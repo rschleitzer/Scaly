@@ -1,0 +1,18 @@
+; OK (positive control, ARG-RESHAPE): the callee aliases its param and stores the
+; alias frame-external (the reshape-provenance recorder attributes it to `p`).
+; But `fill` forwards a BORROWED parameter `bx` (not a frame-local), which
+; outlives the frame, so nothing escapes. Must COMPILE — the reshape walk must
+; not over-flag a borrowed forward. Self-hosted-only.
+define Box ( v: int )
+define Holder ( b: pointer[Box] )
+{
+    procedure stash(this, p: pointer[Box])
+    {
+        let q p
+        set this.b: q
+    }
+}
+procedure fill(c: Holder, bx: pointer[Box])
+    c.stash(bx)
+function main() returns int
+    0

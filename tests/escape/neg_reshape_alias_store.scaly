@@ -1,0 +1,22 @@
+; ESCAPE (negative, ARG-RESHAPE / alias): the callee binds its reference param
+; to a LOCAL (`let q p`) and stores the alias frame-external. The bare-param
+; store recorder saw only `p` directly; an alias broke the attribution, so
+; `fill(&bx)` was silently accepted. The reshape-provenance walk
+; (escape_value_param_root via the alias map) now attributes `q` to param `p`,
+; so passing a Local ref MUST be REJECTED. Self-hosted-only.
+define Box ( v: int )
+define Holder ( b: pointer[Box] )
+{
+    procedure stash(this, p: pointer[Box])
+    {
+        let q p
+        set this.b: q
+    }
+}
+procedure fill(c: Holder)
+{
+    let bx Box(5)
+    c.stash(&bx)
+}
+function main() returns int
+    0

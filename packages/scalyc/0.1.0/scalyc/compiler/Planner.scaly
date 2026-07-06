@@ -463,6 +463,16 @@ define Planner
         ; check flag a stack closure passed to a storing callee.
         current_fn_closure_names: Array[String]
 
+        ; Reshape provenance (escape post-pass): locals whose initializer derives
+        ; from a reference-like/delegate PARAMETER of the function currently being
+        ; walked, mapped to that parameter's index (parallel arrays, rebuilt per
+        ; function like current_fn_closure_names). Lets the store/forward
+        ; recorders see through an alias (`let q p; store(q)`) so a reshaped
+        ; forward of a parameter is still attributed to it (closes the arg-reshape
+        ; residual together with the member-access/deref/&-root provenance walk).
+        current_fn_alias_names: Array[String]
+        current_fn_alias_params: Array[size_t]
+
         ; Transitive page-need set (interprocedural escape forwarding). Names
         ; of functions that need the caller's page ONLY because their body
         ; forwards rp to a sibling that needs one (the escape-machinery
@@ -665,6 +675,8 @@ define Planner
             set escape_forwarding: false
             set escape_saw_indirect: false
             set current_fn_closure_names: Array[String]^this()
+            set current_fn_alias_names: Array[String]^this()
+            set current_fn_alias_params: Array[size_t]^this()
             set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
             set concept_origin_files: Array[String]^this()
@@ -17062,6 +17074,57 @@ define Planner
             false
         }
 
+        ; escape_alias_param_index: the parameter index a local name aliases (via
+        ; the current_fn_alias_names/params reshape map), or -1.
+        function escape_alias_param_index(this: Planner, name: String) returns int
+        {
+            var i: size_t 0
+            while i < current_fn_alias_names.length
+            {
+                let np current_fn_alias_names.get i
+                if np <> null
+                    if np.equals(name)
+                    {
+                        let pp current_fn_alias_params.get i
+                        if pp <> null
+                            return (*pp) as int
+                    }
+                set i: i + 1
+            }
+            -1
+        }
+
+        ; escape_value_param_root: the reference-like/delegate PARAMETER index
+        ; this operand's value IS — a bare parameter, or a bare local ALIAS of a
+        ; parameter (`let q p`). -1 otherwise. Deliberately BARE only (no member
+        ; hop): a field/deref reshape (`s.current`) is NOT the parameter's own
+        ; lifetime — flagging it would reject the ubiquitous struct-field-copy
+        ; pattern (Lexer.restore_state does `set current: s.current`, storing a
+        ; long-lived pointer field of param `s`) and break the self-host. So the
+        ; FIELD reshape stays a documented residual (it needs per-field pointee-
+        ; lifetime tracking the coarse per-param summary cannot express); only the
+        ; precise ALIAS reshape is closed here.
+        function escape_value_param_root(this: Planner, op: PlannedOperand) returns int
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > (0 as size_t)
+                    return -1
+            }
+            choose op.expr
+                when v: Variable
+                {
+                    let pi this.escape_param_index_current(v.name)
+                    if pi >= 0
+                        return pi
+                    return this.escape_alias_param_index(v.name)
+                }
+                else
+                    return -1
+            -1
+        }
+
         ; Pass 0: at a frame-external store of a current-function parameter
         ; reference, record a summary entry. Reuses the Vector-2 store shape
         ; (value = a bare reference-like param; target = param.field / global
@@ -17091,37 +17154,22 @@ define Planner
             let val val_ptr.unwrap()
             let tgt tgt_ptr.unwrap()
 
-            ; Value must be a bare reference-like PARAMETER of the current fn.
+            ; Value must derive from a reference-like/delegate PARAMETER of the
+            ; current fn — directly, through an alias (`let q p`), or through a
+            ; member-access/deref/&-root reshape (`(*pr).a`). escape_value_param_
+            ; root resolves all three. A stored value is escapable if it is a
+            ; pointer/ref (Vector-2 shape) OR a delegate (closure value): a callee
+            ; storing such a value frame-external makes whatever the caller passes
+            ; outlive this frame; the call check then flags callers passing a
+            ; Local ref / STACK closure (a heap `#` / borrowed param is fine).
             var stored_param_index: int -1
-            choose val.expr
-                when v: Variable
-                {
-                    var val_has_member false
-                    if val.member_access <> null
-                    {
-                        let vma (*val.member_access)
-                        if vma.length > (0 as size_t)
-                            set val_has_member: true
-                    }
-                    if val_has_member = false
-                    {
-                        ; A stored param is escapable if it is a pointer/ref
-                        ; (Vector-2 shape) OR a delegate (closure value): a
-                        ; callee storing a delegate PARAM frame-external makes
-                        ; whatever closure the caller passes outlive this frame;
-                        ; the call check then flags callers passing a STACK
-                        ; closure (a heap `#` closure / a borrowed param is fine).
-                        var val_is_escapable false
-                        if Planner.is_reference_like(val.result_type)
-                            set val_is_escapable: true
-                        if this.is_delegate_type(val.result_type.name)
-                            set val_is_escapable: true
-                        if val_is_escapable
-                            set stored_param_index: this.escape_param_index_current(v.name)
-                    }
-                }
-                else
-                    0
+            var val_is_escapable false
+            if Planner.is_reference_like(val.result_type)
+                set val_is_escapable: true
+            if this.is_delegate_type(val.result_type.name)
+                set val_is_escapable: true
+            if val_is_escapable
+                set stored_param_index: this.escape_value_param_root(val)
             if stored_param_index < 0
                 return
 
@@ -17386,40 +17434,25 @@ define Planner
                 if arg_ptr <> null
                 {
                     let arg arg_ptr.unwrap()
-                    var arg_has_member false
-                    if arg.member_access <> null
+                    var arg_is_escapable false
+                    if Planner.is_reference_like(arg.result_type)
+                        set arg_is_escapable: true
+                    if this.is_delegate_type(arg.result_type.name)
+                        set arg_is_escapable: true
+                    if arg_is_escapable
                     {
-                        let ama (*arg.member_access)
-                        if ama.length > (0 as size_t)
-                            set arg_has_member: true
-                    }
-                    if arg_has_member = false
-                    {
-                        var arg_is_escapable false
-                        if Planner.is_reference_like(arg.result_type)
-                            set arg_is_escapable: true
-                        if this.is_delegate_type(arg.result_type.name)
-                            set arg_is_escapable: true
-                        if arg_is_escapable
+                        let fwd_param_index this.escape_value_param_root(arg)
+                        if fwd_param_index >= 0
                         {
-                            var fwd_param_index: int -1
-                            choose arg.expr
-                                when v: Variable
-                                    set fwd_param_index: this.escape_param_index_current(v.name)
-                                else
-                                    0
-                            if fwd_param_index >= 0
-                            {
-                                let cpc this.escape_current_param_count()
-                                if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (1 as size_t), (0 as size_t)) = false
-                                    escape_records.add(EscapeRecord(
-                                        escape_fn_index,
-                                        cpc,
-                                        (fwd_param_index as size_t),
-                                        (1 as size_t),
-                                        (0 as size_t)
-                                    ))
-                            }
+                            let cpc this.escape_current_param_count()
+                            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (1 as size_t), (0 as size_t)) = false
+                                escape_records.add(EscapeRecord(
+                                    escape_fn_index,
+                                    cpc,
+                                    (fwd_param_index as size_t),
+                                    (1 as size_t),
+                                    (0 as size_t)
+                                ))
                         }
                     }
                 }
@@ -17453,17 +17486,9 @@ define Planner
                 return
             let arg arg_ptr.unwrap()
 
-            ; The forwarded arg must be a BARE reference-like/delegate parameter
-            ; of the current function (a member hop or a non-param disqualifies).
-            var arg_has_member false
-            if arg.member_access <> null
-            {
-                let ama (*arg.member_access)
-                if ama.length > (0 as size_t)
-                    set arg_has_member: true
-            }
-            if arg_has_member
-                return
+            ; The forwarded arg must derive from a reference-like/delegate
+            ; parameter of the current function — directly, via an alias, or via
+            ; a member-access/deref/&-root reshape (escape_value_param_root).
             var arg_is_escapable false
             if Planner.is_reference_like(arg.result_type)
                 set arg_is_escapable: true
@@ -17471,12 +17496,7 @@ define Planner
                 set arg_is_escapable: true
             if arg_is_escapable = false
                 return
-            var fwd_param_index: int -1
-            choose arg.expr
-                when v: Variable
-                    set fwd_param_index: this.escape_param_index_current(v.name)
-                else
-                    0
+            let fwd_param_index this.escape_value_param_root(arg)
             if fwd_param_index < 0
                 return
 
@@ -17756,8 +17776,41 @@ define Planner
                     ; call in this function can flag passing it to a storing
                     ; callee. Detected structurally from the Plan tree.
                     if binding.binding_item.name <> null
+                    {
                         if this.binding_inits_stack_closure(binding)
                             current_fn_closure_names.add(String((*binding.binding_item.name)))
+                        ; Reshape alias: a local whose initializer derives from a
+                        ; reference-like/delegate parameter aliases that param, so
+                        ; a later `store q` / `forward(q)` is attributed to it.
+                        ; Bindings walk in evaluation order, so the alias is
+                        ; recorded before any use (and before a chained alias).
+                        if binding.operation <> null
+                        {
+                            let bops (*binding.operation)
+                            if bops.length > 0
+                            {
+                                let bop0 bops.get 0
+                                if bop0 <> null
+                                {
+                                    let bo bop0.unwrap()
+                                    var bo_esc false
+                                    if Planner.is_reference_like(bo.result_type)
+                                        set bo_esc: true
+                                    if this.is_delegate_type(bo.result_type.name)
+                                        set bo_esc: true
+                                    if bo_esc
+                                    {
+                                        let broot this.escape_value_param_root(bo)
+                                        if broot >= 0
+                                        {
+                                            current_fn_alias_names.add(String((*binding.binding_item.name)))
+                                            current_fn_alias_params.add(broot as size_t)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     this.escape_walk_operands(binding.operation)
                 }
                 when ret: Return
@@ -17791,6 +17844,8 @@ define Planner
             ; Local-closure binding (a binding always precedes any use of its
             ; name, so a later call passing the closure sees it).
             set current_fn_closure_names.length: 0
+            set current_fn_alias_names.length: 0
+            set current_fn_alias_params.length: 0
             choose func.impl
                 when action: Action
                     this.escape_walk_action(action)

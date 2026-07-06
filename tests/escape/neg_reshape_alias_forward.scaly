@@ -1,0 +1,22 @@
+; ESCAPE (negative, ARG-RESHAPE / alias + transitive): `forward_it` aliases its
+; param (`let q p`) and forwards the alias to a storing callee. The forwarding
+; fixpoint must see through the alias to record that `forward_it` persists `p`,
+; so `use_it(&bx)` (a Local ref) MUST be REJECTED. Self-hosted-only.
+define Box ( v: int )
+define Holder ( b: pointer[Box] )
+{
+    procedure stash(this, p: pointer[Box])
+        set this.b: p
+}
+procedure forward_it(c: Holder, p: pointer[Box])
+{
+    let q p
+    c.stash(q)
+}
+procedure use_it(c: Holder)
+{
+    let bx Box(5)
+    forward_it(c, &bx)
+}
+function main() returns int
+    0
