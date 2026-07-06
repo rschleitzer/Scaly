@@ -5899,7 +5899,27 @@ define Planner
                                                             {
                                                                 choose (*r0_ptr).expr
                                                                     when rt0: PlannedType
+                                                                    {
+                                                                        ; A CALL-shaped index row — a Type
+                                                                        ; followed by its argument Tuple,
+                                                                        ; `m[String("two")]` — IS a value
+                                                                        ; (the row collapse below resolves
+                                                                        ; the call). Only a BARE type
+                                                                        ; disqualifies the row.
                                                                         set idx_is_value: false
+                                                                        if row.length > 1
+                                                                        {
+                                                                            let r1_ptr row.get 1
+                                                                            if r1_ptr <> null
+                                                                            {
+                                                                                choose (*r1_ptr).expr
+                                                                                    when rt1_tp: PlannedTuple
+                                                                                        set idx_is_value: true
+                                                                                    else
+                                                                                        0
+                                                                            }
+                                                                        }
+                                                                    }
                                                                     when rm0: scalyc.compiler.Plan.PlannedMatrix
                                                                         set idx_is_value: false
                                                                     else

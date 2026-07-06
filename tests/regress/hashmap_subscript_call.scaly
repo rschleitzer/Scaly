@@ -1,0 +1,22 @@
+; A subscript whose index is a CALL — `m[String("two")]` — used to trip the
+; orphan-operand diagnostic: the subscript pre-pass's idx_is_value gate
+; rejected any index row whose first operand was a Type, misclassifying a
+; call-shaped index (Type + argument Tuple) as a non-value. The gate now
+; accepts a Type-followed-by-Tuple index row (it collapses to the call).
+; Expected: PASS
+var b HashMapBuilder[String, int]()
+b.add(String("one"), 1)
+b.add(String("two"), 2)
+var m HashMap[String, int](*b)
+let r m[String("two")]
+if r = null
+{
+    print("FAIL")
+    exit 1
+}
+if (*r) <> 2
+{
+    print("FAIL")
+    exit 2
+}
+print("PASS")
