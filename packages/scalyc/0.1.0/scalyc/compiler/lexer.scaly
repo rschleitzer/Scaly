@@ -135,8 +135,11 @@ define lexer
                 return
             }
 
-            ; Punctuation (no linefeed skip): } ) ] . ? ! $ # ^ \
-            if (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94) || (c = 92)
+            ; Punctuation (no linefeed skip): } ) ] . ? ! # ^ \
+            ; NOTE: '$' (36) is deliberately NOT punctuation — the Local
+            ; lifetime sigil was removed from the grammar; a stray '$' must
+            ; lex as Invalid so it fails loudly instead of orphaning tokens.
+            if (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 35) || (c = 94) || (c = 92)
             {
                 set token: Token.Punctuation(PunctuationToken(c as u8))
                 read_character()

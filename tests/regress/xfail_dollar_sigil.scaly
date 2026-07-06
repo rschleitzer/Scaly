@@ -1,0 +1,7 @@
+; The '$' Local-lifetime sigil was removed from the grammar. A stray '$'
+; used to lex as an orphan punctuation token and SILENTLY truncate the
+; program (rc 0). Now: '$' lexes as Invalid and the parse fails loudly.
+; xfail: unexpected trailing input
+define Point(x: int, y: int)
+let p Point$(1, 2)
+print("must not compile")
