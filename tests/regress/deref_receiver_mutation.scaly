@@ -1,0 +1,38 @@
+; A mutating method called on an explicitly-deref'd pointer receiver
+; `(*p).method(...)` must operate on the POINTEE, not a stack copy.
+; Before the s200 emit_call in-place deref arg, the receiver was
+; materialized into a pooled deref.tmp/arg.tmp: mutations were silently
+; lost, and a Page.get(this)-deriving method (HashMapBuilder.reallocate)
+; masked the stack address into a garbage page header (SIGBUS) — the
+; failure that surfaced when the Modeler's `(*symbols_builder).add(...)`
+; went real with the s189 denylist lift.
+; Expected: PASS
+
+define Counter
+(
+    count: int
+)
+{
+    procedure bump(this: Counter)
+    {
+        set count: count + 1
+    }
+
+    function get(this: Counter) returns int
+        count
+}
+
+procedure bump_through(p: pointer[Counter])
+{
+    (*p).bump()
+    (*p).bump()
+}
+
+var c Counter(40)
+bump_through(&c)
+(*(&c)).bump()
+
+if c.get() = 43
+    print("PASS")
+else
+    print("FAIL")

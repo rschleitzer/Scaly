@@ -6162,6 +6162,121 @@ define Emitter
                     }
                 }
 
+                ; s200: in-place deref arg. An arg written `(*p)` (paren-group
+                ; deref) or `*p` (bare deref) where p is a pointer to a
+                ; struct-mapped T must pass p's VALUE, not a stack copy:
+                ; emit_operand materializes the deref into a pooled deref.tmp/
+                ; arg.tmp, so the callee mutates a COPY (mutations silently
+                ; lost) and a Page.get(this)-deriving method masks the STACK
+                ; address into a garbage page header — HashMapBuilder<String,
+                ; Nameable>::reallocate SIGBUSed in PageList::add when the
+                ; Modeler's `(*symbols_builder).add(...)` went real (the s189
+                ; denylist lift). Scaly struct args are by-ref at the ABI
+                ; (s101), so the original object pointer is the correct
+                ; operand. Gated to non-extern-LLVM callees, chainless
+                ; operands, struct-mapped pointees, and a pointer-typed inner
+                ; operand; the decision uses PLANNED types only, so the inner
+                ; operand is emitted exactly once (an inner call is never
+                ; double-run).
+                if direct_alloca = false
+                {
+                    if arg_operand.member_access = null
+                    {
+                        if call.mangled_name.starts_with("LLVM") = false
+                        {
+                            var deref_args: ref[Vector[PlannedOperand]]? null
+                            choose arg_operand.expr
+                                when dgrp: PlannedTuple
+                                {
+                                    if dgrp.components <> null
+                                    {
+                                        let dcomps (*dgrp.components)
+                                        if dcomps.length = 1
+                                        {
+                                            let dcomp0 dcomps.get 0
+                                            if dcomp0 <> null
+                                            {
+                                                if (*dcomp0).name = null
+                                                {
+                                                    if (*dcomp0).value <> null
+                                                    {
+                                                        let dops (*(*dcomp0).value)
+                                                        if dops.length = 1
+                                                        {
+                                                            let dop0 dops.get 0
+                                                            if dop0 <> null
+                                                            {
+                                                                if (*dop0).member_access = null
+                                                                {
+                                                                    choose (*dop0).expr
+                                                                        when dcall: PlannedCall
+                                                                        {
+                                                                            if dcall.is_intrinsic
+                                                                            {
+                                                                                if dcall.name.equals("*")
+                                                                                    set deref_args: dcall.args
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                            0
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                when dbare: PlannedCall
+                                {
+                                    if dbare.is_intrinsic
+                                    {
+                                        if dbare.name.equals("*")
+                                            set deref_args: dbare.args
+                                    }
+                                }
+                                else
+                                    0
+                            if deref_args <> null
+                            {
+                                let dargs (*deref_args)
+                                if dargs.length = 1
+                                {
+                                    let dinner_ptr dargs.get 0
+                                    if dinner_ptr <> null
+                                    {
+                                        let dinner (*dinner_ptr)
+                                        let pointee_ty map_type arg_operand.result_type
+                                        if pointee_ty.handle <> null
+                                        {
+                                            if LLVMGetTypeKind(pointee_ty) = LLVMTypeKind.Struct()
+                                            {
+                                                let dinner_ty map_type dinner.result_type
+                                                if dinner_ty.handle <> null
+                                                {
+                                                    if LLVMGetTypeKind(dinner_ty) = LLVMTypeKind.Pointer()
+                                                    {
+                                                        let pval emit_operand dinner
+                                                        if pval.handle <> null
+                                                        {
+                                                            if LLVMGetTypeKind(LLVMTypeOf pval) = LLVMTypeKind.Pointer()
+                                                            {
+                                                                set arg_value: pval
+                                                                set direct_alloca: true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 ; (String → const_char coercion is handled planner-side: a
                 ; String argument bound to a pointer[const_char]-like param is
                 ; wrapped in a PlannedAs, and emit_as lowers it — constant to
