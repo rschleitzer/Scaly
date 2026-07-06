@@ -207,7 +207,6 @@ source_filename = "scaly"
 @"8SEEK_END" = constant i64 2
 @"4F_OK" = constant i64 0
 @"4F_OK.1" = constant i64 0
-@.sconst = private constant [3 x i8] c"\01\0A\00"
 @.str = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
 @.str.2 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
 @.str.3 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
@@ -860,7 +859,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @aligned_alloc(i64 1, i64 32)
+  %call = call ptr @aligned_alloc(i64 16, i64 32)
   store ptr %call, ptr @fmt_scratch, align 8
   br label %if.end
 
@@ -878,9 +877,9 @@ entry:
 
 define linkonce_odr void @_Z12scaly_eputnlv() {
 entry:
-  %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst }, ptr %arg.tmp, align 1
-  %call = call i64 @write(i64 2, ptr %arg.tmp, i64 1)
+  %call = call ptr @_Z21scaly_fmt_scratch_ptrv()
+  store i8 10, ptr %call, align 1
+  %call1 = call i64 @write(i64 2, ptr %call, i64 1)
   ret void
 }
 
@@ -906,8 +905,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %val3 = load i64, ptr %val, align 4
-  %ne = icmp ne i64 %val3, 0
-  br i1 %ne, label %if.then4, label %if.end5
+  %eq = icmp eq i64 %val3, 0
+  br i1 %eq, label %if.then4, label %if.end5
 
 if.then4:                                         ; preds = %if.end
   %pos6 = load i64, ptr %pos, align 4
