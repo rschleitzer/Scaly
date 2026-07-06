@@ -503,6 +503,24 @@ define Planner
         current_fn_alias_names: Array[String]
         current_fn_alias_params: Array[size_t]
 
+        ; FIELD-points-to map (Design-B 3e), rebuilt per function like the
+        ; alias/closure sets. An entry (name, field, region) means "local
+        ; `name`'s struct field at index `field` holds a reference of region
+        ; rank `region`". Only LOCAL-region reference fields are recorded (the
+        ; only flaggable ones) — a field left unrecorded resolves to Caller
+        ; (safe) at region_of_arg_path#. Seeded from VISIBLE local constructions
+        ; (`var pp Pair(&bx, ...)`): positional component i -> field i, region =
+        ; region_of_operand(component). Call-result locals (`let s save_state()`)
+        ; are deliberately NOT seeded: a function returning a struct whose
+        ; reference field points to a frame-local is already rejected by the
+        ; return-escape vectors, so such a local's fields are guaranteed non-
+        ; local — leaving them unrecorded (Caller/safe) is sound. This is why
+        ; an explicit return-field-provenance summary (3f) adds no flagging
+        ; behavior over the return-escape guarantee; see region_of_arg_path#.
+        current_fn_fpt_names: Array[String]
+        current_fn_fpt_fields: Array[size_t]
+        current_fn_fpt_regions: Array[size_t]
+
         ; Transitive page-need set (interprocedural escape forwarding). Names
         ; of functions that need the caller's page ONLY because their body
         ; forwards rp to a sibling that needs one (the escape-machinery
@@ -707,6 +725,9 @@ define Planner
             set current_fn_closure_names: Array[String]^this()
             set current_fn_alias_names: Array[String]^this()
             set current_fn_alias_params: Array[size_t]^this()
+            set current_fn_fpt_names: Array[String]^this()
+            set current_fn_fpt_fields: Array[size_t]^this()
+            set current_fn_fpt_regions: Array[size_t]^this()
             set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
             set concept_origin_files: Array[String]^this()
@@ -17184,7 +17205,7 @@ define Planner
 
         function escape_resolve_access(this: Planner, op: PlannedOperand) returns EscapeAccess
         {
-            ; SCALAR accumulate / construct-once (see path_push# comment) — no
+            ; SCALAR accumulate / construct-once (see the EMITTER CONSTRAINT note above) — no
             ; struct local is reassigned across branches, and there is one
             ; EscapeAccess construction (the tail).
             var root_pi: int -1
@@ -17287,7 +17308,7 @@ define Planner
         ; resolves it via per-field provenance instead of coarsely flagging).
         function escape_value_param_access(this: Planner, op: PlannedOperand) returns EscapeAccess
         {
-            ; SCALAR accumulate / construct-once (see path_push# comment).
+            ; SCALAR accumulate / construct-once (see the EMITTER CONSTRAINT note above).
             let acc this.escape_resolve_access(op)
             var pi: int acc.param_index
             var plen acc.path_len
@@ -17312,6 +17333,78 @@ define Planner
                 set f1: 0
             }
             EscapeAccess(pi, plen, f0, f1)
+        }
+
+        ; escape_record_field_points_to (Design-B 3e): seed the caller-side
+        ; field-points-to map from a binding whose initializer is a VISIBLE
+        ; struct construction (a Tuple). For each POSITIONAL component that is a
+        ; reference and whose operand is LOCAL-region (region_of_operand below
+        ; the escape threshold), record (bind_name, component_index -> field
+        ; index, Local). Named components are skipped (positional index may not
+        ; equal field index -> leave unrecorded -> Caller/safe). Only local
+        ; fields are recorded; every other field resolves to Caller (safe) at
+        ; region_of_arg_path#. Call-result / opaque initializers are not Tuples,
+        ; so they are never seeded (sound: see the current_fn_fpt_* field
+        ; comment). Runs in every pass; consulted only by the phase-4 check.
+        function escape_record_field_points_to(this: Planner, binding: PlannedBinding)
+        {
+            if binding.binding_item.name = null
+                return
+            if binding.operation = null
+                return
+            let ops (*binding.operation)
+            if ops.length = 0
+                return
+            let op0_ptr ops.get 0
+            if op0_ptr = null
+                return
+            let op0 op0_ptr.unwrap()
+            ; A member hop on the whole operand means it is not a bare
+            ; construction (`let x foo().bar`) — do not seed.
+            if op0.member_access <> null
+            {
+                let ma (*op0.member_access)
+                if ma.length > (0 as size_t)
+                    return
+            }
+            let bind_name (*binding.binding_item.name)
+            choose op0.expr
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        let comps (*tp.components)
+                        var i: size_t 0
+                        while i < comps.length
+                        {
+                            let cp comps.get i
+                            if cp <> null
+                            {
+                                let comp (*cp)
+                                if comp.name = null
+                                    if comp.value <> null
+                                    {
+                                        let vals (*comp.value)
+                                        if vals.length = 1
+                                        {
+                                            let vp vals.get 0
+                                            if vp <> null
+                                                if Planner.is_reference_like(vp.result_type)
+                                                    if this.region_of_operand(vp.unwrap()) < Planner.required_region_for_escape()
+                                                    {
+                                                        current_fn_fpt_names.add(String(bind_name))
+                                                        current_fn_fpt_fields.add(i)
+                                                        current_fn_fpt_regions.add(Planner.region_rank_local())
+                                                    }
+                                        }
+                                    }
+                            }
+                            set i: i + 1
+                        }
+                    }
+                }
+                else
+                    0
         }
 
         ; escape_value_param_root: the reference-like/delegate PARAMETER index
@@ -17786,7 +17879,7 @@ define Planner
             ; (arg-path ++ callee-path), k=2 truncation. For the common bare
             ; forward (both paths empty) this is the empty path -> byte-identical
             ; to the pre-reshape record. Composed in SCALARS to avoid a struct-
-            ; local reassignment (see path_push# comment).
+            ; local reassignment (see the EMITTER CONSTRAINT note above).
             var cplen facc.path_len
             var cf0 facc.field0
             var cf1 facc.field1
@@ -18079,6 +18172,9 @@ define Planner
                                 }
                             }
                         }
+                        ; Field-points-to seeding (Design-B 3e): a local built by
+                        ; a visible struct construction with a local-ref field.
+                        this.escape_record_field_points_to(binding)
                     }
                     this.escape_walk_operands(binding.operation)
                 }
@@ -18115,6 +18211,9 @@ define Planner
             set current_fn_closure_names.length: 0
             set current_fn_alias_names.length: 0
             set current_fn_alias_params.length: 0
+            set current_fn_fpt_names.length: 0
+            set current_fn_fpt_fields.length: 0
+            set current_fn_fpt_regions.length: 0
             choose func.impl
                 when action: Action
                     this.escape_walk_action(action)
