@@ -8265,70 +8265,263 @@ define Emitter
     ; Emit a match expression
     function emit_match(this, match_expr: PlannedMatch) returns LLVMValueRef
     {
-        ; Match is similar to if with multiple conditions
-        ; Emit condition
+        ; Compare-chain match (port of stage-0 emitMatch, Emitter.cpp:5145):
+        ; per branch, OR-combine `scrutinee = case` compares (ICmp for ints,
+        ; FCmp for floats — the old LLVMBuildSwitch was integer-only) and
+        ; CondBr to the branch body. Branch-body values feed a match.value
+        ; PHI mirroring emit_choose's type-locked, void-gated PHI with undef
+        ; fill for valueless predecessors (s124); the old version returned
+        ; null unconditionally, so match-as-expression yielded no value.
         let cond_value emit_operands match_expr.condition
         if cond_value.handle = null
             return LLVMValueRef null
 
-        ; Create blocks
+        let cond_type LLVMTypeOf(cond_value)
+        let cond_kind LLVMGetTypeKind(cond_type)
+        var cond_is_float: bool false
+        if cond_kind = LLVMTypeKind.Float()
+            set cond_is_float: true
+        if cond_kind = LLVMTypeKind.Double()
+            set cond_is_float: true
+
         let merge_block create_block("match.end")
-        var default_block LLVMBasicBlockRef(null)
-        if match_expr.alternative <> null
-            set default_block: create_block("match.else")
-        else
-            set default_block: merge_block
 
-        ; Create switch instruction
-        let branch_count match_expr.branches.length as int
-        let switch_inst LLVMBuildSwitch(builder, cond_value, default_block, branch_count)
-
-        ; Process each branch
+        var branch_total: size_t 0
         if match_expr.branches <> null
         {
-            for branch in match_expr.branches
+            let btr match_expr.branches
+            set branch_total: (*btr).length
+        }
+        var has_alternative: bool false
+        if match_expr.alternative <> null
+            set has_alternative: true
+
+        ; Each branch contributes at most one PHI entry (value or undef),
+        ; plus one for the chain fall-through edge and one for the else arm.
+        let max_count branch_total + 2
+        var phi_values Vector[LLVMValueRef](max_count)
+        var phi_blocks Vector[LLVMBasicBlockRef](max_count)
+        var phi_count: size_t 0
+        var phi_ref_type LLVMTypeRef(null)
+        var undef_blocks Vector[LLVMBasicBlockRef](max_count)
+        var undef_count: size_t 0
+
+        ; Degenerate no-branch, no-else match: terminate the entry block so
+        ; the merge repositioning below never leaves it unterminated.
+        if branch_total = 0
+        {
+            if has_alternative = false
+                LLVMBuildBr(builder, merge_block)
+        }
+
+        if match_expr.branches <> null
+        {
+            let branches_ref match_expr.branches
+            var bi: size_t 0
+            while bi < branch_total
             {
-                let case_block create_block("match.case")
-
-                ; Add cases to switch
-                if branch.cases <> null
+                let branch_ptr (*branches_ref).get bi
+                if branch_ptr <> null
                 {
-                    for case_cond in branch.cases
+                    let case_block create_block("match.case")
+                    var next_block merge_block
+                    var next_is_merge: bool true
+                    if bi + 1 < branch_total
                     {
-                        let case_value emit_operands case_cond.condition
-                        if case_value.handle <> null
-                            LLVMAddCase(switch_inst, case_value, case_block)
+                        set next_block: create_block("match.next")
+                        set next_is_merge: false
                     }
-                }
+                    else
+                    {
+                        if has_alternative
+                        {
+                            set next_block: create_block("match.next")
+                            set next_is_merge: false
+                        }
+                    }
 
-                ; Emit case body. s25/s28: unwrap ref[PlannedStatement]?
-                ; via if + explicit deref.
-                LLVMPositionBuilderAtEnd(builder, case_block)
-                if branch.consequent <> null
-                {
-                    let stmt_ref branch.consequent
-                    emit_statement(*stmt_ref)
-                }
+                    ; OR-combined compare chain in the current block.
+                    var branch_cond LLVMValueRef(null)
+                    if (*branch_ptr).cases <> null
+                    {
+                        let cases_ref (*branch_ptr).cases
+                        for case_cond in (*cases_ref)
+                        {
+                            let case_value emit_operands case_cond.condition
+                            if case_value.handle <> null
+                            {
+                                var case_cmp LLVMValueRef(null)
+                                if cond_is_float
+                                    set case_cmp: LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), cond_value, case_value, "match.cmp")
+                                else
+                                    set case_cmp: LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), cond_value, case_value, "match.cmp")
+                                if branch_cond.handle = null
+                                    set branch_cond: case_cmp
+                                else
+                                    set branch_cond: LLVMBuildOr(builder, branch_cond, case_cmp, "match.or")
+                            }
+                        }
+                    }
 
-                let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
-                if case_term.handle = null
-                    LLVMBuildBr(builder, merge_block)
+                    ; The chain block's false edge: when it goes straight to
+                    ; merge (last branch, no else), it is a valueless PHI
+                    ; predecessor.
+                    let chain_block LLVMGetInsertBlock(builder)
+                    if branch_cond.handle <> null
+                        LLVMBuildCondBr(builder, branch_cond, case_block, next_block)
+                    else
+                        LLVMBuildBr(builder, case_block)
+                    if next_is_merge
+                    {
+                        if branch_cond.handle <> null
+                        {
+                            undef_blocks.put(undef_count, chain_block)
+                            set undef_count: undef_count + 1
+                        }
+                    }
+
+                    ; Emit the branch body. s25/s28: unwrap
+                    ; ref[PlannedStatement]? via if + explicit deref; s32:
+                    ; Action-variant consequents go through emit_action so
+                    ; the branch yields a real value for the PHI.
+                    LLVMPositionBuilderAtEnd(builder, case_block)
+                    enter_scope()
+                    var branch_value LLVMValueRef(null)
+                    if (*branch_ptr).consequent <> null
+                    {
+                        let stmt_ref (*branch_ptr).consequent
+                        choose (*stmt_ref)
+                            when action: Action
+                                set branch_value: emit_action(action)
+                            else
+                                emit_statement(*stmt_ref)
+                    }
+                    let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+                    if case_term.handle = null
+                    {
+                        let case_end_block LLVMGetInsertBlock(builder)
+                        var added_phi: bool false
+                        if branch_value.handle <> null
+                        {
+                            ; s97: skip void-typed and type-mismatched PHI
+                            ; inputs — lock the type from the first typed
+                            ; value (LLVM types are uniqued, handle compare).
+                            let bv_type LLVMTypeOf(branch_value)
+                            if bv_type.handle <> null
+                            {
+                                if LLVMGetTypeKind(bv_type) <> LLVMTypeKind.Void()
+                                {
+                                    if phi_ref_type.handle = null
+                                        set phi_ref_type: bv_type
+                                    if bv_type.handle = phi_ref_type.handle
+                                    {
+                                        phi_values.put(phi_count, branch_value)
+                                        phi_blocks.put(phi_count, case_end_block)
+                                        set phi_count: phi_count + 1
+                                        set added_phi: true
+                                    }
+                                }
+                            }
+                        }
+                        if added_phi = false
+                        {
+                            undef_blocks.put(undef_count, case_end_block)
+                            set undef_count: undef_count + 1
+                        }
+                        LLVMBuildBr(builder, merge_block)
+                    }
+                    ; s178: the branch value feeds the merge PHI that doesn't
+                    ; exist yet — protect its slot from scope-exit release.
+                    pin_temp_value branch_value
+                    exit_scope()
+
+                    ; Continue the chain in next_block (unless it is merge).
+                    if next_is_merge = false
+                        LLVMPositionBuilderAtEnd(builder, next_block)
+                }
+                set bi: bi + 1
             }
         }
 
-        ; Emit alternative if present. s25/s28: unwrap via if + deref.
+        ; The else arm, emitted in the trailing chain block. s25/s28 unwrap.
         if match_expr.alternative <> null
         {
-            let stmt_ref match_expr.alternative
-            LLVMPositionBuilderAtEnd(builder, default_block)
-            emit_statement(*stmt_ref)
+            enter_scope()
+            var alt_value LLVMValueRef(null)
+            let alt_ref match_expr.alternative
+            choose (*alt_ref)
+                when action: Action
+                    set alt_value: emit_action(action)
+                else
+                    emit_statement(*alt_ref)
             let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
             if alt_term.handle = null
+            {
+                let alt_end_block LLVMGetInsertBlock(builder)
+                var added_alt: bool false
+                if alt_value.handle <> null
+                {
+                    let av_type LLVMTypeOf(alt_value)
+                    if av_type.handle <> null
+                    {
+                        if LLVMGetTypeKind(av_type) <> LLVMTypeKind.Void()
+                        {
+                            if phi_ref_type.handle = null
+                                set phi_ref_type: av_type
+                            if av_type.handle = phi_ref_type.handle
+                            {
+                                phi_values.put(phi_count, alt_value)
+                                phi_blocks.put(phi_count, alt_end_block)
+                                set phi_count: phi_count + 1
+                                set added_alt: true
+                            }
+                        }
+                    }
+                }
+                if added_alt = false
+                {
+                    undef_blocks.put(undef_count, alt_end_block)
+                    set undef_count: undef_count + 1
+                }
                 LLVMBuildBr(builder, merge_block)
+            }
+            pin_temp_value alt_value
+            exit_scope()
         }
 
         ; Continue at merge block
         LLVMPositionBuilderAtEnd(builder, merge_block)
+
+        ; Build the match.value PHI when at least one branch produced a
+        ; typed value; append undef entries for every valueless predecessor
+        ; so the PHI covers each incoming edge (s124).
+        if phi_count > 0
+        {
+            let first_ptr phi_values.get 0
+            if first_ptr <> null
+            {
+                ; Bind the deref'd value to a local first (deref-arg quirk,
+                ; see emit_choose).
+                let first_val (*first_ptr)
+                let phi_ty LLVMTypeOf(first_val)
+                let undef_val LLVMGetUndef(phi_ty)
+                var ui: size_t 0
+                while ui < undef_count
+                {
+                    let ub_ptr undef_blocks.get ui
+                    if ub_ptr <> null
+                    {
+                        phi_values.put(phi_count, undef_val)
+                        phi_blocks.put(phi_count, (*ub_ptr))
+                        set phi_count: phi_count + 1
+                    }
+                    set ui: ui + 1
+                }
+                let phi LLVMBuildPhi(builder, phi_ty, "match.value")
+                LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as int)
+                return phi
+            }
+        }
 
         LLVMValueRef null
     }

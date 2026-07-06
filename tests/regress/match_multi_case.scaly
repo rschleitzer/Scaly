@@ -1,0 +1,18 @@
+; Multiple cases sharing one branch (OR-combined compare chain), and a
+; float scrutinee (the old switch-based emit_match was integer-only).
+; Expected: PASS
+let word match 2: case 1 case 2: 12 else 0
+if word <> 12
+{
+    print("FAIL")
+    exit 1
+}
+
+let f match 2.5: case 1.5: 1 case 2.5: 2 else 0
+if f <> 2
+{
+    print("FAIL")
+    exit 2
+}
+
+print("PASS")

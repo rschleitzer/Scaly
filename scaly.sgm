@@ -374,6 +374,7 @@
     <content link = Case                  multiple          property = cases
     <content colon
     <content link = Statement                               property = consequent
+    <content colon                                 optional
 
 <syntax id = Case                         multiple
     <content link = case

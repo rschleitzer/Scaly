@@ -3294,6 +3294,8 @@ define Parser
             when success: Success
                 set consequent: success
 
+        lexer.parse_colon()
+
         let end lexer.position
 
         BranchSyntax(start, end, cases, consequent)

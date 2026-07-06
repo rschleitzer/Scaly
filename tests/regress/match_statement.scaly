@@ -1,0 +1,27 @@
+; match as a statement, multi-line branches with statement consequents
+; (used to be silently dropped together with everything after it).
+; Expected: PASS
+function show(n: int) returns int
+{
+    var r 0
+    match n
+        case 1
+            set r: 1
+        case 2
+            set r: 2
+        else
+            set r: 99
+    r
+}
+
+if show(2) <> 2
+{
+    print("FAIL")
+    exit 1
+}
+if show(7) <> 99
+{
+    print("FAIL")
+    exit 2
+}
+print("PASS")

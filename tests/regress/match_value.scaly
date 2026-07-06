@@ -1,0 +1,31 @@
+; match as an expression: single-line and multi-line forms both yield the
+; selected branch's value (used to silently yield nothing — no PHI in
+; emit_match, and the multi-line form died on a missing separator colon in
+; the Branch grammar rule).
+; Expected: PASS
+let a match 2: case 1: 10 case 2: 20 else 0
+if a <> 20
+{
+    print("FAIL")
+    exit 1
+}
+
+let b match 5: case 1: 10 case 2: 20 else 0
+if b <> 0
+{
+    print("FAIL")
+    exit 2
+}
+
+let c match 3
+    case 1: 100
+    case 2: 200
+    case 3: 300
+    else 0
+if c <> 300
+{
+    print("FAIL")
+    exit 3
+}
+
+print("PASS")
