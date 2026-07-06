@@ -64,13 +64,17 @@
 
     <section xml:id="lex-strings">
       <title>String Literals</title>
-      <para>String literals are enclosed in double quotes. They support standard
-        escape sequences.</para>
+      <para>String literals are enclosed in double quotes. The supported escape
+        sequences are <literal>\"</literal>, <literal>\\</literal>,
+        <literal>\'</literal>, <literal>\n</literal>, <literal>\r</literal>,
+        <literal>\t</literal>, <literal>\0</literal>, and
+        <literal>\uXXXX</literal> (four hex digits, encoded as UTF-8).</para>
       <programlisting>
 "Hello, World!"
 "Line 1\nLine 2"      ; with newline escape
 "Tab:\tValue"         ; with tab
 "Quote: \"nested\""   ; escaped quotes
+"\u0041"            ; Unicode escape - the letter A
       </programlisting>
       <para>Strings can span multiple lines without any special syntax — newlines
         are simply included as part of the string content:</para>
@@ -83,12 +87,11 @@ lines."
 
     <section xml:id="lex-characters">
       <title>Character Literals</title>
-      <para>Character literals represent single Unicode code points, enclosed
+      <para>Character literals represent single characters, enclosed
         in backticks.</para>
       <programlisting>
 `a`           ; lowercase a
 `\n`          ; newline character
-`\u{1F600}`   ; emoji (grinning face)
       </programlisting>
     </section>
 

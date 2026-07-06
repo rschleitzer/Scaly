@@ -96,7 +96,8 @@ define bool boolean
   <section xml:id="types-literals">
     <title>Literal Type Inference</title>
     <para>Numeric and other literals do not have an inherent type. Their type is
-      inferred from context:</para>
+      inferred from context — the parameter a literal is passed to, the
+      annotation on its binding, or the other operand of an operation:</para>
     <programlisting>
 function double(x: i32) returns i32 { x * 2 }
 
@@ -105,14 +106,16 @@ double(42)           ; 42 inferred as i32 from parameter type
 let y: i64 100       ; 100 inferred as i64 from annotation
 let z y + 50         ; 50 inferred as i64 to match y
     </programlisting>
-    <para>If the type cannot be inferred, the compiler requires an explicit annotation:</para>
+    <para>When nothing constrains an integer literal, it defaults to
+      <literal>int</literal> (the platform word size), so the common case needs
+      no annotation:</para>
     <programlisting>
-let x 42             ; ERROR: cannot infer type for integer literal
-let x: i32 42        ; OK: type explicitly annotated
+let x 42             ; x is int
     </programlisting>
     <para>Scaly does <emphasis>not</emphasis> support type suffixes on literals
-      (such as <literal>42i32</literal>). This keeps literals clean and
-      encourages explicit type annotations where they matter.</para>
+      (such as <literal>42i32</literal>). Where a different width matters,
+      annotate the binding (<literal>let x: i32 42</literal>) or cast
+      (<literal>42 as i32</literal>).</para>
   </section>
 
   <section xml:id="types-references">
@@ -134,48 +137,52 @@ let x: i32 42        ; OK: type explicitly annotated
         implementors, not for everyday code.</para>
       <programlisting>
 ; Low-level list node (internal implementation)
-define Node[T] {
+define Node[T]
+(
     data: T
     next: pointer[Node[T]]    ; raw pointer for linked structure
-}
+)
       </programlisting>
     </section>
 
     <section xml:id="types-option">
       <title>Nullable Values</title>
-      <para>For nullable values, use <literal>Option[T]</literal> — a proper sum type
-        with <literal>Some(value)</literal> and <literal>None</literal> variants:</para>
+      <para>For nullable values, use <literal>Option[T]</literal> from the
+        standard library — a proper sum type with <literal>Some(value)</literal>
+        and <literal>None</literal> variants, matched with
+        <literal>choose</literal>:</para>
       <programlisting>
-function find(list: List[T], predicate: function(T) returns bool) returns Option[T] {
-    ; returns Some(item) if found, None otherwise
-}
-
-let result find(items, \x: x > 10)
-choose result
-    when value: Some: process(value)
-    else handle_not_found()
+let o Option[int].Some(7)
+choose o
+    when v: Some
+        print("got a value")
+    else
+        print("empty")
       </programlisting>
-      <para>The compiler optimizes <literal>Option[T]</literal> to a simple
-        nullable pointer — no space overhead for the tag.</para>
+      <para>For many element types the compiler optimizes
+        <literal>Option[T]</literal> to a simple nullable pointer — no space
+        overhead for the tag (see <xref linkend="types-unions-optimization"/>).</para>
     </section>
   </section>
 
   <section xml:id="types-parameters">
     <title>Parameter Passing</title>
-    <para>All function parameters are <emphasis>borrowed</emphasis> — functions receive
-      read-only access to their arguments. The caller retains ownership.</para>
+    <para>All <emphasis>function</emphasis> parameters are
+      <emphasis>borrowed</emphasis> — functions receive read-only access to
+      their arguments. The caller retains ownership.</para>
     <programlisting>
-define Point { x: i32, y: i32 }
+define Point ( x: int, y: int )
 
-function distance(a: Point, b: Point) returns f64 {
-    ; a and b are read-only views
-    ; cannot modify them
-    ...
+function distance_squared(a: Point, b: Point) returns int
+{
+    let dx a.x - b.x
+    let dy a.y - b.y
+    dx * dx + dy * dy
 }
 
 let origin Point(0, 0)
 let target Point(3, 4)
-distance(origin, target)    ; origin and target unchanged
+distance_squared(origin, target)    ; origin and target unchanged
     </programlisting>
 
     <section xml:id="types-params-implementation">
@@ -195,16 +202,18 @@ distance(origin, target)    ; origin and target unchanged
 
     <section xml:id="types-params-mutation">
       <title>Mutation via Procedures</title>
-      <para>To modify data, use a <literal>procedure</literal> instead of a function.
-        Procedures can declare parameters as mutable:</para>
+      <para>To modify data, use a <literal>procedure</literal> instead of a
+        function. A procedure's parameters may be mutated, and the caller sees
+        the change — no extra keyword is needed; the
+        <literal>procedure</literal> declaration itself is the signal:</para>
       <programlisting>
-procedure move(p: mutable Point, dx: i32, dy: i32) {
-    set p.x: p.x + dx
-    set p.y: p.y + dy
-}
+define Point ( x: int, y: int )
 
-var position Point(0, 0)
-move(position, 5, 3)    ; position is now (5, 3)
+procedure move(p: Point, dx: int)
+    set p.x: p.x + dx
+
+var pos Point(0, 0)
+move(pos, 5)          ; pos.x is now 5
       </programlisting>
       <para>The distinction between functions (pure, read-only) and procedures
         (may mutate) is explicit in the code. Readers immediately know which
@@ -222,7 +231,7 @@ move(position, 5, 3)    ; position is now (5, 3)
       <para>If all members of a type are public, an implicit constructor is generated
         that takes all fields as parameters in declaration order:</para>
       <programlisting>
-define Point { x: i32, y: i32 }
+define Point ( x: int, y: int )
 
 let p Point(10, 20)    ; implicit constructor
       </programlisting>
@@ -230,27 +239,26 @@ let p Point(10, 20)    ; implicit constructor
 
     <section xml:id="types-constructors-explicit">
       <title>Explicit Constructors</title>
-      <para>Use <literal>init</literal> for explicit constructors when you need:</para>
-      <itemizedlist>
-        <listitem><para>Private members (implicit constructor unavailable)</para></listitem>
-        <listitem><para>Default values for some fields</para></listitem>
-        <listitem><para>Different construction signatures</para></listitem>
-      </itemizedlist>
+      <para>Use <literal>init</literal> for explicit constructors when you need
+        default values for some fields or different construction signatures. An
+        explicit <literal>init</literal> coexists with the implicit all-fields
+        constructor:</para>
       <programlisting>
 define Point
 (
-    x: i32
-    y: i32
+    x: int
+    y: int
 )
 {
-    init(value: i32) {      ; convenience constructor
+    init(value: int)        ; convenience constructor
+    {
         set this.x: value
         set this.y: value
     }
 }
 
-let p1 Point(10, 20)    ; first init
-let p2 Point(5)         ; second init - Point(5, 5)
+let p1 Point(10, 20)    ; implicit constructor
+let p2 Point(5)         ; convenience init - Point(5, 5)
       </programlisting>
     </section>
 
@@ -259,7 +267,7 @@ let p2 Point(5)         ; second init - Point(5, 5)
       <para>The <literal>this.</literal> prefix is optional when unambiguous, but
         recommended for clarity:</para>
       <programlisting>
-init(x: i32, y: i32) {
+init(x: int, y: int) {
     set this.x: x    ; clear: field x gets parameter x
     set this.y: y
 }
@@ -271,17 +279,12 @@ init(x: i32, y: i32) {
 
     <section xml:id="types-constructors-complete">
       <title>Complete Initialization</title>
-      <para>All fields must be initialized by any constructor — implicit or explicit.
-        The compiler enforces this. There are no implicit default values (no automatic
-        0, false, or null):</para>
-      <programlisting>
-define Point { x: i32, y: i32 }
-
-init(x: i32) {
-    set this.x: x
-    ; ERROR: field 'y' not initialized
-}
-      </programlisting>
+      <para>Every constructor should initialize all fields. The compiler does
+        not yet enforce this: a field an <literal>init</literal> forgets to set
+        contains an undefined value, not an implicit default (no automatic 0,
+        false, or null). Enforcement as a compile-time error is planned; until
+        then, treat a missing <literal>set</literal> in an
+        <literal>init</literal> as a bug.</para>
     </section>
 
     <section xml:id="types-constructors-return">
@@ -293,119 +296,124 @@ let p Point(10, 20)    ; init returns the new Point
       </programlisting>
     </section>
 
-    <section xml:id="types-constructors-lifetime">
-      <title>Constructed Value Lifetime</title>
-      <para>The lifetime of a constructed value is inferred from context:</para>
-      <itemizedlist>
-        <listitem><para><emphasis>In a block</emphasis>: Local lifetime (current block)</para></listitem>
-        <listitem><para><emphasis>Last statement / return position</emphasis>: Call lifetime (return page)</para></listitem>
-        <listitem><para><emphasis>Explicit annotation</emphasis>: As specified</para></listitem>
-      </itemizedlist>
-      <programlisting>
-function example() returns Point {
-    let temp Point(1, 2)     ; local - dies at block end
-    return Point(3, 4)       ; call - inferred from return position
-}
-      </programlisting>
-    </section>
-
-    <section xml:id="types-constructors-page-param">
-      <title>Page-Parameterized Constructors (<literal>init#</literal>)</title>
-      <para>Some types are value types (can live on the stack) but need to allocate
-        internal data on a page. The <literal>init#</literal> syntax supports this pattern:</para>
-      <programlisting>
-define String(data: pointer[char], length: size_t)
-{
-    ; init# takes an implicit page parameter as first argument
-    init#(page, text: pointer[const_char])
-    {
-        let len strlen(text)
-        set data: page.allocate(len + 1, 1) as pointer[char]
-        memcpy(data, text, len)
-        set length: len
-    }
-}
-      </programlisting>
-      <para>At call sites, the lifetime modifier determines which page is passed:</para>
-      <itemizedlist>
-        <listitem><para><literal>String#("hello")</literal> — passes caller's page (rp)</para></listitem>
-        <listitem><para><literal>String$("world")</literal> — passes local page</para></listitem>
-        <listitem><para><literal>String^hashMap("key")</literal> — passes the named page</para></listitem>
-      </itemizedlist>
-      <para>The <literal>init#</literal> pattern is distinct from regular heap allocation.
-        The struct itself can live on the stack — only its internal data needs a page.
-        This is ideal for types like String, Array, or other containers where the
-        wrapper is small but the content may be large.</para>
-      <para>Note: <literal>init$</literal>, <literal>init^</literal>, and <literal>init!</literal>
-        are reserved for future use and will produce an error.</para>
+    <section xml:id="types-constructors-allocating">
+      <title>Types That Allocate</title>
+      <para>Some types are value types (the struct itself can live on the
+        stack) but allocate internal data — <literal>String</literal>,
+        <literal>Array</literal>, and the other containers. Their constructors
+        are ordinary <literal>init</literal> definitions; the region their
+        internal data is allocated in is chosen by the compiler from how the
+        constructed value is used (see <xref linkend="types-lifetimes"/>). No
+        special constructor syntax is involved.</para>
     </section>
   </section>
 
   <section xml:id="types-closures">
-    <title>Closures (Lambdas)</title>
-    <para>Closures are anonymous functions defined with backslash syntax:</para>
+    <title>Lambdas and Closures</title>
+    <para>A lambda is an anonymous function defined with backslash syntax —
+      parameters, a colon, and a body:</para>
     <programlisting>
 \x: x * 2                    ; single parameter
 \x y: x + y                  ; multiple parameters
-\: 42                        ; no parameters
+    </programlisting>
+    <para>A lambda bound with <literal>let</literal> is called like a named
+      function. Its parameter types are inferred at each call site (the lambda
+      is specialized per call, like a local generic function):</para>
+    <programlisting>
+let inc \x: x + 1
+inc(41)                      ; 42
     </programlisting>
 
     <section xml:id="types-closures-capture">
       <title>Capturing Variables</title>
-      <para>Closures can capture variables from their enclosing scope. Captured
-        variables are treated as implicit borrowed parameters — read-only access,
-        same as explicit function parameters:</para>
+      <para>Lambdas can capture variables from their enclosing scope. Captures
+        are <emphasis>by value</emphasis>: the lambda receives a copy at the
+        call, so later changes to the original are not seen by the closure, and
+        a <literal>set</literal> on a captured name inside the lambda changes
+        only the closure's copy — the original stays untouched:</para>
       <programlisting>
 let multiplier 10
-let scale \x: x * multiplier    ; captures multiplier (read-only)
+let scale \x: x * multiplier    ; captures multiplier by value
 
 scale(5)    ; returns 50
       </programlisting>
     </section>
 
-    <section xml:id="types-closures-pure">
-      <title>Closures Are Pure</title>
-      <para>Closures cannot mutate captured variables. They are pure like functions,
-        not imperative like procedures:</para>
+    <section xml:id="types-closures-delegates">
+      <title>Function Types: Delegates</title>
+      <para>To pass a lambda as a value — to a parameter, into a field, or as a
+        return value — the function type must be named. A
+        <literal>delegate</literal> definition supplies that name:</para>
       <programlisting>
-var count 0
-let bad \: { set count: count + 1 }   ; ERROR: cannot mutate capture
+define IntFn delegate(int) returns int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+let g: IntFn \x: x + 1
+apply(g, 5)                  ; 6
       </programlisting>
+      <para>A delegate-typed value is a closure: a record holding the captures
+        plus the code to run. Calling through it is an indirect call.</para>
     </section>
 
     <section xml:id="types-closures-lifetime">
       <title>Closure Lifetime</title>
-      <para>Since captures are borrowed, a closure cannot outlive its captured
-        variables. The compiler enforces this through lifetime checking:</para>
+      <para>A closure bound to a local variable lives on the stack frame and
+        dies with it. A closure <emphasis>returned</emphasis> from a function
+        must outlive the frame, so the compiler allocates it on the caller's
+        region automatically — factory functions work:</para>
       <programlisting>
-function makeCounter() returns (function() returns i32) {
-    var count 0
-    return \: count    ; ERROR: closure outlives captured 'count'
+define IntFn delegate(int) returns int
+
+function make_adder(n: int) returns IntFn
+{
+    return \x: x + n         ; allocated on the caller's region
+}
+
+let add5 make_adder(5)
+let r add5(2)                ; 7
+      </programlisting>
+      <para>What is <emphasis>not</emphasis> allowed is smuggling a
+        stack-allocated closure out of its frame — returning a local binding,
+        storing it into an object that outlives the frame, or passing it to a
+        callee that stores it. The compiler rejects these with a hard
+        error:</para>
+      <programlisting>
+function bad(n: int) returns IntFn
+{
+    let g: IntFn \x: x + n
+    return g
+    ; error: a closure bound to a local lives on the stack frame and
+    ; cannot be returned - return the lambda directly (return \x: ...)
+    ; so it is allocated on the caller's region
 }
       </programlisting>
     </section>
 
     <section xml:id="types-closures-impl">
       <title>Implementation</title>
-      <para>Each closure is an anonymous struct containing its captures, with a
-        call method implementing the body. Closures are monomorphized like other
-        generic types.</para>
+      <para>A named-called lambda costs nothing at runtime: each call site is
+        monomorphized into a direct call, with captures passed as leading
+        arguments. A delegate-typed closure is a small record — a code pointer
+        plus the captured values — and calling it is one indirect call. No
+        garbage collector is involved either way.</para>
     </section>
   </section>
 
   <section xml:id="types-errors">
     <title>Error Handling</title>
-    <para>Scaly uses explicit error handling. There are no exceptions or stack unwinding — 
+    <para>Scaly uses explicit error handling. There are no exceptions or stack unwinding —
     errors are values returned from functions or procedures.</para>
 
     <section xml:id="types-errors-throws">
       <title>The <literal>throws</literal> Clause</title>
       <para>Functions or procedures that can fail declare their error type with <literal>throws</literal>:</para>
       <programlisting>
-procedure parse(input: String) returns AST throws ParseError {
-    if invalid(input) {
-        throw InvalidSyntax(position, "expected expression")
-    }
+function parse(input: String) returns AST throws ParseError
+{
+    if invalid(input)
+        throw ParseError.InvalidSyntax(String("expected expression"))
     ...
 }
       </programlisting>
@@ -425,7 +433,8 @@ define FileError union
     IoError: String
 )
 
-function readFile(path: String) returns String throws FileError {
+function read_file(path: String) returns String throws FileError
+{
     ...
 }
       </programlisting>
@@ -435,29 +444,31 @@ function readFile(path: String) returns String throws FileError {
 
     <section xml:id="types-errors-try">
       <title>The <literal>try</literal>/<literal>when</literal> Pattern</title>
-      <para>Handle errors with <literal>try</literal> and <literal>when</literal> clauses:</para>
+      <para>Handle errors with <literal>try</literal> and <literal>when</literal>
+        clauses. On success, the binding holds the result and the
+        <literal>when</literal> arms are skipped; on failure, the matching arm
+        runs with the error value bound:</para>
       <programlisting>
-try let ast parse(input)
-    when e: InvalidSyntax: reportError(e)
-    when e: UnexpectedEof: reportError(e)
+try let v read_thing(false)
+    when e: NotFound
+        print("not found")
+    else
+        print("other error")
       </programlisting>
-      <para>If not all error variants are covered, an <literal>else</literal> clause is required:</para>
-      <programlisting>
-try let ast parse(input)
-    when e: InvalidSyntax: reportError(e)
-    else panic("unhandled error")
-      </programlisting>
+      <para>If not all error variants are covered by <literal>when</literal>
+        arms, an <literal>else</literal> clause is required.</para>
     </section>
 
     <section xml:id="types-errors-propagate">
       <title>Error Propagation</title>
       <para>Use <literal>else throw</literal> to re-throw errors to the caller:</para>
       <programlisting>
-function process(input: String) returns Data throws ParseError {
-    try let ast parse(input)
-        else throw    ; re-throws ParseError to caller
+function process(x: int) returns int throws E
+{
+    try let v inner(x)
+        else throw    ; re-throws E to the caller
 
-    transform(ast)
+    v * 2
 }
       </programlisting>
       <para>When the error type matches exactly, the error propagates automatically.
@@ -466,12 +477,12 @@ function process(input: String) returns Data throws ParseError {
 
     <section xml:id="types-errors-lifetime">
       <title>Error Lifetime</title>
-      <para>Thrown values must have thrown lifetime (<literal>!</literal>).
-        The compiler infers this from throw position. If inference fails, annotate
-        explicitly:</para>
+      <para>Thrown values live in an exception region the caller provides. The
+        compiler infers this from throw position; the explicit thrown-lifetime
+        suffix <literal>!</literal> may also be written on the thrown
+        construction:</para>
       <programlisting>
-throw ParseError.InvalidSyntax(pos, msg)!   ; explicit thrown lifetime</programlisting>
-      <para>The caller provides the exception region where the error will be stored.</para>
+throw ParseError.InvalidSyntax(msg)!   ; explicit thrown lifetime</programlisting>
     </section>
   </section>
 
@@ -510,17 +521,17 @@ Shape = { tag: u8, data: [size of largest variant] }
         the result; the binding is bound to the variant's payload:</para>
       <programlisting>
 choose s
-    when r: Circle: computeCircleArea(r)
+    when r: Circle: r * r * 3.14
     when b: Box: b.width * b.height
     else 0.0</programlisting>
-      <para>If not all variants are covered, an <literal>else</literal> clause is required:</para>
-      <programlisting>
-choose s: when r: Circle: computeCircleArea(r) else 0.0    ; handles Box and Empty</programlisting>
+      <para>If not all variants are covered, an <literal>else</literal> clause is
+        required.</para>
     </section>
 
     <section xml:id="types-unions-option">
       <title>Option Type</title>
-      <para><literal>Option[T]</literal> is a union for nullable values:</para>
+      <para><literal>Option[T]</literal> is the standard library's union for
+        nullable values:</para>
       <programlisting>
 define Option[T] union
 (
@@ -528,12 +539,9 @@ define Option[T] union
     None
 )
 
-function find(list: List[T], pred: function(T) returns bool) returns Option[T] {
-    ...
-}
-
-choose find(items, \x: x > 10)
-    when value: Some: process(value)
+let o Option[int].Some(7)
+choose o
+    when v: Some: process(v)
     else handle_not_found()
       </programlisting>
     </section>
@@ -553,23 +561,25 @@ choose find(items, \x: x > 10)
     <title>Generics</title>
     <para>Scaly supports generic types with type parameters in square brackets:</para>
     <programlisting>
-define List[T] {
-    ...
+define Pair[T] ( first: T, second: T )
+{
+    function sum(this) returns T
+        first + second
 }
 
-define HashMap[K, V] {
-    ...
-}
-
-let numbers List[i32]()
-let names List[String]()
+let p Pair[int](20, 22)
+p.sum()                      ; 42
     </programlisting>
+    <para>The standard library's containers are generic the same way:
+      <literal>Vector[T]</literal>, <literal>List[T]</literal>,
+      <literal>HashMap[K, V]</literal>, <literal>Option[T]</literal>,
+      <literal>Result[T, E]</literal>.</para>
 
     <section xml:id="types-generics-mono">
       <title>Monomorphization</title>
       <para>Generics are implemented via <emphasis>monomorphization</emphasis>: each
         concrete instantiation becomes a completely separate type at compile time.
-        <literal>List[i32]</literal> and <literal>List[String]</literal> share no
+        <literal>Pair[int]</literal> and <literal>Pair[String]</literal> share no
         code at runtime — each has its own specialized implementation.</para>
       <para>Benefits:</para>
       <itemizedlist>
@@ -589,9 +599,9 @@ let names List[String]()
       <para>The Planner generates unique mangled names for each instantiation,
         following Itanium ABI conventions:</para>
       <programlisting>
-List[i32]         → _ZN4ListIiE...
-List[String]      → _ZN4ListI6StringE...
-HashMap[String, i32] → _ZN7HashMapI6StringiE...
+List[int]            → _ZN4ListIiE...
+List[String]         → _ZN4ListI6StringE...
+HashMap[String, int] → _ZN7HashMapI6StringiE...
       </programlisting>
       <para>These names are compatible with <literal>c++filt</literal> for debugging.</para>
     </section>
@@ -600,163 +610,102 @@ HashMap[String, i32] → _ZN7HashMapI6StringiE...
   <section xml:id="types-lifetimes">
     <title>Lifetimes and Memory Regions</title>
     <para>Scaly uses Region-Based Memory Management (RBMM). Instead of garbage
-      collection or manual malloc/free, values are allocated in memory regions
-      (pages) that are deallocated in bulk when their owning scope exits.</para>
+      collection or manual malloc/free, values that need the heap are allocated
+      in memory regions (pages) that are deallocated in bulk when their owning
+      scope exits.</para>
 
-    <section xml:id="types-allocation">
-      <title>Stack vs Page Allocation</title>
-      <para>The presence or absence of a lifetime suffix on a constructor call
-        determines whether the value is stack-allocated or page-allocated:</para>
-      <variablelist>
-        <varlistentry>
-          <term>No suffix = Stack allocation</term>
-          <listitem><para>The value is allocated on the stack frame. Fast, automatic
-            cleanup when the function returns. Cannot outlive the current function.</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term>Lifetime suffix = Page allocation</term>
-          <listitem><para>The value is allocated on a memory page. Can outlive the
-            current block depending on which lifetime is used.</para></listitem>
-        </varlistentry>
-      </variablelist>
-      <programlisting>
-let stack_point Point(10, 20)     ; stack-allocated (by value)
-let page_point Point$(10, 20)     ; page-allocated (local page)
-      </programlisting>
-      <para>Note: The lifetime suffix comes <emphasis>before</emphasis> the constructor
-        parameters, not after. This follows the general pattern: Type + Generics + Lifetime + Parameters.</para>
+    <section xml:id="types-lifetime-inference">
+      <title>Allocation Is Inferred</title>
+      <para>Ordinary code carries no memory-management annotations at all. A
+        constructed value lives on the stack when that suffices; when its
+        internals allocate, or the value must outlive the statement that
+        created it, the compiler places the allocation in an appropriate
+        region:</para>
+      <itemizedlist>
+        <listitem><para>A value used only within the current function gets a
+          <emphasis>local</emphasis> region, freed when the scope
+          exits.</para></listitem>
+        <listitem><para>A value returned from a function is placed in the
+          <emphasis>caller's</emphasis> region, so it survives the
+          return.</para></listitem>
+        <listitem><para>A thrown error value is placed in the exception region
+          the caller provides.</para></listitem>
+      </itemizedlist>
+      <para>The standard library and the Scaly compiler itself are written in
+        exactly this annotation-free style.</para>
     </section>
 
-    <section xml:id="types-lifetime-kinds">
-      <title>Lifetime Kinds</title>
+    <section xml:id="types-escape">
+      <title>Escape Checking</title>
+      <para>The compiler proves that no reference outlives the memory it points
+        into. A reference to a local that would escape the frame — through a
+        return, through a store into an object that outlives the frame, or by
+        being passed to a callee that stores it — is a hard compile-time
+        error:</para>
+      <programlisting>
+function dangling() returns pointer[int]
+{
+    var local 5
+    return &amp;local
+}
+; error: reference into a local page escapes via return - allocate the
+; target with '#' (caller page) or '^name' (region) so it outlives the use
+      </programlisting>
+      <para>The check is interprocedural (it follows the value through calls
+        into callees that store their parameters, and through closures) and
+        conservative: code it accepts is safe.</para>
+    </section>
+
+    <section xml:id="types-lifetime-explicit">
+      <title>Explicit Lifetime Suffixes</title>
+      <para>When a value must be placed in a region the inference would not
+        choose — most commonly a heap object returned by pointer — an explicit
+        lifetime suffix on the constructor call says where it lives. The suffix
+        goes between the type and the argument list:</para>
       <variablelist>
         <varlistentry>
-          <term>Local (<literal>$</literal>)</term>
-          <listitem><para>Value is allocated on a local page that lives until the
-            end of the current block. The page is lazily allocated on first use
-            and automatically deallocated when the block exits.</para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term>Caller (<literal>#</literal>)</term>
-          <listitem><para>Value is allocated on the caller's return page. It survives
-            the function return and is managed by the caller. Used for returning
-            heap-allocated values.</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term>Thrown (<literal>!</literal>)</term>
-          <listitem><para>Value is allocated on the exception page. Used for error
-            values that may be thrown and caught by the caller.</para></listitem>
+          <listitem><para>The value is allocated in the caller's region. It
+            survives the function return and is freed with the caller's scope.
+            Used for returning heap-allocated values by pointer.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term>Reference (<literal>^name</literal>)</term>
-          <listitem><para>Value is allocated on the same page as the named variable.
-            The named variable must itself be page-allocated (not stack-allocated).
-            Used when adding values to collections.</para></listitem>
+          <listitem><para>The value is allocated in the same region as the
+            named value — for tying an allocation's lifetime to a specific
+            longer-lived object, such as a collection it is stored
+            into.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Thrown (<literal>!</literal>)</term>
+          <listitem><para>The value is allocated in the exception region. The
+            compiler infers this for values in throw position, so writing it is
+            rarely necessary.</para></listitem>
         </varlistentry>
       </variablelist>
-    </section>
-
-    <section xml:id="types-lifetime-local">
-      <title>Local Lifetime ($)</title>
-      <para>Local lifetime allocates on a page scoped to the current block. The
-        page is lazily allocated (only when needed) and automatically freed when
-        the block exits:</para>
       <programlisting>
-function process(input: String) {
-    if condition {
-        let parser Parser$(input)    ; allocated on local page
-        parser.parse()
-    }                                 ; page deallocated here
+define Node ( data: int )
 
-    ; parser and its page are gone
-}
-      </programlisting>
-      <para><emphasis role="bold">Important:</emphasis> Local lifetime (<literal>$</literal>)
-        is forbidden on return types. A function cannot return a value with local
-        lifetime because the local page is deallocated before the caller receives
-        the value.</para>
-      <programlisting>
-; ERROR: local lifetime ($) not allowed on return types
-function bad() returns Point$ { ... }
+function create_node(data: int) returns pointer[Node]
+    Node#(data)              ; allocated in the caller's region
 
-; OK: use caller lifetime (#) or by-value return
-function good() returns Point# { ... }
-function also_good() returns Point { ... }
+let n create_node(7)
+(*n).data                    ; 7 — valid in the caller's scope
       </programlisting>
-    </section>
-
-    <section xml:id="types-lifetime-caller">
-      <title>Caller Lifetime (#)</title>
-      <para>Values that must survive a function return use caller lifetime. The
-        value is allocated on the caller's page, not the function's local page:</para>
-      <programlisting>
-function createParser(input: String) returns pointer[Parser] {
-    Parser#(input)    ; allocated on caller's page
-}
-      </programlisting>
-      <para>The compiler may infer caller lifetime for values in return position
-        when the return type specifies it.</para>
-    </section>
-
-    <section xml:id="types-lifetime-thrown">
-      <title>Thrown Lifetime (!)</title>
-      <para>Error values use thrown lifetime. The value is allocated on a special
-        exception page provided by the caller:</para>
-      <programlisting>
-function parse(input: String) returns AST throws ParseError {
-    if invalid(input) {
-        throw ParseError("invalid syntax")!   ; thrown lifetime
-    }
-    ...
-}
-      </programlisting>
-      <para>The compiler infers thrown lifetime for values in throw position.</para>
-    </section>
-
-    <section xml:id="types-lifetime-reference">
-      <title>Reference Lifetime (^name)</title>
-      <para>When adding a value to a collection, the value must be allocated on
-        the same page as the collection. Use reference lifetime with the
-        collection's name:</para>
-      <programlisting>
-let items Array$()                ; items is page-allocated
-let item Car^items("red")         ; item allocated on same page as items
-items.add(item)                   ; safe - same lifetime
-      </programlisting>
-      <para><emphasis role="bold">Validation:</emphasis> The compiler verifies that
-        the referenced variable (<literal>items</literal> in this example) is
-        page-allocated. Referencing a stack-allocated variable is an error:</para>
-      <programlisting>
-let stack_car Car("blue")         ; stack-allocated (no suffix)
-let other Car^stack_car("red")    ; ERROR: cannot use ^stack_car
-                                  ; stack_car is not page-allocated
-      </programlisting>
-      <para>This prevents dangling references: you cannot tie a value's lifetime
-        to a stack variable that will be destroyed when the function returns.</para>
     </section>
 
     <section xml:id="types-lifetime-byvalue">
       <title>By-Value Returns</title>
-      <para>Functions can return values by value (no lifetime annotation). This
-        is the simplest approach for small types:</para>
+      <para>Functions can return values by value — the simplest and most common
+        case, and the reason most code needs no lifetime suffix at all:</para>
       <programlisting>
-function createPoint(x: i32, y: i32) returns Point {
+function create_point(x: int, y: int) returns Point
+{
     Point(x, y)    ; constructed and returned by value
 }
       </programlisting>
-      <para>By-value return avoids page allocation entirely. The value is
+      <para>By-value return avoids region allocation entirely. The value is
         constructed directly in the caller's stack frame or register.</para>
-    </section>
-
-    <section xml:id="types-lifetime-inference">
-      <title>Lifetime Inference</title>
-      <para>The compiler infers lifetimes where possible:</para>
-      <itemizedlist>
-        <listitem><para>No suffix on constructor = stack allocation (by value)</para></listitem>
-        <listitem><para>Throw position implies thrown lifetime (<literal>!</literal>)</para></listitem>
-        <listitem><para>Reference lifetime (<literal>^container</literal>) must always be explicit</para></listitem>
-        <listitem><para><literal>$</literal>, <literal>#</literal> must be explicit on constructor calls</para></listitem>
-      </itemizedlist>
     </section>
   </section>
 

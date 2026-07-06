@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->Bootstrapping the Compiler from C++</TITLE
+>Bootstrap History and the Seed</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
@@ -64,53 +64,72 @@ WIDTH="100%"></DIV
 CLASS="appendix"
 ><H1
 ><A
-NAME="AEN2809"
+NAME="AEN2843"
 ></A
->Appendix B. Bootstrapping the Compiler from C++</H1
+>Appendix B. Bootstrap History and the Seed</H1
 ><P
->Scaly is self-hosted. The normal way to build the compiler is from the
-    committed seed, as described in <A
-HREF="tutorial.htm#AEN59"
+>Scaly is self-hosted, and the committed <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>seed</I
+></SPAN
+> — the
+    compiler emitted as its own textual LLVM IR under
+    <TT
+CLASS="filename"
+>seed/</TT
+> — is the sole bootstrap root. The normal way to
+    build the compiler is from that seed, as described in
+    <A
+HREF="tutorial.htm#AEN69"
 >the Section called <I
 >Building from Source</I
 > in Chapter 2</A
->, which needs only
-    LLVM 18 and a C compiler. A single seed already covers every 64-bit
-    little-endian target, so most platforms need no bootstrap at all. You need
-    the C++ bootstrap in only two cases: refreshing the seed after changing the
-    compiler, or bringing up a target with a different data model (32-bit,
-    big-endian, or LLP64), which the seed does not cover.</P
+>; it needs only LLVM 18 and a C compiler. A
+    single seed covers every 64-bit little-endian (LP64) target, and a CI
+    matrix builds and verifies it natively on macOS and Linux, on both x86-64
+    and AArch64.</P
 ><P
->The compiler that produced the seed was originally bootstrapped from a
-    reference implementation written in C++. Building it needs a C++17 compiler,
-    CMake, and openjade in addition to LLVM 18:</P
-><PRE
-CLASS="programlisting"
->; macOS
-brew install llvm@18 cmake openjade
-
-; Ubuntu 24.04
-sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</PRE
-><P
-><B
-CLASS="command"
->./build.sh</B
-> builds the C++ stage-0 compiler, and
-    <TT
+>The seed is refreshed by <TT
 CLASS="filename"
 >tools/seed.sh</TT
-> then bootstraps it into the self-hosted
-    compiler and emits a fresh, fixed-point-verified seed. See
+>: it
+    bootstraps a compiler from the committed seed, re-emits the compiler
+    sources with it, and verifies the <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>fixed point</I
+></SPAN
+> — the
+    seed must reproduce itself byte-identically — before
     <TT
 CLASS="filename"
+>tools/install-seed.sh</TT
+> installs the new files. Textual
+    IR is diffable and auditable, which is why Scaly ships it instead of opaque
+    per-platform binaries. See <TT
+CLASS="filename"
 >RELEASING.md</TT
-> for the full seed-distribution process.</P
+> in the
+    repository for the full seed-distribution checklist.</P
 ><P
->The C++ implementation is kept buildable on purpose: it is an
-    independent compiler lineage, which preserves a diverse-double-compiling
-    check against trusting-trust attacks, and it is the per-platform bootstrap
-    root for new architectures. It is not part of the language or its everyday
-    toolchain.</P
+>Historically, the self-hosted compiler was bootstrapped from a
+    reference implementation written in C++ (which had itself replaced an
+    earlier TypeScript bootstrapper). That C++ stage-0 compiler was retired in
+    July 2026, once the seed became self-sufficient: its sources are frozen
+    under <TT
+CLASS="filename"
+>retired/scalyc0/</TT
+> as a historical reference, it
+    has no build, and it cannot parse the current language. No C++ toolchain
+    appears anywhere in today's build.</P
+><P
+>Targets with a different data model (32-bit, big-endian, or LLP64
+    such as Windows) are not covered by the seed; supporting one would mean
+    generalizing the compiler's size and alignment emission off its fixed
+    64-bit constants and minting a seed for that data model.</P
 ></DIV
 ><DIV
 CLASS="NAVFOOTER"

@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN447"
+NAME="AEN536"
 ></A
 >Chapter 4 Type System</H1
 ><DIV
@@ -83,67 +83,67 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN449"
+HREF="types.htm#AEN538"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN452"
+HREF="types.htm#AEN541"
 >Intrinsic Types (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN492"
+HREF="types.htm#AEN581"
 >Type Aliases (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN499"
+HREF="types.htm#AEN588"
 >Backend Preludes (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN509"
+HREF="types.htm#AEN598"
 >Literal Type Inference</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN518"
+HREF="types.htm#AEN610"
 >References</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN543"
+HREF="types.htm#AEN637"
 >Parameter Passing</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN565"
+HREF="types.htm#AEN661"
 >Constructors</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN640"
->Closures (Lambdas)</A
+HREF="types.htm#AEN702"
+>Lambdas and Closures</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN659"
+HREF="types.htm#AEN732"
 >Error Handling</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN700"
+HREF="types.htm#AEN773"
 >Union Types</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN737"
+HREF="types.htm#AEN809"
 >Generics</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN767"
+HREF="types.htm#AEN845"
 >Lifetimes and Memory Regions</A
 ></DT
 ></DL
@@ -153,7 +153,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN449"
+NAME="AEN538"
 >Overview</A
 ></H1
 ><P
@@ -169,7 +169,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN452"
+NAME="AEN541"
 >Intrinsic Types (Future Direction)</A
 ></H1
 ><DIV
@@ -317,7 +317,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN492"
+NAME="AEN581"
 >Type Aliases (Future Direction)</A
 ></H1
 ><P
@@ -344,7 +344,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN499"
+NAME="AEN588"
 >Backend Preludes (Future Direction)</A
 ></H1
 ><P
@@ -360,7 +360,7 @@ CLASS="emphasis"
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN503"
+NAME="AEN592"
 ></A
 ><P
 ><B
@@ -388,7 +388,7 @@ define size_t u64
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN506"
+NAME="AEN595"
 ></A
 ><P
 ><B
@@ -413,12 +413,13 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN509"
+NAME="AEN598"
 >Literal Type Inference</A
 ></H1
 ><P
 >Numeric and other literals do not have an inherent type. Their type is
-      inferred from context:</P
+      inferred from context — the parameter a literal is passed to, the
+      annotation on its binding, or the other operand of an operation:</P
 ><PRE
 CLASS="programlisting"
 >&#13;function double(x: i32) returns i32 { x * 2 }
@@ -429,11 +430,15 @@ let y: i64 100       ; 100 inferred as i64 from annotation
 let z y + 50         ; 50 inferred as i64 to match y
     </PRE
 ><P
->If the type cannot be inferred, the compiler requires an explicit annotation:</P
+>When nothing constrains an integer literal, it defaults to
+      <TT
+CLASS="literal"
+>int</TT
+> (the platform word size), so the common case needs
+      no annotation:</P
 ><PRE
 CLASS="programlisting"
->&#13;let x 42             ; ERROR: cannot infer type for integer literal
-let x: i32 42        ; OK: type explicitly annotated
+>&#13;let x 42             ; x is int
     </PRE
 ><P
 >Scaly does <SPAN
@@ -446,15 +451,22 @@ CLASS="emphasis"
       (such as <TT
 CLASS="literal"
 >42i32</TT
->). This keeps literals clean and
-      encourages explicit type annotations where they matter.</P
+>). Where a different width matters,
+      annotate the binding (<TT
+CLASS="literal"
+>let x: i32 42</TT
+>) or cast
+      (<TT
+CLASS="literal"
+>42 as i32</TT
+>).</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN518"
+NAME="AEN610"
 >References</A
 ></H1
 ><P
@@ -484,7 +496,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN526"
+NAME="AEN618"
 >Low-Level Pointers</A
 ></H2
 ><P
@@ -507,10 +519,11 @@ CLASS="literal"
 ><PRE
 CLASS="programlisting"
 >&#13;; Low-level list node (internal implementation)
-define Node[T] {
+define Node[T]
+(
     data: T
     next: pointer[Node[T]]    ; raw pointer for linked structure
-}
+)
       </PRE
 ></DIV
 ><DIV
@@ -518,38 +531,47 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN534"
+NAME="AEN626"
 >Nullable Values</A
 ></H2
 ><P
 >For nullable values, use <TT
 CLASS="literal"
 >Option[T]</TT
-> — a proper sum type
-        with <TT
+> from the
+        standard library — a proper sum type with <TT
 CLASS="literal"
 >Some(value)</TT
-> and <TT
+>
+        and <TT
 CLASS="literal"
 >None</TT
-> variants:</P
+> variants, matched with
+        <TT
+CLASS="literal"
+>choose</TT
+>:</P
 ><PRE
 CLASS="programlisting"
->&#13;function find(list: List[T], predicate: function(T) returns bool) returns Option[T] {
-    ; returns Some(item) if found, None otherwise
-}
-
-let result find(items, \x: x &#62; 10)
-choose result
-    when value: Some: process(value)
-    else handle_not_found()
+>&#13;let o Option[int].Some(7)
+choose o
+    when v: Some
+        print("got a value")
+    else
+        print("empty")
       </PRE
 ><P
->The compiler optimizes <TT
+>For many element types the compiler optimizes
+        <TT
 CLASS="literal"
 >Option[T]</TT
-> to a simple
-        nullable pointer — no space overhead for the tag.</P
+> to a simple nullable pointer — no space
+        overhead for the tag (see <A
+HREF="types.htm#AEN797"
+>the Section called <I
+>Option Optimization</I
+></A
+>).</P
 ></DIV
 ></DIV
 ><DIV
@@ -557,38 +579,46 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN543"
+NAME="AEN637"
 >Parameter Passing</A
 ></H1
 ><P
->All function parameters are <SPAN
+>All <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>function</I
+></SPAN
+> parameters are
+      <SPAN
 CLASS="emphasis"
 ><I
 CLASS="emphasis"
 >borrowed</I
 ></SPAN
-> — functions receive
-      read-only access to their arguments. The caller retains ownership.</P
+> — functions receive read-only access to
+      their arguments. The caller retains ownership.</P
 ><PRE
 CLASS="programlisting"
->&#13;define Point { x: i32, y: i32 }
+>&#13;define Point ( x: int, y: int )
 
-function distance(a: Point, b: Point) returns f64 {
-    ; a and b are read-only views
-    ; cannot modify them
-    ...
+function distance_squared(a: Point, b: Point) returns int
+{
+    let dx a.x - b.x
+    let dy a.y - b.y
+    dx * dx + dy * dy
 }
 
 let origin Point(0, 0)
 let target Point(3, 4)
-distance(origin, target)    ; origin and target unchanged
+distance_squared(origin, target)    ; origin and target unchanged
     </PRE
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN548"
+NAME="AEN643"
 >Implementation</A
 ></H2
 ><P
@@ -630,24 +660,29 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN559"
+NAME="AEN654"
 >Mutation via Procedures</A
 ></H2
 ><P
 >To modify data, use a <TT
 CLASS="literal"
 >procedure</TT
-> instead of a function.
-        Procedures can declare parameters as mutable:</P
+> instead of a
+        function. A procedure's parameters may be mutated, and the caller sees
+        the change — no extra keyword is needed; the
+        <TT
+CLASS="literal"
+>procedure</TT
+> declaration itself is the signal:</P
 ><PRE
 CLASS="programlisting"
->&#13;procedure move(p: mutable Point, dx: i32, dy: i32) {
-    set p.x: p.x + dx
-    set p.y: p.y + dy
-}
+>&#13;define Point ( x: int, y: int )
 
-var position Point(0, 0)
-move(position, 5, 3)    ; position is now (5, 3)
+procedure move(p: Point, dx: int)
+    set p.x: p.x + dx
+
+var pos Point(0, 0)
+move(pos, 5)          ; pos.x is now 5
       </PRE
 ><P
 >The distinction between functions (pure, read-only) and procedures
@@ -660,7 +695,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN565"
+NAME="AEN661"
 >Constructors</A
 ></H1
 ><P
@@ -671,7 +706,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN568"
+NAME="AEN664"
 >Implicit Constructors</A
 ></H2
 ><P
@@ -679,7 +714,7 @@ NAME="AEN568"
         that takes all fields as parameters in declaration order:</P
 ><PRE
 CLASS="programlisting"
->&#13;define Point { x: i32, y: i32 }
+>&#13;define Point ( x: int, y: int )
 
 let p Point(10, 20)    ; implicit constructor
       </PRE
@@ -689,46 +724,37 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN572"
+NAME="AEN668"
 >Explicit Constructors</A
 ></H2
 ><P
 >Use <TT
 CLASS="literal"
 >init</TT
-> for explicit constructors when you need:</P
-><P
-></P
-><UL
-><LI
-><P
->Private members (implicit constructor unavailable)</P
-></LI
-><LI
-><P
->Default values for some fields</P
-></LI
-><LI
-><P
->Different construction signatures</P
-></LI
-></UL
+> for explicit constructors when you need
+        default values for some fields or different construction signatures. An
+        explicit <TT
+CLASS="literal"
+>init</TT
+> coexists with the implicit all-fields
+        constructor:</P
 ><PRE
 CLASS="programlisting"
 >&#13;define Point
 (
-    x: i32
-    y: i32
+    x: int
+    y: int
 )
 {
-    init(value: i32) {      ; convenience constructor
+    init(value: int)        ; convenience constructor
+    {
         set this.x: value
         set this.y: value
     }
 }
 
-let p1 Point(10, 20)    ; first init
-let p2 Point(5)         ; second init - Point(5, 5)
+let p1 Point(10, 20)    ; implicit constructor
+let p2 Point(5)         ; convenience init - Point(5, 5)
       </PRE
 ></DIV
 ><DIV
@@ -736,7 +762,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN584"
+NAME="AEN674"
 >The <TT
 CLASS="literal"
 >this</TT
@@ -750,7 +776,7 @@ CLASS="literal"
         recommended for clarity:</P
 ><PRE
 CLASS="programlisting"
->&#13;init(x: i32, y: i32) {
+>&#13;init(x: int, y: int) {
     set this.x: x    ; clear: field x gets parameter x
     set this.y: y
 }
@@ -771,29 +797,32 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN593"
+NAME="AEN683"
 >Complete Initialization</A
 ></H2
 ><P
->All fields must be initialized by any constructor — implicit or explicit.
-        The compiler enforces this. There are no implicit default values (no automatic
-        0, false, or null):</P
-><PRE
-CLASS="programlisting"
->&#13;define Point { x: i32, y: i32 }
-
-init(x: i32) {
-    set this.x: x
-    ; ERROR: field 'y' not initialized
-}
-      </PRE
+>Every constructor should initialize all fields. The compiler does
+        not yet enforce this: a field an <TT
+CLASS="literal"
+>init</TT
+> forgets to set
+        contains an undefined value, not an implicit default (no automatic 0,
+        false, or null). Enforcement as a compile-time error is planned; until
+        then, treat a missing <TT
+CLASS="literal"
+>set</TT
+> in an
+        <TT
+CLASS="literal"
+>init</TT
+> as a bug.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN597"
+NAME="AEN689"
 >Constructor Return</A
 ></H2
 ><P
@@ -815,131 +844,31 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN603"
->Constructed Value Lifetime</A
+NAME="AEN695"
+>Types That Allocate</A
 ></H2
 ><P
->The lifetime of a constructed value is inferred from context:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->In a block</I
-></SPAN
->: Local lifetime (current block)</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Last statement / return position</I
-></SPAN
->: Call lifetime (return page)</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Explicit annotation</I
-></SPAN
->: As specified</P
-></LI
-></UL
-><PRE
-CLASS="programlisting"
->&#13;function example() returns Point {
-    let temp Point(1, 2)     ; local - dies at block end
-    return Point(3, 4)       ; call - inferred from return position
-}
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN617"
->Page-Parameterized Constructors (<TT
+>Some types are value types (the struct itself can live on the
+        stack) but allocate internal data — <TT
 CLASS="literal"
->init#</TT
->)</A
-></H2
-><P
->Some types are value types (can live on the stack) but need to allocate
-        internal data on a page. The <TT
+>String</TT
+>,
+        <TT
 CLASS="literal"
->init#</TT
-> syntax supports this pattern:</P
-><PRE
-CLASS="programlisting"
->&#13;define String(data: pointer[char], length: size_t)
-{
-    ; init# takes an implicit page parameter as first argument
-    init#(page, text: pointer[const_char])
-    {
-        let len strlen(text)
-        set data: page.allocate(len + 1, 1) as pointer[char]
-        memcpy(data, text, len)
-        set length: len
-    }
-}
-      </PRE
-><P
->At call sites, the lifetime modifier determines which page is passed:</P
-><P
-></P
-><UL
-><LI
-><P
-><TT
+>Array</TT
+>, and the other containers. Their constructors
+        are ordinary <TT
 CLASS="literal"
->String#("hello")</TT
-> — passes caller's page (rp)</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->String$("world")</TT
-> — passes local page</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->String^hashMap("key")</TT
-> — passes the named page</P
-></LI
-></UL
-><P
->The <TT
-CLASS="literal"
->init#</TT
-> pattern is distinct from regular heap allocation.
-        The struct itself can live on the stack — only its internal data needs a page.
-        This is ideal for types like String, Array, or other containers where the
-        wrapper is small but the content may be large.</P
-><P
->Note: <TT
-CLASS="literal"
->init$</TT
->, <TT
-CLASS="literal"
->init^</TT
->, and <TT
-CLASS="literal"
->init!</TT
->
-        are reserved for future use and will produce an error.</P
+>init</TT
+> definitions; the region their
+        internal data is allocated in is chosen by the compiler from how the
+        constructed value is used (see <A
+HREF="types.htm#AEN845"
+>the Section called <I
+>Lifetimes and Memory Regions</I
+></A
+>). No
+        special constructor syntax is involved.</P
 ></DIV
 ></DIV
 ><DIV
@@ -947,33 +876,56 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN640"
->Closures (Lambdas)</A
+NAME="AEN702"
+>Lambdas and Closures</A
 ></H1
 ><P
->Closures are anonymous functions defined with backslash syntax:</P
+>A lambda is an anonymous function defined with backslash syntax —
+      parameters, a colon, and a body:</P
 ><PRE
 CLASS="programlisting"
 >&#13;\x: x * 2                    ; single parameter
 \x y: x + y                  ; multiple parameters
-\: 42                        ; no parameters
+    </PRE
+><P
+>A lambda bound with <TT
+CLASS="literal"
+>let</TT
+> is called like a named
+      function. Its parameter types are inferred at each call site (the lambda
+      is specialized per call, like a local generic function):</P
+><PRE
+CLASS="programlisting"
+>&#13;let inc \x: x + 1
+inc(41)                      ; 42
     </PRE
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN644"
+NAME="AEN709"
 >Capturing Variables</A
 ></H2
 ><P
->Closures can capture variables from their enclosing scope. Captured
-        variables are treated as implicit borrowed parameters — read-only access,
-        same as explicit function parameters:</P
+>Lambdas can capture variables from their enclosing scope. Captures
+        are <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>by value</I
+></SPAN
+>: the lambda receives a copy at the
+        call, so later changes to the original are not seen by the closure, and
+        a <TT
+CLASS="literal"
+>set</TT
+> on a captured name inside the lambda changes
+        only the closure's copy — the original stays untouched:</P
 ><PRE
 CLASS="programlisting"
 >&#13;let multiplier 10
-let scale \x: x * multiplier    ; captures multiplier (read-only)
+let scale \x: x * multiplier    ; captures multiplier by value
 
 scale(5)    ; returns 50
       </PRE
@@ -983,34 +935,82 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN648"
->Closures Are Pure</A
+NAME="AEN715"
+>Function Types: Delegates</A
 ></H2
 ><P
->Closures cannot mutate captured variables. They are pure like functions,
-        not imperative like procedures:</P
+>To pass a lambda as a value — to a parameter, into a field, or as a
+        return value — the function type must be named. A
+        <TT
+CLASS="literal"
+>delegate</TT
+> definition supplies that name:</P
 ><PRE
 CLASS="programlisting"
->&#13;var count 0
-let bad \: { set count: count + 1 }   ; ERROR: cannot mutate capture
+>&#13;define IntFn delegate(int) returns int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+let g: IntFn \x: x + 1
+apply(g, 5)                  ; 6
       </PRE
+><P
+>A delegate-typed value is a closure: a record holding the captures
+        plus the code to run. Calling through it is an indirect call.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN652"
+NAME="AEN721"
 >Closure Lifetime</A
 ></H2
 ><P
->Since captures are borrowed, a closure cannot outlive its captured
-        variables. The compiler enforces this through lifetime checking:</P
+>A closure bound to a local variable lives on the stack frame and
+        dies with it. A closure <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>returned</I
+></SPAN
+> from a function
+        must outlive the frame, so the compiler allocates it on the caller's
+        region automatically — factory functions work:</P
 ><PRE
 CLASS="programlisting"
->&#13;function makeCounter() returns (function() returns i32) {
-    var count 0
-    return \: count    ; ERROR: closure outlives captured 'count'
+>&#13;define IntFn delegate(int) returns int
+
+function make_adder(n: int) returns IntFn
+{
+    return \x: x + n         ; allocated on the caller's region
+}
+
+let add5 make_adder(5)
+let r add5(2)                ; 7
+      </PRE
+><P
+>What is <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>not</I
+></SPAN
+> allowed is smuggling a
+        stack-allocated closure out of its frame — returning a local binding,
+        storing it into an object that outlives the frame, or passing it to a
+        callee that stores it. The compiler rejects these with a hard
+        error:</P
+><PRE
+CLASS="programlisting"
+>&#13;function bad(n: int) returns IntFn
+{
+    let g: IntFn \x: x + n
+    return g
+    ; error: a closure bound to a local lives on the stack frame and
+    ; cannot be returned - return the lambda directly (return \x: ...)
+    ; so it is allocated on the caller's region
 }
       </PRE
 ></DIV
@@ -1019,13 +1019,15 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN656"
+NAME="AEN729"
 >Implementation</A
 ></H2
 ><P
->Each closure is an anonymous struct containing its captures, with a
-        call method implementing the body. Closures are monomorphized like other
-        generic types.</P
+>A named-called lambda costs nothing at runtime: each call site is
+        monomorphized into a direct call, with captures passed as leading
+        arguments. A delegate-typed closure is a small record — a code pointer
+        plus the captured values — and calling it is one indirect call. No
+        garbage collector is involved either way.</P
 ></DIV
 ></DIV
 ><DIV
@@ -1033,18 +1035,18 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN659"
+NAME="AEN732"
 >Error Handling</A
 ></H1
 ><P
->Scaly uses explicit error handling. There are no exceptions or stack unwinding — 
+>Scaly uses explicit error handling. There are no exceptions or stack unwinding —
     errors are values returned from functions or procedures.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN662"
+NAME="AEN735"
 >The <TT
 CLASS="literal"
 >throws</TT
@@ -1057,10 +1059,10 @@ CLASS="literal"
 >:</P
 ><PRE
 CLASS="programlisting"
->&#13;procedure parse(input: String) returns AST throws ParseError {
-    if invalid(input) {
-        throw InvalidSyntax(position, "expected expression")
-    }
+>&#13;function parse(input: String) returns AST throws ParseError
+{
+    if invalid(input)
+        throw ParseError.InvalidSyntax(String("expected expression"))
     ...
 }
       </PRE
@@ -1076,7 +1078,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN670"
+NAME="AEN743"
 >Single Error Type</A
 ></H2
 ><P
@@ -1091,7 +1093,8 @@ CLASS="programlisting"
     IoError: String
 )
 
-function readFile(path: String) returns String throws FileError {
+function read_file(path: String) returns String throws FileError
+{
     ...
 }
       </PRE
@@ -1110,7 +1113,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN677"
+NAME="AEN750"
 >The <TT
 CLASS="literal"
 >try</TT
@@ -1126,31 +1129,37 @@ CLASS="literal"
 > and <TT
 CLASS="literal"
 >when</TT
-> clauses:</P
+>
+        clauses. On success, the binding holds the result and the
+        <TT
+CLASS="literal"
+>when</TT
+> arms are skipped; on failure, the matching arm
+        runs with the error value bound:</P
 ><PRE
 CLASS="programlisting"
->&#13;try let ast parse(input)
-    when e: InvalidSyntax: reportError(e)
-    when e: UnexpectedEof: reportError(e)
+>&#13;try let v read_thing(false)
+    when e: NotFound
+        print("not found")
+    else
+        print("other error")
       </PRE
 ><P
->If not all error variants are covered, an <TT
+>If not all error variants are covered by <TT
+CLASS="literal"
+>when</TT
+>
+        arms, an <TT
 CLASS="literal"
 >else</TT
-> clause is required:</P
-><PRE
-CLASS="programlisting"
->&#13;try let ast parse(input)
-    when e: InvalidSyntax: reportError(e)
-    else panic("unhandled error")
-      </PRE
+> clause is required.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN688"
+NAME="AEN762"
 >Error Propagation</A
 ></H2
 ><P
@@ -1160,11 +1169,12 @@ CLASS="literal"
 > to re-throw errors to the caller:</P
 ><PRE
 CLASS="programlisting"
->&#13;function process(input: String) returns Data throws ParseError {
-    try let ast parse(input)
-        else throw    ; re-throws ParseError to caller
+>&#13;function process(x: int) returns int throws E
+{
+    try let v inner(x)
+        else throw    ; re-throws E to the caller
 
-    transform(ast)
+    v * 2
 }
       </PRE
 ><P
@@ -1176,21 +1186,20 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN694"
+NAME="AEN768"
 >Error Lifetime</A
 ></H2
 ><P
->Thrown values must have thrown lifetime (<TT
+>Thrown values live in an exception region the caller provides. The
+        compiler infers this from throw position; the explicit thrown-lifetime
+        suffix <TT
 CLASS="literal"
 >!</TT
->).
-        The compiler infers this from throw position. If inference fails, annotate
-        explicitly:</P
+> may also be written on the thrown
+        construction:</P
 ><PRE
 CLASS="programlisting"
->&#13;throw ParseError.InvalidSyntax(pos, msg)!   ; explicit thrown lifetime</PRE
-><P
->The caller provides the exception region where the error will be stored.</P
+>&#13;throw ParseError.InvalidSyntax(msg)!   ; explicit thrown lifetime</PRE
 ></DIV
 ></DIV
 ><DIV
@@ -1198,7 +1207,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN700"
+NAME="AEN773"
 >Union Types</A
 ></H1
 ><P
@@ -1223,7 +1232,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN704"
+NAME="AEN777"
 >Memory Layout</A
 ></H2
 ><P
@@ -1241,7 +1250,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN709"
+NAME="AEN782"
 >Pattern Matching with <TT
 CLASS="literal"
 >choose</TT
@@ -1263,31 +1272,30 @@ CLASS="literal"
 ><PRE
 CLASS="programlisting"
 >&#13;choose s
-    when r: Circle: computeCircleArea(r)
+    when r: Circle: r * r * 3.14
     when b: Box: b.width * b.height
     else 0.0</PRE
 ><P
 >If not all variants are covered, an <TT
 CLASS="literal"
 >else</TT
-> clause is required:</P
-><PRE
-CLASS="programlisting"
->&#13;choose s: when r: Circle: computeCircleArea(r) else 0.0    ; handles Box and Empty</PRE
+> clause is
+        required.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN720"
+NAME="AEN792"
 >Option Type</A
 ></H2
 ><P
 ><TT
 CLASS="literal"
 >Option[T]</TT
-> is a union for nullable values:</P
+> is the standard library's union for
+        nullable values:</P
 ><PRE
 CLASS="programlisting"
 >&#13;define Option[T] union
@@ -1296,12 +1304,9 @@ CLASS="programlisting"
     None
 )
 
-function find(list: List[T], pred: function(T) returns bool) returns Option[T] {
-    ...
-}
-
-choose find(items, \x: x &#62; 10)
-    when value: Some: process(value)
+let o Option[int].Some(7)
+choose o
+    when v: Some: process(v)
     else handle_not_found()
       </PRE
 ></DIV
@@ -1310,7 +1315,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN725"
+NAME="AEN797"
 >Option Optimization</A
 ></H2
 ><P
@@ -1345,30 +1350,48 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN737"
+NAME="AEN809"
 >Generics</A
 ></H1
 ><P
 >Scaly supports generic types with type parameters in square brackets:</P
 ><PRE
 CLASS="programlisting"
->&#13;define List[T] {
-    ...
+>&#13;define Pair[T] ( first: T, second: T )
+{
+    function sum(this) returns T
+        first + second
 }
 
-define HashMap[K, V] {
-    ...
-}
-
-let numbers List[i32]()
-let names List[String]()
+let p Pair[int](20, 22)
+p.sum()                      ; 42
     </PRE
+><P
+>The standard library's containers are generic the same way:
+      <TT
+CLASS="literal"
+>Vector[T]</TT
+>, <TT
+CLASS="literal"
+>List[T]</TT
+>,
+      <TT
+CLASS="literal"
+>HashMap[K, V]</TT
+>, <TT
+CLASS="literal"
+>Option[T]</TT
+>,
+      <TT
+CLASS="literal"
+>Result[T, E]</TT
+>.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN741"
+NAME="AEN819"
 >Monomorphization</A
 ></H2
 ><P
@@ -1382,10 +1405,10 @@ CLASS="emphasis"
         concrete instantiation becomes a completely separate type at compile time.
         <TT
 CLASS="literal"
->List[i32]</TT
+>Pair[int]</TT
 > and <TT
 CLASS="literal"
->List[String]</TT
+>Pair[String]</TT
 > share no
         code at runtime — each has its own specialized implementation.</P
 ><P
@@ -1426,7 +1449,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN761"
+NAME="AEN839"
 >Name Mangling</A
 ></H2
 ><P
@@ -1434,9 +1457,9 @@ NAME="AEN761"
         following Itanium ABI conventions:</P
 ><PRE
 CLASS="programlisting"
->&#13;List[i32]         → _ZN4ListIiE...
-List[String]      → _ZN4ListI6StringE...
-HashMap[String, i32] → _ZN7HashMapI6StringiE...
+>&#13;List[int]            → _ZN4ListIiE...
+List[String]         → _ZN4ListI6StringE...
+HashMap[String, int] → _ZN7HashMapI6StringiE...
       </PRE
 ><P
 >These names are compatible with <TT
@@ -1450,84 +1473,112 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN767"
+NAME="AEN845"
 >Lifetimes and Memory Regions</A
 ></H1
 ><P
 >Scaly uses Region-Based Memory Management (RBMM). Instead of garbage
-      collection or manual malloc/free, values are allocated in memory regions
-      (pages) that are deallocated in bulk when their owning scope exits.</P
+      collection or manual malloc/free, values that need the heap are allocated
+      in memory regions (pages) that are deallocated in bulk when their owning
+      scope exits.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN770"
->Stack vs Page Allocation</A
+NAME="AEN848"
+>Allocation Is Inferred</A
 ></H2
 ><P
->The presence or absence of a lifetime suffix on a constructor call
-        determines whether the value is stack-allocated or page-allocated:</P
+>Ordinary code carries no memory-management annotations at all. A
+        constructed value lives on the stack when that suffices; when its
+        internals allocate, or the value must outlive the statement that
+        created it, the compiler places the allocation in an appropriate
+        region:</P
 ><P
 ></P
-><DIV
-CLASS="variablelist"
-><DL
-><DT
->No suffix = Stack allocation</DT
-><DD
+><UL
+><LI
 ><P
->The value is allocated on the stack frame. Fast, automatic
-            cleanup when the function returns. Cannot outlive the current function.</P
-></DD
-><DT
->Lifetime suffix = Page allocation</DT
-><DD
-><P
->The value is allocated on a memory page. Can outlive the
-            current block depending on which lifetime is used.</P
-></DD
-></DL
-></DIV
-><PRE
-CLASS="programlisting"
->&#13;let stack_point Point(10, 20)     ; stack-allocated (by value)
-let page_point Point$(10, 20)     ; page-allocated (local page)
-      </PRE
-><P
->Note: The lifetime suffix comes <SPAN
+>A value used only within the current function gets a
+          <SPAN
 CLASS="emphasis"
 ><I
 CLASS="emphasis"
->before</I
+>local</I
 ></SPAN
-> the constructor
-        parameters, not after. This follows the general pattern: Type + Generics + Lifetime + Parameters.</P
+> region, freed when the scope
+          exits.</P
+></LI
+><LI
+><P
+>A value returned from a function is placed in the
+          <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>caller's</I
+></SPAN
+> region, so it survives the
+          return.</P
+></LI
+><LI
+><P
+>A thrown error value is placed in the exception region
+          the caller provides.</P
+></LI
+></UL
+><P
+>The standard library and the Scaly compiler itself are written in
+        exactly this annotation-free style.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN785"
->Lifetime Kinds</A
+NAME="AEN861"
+>Escape Checking</A
 ></H2
+><P
+>The compiler proves that no reference outlives the memory it points
+        into. A reference to a local that would escape the frame — through a
+        return, through a store into an object that outlives the frame, or by
+        being passed to a callee that stores it — is a hard compile-time
+        error:</P
+><PRE
+CLASS="programlisting"
+>&#13;function dangling() returns pointer[int]
+{
+    var local 5
+    return &#38;local
+}
+; error: reference into a local page escapes via return - allocate the
+; target with '#' (caller page) or '^name' (region) so it outlives the use
+      </PRE
+><P
+>The check is interprocedural (it follows the value through calls
+        into callees that store their parameters, and through closures) and
+        conservative: code it accepts is safe.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN866"
+>Explicit Lifetime Suffixes</A
+></H2
+><P
+>When a value must be placed in a region the inference would not
+        choose — most commonly a heap object returned by pointer — an explicit
+        lifetime suffix on the constructor call says where it lives. The suffix
+        goes between the type and the argument list:</P
 ><P
 ></P
 ><DIV
 CLASS="variablelist"
 ><DL
-><DT
->Local (<TT
-CLASS="literal"
->$</TT
->)</DT
-><DD
-><P
->Value is allocated on a local page that lives until the
-            end of the current block. The page is lazily allocated on first use
-            and automatically deallocated when the block exits.</P
-></DD
 ><DT
 >Caller (<TT
 CLASS="literal"
@@ -1535,19 +1586,9 @@ CLASS="literal"
 >)</DT
 ><DD
 ><P
->Value is allocated on the caller's return page. It survives
-            the function return and is managed by the caller. Used for returning
-            heap-allocated values.</P
-></DD
-><DT
->Thrown (<TT
-CLASS="literal"
->!</TT
->)</DT
-><DD
-><P
->Value is allocated on the exception page. Used for error
-            values that may be thrown and caught by the caller.</P
+>The value is allocated in the caller's region. It
+            survives the function return and is freed with the caller's scope.
+            Used for returning heap-allocated values by pointer.</P
 ></DD
 ><DT
 >Reference (<TT
@@ -1556,58 +1597,33 @@ CLASS="literal"
 >)</DT
 ><DD
 ><P
->Value is allocated on the same page as the named variable.
-            The named variable must itself be page-allocated (not stack-allocated).
-            Used when adding values to collections.</P
+>The value is allocated in the same region as the
+            named value — for tying an allocation's lifetime to a specific
+            longer-lived object, such as a collection it is stored
+            into.</P
+></DD
+><DT
+>Thrown (<TT
+CLASS="literal"
+>!</TT
+>)</DT
+><DD
+><P
+>The value is allocated in the exception region. The
+            compiler infers this for values in throw position, so writing it is
+            rarely necessary.</P
 ></DD
 ></DL
 ></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN808"
->Local Lifetime ($)</A
-></H2
-><P
->Local lifetime allocates on a page scoped to the current block. The
-        page is lazily allocated (only when needed) and automatically freed when
-        the block exits:</P
 ><PRE
 CLASS="programlisting"
->&#13;function process(input: String) {
-    if condition {
-        let parser Parser$(input)    ; allocated on local page
-        parser.parse()
-    }                                 ; page deallocated here
+>&#13;define Node ( data: int )
 
-    ; parser and its page are gone
-}
-      </PRE
-><P
-><SPAN
-CLASS="bold"
-><B
-CLASS="emphasis"
->Important:</B
-></SPAN
-> Local lifetime (<TT
-CLASS="literal"
->$</TT
->)
-        is forbidden on return types. A function cannot return a value with local
-        lifetime because the local page is deallocated before the caller receives
-        the value.</P
-><PRE
-CLASS="programlisting"
->&#13;; ERROR: local lifetime ($) not allowed on return types
-function bad() returns Point$ { ... }
+function create_node(data: int) returns pointer[Node]
+    Node#(data)              ; allocated in the caller's region
 
-; OK: use caller lifetime (#) or by-value return
-function good() returns Point# { ... }
-function also_good() returns Point { ... }
+let n create_node(7)
+(*n).data                    ; 7 — valid in the caller's scope
       </PRE
 ></DIV
 ><DIV
@@ -1615,149 +1631,22 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN816"
->Caller Lifetime (#)</A
-></H2
-><P
->Values that must survive a function return use caller lifetime. The
-        value is allocated on the caller's page, not the function's local page:</P
-><PRE
-CLASS="programlisting"
->&#13;function createParser(input: String) returns pointer[Parser] {
-    Parser#(input)    ; allocated on caller's page
-}
-      </PRE
-><P
->The compiler may infer caller lifetime for values in return position
-        when the return type specifies it.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN821"
->Thrown Lifetime (!)</A
-></H2
-><P
->Error values use thrown lifetime. The value is allocated on a special
-        exception page provided by the caller:</P
-><PRE
-CLASS="programlisting"
->&#13;function parse(input: String) returns AST throws ParseError {
-    if invalid(input) {
-        throw ParseError("invalid syntax")!   ; thrown lifetime
-    }
-    ...
-}
-      </PRE
-><P
->The compiler infers thrown lifetime for values in throw position.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN826"
->Reference Lifetime (^name)</A
-></H2
-><P
->When adding a value to a collection, the value must be allocated on
-        the same page as the collection. Use reference lifetime with the
-        collection's name:</P
-><PRE
-CLASS="programlisting"
->&#13;let items Array$()                ; items is page-allocated
-let item Car^items("red")         ; item allocated on same page as items
-items.add(item)                   ; safe - same lifetime
-      </PRE
-><P
-><SPAN
-CLASS="bold"
-><B
-CLASS="emphasis"
->Validation:</B
-></SPAN
-> The compiler verifies that
-        the referenced variable (<TT
-CLASS="literal"
->items</TT
-> in this example) is
-        page-allocated. Referencing a stack-allocated variable is an error:</P
-><PRE
-CLASS="programlisting"
->&#13;let stack_car Car("blue")         ; stack-allocated (no suffix)
-let other Car^stack_car("red")    ; ERROR: cannot use ^stack_car
-                                  ; stack_car is not page-allocated
-      </PRE
-><P
->This prevents dangling references: you cannot tie a value's lifetime
-        to a stack variable that will be destroyed when the function returns.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN835"
+NAME="AEN886"
 >By-Value Returns</A
 ></H2
 ><P
->Functions can return values by value (no lifetime annotation). This
-        is the simplest approach for small types:</P
+>Functions can return values by value — the simplest and most common
+        case, and the reason most code needs no lifetime suffix at all:</P
 ><PRE
 CLASS="programlisting"
->&#13;function createPoint(x: i32, y: i32) returns Point {
+>&#13;function create_point(x: int, y: int) returns Point
+{
     Point(x, y)    ; constructed and returned by value
 }
       </PRE
 ><P
->By-value return avoids page allocation entirely. The value is
+>By-value return avoids region allocation entirely. The value is
         constructed directly in the caller's stack frame or register.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN840"
->Lifetime Inference</A
-></H2
-><P
->The compiler infers lifetimes where possible:</P
-><P
-></P
-><UL
-><LI
-><P
->No suffix on constructor = stack allocation (by value)</P
-></LI
-><LI
-><P
->Throw position implies thrown lifetime (<TT
-CLASS="literal"
->!</TT
->)</P
-></LI
-><LI
-><P
->Reference lifetime (<TT
-CLASS="literal"
->^container</TT
->) must always be explicit</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->$</TT
->, <TT
-CLASS="literal"
->#</TT
-> must be explicit on constructor calls</P
-></LI
-></UL
 ></DIV
 ></DIV
 ></DIV

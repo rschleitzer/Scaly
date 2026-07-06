@@ -22,8 +22,10 @@
         and its standard library share one small, regular syntax.</para>
       </listitem>
       <listitem>
-        <para><emphasis>Explicit over implicit</emphasis> — Memory management
-        and control flow are visible in the code structure.</para>
+        <para><emphasis>Safety without ceremony</emphasis> — Memory is managed
+        through regions the compiler infers, and an escape checker proves at
+        compile time that no reference outlives its memory; ordinary code
+        carries no annotations.</para>
       </listitem>
       <listitem>
         <para><emphasis>Incremental complexity</emphasis> — Simple programs
@@ -44,8 +46,10 @@
     <itemizedlist>
       <listitem><para>Lexer, parser, modeler, planner, emitter — <emphasis>implemented</emphasis></para></listitem>
       <listitem><para>LLVM code generation (JIT and ahead-of-time) — <emphasis>implemented</emphasis></para></listitem>
-      <listitem><para>Region-based memory management — <emphasis>implemented</emphasis></para></listitem>
+      <listitem><para>Region-based memory management with inferred allocation and compile-time escape checking — <emphasis>implemented</emphasis></para></listitem>
       <listitem><para>Self-hosting bootstrap — <emphasis>achieved</emphasis> (the compiler compiles itself)</para></listitem>
+      <listitem><para>Source-level debugging (DWARF via <option>-g</option>) — <emphasis>implemented</emphasis></para></listitem>
+      <listitem><para>Language server (<command>scalyls</command>, written in Scaly) and a VS Code extension — <emphasis>available</emphasis> (see the tutorial)</para></listitem>
     </itemizedlist>
   </section>
 

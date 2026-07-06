@@ -65,7 +65,8 @@ let d 84 'divided by' 2     ; infix -> 42
       usual precedences. A custom operator with a text or single-quoted name
       binds most weakly of all — at the same level as <literal>||</literal> —
       so the built-in arithmetic in an expression combines before it. For
-      example, given the <literal>'minus'</literal> operator above,
+      example, given an operator <literal>'minus'</literal> that subtracts its
+      right operand from its left,
       <literal>20 'minus' 3 + 5</literal> parses as
       <literal>20 'minus' (3 + 5)</literal> and yields <literal>12</literal>.</para>
   </section>

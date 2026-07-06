@@ -1,30 +1,34 @@
 <appendix xml:id="appendix-bootstrap">
-  <title>Bootstrapping the Compiler from C++</title>
+  <title>Bootstrap History and the Seed</title>
 
-  <para>Scaly is self-hosted. The normal way to build the compiler is from the
-    committed seed, as described in <xref linkend="tut-build"/>, which needs only
-    LLVM 18 and a C compiler. A single seed already covers every 64-bit
-    little-endian target, so most platforms need no bootstrap at all. You need
-    the C++ bootstrap in only two cases: refreshing the seed after changing the
-    compiler, or bringing up a target with a different data model (32-bit,
-    big-endian, or LLP64), which the seed does not cover.</para>
+  <para>Scaly is self-hosted, and the committed <emphasis>seed</emphasis> — the
+    compiler emitted as its own textual LLVM IR under
+    <filename>seed/</filename> — is the sole bootstrap root. The normal way to
+    build the compiler is from that seed, as described in
+    <xref linkend="tut-build"/>; it needs only LLVM 18 and a C compiler. A
+    single seed covers every 64-bit little-endian (LP64) target, and a CI
+    matrix builds and verifies it natively on macOS and Linux, on both x86-64
+    and AArch64.</para>
 
-  <para>The compiler that produced the seed was originally bootstrapped from a
-    reference implementation written in C++. Building it needs a C++17 compiler,
-    CMake, and openjade in addition to LLVM 18:</para>
-  <programlisting>; macOS
-brew install llvm@18 cmake openjade
+  <para>The seed is refreshed by <filename>tools/seed.sh</filename>: it
+    bootstraps a compiler from the committed seed, re-emits the compiler
+    sources with it, and verifies the <emphasis>fixed point</emphasis> — the
+    seed must reproduce itself byte-identically — before
+    <filename>tools/install-seed.sh</filename> installs the new files. Textual
+    IR is diffable and auditable, which is why Scaly ships it instead of opaque
+    per-platform binaries. See <filename>RELEASING.md</filename> in the
+    repository for the full seed-distribution checklist.</para>
 
-; Ubuntu 24.04
-sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</programlisting>
-  <para><command>./build.sh</command> builds the C++ stage-0 compiler, and
-    <filename>tools/seed.sh</filename> then bootstraps it into the self-hosted
-    compiler and emits a fresh, fixed-point-verified seed. See
-    <filename>RELEASING.md</filename> for the full seed-distribution process.</para>
+  <para>Historically, the self-hosted compiler was bootstrapped from a
+    reference implementation written in C++ (which had itself replaced an
+    earlier TypeScript bootstrapper). That C++ stage-0 compiler was retired in
+    July 2026, once the seed became self-sufficient: its sources are frozen
+    under <filename>retired/scalyc0/</filename> as a historical reference, it
+    has no build, and it cannot parse the current language. No C++ toolchain
+    appears anywhere in today's build.</para>
 
-  <para>The C++ implementation is kept buildable on purpose: it is an
-    independent compiler lineage, which preserves a diverse-double-compiling
-    check against trusting-trust attacks, and it is the per-platform bootstrap
-    root for new architectures. It is not part of the language or its everyday
-    toolchain.</para>
+  <para>Targets with a different data model (32-bit, big-endian, or LLP64
+    such as Windows) are not covered by the seed; supporting one would mean
+    generalizing the compiler's size and alignment emission off its fixed
+    64-bit constants and minting a seed for that data model.</para>
 </appendix>

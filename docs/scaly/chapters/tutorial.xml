@@ -11,23 +11,30 @@
 
     <section xml:id="tut-install">
       <title>Installing Scaly</title>
-      <para>The quickest way to get the compiler is the installer hosted on
+      <para>This section starts from a blank machine — a fresh Linux
+        installation or a new Mac — and ends with the whole Scaly toolchain
+        installed: the compiler, the language server, and (in the next section)
+        editor support in Visual Studio Code with syntax highlighting and a
+        source-level debugger.</para>
+      <para>The quickest way to get the toolchain is the installer hosted on
         scaly.io. Scaly ships as its own LLVM IR (a <emphasis>seed</emphasis>)
         and is turned into a native binary on your own machine, so first install
         LLVM 18 and a C compiler:</para>
-      <programlisting>; macOS
+      <programlisting>; macOS (install Homebrew first from https://brew.sh if you don't have it)
 brew install llvm@18
 
 ; Ubuntu / Debian
 sudo apt install llvm-18 clang</programlisting>
       <para>Then run the installer. It downloads Scaly, builds it for your
-        machine, and puts <command>scalyc</command> on your <envar>PATH</envar>
-        under <filename>~/.scaly</filename> — no <command>sudo</command>
+        machine, and puts two commands on your <envar>PATH</envar> under
+        <filename>~/.scaly</filename> — no <command>sudo</command>
         required:</para>
       <programlisting>curl -fsSL https://scaly.io/install.sh | sh</programlisting>
-      <para>Open a new terminal afterwards so the updated <envar>PATH</envar>
-        takes effect; then <command>scalyc</command> works from any directory, as
-        the rest of this tutorial assumes. To uninstall, remove
+      <para>The two commands are <command>scalyc</command>, the compiler, and
+        <command>scalyls</command>, the language server that powers the editor
+        features in <xref linkend="tut-vscode"/>. Open a new terminal afterwards
+        so the updated <envar>PATH</envar> takes effect; then both work from any
+        directory, as the rest of this tutorial assumes. To uninstall, remove
         <filename>~/.scaly</filename> and the <envar>PATH</envar> line the
         installer added to your shell profile.</para>
     </section>
@@ -49,17 +56,19 @@ sudo apt install llvm-18 clang</programlisting>
         repository root:</para>
       <programlisting>tools/build-from-seed.sh</programlisting>
       <para>This compiles the seed with <command>llc</command>, links it into
-        <filename>scalyc/build/scalyc</filename>, and builds the small runtime
-        archive the compiler links your programs against. To put it on your
-        <envar>PATH</envar> from a repository checkout:</para>
+        <filename>scalyc/build/scalyc</filename>, builds the
+        <command>scalyls</command> language server beside it, and builds the
+        small runtime archive the compiler links your programs against. To put
+        both on your <envar>PATH</envar> from a repository checkout:</para>
       <programlisting>tools/install.sh</programlisting>
-      <para>This installs a small <command>scalyc</command> wrapper in
+      <para>This installs small <command>scalyc</command> and
+        <command>scalyls</command> wrappers in
         <filename>/usr/local/bin</filename> (override with <envar>BINDIR</envar>,
         e.g. <userinput>BINDIR="$HOME/.local/bin" tools/install.sh</userinput>)
-        that points back at the compiler in this repository and sets
+        that point back at the binaries in this repository and set
         <envar>SCALY_HOME</envar> so the prelude and standard library are found
-        whatever your current directory is; rebuilding the compiler is picked up
-        automatically with no reinstall. Remove it again with
+        whatever your current directory is; rebuilding is picked up
+        automatically with no reinstall. Remove them again with
         <filename>tools/uninstall.sh</filename>.</para>
       <note>
         <para><filename>tools/install.sh</filename> builds the small runtime
@@ -71,9 +80,9 @@ sudo apt install llvm-18 clang</programlisting>
           cleared on reboot; re-run <filename>tools/build-from-seed.sh</filename>
           to rebuild it.</para>
       </note>
-      <para>The C++ bootstrap that originally produced the seed is described in
-        <xref linkend="appendix-bootstrap"/>; you do not need it for everyday
-        use.</para>
+      <para>How the seed came to be — and how it is refreshed and verified — is
+        described in <xref linkend="appendix-bootstrap"/>; you do not need any
+        of it for everyday use.</para>
     </section>
 
     <section xml:id="tut-hello">
@@ -96,38 +105,119 @@ sudo apt install llvm-18 clang</programlisting>
   <section xml:id="tut-vscode">
     <title>Using Scaly with VS Code</title>
     <para>You can drive the whole edit-compile-run-debug loop from
-      <application>Visual Studio Code</application>: a build task to compile the
-      file you are editing, a run task to execute it, and a launch
-      configuration that stops at breakpoints and lets you step through your
-      Scaly source. Debugging uses the DWARF information the compiler emits with
-      the <option>-g</option> flag, so breakpoints land on real source lines and
-      scalar local variables show their values.</para>
-    <para>Open your project folder as your VS Code workspace and install the
-      <emphasis>CodeLLDB</emphasis> extension (extension id
-      <code>vadimcn.vscode-lldb</code>), which provides the
-      <code>lldb</code> debugger type used below. Reload the window afterwards
-      (<guimenu>Command Palette</guimenu> &gt; <guimenuitem>Developer: Reload
-      Window</guimenuitem>) so the extension activates; if
-      <keycap>F5</keycap> reports <errortext>configured debug type 'lldb' is not
-      supported</errortext>, CodeLLDB is not installed or not enabled. The tasks call
-      <command>scalyc</command> by name, so install it on your
-      <envar>PATH</envar> first (see <xref linkend="tut-install"/>). If
-      <application>Visual Studio Code</application> was already running when you
-      installed <command>scalyc</command>, restart it so its process picks up
-      the updated <envar>PATH</envar> — otherwise the tasks will fail to find
-      the compiler.</para>
-    <note>
-      <para>Because the installed <command>scalyc</command> wrapper sets
-        <envar>SCALY_HOME</envar> for you, the compiler finds the prelude (which
-        defines <code>print</code> and friends) and the standard library no
-        matter where your <filename>.scaly</filename> files live — you do not
-        have to work inside the compiler's own source tree. The tasks set
-        <code>cwd</code> to <code>${workspaceFolder}</code> only so the compiled
-        executable lands beside your source.</para>
-    </note>
+      <application>Visual Studio Code</application>. Two extensions turn it
+      into a full Scaly IDE:</para>
+    <itemizedlist>
+      <listitem>
+        <para>The <emphasis>Scaly</emphasis> extension provides syntax
+          highlighting and connects the editor to the
+          <command>scalyls</command> language server you installed in
+          <xref linkend="tut-install"/> — giving live error squiggles,
+          hover, go-to-definition, completion, rename, and more.</para>
+      </listitem>
+      <listitem>
+        <para>The <emphasis>CodeLLDB</emphasis> extension provides the
+          debugger. Debugging uses the DWARF information the compiler emits
+          with the <option>-g</option> flag, so breakpoints land on real
+          source lines and scalar local variables show their values.</para>
+      </listitem>
+    </itemizedlist>
+    <para>If you do not have VS Code yet, download it from
+      <literal>code.visualstudio.com</literal>
+      (macOS and Linux installers are provided; on Ubuntu,
+      <userinput>sudo snap install code --classic</userinput> also works).</para>
+
+    <section xml:id="tut-vscode-extension">
+      <title>Installing the Scaly Extension</title>
+      <para>The Scaly extension is distributed as a <filename>.vsix</filename>
+        package on scaly.io. Download it and install it from the command
+        line:</para>
+      <programlisting>curl -fsSLO https://scaly.io/downloads/scaly-vscode.vsix
+code --install-extension scaly-vscode.vsix</programlisting>
+      <para>Alternatively, install it from within VS Code: open the
+        <guilabel>Extensions</guilabel> view, click the
+        <guibutton>···</guibutton> menu in its title bar, choose
+        <guimenuitem>Install from VSIX…</guimenuitem>, and pick the downloaded
+        file.</para>
+      <para>The extension launches <command>scalyls</command> from your
+        <envar>PATH</envar>, so install the toolchain first
+        (<xref linkend="tut-install"/>). If VS Code was already running when
+        you installed the toolchain, restart it (not just the window) so its
+        process picks up the updated <envar>PATH</envar>. Should the server
+        binary live somewhere unusual, point the
+        <code>scaly.server.path</code> setting at it.</para>
+    </section>
+
+    <section xml:id="tut-vscode-lsp">
+      <title>What the Language Server Gives You</title>
+      <para>Open any folder, create a file <filename>double.scaly</filename>,
+        and type a small program:</para>
+      <programlisting>function double(n: int) returns int
+    n * 2
+
+let d double(21)
+if d = 42
+    print("doubled!")</programlisting>
+      <para>As you type, the language server is at work. Things to try:</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis>Diagnostics</emphasis> — misspell a call (say,
+            change <code>double(21)</code> to
+            <code>doubel(21)</code>): a red squiggle appears and the
+            Problems panel shows <computeroutput>function not found:
+            doubel</computeroutput>. Fix it and the squiggle clears.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Hover</emphasis> — rest the mouse on
+            <code>double</code> or a binding to see its signature or
+            type.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Go to Definition</emphasis>
+            (<keycap>F12</keycap>) and <emphasis>Find All References</emphasis>
+            (<keycap>Shift</keycap>+<keycap>F12</keycap>) — work across files
+            and into the standard library.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Completion</emphasis> — names in scope and members
+            appear as you type.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Rename</emphasis> (<keycap>F2</keycap>) — renames a
+            symbol everywhere it is used, shadow-aware.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Outline and symbols</emphasis> — the Outline view
+            and <keycap>Cmd</keycap>+<keycap>Shift</keycap>+<keycap>O</keycap>
+            list the file's functions and types;
+            <keycap>Cmd</keycap>+<keycap>T</keycap> searches symbols across
+            the workspace. (Use <keycap>Ctrl</keycap> instead of
+            <keycap>Cmd</keycap> on Linux.)</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Inlay hints</emphasis> — inferred types appear
+            inline after bindings; <emphasis>signature help</emphasis> shows
+            parameter hints while you type a call; <emphasis>semantic
+            highlighting</emphasis> and <emphasis>folding</emphasis> come for
+            free.</para>
+        </listitem>
+      </itemizedlist>
+      <para>If the server ever needs a kick — say, after you rebuilt it —
+        run <guimenuitem>Scaly: Restart Language Server</guimenuitem> from the
+        Command Palette.</para>
+    </section>
 
     <section xml:id="tut-vscode-tasks">
       <title>Build and Run Tasks</title>
+      <note>
+        <para>Because the installed <command>scalyc</command> wrapper sets
+          <envar>SCALY_HOME</envar> for you, the compiler finds the prelude
+          (which defines <code>print</code> and friends) and the standard
+          library no matter where your <filename>.scaly</filename> files live —
+          you do not have to work inside the compiler's own source tree. The
+          tasks below set <code>cwd</code> to <code>${workspaceFolder}</code>
+          only so the compiled executable lands beside your source.</para>
+      </note>
       <para>Create <filename>.vscode/tasks.json</filename> with a build task that
         compiles the open file with debug info, and a run task that executes the
         result:</para>
@@ -171,6 +261,16 @@ sudo apt install llvm-18 clang</programlisting>
 
     <section xml:id="tut-vscode-launch">
       <title>Launch Configuration</title>
+      <para>Debugging needs one more extension:
+        <emphasis>CodeLLDB</emphasis> (extension id
+        <code>vadimcn.vscode-lldb</code>, installable normally from the
+        Extensions view), which provides the <code>lldb</code> debugger type
+        used below. Reload the window afterwards
+        (<guimenu>Command Palette</guimenu> &gt; <guimenuitem>Developer: Reload
+        Window</guimenuitem>) so the extension activates; if
+        <keycap>F5</keycap> reports <errortext>configured debug type 'lldb' is
+        not supported</errortext>, CodeLLDB is not installed or not
+        enabled.</para>
       <para>Create <filename>.vscode/launch.json</filename> so
         <keycap>F5</keycap> builds the open file and starts it under the
         debugger:</para>
@@ -191,31 +291,29 @@ sudo apt install llvm-18 clang</programlisting>
     </section>
 
     <section xml:id="tut-vscode-breakpoints-setting">
-      <title>Allowing Breakpoints in Scaly Files</title>
-      <para>By default VS Code only lets you set breakpoints in files whose
-        language it recognizes <emphasis>and</emphasis> for which an installed
-        debugger has declared breakpoint support. Languages like C# ship a VS
-        Code extension that does both, so breakpoints work there out of the box.
-        Scaly has no such extension yet, so <filename>.scaly</filename> files are
-        treated as plain text — clicking the gutter does nothing and no red dot
-        appears.</para>
-      <para>Until a Scaly language extension exists, lift that restriction by
-        creating <filename>.vscode/settings.json</filename>:</para>
-      <programlisting>{
+      <title>Breakpoints in Scaly Files</title>
+      <para>VS Code only lets you set breakpoints in files whose language an
+        installed extension has declared debuggable. The Scaly extension from
+        <xref linkend="tut-vscode-extension"/> does exactly that for
+        <filename>.scaly</filename> files, so with it installed, clicking in
+        the editor gutter places a breakpoint (a red dot appears) — nothing to
+        configure.</para>
+      <note>
+        <para>If you skip the Scaly extension, <filename>.scaly</filename>
+          files are treated as plain text and the gutter does nothing. In that
+          case you can lift the restriction by hand in
+          <filename>.vscode/settings.json</filename>:</para>
+        <programlisting>{
     "debug.allowBreakpointsEverywhere": true
 }</programlisting>
-      <para>With this set, breakpoints can be placed in any file, including
-        <filename>.scaly</filename>. (The same effect is available globally via
-        <guimenu>Command Palette</guimenu> &gt; <guimenuitem>Preferences: Open
-        User Settings (JSON)</guimenuitem> if you prefer it for every
-        workspace.)</para>
+      </note>
     </section>
 
     <section xml:id="tut-vscode-debug">
       <title>Setting a Breakpoint and Stepping</title>
-      <para>Put this program in <filename>area.scaly</filename> at the repository
-        root. It computes a rectangle's area from two mutable bindings — small,
-        but enough to stop and inspect some values:</para>
+      <para>Put this program in <filename>area.scaly</filename> in your
+        workspace folder. It computes a rectangle's area from two mutable
+        bindings — small, but enough to stop and inspect some values:</para>
       <programlisting>var width 8
 var height 5
 var area width * height
@@ -259,8 +357,8 @@ else
         <keycap>F10</keycap> (<guimenuitem>Step Over</guimenuitem>) runs a call as
         a single step; <keycap>F11</keycap> (<guimenuitem>Step Into</guimenuitem>)
         descends into the called function so you can watch it run. Put this
-        program in <filename>rectangle.scaly</filename> at the repository
-        root — it factors the area calculation out into a function:</para>
+        program in <filename>rectangle.scaly</filename> in your workspace
+        folder — it factors the area calculation out into a function:</para>
       <programlisting>function area(w: int, h: int) returns int
 {
     var result w * h
@@ -307,9 +405,10 @@ else
             bodies.</para>
         </listitem>
         <listitem>
-          <para>The <guilabel>Variables</guilabel> pane shows scalar
-            <code>var</code> locals — integers and booleans — for whichever
-            stack frame is selected.</para>
+          <para>The <guilabel>Variables</guilabel> pane shows
+            <code>var</code> locals — integers and booleans, and also
+            structures, unions, and pointers with their fields expandable —
+            for whichever stack frame is selected.</para>
         </listitem>
         <listitem>
           <para>Breakpoints and stepping work line-by-line inside loop and
@@ -320,8 +419,8 @@ else
         </listitem>
         <listitem>
           <para>Function parameters, <code>let</code> (immutable) bindings, and
-            aggregate values such as structures and strings are not shown
-            yet.</para>
+            some standard-library types such as <code>String</code> are not
+            shown yet.</para>
         </listitem>
         <listitem>
           <para>The <guilabel>Watch</guilabel> view and
@@ -457,7 +556,7 @@ let v c.get()        ; v is 2</programlisting>
 let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</programlisting>
       <para><xref linkend="types-constructors"/> covers constructors, including
-        the page-aware <code>init#</code> form used by types that allocate.</para>
+        explicit <code>init</code> forms with their own signatures.</para>
     </section>
 
     <section xml:id="tut-unions">
@@ -551,8 +650,8 @@ choose result
       makes the failure a value you must handle, not a crash you can forget.</para>
     <para>From here, the rest of this specification fills in the details: the
       <xref linkend="lexical"/> rules, the full <xref linkend="expressions"/>
-      model, and the <xref linkend="types"/> system including generics,
-      lifetimes, and region-based memory management.</para>
+      model, and the <xref linkend="types"/> system including generics and the
+      inferred region-based memory management.</para>
   </section>
 
 </chapter>

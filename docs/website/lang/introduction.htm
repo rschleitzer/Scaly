@@ -146,10 +146,12 @@ CLASS="emphasis"
 CLASS="emphasis"
 ><I
 CLASS="emphasis"
->Explicit over implicit</I
+>Safety without ceremony</I
 ></SPAN
-> — Memory management
-        and control flow are visible in the code structure.</P
+> — Memory is managed
+        through regions the compiler infers, and an escape checker proves at
+        compile time that no reference outlives its memory; ordinary code
+        carries no annotations.</P
 ></LI
 ><LI
 ><P
@@ -206,7 +208,7 @@ CLASS="emphasis"
 ></LI
 ><LI
 ><P
->Region-based memory management — <SPAN
+>Region-based memory management with inferred allocation and compile-time escape checking — <SPAN
 CLASS="emphasis"
 ><I
 CLASS="emphasis"
@@ -223,6 +225,32 @@ CLASS="emphasis"
 >achieved</I
 ></SPAN
 > (the compiler compiles itself)</P
+></LI
+><LI
+><P
+>Source-level debugging (DWARF via <CODE
+CLASS="option"
+>-g</CODE
+>) — <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>implemented</I
+></SPAN
+></P
+></LI
+><LI
+><P
+>Language server (<B
+CLASS="command"
+>scalyls</B
+>, written in Scaly) and a VS Code extension — <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>available</I
+></SPAN
+> (see the tutorial)</P
 ></LI
 ></UL
 ></DIV

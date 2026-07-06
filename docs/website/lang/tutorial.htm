@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN38"
+NAME="AEN46"
 ></A
 >Chapter 2 Tutorial</H1
 ><DIV
@@ -83,22 +83,22 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN41"
+HREF="tutorial.htm#AEN49"
 >Getting Started</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN102"
+HREF="tutorial.htm#AEN114"
 >Using Scaly with VS Code</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN253"
+HREF="tutorial.htm#AEN334"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN334"
+HREF="tutorial.htm#AEN415"
 >Putting It Together</A
 ></DT
 ></DL
@@ -113,7 +113,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN41"
+NAME="AEN49"
 >Getting Started</A
 ></H1
 ><DIV
@@ -121,11 +121,17 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN43"
+NAME="AEN51"
 >Installing Scaly</A
 ></H2
 ><P
->The quickest way to get the compiler is the installer hosted on
+>This section starts from a blank machine — a fresh Linux
+        installation or a new Mac — and ends with the whole Scaly toolchain
+        installed: the compiler, the language server, and (in the next section)
+        editor support in Visual Studio Code with syntax highlighting and a
+        source-level debugger.</P
+><P
+>The quickest way to get the toolchain is the installer hosted on
         scaly.io. Scaly ships as its own LLVM IR (a <SPAN
 CLASS="emphasis"
 ><I
@@ -137,21 +143,18 @@ CLASS="emphasis"
         LLVM 18 and a C compiler:</P
 ><PRE
 CLASS="programlisting"
->; macOS
+>; macOS (install Homebrew first from https://brew.sh if you don't have it)
 brew install llvm@18
 
 ; Ubuntu / Debian
 sudo apt install llvm-18 clang</PRE
 ><P
 >Then run the installer. It downloads Scaly, builds it for your
-        machine, and puts <B
-CLASS="command"
->scalyc</B
-> on your <CODE
+        machine, and puts two commands on your <CODE
 CLASS="envar"
 >PATH</CODE
->
-        under <TT
+> under
+        <TT
 CLASS="filename"
 >~/.scaly</TT
 > — no <B
@@ -163,15 +166,25 @@ CLASS="command"
 CLASS="programlisting"
 >curl -fsSL https://scaly.io/install.sh | sh</PRE
 ><P
->Open a new terminal afterwards so the updated <CODE
-CLASS="envar"
->PATH</CODE
->
-        takes effect; then <B
+>The two commands are <B
 CLASS="command"
 >scalyc</B
-> works from any directory, as
-        the rest of this tutorial assumes. To uninstall, remove
+>, the compiler, and
+        <B
+CLASS="command"
+>scalyls</B
+>, the language server that powers the editor
+        features in <A
+HREF="tutorial.htm#AEN114"
+>the Section called <I
+>Using Scaly with VS Code</I
+></A
+>. Open a new terminal afterwards
+        so the updated <CODE
+CLASS="envar"
+>PATH</CODE
+> takes effect; then both work from any
+        directory, as the rest of this tutorial assumes. To uninstall, remove
         <TT
 CLASS="filename"
 >~/.scaly</TT
@@ -186,7 +199,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN59"
+NAME="AEN69"
 >Building from Source</A
 ></H2
 ><P
@@ -233,9 +246,13 @@ CLASS="command"
         <TT
 CLASS="filename"
 >scalyc/build/scalyc</TT
->, and builds the small runtime
-        archive the compiler links your programs against. To put it on your
-        <CODE
+>, builds the
+        <B
+CLASS="command"
+>scalyls</B
+> language server beside it, and builds the
+        small runtime archive the compiler links your programs against. To put
+        both on your <CODE
 CLASS="envar"
 >PATH</CODE
 > from a repository checkout:</P
@@ -243,10 +260,14 @@ CLASS="envar"
 CLASS="programlisting"
 >tools/install.sh</PRE
 ><P
->This installs a small <B
+>This installs small <B
 CLASS="command"
 >scalyc</B
-> wrapper in
+> and
+        <B
+CLASS="command"
+>scalyls</B
+> wrappers in
         <TT
 CLASS="filename"
 >/usr/local/bin</TT
@@ -258,13 +279,13 @@ CLASS="envar"
 CLASS="userinput"
 >BINDIR="$HOME/.local/bin" tools/install.sh</KBD
 >)
-        that points back at the compiler in this repository and sets
+        that point back at the binaries in this repository and set
         <CODE
 CLASS="envar"
 >SCALY_HOME</CODE
 > so the prelude and standard library are found
-        whatever your current directory is; rebuilding the compiler is picked up
-        automatically with no reinstall. Remove it again with
+        whatever your current directory is; rebuilding is picked up
+        automatically with no reinstall. Remove them again with
         <TT
 CLASS="filename"
 >tools/uninstall.sh</TT
@@ -302,19 +323,19 @@ CLASS="filename"
 ></BLOCKQUOTE
 ></DIV
 ><P
->The C++ bootstrap that originally produced the seed is described in
-        <A
+>How the seed came to be — and how it is refreshed and verified — is
+        described in <A
 HREF="appendix-bootstrap.htm"
 >Appendix B</A
->; you do not need it for everyday
-        use.</P
+>; you do not need any
+        of it for everyday use.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN90"
+NAME="AEN102"
 >Hello, World!</A
 ></H2
 ><P
@@ -355,7 +376,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN102"
+NAME="AEN114"
 >Using Scaly with VS Code</A
 ></H1
 ><P
@@ -363,74 +384,324 @@ NAME="AEN102"
       <SPAN
 CLASS="application"
 >Visual Studio Code</SPAN
->: a build task to compile the
-      file you are editing, a run task to execute it, and a launch
-      configuration that stops at breakpoints and lets you step through your
-      Scaly source. Debugging uses the DWARF information the compiler emits with
-      the <CODE
-CLASS="option"
->-g</CODE
-> flag, so breakpoints land on real source lines and
-      scalar local variables show their values.</P
+>. Two extensions turn it
+      into a full Scaly IDE:</P
 ><P
->Open your project folder as your VS Code workspace and install the
-      <SPAN
+></P
+><UL
+><LI
+><P
+>The <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Scaly</I
+></SPAN
+> extension provides syntax
+          highlighting and connects the editor to the
+          <B
+CLASS="command"
+>scalyls</B
+> language server you installed in
+          <A
+HREF="tutorial.htm#AEN51"
+>the Section called <I
+>Installing Scaly</I
+></A
+> — giving live error squiggles,
+          hover, go-to-definition, completion, rename, and more.</P
+></LI
+><LI
+><P
+>The <SPAN
 CLASS="emphasis"
 ><I
 CLASS="emphasis"
 >CodeLLDB</I
 ></SPAN
-> extension (extension id
+> extension provides the
+          debugger. Debugging uses the DWARF information the compiler emits
+          with the <CODE
+CLASS="option"
+>-g</CODE
+> flag, so breakpoints land on real
+          source lines and scalar local variables show their values.</P
+></LI
+></UL
+><P
+>If you do not have VS Code yet, download it from
       <TT
-CLASS="code"
->vadimcn.vscode-lldb</TT
->), which provides the
-      <TT
-CLASS="code"
->lldb</TT
-> debugger type used below. Reload the window afterwards
-      (<SPAN
-CLASS="guimenu"
->Command Palette</SPAN
-> &#62; <SPAN
+CLASS="literal"
+>code.visualstudio.com</TT
+>
+      (macOS and Linux installers are provided; on Ubuntu,
+      <KBD
+CLASS="userinput"
+>sudo snap install code --classic</KBD
+> also works).</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN131"
+>Installing the Scaly Extension</A
+></H2
+><P
+>The Scaly extension is distributed as a <TT
+CLASS="filename"
+>.vsix</TT
+>
+        package on scaly.io. Download it and install it from the command
+        line:</P
+><PRE
+CLASS="programlisting"
+>curl -fsSLO https://scaly.io/downloads/scaly-vscode.vsix
+code --install-extension scaly-vscode.vsix</PRE
+><P
+>Alternatively, install it from within VS Code: open the
+        <SPAN
+CLASS="guilabel"
+>Extensions</SPAN
+> view, click the
+        <SPAN
+CLASS="guibutton"
+>···</SPAN
+> menu in its title bar, choose
+        <SPAN
 CLASS="guimenuitem"
->Developer: Reload
-      Window</SPAN
->) so the extension activates; if
-      <B
-CLASS="keycap"
->F5</B
-> reports <FONT
-COLOR="RED"
->configured debug type 'lldb' is not
-      supported</FONT
->, CodeLLDB is not installed or not enabled. The tasks call
-      <B
+>Install from VSIX…</SPAN
+>, and pick the downloaded
+        file.</P
+><P
+>The extension launches <B
 CLASS="command"
->scalyc</B
-> by name, so install it on your
-      <CODE
+>scalyls</B
+> from your
+        <CODE
 CLASS="envar"
 >PATH</CODE
-> first (see <A
-HREF="tutorial.htm#AEN43"
+>, so install the toolchain first
+        (<A
+HREF="tutorial.htm#AEN51"
 >the Section called <I
 >Installing Scaly</I
 ></A
->). If
-      <SPAN
-CLASS="application"
->Visual Studio Code</SPAN
-> was already running when you
-      installed <B
-CLASS="command"
->scalyc</B
->, restart it so its process picks up
-      the updated <CODE
+>). If VS Code was already running when
+        you installed the toolchain, restart it (not just the window) so its
+        process picks up the updated <CODE
 CLASS="envar"
 >PATH</CODE
-> — otherwise the tasks will fail to find
-      the compiler.</P
+>. Should the server
+        binary live somewhere unusual, point the
+        <TT
+CLASS="code"
+>scaly.server.path</TT
+> setting at it.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN146"
+>What the Language Server Gives You</A
+></H2
+><P
+>Open any folder, create a file <TT
+CLASS="filename"
+>double.scaly</TT
+>,
+        and type a small program:</P
+><PRE
+CLASS="programlisting"
+>function double(n: int) returns int
+    n * 2
+
+let d double(21)
+if d = 42
+    print("doubled!")</PRE
+><P
+>As you type, the language server is at work. Things to try:</P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Diagnostics</I
+></SPAN
+> — misspell a call (say,
+            change <TT
+CLASS="code"
+>double(21)</TT
+> to
+            <TT
+CLASS="code"
+>doubel(21)</TT
+>): a red squiggle appears and the
+            Problems panel shows <SAMP
+CLASS="computeroutput"
+>function not found:
+            doubel</SAMP
+>. Fix it and the squiggle clears.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Hover</I
+></SPAN
+> — rest the mouse on
+            <TT
+CLASS="code"
+>double</TT
+> or a binding to see its signature or
+            type.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Go to Definition</I
+></SPAN
+>
+            (<B
+CLASS="keycap"
+>F12</B
+>) and <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Find All References</I
+></SPAN
+>
+            (<B
+CLASS="keycap"
+>Shift</B
+>+<B
+CLASS="keycap"
+>F12</B
+>) — work across files
+            and into the standard library.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Completion</I
+></SPAN
+> — names in scope and members
+            appear as you type.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Rename</I
+></SPAN
+> (<B
+CLASS="keycap"
+>F2</B
+>) — renames a
+            symbol everywhere it is used, shadow-aware.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Outline and symbols</I
+></SPAN
+> — the Outline view
+            and <B
+CLASS="keycap"
+>Cmd</B
+>+<B
+CLASS="keycap"
+>Shift</B
+>+<B
+CLASS="keycap"
+>O</B
+>
+            list the file's functions and types;
+            <B
+CLASS="keycap"
+>Cmd</B
+>+<B
+CLASS="keycap"
+>T</B
+> searches symbols across
+            the workspace. (Use <B
+CLASS="keycap"
+>Ctrl</B
+> instead of
+            <B
+CLASS="keycap"
+>Cmd</B
+> on Linux.)</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Inlay hints</I
+></SPAN
+> — inferred types appear
+            inline after bindings; <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>signature help</I
+></SPAN
+> shows
+            parameter hints while you type a call; <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>semantic
+            highlighting</I
+></SPAN
+> and <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>folding</I
+></SPAN
+> come for
+            free.</P
+></LI
+></UL
+><P
+>If the server ever needs a kick — say, after you rebuilt it —
+        run <SPAN
+CLASS="guimenuitem"
+>Scaly: Restart Language Server</SPAN
+> from the
+        Command Palette.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN195"
+>Build and Run Tasks</A
+></H2
 ><DIV
 CLASS="note"
 ><BLOCKQUOTE
@@ -442,37 +713,29 @@ CLASS="note"
 CLASS="command"
 >scalyc</B
 > wrapper sets
-        <CODE
+          <CODE
 CLASS="envar"
 >SCALY_HOME</CODE
-> for you, the compiler finds the prelude (which
-        defines <TT
+> for you, the compiler finds the prelude
+          (which defines <TT
 CLASS="code"
 >print</TT
-> and friends) and the standard library no
-        matter where your <TT
+> and friends) and the standard
+          library no matter where your <TT
 CLASS="filename"
 >.scaly</TT
-> files live — you do not
-        have to work inside the compiler's own source tree. The tasks set
-        <TT
+> files live —
+          you do not have to work inside the compiler's own source tree. The
+          tasks below set <TT
 CLASS="code"
 >cwd</TT
 > to <TT
 CLASS="code"
 >${workspaceFolder}</TT
-> only so the compiled
-        executable lands beside your source.</P
+>
+          only so the compiled executable lands beside your source.</P
 ></BLOCKQUOTE
 ></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN129"
->Build and Run Tasks</A
-></H2
 ><P
 >Create <TT
 CLASS="filename"
@@ -552,9 +815,44 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN144"
+NAME="AEN218"
 >Launch Configuration</A
 ></H2
+><P
+>Debugging needs one more extension:
+        <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>CodeLLDB</I
+></SPAN
+> (extension id
+        <TT
+CLASS="code"
+>vadimcn.vscode-lldb</TT
+>, installable normally from the
+        Extensions view), which provides the <TT
+CLASS="code"
+>lldb</TT
+> debugger type
+        used below. Reload the window afterwards
+        (<SPAN
+CLASS="guimenu"
+>Command Palette</SPAN
+> &#62; <SPAN
+CLASS="guimenuitem"
+>Developer: Reload
+        Window</SPAN
+>) so the extension activates; if
+        <B
+CLASS="keycap"
+>F5</B
+> reports <FONT
+COLOR="RED"
+>configured debug type 'lldb' is
+        not supported</FONT
+>, CodeLLDB is not installed or not
+        enabled.</P
 ><P
 >Create <TT
 CLASS="filename"
@@ -587,29 +885,38 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN150"
->Allowing Breakpoints in Scaly Files</A
+NAME="AEN232"
+>Breakpoints in Scaly Files</A
 ></H2
 ><P
->By default VS Code only lets you set breakpoints in files whose
-        language it recognizes <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->and</I
-></SPAN
-> for which an installed
-        debugger has declared breakpoint support. Languages like C# ship a VS
-        Code extension that does both, so breakpoints work there out of the box.
-        Scaly has no such extension yet, so <TT
+>VS Code only lets you set breakpoints in files whose language an
+        installed extension has declared debuggable. The Scaly extension from
+        <A
+HREF="tutorial.htm#AEN131"
+>the Section called <I
+>Installing the Scaly Extension</I
+></A
+> does exactly that for
+        <TT
 CLASS="filename"
 >.scaly</TT
-> files are
-        treated as plain text — clicking the gutter does nothing and no red dot
-        appears.</P
+> files, so with it installed, clicking in
+        the editor gutter places a breakpoint (a red dot appears) — nothing to
+        configure.</P
+><DIV
+CLASS="note"
+><BLOCKQUOTE
+CLASS="note"
 ><P
->Until a Scaly language extension exists, lift that restriction by
-        creating <TT
+><B
+>Note: </B
+>If you skip the Scaly extension, <TT
+CLASS="filename"
+>.scaly</TT
+>
+          files are treated as plain text and the gutter does nothing. In that
+          case you can lift the restriction by hand in
+          <TT
 CLASS="filename"
 >.vscode/settings.json</TT
 >:</P
@@ -618,37 +925,24 @@ CLASS="programlisting"
 >{
     "debug.allowBreakpointsEverywhere": true
 }</PRE
-><P
->With this set, breakpoints can be placed in any file, including
-        <TT
-CLASS="filename"
->.scaly</TT
->. (The same effect is available globally via
-        <SPAN
-CLASS="guimenu"
->Command Palette</SPAN
-> &#62; <SPAN
-CLASS="guimenuitem"
->Preferences: Open
-        User Settings (JSON)</SPAN
-> if you prefer it for every
-        workspace.)</P
+></BLOCKQUOTE
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN162"
+NAME="AEN242"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
 >Put this program in <TT
 CLASS="filename"
 >area.scaly</TT
-> at the repository
-        root. It computes a rectangle's area from two mutable bindings — small,
-        but enough to stop and inspect some values:</P
+> in your
+        workspace folder. It computes a rectangle's area from two mutable
+        bindings — small, but enough to stop and inspect some values:</P
 ><PRE
 CLASS="programlisting"
 >var width 8
@@ -745,7 +1039,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN192"
+NAME="AEN272"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -768,8 +1062,8 @@ CLASS="guimenuitem"
         program in <TT
 CLASS="filename"
 >rectangle.scaly</TT
-> at the repository
-        root — it factors the area calculation out into a function:</P
+> in your workspace
+        folder — it factors the area calculation out into a function:</P
 ><PRE
 CLASS="programlisting"
 >function area(w: int, h: int) returns int
@@ -877,13 +1171,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN287"
+HREF="tutorial.htm#AEN368"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN295"
+HREF="tutorial.htm#AEN376"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -894,7 +1188,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN229"
+NAME="AEN309"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -913,12 +1207,13 @@ NAME="AEN229"
 >The <SPAN
 CLASS="guilabel"
 >Variables</SPAN
-> pane shows scalar
+> pane shows
             <TT
 CLASS="code"
 >var</TT
-> locals — integers and booleans — for whichever
-            stack frame is selected.</P
+> locals — integers and booleans, and also
+            structures, unions, and pointers with their fields expandable —
+            for whichever stack frame is selected.</P
 ></LI
 ><LI
 ><P
@@ -946,8 +1241,11 @@ CLASS="code"
 CLASS="code"
 >let</TT
 > (immutable) bindings, and
-            aggregate values such as structures and strings are not shown
-            yet.</P
+            some standard-library types such as <TT
+CLASS="code"
+>String</TT
+> are not
+            shown yet.</P
 ></LI
 ><LI
 ><P
@@ -974,7 +1272,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN253"
+NAME="AEN334"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -987,7 +1285,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN256"
+NAME="AEN337"
 >Values and Bindings</A
 ></H2
 ><P
@@ -1025,7 +1323,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN266"
+NAME="AEN347"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -1059,7 +1357,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN274"
+NAME="AEN355"
 >Control Flow</A
 ></H2
 ><P
@@ -1117,7 +1415,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN287"
+NAME="AEN368"
 >Functions</A
 ></H2
 ><P
@@ -1154,7 +1452,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN295"
+NAME="AEN376"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -1165,7 +1463,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN559"
+HREF="types.htm#AEN654"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1191,7 +1489,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN301"
+NAME="AEN382"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1213,22 +1511,22 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN565"
+HREF="types.htm#AEN661"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
 > covers constructors, including
-        the page-aware <TT
+        explicit <TT
 CLASS="code"
->init#</TT
-> form used by types that allocate.</P
+>init</TT
+> forms with their own signatures.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN309"
+NAME="AEN390"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1274,7 +1572,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN700"
+HREF="types.htm#AEN773"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1289,7 +1587,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN323"
+NAME="AEN404"
 >Modules and Imports</A
 ></H2
 ><P
@@ -1344,7 +1642,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN334"
+NAME="AEN415"
 >Putting It Together</A
 ></H1
 ><P
@@ -1433,8 +1731,8 @@ HREF="expressions.htm"
       model, and the <A
 HREF="types.htm"
 >Chapter 4</A
-> system including generics,
-      lifetimes, and region-based memory management.</P
+> system including generics and the
+      inferred region-based memory management.</P
 ></DIV
 ></DIV
 ><DIV

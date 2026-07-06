@@ -76,8 +76,8 @@ if b.area() = 12
       <emphasis>prelude</emphasis>: every program depends on it automatically,
       and its types are visible everywhere without any <code>use</code>
       statement. Pass <option>--no-prelude</option> to compile without it, for
-      bare-metal or embedded targets. See <xref linkend="types-prelude"/> for
-      what the prelude provides.</para>
+      bare-metal or embedded targets. See <xref linkend="stdlib"/> for
+      what the standard library provides.</para>
   </section>
 
   <section xml:id="mod-use">
