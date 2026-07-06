@@ -24,12 +24,17 @@ done
 cp "$SRC/main.ll" "$SRC/scalyc.ll" "$SRC/scaly.ll" seed/
 SUM_FILES="main.ll scalyc.ll scaly.ll"
 
-# scalyls language server seed (optional — present when tools/seed.sh emitted it
-# via the C++ stage-0; it is a separate self-contained program, not part of the
+# scalyls language server seed (optional — present when tools/seed.sh emitted
+# it, self-hosted. A separate program with TWO roots (scalyls_main.ll +
+# scalyls.ll) that links against the compiler seed objects; not part of the
 # compiler fixed point).
 if [ -f "$SRC/scalyls.ll" ]; then
     cp "$SRC/scalyls.ll" seed/
     SUM_FILES="$SUM_FILES scalyls.ll"
+fi
+if [ -f "$SRC/scalyls_main.ll" ]; then
+    cp "$SRC/scalyls_main.ll" seed/
+    SUM_FILES="$SUM_FILES scalyls_main.ll"
 fi
 
 # shellcheck disable=SC2086

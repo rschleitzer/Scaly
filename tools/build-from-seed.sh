@@ -71,3 +71,20 @@ echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 "$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
 ar rcs /tmp/libscaly.a /tmp/libscaly.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
+
+# Build the scalyls language server from its seed, when committed. scalyls is
+# a separate program with its own two roots (scalyls_main.ll + scalyls.ll);
+# it depends on the scalyc + scaly packages, whose bodies come from the
+# compiler seed objects already built above — same recipe as tools/seed.sh.
+# Lands beside the compiler so tools/install.sh and the VS Code extension can
+# find it.
+if [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ]; then
+    LSOUT="$(dirname "$OUT")/scalyls"
+    for f in scalyls_main scalyls; do
+        "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
+    done
+    ${CLANG:-clang} "${LINKARGS[@]}" "$WORK/scalyls_main.o" "$WORK/scalyls.o" \
+        "$WORK/scalyc.o" "$WORK/scaly.o" \
+        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$LSOUT"
+    echo "build-from-seed: OK — $LSOUT (language server)"
+fi

@@ -40,6 +40,15 @@ else
   echo "uninstall: no wrapper at $WRAPPER"
 fi
 
+# Same for the scalyls language-server wrapper, when installed.
+LSWRAPPER="$BINDIR/scalyls"
+if [ -e "$LSWRAPPER" ]; then
+  if [ "$FORCE" = "1" ] || grep -q "$MARKER" "$LSWRAPPER" 2>/dev/null; then
+    rm_path "$LSWRAPPER"
+    echo "uninstall: removed $LSWRAPPER"
+  fi
+fi
+
 # If some OTHER scalyc is still first on PATH, say so — the user may have a
 # second install or a stale copy in a different bin dir.
 other=$(command -v scalyc 2>/dev/null || true)
