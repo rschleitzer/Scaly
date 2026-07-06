@@ -3178,106 +3178,6 @@ if.end15:                                         ; preds = %if.end4
   br label %while.cond
 }
 
-define linkonce_odr i1 @_ZN6String6equalsE6String(ptr %0, ptr %1) {
-entry:
-  %byte = alloca i8, align 1
-  %bit_count = alloca i64, align 8
-  %length = alloca i64, align 8
-  store i64 0, ptr %length, align 1
-  %index = alloca i64, align 8
-  store i64 0, ptr %index, align 1
-  %load.struct = load %_Z6String, ptr %0, align 8
-  %data = extractvalue %_Z6String %load.struct, 0
-  %ne = icmp ne ptr %data, null
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  store i64 0, ptr %bit_count, align 1
-  br label %while.cond
-
-if.end:                                           ; preds = %while.exit, %entry
-  %length18 = load i64, ptr %length, align 4
-  %call = call i64 @_ZN6String10get_lengthEv(ptr %1)
-  %ne19 = icmp ne i64 %length18, %call
-  br i1 %ne19, label %if.then20, label %if.end21
-
-while.cond:                                       ; preds = %if.end14, %if.then
-  br i1 true, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %bit_count1 = load i64, ptr %bit_count, align 4
-  %eq = icmp eq i64 %bit_count1, 63
-  br i1 %eq, label %if.then2, label %if.end3
-
-while.exit:                                       ; preds = %if.then13, %while.cond
-  br label %if.end
-
-if.then2:                                         ; preds = %while.body
-  call void @exit(i64 11)
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %while.body
-  %load.struct4 = load %_Z6String, ptr %0, align 8
-  %data5 = extractvalue %_Z6String %load.struct4, 0
-  %index6 = load i64, ptr %index, align 4
-  %ptr.add = getelementptr inbounds i8, ptr %data5, i64 %index6
-  %deref = load i8, ptr %ptr.add, align 1
-  store i8 %deref, ptr %byte, align 1
-  %length7 = load i64, ptr %length, align 4
-  %byte8 = load i8, ptr %byte, align 1
-  %and = and i8 %byte8, 127
-  %as.zext = zext i8 %and to i64
-  %bit_count9 = load i64, ptr %bit_count, align 4
-  %shl = shl i64 %as.zext, %bit_count9
-  %or = or i64 %length7, %shl
-  store i64 %or, ptr %length, align 1
-  %byte10 = load i8, ptr %byte, align 1
-  %and11 = and i8 %byte10, -128
-  %eq12 = icmp eq i8 %and11, 0
-  br i1 %eq12, label %if.then13, label %if.end14
-
-if.then13:                                        ; preds = %if.end3
-  br label %while.exit
-
-if.end14:                                         ; preds = %if.end3
-  %bit_count15 = load i64, ptr %bit_count, align 4
-  %add = add i64 %bit_count15, 7
-  store i64 %add, ptr %bit_count, align 1
-  %index16 = load i64, ptr %index, align 4
-  %add17 = add i64 %index16, 1
-  store i64 %add17, ptr %index, align 1
-  br label %while.cond
-
-if.then20:                                        ; preds = %if.end
-  ret i1 false
-
-if.end21:                                         ; preds = %if.end
-  %load.struct22 = load %_Z6String, ptr %0, align 8
-  %data23 = extractvalue %_Z6String %load.struct22, 0
-  %eq24 = icmp eq ptr %data23, null
-  br i1 %eq24, label %if.then25, label %if.end26
-
-if.then25:                                        ; preds = %if.end21
-  ret i1 true
-
-if.end26:                                         ; preds = %if.end21
-  %load.struct27 = load %_Z6String, ptr %0, align 8
-  %data28 = extractvalue %_Z6String %load.struct27, 0
-  %index29 = load i64, ptr %index, align 4
-  %ptr.add30 = getelementptr inbounds i8, ptr %data28, i64 %index29
-  %ptr.add31 = getelementptr inbounds i8, ptr %ptr.add30, i64 1
-  %load.struct32 = load %_Z6String, ptr %1, align 8
-  %data33 = extractvalue %_Z6String %load.struct32, 0
-  %index34 = load i64, ptr %index, align 4
-  %ptr.add35 = getelementptr inbounds i8, ptr %data33, i64 %index34
-  %ptr.add36 = getelementptr inbounds i8, ptr %ptr.add35, i64 1
-  %length37 = load i64, ptr %length, align 4
-  %call38 = call i32 @memcmp(ptr %ptr.add31, ptr %ptr.add36, i64 %length37)
-  %zext = zext i32 %call38 to i64
-  %eq39 = icmp eq i64 %zext, 0
-  ret i1 %eq39
-}
-
 define linkonce_odr i64 @_ZN13StringBuilder10get_lengthEv(ptr %0) {
 entry:
   %field.inplace = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
@@ -18492,6 +18392,106 @@ entry:
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
+}
+
+define linkonce_odr i1 @_ZN6String6equalsE6String(ptr %0, ptr %1) {
+entry:
+  %byte = alloca i8, align 1
+  %bit_count = alloca i64, align 8
+  %length = alloca i64, align 8
+  store i64 0, ptr %length, align 1
+  %index = alloca i64, align 8
+  store i64 0, ptr %index, align 1
+  %load.struct = load %_Z6String, ptr %0, align 8
+  %data = extractvalue %_Z6String %load.struct, 0
+  %ne = icmp ne ptr %data, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  store i64 0, ptr %bit_count, align 1
+  br label %while.cond
+
+if.end:                                           ; preds = %while.exit, %entry
+  %length18 = load i64, ptr %length, align 4
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %1)
+  %ne19 = icmp ne i64 %length18, %call
+  br i1 %ne19, label %if.then20, label %if.end21
+
+while.cond:                                       ; preds = %if.end14, %if.then
+  br i1 true, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %bit_count1 = load i64, ptr %bit_count, align 4
+  %eq = icmp eq i64 %bit_count1, 63
+  br i1 %eq, label %if.then2, label %if.end3
+
+while.exit:                                       ; preds = %if.then13, %while.cond
+  br label %if.end
+
+if.then2:                                         ; preds = %while.body
+  call void @exit(i64 11)
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %while.body
+  %load.struct4 = load %_Z6String, ptr %0, align 8
+  %data5 = extractvalue %_Z6String %load.struct4, 0
+  %index6 = load i64, ptr %index, align 4
+  %ptr.add = getelementptr inbounds i8, ptr %data5, i64 %index6
+  %deref = load i8, ptr %ptr.add, align 1
+  store i8 %deref, ptr %byte, align 1
+  %length7 = load i64, ptr %length, align 4
+  %byte8 = load i8, ptr %byte, align 1
+  %and = and i8 %byte8, 127
+  %as.zext = zext i8 %and to i64
+  %bit_count9 = load i64, ptr %bit_count, align 4
+  %shl = shl i64 %as.zext, %bit_count9
+  %or = or i64 %length7, %shl
+  store i64 %or, ptr %length, align 1
+  %byte10 = load i8, ptr %byte, align 1
+  %and11 = and i8 %byte10, -128
+  %eq12 = icmp eq i8 %and11, 0
+  br i1 %eq12, label %if.then13, label %if.end14
+
+if.then13:                                        ; preds = %if.end3
+  br label %while.exit
+
+if.end14:                                         ; preds = %if.end3
+  %bit_count15 = load i64, ptr %bit_count, align 4
+  %add = add i64 %bit_count15, 7
+  store i64 %add, ptr %bit_count, align 1
+  %index16 = load i64, ptr %index, align 4
+  %add17 = add i64 %index16, 1
+  store i64 %add17, ptr %index, align 1
+  br label %while.cond
+
+if.then20:                                        ; preds = %if.end
+  ret i1 false
+
+if.end21:                                         ; preds = %if.end
+  %load.struct22 = load %_Z6String, ptr %0, align 8
+  %data23 = extractvalue %_Z6String %load.struct22, 0
+  %eq24 = icmp eq ptr %data23, null
+  br i1 %eq24, label %if.then25, label %if.end26
+
+if.then25:                                        ; preds = %if.end21
+  ret i1 true
+
+if.end26:                                         ; preds = %if.end21
+  %load.struct27 = load %_Z6String, ptr %0, align 8
+  %data28 = extractvalue %_Z6String %load.struct27, 0
+  %index29 = load i64, ptr %index, align 4
+  %ptr.add30 = getelementptr inbounds i8, ptr %data28, i64 %index29
+  %ptr.add31 = getelementptr inbounds i8, ptr %ptr.add30, i64 1
+  %load.struct32 = load %_Z6String, ptr %1, align 8
+  %data33 = extractvalue %_Z6String %load.struct32, 0
+  %index34 = load i64, ptr %index, align 4
+  %ptr.add35 = getelementptr inbounds i8, ptr %data33, i64 %index34
+  %ptr.add36 = getelementptr inbounds i8, ptr %ptr.add35, i64 1
+  %length37 = load i64, ptr %length, align 4
+  %call38 = call i32 @memcmp(ptr %ptr.add31, ptr %ptr.add36, i64 %length37)
+  %zext = zext i32 %call38 to i64
+  %eq39 = icmp eq i64 %zext, 0
+  ret i1 %eq39
 }
 
 define linkonce_odr i1 @_ZN6String6equalsEP10const_char(ptr %0, ptr %1) {

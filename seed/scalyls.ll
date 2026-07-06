@@ -2704,8 +2704,6 @@ if.end:                                           ; preds = %choose.when
   br label %choose.end
 }
 
-declare i1 @_ZN6String6equalsEP10const_char(ptr, ptr)
-
 define linkonce_odr void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %sret.result4 = alloca %_Z9JsonValue, align 8
@@ -27717,8 +27715,6 @@ while.exit:                                       ; preds = %while.cond
 }
 
 declare i64 @_ZN6String4hashEv(ptr)
-
-declare i1 @_ZN6String6equalsE6String(ptr, ptr)
 
 define linkonce_odr i1 @_ZN7HashMapI6String8NameableE8containsE6String(ptr %0, ptr %1) {
 entry:
@@ -60091,8 +60087,8 @@ while.exit:                                       ; preds = %while.cond
 
 if.then12:                                        ; preds = %while.exit
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result9, ptr %sret.result1)
-  %eq = icmp eq i1 %call14, false
-  br i1 %eq, label %if.then15, label %if.end16
+  %not = xor i1 %call14, true
+  br i1 %not, label %if.then15, label %if.end16
 
 if.end13:                                         ; preds = %if.end16, %while.exit
   %sb29 = load ptr, ptr %sb, align 8
@@ -67534,8 +67530,8 @@ if.end7:                                          ; preds = %if.end
 
 if.then12:                                        ; preds = %if.end7
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result9, ptr %sret.result2)
-  %eq = icmp eq i1 %call14, false
-  br i1 %eq, label %if.then15, label %if.end16
+  %not = xor i1 %call14, true
+  br i1 %not, label %if.then15, label %if.end16
 
 if.end13:                                         ; preds = %if.end16, %if.end7
   store { ptr } zeroinitializer, ptr %0, align 1
@@ -67578,8 +67574,8 @@ if.end:                                           ; preds = %entry
 
 if.then6:                                         ; preds = %if.end
   %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %eq = icmp eq i1 %call8, false
-  br i1 %eq, label %if.then9, label %if.end10
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then9, label %if.end10
 
 if.end7:                                          ; preds = %if.end10, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
@@ -67901,11 +67897,11 @@ if.end11:                                         ; preds = %while.exit
 
 define linkonce_odr void @_ZN7symbols25member_completions_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result36 = alloca { ptr }, align 8
   %sret.result35 = alloca { ptr }, align 8
-  %sret.result30 = alloca { ptr }, align 8
+  %sret.result34 = alloca { ptr }, align 8
+  %sret.result29 = alloca { ptr }, align 8
   %blob = alloca { ptr }, align 8
-  %sret.result25 = alloca { ptr }, align 8
+  %sret.result24 = alloca { ptr }, align 8
   %sret.result12 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -67939,7 +67935,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %result42 = load { ptr }, ptr %result, align 8
+  %result41 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
@@ -67949,9 +67945,9 @@ if.then6:                                         ; preds = %while.body
   br i1 %eq9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %while.body
-  %i40 = load i64, ptr %i, align 4
-  %add41 = add i64 %i40, 1
-  store i64 %add41, ptr %i, align 1
+  %i39 = load i64, ptr %i, align 4
+  %add40 = add i64 %i39, 1
+  store i64 %add40, ptr %i, align 1
   br label %while.cond
 
 if.then10:                                        ; preds = %if.then6
@@ -67963,60 +67959,60 @@ if.then10:                                        ; preds = %if.then6
   br i1 %gt, label %if.then16, label %if.end17
 
 if.end11:                                         ; preds = %if.end17, %if.then6
-  %i39 = load i64, ptr %i, align 4
-  %add = add i64 %i39, 1
+  %i38 = load i64, ptr %i, align 4
+  %add = add i64 %i38, 1
   store i64 %add, ptr %line_start, align 1
   br label %if.end7
 
 if.then16:                                        ; preds = %if.then10
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %sret.result12, ptr %3)
-  %eq19 = icmp eq i1 %call18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %not = xor i1 %call18, true
+  br i1 %not, label %if.then19, label %if.end20
 
-if.end17:                                         ; preds = %if.end21, %if.then10
+if.end17:                                         ; preds = %if.end20, %if.then10
   br label %if.end11
 
-if.then20:                                        ; preds = %if.then16
-  %call22 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
-  br i1 %call22, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %if.then16
+  %call21 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
+  br i1 %call21, label %if.then22, label %if.end23
 
-if.end21:                                         ; preds = %if.end24, %if.then16
+if.end20:                                         ; preds = %if.end23, %if.then16
   br label %if.end17
 
-if.then23:                                        ; preds = %if.then20
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result12)
-  %call26 = call i64 @_ZN6String4hashEv(ptr %sret.result25)
+if.then22:                                        ; preds = %if.then19
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sret.result12)
+  %call25 = call i64 @_ZN6String4hashEv(ptr %sret.result24)
   store { ptr } zeroinitializer, ptr %blob, align 1
-  %call27 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  br i1 %call27, label %if.then28, label %if.end29
+  %call26 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  br i1 %call26, label %if.then27, label %if.end28
 
-if.end24:                                         ; preds = %if.end34, %if.then20
-  br label %if.end21
+if.end23:                                         ; preds = %if.end33, %if.then19
+  br label %if.end20
 
-if.then28:                                        ; preds = %if.then23
-  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %sret.result12)
-  %set.load = load { ptr }, ptr %sret.result30, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end29
+if.then27:                                        ; preds = %if.then22
+  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sret.result12)
+  %set.load = load { ptr }, ptr %sret.result29, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end28
 
-if.end29:                                         ; preds = %if.then28, %if.then23
-  %call31 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  %eq32 = icmp eq i1 %call31, false
-  br i1 %eq32, label %if.then33, label %if.end34
+if.end28:                                         ; preds = %if.then27, %if.then22
+  %call30 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  %eq31 = icmp eq i1 %call30, false
+  br i1 %eq31, label %if.then32, label %if.end33
 
-if.then33:                                        ; preds = %if.end29
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result12)
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sret.result25, ptr %sret.result35)
-  %set.load37 = load { ptr }, ptr %sret.result36, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call26, ptr %blob)
-  br label %if.end34
+if.then32:                                        ; preds = %if.end28
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %sret.result12)
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result24, ptr %sret.result34)
+  %set.load36 = load { ptr }, ptr %sret.result35, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call25, ptr %blob)
+  br label %if.end33
 
-if.end34:                                         ; preds = %if.then33, %if.end29
-  call void @_ZN7symbols20members_from_ws_blobEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %blob, ptr %4)
-  %set.load38 = load { ptr }, ptr %sret.result35, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end24
+if.end33:                                         ; preds = %if.then32, %if.end28
+  call void @_ZN7symbols20members_from_ws_blobEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %blob, ptr %4)
+  %set.load37 = load { ptr }, ptr %sret.result34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end23
 }
 
 define linkonce_odr void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -69369,11 +69365,11 @@ choose.when1:                                     ; preds = %entry
 
 define linkonce_odr void @_ZN7symbols18member_type_in_dirEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
 entry:
-  %sret.result36 = alloca { ptr }, align 8
   %sret.result35 = alloca { ptr }, align 8
-  %sret.result30 = alloca { ptr }, align 8
+  %sret.result34 = alloca { ptr }, align 8
+  %sret.result29 = alloca { ptr }, align 8
   %blob = alloca { ptr }, align 8
-  %sret.result25 = alloca { ptr }, align 8
+  %sret.result24 = alloca { ptr }, align 8
   %sret.result12 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -69407,7 +69403,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %result42 = load { ptr }, ptr %result, align 8
+  %result41 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
@@ -69417,9 +69413,9 @@ if.then6:                                         ; preds = %while.body
   br i1 %eq9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %while.body
-  %i40 = load i64, ptr %i, align 4
-  %add41 = add i64 %i40, 1
-  store i64 %add41, ptr %i, align 1
+  %i39 = load i64, ptr %i, align 4
+  %add40 = add i64 %i39, 1
+  store i64 %add40, ptr %i, align 1
   br label %while.cond
 
 if.then10:                                        ; preds = %if.then6
@@ -69431,60 +69427,60 @@ if.then10:                                        ; preds = %if.then6
   br i1 %gt, label %if.then16, label %if.end17
 
 if.end11:                                         ; preds = %if.end17, %if.then6
-  %i39 = load i64, ptr %i, align 4
-  %add = add i64 %i39, 1
+  %i38 = load i64, ptr %i, align 4
+  %add = add i64 %i38, 1
   store i64 %add, ptr %line_start, align 1
   br label %if.end7
 
 if.then16:                                        ; preds = %if.then10
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %sret.result12, ptr %3)
-  %eq19 = icmp eq i1 %call18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %not = xor i1 %call18, true
+  br i1 %not, label %if.then19, label %if.end20
 
-if.end17:                                         ; preds = %if.end21, %if.then10
+if.end17:                                         ; preds = %if.end20, %if.then10
   br label %if.end11
 
-if.then20:                                        ; preds = %if.then16
-  %call22 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
-  br i1 %call22, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %if.then16
+  %call21 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
+  br i1 %call21, label %if.then22, label %if.end23
 
-if.end21:                                         ; preds = %if.end24, %if.then16
+if.end20:                                         ; preds = %if.end23, %if.then16
   br label %if.end17
 
-if.then23:                                        ; preds = %if.then20
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result12)
-  %call26 = call i64 @_ZN6String4hashEv(ptr %sret.result25)
+if.then22:                                        ; preds = %if.then19
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sret.result12)
+  %call25 = call i64 @_ZN6String4hashEv(ptr %sret.result24)
   store { ptr } zeroinitializer, ptr %blob, align 1
-  %call27 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  br i1 %call27, label %if.then28, label %if.end29
+  %call26 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  br i1 %call26, label %if.then27, label %if.end28
 
-if.end24:                                         ; preds = %if.end34, %if.then20
-  br label %if.end21
+if.end23:                                         ; preds = %if.end33, %if.then19
+  br label %if.end20
 
-if.then28:                                        ; preds = %if.then23
-  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %sret.result12)
-  %set.load = load { ptr }, ptr %sret.result30, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end29
+if.then27:                                        ; preds = %if.then22
+  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sret.result12)
+  %set.load = load { ptr }, ptr %sret.result29, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end28
 
-if.end29:                                         ; preds = %if.then28, %if.then23
-  %call31 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  %eq32 = icmp eq i1 %call31, false
-  br i1 %eq32, label %if.then33, label %if.end34
+if.end28:                                         ; preds = %if.then27, %if.then22
+  %call30 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  %eq31 = icmp eq i1 %call30, false
+  br i1 %eq31, label %if.then32, label %if.end33
 
-if.then33:                                        ; preds = %if.end29
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result12)
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sret.result25, ptr %sret.result35)
-  %set.load37 = load { ptr }, ptr %sret.result36, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call26, ptr %blob)
-  br label %if.end34
+if.then32:                                        ; preds = %if.end28
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %sret.result12)
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result24, ptr %sret.result34)
+  %set.load36 = load { ptr }, ptr %sret.result35, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call25, ptr %blob)
+  br label %if.end33
 
-if.end34:                                         ; preds = %if.then33, %if.end29
-  call void @_ZN7symbols24member_type_from_ws_blobEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %blob, ptr %4, ptr %5)
-  %set.load38 = load { ptr }, ptr %sret.result35, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end24
+if.end33:                                         ; preds = %if.then32, %if.end28
+  call void @_ZN7symbols24member_type_from_ws_blobEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %blob, ptr %4, ptr %5)
+  %set.load37 = load { ptr }, ptr %sret.result34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end23
 }
 
 define linkonce_odr void @_ZN7symbols14member_type_wsEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
@@ -69526,8 +69522,8 @@ if.end7:                                          ; preds = %if.end
 
 if.then12:                                        ; preds = %if.end7
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result9, ptr %sret.result2)
-  %eq = icmp eq i1 %call14, false
-  br i1 %eq, label %if.then15, label %if.end16
+  %not = xor i1 %call14, true
+  br i1 %not, label %if.then15, label %if.end16
 
 if.end13:                                         ; preds = %if.end16, %if.end7
   store { ptr } zeroinitializer, ptr %0, align 1
@@ -70074,8 +70070,8 @@ choose.when6:                                     ; preds = %entry
 
 define linkonce_odr void @_ZN7symbols27function_return_type_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result26 = alloca { ptr }, align 8
   %sret.result25 = alloca { ptr }, align 8
+  %sret.result24 = alloca { ptr }, align 8
   %sret.result12 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -70109,7 +70105,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %result30 = load { ptr }, ptr %result, align 8
+  %result29 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
@@ -70119,9 +70115,9 @@ if.then6:                                         ; preds = %while.body
   br i1 %eq9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %while.body
-  %i28 = load i64, ptr %i, align 4
-  %add29 = add i64 %i28, 1
-  store i64 %add29, ptr %i, align 1
+  %i27 = load i64, ptr %i, align 4
+  %add28 = add i64 %i27, 1
+  store i64 %add28, ptr %i, align 1
   br label %while.cond
 
 if.then10:                                        ; preds = %if.then6
@@ -70133,35 +70129,35 @@ if.then10:                                        ; preds = %if.then6
   br i1 %gt, label %if.then16, label %if.end17
 
 if.end11:                                         ; preds = %if.end17, %if.then6
-  %i27 = load i64, ptr %i, align 4
-  %add = add i64 %i27, 1
+  %i26 = load i64, ptr %i, align 4
+  %add = add i64 %i26, 1
   store i64 %add, ptr %line_start, align 1
   br label %if.end7
 
 if.then16:                                        ; preds = %if.then10
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %sret.result12, ptr %3)
-  %eq19 = icmp eq i1 %call18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %not = xor i1 %call18, true
+  br i1 %not, label %if.then19, label %if.end20
 
-if.end17:                                         ; preds = %if.end21, %if.then10
+if.end17:                                         ; preds = %if.end20, %if.then10
   br label %if.end11
 
-if.then20:                                        ; preds = %if.then16
-  %call22 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
-  br i1 %call22, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %if.then16
+  %call21 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
+  br i1 %call21, label %if.then22, label %if.end23
 
-if.end21:                                         ; preds = %if.end24, %if.then16
+if.end20:                                         ; preds = %if.end23, %if.then16
   br label %if.end17
 
-if.then23:                                        ; preds = %if.then20
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result12)
-  call void @_ZN7symbols20function_return_typeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result26, ptr %1, ptr %sret.result25, ptr %4)
-  %set.load = load { ptr }, ptr %sret.result26, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result26, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end24
+if.then22:                                        ; preds = %if.then19
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sret.result12)
+  call void @_ZN7symbols20function_return_typeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result24, ptr %4)
+  %set.load = load { ptr }, ptr %sret.result25, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end23
 
-if.end24:                                         ; preds = %if.then23, %if.then20
-  br label %if.end21
+if.end23:                                         ; preds = %if.then22, %if.then19
+  br label %if.end20
 }
 
 define linkonce_odr void @_ZN7symbols8mem_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -72657,8 +72653,8 @@ if.end:                                           ; preds = %entry
 
 if.then6:                                         ; preds = %if.end
   %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %eq = icmp eq i1 %call8, false
-  br i1 %eq, label %if.then9, label %if.end10
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then9, label %if.end10
 
 if.end7:                                          ; preds = %if.end10, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
@@ -72776,11 +72772,11 @@ if.end29:                                         ; preds = %while.exit
 
 define linkonce_odr void @_ZN7symbols22find_definition_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result36 = alloca { ptr }, align 8
   %sret.result35 = alloca { ptr }, align 8
-  %sret.result30 = alloca { ptr }, align 8
+  %sret.result34 = alloca { ptr }, align 8
+  %sret.result29 = alloca { ptr }, align 8
   %blob = alloca { ptr }, align 8
-  %sret.result25 = alloca { ptr }, align 8
+  %sret.result24 = alloca { ptr }, align 8
   %sret.result12 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -72814,7 +72810,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %result42 = load { ptr }, ptr %result, align 8
+  %result41 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
@@ -72824,9 +72820,9 @@ if.then6:                                         ; preds = %while.body
   br i1 %eq9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %while.body
-  %i40 = load i64, ptr %i, align 4
-  %add41 = add i64 %i40, 1
-  store i64 %add41, ptr %i, align 1
+  %i39 = load i64, ptr %i, align 4
+  %add40 = add i64 %i39, 1
+  store i64 %add40, ptr %i, align 1
   br label %while.cond
 
 if.then10:                                        ; preds = %if.then6
@@ -72838,60 +72834,60 @@ if.then10:                                        ; preds = %if.then6
   br i1 %gt, label %if.then16, label %if.end17
 
 if.end11:                                         ; preds = %if.end17, %if.then6
-  %i39 = load i64, ptr %i, align 4
-  %add = add i64 %i39, 1
+  %i38 = load i64, ptr %i, align 4
+  %add = add i64 %i38, 1
   store i64 %add, ptr %line_start, align 1
   br label %if.end7
 
 if.then16:                                        ; preds = %if.then10
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %sret.result12, ptr %3)
-  %eq19 = icmp eq i1 %call18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %not = xor i1 %call18, true
+  br i1 %not, label %if.then19, label %if.end20
 
-if.end17:                                         ; preds = %if.end21, %if.then10
+if.end17:                                         ; preds = %if.end20, %if.then10
   br label %if.end11
 
-if.then20:                                        ; preds = %if.then16
-  %call22 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
-  br i1 %call22, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %if.then16
+  %call21 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
+  br i1 %call21, label %if.then22, label %if.end23
 
-if.end21:                                         ; preds = %if.end24, %if.then16
+if.end20:                                         ; preds = %if.end23, %if.then16
   br label %if.end17
 
-if.then23:                                        ; preds = %if.then20
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result12)
-  %call26 = call i64 @_ZN6String4hashEv(ptr %sret.result25)
+if.then22:                                        ; preds = %if.then19
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sret.result12)
+  %call25 = call i64 @_ZN6String4hashEv(ptr %sret.result24)
   store { ptr } zeroinitializer, ptr %blob, align 1
-  %call27 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  br i1 %call27, label %if.then28, label %if.end29
+  %call26 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  br i1 %call26, label %if.then27, label %if.end28
 
-if.end24:                                         ; preds = %if.end34, %if.then20
-  br label %if.end21
+if.end23:                                         ; preds = %if.end33, %if.then19
+  br label %if.end20
 
-if.then28:                                        ; preds = %if.then23
-  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %sret.result12)
-  %set.load = load { ptr }, ptr %sret.result30, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end29
+if.then27:                                        ; preds = %if.then22
+  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sret.result12)
+  %set.load = load { ptr }, ptr %sret.result29, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end28
 
-if.end29:                                         ; preds = %if.then28, %if.then23
-  %call31 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  %eq32 = icmp eq i1 %call31, false
-  br i1 %eq32, label %if.then33, label %if.end34
+if.end28:                                         ; preds = %if.then27, %if.then22
+  %call30 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  %eq31 = icmp eq i1 %call30, false
+  br i1 %eq31, label %if.then32, label %if.end33
 
-if.then33:                                        ; preds = %if.end29
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result12)
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sret.result25, ptr %sret.result35)
-  %set.load37 = load { ptr }, ptr %sret.result36, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call26, ptr %blob)
-  br label %if.end34
+if.then32:                                        ; preds = %if.end28
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %sret.result12)
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result24, ptr %sret.result34)
+  %set.load36 = load { ptr }, ptr %sret.result35, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call25, ptr %blob)
+  br label %if.end33
 
-if.end34:                                         ; preds = %if.then33, %if.end29
-  call void @_ZN7symbols16def_from_ws_blobEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %blob, ptr %4)
-  %set.load38 = load { ptr }, ptr %sret.result35, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end24
+if.end33:                                         ; preds = %if.then32, %if.end28
+  call void @_ZN7symbols16def_from_ws_blobEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %blob, ptr %4)
+  %set.load37 = load { ptr }, ptr %sret.result34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end23
 }
 
 define linkonce_odr void @_ZN7symbols16def_from_ws_blobEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -74030,11 +74026,11 @@ if.end75:                                         ; preds = %if.end71
 define linkonce_odr i1 @_ZN7symbols14concept_in_dirEPN4scaly6memory4PageE6String6String6String(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
-  %sret.result36 = alloca { ptr }, align 8
   %sret.result35 = alloca { ptr }, align 8
-  %sret.result30 = alloca { ptr }, align 8
+  %sret.result34 = alloca { ptr }, align 8
+  %sret.result29 = alloca { ptr }, align 8
   %blob = alloca { ptr }, align 8
-  %sret.result25 = alloca { ptr }, align 8
+  %sret.result24 = alloca { ptr }, align 8
   %sret.result12 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -74068,9 +74064,9 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %found44 = load i1, ptr %found, align 1
+  %found43 = load i1, ptr %found, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret i1 %found44
+  ret i1 %found43
 
 if.then6:                                         ; preds = %while.body
   %found8 = load i1, ptr %found, align 1
@@ -74078,9 +74074,9 @@ if.then6:                                         ; preds = %while.body
   br i1 %eq9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %while.body
-  %i42 = load i64, ptr %i, align 4
-  %add43 = add i64 %i42, 1
-  store i64 %add43, ptr %i, align 1
+  %i41 = load i64, ptr %i, align 4
+  %add42 = add i64 %i41, 1
+  store i64 %add42, ptr %i, align 1
   br label %while.cond
 
 if.then10:                                        ; preds = %if.then6
@@ -74092,65 +74088,65 @@ if.then10:                                        ; preds = %if.then6
   br i1 %gt, label %if.then16, label %if.end17
 
 if.end11:                                         ; preds = %if.end17, %if.then6
-  %i41 = load i64, ptr %i, align 4
-  %add = add i64 %i41, 1
+  %i40 = load i64, ptr %i, align 4
+  %add = add i64 %i40, 1
   store i64 %add, ptr %line_start, align 1
   br label %if.end7
 
 if.then16:                                        ; preds = %if.then10
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %sret.result12, ptr %2)
-  %eq19 = icmp eq i1 %call18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %not = xor i1 %call18, true
+  br i1 %not, label %if.then19, label %if.end20
 
-if.end17:                                         ; preds = %if.end21, %if.then10
+if.end17:                                         ; preds = %if.end20, %if.then10
   br label %if.end11
 
-if.then20:                                        ; preds = %if.then16
-  %call22 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
-  br i1 %call22, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %if.then16
+  %call21 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
+  br i1 %call21, label %if.then22, label %if.end23
 
-if.end21:                                         ; preds = %if.end24, %if.then16
+if.end20:                                         ; preds = %if.end23, %if.then16
   br label %if.end17
 
-if.then23:                                        ; preds = %if.then20
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %0, ptr %sret.result12)
-  %call26 = call i64 @_ZN6String4hashEv(ptr %sret.result25)
+if.then22:                                        ; preds = %if.then19
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %0, ptr %sret.result12)
+  %call25 = call i64 @_ZN6String4hashEv(ptr %sret.result24)
   store { ptr } zeroinitializer, ptr %blob, align 1
-  %call27 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  br i1 %call27, label %if.then28, label %if.end29
+  %call26 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  br i1 %call26, label %if.then27, label %if.end28
 
-if.end24:                                         ; preds = %if.end40, %if.then20
-  br label %if.end21
+if.end23:                                         ; preds = %if.end39, %if.then19
+  br label %if.end20
 
-if.then28:                                        ; preds = %if.then23
-  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %0, ptr %sret.result12)
-  %set.load = load { ptr }, ptr %sret.result30, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end29
+if.then27:                                        ; preds = %if.then22
+  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %0, ptr %sret.result12)
+  %set.load = load { ptr }, ptr %sret.result29, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end28
 
-if.end29:                                         ; preds = %if.then28, %if.then23
-  %call31 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  %eq32 = icmp eq i1 %call31, false
-  br i1 %eq32, label %if.then33, label %if.end34
+if.end28:                                         ; preds = %if.then27, %if.then22
+  %call30 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  %eq31 = icmp eq i1 %call30, false
+  br i1 %eq31, label %if.then32, label %if.end33
 
-if.then33:                                        ; preds = %if.end29
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result35, ptr %0, ptr %sret.result12)
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result36, ptr %0, ptr %sret.result25, ptr %sret.result35)
-  %set.load37 = load { ptr }, ptr %sret.result36, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call26, ptr %blob)
-  br label %if.end34
+if.then32:                                        ; preds = %if.end28
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result34, ptr %0, ptr %sret.result12)
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %0, ptr %sret.result24, ptr %sret.result34)
+  %set.load36 = load { ptr }, ptr %sret.result35, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call25, ptr %blob)
+  br label %if.end33
 
-if.end34:                                         ; preds = %if.then33, %if.end29
-  %call38 = call i1 @_ZN7symbols18concept_in_ws_blobEPN4scaly6memory4PageE6String6String(ptr %local_page, ptr %blob, ptr %3)
-  br i1 %call38, label %if.then39, label %if.end40
+if.end33:                                         ; preds = %if.then32, %if.end28
+  %call37 = call i1 @_ZN7symbols18concept_in_ws_blobEPN4scaly6memory4PageE6String6String(ptr %local_page, ptr %blob, ptr %3)
+  br i1 %call37, label %if.then38, label %if.end39
 
-if.then39:                                        ; preds = %if.end34
+if.then38:                                        ; preds = %if.end33
   store i1 true, ptr %found, align 1
-  br label %if.end40
+  br label %if.end39
 
-if.end40:                                         ; preds = %if.then39, %if.end34
-  br label %if.end24
+if.end39:                                         ; preds = %if.then38, %if.end33
+  br label %if.end23
 }
 
 define linkonce_odr i1 @_ZN7symbols20concept_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %0, ptr %1, ptr %2) {
@@ -74176,8 +74172,8 @@ if.end:                                           ; preds = %entry
 
 if.then4:                                         ; preds = %if.end
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %sret.result1)
-  %eq = icmp eq i1 %call6, false
-  br i1 %eq, label %if.then7, label %if.end8
+  %not = xor i1 %call6, true
+  br i1 %not, label %if.then7, label %if.end8
 
 if.end5:                                          ; preds = %if.end8, %if.end
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
@@ -74194,11 +74190,11 @@ if.end8:                                          ; preds = %if.then4
 
 define linkonce_odr void @_ZN7symbols18return_type_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result36 = alloca { ptr }, align 8
   %sret.result35 = alloca { ptr }, align 8
-  %sret.result30 = alloca { ptr }, align 8
+  %sret.result34 = alloca { ptr }, align 8
+  %sret.result29 = alloca { ptr }, align 8
   %blob = alloca { ptr }, align 8
-  %sret.result25 = alloca { ptr }, align 8
+  %sret.result24 = alloca { ptr }, align 8
   %sret.result12 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -74232,7 +74228,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %result42 = load { ptr }, ptr %result, align 8
+  %result41 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
@@ -74242,9 +74238,9 @@ if.then6:                                         ; preds = %while.body
   br i1 %eq9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %while.body
-  %i40 = load i64, ptr %i, align 4
-  %add41 = add i64 %i40, 1
-  store i64 %add41, ptr %i, align 1
+  %i39 = load i64, ptr %i, align 4
+  %add40 = add i64 %i39, 1
+  store i64 %add40, ptr %i, align 1
   br label %while.cond
 
 if.then10:                                        ; preds = %if.then6
@@ -74256,60 +74252,60 @@ if.then10:                                        ; preds = %if.then6
   br i1 %gt, label %if.then16, label %if.end17
 
 if.end11:                                         ; preds = %if.end17, %if.then6
-  %i39 = load i64, ptr %i, align 4
-  %add = add i64 %i39, 1
+  %i38 = load i64, ptr %i, align 4
+  %add = add i64 %i38, 1
   store i64 %add, ptr %line_start, align 1
   br label %if.end7
 
 if.then16:                                        ; preds = %if.then10
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %sret.result12, ptr %3)
-  %eq19 = icmp eq i1 %call18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %not = xor i1 %call18, true
+  br i1 %not, label %if.then19, label %if.end20
 
-if.end17:                                         ; preds = %if.end21, %if.then10
+if.end17:                                         ; preds = %if.end20, %if.then10
   br label %if.end11
 
-if.then20:                                        ; preds = %if.then16
-  %call22 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
-  br i1 %call22, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %if.then16
+  %call21 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
+  br i1 %call21, label %if.then22, label %if.end23
 
-if.end21:                                         ; preds = %if.end24, %if.then16
+if.end20:                                         ; preds = %if.end23, %if.then16
   br label %if.end17
 
-if.then23:                                        ; preds = %if.then20
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result12)
-  %call26 = call i64 @_ZN6String4hashEv(ptr %sret.result25)
+if.then22:                                        ; preds = %if.then19
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sret.result12)
+  %call25 = call i64 @_ZN6String4hashEv(ptr %sret.result24)
   store { ptr } zeroinitializer, ptr %blob, align 1
-  %call27 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  br i1 %call27, label %if.then28, label %if.end29
+  %call26 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  br i1 %call26, label %if.then27, label %if.end28
 
-if.end24:                                         ; preds = %if.end34, %if.then20
-  br label %if.end21
+if.end23:                                         ; preds = %if.end33, %if.then19
+  br label %if.end20
 
-if.then28:                                        ; preds = %if.then23
-  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %sret.result12)
-  %set.load = load { ptr }, ptr %sret.result30, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end29
+if.then27:                                        ; preds = %if.then22
+  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sret.result12)
+  %set.load = load { ptr }, ptr %sret.result29, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end28
 
-if.end29:                                         ; preds = %if.then28, %if.then23
-  %call31 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  %eq32 = icmp eq i1 %call31, false
-  br i1 %eq32, label %if.then33, label %if.end34
+if.end28:                                         ; preds = %if.then27, %if.then22
+  %call30 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  %eq31 = icmp eq i1 %call30, false
+  br i1 %eq31, label %if.then32, label %if.end33
 
-if.then33:                                        ; preds = %if.end29
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result12)
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sret.result25, ptr %sret.result35)
-  %set.load37 = load { ptr }, ptr %sret.result36, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call26, ptr %blob)
-  br label %if.end34
+if.then32:                                        ; preds = %if.end28
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %sret.result12)
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result24, ptr %sret.result34)
+  %set.load36 = load { ptr }, ptr %sret.result35, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call25, ptr %blob)
+  br label %if.end33
 
-if.end34:                                         ; preds = %if.then33, %if.end29
-  call void @_ZN7symbols24return_type_from_ws_blobEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %blob, ptr %4)
-  %set.load38 = load { ptr }, ptr %sret.result35, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end24
+if.end33:                                         ; preds = %if.then32, %if.end28
+  call void @_ZN7symbols24return_type_from_ws_blobEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %blob, ptr %4)
+  %set.load37 = load { ptr }, ptr %sret.result34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end23
 }
 
 define linkonce_odr void @_ZN7symbols24return_type_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -74339,8 +74335,8 @@ if.end:                                           ; preds = %entry
 
 if.then6:                                         ; preds = %if.end
   %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %eq = icmp eq i1 %call8, false
-  br i1 %eq, label %if.then9, label %if.end10
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then9, label %if.end10
 
 if.end7:                                          ; preds = %if.end10, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
@@ -74359,8 +74355,8 @@ if.end10:                                         ; preds = %if.then6
 define linkonce_odr void @_ZN7symbols19tagged_names_in_dirEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %ci = alloca i64, align 8
-  %sret.result22 = alloca { ptr }, align 8
   %sret.result21 = alloca { ptr }, align 8
+  %sret.result20 = alloca { ptr }, align 8
   %sret.result8 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -74398,8 +74394,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %sb37 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb37)
+  %sb36 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb36)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %sret.result8, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -74414,56 +74410,56 @@ if.then6:                                         ; preds = %while.body
   br i1 %gt, label %if.then12, label %if.end13
 
 if.end7:                                          ; preds = %if.end13, %while.body
-  %i35 = load i64, ptr %i, align 4
-  %add36 = add i64 %i35, 1
-  store i64 %add36, ptr %i, align 1
+  %i34 = load i64, ptr %i, align 4
+  %add35 = add i64 %i34, 1
+  store i64 %add35, ptr %i, align 1
   br label %while.cond
 
 if.then12:                                        ; preds = %if.then6
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result8, ptr %3)
-  %eq15 = icmp eq i1 %call14, false
-  br i1 %eq15, label %if.then16, label %if.end17
+  %not = xor i1 %call14, true
+  br i1 %not, label %if.then15, label %if.end16
 
-if.end13:                                         ; preds = %if.end17, %if.then6
-  %i33 = load i64, ptr %i, align 4
-  %add34 = add i64 %i33, 1
-  store i64 %add34, ptr %line_start, align 1
+if.end13:                                         ; preds = %if.end16, %if.then6
+  %i32 = load i64, ptr %i, align 4
+  %add33 = add i64 %i32, 1
+  store i64 %add33, ptr %line_start, align 1
   br label %if.end7
 
-if.then16:                                        ; preds = %if.then12
-  %call18 = call i1 @_ZN4File6existsE6String(ptr %sret.result8)
-  br i1 %call18, label %if.then19, label %if.end20
+if.then15:                                        ; preds = %if.then12
+  %call17 = call i1 @_ZN4File6existsE6String(ptr %sret.result8)
+  br i1 %call17, label %if.then18, label %if.end19
 
-if.end17:                                         ; preds = %if.end20, %if.then12
+if.end16:                                         ; preds = %if.end19, %if.then12
   br label %if.end13
 
-if.then19:                                        ; preds = %if.then16
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result21, ptr %local_page, ptr %sret.result8)
-  call void @_ZN7symbols20tagged_names_lexicalEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr %sret.result21)
+if.then18:                                        ; preds = %if.then15
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr %sret.result8)
+  call void @_ZN7symbols20tagged_names_lexicalEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result21, ptr %local_page, ptr %sret.result20)
   store i64 0, ptr %ci, align 1
-  %call23 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result22)
-  br label %while.cond24
+  %call22 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result21)
+  br label %while.cond23
 
-if.end20:                                         ; preds = %while.exit26, %if.then16
-  br label %if.end17
+if.end19:                                         ; preds = %while.exit25, %if.then15
+  br label %if.end16
 
-while.cond24:                                     ; preds = %while.body25, %if.then19
-  %ci27 = load i64, ptr %ci, align 4
-  %lt28 = icmp ult i64 %ci27, %call23
-  br i1 %lt28, label %while.body25, label %while.exit26
+while.cond23:                                     ; preds = %while.body24, %if.then18
+  %ci26 = load i64, ptr %ci, align 4
+  %lt27 = icmp ult i64 %ci26, %call22
+  br i1 %lt27, label %while.body24, label %while.exit25
 
-while.body25:                                     ; preds = %while.cond24
-  %sb29 = load ptr, ptr %sb, align 8
-  %ci30 = load i64, ptr %ci, align 4
-  %call31 = call i8 @_ZN6String3getEm(ptr %sret.result22, i64 %ci30)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb29, i8 %call31)
-  %ci32 = load i64, ptr %ci, align 4
-  %add = add i64 %ci32, 1
+while.body24:                                     ; preds = %while.cond23
+  %sb28 = load ptr, ptr %sb, align 8
+  %ci29 = load i64, ptr %ci, align 4
+  %call30 = call i8 @_ZN6String3getEm(ptr %sret.result21, i64 %ci29)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb28, i8 %call30)
+  %ci31 = load i64, ptr %ci, align 4
+  %add = add i64 %ci31, 1
   store i64 %add, ptr %ci, align 1
-  br label %while.cond24
+  br label %while.cond23
 
-while.exit26:                                     ; preds = %while.cond24
-  br label %if.end20
+while.exit25:                                     ; preds = %while.cond23
+  br label %if.end19
 }
 
 define linkonce_odr void @_ZN7symbols25tagged_names_from_ws_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -74711,11 +74707,11 @@ while.exit82:                                     ; preds = %while.cond80
 define linkonce_odr void @_ZN7symbols22workspace_names_in_dirEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %ci = alloca i64, align 8
-  %sret.result32 = alloca { ptr }, align 8
   %sret.result31 = alloca { ptr }, align 8
-  %sret.result26 = alloca { ptr }, align 8
+  %sret.result30 = alloca { ptr }, align 8
+  %sret.result25 = alloca { ptr }, align 8
   %blob = alloca { ptr }, align 8
-  %sret.result21 = alloca { ptr }, align 8
+  %sret.result20 = alloca { ptr }, align 8
   %sret.result8 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -74753,8 +74749,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %sb48 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb48)
+  %sb47 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb47)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %sret.result8, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -74769,81 +74765,81 @@ if.then6:                                         ; preds = %while.body
   br i1 %gt, label %if.then12, label %if.end13
 
 if.end7:                                          ; preds = %if.end13, %while.body
-  %i46 = load i64, ptr %i, align 4
-  %add47 = add i64 %i46, 1
-  store i64 %add47, ptr %i, align 1
+  %i45 = load i64, ptr %i, align 4
+  %add46 = add i64 %i45, 1
+  store i64 %add46, ptr %i, align 1
   br label %while.cond
 
 if.then12:                                        ; preds = %if.then6
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result8, ptr %3)
-  %eq15 = icmp eq i1 %call14, false
-  br i1 %eq15, label %if.then16, label %if.end17
+  %not = xor i1 %call14, true
+  br i1 %not, label %if.then15, label %if.end16
 
-if.end13:                                         ; preds = %if.end17, %if.then6
-  %i44 = load i64, ptr %i, align 4
-  %add45 = add i64 %i44, 1
-  store i64 %add45, ptr %line_start, align 1
+if.end13:                                         ; preds = %if.end16, %if.then6
+  %i43 = load i64, ptr %i, align 4
+  %add44 = add i64 %i43, 1
+  store i64 %add44, ptr %line_start, align 1
   br label %if.end7
 
-if.then16:                                        ; preds = %if.then12
-  %call18 = call i1 @_ZN4File6existsE6String(ptr %sret.result8)
-  br i1 %call18, label %if.then19, label %if.end20
+if.then15:                                        ; preds = %if.then12
+  %call17 = call i1 @_ZN4File6existsE6String(ptr %sret.result8)
+  br i1 %call17, label %if.then18, label %if.end19
 
-if.end17:                                         ; preds = %if.end20, %if.then12
+if.end16:                                         ; preds = %if.end19, %if.then12
   br label %if.end13
 
-if.then19:                                        ; preds = %if.then16
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result21, ptr %1, ptr %sret.result8)
-  %call22 = call i64 @_ZN6String4hashEv(ptr %sret.result21)
+if.then18:                                        ; preds = %if.then15
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result20, ptr %1, ptr %sret.result8)
+  %call21 = call i64 @_ZN6String4hashEv(ptr %sret.result20)
   store { ptr } zeroinitializer, ptr %blob, align 1
-  %call23 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result8, i64 %call22)
-  br i1 %call23, label %if.then24, label %if.end25
+  %call22 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result8, i64 %call21)
+  br i1 %call22, label %if.then23, label %if.end24
 
-if.end20:                                         ; preds = %while.exit37, %if.then16
-  br label %if.end17
+if.end19:                                         ; preds = %while.exit36, %if.then15
+  br label %if.end16
 
-if.then24:                                        ; preds = %if.then19
-  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result26, ptr %1, ptr %sret.result8)
-  %set.load = load { ptr }, ptr %sret.result26, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result26, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end25
+if.then23:                                        ; preds = %if.then18
+  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result8)
+  %set.load = load { ptr }, ptr %sret.result25, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end24
 
-if.end25:                                         ; preds = %if.then24, %if.then19
-  %call27 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result8, i64 %call22)
-  %eq28 = icmp eq i1 %call27, false
-  br i1 %eq28, label %if.then29, label %if.end30
+if.end24:                                         ; preds = %if.then23, %if.then18
+  %call26 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result8, i64 %call21)
+  %eq27 = icmp eq i1 %call26, false
+  br i1 %eq27, label %if.then28, label %if.end29
 
-if.then29:                                        ; preds = %if.end25
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result31, ptr %1, ptr %sret.result8)
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result32, ptr %1, ptr %sret.result21, ptr %sret.result31)
-  %set.load33 = load { ptr }, ptr %sret.result32, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result8, i64 %call22, ptr %blob)
-  br label %if.end30
+if.then28:                                        ; preds = %if.end24
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %sret.result8)
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result31, ptr %1, ptr %sret.result20, ptr %sret.result30)
+  %set.load32 = load { ptr }, ptr %sret.result31, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result31, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result8, i64 %call21, ptr %blob)
+  br label %if.end29
 
-if.end30:                                         ; preds = %if.then29, %if.end25
-  call void @_ZN7symbols25tagged_names_from_ws_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result31, ptr %local_page, ptr %blob)
+if.end29:                                         ; preds = %if.then28, %if.end24
+  call void @_ZN7symbols25tagged_names_from_ws_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %local_page, ptr %blob)
   store i64 0, ptr %ci, align 1
-  %call34 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result31)
-  br label %while.cond35
+  %call33 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result30)
+  br label %while.cond34
 
-while.cond35:                                     ; preds = %while.body36, %if.end30
-  %ci38 = load i64, ptr %ci, align 4
-  %lt39 = icmp ult i64 %ci38, %call34
-  br i1 %lt39, label %while.body36, label %while.exit37
+while.cond34:                                     ; preds = %while.body35, %if.end29
+  %ci37 = load i64, ptr %ci, align 4
+  %lt38 = icmp ult i64 %ci37, %call33
+  br i1 %lt38, label %while.body35, label %while.exit36
 
-while.body36:                                     ; preds = %while.cond35
-  %sb40 = load ptr, ptr %sb, align 8
-  %ci41 = load i64, ptr %ci, align 4
-  %call42 = call i8 @_ZN6String3getEm(ptr %sret.result31, i64 %ci41)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb40, i8 %call42)
-  %ci43 = load i64, ptr %ci, align 4
-  %add = add i64 %ci43, 1
+while.body35:                                     ; preds = %while.cond34
+  %sb39 = load ptr, ptr %sb, align 8
+  %ci40 = load i64, ptr %ci, align 4
+  %call41 = call i8 @_ZN6String3getEm(ptr %sret.result30, i64 %ci40)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb39, i8 %call41)
+  %ci42 = load i64, ptr %ci, align 4
+  %add = add i64 %ci42, 1
   store i64 %add, ptr %ci, align 1
-  br label %while.cond35
+  br label %while.cond34
 
-while.exit37:                                     ; preds = %while.cond35
-  br label %if.end20
+while.exit36:                                     ; preds = %while.cond34
+  br label %if.end19
 }
 
 define linkonce_odr i1 @_ZN7symbols16is_noncode_startE2u8(i8 %0) {
@@ -81803,8 +81799,8 @@ if.end:                                           ; preds = %entry
 
 if.then6:                                         ; preds = %if.end
   %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %eq = icmp eq i1 %call8, false
-  br i1 %eq, label %if.then9, label %if.end10
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then9, label %if.end10
 
 if.end7:                                          ; preds = %if.end10, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
@@ -88308,11 +88304,11 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr void @_ZN7symbols21find_signature_in_dirEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) {
 entry:
-  %sret.result36 = alloca { ptr }, align 8
   %sret.result35 = alloca { ptr }, align 8
-  %sret.result30 = alloca { ptr }, align 8
+  %sret.result34 = alloca { ptr }, align 8
+  %sret.result29 = alloca { ptr }, align 8
   %blob = alloca { ptr }, align 8
-  %sret.result25 = alloca { ptr }, align 8
+  %sret.result24 = alloca { ptr }, align 8
   %sret.result12 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %line_start = alloca i64, align 8
@@ -88346,7 +88342,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq5, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %result42 = load { ptr }, ptr %result, align 8
+  %result41 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
@@ -88356,9 +88352,9 @@ if.then6:                                         ; preds = %while.body
   br i1 %eq9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %while.body
-  %i40 = load i64, ptr %i, align 4
-  %add41 = add i64 %i40, 1
-  store i64 %add41, ptr %i, align 1
+  %i39 = load i64, ptr %i, align 4
+  %add40 = add i64 %i39, 1
+  store i64 %add40, ptr %i, align 1
   br label %while.cond
 
 if.then10:                                        ; preds = %if.then6
@@ -88370,60 +88366,60 @@ if.then10:                                        ; preds = %if.then6
   br i1 %gt, label %if.then16, label %if.end17
 
 if.end11:                                         ; preds = %if.end17, %if.then6
-  %i39 = load i64, ptr %i, align 4
-  %add = add i64 %i39, 1
+  %i38 = load i64, ptr %i, align 4
+  %add = add i64 %i38, 1
   store i64 %add, ptr %line_start, align 1
   br label %if.end7
 
 if.then16:                                        ; preds = %if.then10
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %sret.result12, ptr %3)
-  %eq19 = icmp eq i1 %call18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %not = xor i1 %call18, true
+  br i1 %not, label %if.then19, label %if.end20
 
-if.end17:                                         ; preds = %if.end21, %if.then10
+if.end17:                                         ; preds = %if.end20, %if.then10
   br label %if.end11
 
-if.then20:                                        ; preds = %if.then16
-  %call22 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
-  br i1 %call22, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %if.then16
+  %call21 = call i1 @_ZN4File6existsE6String(ptr %sret.result12)
+  br i1 %call21, label %if.then22, label %if.end23
 
-if.end21:                                         ; preds = %if.end24, %if.then16
+if.end20:                                         ; preds = %if.end23, %if.then16
   br label %if.end17
 
-if.then23:                                        ; preds = %if.then20
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result12)
-  %call26 = call i64 @_ZN6String4hashEv(ptr %sret.result25)
+if.then22:                                        ; preds = %if.then19
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sret.result12)
+  %call25 = call i64 @_ZN6String4hashEv(ptr %sret.result24)
   store { ptr } zeroinitializer, ptr %blob, align 1
-  %call27 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  br i1 %call27, label %if.then28, label %if.end29
+  %call26 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  br i1 %call26, label %if.then27, label %if.end28
 
-if.end24:                                         ; preds = %if.end34, %if.then20
-  br label %if.end21
+if.end23:                                         ; preds = %if.end33, %if.then19
+  br label %if.end20
 
-if.then28:                                        ; preds = %if.then23
-  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %sret.result12)
-  %set.load = load { ptr }, ptr %sret.result30, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end29
+if.then27:                                        ; preds = %if.then22
+  call void @_ZN8symindex8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sret.result12)
+  %set.load = load { ptr }, ptr %sret.result29, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end28
 
-if.end29:                                         ; preds = %if.then28, %if.then23
-  %call31 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call26)
-  %eq32 = icmp eq i1 %call31, false
-  br i1 %eq32, label %if.then33, label %if.end34
+if.end28:                                         ; preds = %if.then27, %if.then22
+  %call30 = call i1 @_ZN8symindex5validE6Stringm(ptr %sret.result12, i64 %call25)
+  %eq31 = icmp eq i1 %call30, false
+  br i1 %eq31, label %if.then32, label %if.end33
 
-if.then33:                                        ; preds = %if.end29
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result12)
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sret.result25, ptr %sret.result35)
-  %set.load37 = load { ptr }, ptr %sret.result36, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call26, ptr %blob)
-  br label %if.end34
+if.then32:                                        ; preds = %if.end28
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %sret.result12)
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sret.result24, ptr %sret.result34)
+  %set.load36 = load { ptr }, ptr %sret.result35, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %blob, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8symindex3putE6Stringm6String(ptr %sret.result12, i64 %call25, ptr %blob)
+  br label %if.end33
 
-if.end34:                                         ; preds = %if.then33, %if.end29
-  call void @_ZN7symbols16sig_from_ws_blobEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %blob, ptr %4, i64 %5)
-  %set.load38 = load { ptr }, ptr %sret.result35, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end24
+if.end33:                                         ; preds = %if.then32, %if.end28
+  call void @_ZN7symbols16sig_from_ws_blobEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %blob, ptr %4, i64 %5)
+  %set.load37 = load { ptr }, ptr %sret.result34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end23
 }
 
 define linkonce_odr i64 @_ZN8semantic18position_to_offsetEPN4scaly6memory4PageE6Stringmm(ptr %0, ptr %1, i64 %2, i64 %3) {
@@ -103190,6 +103186,8 @@ declare ptr @_Z3getPv(ptr)
 
 declare void @_ZN6StringC1E6String(ptr, ptr)
 
+declare i1 @_ZN6String6equalsEP10const_char(...)
+
 declare void @_ZN13StringBuilderC1Ev(ptr)
 
 declare i64 @strlen(...)
@@ -103199,6 +103197,8 @@ declare i64 @read(...)
 declare void @_ZN6StringC1Em(ptr, i64)
 
 declare i64 @write(...)
+
+declare i1 @_ZN6String6equalsE6String(...)
 
 declare i64 @_ZN7hashing9get_primeEm(...)
 
