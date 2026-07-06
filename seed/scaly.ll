@@ -2719,12 +2719,12 @@ if.then:                                          ; preds = %while.body
   br i1 %ne5, label %if.then6, label %if.end7
 
 if.end:                                           ; preds = %while.body
-  %node18 = load ptr, ptr %node, align 8
-  store ptr %node18, ptr %previous_node, align 1
-  %node19 = load ptr, ptr %node, align 8
-  %load.struct20 = load %_Z4NodeIiE, ptr %node19, align 8
-  %next21 = extractvalue %_Z4NodeIiE %load.struct20, 1
-  store ptr %next21, ptr %node, align 1
+  %node21 = load ptr, ptr %node, align 8
+  store ptr %node21, ptr %previous_node, align 1
+  %node22 = load ptr, ptr %node, align 8
+  %load.struct23 = load %_Z4NodeIiE, ptr %node22, align 8
+  %next24 = extractvalue %_Z4NodeIiE %load.struct23, 1
+  store ptr %next24, ptr %node, align 1
   br label %while.cond
 
 if.then6:                                         ; preds = %if.then
@@ -2744,8 +2744,11 @@ if.end7:                                          ; preds = %if.then6, %if.then
   br i1 %eq14, label %if.then15, label %if.end16
 
 if.then15:                                        ; preds = %if.end7
-  %head17 = getelementptr inbounds %_Z4ListIiE, ptr %0, i32 0, i32 0
-  store ptr null, ptr %head17, align 8
+  %node17 = load ptr, ptr %node, align 8
+  %load.struct18 = load %_Z4NodeIiE, ptr %node17, align 8
+  %next19 = extractvalue %_Z4NodeIiE %load.struct18, 1
+  %head20 = getelementptr inbounds %_Z4ListIiE, ptr %0, i32 0, i32 0
+  store ptr %next19, ptr %head20, align 8
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end7
@@ -3922,25 +3925,60 @@ entry:
   store ptr null, ptr %previous_node, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.body, %entry
+while.cond:                                       ; preds = %if.end, %entry
   %node1 = load ptr, ptr %node, align 8
   %ne = icmp ne ptr %node1, null
   br i1 %ne, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6StringE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6StringE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6StringE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6StringE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
+  %base.deref = load ptr, ptr %node, align 8
+  %field.inplace = getelementptr inbounds %_Z4NodeI6StringE, ptr %base.deref, i32 0, i32 0
+  %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %1)
+  br i1 %call, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
   ret i1 false
+
+if.then:                                          ; preds = %while.body
+  %previous_node2 = load ptr, ptr %previous_node, align 8
+  %ne3 = icmp ne ptr %previous_node2, null
+  br i1 %ne3, label %if.then4, label %if.end5
+
+if.end:                                           ; preds = %while.body
+  %node18 = load ptr, ptr %node, align 8
+  store ptr %node18, ptr %previous_node, align 1
+  %node19 = load ptr, ptr %node, align 8
+  %load.struct20 = load %_Z4NodeI6StringE, ptr %node19, align 8
+  %next21 = extractvalue %_Z4NodeI6StringE %load.struct20, 1
+  store ptr %next21, ptr %node, align 1
+  br label %while.cond
+
+if.then4:                                         ; preds = %if.then
+  %node6 = load ptr, ptr %node, align 8
+  %load.struct7 = load %_Z4NodeI6StringE, ptr %node6, align 8
+  %next = extractvalue %_Z4NodeI6StringE %load.struct7, 1
+  %ptr.load = load ptr, ptr %previous_node, align 8
+  %next8 = getelementptr inbounds %_Z4NodeI6StringE, ptr %ptr.load, i32 0, i32 1
+  store ptr %next, ptr %next8, align 8
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.then
+  %node9 = load ptr, ptr %node, align 8
+  %load.struct10 = load %_Z4ListI6StringE, ptr %0, align 8
+  %head11 = extractvalue %_Z4ListI6StringE %load.struct10, 0
+  %eq = icmp eq ptr %node9, %head11
+  br i1 %eq, label %if.then12, label %if.end13
+
+if.then12:                                        ; preds = %if.end5
+  %node14 = load ptr, ptr %node, align 8
+  %load.struct15 = load %_Z4NodeI6StringE, ptr %node14, align 8
+  %next16 = extractvalue %_Z4NodeI6StringE %load.struct15, 1
+  %head17 = getelementptr inbounds %_Z4ListI6StringE, ptr %0, i32 0, i32 0
+  store ptr %next16, ptr %head17, align 8
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %if.end5
+  ret i1 true
 }
 
 define linkonce_odr void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %0, ptr %1, ptr %2) {
@@ -4467,25 +4505,60 @@ entry:
   store ptr null, ptr %previous_node, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.body, %entry
+while.cond:                                       ; preds = %if.end, %entry
   %node1 = load ptr, ptr %node, align 8
   %ne = icmp ne ptr %node1, null
   br i1 %ne, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6StringE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6StringE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6StringE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6StringE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
+  %base.deref = load ptr, ptr %node, align 8
+  %field.inplace = getelementptr inbounds %_Z4NodeI6StringE, ptr %base.deref, i32 0, i32 0
+  %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %1)
+  br i1 %call, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
   ret i1 false
+
+if.then:                                          ; preds = %while.body
+  %previous_node2 = load ptr, ptr %previous_node, align 8
+  %ne3 = icmp ne ptr %previous_node2, null
+  br i1 %ne3, label %if.then4, label %if.end5
+
+if.end:                                           ; preds = %while.body
+  %node18 = load ptr, ptr %node, align 8
+  store ptr %node18, ptr %previous_node, align 1
+  %node19 = load ptr, ptr %node, align 8
+  %load.struct20 = load %_Z4NodeI6StringE, ptr %node19, align 8
+  %next21 = extractvalue %_Z4NodeI6StringE %load.struct20, 1
+  store ptr %next21, ptr %node, align 1
+  br label %while.cond
+
+if.then4:                                         ; preds = %if.then
+  %node6 = load ptr, ptr %node, align 8
+  %load.struct7 = load %_Z4NodeI6StringE, ptr %node6, align 8
+  %next = extractvalue %_Z4NodeI6StringE %load.struct7, 1
+  %ptr.load = load ptr, ptr %previous_node, align 8
+  %next8 = getelementptr inbounds %_Z4NodeI6StringE, ptr %ptr.load, i32 0, i32 1
+  store ptr %next, ptr %next8, align 8
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.then
+  %node9 = load ptr, ptr %node, align 8
+  %load.struct10 = load %_Z11BuilderListI6StringE, ptr %0, align 8
+  %head11 = extractvalue %_Z11BuilderListI6StringE %load.struct10, 0
+  %eq = icmp eq ptr %node9, %head11
+  br i1 %eq, label %if.then12, label %if.end13
+
+if.then12:                                        ; preds = %if.end5
+  %node14 = load ptr, ptr %node, align 8
+  %load.struct15 = load %_Z4NodeI6StringE, ptr %node14, align 8
+  %next16 = extractvalue %_Z4NodeI6StringE %load.struct15, 1
+  %head17 = getelementptr inbounds %_Z11BuilderListI6StringE, ptr %0, i32 0, i32 0
+  store ptr %next16, ptr %head17, align 8
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %if.end5
+  ret i1 true
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI6StringE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
@@ -19544,12 +19617,12 @@ if.then:                                          ; preds = %while.body
   br i1 %ne5, label %if.then6, label %if.end7
 
 if.end:                                           ; preds = %while.body
-  %node18 = load ptr, ptr %node, align 8
-  store ptr %node18, ptr %previous_node, align 1
-  %node19 = load ptr, ptr %node, align 8
-  %load.struct20 = load %_Z4NodeIcE, ptr %node19, align 8
-  %next21 = extractvalue %_Z4NodeIcE %load.struct20, 1
-  store ptr %next21, ptr %node, align 1
+  %node21 = load ptr, ptr %node, align 8
+  store ptr %node21, ptr %previous_node, align 1
+  %node22 = load ptr, ptr %node, align 8
+  %load.struct23 = load %_Z4NodeIcE, ptr %node22, align 8
+  %next24 = extractvalue %_Z4NodeIcE %load.struct23, 1
+  store ptr %next24, ptr %node, align 1
   br label %while.cond
 
 if.then6:                                         ; preds = %if.then
@@ -19569,8 +19642,11 @@ if.end7:                                          ; preds = %if.then6, %if.then
   br i1 %eq14, label %if.then15, label %if.end16
 
 if.then15:                                        ; preds = %if.end7
-  %head17 = getelementptr inbounds %_Z4ListIcE, ptr %0, i32 0, i32 0
-  store ptr null, ptr %head17, align 8
+  %node17 = load ptr, ptr %node, align 8
+  %load.struct18 = load %_Z4NodeIcE, ptr %node17, align 8
+  %next19 = extractvalue %_Z4NodeIcE %load.struct18, 1
+  %head20 = getelementptr inbounds %_Z4ListIcE, ptr %0, i32 0, i32 0
+  store ptr %next19, ptr %head20, align 8
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end7
