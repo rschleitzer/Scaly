@@ -1,0 +1,10 @@
+; A multi-byte string in char-return position cannot be a char literal —
+; the return fold must hard-error instead of silently truncating the
+; string pointer into the char slot (the pre-fold behavior).
+; xfail: not a single character
+
+function bad() returns char
+    "ab"
+
+print "should not compile\n"
+return 0

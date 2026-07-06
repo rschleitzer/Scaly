@@ -16496,6 +16496,27 @@ define Planner
             let planned_target_flat this.plan_operands(a.target)
             let planned_target_collapsed this.collapse_operand_sequence(planned_target_flat)
 
+            ; Double-quoted char literal as the IMPLICIT return (tail) of a
+            ; char/u8-returning function (`function CHAR_X() returns char "]"`).
+            ; do_tail_check marks the outermost body action of a function with
+            ; a return type; a `set` action (target present) is never a return.
+            ; Mirrors the plan_return# fold — without it the string POINTER
+            ; silently truncates into the char return slot.
+            if do_tail_check
+                if a.target.length = 0
+                    if this.current_return_type <> null
+                    {
+                        let trt (*this.current_return_type)
+                        var trt_is_charlike: bool false
+                        if trt.name = "char"
+                            set trt_is_charlike: true
+                        if trt.name = "u8"
+                            set trt_is_charlike: true
+                        if trt_is_charlike
+                            if this.operand_is_string_constant(planned_source_collapsed)
+                                set planned_source_collapsed: this.fold_string_operand_to_char(planned_source_collapsed, trt)
+                    }
+
             ; For -g line info: take the location from the FIRST flat source
             ; operand, which carries the authoritative source span. The
             ; collapsed operand's loc is sometimes synthesized (start 0),
@@ -19827,6 +19848,24 @@ define Planner
 
             let planned_flat this.plan_operands(r.result)
             var planned_collapsed this.collapse_operand_sequence(planned_flat)
+
+            ; Double-quoted char literal in return position (`return "]"` in
+            ; a char/u8-returning function): fold the string constant into a
+            ; validated CharacterConstant, matching the `as char`, binary-
+            ; comparison and annotated-binding folds. Without the fold the
+            ; string POINTER silently truncates into the char return slot.
+            if this.current_return_type <> null
+            {
+                let rrt (*this.current_return_type)
+                var rt_is_charlike: bool false
+                if rrt.name = "char"
+                    set rt_is_charlike: true
+                if rrt.name = "u8"
+                    set rt_is_charlike: true
+                if rt_is_charlike
+                    if this.operand_is_string_constant(planned_collapsed)
+                        set planned_collapsed: this.fold_string_operand_to_char(planned_collapsed, rrt)
+            }
 
             ; A returned value/ref whose lifetime is the Local ($) page would
             ; dangle once the frame is freed. Page inference (rule 2): if the

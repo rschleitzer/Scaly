@@ -1,0 +1,56 @@
+; Return-position char-literal fold (2026-07-06): a double-quoted
+; single-character string returned from a char/u8-returning function —
+; implicit tail (`function f() returns char "]"`) or explicit
+; (`return "["`) — folds into a validated CharacterConstant, matching
+; the `as char`, binary-comparison and annotated-binding folds. Before
+; the fold this compiled SILENTLY WRONG (the string pointer truncated
+; into the char return slot). Escapes are decoded by the Modeler, so
+; `"\n"` returns byte 10.
+; Expected: PASS
+
+function ret_implicit() returns char
+    "]"
+
+function ret_explicit() returns char
+{
+    return "["
+}
+
+function ret_u8() returns u8
+    "A"
+
+function ret_newline() returns char
+    "\n"
+
+var failures 0
+
+if ret_implicit() = "]"
+    0
+else
+    set failures: failures + 1
+
+if ret_explicit() = "["
+    0
+else
+    set failures: failures + 1
+
+if ret_u8() = 65
+    0
+else
+    set failures: failures + 1
+
+if ret_newline() = 10
+    0
+else
+    set failures: failures + 1
+
+; the cast form must keep working and agree with the fold
+if ret_implicit() = "]" as char
+    0
+else
+    set failures: failures + 1
+
+if failures = 0
+    print "PASS\n"
+else
+    print "FAIL\n"
