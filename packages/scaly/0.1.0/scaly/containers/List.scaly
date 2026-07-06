@@ -32,7 +32,7 @@ define List[T]
                     set previous_node.next: node.next
 
                 if node = head
-                    set head: null
+                    set head: node.next
 
                 return true
             }
