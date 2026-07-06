@@ -16521,9 +16521,34 @@ define Planner
                 if a.target.length = 0
                 {
                     let tail_life Lifetime.Call(scalyc.compiler.Model.Call(action_loc))
-                    let tp this.promote_tail_operand(planned_source_collapsed, tail_life)
-                    if tp <> null
-                        set planned_source_collapsed: (*tp)
+                    ; WP7: a value construction (Unspecified life) returned as
+                    ; pointer[T] must be promoted to the caller page. The normal
+                    ; promote_tail_operand refuses an Unspecified construction
+                    ; (Local-only, protecting by-value stack returns like
+                    ; PageListIterator); restamp_operand_life DOES promote it.
+                    ; Gate strictly on a pointer/ref return type + a value
+                    ; construction whose result_type is NOT itself a pointer.
+                    var wp7_promoted false
+                    if this.current_return_type <> null
+                    {
+                        let crt (*this.current_return_type)
+                        if crt.name.equals("pointer")
+                            if this.tail_is_unspecified_value_ctor(planned_source_collapsed)
+                            {
+                                let ptrp this.restamp_operand_life(planned_source_collapsed, tail_life)
+                                if ptrp <> null
+                                {
+                                    set planned_source_collapsed: (*ptrp)
+                                    set wp7_promoted: true
+                                }
+                            }
+                    }
+                    if wp7_promoted = false
+                    {
+                        let tp this.promote_tail_operand(planned_source_collapsed, tail_life)
+                        if tp <> null
+                            set planned_source_collapsed: (*tp)
+                    }
                 }
 
             ; Implicit-return (tail) ESCAPE CHECK — hole 1 (2026-07-02f).
@@ -16583,6 +16608,42 @@ define Planner
         ; restamp_operand_life# (which re-checks the expression life itself).
         ; result_owns_page_guts excludes borrows/handles. Read the EXPRESSION
         ; life, not result_type.life, by design.
+        ; WP7: true when `op` is an Unspecified-life value construction
+        ; (PlannedCall/PlannedTuple) whose result_type is NOT itself a
+        ; pointer/ref — the shape returned as pointer[T] that must be promoted
+        ; to the caller page. A call already returning a pointer (`return
+        ; create_node(x)`) has a pointer result_type and is excluded, so it is
+        ; forwarded unchanged (no false-positive promotion/diagnostic).
+        function tail_is_unspecified_value_ctor(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.result_type.name.equals("pointer")
+                return false
+            if op.result_type.name.equals("ref")
+                return false
+            choose op.expr
+                when vc: PlannedCall
+                {
+                    if vc.is_operator
+                        return false
+                    choose vc.life
+                        when u: Unspecified
+                            return true
+                        else
+                            return false
+                }
+                when vt: PlannedTuple
+                {
+                    choose vt.life
+                        when u: Unspecified
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
         function operand_is_local_page_construction(this: Planner, op: PlannedOperand) returns bool
         {
             if Planner.result_owns_page_guts(op.result_type) = false
@@ -19622,6 +19683,17 @@ define Planner
             if return_needs_promotion = false
                 if this.operand_reads_tainted_local_field(planned_collapsed)
                     set return_needs_promotion: true
+            ; WP7: explicit `return Node(data)` where the return type is
+            ; pointer[Node] — promote the value construction to the caller page
+            ; (the implicit-tail path does the same in plan_action). Gated on a
+            ; pointer return type + an Unspecified value construction whose
+            ; result_type is not itself a pointer (so `return create_node(x)`,
+            ; already a pointer, is forwarded unchanged).
+            if return_needs_promotion = false
+                if this.current_return_type <> null
+                    if (*this.current_return_type).name.equals("pointer")
+                        if this.tail_is_unspecified_value_ctor(planned_collapsed)
+                            set return_needs_promotion: true
             if planned_flat.length > 0
                 if return_needs_promotion
                 {
@@ -22107,7 +22179,13 @@ define Planner
             ; it dangles on the local page. plan_action# reads-and-clears the
             ; flag so only the outermost body action promotes.
             let saved_ptr this.promote_tail_return
-            set this.promote_tail_return: Planner.needs_implicit_return_page(f)
+            var f_promote_tail Planner.needs_implicit_return_page(f)
+            ; WP7: also promote the tail of a pointer[T]-return whose tail is a
+            ; value construction of T (see body_returns_value_ctor_as_pointer).
+            if f_promote_tail = false
+                if Planner.body_returns_value_ctor_as_pointer(f)
+                    set f_promote_tail: true
+            set this.promote_tail_return: f_promote_tail
             ; Hole-1 (2026-07-02f): the tail ref-escape CHECK runs for every
             ; function with a return type, not just page-owning-value returns
             ; (unify returns ref[Vector[...]]? — needs_implicit_return_page is
@@ -28398,6 +28476,129 @@ define Planner
                 0
         false
     }
+
+    ; WP7: does a `pointer[T]`-returning function's body TAIL construct T by
+    ; value (no lifetime marker)? `function create() returns pointer[Node]
+    ; { Node(data) }`. The emitter would otherwise take the address of a stack
+    ; value that dies with the frame. When true, function_needs_caller_page
+    ; grants the rp page parameter (and `#`-style mangling) and the plan-time
+    ; tail promotion restamps the construction to Call life — behaving exactly
+    ; like the explicit `Node#(data)`. body_has_call_lifetime already covers
+    ; the explicit-`#` case; this is the NO-sigil complement. Conservative:
+    ; fires only for a direct value construction of the exact pointee at the
+    ; tail (single-expression body or the last statement of a braced block).
+    ; A tail that already carries a lifetime, returns a pointer, or is a call/
+    ; variable is NOT flagged.
+    function body_returns_value_ctor_as_pointer(func: Function) returns bool
+    {
+        if Planner.is_extern_impl(func.implementation)
+            return false
+        if func.returns_ = null
+            return false
+        let rt (*func.returns_)
+        ; return type must be pointer[T]; extract the pointee name.
+        if Planner.is_ref_or_pointer_type(rt) = false
+            return false
+        if rt.generics = null
+            return false
+        let gens (*rt.generics)
+        if gens.length <> 1
+            return false
+        let pointee_ptr gens.get 0
+        if pointee_ptr = null
+            return false
+        let pointee (*pointee_ptr)
+        if pointee.name.length <> 1
+            return false
+        let pn_ptr pointee.name.get 0
+        if pn_ptr = null
+            return false
+        let pointee_name (*pn_ptr)
+        ; walk to the tail operand sequence.
+        choose func.implementation
+            when a: Action
+                return Planner.ops_tail_is_value_ctor(a.source, pointee_name)
+            else
+                0
+        false
+    }
+
+    ; ops_tail_is_value_ctor: does this operand sequence's TAIL construct the
+    ; named type by value? Handles a single-expression body ([Type(name),
+    ; Tuple]) and a braced block (a lone Block operand — descend to its last
+    ; statement). Returns false for anything else.
+    function ops_tail_is_value_ctor(ops: Vector[Operand], type_name: String) returns bool
+    {
+        ; A lone Block operand: descend into its last statement.
+        if ops.length = 1
+        {
+            let only_ptr ops.get 0
+            if only_ptr <> null
+            {
+                var is_block: bool false
+                var handled: bool false
+                var result: bool false
+                choose (*only_ptr).expression
+                    when b: Block
+                    {
+                        set handled: true
+                        if b.statements.length > 0
+                        {
+                            let last_ptr b.statements.get(b.statements.length - 1)
+                            if last_ptr <> null
+                                choose (*last_ptr)
+                                    when a: Action
+                                        if a.target.length = 0
+                                            set result: Planner.ops_tail_is_value_ctor(a.source, type_name)
+                                    else
+                                        0
+                        }
+                    }
+                    else
+                        0
+                if handled
+                    return result
+            }
+        }
+        ; Direct value construction: first operand is Type(type_name) with no
+        ; lifetime marker and a member-access-free head, followed by a Tuple.
+        if ops.length >= 2
+        {
+            let head_ptr ops.get 0
+            let next_ptr ops.get 1
+            if head_ptr <> null
+                if next_ptr <> null
+                {
+                    let head (*head_ptr)
+                    if head.member_access = null
+                        choose head.expression
+                            when t: scalyc.compiler.Model.Type
+                            {
+                                var life_ok: bool false
+                                choose t.lifetime
+                                    when u: Unspecified
+                                        set life_ok: true
+                                    else
+                                        0
+                                if life_ok
+                                    if t.name.length = 1
+                                    {
+                                        let tn_ptr t.name.get 0
+                                        if tn_ptr <> null
+                                            if (*tn_ptr).equals(type_name)
+                                                choose (*next_ptr).expression
+                                                    when tup: Tuple
+                                                        return true
+                                                    else
+                                                        0
+                                    }
+                            }
+                            else
+                                0
+                }
+        }
+        false
+    }
     ; ---- transitive page-need walker: does a function body MENTION any name in
     ; a set? A sibling CALL's name rides either a member_access hop
     ; (`this.collect_flow_locals(...)`) or a dotted Type-name segment
@@ -28683,6 +28884,12 @@ define Planner
             if Planner.is_ref_or_pointer_type((*func.returns_))
                 if Planner.body_has_call_lifetime(func)
                     return true
+        ; WP7: a `pointer[T]`-return whose tail constructs T by value needs the
+        ; rp page (and `#`-style mangling) so the promoted construction lives on
+        ; the caller page. The no-sigil complement of the body_has_call_lifetime
+        ; gate above.
+        if Planner.body_returns_value_ctor_as_pointer(func)
+            return true
         Planner.static_name_in_set(pl.transitive_page_names, func.name)
     }
 

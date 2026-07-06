@@ -1,0 +1,29 @@
+; A value construction returned where the return type is pointer[T] —
+; `function create() returns pointer[Node] { Node(data) }` — used to take
+; the address of a stack value that died with the frame (SIGSEGV at the
+; caller). It is now promoted to the caller's region, behaving like the
+; explicit `Node#(data)`.
+; Expected: PASS
+define Node(data: int)
+
+function create_node(data: int) returns pointer[Node]
+    Node(data)
+
+; A call that ALREADY returns a pointer must be forwarded unchanged
+; (no false-positive escape diagnostic).
+function forward(data: int) returns pointer[Node]
+    create_node(data)
+
+let n create_node(7)
+if (*n).data <> 7
+{
+    print("FAIL")
+    exit 1
+}
+let m forward(9)
+if (*m).data <> 9
+{
+    print("FAIL")
+    exit 2
+}
+print("PASS")
