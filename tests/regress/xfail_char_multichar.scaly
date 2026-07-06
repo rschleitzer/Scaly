@@ -1,0 +1,5 @@
+; A char literal must decode to exactly one byte; a multi-character string
+; in char context is a hard diagnostic (was: silent first-byte truncation).
+; xfail: not a single character
+let c: char "ab"
+print("must not compile")

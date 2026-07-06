@@ -10305,17 +10305,34 @@ define Emitter
         {
             if dst_kind = int_kind
                 return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
-
+            ; Float to double: fpext
+            if dst_kind = double_kind
+                return LLVMBuildFPExt(builder, src_value, dst_type, "as.fpext")
+            if dst_kind = float_kind
+                return src_value
         }
         if src_kind = double_kind
         {
             if dst_kind = int_kind
                 return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
-
+            ; Double to float: fptrunc
+            if dst_kind = float_kind
+                return LLVMBuildFPTrunc(builder, src_value, dst_type, "as.fptrunc")
+            if dst_kind = double_kind
+                return src_value
         }
 
-        ; Fallback: return source value unchanged
-        src_value
+        ; No cast rule matched. The old fallback returned the source value
+        ; UNCHANGED, silently producing a wrong-typed value that dropped the
+        ; surrounding statement (the Bug-B silent-drop class — e.g. casting a
+        ; backtick FRAGMENT, an [N x i8] array, to int). Mirror stage-0's
+        ; hard error (Emitter.cpp:6211) via the unknown-operator trap pattern.
+        scaly_eputs "Emitter: cannot cast this value to "
+        let as_tn as_expr.target_type.name.to_c_string()
+        scaly_eputs as_tn
+        scaly_eputs "\n"
+        exit 14
+        LLVMValueRef null
     }
 
     ; Emit variant construction (e.g., Result.Ok value, Option.Some value)

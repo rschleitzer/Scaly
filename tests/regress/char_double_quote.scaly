@@ -1,0 +1,29 @@
+; Char literals are written as double-quoted single-character strings in a
+; char context: annotated binding, comparison against a char, `as char`,
+; and escape forms. (Backticks remain FRAGMENTS — reserved for string
+; interpolation — and are not chars.)
+; Expected: PASS
+let c: char "a"
+if c <> "a"
+{
+    print("FAIL")
+    exit 1
+}
+let i c as int
+if i <> 97
+{
+    print("FAIL")
+    exit 2
+}
+let nl: char "\n"
+if nl as int <> 10
+{
+    print("FAIL")
+    exit 3
+}
+if ("A" as char) as int <> 65
+{
+    print("FAIL")
+    exit 4
+}
+print("PASS")

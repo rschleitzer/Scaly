@@ -1868,6 +1868,70 @@ define Planner
             diagnostics.length > 0
         }
 
+        ; Character literals are written as double-quoted strings in a
+        ; char-typed context (`let c: char "a"`, `c = "a"`, `"x" as char`).
+        ; Fold a chainless STRING-constant operand into a CharacterConstant
+        ; typed `char`; the string's escapes are already decoded by the
+        ; Modeler, so a decoded length other than ONE byte cannot be a char —
+        ; hard diagnostic instead of the old silent first-byte/garbage.
+        ; Non-string operands pass through unchanged.
+        function fold_string_operand_to_char(this: Planner, op: PlannedOperand, char_type: PlannedType) returns PlannedOperand
+        {
+            if op.member_access <> null
+                return op
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when s: StringConstant
+                        {
+                            if s.value.get_length() <> 1
+                            {
+                                var csb StringBuilder()
+                                csb.append "not a single character: \""
+                                csb.append s.value
+                                csb.append "\" has "
+                                csb.append(Planner.size_to_string(s.value.get_length()))
+                                csb.append " bytes; a char literal must decode to exactly one"
+                                this.add_diagnostic(op.loc, csb.to_string())
+                                return op
+                            }
+                            let cc Constant.Character(CharacterConstant(s.span, s.value))
+                            return PlannedOperand(
+                                op.loc,
+                                PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant cc),
+                                null,
+                                char_type
+                            )
+                        }
+                        else
+                            return op
+                }
+                else
+                    return op
+            op
+        }
+
+        ; True when `op` is a chainless string-constant operand (the shape
+        ; fold_string_operand_to_char converts).
+        function operand_is_string_constant(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when s: StringConstant
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
         ; ===== glob-ambiguity diagnostic (use-visibility, hard) =====
         ;
         ; Two glob imports in one file (`use a.*` and `use b.*`) that BOTH
@@ -5038,6 +5102,140 @@ define Planner
                             else
                                 0
                     }
+                }
+            }
+
+            ; Delegate-call pre-pass: fuse any adjacent `[delegateVar, Tuple]`
+            ; pair anywhere in the flat list into an is_indirect PlannedCall
+            ; (same construction as the length-2 GAP-B block above, which
+            ; only fires when the call IS the whole sequence). Without this,
+            ; an indirect call embedded in a larger expression —
+            ; `if add5(2) = 7` — fed the Tuple to the binary loop as a
+            ; nameless operator and the trailing `= 7` collapsed as a bogus
+            ; unary `=` (emitter trap). Mirrors the lambda pre-pass above;
+            ; the pair is replaced and the strictly-shorter list re-collapsed.
+            if ops.length >= 2
+            {
+                var dp_i: size_t 0
+                var dp_found: bool false
+                var dp_at: size_t 0
+                var dp_name ""
+                while dp_i + 1 < ops.length
+                {
+                    if dp_found = false
+                    {
+                        let dp_h_ptr ops.get dp_i
+                        let dp_t_ptr ops.get(dp_i + 1)
+                        if dp_h_ptr <> null
+                        {
+                            if dp_t_ptr <> null
+                            {
+                                if (*dp_h_ptr).member_access = null
+                                {
+                                    var dp_cand ""
+                                    choose (*dp_h_ptr).expr
+                                        when v: Variable
+                                            if this.is_delegate_type(v.variable_type.name)
+                                                set dp_cand: v.variable_type.name
+                                        else
+                                            0
+                                    if dp_cand.get_length() > 0
+                                    {
+                                        var dp_is_tuple: bool false
+                                        choose (*dp_t_ptr).expr
+                                            when dtp_chk: PlannedTuple
+                                                set dp_is_tuple: true
+                                            else
+                                                0
+                                        if dp_is_tuple
+                                        {
+                                            set dp_found: true
+                                            set dp_at: dp_i
+                                            set dp_name: dp_cand
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    set dp_i: dp_i + 1
+                }
+                if dp_found
+                {
+                    let dp_h_ptr ops.get dp_at
+                    let dp_t_ptr ops.get(dp_at + 1)
+                    let dp_head (*dp_h_ptr)
+                    choose (*dp_t_ptr).expr
+                        when dp_tp: PlannedTuple
+                        {
+                            ; Collapse the tuple components into call args:
+                            ; [callee, arg0, arg1, ...] (GAP-B shape).
+                            var dp_args Array[PlannedOperand]()
+                            dp_args.add dp_head
+                            if dp_tp.components <> null
+                            {
+                                let dp_comps (*dp_tp.components)
+                                var dp_ci: size_t 0
+                                while dp_ci < dp_comps.length
+                                {
+                                    let dp_cp dp_comps.get dp_ci
+                                    if dp_cp <> null
+                                        if (*dp_cp).value <> null
+                                        {
+                                            let dp_vals (*(*dp_cp).value)
+                                            if dp_vals.length > 0
+                                            {
+                                                let dp_ca this.collapse_operand_sequence(dp_vals)
+                                                dp_args.add dp_ca
+                                            }
+                                        }
+                                    set dp_ci: dp_ci + 1
+                                }
+                            }
+                            let dp_ret this.delegate_return_type(dp_name)
+                            var dp_args_holder Vector[PlannedOperand](dp_args)
+                            let dp_call PlannedCall(
+                                dp_head.loc,
+                                "indirect",
+                                "",
+                                false,
+                                false,
+                                false,
+                                false,
+                                &dp_args_holder,
+                                dp_ret,
+                                Lifetime.Unspecified(Unspecified()),
+                                null,
+                                true
+                            )
+                            let dp_call_op PlannedOperand(
+                                dp_head.loc,
+                                PlannedExpression.Call dp_call,
+                                null,
+                                dp_ret
+                            )
+                            var dp_new Array[PlannedOperand]()
+                            var dp_k: size_t 0
+                            while dp_k < ops.length
+                            {
+                                if dp_k = dp_at
+                                    dp_new.add dp_call_op
+                                else
+                                {
+                                    if dp_k <> dp_at + 1
+                                    {
+                                        let dp_op_ptr ops.get dp_k
+                                        if dp_op_ptr <> null
+                                            dp_new.add (*dp_op_ptr)
+                                    }
+                                }
+                                set dp_k: dp_k + 1
+                            }
+                            var dp_new_vec Vector[PlannedOperand](dp_new)
+                            return this.collapse_operand_sequence(dp_new_vec)
+                        }
+                        else
+                            0
                 }
             }
 
@@ -8997,26 +9195,14 @@ define Planner
                         var folded: bool false
                         if pas.target_type.name.equals("char")
                         {
-                            choose result.expr
-                                when pc: scalyc.compiler.Plan.PlannedConstant
-                                {
-                                    choose pc.value
-                                        when s: StringConstant
-                                        {
-                                            let cc Constant.Character(CharacterConstant(s.span, s.value))
-                                            set result: PlannedOperand(
-                                                op.loc,
-                                                PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant cc),
-                                                null,
-                                                pas.target_type
-                                            )
-                                            set folded: true
-                                        }
-                                        else
-                                            0
-                                }
-                                else
-                                    0
+                            ; The fold validates: a decoded length other than
+                            ; one byte is a hard diagnostic, not a silent
+                            ; first-byte truncation.
+                            if this.operand_is_string_constant(result)
+                            {
+                                set result: this.fold_string_operand_to_char(result, pas.target_type)
+                                set folded: true
+                            }
                         }
                         if pas.target_type.name.equals("u8")
                         {
@@ -9474,6 +9660,30 @@ define Planner
                             }
                         }
                     }
+
+                    ; Double-quoted char literals: when one side of a binary
+                    ; operator is char/u8-typed and the other side is a bare
+                    ; string constant, fold the string side into a validated
+                    ; CharacterConstant so `c = "a"` compares bytes (a string
+                    ; constant is a POINTER — the raw comparison was a silent
+                    ; pointer compare). Multi-byte strings hard-error inside
+                    ; the fold.
+                    var lhs_is_charlike: bool false
+                    if result.result_type.name.equals("char")
+                        set lhs_is_charlike: true
+                    if result.result_type.name.equals("u8")
+                        set lhs_is_charlike: true
+                    if lhs_is_charlike
+                        if this.operand_is_string_constant(rhs)
+                            set rhs: this.fold_string_operand_to_char(rhs, result.result_type)
+                    var rhs_is_charlike: bool false
+                    if rhs.result_type.name.equals("char")
+                        set rhs_is_charlike: true
+                    if rhs.result_type.name.equals("u8")
+                        set rhs_is_charlike: true
+                    if rhs_is_charlike
+                        if this.operand_is_string_constant(result)
+                            set result: this.fold_string_operand_to_char(result, rhs.result_type)
 
                     let resolved this.resolve_operator_call(
                         op_name, result.result_type, rhs.result_type
@@ -15910,6 +16120,19 @@ define Planner
             var binding_type: PlannedType collapsed.result_type
             if planned_item.item_type <> null
                 set binding_type: (*planned_item.item_type)
+
+            ; Double-quoted char literal in an annotated binding
+            ; (`let c: char "a"`): fold the string-constant initializer into a
+            ; validated CharacterConstant, matching the `as char` and binary-
+            ; comparison folds.
+            var bt_is_charlike: bool false
+            if binding_type.name.equals("char")
+                set bt_is_charlike: true
+            if binding_type.name.equals("u8")
+                set bt_is_charlike: true
+            if bt_is_charlike
+                if this.operand_is_string_constant(collapsed)
+                    set collapsed: this.fold_string_operand_to_char(collapsed, binding_type)
 
             ; Emit an equality constraint between the declared binding
             ; type and the collapsed initializer's result type. Solvable

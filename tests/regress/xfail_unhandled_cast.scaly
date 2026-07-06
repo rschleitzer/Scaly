@@ -1,0 +1,8 @@
+; emit_as used to return the source value UNCHANGED when no cast rule
+; matched (silent wrong-typed value, statement dropped). Now a loud trap.
+; A backtick literal is a FRAGMENT ([N x i8] array) — casting it to int
+; has no rule.
+; xfail: cannot cast this value to
+let f `a`
+let i f as int
+print("must not compile")
