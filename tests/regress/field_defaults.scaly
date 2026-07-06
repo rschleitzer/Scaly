@@ -1,0 +1,31 @@
+; Field default values fill in for properties a construction omits:
+; `Config()` uses both defaults, `Config(false)` fills the trailing one.
+; The data-class construction path used to zero/garbage-init omitted
+; fields (it never consulted Property.initializer).
+; Expected: PASS
+define Config(verbose: bool(false), level: int(3))
+
+let c Config()
+if c.level <> 3
+{
+    print("FAIL")
+    exit 1
+}
+if c.verbose <> false
+{
+    print("FAIL")
+    exit 2
+}
+
+let d Config(true)
+if d.verbose <> true
+{
+    print("FAIL")
+    exit 3
+}
+if d.level <> 3
+{
+    print("FAIL")
+    exit 4
+}
+print("PASS")

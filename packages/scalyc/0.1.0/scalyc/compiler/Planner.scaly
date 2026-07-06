@@ -2713,6 +2713,98 @@ define Planner
                     null
         }
 
+        ; fill_default_components: for a data-class construction that matched
+        ; no explicit init#, append default-value components for every
+        ; property beyond the provided count (`Config()` with all-defaulted
+        ; fields, or `Config(true)` filling the trailing default). Mirrors
+        ; stage-0 Planner.cpp:9229-9275. Returns a fresh component vector when
+        ; defaults were appended, else the input unchanged. Only fires when
+        ; the construction genuinely omitted trailing properties that ALL have
+        ; defaults; a full construction and a concept whose missing properties
+        ; lack defaults are both no-ops (keeps compiler-own emission unchanged
+        ; where every construction provides all args → fixpoint-safe).
+        function fill_default_components(
+            this: Planner,
+            struct_name: String,
+            loc: Span,
+            provided: ref[Vector[PlannedComponent]]?
+        ) returns ref[Vector[PlannedComponent]]?
+        {
+            let concept_ref this.lookup_concept(struct_name)
+            if concept_ref = null
+                return provided
+            let c (*concept_ref)
+            var out_ref: ref[Vector[PlannedComponent]]? provided
+            choose c.definition
+                when s: Structure
+                {
+                    var provided_count: size_t 0
+                    if provided <> null
+                        set provided_count: (*provided).length
+                    if provided_count < s.properties.length
+                    {
+                        ; Only fill when EVERY missing property has a default;
+                        ; otherwise leave untouched (genuine tuple or an arity
+                        ; error handled elsewhere) so we never spuriously
+                        ; append.
+                        var all_missing_defaulted: bool true
+                        var pchk: size_t provided_count
+                        while pchk < s.properties.length
+                        {
+                            let pc_ptr s.properties.get pchk
+                            if pc_ptr <> null
+                                if pc_ptr.initializer = null
+                                    set all_missing_defaulted: false
+                            set pchk: pchk + 1
+                        }
+                        if all_missing_defaulted = false
+                            return provided
+                        var filled Array[PlannedComponent]()
+                        if provided <> null
+                        {
+                            let pv (*provided)
+                            var ci: size_t 0
+                            while ci < pv.length
+                            {
+                                let cp pv.get ci
+                                if cp <> null
+                                    filled.add((*cp))
+                                set ci: ci + 1
+                            }
+                        }
+                        var pi: size_t provided_count
+                        while pi < s.properties.length
+                        {
+                            let prop_ptr s.properties.get pi
+                            if prop_ptr <> null
+                            {
+                                let init_ops (*prop_ptr.initializer)
+                                let planned_def this.plan_operands(init_ops)
+                                if planned_def.length > 0
+                                {
+                                    let collapsed_def this.collapse_operand_sequence(planned_def)
+                                    var one_arr Array[PlannedOperand]()
+                                    one_arr.add collapsed_def
+                                    var one_vec Vector[PlannedOperand](one_arr)
+                                    filled.add(PlannedComponent(
+                                        prop_ptr.span,
+                                        null,
+                                        &one_vec,
+                                        null
+                                    ))
+                                }
+                            }
+                            set pi: pi + 1
+                        }
+                        var filled_vec Vector[PlannedComponent](filled)
+                        set out_ref: &filled_vec
+                    }
+                }
+                else
+                    0
+            out_ref
+        }
+
         ; find_initializer: locate an Initializer on a Struct-shaped
         ; concept whose parameter types are pairwise compatible with
         ; `arg_types`. Returns null when no match. Deliberately linear —
@@ -7027,6 +7119,14 @@ define Planner
                                 }
                                 else
                                     0
+
+                            ; Field defaults: append a planned default component
+                            ; for every property the construction omitted
+                            ; (`Config()` / `Config(true)` with defaulted fields).
+                            ; No-op for a full construction or a plain tuple.
+                            ; Mirrors stage-0 Planner.cpp:9229-9275.
+                            set components_holder: this.fill_default_components(fn_name, second.loc, components_holder)
+
                             ; Propagate the type's lifetime into the tuple.
                             ; ctor_struct_type carries the lifetime from the
                             ; lifetime marker merge (above) — `Plan(...)` has
