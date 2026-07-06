@@ -45,8 +45,6 @@ define ParserConstants
         "?" as char
     function CHAR_HASH() returns char
         "#" as char
-    function CHAR_DOLLAR() returns char
-        "$" as char
     function CHAR_CARET() returns char
         "^" as char
     function CHAR_BACKSLASH() returns char
@@ -195,6 +193,17 @@ define Parser
             }
             when success: Success
                 set statements: success
+
+        var skipping_separators true
+        while skipping_separators
+            set skipping_separators: lexer.parse_colon()
+        var trailing_ok lexer.is_at_end()
+        choose lexer.token
+            when e: Empty {}
+            else
+                set trailing_ok: false
+        if trailing_ok = false
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "unexpected trailing input - the construct before this point did not parse"))
 
         let end lexer.position
 

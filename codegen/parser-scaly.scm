@@ -16,7 +16,6 @@
         (("!") "ParserConstants.CHAR_EXCL()")
         (("?") "ParserConstants.CHAR_QUESTION()")
         (("#") "ParserConstants.CHAR_HASH()")
-        (("$") "ParserConstants.CHAR_DOLLAR()")
         (("^") "ParserConstants.CHAR_CARET()")
         (("\\\\") "ParserConstants.CHAR_BACKSLASH()")
         (else ($ "ParserConstants.CHAR_" value "()"))))
@@ -69,8 +68,6 @@ define ParserConstants
         \"?\" as char
     function CHAR_HASH() returns char
         \"#\" as char
-    function CHAR_DOLLAR() returns char
-        \"$\" as char
     function CHAR_CARET() returns char
         \"^\" as char
     function CHAR_BACKSLASH() returns char
@@ -390,6 +387,24 @@ define Parser
                         (else "")
                     )
                 ))
+                ;; End-of-input backstop, Program only: leftover tokens mean an
+                ;; earlier construct silently truncated (its parse error was
+                ;; swallowed by an optional-field/list path). Fail LOUDLY here
+                ;; instead of dropping the rest of the program.
+                (if (string=? "Program" (id syntax))
+"
+        var skipping_separators true
+        while skipping_separators
+            set skipping_separators: lexer.parse_colon()
+        var trailing_ok lexer.is_at_end()
+        choose lexer.token
+            when e: Empty {}
+            else
+                set trailing_ok: false
+        if trailing_ok = false
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, \"unexpected trailing input - the construct before this point did not parse\"))
+"
+                    "")
 "
         let end lexer.position
 

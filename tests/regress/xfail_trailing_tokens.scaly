@@ -1,0 +1,7 @@
+; The parse_program end-of-input backstop: leftover tokens after the statement
+; list (here: an orphan ')') used to be SILENTLY DISCARDED together with
+; everything after them (rc 0, truncated program). Now a hard parse error.
+; xfail: unexpected trailing input
+let x 5
+)
+print("must not compile")
