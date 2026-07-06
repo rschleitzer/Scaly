@@ -43,35 +43,35 @@ define ParserError union (
 ; Lexer import (uses its own char constants)
 module lexer
 
-; Character constants for punctuation (char literals use double-quote + type annotation)
+; Character constants for punctuation (double-quoted char literals fold in return position)
 define ParserConstants
 {
     function CHAR_LPAREN() returns char
-        \"(\" as char
+        \"(\"
     function CHAR_RPAREN() returns char
-        \")\" as char
+        \")\"
     function CHAR_LBRACKET() returns char
-        \"[\" as char
+        \"[\"
     function CHAR_RBRACKET() returns char
-        \"]\" as char
+        \"]\"
     function CHAR_LBRACE() returns char
-        \"{\" as char
+        \"{\"
     function CHAR_RBRACE() returns char
-        \"}\" as char
+        \"}\"
     function CHAR_COMMA() returns char
-        \",\" as char
+        \",\"
     function CHAR_DOT() returns char
-        \".\" as char
+        \".\"
     function CHAR_EXCL() returns char
-        \"!\" as char
+        \"!\"
     function CHAR_QUESTION() returns char
-        \"?\" as char
+        \"?\"
     function CHAR_HASH() returns char
-        \"#\" as char
+        \"#\"
     function CHAR_CARET() returns char
-        \"^\" as char
+        \"^\"
     function CHAR_BACKSLASH() returns char
-        \"\\\\\" as char
+        \"\\\\\"
 }
 
 define Parser

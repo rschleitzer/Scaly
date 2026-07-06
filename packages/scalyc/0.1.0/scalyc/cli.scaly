@@ -928,10 +928,10 @@ define cli
         while i < file_path.get_length() as int
         {
             let c file_path.get(i as size_t)
-            if c = "/" as char
+            if c = "/"
                 set start: i + 1
 
-            if c = "\\" as char
+            if c = "\\"
                 set start: i + 1
 
             set i: i + 1
@@ -943,7 +943,7 @@ define cli
         while i >= start
         {
             let c file_path.get(i as size_t)
-            if c = "." as char
+            if c = "."
             {
                 set end: i
                 ; break - just use assignment for now

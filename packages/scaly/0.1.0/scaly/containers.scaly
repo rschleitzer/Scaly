@@ -276,21 +276,21 @@ define containers
             {
                 ; To restore the full stress range, swap each commented line
                 ; with the active line directly above it (move the ';').
-                var i: char = "A" as char
-                while i <= "C" as char
-                ; while i <= "Z" as char
+                var i: char = "A"
+                while i <= "C"
+                ; while i <= "Z"
                 {
-                    var j: char = "a" as char
-                    while j <= "c" as char
-                    ; while j <= "z" as char
+                    var j: char = "a"
+                    while j <= "c"
+                    ; while j <= "z"
                     {
-                        var k: char = "0" as char
-                        while k <= "2" as char
-                        ; while k <= "9" as char
+                        var k: char = "0"
+                        while k <= "2"
+                        ; while k <= "9"
                         {
-                            var l: char = "!" as char
-                            while l <= "#" as char
-                            ; while l <= "/" as char
+                            var l: char = "!"
+                            while l <= "#"
+                            ; while l <= "/"
                             {
                                 var sb StringBuilder(i)
                                 sb.append j
@@ -313,21 +313,21 @@ define containers
             ; SMOKE TEST note there). Looks up exactly the 81 keys inserted.
             {
                 ; Verify pass — keep these bounds identical to the build pass.
-                var i: char = "A" as char
-                while i <= "C" as char
-                ; while i <= "Z" as char
+                var i: char = "A"
+                while i <= "C"
+                ; while i <= "Z"
                 {
-                    var j: char = "a" as char
-                    while j <= "c" as char
-                    ; while j <= "z" as char
+                    var j: char = "a"
+                    while j <= "c"
+                    ; while j <= "z"
                     {
-                        var k: char = "0" as char
-                        while k <= "2" as char
-                        ; while k <= "9" as char
+                        var k: char = "0"
+                        while k <= "2"
+                        ; while k <= "9"
                         {
-                            var l: char = "!" as char
-                            while l <= "#" as char
-                            ; while l <= "/" as char
+                            var l: char = "!"
+                            while l <= "#"
+                            ; while l <= "/"
                             {
                                 var sb StringBuilder(i)
                                 sb.append j
@@ -393,10 +393,10 @@ define containers
         if str_slice.length <> 5
             return -56
 
-        if *(str_slice[0]) <> "H" as char
+        if *(str_slice[0]) <> "H"
             return -57
 
-        if *(str_slice[4]) <> "o" as char
+        if *(str_slice[4]) <> "o"
             return -58
 
         ; Test slice equality
