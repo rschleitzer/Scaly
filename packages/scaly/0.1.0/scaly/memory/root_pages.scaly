@@ -82,8 +82,11 @@ mutable fmt_scratch: pointer[char] null
 
 function scaly_fmt_scratch_ptr() returns pointer[char]
 {
+    ; alignment must be a valid power-of-two >= sizeof(void*): aligned_alloc(1,
+    ; ...) returns NULL on macOS/Apple libc (and is UB per C11), which made a
+    ; deref of this scratch buffer SIGSEGV. 16 is safe; 32 is a multiple of it.
     if fmt_scratch = null
-        set fmt_scratch: aligned_alloc(1, 32) as pointer[char]
+        set fmt_scratch: aligned_alloc(16, 32) as pointer[char]
     fmt_scratch
 }
 
@@ -97,7 +100,12 @@ procedure scaly_eputs(s: pointer[const_char])
 
 procedure scaly_eputnl()
 {
-    write(2 as int, "\n" as pointer[void], 1 as size_t)
+    ; A Scaly "\n" literal is a String struct (varint-prefixed buffer); casting
+    ; it to pointer[void] and writing 1 byte emitted the struct's first byte
+    ; (garbage), not the newline. Write the LF byte from the scratch buffer.
+    let buf scaly_fmt_scratch_ptr()
+    set *buf: (10 as char)
+    write(2 as int, buf as pointer[void], 1 as size_t)
 }
 
 procedure scaly_eputi(n: i64)
@@ -111,7 +119,10 @@ procedure scaly_eputi(n: i64)
         set negative: true
         set val: 0 - val
     }
-    if val <> 0
+    ; A zero value produces no digits in the loop below, so emit the single
+    ; '0' here. The guard was inverted (val <> 0), which appended a spurious
+    ; trailing '0' to every nonzero value and printed nothing for 0.
+    if val = 0
     {
         set pos: pos - 1
         set *(buf + pos): 48 as char
