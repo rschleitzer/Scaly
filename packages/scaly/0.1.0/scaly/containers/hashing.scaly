@@ -75,15 +75,13 @@ function hash(data: pointer[char], length: size_t) returns size_t
     while i < length
     {
         let value (*(data + i)) as size_t
-        ; FNV-1a XOR step. The `^` token is Scaly's reference-lifetime
-        ; sigil and cannot be written as a bitwise operator in expression
-        ; position, so XOR is computed via the identity
-        ; a ^ b == (a | b) - (a & b) using only supported operators.
-        ; (The legacy `hash // value` relied on an UNKNOWN operator `//`
-        ; that the self-hosted emitter dropped entirely — making the hash
-        ; content-independent / length-only.)
-        let xord (hash | value) - (hash & value)
-        set hash: xord * prime
+        ; FNV-1a XOR step. `xor` is the word operator for bitwise XOR —
+        ; the `^` token is Scaly's reference-lifetime sigil and cannot be
+        ; written as a bitwise operator in expression position. (History:
+        ; the legacy `hash // value` used an UNKNOWN operator the emitter
+        ; dropped — length-only hash; then the (a|b)-(a&b) identity, which
+        ; llc never folded back to xor — 3 ALU ops per byte.)
+        set hash: (hash xor value) * prime
 
         set i: i + (1 as size_t)
     }
