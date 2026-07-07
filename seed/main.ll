@@ -1,5 +1,6 @@
 ; ModuleID = 'main'
 source_filename = "main"
+target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 
 declare ptr @memcpy(...)
 
