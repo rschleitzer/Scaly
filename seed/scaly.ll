@@ -16406,21 +16406,18 @@ while.body:                                       ; preds = %while.cond
   %deref = load i8, ptr %ptr.add, align 1
   %as.zext = zext i8 %deref to i64
   %hash3 = load i64, ptr %hash, align 4
-  %or = or i64 %hash3, %as.zext
-  %hash4 = load i64, ptr %hash, align 4
-  %and = and i64 %hash4, %as.zext
-  %sub = sub i64 %or, %and
-  %prime5 = load i64, ptr %prime, align 4
-  %mul = mul i64 %sub, %prime5
+  %xor = xor i64 %hash3, %as.zext
+  %prime4 = load i64, ptr %prime, align 4
+  %mul = mul i64 %xor, %prime4
   store i64 %mul, ptr %hash, align 1
-  %i6 = load i64, ptr %i, align 4
-  %add = add i64 %i6, 1
+  %i5 = load i64, ptr %i, align 4
+  %add = add i64 %i5, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  %hash7 = load i64, ptr %hash, align 4
-  ret i64 %hash7
+  %hash6 = load i64, ptr %hash, align 4
+  ret i64 %hash6
 }
 
 define linkonce_odr ptr @_ZN5Slice3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
