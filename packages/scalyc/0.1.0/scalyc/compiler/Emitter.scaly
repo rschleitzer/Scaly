@@ -322,11 +322,72 @@ define Emitter
         ; Create builder
         set builder: LLVMCreateBuilderInContext(context)
 
+        ; Stamp the module with the target's DataLayout. Every consumer
+        ; that folds a `ptrtoint (getelementptr (%T, null, 1))` allocation
+        ; size must use the SAME layout the backend uses for field offsets;
+        ; a module without a datalayout line makes `opt` fold with LLVM's
+        ; DEFAULT layout (i64 ABI-align 4) while llc lays out with the
+        ; target layout (i64 align 8) — region allocations come out
+        ; undersized (Planner: 1208 vs 1216) and the heap corrupts. llc
+        ; masked this at O0 by stamping the target layout itself.
+        apply_target_layout()
+
         ; Initialize intrinsic types
         init_intrinsic_types()
 
         ; Set up DWARF debug info (-g). No-op unless emit_debug_info.
         init_debug_info()
+    }
+
+    ; Resolve the emission triple (host default, or --target override) to a
+    ; TargetMachine and copy its DataLayout string onto the module. Best
+    ; effort: on any failure the module keeps no layout — the llc path
+    ; still works exactly as before.
+    procedure apply_target_layout(this)
+    {
+        LLVMInitializeAArch64TargetInfo()
+        LLVMInitializeAArch64Target()
+        LLVMInitializeAArch64TargetMC()
+        LLVMInitializeX86TargetInfo()
+        LLVMInitializeX86Target()
+        LLVMInitializeX86TargetMC()
+
+        var triple (LLVMGetDefaultTargetTriple() as pointer[const_char])
+        if config.target_triple.get_length() > 0
+        {
+            let override_triple config.target_triple.to_c_string()
+            set triple: override_triple
+        }
+        else
+        {
+            if triple = null
+                return
+        }
+
+        var target LLVMTargetRef(null)
+        let lookup_err LLVMGetTargetFromTriple(triple, &target, null as pointer[pointer[char]])
+        if lookup_err <> 0
+            return
+
+        let tm LLVMCreateTargetMachine(target, triple,
+            "generic" as pointer[const_char],
+            "" as pointer[const_char],
+            0, 2, 0)
+        if tm.handle = null
+            return
+
+        let td LLVMCreateTargetDataLayout(tm)
+        if td.handle <> null
+        {
+            let dl_str LLVMCopyStringRepOfTargetData(td)
+            if dl_str <> null
+            {
+                LLVMSetDataLayout(llvm_module, dl_str as pointer[const_char])
+                LLVMDisposeMessage dl_str
+            }
+            LLVMDisposeTargetData td
+        }
+        LLVMDisposeTargetMachine tm
     }
 
     ; Record the source file path + contents for -g. Must be called

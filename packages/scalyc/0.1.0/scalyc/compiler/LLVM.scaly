@@ -562,6 +562,15 @@ function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[const_ch
 ; Dispose target machine
 procedure LLVMDisposeTargetMachine(machine: LLVMTargetMachineRef) extern
 
+; The DataLayout a target machine compiles for (caller owns the result)
+function LLVMCreateTargetDataLayout(machine: LLVMTargetMachineRef) returns LLVMTargetDataRef extern
+
+; String representation of a DataLayout (dispose with LLVMDisposeMessage)
+function LLVMCopyStringRepOfTargetData(td: LLVMTargetDataRef) returns pointer[char] extern
+
+; Dispose target data
+procedure LLVMDisposeTargetData(td: LLVMTargetDataRef) extern
+
 ; Emit to file
 function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[const_char], codegen: int, error_message: pointer[pointer[char]]) returns int extern
 
