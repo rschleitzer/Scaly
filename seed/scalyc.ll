@@ -232931,6 +232931,7 @@ define linkonce_odr void @_ZN7Emitter18emit_function_declEPN4scaly6memory4PageE1
 entry:
   %llvm_func = alloca %_Z12LLVMValueRef, align 8
   %choose.union214 = alloca %_Z21PlannedImplementation, align 8
+  %is_extern = alloca i1, align 1
   %arg.tmp207 = alloca { ptr }, align 8
   %arg.tmp202 = alloca { ptr }, align 8
   %arg.tmp180 = alloca %_Z11LLVMTypeRef, align 8
@@ -233260,6 +233261,7 @@ if.end115:                                        ; preds = %if.end138, %if.end1
   %field.inplace199 = getelementptr inbounds %_Z15PlannedFunction, ptr %3, i32 0, i32 4
   %call200 = call ptr @_ZN6String6c_dataEv(ptr %field.inplace199)
   store ptr %call200, ptr %param_types, align 1
+  store i1 false, ptr %pass_by_ptr, align 1
   %field.inplace201 = getelementptr inbounds %_Z15PlannedFunction, ptr %3, i32 0, i32 3
   store { ptr } { ptr @.sconst.1273 }, ptr %arg.tmp202, align 1
   %call203 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace201, ptr %arg.tmp202)
@@ -233411,7 +233413,7 @@ if.then204:                                       ; preds = %if.end115
   br i1 %eq209, label %if.then210, label %if.end211
 
 if.end205:                                        ; preds = %if.end211, %if.end115
-  store i1 false, ptr %pass_by_ptr, align 1
+  store i1 false, ptr %is_extern, align 1
   %load.struct212 = load %_Z15PlannedFunction, ptr %3, align 8
   %impl213 = extractvalue %_Z15PlannedFunction %load.struct212, 10
   store %_Z21PlannedImplementation %impl213, ptr %choose.union214, align 1
@@ -233423,6 +233425,7 @@ if.end205:                                        ; preds = %if.end211, %if.end1
 
 if.then210:                                       ; preds = %if.then204
   store ptr @.str.1275, ptr %param_types, align 1
+  store i1 true, ptr %pass_by_ptr, align 1
   br label %if.end211
 
 if.end211:                                        ; preds = %if.then210, %if.then204
@@ -233436,9 +233439,9 @@ choose.end217:                                    ; preds = %choose.else218, %ch
   %func_cstr = load ptr, ptr %param_types, align 8
   %call225 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle224, ptr %func_cstr)
   store %_Z12LLVMValueRef %call225, ptr %llvm_func, align 1
-  %is_extern = load i1, ptr %pass_by_ptr, align 1
-  %eq226 = icmp eq i1 %is_extern, false
-  br i1 %eq226, label %if.then227, label %if.end228
+  %is_extern226 = load i1, ptr %is_extern, align 1
+  %eq227 = icmp eq i1 %is_extern226, false
+  br i1 %eq227, label %if.then228, label %if.end229
 
 choose.else218:                                   ; preds = %if.end205
   br label %choose.end217
@@ -233446,110 +233449,124 @@ choose.else218:                                   ; preds = %if.end205
 choose.when219:                                   ; preds = %if.end205
   %"variant.c_data().ptr220" = getelementptr inbounds %_Z21PlannedImplementation, ptr %choose.union214, i32 0, i32 1
   %variant.val221 = load %_Z17PlannedExternImpl, ptr %"variant.c_data().ptr220", align 8
-  store i1 true, ptr %pass_by_ptr, align 1
+  store i1 true, ptr %is_extern, align 1
   br label %choose.end217
 
-if.then227:                                       ; preds = %choose.end217
-  %load.struct229 = load %_Z7Emitter, ptr %2, align 8
-  %llvm_module230 = extractvalue %_Z7Emitter %load.struct229, 4
-  %handle231 = extractvalue %_Z13LLVMModuleRef %llvm_module230, 0
-  %func_cstr232 = load ptr, ptr %param_types, align 8
-  %handle233 = extractvalue %_Z11LLVMTypeRef %call198, 0
-  %call234 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle231, ptr %func_cstr232, ptr %handle233)
-  store %_Z12LLVMValueRef %call234, ptr %llvm_func, align 1
-  br label %if.end228
+if.then228:                                       ; preds = %choose.end217
+  %load.struct230 = load %_Z7Emitter, ptr %2, align 8
+  %llvm_module231 = extractvalue %_Z7Emitter %load.struct230, 4
+  %handle232 = extractvalue %_Z13LLVMModuleRef %llvm_module231, 0
+  %func_cstr233 = load ptr, ptr %param_types, align 8
+  %handle234 = extractvalue %_Z11LLVMTypeRef %call198, 0
+  %call235 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle232, ptr %func_cstr233, ptr %handle234)
+  store %_Z12LLVMValueRef %call235, ptr %llvm_func, align 1
+  br label %if.end229
 
-if.end228:                                        ; preds = %if.then227, %choose.end217
-  %llvm_func235 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
-  %handle236 = extractvalue %_Z12LLVMValueRef %llvm_func235, 0
-  %eq237 = icmp eq ptr %handle236, null
-  br i1 %eq237, label %if.then238, label %if.end239
+if.end229:                                        ; preds = %if.then228, %choose.end217
+  %llvm_func236 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+  %handle237 = extractvalue %_Z12LLVMValueRef %llvm_func236, 0
+  %eq238 = icmp eq ptr %handle237, null
+  br i1 %eq238, label %if.then239, label %if.end240
 
-if.then238:                                       ; preds = %if.end228
-  %load.struct240 = load %_Z7Emitter, ptr %2, align 8
-  %llvm_module241 = extractvalue %_Z7Emitter %load.struct240, 4
-  %handle242 = extractvalue %_Z13LLVMModuleRef %llvm_module241, 0
-  %func_cstr243 = load ptr, ptr %param_types, align 8
-  %handle244 = extractvalue %_Z11LLVMTypeRef %call198, 0
-  %call245 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle242, ptr %func_cstr243, ptr %handle244)
-  store %_Z12LLVMValueRef %call245, ptr %llvm_func, align 1
-  br label %if.end239
+if.then239:                                       ; preds = %if.end229
+  %load.struct241 = load %_Z7Emitter, ptr %2, align 8
+  %llvm_module242 = extractvalue %_Z7Emitter %load.struct241, 4
+  %handle243 = extractvalue %_Z13LLVMModuleRef %llvm_module242, 0
+  %func_cstr244 = load ptr, ptr %param_types, align 8
+  %handle245 = extractvalue %_Z11LLVMTypeRef %call198, 0
+  %call246 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle243, ptr %func_cstr244, ptr %handle245)
+  store %_Z12LLVMValueRef %call246, ptr %llvm_func, align 1
+  br label %if.end240
 
-if.end239:                                        ; preds = %if.then238, %if.end228
-  %use_sret246 = load i1, ptr %has_body, align 1
-  br i1 %use_sret246, label %if.then247, label %if.end248
+if.end240:                                        ; preds = %if.then239, %if.end229
+  %use_sret247 = load i1, ptr %has_body, align 1
+  br i1 %use_sret247, label %if.then248, label %if.end249
 
-if.then247:                                       ; preds = %if.end239
-  %sret_type249 = load %_Z11LLVMTypeRef, ptr %sret_type, align 8
-  %handle250 = extractvalue %_Z11LLVMTypeRef %sret_type249, 0
-  %ne251 = icmp ne ptr %handle250, null
-  br i1 %ne251, label %if.then252, label %if.end253
+if.then248:                                       ; preds = %if.end240
+  %sret_type250 = load %_Z11LLVMTypeRef, ptr %sret_type, align 8
+  %handle251 = extractvalue %_Z11LLVMTypeRef %sret_type250, 0
+  %ne252 = icmp ne ptr %handle251, null
+  br i1 %ne252, label %if.then253, label %if.end254
 
-if.end248:                                        ; preds = %if.end253, %if.end239
-  %load.struct272 = load %_Z15PlannedFunction, ptr %3, align 8
-  %is_private273 = extractvalue %_Z15PlannedFunction %load.struct272, 1
-  br i1 %is_private273, label %if.then274, label %if.else275
+if.end249:                                        ; preds = %if.end254, %if.end240
+  %load.struct273 = load %_Z15PlannedFunction, ptr %3, align 8
+  %is_private274 = extractvalue %_Z15PlannedFunction %load.struct273, 1
+  br i1 %is_private274, label %if.then275, label %if.else276
 
-if.then252:                                       ; preds = %if.then247
-  %call254 = call i32 @_ZN7Emitter12sret_kind_idEv(ptr %2)
-  %call255 = call i32 @_ZN7Emitter15noalias_kind_idEv(ptr %2)
-  %load.struct256 = load %_Z7Emitter, ptr %2, align 8
-  %context257 = extractvalue %_Z7Emitter %load.struct256, 1
-  %handle258 = extractvalue %_Z14LLVMContextRef %context257, 0
-  %sret_type259 = load %_Z11LLVMTypeRef, ptr %sret_type, align 8
-  %handle260 = extractvalue %_Z11LLVMTypeRef %sret_type259, 0
-  %call261 = call %_Z16LLVMAttributeRef @LLVMCreateTypeAttribute(ptr %handle258, i32 %call254, ptr %handle260)
-  %llvm_func262 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
-  %handle263 = extractvalue %_Z12LLVMValueRef %llvm_func262, 0
-  %handle264 = extractvalue %_Z16LLVMAttributeRef %call261, 0
-  call void @LLVMAddAttributeAtIndex(ptr %handle263, i32 1, ptr %handle264)
-  %load.struct265 = load %_Z7Emitter, ptr %2, align 8
-  %context266 = extractvalue %_Z7Emitter %load.struct265, 1
-  %handle267 = extractvalue %_Z14LLVMContextRef %context266, 0
-  %call268 = call %_Z16LLVMAttributeRef @LLVMCreateEnumAttribute(ptr %handle267, i32 %call255, i64 0)
-  %llvm_func269 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
-  %handle270 = extractvalue %_Z12LLVMValueRef %llvm_func269, 0
-  %handle271 = extractvalue %_Z16LLVMAttributeRef %call268, 0
-  call void @LLVMAddAttributeAtIndex(ptr %handle270, i32 1, ptr %handle271)
-  br label %if.end253
+if.then253:                                       ; preds = %if.then248
+  %call255 = call i32 @_ZN7Emitter12sret_kind_idEv(ptr %2)
+  %call256 = call i32 @_ZN7Emitter15noalias_kind_idEv(ptr %2)
+  %load.struct257 = load %_Z7Emitter, ptr %2, align 8
+  %context258 = extractvalue %_Z7Emitter %load.struct257, 1
+  %handle259 = extractvalue %_Z14LLVMContextRef %context258, 0
+  %sret_type260 = load %_Z11LLVMTypeRef, ptr %sret_type, align 8
+  %handle261 = extractvalue %_Z11LLVMTypeRef %sret_type260, 0
+  %call262 = call %_Z16LLVMAttributeRef @LLVMCreateTypeAttribute(ptr %handle259, i32 %call255, ptr %handle261)
+  %llvm_func263 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+  %handle264 = extractvalue %_Z12LLVMValueRef %llvm_func263, 0
+  %handle265 = extractvalue %_Z16LLVMAttributeRef %call262, 0
+  call void @LLVMAddAttributeAtIndex(ptr %handle264, i32 1, ptr %handle265)
+  %load.struct266 = load %_Z7Emitter, ptr %2, align 8
+  %context267 = extractvalue %_Z7Emitter %load.struct266, 1
+  %handle268 = extractvalue %_Z14LLVMContextRef %context267, 0
+  %call269 = call %_Z16LLVMAttributeRef @LLVMCreateEnumAttribute(ptr %handle268, i32 %call256, i64 0)
+  %llvm_func270 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+  %handle271 = extractvalue %_Z12LLVMValueRef %llvm_func270, 0
+  %handle272 = extractvalue %_Z16LLVMAttributeRef %call269, 0
+  call void @LLVMAddAttributeAtIndex(ptr %handle271, i32 1, ptr %handle272)
+  br label %if.end254
 
-if.end253:                                        ; preds = %if.then252, %if.then247
-  br label %if.end248
+if.end254:                                        ; preds = %if.then253, %if.then248
+  br label %if.end249
 
-if.then274:                                       ; preds = %if.end248
-  %llvm_func277 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
-  %handle278 = extractvalue %_Z12LLVMValueRef %llvm_func277, 0
-  %call279 = call i64 @_ZN11LLVMLinkage8InternalEv()
-  call void @LLVMSetLinkage(ptr %handle278, i64 %call279)
-  br label %if.end276
+if.then275:                                       ; preds = %if.end249
+  %llvm_func278 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+  %handle279 = extractvalue %_Z12LLVMValueRef %llvm_func278, 0
+  %call280 = call i64 @_ZN11LLVMLinkage8InternalEv()
+  call void @LLVMSetLinkage(ptr %handle279, i64 %call280)
+  br label %if.end277
 
-if.else275:                                       ; preds = %if.end248
-  %is_extern280 = load i1, ptr %pass_by_ptr, align 1
-  br i1 %is_extern280, label %if.then281, label %if.else282
+if.else276:                                       ; preds = %if.end249
+  %is_extern281 = load i1, ptr %is_extern, align 1
+  br i1 %is_extern281, label %if.then282, label %if.else283
 
-if.end276:                                        ; preds = %if.end283, %if.then274
-  %field.inplace290 = getelementptr inbounds %_Z15PlannedFunction, ptr %3, i32 0, i32 4
-  call void @_ZN7Emitter14cache_functionE6String12LLVMValueRef(ptr %2, ptr %field.inplace290, ptr %llvm_func)
-  %llvm_func291 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+if.end277:                                        ; preds = %if.end284, %if.then275
+  %field.inplace297 = getelementptr inbounds %_Z15PlannedFunction, ptr %3, i32 0, i32 4
+  call void @_ZN7Emitter14cache_functionE6String12LLVMValueRef(ptr %2, ptr %field.inplace297, ptr %llvm_func)
+  %llvm_func298 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %llvm_func, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then281:                                       ; preds = %if.else275
-  %llvm_func284 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
-  %handle285 = extractvalue %_Z12LLVMValueRef %llvm_func284, 0
-  %call286 = call i64 @_ZN11LLVMLinkage8ExternalEv()
-  call void @LLVMSetLinkage(ptr %handle285, i64 %call286)
-  br label %if.end283
+if.then282:                                       ; preds = %if.else276
+  %llvm_func285 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+  %handle286 = extractvalue %_Z12LLVMValueRef %llvm_func285, 0
+  %call287 = call i64 @_ZN11LLVMLinkage8ExternalEv()
+  call void @LLVMSetLinkage(ptr %handle286, i64 %call287)
+  br label %if.end284
 
-if.else282:                                       ; preds = %if.else275
-  %llvm_func287 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
-  %handle288 = extractvalue %_Z12LLVMValueRef %llvm_func287, 0
-  %call289 = call i64 @_ZN11LLVMLinkage11LinkOnceODREv()
-  call void @LLVMSetLinkage(ptr %handle288, i64 %call289)
-  br label %if.end283
+if.else283:                                       ; preds = %if.else276
+  %is_entry_main = load i1, ptr %pass_by_ptr, align 1
+  br i1 %is_entry_main, label %if.then288, label %if.else289
 
-if.end283:                                        ; preds = %if.else282, %if.then281
-  br label %if.end276
+if.end284:                                        ; preds = %if.end290, %if.then282
+  br label %if.end277
+
+if.then288:                                       ; preds = %if.else283
+  %llvm_func291 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+  %handle292 = extractvalue %_Z12LLVMValueRef %llvm_func291, 0
+  %call293 = call i64 @_ZN11LLVMLinkage8ExternalEv()
+  call void @LLVMSetLinkage(ptr %handle292, i64 %call293)
+  br label %if.end290
+
+if.else289:                                       ; preds = %if.else283
+  %llvm_func294 = load %_Z12LLVMValueRef, ptr %llvm_func, align 8
+  %handle295 = extractvalue %_Z12LLVMValueRef %llvm_func294, 0
+  %call296 = call i64 @_ZN11LLVMLinkage11LinkOnceODREv()
+  call void @LLVMSetLinkage(ptr %handle295, i64 %call296)
+  br label %if.end290
+
+if.end290:                                        ; preds = %if.else289, %if.then288
+  br label %if.end284
 }
 
 define linkonce_odr i1 @_ZN7Emitter26is_uninstantiated_templateE6String(ptr %0, ptr %1) {

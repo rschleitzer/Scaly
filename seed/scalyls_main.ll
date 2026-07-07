@@ -22,7 +22,7 @@ declare i64 @puts(ptr)
 
 declare void @_ZN6server3runEv()
 
-define linkonce_odr i64 @main(i64 %0, ptr %1) {
+define i64 @main(i64 %0, ptr %1) {
 entry:
   call void @_ZN6server3runEv()
   ret i64 0

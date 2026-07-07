@@ -22,7 +22,7 @@ declare i64 @puts(ptr)
 
 declare i64 @_ZN3cli4mainEiPPc(i64, ptr)
 
-define linkonce_odr i64 @main(i64 %0, ptr %1) {
+define i64 @main(i64 %0, ptr %1) {
 entry:
   %call = call i64 @_ZN3cli4mainEiPPc(i64 %0, ptr %1)
   ret i64 %call
