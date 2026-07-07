@@ -292,14 +292,6 @@ function ctz_u64(x: u64) returns i32
 ; StackBucket: root pages
 ; --------------------------------------------------------------------------
 
-; BOOTSTRAP-COMPAT WRAPPER — DELETE AFTER THE NEXT SEED REFRESH. The
-; allocation logic moved to Page.allocate_root_page; the committed seed's
-; emitter still emits prologue calls to _Z21scaly_alloc_root_pagev, so this
-; symbol must stay defined for one seed generation (build-from-seed compiles
-; this source with the OLD seed compiler).
-function scaly_alloc_root_page() returns pointer[Page]
-    Page.allocate_root_page()
-
 procedure scaly_release_root_page(p: pointer[Page])
 {
     ; Strict LIFO: the release must pop the current top. A mismatch means

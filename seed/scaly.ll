@@ -1322,12 +1322,6 @@ if.end44:                                         ; preds = %if.then43, %if.end3
   ret i32 %as.trunc
 }
 
-define linkonce_odr ptr @_Z21scaly_alloc_root_pagev() {
-entry:
-  %call = call ptr @_ZN4Page18allocate_root_pageEv()
-  ret ptr %call
-}
-
 define linkonce_odr void @_Z23scaly_release_root_pageP4Page(ptr %0) {
 entry:
   %global.load = load ptr, ptr @stack_top, align 8
