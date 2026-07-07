@@ -38,12 +38,37 @@ fi
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
-for f in main scalyc scaly; do
+
+# Whole-program `opt -O2` between the seed IR and llc (~20% faster compiler).
+# Requires llvm-link + opt (both ship with LLVM 18) and the seed's external
+# @main (every other function is linkonce_odr — discardable — so the entry
+# anchors GlobalDCE; the modules carry a `target datalayout` line so opt's
+# constant folding agrees with llc). Set SCALYC_NO_OPT=1 to skip, and the
+# per-module llc path is the automatic fallback when opt/llvm-link are absent.
+use_opt=0
+if [ "${SCALYC_NO_OPT:-0}" != "1" ] && [ -n "$OPT" ] && [ -n "$LLVM_LINK" ]; then
+    if grep -q '^define i64 @main(' "$SEED/main.ll"; then
+        use_opt=1
+    else
+        echo "build-from-seed: seed main is not external — skipping opt"
+    fi
+fi
+
+if [ "$use_opt" = "1" ]; then
+    "$LLVM_LINK" "$SEED/main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyc_linked.bc"
+    "$OPT" -O2 "$WORK/scalyc_linked.bc" -o "$WORK/scalyc_opt.bc"
     # -relocation-model=pic: x86-64 Linux links executables as PIE, which rejects
     # llc's default (static) R_X86_64_32 absolute relocations. PIC is the default
     # on Mach-O, so this is a no-op on macOS and harmless on aarch64.
-    "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
-done
+    "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyc_opt.bc" -o "$WORK/scalyc_all.o"
+    SCALYC_OBJS=("$WORK/scalyc_all.o")
+    echo "build-from-seed: whole-program opt -O2 applied"
+else
+    for f in main scalyc scaly; do
+        "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
+    done
+    SCALYC_OBJS=("$WORK/main.o" "$WORK/scalyc.o" "$WORK/scaly.o")
+fi
 
 # On Linux, stock GNU ld (BFD) fails to link libLLVM-18 ("failed to set dynamic
 # section sizes: bad value"); lld handles it. Use lld when present. macOS ld64
@@ -57,7 +82,7 @@ if [ "$(uname -s)" = "Linux" ]; then
 fi
 
 mkdir -p "$(dirname "$OUT")"
-${CLANG:-clang} "${LINKARGS[@]}" "$WORK/main.o" "$WORK/scalyc.o" "$WORK/scaly.o" \
+${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT"
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"
@@ -80,11 +105,27 @@ echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 # find it.
 if [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ]; then
     LSOUT="$(dirname "$OUT")/scalyls"
-    for f in scalyls_main scalyls; do
-        "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
-    done
-    ${CLANG:-clang} "${LINKARGS[@]}" "$WORK/scalyls_main.o" "$WORK/scalyls.o" \
-        "$WORK/scalyc.o" "$WORK/scaly.o" \
+    if [ "$use_opt" = "1" ] && grep -q '^define i64 @main(' "$SEED/scalyls_main.ll"; then
+        # Same whole-program shape as the compiler: scalyls' own two roots
+        # plus the scalyc + scaly package bodies (the compiler's main.ll is
+        # excluded — scalyls_main.ll provides this program's @main anchor).
+        "$LLVM_LINK" "$SEED/scalyls_main.ll" "$SEED/scalyls.ll" \
+            "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyls_linked.bc"
+        "$OPT" -O2 "$WORK/scalyls_linked.bc" -o "$WORK/scalyls_opt.bc"
+        "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyls_opt.bc" -o "$WORK/scalyls_all.o"
+        SCALYLS_OBJS=("$WORK/scalyls_all.o")
+    else
+        for f in scalyls_main scalyls; do
+            "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
+        done
+        if [ ! -f "$WORK/scalyc.o" ]; then
+            for f in scalyc scaly; do
+                "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
+            done
+        fi
+        SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
+    fi
+    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" \
         -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 fi

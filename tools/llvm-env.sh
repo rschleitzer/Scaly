@@ -30,6 +30,20 @@ fi
 LLVM_LIBDIR=${LLVM_LIBDIR:-$LLVM_PREFIX/lib}
 LLVM_LIBNAME=${LLVM_LIBNAME:-LLVM-18}
 
+# 3b. opt + llvm-link (optional — used for the whole-program -O2 seed build;
+#     the pipeline falls back to per-module llc when either is missing, so
+#     their absence never fails validation).
+if [ -z "$OPT" ]; then
+  for cand in "$LLVM_PREFIX/bin/opt" "$LLVM_PREFIX/bin/opt-18" opt-18; do
+    if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then OPT="$cand"; break; fi
+  done
+fi
+if [ -z "$LLVM_LINK" ]; then
+  for cand in "$LLVM_PREFIX/bin/llvm-link" "$LLVM_PREFIX/bin/llvm-link-18" llvm-link-18; do
+    if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLVM_LINK="$cand"; break; fi
+  done
+fi
+
 # 4. report / validate
 llvm_env_ok=1
 [ -n "$LLVM_PREFIX" ] && [ -d "$LLVM_PREFIX" ] || { echo "llvm-env: LLVM-18 prefix not found (set LLVM18=/path)"; llvm_env_ok=0; }
@@ -37,4 +51,4 @@ llvm_env_ok=1
 if [ "$llvm_env_ok" = "1" ]; then
   echo "llvm-env: prefix=$LLVM_PREFIX  llc=$LLC  lib=$LLVM_LIBDIR (-l$LLVM_LIBNAME)"
 fi
-export LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME
+export LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME OPT LLVM_LINK
