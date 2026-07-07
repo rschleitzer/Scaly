@@ -2,10 +2,9 @@ define PAGE_SIZE size_t 0x1000
 
 ; Head of the HeapBucket free list (buckets with at least one free page).
 ; Full buckets are unlinked by allocate_page below and re-added on free
-; (scaly_release_page, root_pages.scaly). Lives HERE, not in root_pages:
-; lookup_global is populated in member-planning order and module Page is
-; planned before module root_pages, so allocate_page could not otherwise
-; resolve it.
+; (release_page below). Lives HERE, not in root_pages: lookup_global is
+; populated in member-planning order and module Page is planned before
+; module root_pages, so allocate_page could not otherwise resolve it.
 mutable heap_head: pointer[HeapBucketHeader] null
 
 ; StackBucket state for allocate_root_page below — same planning-order
@@ -51,6 +50,34 @@ define Page
         }
 
         page
+    }
+
+    function release_page(p: pointer[Page])
+    {
+        ; Oversized pages (allocated directly via aligned_alloc in
+        ; allocate_oversized) carry next_object == null. They go back via free.
+        if p.next_object = null
+        {
+            free(p as pointer[void])
+            return
+        }
+
+        let b heap_bucket_of p
+        let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - (1 as size_t)
+
+        let was_full b.bitmap = 0
+        set b.bitmap: b.bitmap | ((1 as u64) << slot)
+
+        if was_full
+        {
+            ; Bucket had been full; rejoin the free list at the head.
+            set b.next: heap_head
+            set b.prev: null
+            if heap_head <> null
+                set heap_head.prev: b
+
+            set heap_head: b
+        }
     }
 
     function allocate_root_page() returns pointer[Page]
@@ -194,7 +221,7 @@ define Page
         for exclusive_page in exclusive_pages
         {
             exclusive_page.deallocate_extensions()
-            scaly_release_page exclusive_page
+            release_page(exclusive_page)
         }
 
         var page next_page
@@ -208,9 +235,9 @@ define Page
             for excl in page.exclusive_pages
             {
                 excl.deallocate_extensions()
-                scaly_release_page excl
+                release_page(excl)
             }
-            scaly_release_page page
+            release_page(page)
             set page: next_page
         }
     }
@@ -218,7 +245,7 @@ define Page
     function deallocate_exclusive_page(this: Page, page: pointer[Page])
     {
         page.deallocate_extensions()
-        scaly_release_page page
+        release_page(page)
         if exclusive_pages.remove(page) = false
             exit 2
 
@@ -241,7 +268,7 @@ define Page
             let node exclusive_pages.head
             let page node.page
             page.deallocate_extensions()
-            scaly_release_page page
+            release_page(page)
             set exclusive_pages.head: node.next
         }
 
@@ -263,7 +290,7 @@ define Page
         {
             let page_to_free next_page
             set next_page: page_to_free.next_page
-            scaly_release_page page_to_free
+            release_page(page_to_free)
         }
     }
 }

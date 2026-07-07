@@ -1,4 +1,8 @@
-; StackBucket (strict LIFO) and HeapBucket (bitmap-managed) page allocators.
+; Bucket machinery for the StackBucket (strict LIFO) and HeapBucket
+; (bitmap-managed) page allocators, plus the StackBucket release paths and
+; the SCALY_TRACE_ROOT diagnostics. The allocate/release entry points live
+; in Page.scaly (Page.allocate_root_page / Page.allocate_page /
+; Page.release_page), together with the mutable allocator state.
 ;
 ; StackBucket: root pages — function-local and try-scope pages the Emitter
 ;   allocates at entry and releases on exit. Push is a pointer bump; pop is
@@ -12,9 +16,8 @@
 ; Each bucket is a BUCKET_SIZE-aligned region of BUCKET_PAGES pages. Page 0
 ; holds the bucket header; pages 1..BUCKET_PAGES-1 are usable.
 ;
-; The allocator state and trace counters are Scaly-owned mutable module
-; globals (heap_head lives in Page.scaly beside its consumer,
-; Page.allocate_page). Diagnostics go to stderr via write(2, ...) below.
+; The trace counters are Scaly-owned mutable module globals. Diagnostics go
+; to stderr via write(2, ...) below.
 ;
 ; Guard semantics: `if X ACTION` runs ACTION when X is true, then falls
 ; through. It's an early-exit when the condition holds.
@@ -44,10 +47,10 @@ define HeapBucketHeader
 )
 
 ; The process-global allocator state (stack_head, stack_top, heap_head)
-; lives in Page.scaly: its consumers Page.allocate_root_page and
-; Page.allocate_page are planned before this module, and lookup_global
-; is populated in planning order. The release paths below are planned
-; later and resolve those globals fine.
+; lives in Page.scaly: its consumers Page.allocate_root_page,
+; Page.allocate_page and Page.release_page are planned before this module,
+; and lookup_global is populated in planning order. The root-page release
+; below is planned later and resolves stack_top fine.
 
 ; Trace-diagnostic state — off by default, armed by SCALY_TRACE_ROOT on
 ; the first root-page push or pop. All state is Scaly-owned; the shim
@@ -359,39 +362,6 @@ procedure scaly_release_root_page_full(p: pointer[Page])
     if used
         p.deallocate_extensions()
     scaly_release_root_page p
-}
-
-; --------------------------------------------------------------------------
-; HeapBucket: extension and exclusive pages. Allocation lives in
-; Page.allocate_page (Page.scaly); the release path stays here.
-; --------------------------------------------------------------------------
-
-procedure scaly_release_page(p: pointer[Page])
-{
-    ; Oversized pages (allocated directly via aligned_alloc in Page.scaly's
-    ; allocate_oversized) carry next_object == null. They go back via free.
-    if p.next_object = null
-    {
-        free(p as pointer[void])
-        return
-    }
-
-    let b heap_bucket_of p
-    let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - (1 as size_t)
-
-    let was_full b.bitmap = 0
-    set b.bitmap: b.bitmap | ((1 as u64) << slot)
-
-    if was_full
-    {
-        ; Bucket had been full; rejoin the free list at the head.
-        set b.next: heap_head
-        set b.prev: null
-        if heap_head <> null
-            set heap_head.prev: b
-
-        set heap_head: b
-    }
 }
 
 ; --------------------------------------------------------------------------
