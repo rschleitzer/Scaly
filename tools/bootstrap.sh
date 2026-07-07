@@ -25,7 +25,7 @@ LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
 
 # Bootstrap ROOT: the committed seed. The C++ stage-0 fallback is retired
 # (sources frozen under retired/scalyc0/) — no seed means no bootstrap.
-if [ -f seed/scalyc.ll ] && tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; then
+if [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root"
   ROOT=/tmp/scalyc_seed_root
 else

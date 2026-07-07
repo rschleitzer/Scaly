@@ -103,7 +103,10 @@ echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 # compiler seed objects already built above — same recipe as tools/seed.sh.
 # Lands beside the compiler so tools/install.sh and the VS Code extension can
 # find it.
-if [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ]; then
+# SCALYC_SEED_NO_SCALYLS=1 skips the language server — bootstrap/cycle roots
+# only need the compiler, and the scalyls whole-program opt pass re-optimizes
+# the entire scalyc+scaly superset module (~1min it would spend for nothing).
+if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ]; then
     LSOUT="$(dirname "$OUT")/scalyls"
     if [ "$use_opt" = "1" ] && grep -q '^define i64 @main(' "$SEED/scalyls_main.ll"; then
         # Same whole-program shape as the compiler: scalyls' own two roots

@@ -13,7 +13,7 @@ LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
 # (sources frozen under retired/scalyc0/) — no seed means no bootstrap.
 # Cached at /tmp/scalyc_seed_root — rebuilt only when older than the seed.
 if [ -f seed/scalyc.ll ] && { [ -x /tmp/scalyc_seed_root ] && [ /tmp/scalyc_seed_root -nt seed/scalyc.ll ] \
-     || tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; }; then
+     || SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; }; then
   ROOT=/tmp/scalyc_seed_root
 else
   echo "cycle: FAIL — no usable seed (seed/scalyc.ll missing or build-from-seed failed)"
