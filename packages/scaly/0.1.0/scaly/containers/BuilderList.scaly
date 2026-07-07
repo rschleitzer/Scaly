@@ -8,9 +8,17 @@ define BuilderList[T] (head: pointer[Node[T]])
         set head: null
     }
 
-    function add(this: BuilderList[T], element: T)
+    ; The node page is an EXPLICIT parameter (mirrors the retired C++
+    ; `add(Page* private_page, T element)`). `Node[T]^this` would derive
+    ; the page via Page.get(this) — but a BuilderList embedded in a big
+    ; (>PAGE_SIZE, oversized) slots-vector buffer has NO page header at
+    ; its masked address: Page.get returns the oversized page header
+    ; (next_object = null) or an interior garbage "header", and the node
+    ; allocation returns ~null / corrupts. Callers pass the page that
+    ; OWNS the slots vector (Page.get(slots) / the fresh exclusive page).
+    function add(this: BuilderList[T], page: pointer[Page], element: T)
     {
-        let new_node Node[T]^this(element, head)
+        let new_node Node[T]^page(element, head)
         set head: new_node
     }
 
