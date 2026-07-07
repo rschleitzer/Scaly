@@ -346,7 +346,7 @@ for.cond:                                         ; preds = %for.body, %if.end
 
 for.body:                                         ; preds = %for.cond
   call void @_ZN4Page21deallocate_extensionsEv(ptr %next)
-  call void @_Z18scaly_release_pageP4Page(ptr %next)
+  call void @_ZN4Page12release_pageEP4Page(ptr %next)
   br label %for.cond
 
 for.exit:                                         ; preds = %for.cond
@@ -382,14 +382,64 @@ for.cond12:                                       ; preds = %for.body13, %while.
 
 for.body13:                                       ; preds = %for.cond12
   call void @_ZN4Page21deallocate_extensionsEv(ptr %next15)
-  call void @_Z18scaly_release_pageP4Page(ptr %next15)
+  call void @_ZN4Page12release_pageEP4Page(ptr %next15)
   br label %for.cond12
 
 for.exit14:                                       ; preds = %for.cond12
   %page17 = load ptr, ptr %page, align 8
-  call void @_Z18scaly_release_pageP4Page(ptr %page17)
+  call void @_ZN4Page12release_pageEP4Page(ptr %page17)
   store ptr %next_page6, ptr %page, align 1
   br label %while.cond
+}
+
+define linkonce_odr void @_ZN4Page12release_pageEP4Page(ptr %0) {
+entry:
+  %load.struct = load %_Z4Page, ptr %0, align 8
+  %next_object = extractvalue %_Z4Page %load.struct, 0
+  %eq = icmp eq ptr %next_object, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @free(ptr %0)
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call = call ptr @_Z14heap_bucket_ofP4Page(ptr %0)
+  %as.ptrtoint = ptrtoint ptr %0 to i64
+  %as.ptrtoint1 = ptrtoint ptr %call to i64
+  %sub = sub i64 %as.ptrtoint, %as.ptrtoint1
+  %udiv = udiv i64 %sub, 4096
+  %sub2 = sub i64 %udiv, 1
+  %load.struct3 = load %_Z16HeapBucketHeader, ptr %call, align 8
+  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct3, 2
+  %eq4 = icmp eq i64 %bitmap, 0
+  %load.struct5 = load %_Z16HeapBucketHeader, ptr %call, align 8
+  %bitmap6 = extractvalue %_Z16HeapBucketHeader %load.struct5, 2
+  %shl = shl i64 1, %sub2
+  %or = or i64 %bitmap6, %shl
+  %bitmap7 = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 2
+  store i64 %or, ptr %bitmap7, align 4
+  br i1 %eq4, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end
+  %global.load = load ptr, ptr @heap_head, align 8
+  %next = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 1
+  store ptr %global.load, ptr %next, align 8
+  %prev = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 0
+  store ptr null, ptr %prev, align 8
+  %global.load10 = load ptr, ptr @heap_head, align 8
+  %ne = icmp ne ptr %global.load10, null
+  br i1 %ne, label %if.then11, label %if.end12
+
+if.end9:                                          ; preds = %if.end12, %if.end
+  ret void
+
+if.then11:                                        ; preds = %if.then8
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %if.then8
+  store ptr %call, ptr @heap_head, align 8
+  br label %if.end9
 }
 
 define linkonce_odr ptr @_ZN4Page8allocateEmm(ptr %0, i64 %1, i64 %2) {
@@ -804,7 +854,7 @@ entry:
 define linkonce_odr void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %0, ptr %1) {
 entry:
   call void @_ZN4Page21deallocate_extensionsEv(ptr %1)
-  call void @_Z18scaly_release_pageP4Page(ptr %1)
+  call void @_ZN4Page12release_pageEP4Page(ptr %1)
   %field.inplace = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 3
   %call = call i1 @_ZN8PageList6removeEP4Page(ptr %field.inplace, ptr %1)
   %eq = icmp eq i1 %call, false
@@ -881,7 +931,7 @@ while.body:                                       ; preds = %while.cond
   %load.struct5 = load %_Z8PageNode, ptr %head4, align 8
   %page = extractvalue %_Z8PageNode %load.struct5, 0
   call void @_ZN4Page21deallocate_extensionsEv(ptr %page)
-  call void @_Z18scaly_release_pageP4Page(ptr %page)
+  call void @_ZN4Page12release_pageEP4Page(ptr %page)
   %load.struct6 = load %_Z8PageNode, ptr %head4, align 8
   %next = extractvalue %_Z8PageNode %load.struct6, 1
   %exclusive_pages7 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 3
@@ -940,7 +990,7 @@ while.body:                                       ; preds = %while.cond
   %next_page7 = extractvalue %_Z4Page %load.struct6, 2
   %next_page8 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 2
   store ptr %next_page7, ptr %next_page8, align 8
-  call void @_Z18scaly_release_pageP4Page(ptr %next_page5)
+  call void @_ZN4Page12release_pageEP4Page(ptr %next_page5)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
@@ -1424,56 +1474,6 @@ if.then12:                                        ; preds = %if.end10
 if.end13:                                         ; preds = %if.then12, %if.end10
   call void @_Z23scaly_release_root_pageP4Page(ptr %0)
   ret void
-}
-
-define linkonce_odr void @_Z18scaly_release_pageP4Page(ptr %0) {
-entry:
-  %load.struct = load %_Z4Page, ptr %0, align 8
-  %next_object = extractvalue %_Z4Page %load.struct, 0
-  %eq = icmp eq ptr %next_object, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @free(ptr %0)
-  ret void
-
-if.end:                                           ; preds = %entry
-  %call = call ptr @_Z14heap_bucket_ofP4Page(ptr %0)
-  %as.ptrtoint = ptrtoint ptr %0 to i64
-  %as.ptrtoint1 = ptrtoint ptr %call to i64
-  %sub = sub i64 %as.ptrtoint, %as.ptrtoint1
-  %udiv = udiv i64 %sub, 4096
-  %sub2 = sub i64 %udiv, 1
-  %load.struct3 = load %_Z16HeapBucketHeader, ptr %call, align 8
-  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct3, 2
-  %eq4 = icmp eq i64 %bitmap, 0
-  %load.struct5 = load %_Z16HeapBucketHeader, ptr %call, align 8
-  %bitmap6 = extractvalue %_Z16HeapBucketHeader %load.struct5, 2
-  %shl = shl i64 1, %sub2
-  %or = or i64 %bitmap6, %shl
-  %bitmap7 = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 2
-  store i64 %or, ptr %bitmap7, align 4
-  br i1 %eq4, label %if.then8, label %if.end9
-
-if.then8:                                         ; preds = %if.end
-  %global.load = load ptr, ptr @heap_head, align 8
-  %next = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 1
-  store ptr %global.load, ptr %next, align 8
-  %prev = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 0
-  store ptr null, ptr %prev, align 8
-  %global.load10 = load ptr, ptr @heap_head, align 8
-  %ne = icmp ne ptr %global.load10, null
-  br i1 %ne, label %if.then11, label %if.end12
-
-if.end9:                                          ; preds = %if.end12, %if.end
-  ret void
-
-if.then11:                                        ; preds = %if.then8
-  br label %if.end12
-
-if.end12:                                         ; preds = %if.then11, %if.then8
-  store ptr %call, ptr @heap_head, align 8
-  br label %if.end9
 }
 
 define linkonce_odr void @_Z16scaly_trace_dumpv() {
