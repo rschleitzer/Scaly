@@ -19765,7 +19765,7 @@ define Planner
                         set i: i + 1
                     }
                     var sh Vector[PlannedStatement](out_stmts)
-                    let nblk PlannedBlock(blk.loc, &sh, blk.needs_local_page_cleanup)
+                    let nblk PlannedBlock(blk.loc, &sh)
                     return PlannedOperand^this(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type)
                 }
                 when c: PlannedCall
@@ -20369,10 +20369,6 @@ define Planner
 
         ; ================================================================
         ; plan_block: push a fresh scope, plan every statement, pop.
-        ; After planning, scan the planned statements for any operand
-        ; carrying a Local lifetime — that's the signal that a `$`
-        ; allocation happened in this block and the emitter must emit
-        ; page-cleanup on exit.
         ; ================================================================
         function plan_block(this: Planner, b: Block) returns PlannedBlock
         {
@@ -20380,25 +20376,12 @@ define Planner
             let planned_stmts this.plan_statements(b.statements)
             this.pop_scope()
 
-            var has_local: bool false
-            var si: size_t 0
-            while si < planned_stmts.length
-            {
-                let s_ptr planned_stmts.get si
-                if s_ptr <> null
-                {
-                    if Planner.statement_has_local_lifetime((*s_ptr))
-                        set has_local: true
-                }
-                set si: si + 1
-            }
-
             var stmts_holder Vector[PlannedStatement](planned_stmts)
-            PlannedBlock(b.span, &stmts_holder, has_local)
+            PlannedBlock(b.span, &stmts_holder)
         }
 
-        ; has_local_lifetime: true iff `t` is a $-allocation marker
-        ; (Lifetime.Local). Value types with Unspecified lifetime stay
+        ; has_local_lifetime: true iff `t` carries a Local-lifetime
+        ; marker. Value types with Unspecified lifetime stay
         ; stack-resident and don't need page cleanup.
         function has_local_lifetime(t: PlannedType) returns bool
         {
@@ -20411,8 +20394,8 @@ define Planner
 
         ; operand_has_local_lifetime: true iff the operand's own type or
         ; any of its planned call args / tuple components carries a
-        ; Local lifetime. Does not descend into nested blocks — those
-        ; own their own needs_local_page_cleanup flag.
+        ; Local lifetime. Does not descend into nested blocks. Feeds the
+        ; function-level needs_local_page computation.
         function operand_has_local_lifetime(op: PlannedOperand) returns bool
         {
             if Planner.has_local_lifetime(op.result_type)
@@ -20467,72 +20450,6 @@ define Planner
                                         set j: j + 1
                                     }
                                 }
-                            }
-                            set i: i + 1
-                        }
-                    }
-                    false
-                }
-                else
-                    false
-        }
-
-        ; statement_has_local_lifetime: scan the operands inside a
-        ; PlannedStatement for any Local-lifetime marker.
-        function statement_has_local_lifetime(s: PlannedStatement) returns bool
-        {
-            choose s
-                when a: PlannedAction
-                {
-                    if a.source <> null
-                    {
-                        let src (*a.source)
-                        var i: size_t 0
-                        while i < src.length
-                        {
-                            let op_ptr src.get i
-                            if op_ptr <> null
-                            {
-                                if Planner.operand_has_local_lifetime((*op_ptr))
-                                    return true
-                            }
-                            set i: i + 1
-                        }
-                    }
-                    false
-                }
-                when b: PlannedBinding
-                {
-                    if b.operation <> null
-                    {
-                        let ops (*b.operation)
-                        var i: size_t 0
-                        while i < ops.length
-                        {
-                            let op_ptr ops.get i
-                            if op_ptr <> null
-                            {
-                                if Planner.operand_has_local_lifetime((*op_ptr))
-                                    return true
-                            }
-                            set i: i + 1
-                        }
-                    }
-                    false
-                }
-                when r: PlannedReturn
-                {
-                    if r.result <> null
-                    {
-                        let ops (*r.result)
-                        var i: size_t 0
-                        while i < ops.length
-                        {
-                            let op_ptr ops.get i
-                            if op_ptr <> null
-                            {
-                                if Planner.operand_has_local_lifetime((*op_ptr))
-                                    return true
                             }
                             set i: i + 1
                         }

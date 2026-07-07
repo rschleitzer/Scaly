@@ -75,19 +75,8 @@ define LoopContext
 (
     exit_block: LLVMBasicBlockRef       ; Target for 'break'
     continue_block: LLVMBasicBlockRef   ; Target for 'continue'
-    cleanup_depth: size_t               ; BlockCleanupStack size at loop entry
     loop_label: String                  ; Loop label ("" = unlabeled)
     result_slot: LLVMValueRef           ; break-value alloca (null = no value)
-)
-
-; ============================================================================
-; Block Cleanup Context - for block-scoped RBMM cleanup
-; ============================================================================
-
-define BlockCleanupContext
-(
-    watermark: LLVMValueRef     ; BlockWatermark saved at block entry
-    needs_cleanup: bool         ; True if this block has $ allocations
 )
 
 ; ============================================================================
@@ -216,7 +205,7 @@ define Emitter
     ; s196: the current function's lazily-allocated root page for transient
     ; #/$/for allocations in a non-rp function. Mirrors stage-0's
     ; CurrentRegion.LocalPage but kept SEPARATE from current_region.local_page
-    ; so the (never-exercised) watermark/block-cleanup machinery stays dead.
+    ; (which stays a never-set null read only by emit_action's rp fallback).
     ; Allocated once at entry-block start by get_or_create_local_page and
     ; released (scaly_release_root_page) on every function exit path.
     function_local_page: LLVMValueRef
@@ -237,8 +226,6 @@ define Emitter
     current_region: RegionInfo
     ; Loop context stack for break/continue
     loop_stack: ref[Array[LoopContext]]?
-    ; Block cleanup context stack
-    block_cleanup_stack: ref[Array[BlockCleanupContext]]?
     ; s178: alloca-reuse pool. Entry-block temp slots (arg.tmp,
     ; sret.result, deref.tmp, tuple, choose.union, variant.ptr) are
     ; registered here and recycled across statements of the same
@@ -261,13 +248,6 @@ define Emitter
     ; The scope-exit release pass skips pinned slots; pins expire
     ; with their enclosing statement window.
     temp_pinned: ref[Array[LLVMValueRef]]?
-    ; RBMM runtime functions
-    page_type: LLVMTypeRef
-    page_allocate: LLVMValueRef
-    page_allocate_page: LLVMValueRef
-    page_deallocate_extensions: LLVMValueRef
-    page_save_watermark: LLVMValueRef
-    page_restore_watermark: LLVMValueRef
 )
 {
     init(cfg: EmitterConfig)
@@ -310,7 +290,6 @@ define Emitter
         set scope_marks: Array[size_t]^this()
         set current_region: RegionInfo^this()
         set loop_stack: Array[LoopContext]^this()
-        set block_cleanup_stack: Array[BlockCleanupContext]^this()
         set temp_pool_types: Array[LLVMTypeRef]^this()
         set temp_pool_slots: Array[LLVMValueRef]^this()
         set temp_pool_free: Array[size_t]^this()
@@ -318,12 +297,6 @@ define Emitter
         set temp_stmt_log: Array[size_t]^this()
         set temp_stmt_log_start: 0
         set temp_pinned: Array[LLVMValueRef]^this()
-        set page_type: LLVMTypeRef(null)
-        set page_allocate: LLVMValueRef(null)
-        set page_allocate_page: LLVMValueRef(null)
-        set page_deallocate_extensions: LLVMValueRef(null)
-        set page_save_watermark: LLVMValueRef(null)
-        set page_restore_watermark: LLVMValueRef(null)
     }
 
     ; ========================================================================
@@ -1025,9 +998,8 @@ define Emitter
     ; call. Compiling the large scalyc.scaly leaked ~177k root pages / ~49GB
     ; and OOM-killed the self-hosted compiler. Stage-0 (Emitter.cpp) caches
     ; ONE page per function (getOrCreateLocalPage) and releases it on every
-    ; exit; this ports that lifecycle. Kept on a dedicated field
-    ; function_local_page (NOT current_region.local_page) so the emitter's
-    ; never-exercised watermark/block-cleanup paths stay dead.
+    ; exit; this ports that lifecycle on a dedicated field
+    ; function_local_page (NOT current_region.local_page).
     ; ========================================================================
 
     ; Look up or declare Page.allocate_root_page() -> ptr.
@@ -8049,9 +8021,6 @@ define Emitter
     ; Emit a block
     function emit_block(this, block: PlannedBlock) returns LLVMValueRef
     {
-        ; Push block cleanup context
-        push_block_cleanup block.needs_local_page_cleanup
-
         var last_value LLVMValueRef(null)
 
         if block.statements <> null
@@ -8074,7 +8043,6 @@ define Emitter
                     when ret: Return
                     {
                         emit_return ret
-                        pop_block_cleanup false
                         return LLVMValueRef null
                     }
                     else
@@ -8083,9 +8051,6 @@ define Emitter
                     }
             }
         }
-
-        ; Pop cleanup and emit cleanup if needed
-        pop_block_cleanup true
 
         last_value
     }
@@ -11772,9 +11737,6 @@ define Emitter
 
         }
 
-        ; Emit block-scoped cleanups for all pending blocks
-        emit_block_cleanups 0
-
         ; s196: release the function-local root page before returning
         ; (no-op when none was allocated). Replaces the old dead cleanup
         ; that read the never-set current_region.local_page and used free()
@@ -11967,7 +11929,6 @@ define Emitter
                     if throw_stmt.result.length > 0
                         emit_operands throw_stmt.result
                 }
-                emit_block_cleanups 0
                 ; s196: release the function-local root page on the throw path.
                 emit_release_local_page()
                 let void_ty LLVMVoidTypeInContext(context)
@@ -12016,9 +11977,6 @@ define Emitter
             }
         }
 
-        ; Emit block-scoped cleanups
-        emit_block_cleanups 0
-
         ; s196: release the function-local root page before unwinding.
         emit_release_local_page()
 
@@ -12055,9 +12013,6 @@ define Emitter
                         LLVMBuildStore(builder, break_value, loop_ctx.result_slot)
                 }
 
-        ; Emit block-scoped cleanups back to the target loop's entry depth
-        emit_block_cleanups loop_ctx.cleanup_depth
-
         ; Jump to the exit block of the target loop
         LLVMBuildBr(builder, loop_ctx.exit_block)
 
@@ -12072,147 +12027,10 @@ define Emitter
         if loop_ctx = null
             return false
 
-        ; Emit block-scoped cleanups back to the target loop's entry depth
-        emit_block_cleanups loop_ctx.cleanup_depth
-
         ; Jump to the continue block of the target loop
         LLVMBuildBr(builder, loop_ctx.continue_block)
 
         true
-    }
-
-    ; ========================================================================
-    ; Block Cleanup Helpers
-    ; ========================================================================
-
-    ; Emit cleanup for blocks from current depth down to target depth
-    procedure emit_block_cleanups(this, target_depth: size_t)
-    {
-        ; Emit restore_watermark for each block that needs cleanup,
-        ; from innermost to target_depth (not including target_depth)
-        if page_restore_watermark.handle = null
-            return
-
-        var i block_cleanup_stack.length
-        while i > target_depth
-        {
-            let cleanup block_cleanup_stack.get(i - 1)
-            if cleanup <> null
-            {
-                if cleanup.needs_cleanup
-                {
-                    if cleanup.watermark.handle <> null
-                    {
-                        if current_region.local_page.handle <> null
-                        {
-                            ; Call restore_watermark(local_page, watermark)
-                            emit_restore_watermark cleanup.watermark
-                        }
-                    }
-                }
-            }
-            set i: i - 1
-        }
-    }
-
-    ; Push a new block cleanup context
-    procedure push_block_cleanup(this, needs_cleanup: bool)
-    {
-        var watermark LLVMValueRef(null)
-        if needs_cleanup
-        {
-            if current_region.local_page.handle <> null
-            {
-                ; Save watermark: call Page.save_watermark(local_page)
-                let save_wm_name "_ZN4scaly6memory4Page14save_watermarkE"
-                let save_wm_fn LLVMGetNamedFunction(llvm_module, save_wm_name.c_data())
-                if save_wm_fn.handle <> null
-                {
-                    ; BlockWatermark is a struct - get its type
-                    let watermark_name "BlockWatermark"
-                    var watermark_type lookup_struct_cache watermark_name
-                    if watermark_type.handle = null
-                    {
-                        ; Create an opaque watermark type (4 pointers = 32 bytes on 64-bit)
-                        set watermark_type: LLVMStructCreateNamed(context, watermark_name.c_data())
-                        let ptr_type LLVMPointerTypeInContext(context, 0)
-                        var wm_fields Vector[LLVMTypeRef](4)
-                        wm_fields.put(0, ptr_type)  ; page
-                        wm_fields.put(1, ptr_type)  ; next_object
-                        wm_fields.put(2, ptr_type)  ; extension_tail
-                        wm_fields.put(3, ptr_type)  ; exclusive_head
-                        LLVMStructSetBody(watermark_type, wm_fields.data, 4, 0)
-                        cache_struct(watermark_name, watermark_type)
-                    }
-
-                    ; Call save_watermark
-                    var save_args Vector[LLVMValueRef](1)
-                    save_args.put(0, current_region.local_page)
-                    let ptr_type LLVMPointerTypeInContext(context, 0)
-                    var save_param_types Vector[LLVMTypeRef](1)
-                    save_param_types.put(0, ptr_type)
-                    let save_func_type LLVMFunctionType(watermark_type, save_param_types.data, 1, 0)
-                    set watermark: LLVMBuildCall2(builder, save_func_type, save_wm_fn, save_args.data, 1, "watermark")
-                }
-            }
-        }
-        let ctx BlockCleanupContext(watermark, needs_cleanup)
-        block_cleanup_stack.add ctx
-    }
-
-    ; Pop a block cleanup context and optionally emit cleanup
-    procedure pop_block_cleanup(this, emit_cleanup: bool)
-    {
-        if block_cleanup_stack.length = 0
-            return
-
-        if emit_cleanup
-        {
-            let cleanup block_cleanup_stack.get(block_cleanup_stack.length - 1)
-            if cleanup <> null
-            {
-                if cleanup.needs_cleanup
-                {
-                    if cleanup.watermark.handle <> null
-                    {
-                        if current_region.local_page.handle <> null
-                        {
-                            ; Call restore_watermark
-                            emit_restore_watermark cleanup.watermark
-                        }
-                    }
-                }
-            }
-        }
-
-        ; Remove from stack (shrink length)
-        if block_cleanup_stack.length > 0
-            set block_cleanup_stack.length: block_cleanup_stack.length - 1
-    }
-
-    ; Emit a call to restore_watermark
-    procedure emit_restore_watermark(this, watermark: LLVMValueRef)
-    {
-        let restore_wm_name "_ZN4scaly6memory4Page17restore_watermarkE"
-        let restore_wm_fn LLVMGetNamedFunction(llvm_module, restore_wm_name.c_data())
-        if restore_wm_fn.handle <> null
-        {
-            ; Call restore_watermark(local_page, watermark)
-            var restore_args Vector[LLVMValueRef](2)
-            restore_args.put(0, current_region.local_page)
-            restore_args.put(1, watermark)
-
-            let ptr_type LLVMPointerTypeInContext(context, 0)
-            let void_type LLVMVoidTypeInContext(context)
-            let watermark_type LLVMTypeOf(watermark)
-
-            var restore_param_types Vector[LLVMTypeRef](2)
-            restore_param_types.put(0, ptr_type)       ; Page pointer
-            restore_param_types.put(1, watermark_type) ; BlockWatermark
-
-            let restore_func_type LLVMFunctionType(void_type, restore_param_types.data, 2, 0)
-            LLVMBuildCall2(builder, restore_func_type, restore_wm_fn, restore_args.data, 2, "")
-        }
     }
 
     ; ========================================================================
@@ -12222,7 +12040,7 @@ define Emitter
     ; Push a loop context onto the stack
     procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String, result_slot: LLVMValueRef)
     {
-        let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length, loop_label, result_slot)
+        let ctx LoopContext(exit_block, continue_block, loop_label, result_slot)
         loop_stack.add ctx
     }
 

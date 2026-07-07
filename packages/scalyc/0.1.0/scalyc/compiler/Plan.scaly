@@ -194,7 +194,6 @@ define PlannedBlock
 (
     loc: Span
     statements: ref[Vector[PlannedStatement]]?
-    needs_local_page_cleanup: bool  ; True if this block contains $ allocations
 )
 
 define PlannedIf
