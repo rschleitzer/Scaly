@@ -1,3 +1,9 @@
+; Deliberately NOT List[pointer[Page]]: this is the allocator's own intrusive
+; list, embedded by value in the Page header — a layer BELOW containers
+; (List's Node[T]^this itself calls Page.allocate). Replacing it would invert
+; the memory/containers layering, pull generic instantiation into the
+; allocator core (BlockWatermark walks node.page/node.next directly), and
+; shift the Page layout (seed refresh). Keep it concrete and auditable.
 define PageList
 (
     head: pointer[PageNode] (null)
