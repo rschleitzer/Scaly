@@ -9921,6 +9921,14 @@ define Planner
                                         if Planner.is_operator_name(nty.name) = false
                                             if this.is_operator(nty.name)
                                                 set next_is_op: true
+                                        ; Word operators (`and`/`or`/`xor`) are
+                                        ; neither operator-shaped nor registered;
+                                        ; recognise them by table precedence so a
+                                        ; higher-prec word op on the right climbs
+                                        ; (`a | b xor c`, `a or b and c`). Same
+                                        ; triple as the loop-entry recognition.
+                                        if Planner.get_operator_precedence(nty.name) > 0
+                                            set next_is_op: true
                                         if next_is_op
                                         {
                                             var next_prec Planner.get_operator_precedence(nty.name)
@@ -10320,6 +10328,9 @@ define Planner
                                 if op_name = "|"
                                     set combined_type: result.result_type
                                 if op_name = "^"
+                                    set combined_type: result.result_type
+                                ; Word synonym for `^` (bitwise XOR).
+                                if op_name = "xor"
                                     set combined_type: result.result_type
                                 if op_name = "<<"
                                     set combined_type: result.result_type
@@ -25695,6 +25706,11 @@ define Planner
             return "or"
         if name = "^"
             return "eo"
+        ; Word-operator synonym for bitwise XOR — `^` is the reference-
+        ; lifetime sigil in expression position, so XOR is only writable
+        ; as the word operator.
+        if name = "xor"
+            return "eo"
         if name = "~"
             return "co"
         if name = "<<"
@@ -28122,6 +28138,9 @@ define Planner
             return 3
         if name = "^"
             return 4
+        ; Word synonym for `^` (bitwise XOR) — same precedence.
+        if name = "xor"
+            return 4
         if name = "&"
             return 5
         if name = "="
@@ -30059,6 +30078,9 @@ define Planner
         if op = "|"
             return 3
         if op = "^"
+            return 4
+        ; Word synonym for `^` (bitwise XOR) — same precedence.
+        if op = "xor"
             return 4
         if op = "&"
             return 5

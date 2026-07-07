@@ -7204,8 +7204,12 @@ define Emitter
         if op_name = "|"
             return LLVMBuildOr(builder, l, r, "or")
 
-        ; Bitwise XOR
+        ; Bitwise XOR. `xor` is the word synonym — `^` is the reference-
+        ; lifetime sigil in expression position, so source code can only
+        ; write XOR as the word operator.
         if op_name = "^"
+            return LLVMBuildXor(builder, l, r, "xor")
+        if op_name = "xor"
             return LLVMBuildXor(builder, l, r, "xor")
 
         ; Left shift

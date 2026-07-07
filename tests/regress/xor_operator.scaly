@@ -1,0 +1,75 @@
+; `xor` is the word operator for bitwise XOR. The `^` token is Scaly's
+; reference-lifetime sigil and cannot be written as a bitwise operator in
+; expression position, so XOR is only writable as the word form. Same
+; precedence slot as `^` in the table (4: tighter than `|`=3, looser than
+; `&`=5). No short-circuit — plain intrinsic binary op (LLVMBuildXor).
+; Also covers the climb fix: a word operator on the RIGHT of a lower-prec
+; operator must be climbed into (`1 | 6 xor 3`, `true or false and false`)
+; — before the fix next_is_op missed word operators entirely.
+; Expected: PASS
+
+var fail 0
+
+; basic truth table on integers
+if (5 xor 3) <> 6
+    set fail: 1
+if (0 xor 0) <> 0
+    set fail: 2
+if (255 xor 255) <> 0
+    set fail: 3
+if (1 xor 0) <> 1
+    set fail: 4
+
+; self-inverse: (a xor b) xor b = a
+let a 12345
+let b 54321
+if ((a xor b) xor b) <> a
+    set fail: 5
+
+; works on size_t operands
+let sa (170 as size_t)
+let sb (204 as size_t)
+if (sa xor sb) <> (102 as size_t)
+    set fail: 6
+
+; matches the (a | b) - (a & b) identity (the old hashing workaround)
+if (sa xor sb) <> ((sa | sb) - (sa & sb))
+    set fail: 7
+
+; precedence: `&`(5) binds tighter than `xor`(4)
+if (3 & 1 xor 1) <> 0
+    set fail: 8
+; precedence: `xor`(4) binds tighter than `|`(3) — needs the climb,
+; since `xor` sits RIGHT of the lower-prec `|`
+if (1 | 6 xor 3) <> 5
+    set fail: 9
+
+; climb fix also applies to `and`(2) right of `or`(1):
+; true or (false and false) = true; wrong left-assoc gives false
+if (true or false and false) = false
+    set fail: 10
+
+; positive gate: this condition must fold/evaluate to TRUE via a real
+; xor — a silently DROPPED condition reads as false and is caught here
+; (a dropped `if` and a correctly-false fold are otherwise identical).
+var ok 0
+if (5 xor 3) = 6
+    set ok: 1
+if ok <> 1
+    set fail: 12
+
+; FNV-1a step equivalence: xor-then-multiply matches the identity form
+var h1: size_t 0xcbf29ce484222325
+var h2: size_t 0xcbf29ce484222325
+let prime: size_t 0x100000001b3
+let value (65 as size_t)
+set h1: (h1 xor value) * prime
+let xord (h2 | value) - (h2 & value)
+set h2: xord * prime
+if h1 <> h2
+    set fail: 11
+
+if fail = 0
+    print("PASS")
+else
+    print("FAIL")
