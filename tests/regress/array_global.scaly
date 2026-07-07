@@ -1,0 +1,64 @@
+; Regression: module-level const ARRAY global — `define X: T[] [a, b, ...]`.
+; Before the port, the self-hosted compiler emitted the global as an
+; initializer-less scalar decl (`@X = external constant i64`, undefined at
+; link — the s188 class that forced HASH_PRIMES out of hashing.scaly) and
+; pointer arithmetic on a read GEP'd by BYTE (i8) instead of by element.
+; The fix: plan_global decays the global's type to pointer[T] with
+; array_size = element count (derived from the single PlannedMatrix value);
+; the Emitter emits @X = constant [N x T] [...] (emit_array_global) and
+; emit_global_ref GEPs to the first element, so *(X + i) loads element i.
+; Covers: single-line and multi-line (trailing-comma) array literals,
+; decimal + hex elements, reads from inside a namespace function (bare
+; name) and from top level. Expected: PASS
+
+define TBL: size_t[] [3, 5, 11, 23]
+
+define WIDE: size_t[] [
+    100, 200, 300,
+    0x400,
+]
+
+define nums
+{
+
+; namespace-internal array global — the HASH_PRIMES shape (a const
+; table defined inside `define hashing { }`, read by a sibling
+; function via its bare name).
+define NTBL: size_t[] [7, 9]
+
+function pick(i: int) returns size_t
+    *(TBL + i)
+
+function pick_local(i: int) returns size_t
+    *(NTBL + i)
+
+}
+
+function check() returns int
+{
+    if *(TBL + 0) <> 3
+        return 1
+    if *(TBL + 3) <> 23
+        return 2
+    var sum: size_t 0
+    var i: int 0
+    while i < 4
+    {
+        set sum: sum + *(TBL + i)
+        set i: i + 1
+    }
+    if sum <> 42
+        return 3
+    if nums.pick(2) <> 11
+        return 4
+    if *(WIDE + 3) <> 1024
+        return 5
+    if nums.pick_local(1) <> 9
+        return 6
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")

@@ -3764,6 +3764,14 @@ define Emitter
         {
             for global in plan.globals
             {
+                ; Const array globals (array_size set by plan_global)
+                ; emit as [N x T] with a ConstArray initializer — the
+                ; scalar path below would emit an initializer-less
+                ; scalar decl (undefined at link; the s188 HASH_PRIMES
+                ; class).
+                if emit_array_global(global)
+                    continue
+
                 var global_type map_intrinsic_type_by_name global.global_type.name
                 if global_type.handle = null
                     set global_type: map_type(global.global_type)
@@ -5115,6 +5123,116 @@ define Emitter
             ; Immutable binding stored as value directly
             return var_ptr
         }
+    }
+
+    ; Emit a const ARRAY global: `define X: T[] [a, b, ...]`.
+    ; plan_global decays the global's type to pointer[T] with
+    ; array_size = element count; here it becomes
+    ; @X = constant [N x T] [a, b, ...] (emit_global_ref GEPs to the
+    ; first element on reads). Returns false when the global is not an
+    ; array (array_size empty) or any element is not an integer/hex
+    ; constant — the caller falls through to the scalar path. Mirrors
+    ; stage-0 Emitter.cpp:1115-1204.
+    function emit_array_global(this, global: PlannedGlobal) returns bool
+    {
+        if global.is_mutable
+            return false
+        let count parse_array_size(global.global_type.array_size)
+        if count = 0
+            return false
+        if global.global_type.generics = null
+            return false
+        let gens (*global.global_type.generics)
+        if gens.length = 0
+            return false
+        let elem_ptr gens.get 0
+        if elem_ptr = null
+            return false
+        let elem_planned (*elem_ptr)
+        var elem_ty map_intrinsic_type_by_name elem_planned.name
+        if elem_ty.handle = null
+            set elem_ty: map_type(elem_planned)
+        if elem_ty.handle = null
+            return false
+
+        ; Collect the element constants from the single PlannedMatrix
+        ; value (N rows x 1 column or 1 row x N columns — same shapes
+        ; global_array_count counted).
+        if global.value = null
+            return false
+        let vals (*global.value)
+        if vals.length <> 1
+            return false
+        let v0_ptr vals.get 0
+        if v0_ptr = null
+            return false
+        let v0 (*v0_ptr)
+        var elems Vector[LLVMValueRef](count)
+        var filled: size_t 0
+        choose v0.expr
+            when mx: PlannedMatrix
+            {
+                if mx.operations <> null
+                {
+                    let rows (*mx.operations)
+                    var ri: size_t 0
+                    while ri < rows.length
+                    {
+                        let row_ptr rows.get ri
+                        if row_ptr <> null
+                        {
+                            let row (*row_ptr)
+                            var ci: size_t 0
+                            while ci < row.length
+                            {
+                                let cell_ptr row.get ci
+                                if cell_ptr <> null
+                                {
+                                    let cell (*cell_ptr)
+                                    choose cell.expr
+                                        when c: PlannedConstant
+                                        {
+                                            choose c.value
+                                                when i: Integer
+                                                {
+                                                    if filled < count
+                                                    {
+                                                        elems.put(filled, LLVMConstInt(elem_ty, i.value, 0))
+                                                        set filled: filled + 1
+                                                    }
+                                                }
+                                                when h: Hex
+                                                {
+                                                    if filled < count
+                                                    {
+                                                        elems.put(filled, LLVMConstInt(elem_ty, h.value, 0))
+                                                        set filled: filled + 1
+                                                    }
+                                                }
+                                                else
+                                                    0
+                                        }
+                                        else
+                                            0
+                                }
+                                set ci: ci + 1
+                            }
+                        }
+                        set ri: ri + 1
+                    }
+                }
+            }
+            else
+                0
+        if filled <> count
+            return false
+
+        let arr_ty LLVMArrayType2(elem_ty, count)
+        let gv LLVMAddGlobal(llvm_module, arr_ty, global.mangled_name.c_data())
+        let arr_init LLVMConstArray2(elem_ty, elems.data, count)
+        LLVMSetInitializer(gv, arr_init)
+        LLVMSetGlobalConstant(gv, 1)
+        true
     }
 
     ; Emit a global reference

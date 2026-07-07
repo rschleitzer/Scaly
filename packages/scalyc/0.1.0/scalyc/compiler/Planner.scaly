@@ -13147,6 +13147,39 @@ define Planner
                                 null,
                                 g.global_type
                             )
+                        ; Const ARRAY global (array_size set by
+                        ; plan_global): the reference decays to
+                        ; pointer[T] — never inline the Matrix. The
+                        ; GlobalRef's global_type KEEPS array_size
+                        ; (emit_global_ref keys the [N x T] first-element
+                        ; GEP on it); the operand's result_type DROPS it
+                        ; so downstream pointer arithmetic sees a plain
+                        ; pointer[T]. Mirrors Planner.cpp:7021-7042.
+                        if g.global_type.array_size.get_length() > 0
+                        {
+                            let gt g.global_type
+                            let decayed PlannedType(
+                                gt.loc,
+                                gt.name,
+                                gt.mangled_name,
+                                gt.generics,
+                                gt.life,
+                                null,
+                                "",
+                                null
+                            )
+                            return PlannedOperand(
+                                loc,
+                                PlannedExpression.GlobalRef(PlannedGlobalRef(
+                                    loc,
+                                    g.name,
+                                    g.mangled_name,
+                                    gt
+                                )),
+                                null,
+                                decayed
+                            )
+                        }
                         if g.value <> null
                         {
                             let val_vec (*g.value)
@@ -24082,11 +24115,38 @@ define Planner
             var mangled Planner.encode_name(name)
             if g.is_mutable
                 set mangled: String(name)
+            ; Const ARRAY global: `define X: T[] [a, b, ...]` — the
+            ; annotation plans as scalar T (empty [] carries no generics),
+            ; the value as a single PlannedMatrix. Decay the global's type
+            ; to pointer[T] and record the element count in array_size:
+            ; the Emitter emits @X = constant [N x T] [...] and
+            ; emit_global_ref GEPs to the first element; reads type as
+            ; pointer[T] so *(X + i) indexes by element, not by byte.
+            ; Mirrors stage-0 Emitter.cpp:1115-1204 + Planner.cpp:7021-7042.
+            var global_type planned_type
+            if g.is_mutable = false
+            {
+                let arr_count Planner.global_array_count(value_holder)
+                if arr_count > 0
+                {
+                    let ptr_ty Planner.make_pointer_type(planned_type)
+                    set global_type: PlannedType(
+                        ptr_ty.loc,
+                        ptr_ty.name,
+                        ptr_ty.mangled_name,
+                        ptr_ty.generics,
+                        ptr_ty.life,
+                        null,
+                        Planner.size_to_string(arr_count),
+                        null
+                    )
+                }
+            }
             let result PlannedGlobal(
                 g.span,
                 String(name),
                 mangled,
-                planned_type,
+                global_type,
                 &value_holder,
                 g.is_mutable
             )
@@ -27121,6 +27181,48 @@ define Planner
             else
                 0
         out
+    }
+
+    ; global_array_count: element count of a const-global ARRAY value.
+    ; The planned value of `define X: T[] [a, b, ...]` is exactly one
+    ; PlannedMatrix of either N rows x 1 column (comma/newline-separated
+    ; elements) or 1 row x N columns. Returns 0 when the value is not an
+    ; array literal (scalar constants keep the inline path).
+    function global_array_count(value: Vector[PlannedOperand]) returns size_t
+    {
+        if value.length <> 1
+            return 0
+        let op_ptr value.get 0
+        if op_ptr = null
+            return 0
+        let op (*op_ptr)
+        var count: size_t 0
+        choose op.expr
+            when mx: scalyc.compiler.Plan.PlannedMatrix
+            {
+                if mx.operations <> null
+                {
+                    let rows (*mx.operations)
+                    if rows.length = 1
+                    {
+                        let row0_ptr rows.get 0
+                        if row0_ptr <> null
+                            set count: (*row0_ptr).length
+                    }
+                    if rows.length > 1
+                    {
+                        let row0_ptr rows.get 0
+                        if row0_ptr <> null
+                        {
+                            if (*row0_ptr).length = 1
+                                set count: rows.length
+                        }
+                    }
+                }
+            }
+            else
+                0
+        count
     }
 
     function extract_row_to_type(row: Vector[PlannedOperand]) returns ref[Type]?
