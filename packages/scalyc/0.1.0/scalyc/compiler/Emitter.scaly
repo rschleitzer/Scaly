@@ -3080,6 +3080,7 @@ define Emitter
         ; defeating bootstrap (cli.main and the entry point both
         ; resolve to the wrong symbol).
         var func_cstr func.mangled_name.c_data()
+        var is_entry_main: bool false
         if func.name = "main"
         {
             ; "main" is a String constant under the string-literal-as-constant
@@ -3088,7 +3089,10 @@ define Emitter
             ; the plain .str global rather than storing the String struct's
             ; { ptr } into the cstr slot (which corrupts the emitted symbol).
             if func.mangled_name.starts_with("_ZN") = false
+            {
                 set func_cstr: ("main" as pointer[const_char])
+                set is_entry_main: true
+            }
         }
 
         var is_extern: bool false
@@ -3148,7 +3152,16 @@ define Emitter
             if is_extern
                 LLVMSetLinkage(llvm_func, LLVMLinkage.External())
             else
-                LLVMSetLinkage(llvm_func, LLVMLinkage.LinkOnceODR())
+            {
+                ; The program entry stays External: linkonce_odr is
+                ; discardable, so a whole-program pipeline (llvm-link +
+                ; opt) would GlobalDCE the entire binary without this
+                ; anchor.
+                if is_entry_main
+                    LLVMSetLinkage(llvm_func, LLVMLinkage.External())
+                else
+                    LLVMSetLinkage(llvm_func, LLVMLinkage.LinkOnceODR())
+            }
         }
 
         ; Cache the function
