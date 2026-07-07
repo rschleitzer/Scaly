@@ -6,7 +6,6 @@ source_filename = "scaly"
 %_Z8PageList = type { ptr }
 %_Z4Page = type { ptr, ptr, ptr, %_Z8PageList }
 %_Z8PageNode = type { ptr, ptr }
-%_Z14BlockWatermark = type { ptr, ptr, ptr, ptr }
 %_Z17StackBucketHeader = type { ptr, ptr }
 %_Z10TraceEntry = type { ptr, i64, i64 }
 %_Z6VectorIiE = type { i64, ptr }
@@ -703,19 +702,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN14BlockWatermarkC1EP4PagePvP4PageP8PageNode(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %page = getelementptr inbounds %_Z14BlockWatermark, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %page, align 8
-  %next_object = getelementptr inbounds %_Z14BlockWatermark, ptr %0, i32 0, i32 1
-  store ptr %2, ptr %next_object, align 8
-  %extension_tail = getelementptr inbounds %_Z14BlockWatermark, ptr %0, i32 0, i32 2
-  store ptr %3, ptr %extension_tail, align 8
-  %exclusive_head = getelementptr inbounds %_Z14BlockWatermark, ptr %0, i32 0, i32 3
-  store ptr %4, ptr %exclusive_head, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN4Page18allocate_root_pageEv() {
 entry:
   %global.load = load ptr, ptr @stack_top, align 8
@@ -865,135 +851,6 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  ret void
-}
-
-define linkonce_odr void @_ZN4Page14save_watermarkEPN4scaly6memory4PageE(ptr noalias sret(%_Z14BlockWatermark) %0, ptr %1, ptr %2) {
-entry:
-  %struct.init7 = alloca %_Z14BlockWatermark, align 8
-  %struct.init = alloca %_Z14BlockWatermark, align 8
-  %load.struct = load %_Z4Page, ptr %2, align 8
-  %current_page = extractvalue %_Z4Page %load.struct, 1
-  %ne = icmp ne ptr %current_page, null
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %load.struct1 = load %_Z4Page, ptr %2, align 8
-  %current_page2 = extractvalue %_Z4Page %load.struct1, 1
-  %load.struct3 = load %_Z4Page, ptr %2, align 8
-  %current_page4 = extractvalue %_Z4Page %load.struct3, 1
-  %deref = load %_Z4Page, ptr %current_page4, align 8
-  %next_object = extractvalue %_Z4Page %deref, 0
-  %load.struct5 = load %_Z4Page, ptr %2, align 8
-  %next_page = extractvalue %_Z4Page %load.struct5, 2
-  %load.struct6 = load %_Z4Page, ptr %2, align 8
-  %exclusive_pages = extractvalue %_Z4Page %load.struct6, 3
-  %head = extractvalue %_Z8PageList %exclusive_pages, 0
-  call void @_ZN14BlockWatermarkC1EP4PagePvP4PageP8PageNode(ptr %struct.init, ptr %current_page2, ptr %next_object, ptr %next_page, ptr %head)
-  %sret.body = load %_Z14BlockWatermark, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14BlockWatermark, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds %_Z4Page, ptr %2, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %deref.recv)
-  %load.struct8 = load %_Z4Page, ptr %2, align 8
-  %next_object9 = extractvalue %_Z4Page %load.struct8, 0
-  %load.struct10 = load %_Z4Page, ptr %2, align 8
-  %next_page11 = extractvalue %_Z4Page %load.struct10, 2
-  %load.struct12 = load %_Z4Page, ptr %2, align 8
-  %exclusive_pages13 = extractvalue %_Z4Page %load.struct12, 3
-  %head14 = extractvalue %_Z8PageList %exclusive_pages13, 0
-  call void @_ZN14BlockWatermarkC1EP4PagePvP4PageP8PageNode(ptr %struct.init7, ptr %call, ptr %next_object9, ptr %next_page11, ptr %head14)
-  %sret.body15 = load %_Z14BlockWatermark, ptr %struct.init7, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init7, i64 ptrtoint (ptr getelementptr (%_Z14BlockWatermark, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN4Page17restore_watermarkE14BlockWatermark(ptr %0, ptr %1) {
-entry:
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %load.struct = load %_Z4Page, ptr %0, align 8
-  %exclusive_pages = extractvalue %_Z4Page %load.struct, 3
-  %head = extractvalue %_Z8PageList %exclusive_pages, 0
-  %load.struct1 = load %_Z14BlockWatermark, ptr %1, align 8
-  %exclusive_head = extractvalue %_Z14BlockWatermark %load.struct1, 3
-  %ne = icmp ne ptr %head, %exclusive_head
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %load.struct2 = load %_Z4Page, ptr %0, align 8
-  %exclusive_pages3 = extractvalue %_Z4Page %load.struct2, 3
-  %head4 = extractvalue %_Z8PageList %exclusive_pages3, 0
-  %load.struct5 = load %_Z8PageNode, ptr %head4, align 8
-  %page = extractvalue %_Z8PageNode %load.struct5, 0
-  call void @_ZN4Page21deallocate_extensionsEv(ptr %page)
-  call void @_ZN4Page12release_pageEP4Page(ptr %page)
-  %load.struct6 = load %_Z8PageNode, ptr %head4, align 8
-  %next = extractvalue %_Z8PageNode %load.struct6, 1
-  %exclusive_pages7 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 3
-  %head8 = getelementptr inbounds %_Z8PageList, ptr %exclusive_pages7, i32 0, i32 0
-  store ptr %next, ptr %head8, align 8
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  %field.inplace = getelementptr inbounds %_Z14BlockWatermark, ptr %1, i32 0, i32 2
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  call void @_ZN4Page27deallocate_extensions_afterEP4Page(ptr %0, ptr %deref.recv)
-  %load.struct9 = load %_Z14BlockWatermark, ptr %1, align 8
-  %page10 = extractvalue %_Z14BlockWatermark %load.struct9, 0
-  %current_page = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 1
-  store ptr %page10, ptr %current_page, align 8
-  %load.struct11 = load %_Z14BlockWatermark, ptr %1, align 8
-  %page12 = extractvalue %_Z14BlockWatermark %load.struct11, 0
-  %ne13 = icmp ne ptr %page12, null
-  br i1 %ne13, label %if.then, label %if.else
-
-if.then:                                          ; preds = %while.exit
-  %load.struct14 = load %_Z14BlockWatermark, ptr %1, align 8
-  %next_object = extractvalue %_Z14BlockWatermark %load.struct14, 1
-  br label %if.end
-
-if.else:                                          ; preds = %while.exit
-  %load.struct15 = load %_Z14BlockWatermark, ptr %1, align 8
-  %next_object16 = extractvalue %_Z14BlockWatermark %load.struct15, 1
-  %next_object17 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 0
-  store ptr %next_object16, ptr %next_object17, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %next_object, %if.then ], [ %next_object16, %if.else ]
-  ret void
-}
-
-define linkonce_odr void @_ZN4Page27deallocate_extensions_afterEP4Page(ptr %0, ptr %1) {
-entry:
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %load.struct = load %_Z4Page, ptr %0, align 8
-  %next_page = extractvalue %_Z4Page %load.struct, 2
-  %ne = icmp ne ptr %next_page, null
-  %load.struct1 = load %_Z4Page, ptr %0, align 8
-  %next_page2 = extractvalue %_Z4Page %load.struct1, 2
-  %ne3 = icmp ne ptr %next_page2, %1
-  %and = and i1 %ne, %ne3
-  br i1 %and, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %load.struct4 = load %_Z4Page, ptr %0, align 8
-  %next_page5 = extractvalue %_Z4Page %load.struct4, 2
-  %load.struct6 = load %_Z4Page, ptr %next_page5, align 8
-  %next_page7 = extractvalue %_Z4Page %load.struct6, 2
-  %next_page8 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 2
-  store ptr %next_page7, ptr %next_page8, align 8
-  call void @_ZN4Page12release_pageEP4Page(ptr %next_page5)
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
   ret void
 }
 
