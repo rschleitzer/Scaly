@@ -4,7 +4,6 @@ define memory
     module PageNode
     module PageList
     module PageListIterator
-    module BlockWatermark
     module Page
     module root_pages
 

@@ -28201,8 +28201,6 @@ define Planner
             return true
         if name = "FileError"
             return true
-        if name = "BlockWatermark"
-            return true
         if name = "HeapBucketHeader"
             return true
         if name = "StackBucketHeader"
