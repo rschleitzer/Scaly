@@ -9691,7 +9691,7 @@ define Planner
                     ; them into one operand so the binary op sees `~y`, not a
                     ; bare `~`. Without this the prefix RHS dropped and the
                     ; whole `&`/`|` expression vanished (stack_bucket_of's
-                    ; `& ~BUCKET_MASK`, scaly_alloc_page's bitmap clear).
+                    ; `& ~BUCKET_MASK`, Page.allocate_page's bitmap clear).
                     ; Advances i by 3 via rhs_call_consumed (op, ~, operand).
                     if i + 2 < ops.length
                     {

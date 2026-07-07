@@ -12,9 +12,9 @@
 ; Each bucket is a BUCKET_SIZE-aligned region of BUCKET_PAGES pages. Page 0
 ; holds the bucket header; pages 1..BUCKET_PAGES-1 are usable.
 ;
-; The three mutable state pointers + trace counters live in a C shim
-; (scalyc/page_runtime.cpp) because Scaly has no mutable module-level
-; globals yet. The shim also owns fprintf-style diagnostic output.
+; The allocator state and trace counters are Scaly-owned mutable module
+; globals (heap_head lives in Page.scaly beside its consumer,
+; Page.allocate_page). Diagnostics go to stderr via write(2, ...) below.
 ;
 ; Guard semantics: `if X ACTION` runs ACTION when X is true, then falls
 ; through. It's an early-exit when the condition holds.
@@ -46,11 +46,11 @@ define HeapBucketHeader
 ; Process-global allocator state — Scaly-owned mutable module globals.
 ; stack_head: head of the StackBucket chain (doubly-linked, for unwinding).
 ; stack_top: current top-of-stack root page.
-; heap_head: head of the HeapBucket free list (buckets with at least one
-;            free page). Full buckets are unlinked and re-added on free.
+; heap_head (the HeapBucket free-list head) lives in Page.scaly: its
+; consumer Page.allocate_page is planned before this module, and
+; lookup_global is populated in planning order.
 mutable stack_head: pointer[StackBucketHeader] null
 mutable stack_top:  pointer[Page] null
-mutable heap_head:  pointer[HeapBucketHeader] null
 
 ; Trace-diagnostic state — off by default, armed by SCALY_TRACE_ROOT on
 ; the first root-page push or pop. All state is Scaly-owned; the shim
@@ -246,7 +246,7 @@ function create_heap_bucket() returns pointer[HeapBucketHeader]
 ; gap — so the seed would fail to link). Behaviour-identical to the old
 ; shift-loop: returns the index of the lowest set bit.
 ;
-; This matters: scaly_alloc_page clears the lowest free bit each allocation,
+; This matters: Page.allocate_page clears the lowest free bit each allocation,
 ; so a sequentially-filling bucket drove the old shift-loop toward ~31
 ; iterations average (O(n^2) per bucket fill). The binary search is a fixed
 ; 6 steps regardless of slot — the hot path under default-to-local transient
@@ -402,36 +402,9 @@ procedure scaly_release_root_page_full(p: pointer[Page])
 }
 
 ; --------------------------------------------------------------------------
-; HeapBucket: extension and exclusive pages
+; HeapBucket: extension and exclusive pages. Allocation lives in
+; Page.allocate_page (Page.scaly); the release path stays here.
 ; --------------------------------------------------------------------------
-
-function scaly_alloc_page() returns pointer[Page]
-{
-    if heap_head = null
-        set heap_head: create_heap_bucket()
-
-    let b heap_head
-    ; Invariant: b.bitmap != 0 (we unlink full buckets below).
-    let slot ctz_u64 b.bitmap
-    set b.bitmap: b.bitmap & ~((1 as u64) << slot)
-
-    let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
-    let page page_addr as pointer[Page]
-    reset_page page
-
-    if b.bitmap = 0
-    {
-        ; Bucket is now full — unlink from the free list.
-        set heap_head: b.next
-        if heap_head <> null
-            set heap_head.prev: null
-
-        set b.next: null
-        set b.prev: null
-    }
-
-    page
-}
 
 procedure scaly_release_page(p: pointer[Page])
 {

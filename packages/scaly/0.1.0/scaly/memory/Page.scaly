@@ -1,5 +1,13 @@
 define PAGE_SIZE size_t 0x1000
 
+; Head of the HeapBucket free list (buckets with at least one free page).
+; Full buckets are unlinked by allocate_page below and re-added on free
+; (scaly_release_page, root_pages.scaly). Lives HERE, not in root_pages:
+; lookup_global is populated in member-planning order and module Page is
+; planned before module root_pages, so allocate_page could not otherwise
+; resolve it.
+mutable heap_head: pointer[HeapBucketHeader] null
+
 define Page
 (
     next_object: pointer[void]
@@ -11,7 +19,30 @@ define Page
     function allocate_page() returns pointer[Page]
     {
         ; Extension and exclusive pages come from the HeapBucket.
-        return scaly_alloc_page()
+        if heap_head = null
+            set heap_head: create_heap_bucket()
+
+        let b heap_head
+        ; Invariant: b.bitmap != 0 (we unlink full buckets below).
+        let slot ctz_u64 b.bitmap
+        set b.bitmap: b.bitmap & ~((1 as u64) << slot)
+
+        let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
+        let page page_addr as pointer[Page]
+        reset_page page
+
+        if b.bitmap = 0
+        {
+            ; Bucket is now full — unlink from the free list.
+            set heap_head: b.next
+            if heap_head <> null
+                set heap_head.prev: null
+
+            set b.next: null
+            set b.prev: null
+        }
+
+        page
     }
 
     function allocate_root_page() returns pointer[Page]
