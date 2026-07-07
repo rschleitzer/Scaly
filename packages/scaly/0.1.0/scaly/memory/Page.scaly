@@ -8,6 +8,14 @@ define PAGE_SIZE size_t 0x1000
 ; resolve it.
 mutable heap_head: pointer[HeapBucketHeader] null
 
+; StackBucket state for allocate_root_page below — same planning-order
+; reasoning as heap_head. The release side (scaly_release_root_page,
+; root_pages.scaly) is planned later and resolves stack_top fine.
+; stack_head: head of the StackBucket chain (doubly-linked, for unwinding).
+; stack_top: current top-of-stack root page.
+mutable stack_head: pointer[StackBucketHeader] null
+mutable stack_top:  pointer[Page] null
+
 define Page
 (
     next_object: pointer[void]
@@ -48,7 +56,43 @@ define Page
     function allocate_root_page() returns pointer[Page]
     {
         ; Function-local and try-scope pages come from the StackBucket.
-        return scaly_alloc_root_page()
+        ; The Emitter calls this directly (_ZN4Page18allocate_root_pageEv,
+        ; get_alloc_root_page_fn) at every local-page prologue — this
+        ; function must stay allocation-free (no $/#/for-in), or its own
+        ; emission would recurse into it and deadlock at runtime.
+        if stack_top = null
+        {
+            ; First-ever push: lazily create the first bucket if needed, then
+            ; return its first usable slot.
+            if stack_head = null
+                set stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
+
+            let p first_usable_page stack_head
+            set stack_top: p
+            reset_page p
+            return p
+        }
+
+        ; Regular push: bump to the next page in the current bucket.
+        let bucket stack_bucket_of stack_top
+        let next_addr (stack_top as size_t + PAGE_SIZE) as pointer[Page]
+
+        if next_addr > last_usable_page(bucket)
+        {
+            ; Current bucket exhausted — walk to an existing next bucket or
+            ; create one.
+            if bucket.next = null
+                set bucket.next: create_stack_bucket(bucket)
+
+            let fresh first_usable_page bucket.next
+            set stack_top: fresh
+            reset_page fresh
+            return fresh
+        }
+
+        set stack_top: next_addr
+        reset_page next_addr
+        next_addr
     }
 
     function reset(this: Page)
@@ -59,7 +103,7 @@ define Page
         ; Zero the field directly — no PageList() construction. The allocator
         ; must never region-allocate: residency inference would promote the
         ; construction to a local page, and a local page here recurses into
-        ; scaly_alloc_root_page (allocator allocating from itself).
+        ; allocate_root_page (allocator allocating from itself).
         set exclusive_pages.head: null
     }
 

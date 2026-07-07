@@ -623,7 +623,7 @@ define cli
         cmd_builder.append " "
         cmd_builder.append tmp_obj
         ; Append the scaly stdlib static archive. Provides runtime
-        ; functions (scaly_alloc_root_page etc.) that stage-1 emits
+        ; functions (Page.allocate_root_page etc.) that stage-1 emits
         ; as declarations only because it can't fully plan
         ; root_pages.scaly. Must be built with --no-prelude:
         ;     scalyc -c --no-prelude -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly

@@ -22,7 +22,7 @@
 ; These functions must never trigger the Emitter's getOrCreateLocalPage
 ; (i.e. they must not have `$` allocations, `for-in` loops, or calls that
 ; take a caller-page parameter) — otherwise we'd recurse back into
-; scaly_alloc_root_page during its own emission and deadlock at runtime.
+; Page.allocate_root_page during its own emission and deadlock at runtime.
 
 define BUCKET_PAGES  size_t 64
 define BUCKET_SIZE   size_t 0x40000        ; PAGE_SIZE * BUCKET_PAGES
@@ -43,14 +43,11 @@ define HeapBucketHeader
     bitmap: u64
 )
 
-; Process-global allocator state — Scaly-owned mutable module globals.
-; stack_head: head of the StackBucket chain (doubly-linked, for unwinding).
-; stack_top: current top-of-stack root page.
-; heap_head (the HeapBucket free-list head) lives in Page.scaly: its
-; consumer Page.allocate_page is planned before this module, and
-; lookup_global is populated in planning order.
-mutable stack_head: pointer[StackBucketHeader] null
-mutable stack_top:  pointer[Page] null
+; The process-global allocator state (stack_head, stack_top, heap_head)
+; lives in Page.scaly: its consumers Page.allocate_root_page and
+; Page.allocate_page are planned before this module, and lookup_global
+; is populated in planning order. The release paths below are planned
+; later and resolve those globals fine.
 
 ; Trace-diagnostic state — off by default, armed by SCALY_TRACE_ROOT on
 ; the first root-page push or pop. All state is Scaly-owned; the shim
@@ -201,7 +198,7 @@ procedure reset_page(p: pointer[Page])
     ; Zero the field directly — no PageList() construction. The allocator
     ; must never region-allocate: residency inference would promote the
     ; construction to a local page, and a local page here recurses into
-    ; scaly_alloc_root_page (allocator allocating from itself).
+    ; Page.allocate_root_page (allocator allocating from itself).
     set p.exclusive_pages.head: null
 }
 
@@ -295,42 +292,13 @@ function ctz_u64(x: u64) returns i32
 ; StackBucket: root pages
 ; --------------------------------------------------------------------------
 
+; BOOTSTRAP-COMPAT WRAPPER — DELETE AFTER THE NEXT SEED REFRESH. The
+; allocation logic moved to Page.allocate_root_page; the committed seed's
+; emitter still emits prologue calls to _Z21scaly_alloc_root_pagev, so this
+; symbol must stay defined for one seed generation (build-from-seed compiles
+; this source with the OLD seed compiler).
 function scaly_alloc_root_page() returns pointer[Page]
-{
-    if stack_top = null
-    {
-        ; First-ever push: lazily create the first bucket if needed, then
-        ; return its first usable slot.
-        if stack_head = null
-            set stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
-
-        let p first_usable_page stack_head
-        set stack_top: p
-        reset_page p
-        return p
-    }
-
-    ; Regular push: bump to the next page in the current bucket.
-    let bucket stack_bucket_of stack_top
-    let next_addr (stack_top as size_t + PAGE_SIZE) as pointer[Page]
-
-    if next_addr > last_usable_page(bucket)
-    {
-        ; Current bucket exhausted — walk to an existing next bucket or
-        ; create one.
-        if bucket.next = null
-            set bucket.next: create_stack_bucket(bucket)
-
-        let fresh first_usable_page bucket.next
-        set stack_top: fresh
-        reset_page fresh
-        return fresh
-    }
-
-    set stack_top: next_addr
-    reset_page next_addr
-    next_addr
-}
+    Page.allocate_root_page()
 
 procedure scaly_release_root_page(p: pointer[Page])
 {

@@ -1020,7 +1020,7 @@ define Emitter
     ;
     ; A non-rp function that does a #/$/for allocation has no caller page to
     ; allocate on, so the three rp-fallback sites (emit_constructor_call,
-    ; emit_call, emit_for) used to call scaly_alloc_root_page WITHOUT ever
+    ; emit_call, emit_for) used to call Page.allocate_root_page WITHOUT ever
     ; releasing it — one leaked StackBucket page per fallback occurrence per
     ; call. Compiling the large scalyc.scaly leaked ~177k root pages / ~49GB
     ; and OOM-killed the self-hosted compiler. Stage-0 (Emitter.cpp) caches
@@ -1030,19 +1030,19 @@ define Emitter
     ; never-exercised watermark/block-cleanup paths stay dead.
     ; ========================================================================
 
-    ; Look up or declare scaly_alloc_root_page() -> ptr.
+    ; Look up or declare Page.allocate_root_page() -> ptr.
     function get_alloc_root_page_fn(this) returns LLVMValueRef
     {
-        var alloc_fn lookup_function_cache("_Z21scaly_alloc_root_pagev")
+        var alloc_fn lookup_function_cache("_ZN4Page18allocate_root_pageEv")
         if alloc_fn.handle = null
-            set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
+            set alloc_fn: LLVMGetNamedFunction(llvm_module, "_ZN4Page18allocate_root_pageEv")
         if alloc_fn.handle = null
         {
             let ret_ty LLVMPointerTypeInContext(context, 0)
             let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
-            set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
+            set alloc_fn: LLVMAddFunction(llvm_module, "_ZN4Page18allocate_root_pageEv", alloc_ty)
             LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
-            cache_function("_Z21scaly_alloc_root_pagev", alloc_fn)
+            cache_function("_ZN4Page18allocate_root_pageEv", alloc_fn)
         }
         alloc_fn
     }
@@ -5703,7 +5703,7 @@ define Emitter
                 ; so a non-empty mangled name here is a real symbol resolved
                 ; at link time. Declare it as an external varargs function
                 ; (same cosmetic-signature pattern as memcpy/memset and
-                ; scaly_alloc_root_page below — every call path builds its
+                ; Page.allocate_root_page below — every call path builds its
                 ; own concrete func_type for LLVMBuildCall2). Without this
                 ; the call was silently dropped: not_implemented's stderr
                 ; prints vanished from every stage-2+ binary.
@@ -5872,7 +5872,7 @@ define Emitter
         ; When call.requires_page_param is set, prepend an rp arg in
         ; slot 0. Source: caller's `rp` local var if it has a page
         ; parameter (function# caller), else lazily call
-        ; `_Z21scaly_alloc_root_pagev`. Mirrors stage-0's
+        ; `_ZN4Page18allocate_root_pageEv`. Mirrors stage-0's
         ; getOrCreateLocalPage fallback at Emitter.cpp:6657-6681.
         var page_offset: size_t 0
         var page_arg: LLVMValueRef LLVMValueRef(null)
