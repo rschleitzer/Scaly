@@ -1,24 +1,12 @@
 <![CDATA[
 ;; Generate Scaly Parser from scaly.sgm
 
-;; Helper to generate char constant name from punctuation value
-;; Returns function call syntax like ParserConstants.CHAR_LPAREN()
+;; Helper to generate the char-literal argument for a punctuation value.
+;; Bare double-quoted literals fold to parse_punctuation's u8 parameter in
+;; call-argument position; the grammar's backslash value is already "\\",
+;; which is the correct Scaly escape as-is.
 (define (punct-const-name value)
-    (case value
-        (("(") "ParserConstants.CHAR_LPAREN()")
-        ((")") "ParserConstants.CHAR_RPAREN()")
-        (("[") "ParserConstants.CHAR_LBRACKET()")
-        (("]") "ParserConstants.CHAR_RBRACKET()")
-        (("{") "ParserConstants.CHAR_LBRACE()")
-        (("}") "ParserConstants.CHAR_RBRACE()")
-        ((",") "ParserConstants.CHAR_COMMA()")
-        ((".") "ParserConstants.CHAR_DOT()")
-        (("!") "ParserConstants.CHAR_EXCL()")
-        (("?") "ParserConstants.CHAR_QUESTION()")
-        (("#") "ParserConstants.CHAR_HASH()")
-        (("^") "ParserConstants.CHAR_CARET()")
-        (("\\\\") "ParserConstants.CHAR_BACKSLASH()")
-        (else ($ "ParserConstants.CHAR_" value "()"))))
+    ($ "\"" value "\""))
 
 (define (generate-parser-scaly) ($
 "; parser.scaly - Generated from scaly.sgm
@@ -40,39 +28,7 @@ define ParserError union (
 
 ; Syntax types are defined in Syntax.scaly (loaded as module Syntax by compiler.scaly)
 
-; Lexer import (uses its own char constants)
 module lexer
-
-; Character constants for punctuation (double-quoted char literals fold in return position)
-define ParserConstants
-{
-    function CHAR_LPAREN() returns char
-        \"(\"
-    function CHAR_RPAREN() returns char
-        \")\"
-    function CHAR_LBRACKET() returns char
-        \"[\"
-    function CHAR_RBRACKET() returns char
-        \"]\"
-    function CHAR_LBRACE() returns char
-        \"{\"
-    function CHAR_RBRACE() returns char
-        \"}\"
-    function CHAR_COMMA() returns char
-        \",\"
-    function CHAR_DOT() returns char
-        \".\"
-    function CHAR_EXCL() returns char
-        \"!\"
-    function CHAR_QUESTION() returns char
-        \"?\"
-    function CHAR_HASH() returns char
-        \"#\"
-    function CHAR_CARET() returns char
-        \"^\"
-    function CHAR_BACKSLASH() returns char
-        \"\\\\\"
-}
 
 define Parser
 (
