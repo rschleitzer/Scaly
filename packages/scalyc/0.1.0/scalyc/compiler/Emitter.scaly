@@ -5841,6 +5841,37 @@ define Emitter
         LLVMValueRef null
     }
 
+    ; M2.3b: scaly_call_ptr(fn, arg) returns pointer[void] — an indirect
+    ; ptr(ptr) call through a bare function-pointer value. Same
+    ; extern-name-with-no-symbol pattern as the atomics above. The
+    ; delegate-record calling convention prepends the record as a hidden
+    ; first argument, so a plain C-shaped fn(arg) invocation (a
+    ; pthread-entry signature) needs this emitter-lowered form.
+    function emit_ptr_call(this, call: PlannedCall) returns LLVMValueRef
+    {
+        if call.mangled_name <> "scaly_call_ptr"
+            return LLVMValueRef null
+        if call.args = null
+            return LLVMValueRef null
+        if call.args.length < (2 as size_t)
+            return LLVMValueRef null
+        let a0 call.args.get 0
+        let a1 call.args.get 1
+        if a0 = null
+            return LLVMValueRef null
+        if a1 = null
+            return LLVMValueRef null
+        var fnv emit_operand(a0.unwrap())
+        var argv emit_operand(a1.unwrap())
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var arg_tys Vector[LLVMTypeRef](1)
+        arg_tys.put(0, ptr_ty)
+        var arg_vals Vector[LLVMValueRef](1)
+        arg_vals.put(0, argv)
+        let fn_ty LLVMFunctionType(ptr_ty, arg_tys.data, 1 as u32, 0)
+        return LLVMBuildCall2(builder, fn_ty, fnv, arg_vals.data, 1 as u32, "")
+    }
+
     function emit_call(this, call: PlannedCall) returns LLVMValueRef
     {
         ; Indirect call through a function pointer value (Phase-1 JIT). args[0]
@@ -5914,6 +5945,11 @@ define Emitter
         let atomic_val emit_atomic_call call
         if atomic_val.handle <> null
             return atomic_val
+
+        ; M2.3b: scaly_call_ptr lowers to an indirect ptr(ptr) call.
+        let indirect_val emit_ptr_call call
+        if indirect_val.handle <> null
+            return indirect_val
 
         ; s80: Itanium C1 constructor calls — mangled name contains "C1E"
         ; between the class encoding and parameter encoding. Allocate the

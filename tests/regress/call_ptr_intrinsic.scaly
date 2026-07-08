@@ -1,0 +1,25 @@
+; M2.3b indirect-call primitive: scaly_call_ptr(fn, arg) is an extern
+; name with no symbol anywhere — the Emitter lowers it to a bare
+; ptr(ptr) indirect call (emit_ptr_call), the C calling shape a
+; pthread-style entry expects (no hidden delegate-record argument).
+
+function scaly_call_ptr(fn: pointer[void], arg: pointer[void]) returns pointer[void] extern
+
+procedure bump(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[i64]
+    let v *cell
+    set *cell: v + (1 as i64)
+    arg
+}
+
+var cell u8[8]
+set *(cell as pointer[i64]): 41 as i64
+let r scaly_call_ptr(&bump, cell as pointer[void])
+var ok true
+if r <> (cell as pointer[void])
+    set ok: false
+if *(cell as pointer[i64]) <> (42 as i64)
+    set ok: false
+if ok
+    print "PASS\n"
