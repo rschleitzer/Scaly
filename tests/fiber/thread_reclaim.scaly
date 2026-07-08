@@ -1,0 +1,54 @@
+; Thread-exit bucket reclamation (stage-2 milestone 2.3b): a dying
+; thread's allocator buckets no longer leak. The trampoline around
+; every Thread.spawn entry frees the thread's stack buckets and its
+; EMPTY heap buckets outright (the churn loop below exercises that
+; path), and marks heap buckets that still hold live pages DEAD +
+; orphaned — the release_page that drains the last live page frees the
+; bucket, from whichever thread it runs on. Here the child keeps one
+; page live past its own exit and hands it to main; main's release is
+; the last drain, so main's thread-local Page.reclaimed_dead_buckets()
+; counter must tick exactly once.
+; Expected: reclaim-ok done
+
+procedure reclaim_entry(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    ; Keep one page live past thread exit — its bucket dies DEAD.
+    let keep Page.allocate_page()
+    set *cell: keep as size_t
+    ; Fill the first bucket completely (63 slots) and spill into a
+    ; second, then free everything: the first bucket goes full→free and
+    ; is ADOPTED back by this thread, ending with only `keep` live; the
+    ; drained second bucket is EMPTY at exit and freed by the
+    ; trampoline outright.
+    var held u8[576]
+    let held_cells held as pointer[size_t]
+    var k: size_t 0
+    while k < (70 as size_t)
+    {
+        let q Page.allocate_page()
+        let slot (held_cells as size_t + k * (8 as size_t)) as pointer[size_t]
+        set *slot: q as size_t
+        set k: k + (1 as size_t)
+    }
+    set k: 0 as size_t
+    while k < (70 as size_t)
+    {
+        let slot (held_cells as size_t + k * (8 as size_t)) as pointer[size_t]
+        let v *slot
+        Page.release_page(v as pointer[Page])
+        set k: k + (1 as size_t)
+    }
+    null
+}
+
+var cell u8[8]
+let t Thread.spawn(&reclaim_entry, cell as pointer[void])
+Thread.join(t)
+let before Page.reclaimed_dead_buckets()
+let kept (*(cell as pointer[size_t])) as pointer[Page]
+Page.release_page kept
+let after Page.reclaimed_dead_buckets()
+if after - before = (1 as i64)
+    Console.print "reclaim-ok "
+Console.println "done"

@@ -240,6 +240,36 @@ procedure scaly_guard_install(classify: pointer[void]) returns i32 extern
 procedure pthread_create(thread: pointer[size_t], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
 procedure pthread_join(thread: size_t, retval: pointer[void]) returns i32 extern
 
+; Indirect-call primitive (milestone 2.3b): an extern name with no
+; symbol anywhere — the Emitter lowers it to a bare ptr(ptr) indirect
+; call, the C calling shape of a pthread-style entry (the delegate
+; mechanism can't produce this: it prepends the record as a hidden
+; first argument).
+function scaly_call_ptr(fn: pointer[void], arg: pointer[void]) returns pointer[void] extern
+
+; The pthread entry of every Thread.spawn (milestone 2.3b): unpacks the
+; spawn cell ({fn, arg} on their own heap page, released BEFORE the
+; entry runs — cross-thread frees are safe since 2.3), runs the user
+; entry through scaly_call_ptr, then reclaims the dying thread's
+; allocator state: pooled fiber stacks, the fully-unwound stack-bucket
+; chain, and the heap buckets (empty → freed now; still-live → marked
+; dead, freed by their last release_page from any thread). Outside the
+; user entry this frame must stay allocation-free — after the reclaim
+; there is no allocator left to allocate from.
+procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
+{
+    let cell raw as pointer[size_t]
+    let fn_v *cell
+    let arg_slot (raw as size_t + (8 as size_t)) as pointer[size_t]
+    let arg_v *arg_slot
+    let host Page.get(raw)
+    Page.release_page host
+    scaly_call_ptr(fn_v as pointer[void], arg_v as pointer[void])
+    Fiber.drain_stack_pool()
+    scaly_thread_release_buckets()
+    null
+}
+
 ; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
 ; stack-arg ABI); mmap's offset is 64-bit on both OSes.
 function mmap(addr: pointer[void], length: size_t, prot: i32, flags: i32, fd: i32, offset: i64) returns pointer[void] extern
@@ -1138,12 +1168,21 @@ define Thread
     ; Run entry (a `procedure (arg: pointer[void]) returns pointer[void]`,
     ; taken with &entry) on a new OS thread; arg is handed to it verbatim.
     ; Returns the thread handle for Thread.join. Traps (exit 109) when
-    ; the OS refuses a thread.
+    ; the OS refuses a thread. The thread runs through
+    ; scaly_thread_start, which reclaims the thread's allocator buckets
+    ; after the entry returns (milestone 2.3b) — the spawn cell rides on
+    ; its own heap page because the spawner may return before the thread
+    ; starts; the trampoline releases it.
     procedure spawn(fn: pointer[void], arg: pointer[void]) returns size_t
     {
+        let p Page.allocate_page()
+        let cell p.allocate(16 as size_t, 8 as size_t) as pointer[size_t]
+        set *cell: fn as size_t
+        let slot1 (cell as size_t + (8 as size_t)) as pointer[size_t]
+        set *slot1: arg as size_t
         var handle u8[8]
         let hp handle as pointer[size_t]
-        let rc pthread_create(hp, null, fn, arg)
+        let rc pthread_create(hp, null, &scaly_thread_start, cell as pointer[void])
         if rc <> (0 as i32)
             exit 109
         *hp

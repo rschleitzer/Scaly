@@ -9,8 +9,9 @@
 ; (allocate/release rounds on its own chain). After the join, main runs
 ; three buckets' worth of allocate/release again, proving its freelist
 ; survived. Workers print nothing; output stays deterministic. The
-; workers' chains (incl. adopted buckets) leak at thread exit — the
-; documented 2.3 residual (no thread-exit hook yet).
+; workers' chains (incl. adopted buckets) are empty when the workers
+; return and are freed by the thread trampoline (milestone 2.3b —
+; tests/fiber/thread_reclaim.scaly proves the live-bucket path).
 ; Expected: churn-ok done
 
 procedure churn_entry(arg: pointer[void]) returns pointer[void]

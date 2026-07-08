@@ -45,6 +45,7 @@ define HeapBucketHeader
     next: pointer[HeapBucketHeader]
     bitmap: u64
     lock: u64
+    dead: u64                      ; owner thread exited; free on last drain
 )
 
 ; The per-thread allocator state (stack_head, stack_top, heap_head —
@@ -221,6 +222,72 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader])
     scaly_atomic_store_u64(lp, 0 as u64)
 }
 
+; Called by Page.release_page UNDER THE BUCKET LOCK after setting the
+; freed bit (was_full false): when the bucket is DEAD (owner thread
+; exited, scaly_thread_release_buckets below) and this free drained the
+; last live page, unlock and free the bucket, report true — the caller
+; must not touch it again. Lives HERE, not in Page.scaly: BITMAP_ALL_FREE
+; is this module's constant, and module globals resolve in planning
+; order (Page is planned first — reading the constant from there drops
+; the statement silently).
+function drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
+{
+    if b.dead = (0 as u64)
+        return false
+    if b.bitmap <> BITMAP_ALL_FREE
+        return false
+    bucket_unlock b
+    set dead_buckets_reclaimed: dead_buckets_reclaimed + (1 as i64)
+    free(b as pointer[void])
+    true
+}
+
+; Reclaim a dying thread's allocator buckets (milestone 2.3b). Called by
+; the thread trampoline (fiber.scaly scaly_thread_start) AFTER the user
+; entry returned, i.e. every frame is unwound: all root pages are popped,
+; so the stack-bucket chain is idle and simply freed. Heap buckets:
+; empty ones are freed here; ones with live pages (handed to other
+; threads or stored long-lived) are marked DEAD and orphaned — the
+; release_page that drains the last page frees them, from whichever
+; thread it runs on (Page.scaly). A full bucket of the dying thread is
+; already orphaned (unlinked at allocation time) and needs no marking:
+; the freer that observes its full→free transition adopts it as usual.
+; Races with concurrent remote frees are serialized by the bucket lock;
+; an empty bucket cannot receive frees (no live pages), so freeing it
+; after unlock is safe. This function must stay allocation-free: it
+; tears down the very allocator it would allocate from.
+procedure scaly_thread_release_buckets()
+{
+    var sb stack_head
+    while sb <> null
+    {
+        let nxt sb.next
+        free(sb as pointer[void])
+        set sb: nxt
+    }
+    set stack_head: null
+    set stack_top: null
+
+    var hb heap_head
+    while hb <> null
+    {
+        let nxt hb.next
+        bucket_lock hb
+        let empty hb.bitmap = BITMAP_ALL_FREE
+        if empty = false
+        {
+            set hb.dead: 1 as u64
+            set hb.next: null
+            set hb.prev: null
+        }
+        bucket_unlock hb
+        if empty
+            free(hb as pointer[void])
+        set hb: nxt
+    }
+    set heap_head: null
+}
+
 function first_usable_page(bucket: pointer[void]) returns pointer[Page]
     (bucket as size_t + PAGE_SIZE) as pointer[Page]
 
@@ -274,6 +341,7 @@ function create_heap_bucket() returns pointer[HeapBucketHeader]
     set hb.next: null
     set hb.bitmap: BITMAP_ALL_FREE
     set hb.lock: 0 as u64
+    set hb.dead: 0 as u64
     hb
 }
 

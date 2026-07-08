@@ -14,6 +14,9 @@ mutable heap_head: pointer[HeapBucketHeader] null
 ; stack_top: current top-of-stack root page.
 mutable stack_head: pointer[StackBucketHeader] null
 mutable stack_top:  pointer[Page] null
+; Dead heap buckets this thread drained and freed (milestone 2.3b) —
+; teardown-proof counter, read via Page.reclaimed_dead_buckets().
+mutable dead_buckets_reclaimed: i64 0
 
 define Page
 (
@@ -93,8 +96,26 @@ define Page
 
             set heap_head: b
         }
+        if was_full = false
+        {
+            ; Milestone 2.3b: the last drain of a DEAD bucket (owner
+            ; thread exited with this bucket still holding live pages)
+            ; frees the bucket itself — from whichever thread runs this.
+            ; A dead bucket can never be full (it sits in no chain, so
+            ; nothing allocates from it; bits only get set), so the two
+            ; branches never collide. The check lives in root_pages
+            ; (drain_dead_bucket) — BITMAP_ALL_FREE is not resolvable
+            ; from this earlier-planned module.
+            if drain_dead_bucket(b)
+                return
+        }
         bucket_unlock b
     }
+
+    ; How many dead buckets THIS thread has drained and freed
+    ; (teardown proof for tests; the counter is thread-local).
+    function reclaimed_dead_buckets() returns i64
+        dead_buckets_reclaimed
 
     function allocate_root_page() returns pointer[Page]
     {
