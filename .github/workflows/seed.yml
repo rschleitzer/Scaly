@@ -78,6 +78,13 @@ jobs:
       - name: The 10k demo (fiber-per-connection HTTP, milestone 1.6)
         run: tests/fiber/bench/run.sh dist/seed/scalyc_seed
 
+      # tools/seed.sh above links scalyls from FRESHLY emitted IR; this is the
+      # only place the COMMITTED seed/scalyls*.ll get linked and served — and
+      # it keeps verify-seed.sh itself from silently going stale (its scalyls
+      # link recipe once drifted for months because nothing executed it).
+      - name: Verify committed seed (hello, AOT, regress, scalyls link+smoke)
+        run: tools/verify-seed.sh dist/seed/scalyc_seed
+
       - name: Upload native compiler
         uses: actions/upload-artifact@v4
         with:
