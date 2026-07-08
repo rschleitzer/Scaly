@@ -46,7 +46,8 @@ define HeapBucketHeader
     bitmap: u64
 )
 
-; The process-global allocator state (stack_head, stack_top, heap_head)
+; The per-thread allocator state (stack_head, stack_top, heap_head —
+; thread_local like every mutable global since milestone 2.2)
 ; lives in Page.scaly: its consumers Page.allocate_root_page,
 ; Page.allocate_page and Page.release_page are planned before this module,
 ; and lookup_global is populated in planning order. The root-page release

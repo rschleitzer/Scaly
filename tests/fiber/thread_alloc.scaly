@@ -1,0 +1,53 @@
+; Cross-thread allocation (stage-2 milestone 2.2): every mutable module
+; global — above all the allocator state stack_head/stack_top/heap_head —
+; is thread_local now, so the milestone-2.1 NO-ALLOCATION convention for
+; thread entries is lifted. Four threads allocate CONCURRENTLY: each
+; entry's frame takes a local root page (the first-ever push on that
+; thread's own TLS StackBucket) and a String loop spills into extension
+; pages, all on the thread's private allocator. Each thread sums its
+; string lengths into a caller-owned cell; main joins all four and
+; verifies. Threads print nothing — output stays deterministic.
+; Regions remain thread-confined: pages a thread allocates are freed by
+; that thread (cross-thread hand-off is milestone 2.3).
+; Expected: sums-ok done
+
+procedure alloc_entry(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[i64]
+    set *cell: 0 as i64
+    var k 0
+    while k < 40
+    {
+        let s String("0123456789")
+        let n s.get_length()
+        let cur *cell
+        set *cell: cur + (n as i64)
+        set k: k + 1
+    }
+    null
+}
+
+var cell0 u8[8]
+var cell1 u8[8]
+var cell2 u8[8]
+var cell3 u8[8]
+let t0 Thread.spawn(&alloc_entry, cell0 as pointer[void])
+let t1 Thread.spawn(&alloc_entry, cell1 as pointer[void])
+let t2 Thread.spawn(&alloc_entry, cell2 as pointer[void])
+let t3 Thread.spawn(&alloc_entry, cell3 as pointer[void])
+Thread.join(t0)
+Thread.join(t1)
+Thread.join(t2)
+Thread.join(t3)
+var ok true
+if *(cell0 as pointer[i64]) <> (400 as i64)
+    set ok: false
+if *(cell1 as pointer[i64]) <> (400 as i64)
+    set ok: false
+if *(cell2 as pointer[i64]) <> (400 as i64)
+    set ok: false
+if *(cell3 as pointer[i64]) <> (400 as i64)
+    set ok: false
+if ok
+    Console.print "sums-ok "
+Console.println "done"

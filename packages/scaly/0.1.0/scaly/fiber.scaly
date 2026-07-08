@@ -21,9 +21,10 @@
 ; bucket chain belonging to the fiber. resume/yield/finish swap that
 ; per-fiber allocator state with the resuming side's at EVERY context
 ; crossing (the Fiber record always holds the non-running side's context +
-; allocator state). The HeapBucket allocator (heap_head) stays
-; process-global: it is bitmap-managed, not LIFO, so single-threaded
-; fibers can interleave extension/exclusive-page traffic safely. dispose
+; allocator state). The HeapBucket allocator (heap_head) is shared by
+; all fibers of one thread (thread_local since milestone 2.2): it is
+; bitmap-managed, not LIFO, so the fibers of a thread can interleave
+; extension/exclusive-page traffic safely. dispose
 ; frees the fiber's whole region wholesale: every root page still on its
 ; stack (extension + exclusive chains included), the stack buckets
 ; themselves, then the mmap'd stack.
@@ -172,17 +173,19 @@
 ; signature is `procedure entry(arg: pointer[void]) returns pointer[void]`
 ; (take it with &entry; return null — the result is discarded).
 ;
-; NO-ALLOCATION CONVENTION (until milestone 2.2): every allocator
-; global (heap_head, stack_head/stack_top, root-page scratch, the fiber
-; globals below) is process-global and unsynchronized — a spawned
-; thread that allocates corrupts the spawner's allocator state. Until
-; milestone 2.2 makes that state thread-local, a thread entry MUST NOT
-; ALLOCATE: no page allocation, no String/object/container
-; construction, no fibers, schedulers, or channels. Allowed: pure
-; computation over spawner-provided memory, syscall-style externs, and
-; Console.print/println of cstring literals (strlen+write —
-; allocation-free by construction). tests/fiber/thread_hello.scaly is
-; the demonstrator.
+; Thread-local allocator state (milestone 2.2): every mutable module
+; global — heap_head, stack_head/stack_top, root-page scratch, the
+; fiber globals below — is thread_local (the Emitter marks all mutable
+; globals so), giving each OS thread its own allocator, scheduler slot,
+; and stack pool. The milestone-2.1 no-allocation convention is lifted:
+; a thread entry may allocate freely — pages, Strings, containers,
+; fibers, schedulers, channels — all on its private state
+; (tests/fiber/thread_alloc.scaly is the demonstrator). What remains
+; forbidden until milestone 2.3 (freelist safety) is CROSS-THREAD page
+; hand-off: release_page mutates the owning HeapBucket's bitmap and
+; free list unsynchronized, so a page must be allocated AND freed by
+; the same thread — regions are thread-confined, and channels only
+; connect fibers of one thread.
 ;
 ;   let t Thread.spawn(&entry, arg)   ; arg: pointer[void], handed to entry
 ;   Thread.join(t)                    ; blocks until entry returned
