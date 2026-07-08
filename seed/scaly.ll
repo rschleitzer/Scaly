@@ -20800,6 +20800,14 @@ declare i64 @scaly_eio_read(i32, ptr, i64)
 
 declare i64 @scaly_eio_write(i32, ptr, i64)
 
+declare i32 @scaly_eio_tcp_listen(i32)
+
+declare i32 @scaly_eio_tcp_port(i32)
+
+declare i32 @scaly_eio_tcp_connect(i32)
+
+declare i32 @scaly_eio_accept(i32)
+
 declare ptr @mmap(ptr, i64, i32, i32, i32, i64)
 
 declare i32 @munmap(ptr, i64)
@@ -21906,6 +21914,47 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %r3 = load i64, ptr %r, align 8
   ret i64 %r3
+}
+
+define linkonce_odr i32 @_ZN2Io6listenE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_tcp_listen(i32 %0)
+  ret i32 %call
+}
+
+define linkonce_odr i32 @_ZN2Io10local_portE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_tcp_port(i32 %0)
+  ret i32 %call
+}
+
+define linkonce_odr i32 @_ZN2Io7connectE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_tcp_connect(i32 %0)
+  ret i32 %call
+}
+
+define linkonce_odr i32 @_ZN2Io6acceptE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_accept(i32 %0)
+  %r = alloca i32, align 4
+  store i32 %call, ptr %r, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %r1 = load i32, ptr %r, align 4
+  %eq = icmp eq i32 %r1, -2
+  br i1 %eq, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  call void @_ZN2Io4parkE3i32b(i32 %0, i1 false)
+  %call2 = call i32 @scaly_eio_accept(i32 %0)
+  store i32 %call2, ptr %r, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %r3 = load i32, ptr %r, align 4
+  ret i32 %r3
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
