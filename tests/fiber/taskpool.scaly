@@ -1,0 +1,120 @@
+; Work-stealing task pool (stage-3 milestone 3.2): 100 tasks fan out
+; over 4 worker threads and each writes its result into a CALLER-OWNED
+; DISJOINT SLOT — Vector.put at the task's own index, the canonical
+; parallel result target (the submitter is parked in TaskGroup.wait,
+; its region quiescent, so the cross-thread puts are race-free). A
+; second wave REUSES the same group and churns allocations inside the
+; tasks (pages allocated and released on the workers' own thread-local
+; allocators — one region per task; String locals unwind with the task
+; frame). Both waves are verified by summing the slots on the caller.
+; Expected: taskpool-ok done
+
+; Wave-1 entry: square the index into slot [index]. The cell (caller
+; stack memory, outlives the wave) carries {index, data, length}; the
+; task reborrows the caller's Vector with the non-allocating borrow
+; init and puts through it.
+procedure square_task(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    let i *cell
+    let dp (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[i64]
+    let len *(((cell as size_t) + (16 as size_t)) as pointer[size_t])
+    var v Vector[i64](dp, len)
+    let n i as i64
+    v.put(i, n * n)
+    null
+}
+
+; Wave-2 entry: churn this worker's allocator (whole pages taken and
+; released, a String that unwinds with the frame), then triple the
+; index into slot [index].
+procedure churn_task(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    let i *cell
+    let dp (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[i64]
+    let len *(((cell as size_t) + (16 as size_t)) as pointer[size_t])
+    var k 0
+    while k < 5
+    {
+        let p Page.allocate_page()
+        Page.release_page(p)
+        set k: k + 1
+    }
+    let s String("task-local region")
+    var v Vector[i64](dp, len)
+    let n i as i64
+    v.put(i, n * (3 as i64))
+    null
+}
+
+let pool TaskPool.create(4 as i64)
+let g TaskGroup.create()
+
+; Wave 1: 100 squares into a caller-owned vector.
+var results Vector[i64](100 as size_t)
+var cells u8[2400]
+let cbase cells as pointer[size_t]
+var i: size_t 0
+while i < (100 as size_t)
+{
+    let c ((cbase as size_t) + (i * (24 as size_t))) as pointer[size_t]
+    set *c: i
+    set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): results.data as size_t
+    set *(((c as size_t) + (16 as size_t)) as pointer[size_t]): results.length
+    TaskPool.submit(pool, &square_task, c as pointer[void], g)
+    set i: i + (1 as size_t)
+}
+TaskGroup.wait(g)
+
+var sum 0 as i64
+set i: 0 as size_t
+while i < (100 as size_t)
+{
+    let v results.get i
+    if v <> null
+        set sum: sum + (*v)
+    set i: i + (1 as size_t)
+}
+if sum <> (328350 as i64)
+{
+    Console.println "wave1-sum-bad"
+    exit 1
+}
+
+; Wave 2: reuse the group; 40 allocation-churning tasks.
+var results2 Vector[i64](40 as size_t)
+var cells2 u8[960]
+let cbase2 cells2 as pointer[size_t]
+set i: 0 as size_t
+while i < (40 as size_t)
+{
+    let c ((cbase2 as size_t) + (i * (24 as size_t))) as pointer[size_t]
+    set *c: i
+    set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): results2.data as size_t
+    set *(((c as size_t) + (16 as size_t)) as pointer[size_t]): results2.length
+    TaskPool.submit(pool, &churn_task, c as pointer[void], g)
+    set i: i + (1 as size_t)
+}
+TaskGroup.wait(g)
+
+var sum2 0 as i64
+set i: 0 as size_t
+while i < (40 as size_t)
+{
+    let v results2.get i
+    if v <> null
+        set sum2: sum2 + (*v)
+    set i: i + (1 as size_t)
+}
+if sum2 <> (2340 as i64)
+{
+    Console.println "wave2-sum-bad"
+    exit 1
+}
+
+TaskGroup.dispose(g)
+TaskPool.shutdown(pool)
+
+Console.print "taskpool-ok "
+Console.println "done"

@@ -247,12 +247,56 @@
 ;   let res Io.offload(&blocking_op, arg)   ; parks in a task; runs
 ;                                           ; in place otherwise
 ;
+; Work-stealing task pool (stage-3 milestone 3.2): the task runtime the
+; TaskPlanner's `parallel for` emission (milestone 3.3) will dispatch
+; to, usable directly today. A pool is N OS threads (Thread.spawn),
+; each owning a spinlocked work deque; TaskPool.submit places a task on
+; a deque round-robin and a worker whose own deque runs dry STEALS from
+; the others'. The wake channel is the IoPool pattern: one pipe byte
+; per queued item — a worker blocks in a 1-byte read and, having
+; consumed a byte, is entitled to exactly one item SOMEWHERE (pushes
+; precede byte writes, takes follow byte reads), so its steal scan
+; always terminates. Closing the write end (TaskPool.shutdown) drains
+; the remaining bytes first, then hands every worker a 0 — queued work
+; still runs before the workers exit and are joined.
+;
+; One region per task: the task entry (`procedure fn(arg: pointer[void])
+; returns pointer[void]`, run via scaly_call_ptr) executes on a worker
+; thread — its allocations root on that worker's thread-local allocator
+; and unwind with the entry frame, so each task's region dies with the
+; task. Results land in CALLER-OWNED DISJOINT SLOTS (Vector.put at the
+; task's own index is the canonical target): the submitter is parked in
+; TaskGroup.wait while tasks run, its region is quiescent, so those
+; cross-thread writes are race-free — the milestone-2.5 zero-copy
+; discipline. Anything a task allocates and keeps beyond its return
+; must ride its own heap page, mailbox-message style.
+;
+; A TaskGroup counts in-flight tasks (atomic) and carries its own pipe:
+; the completion that takes pending to zero writes one byte, and wait
+; re-checks the counter after every byte it reads — stale bytes from
+; intermediate zero-crossings (submit waves reusing one group) are
+; harmless. Work items ride the GROUP'S own heap page (bump-allocated
+; by the submitter, freed wholesale in dispose), so the pool needs no
+; allocator and nothing to track. Contracts: one submitting thread per
+; group, wait only after every submit of the wave, dispose only after
+; wait, shutdown only when no group has work in flight; wait blocks the
+; calling THREAD (call it from the main context, not inside a scheduled
+; task). No shared_ global is needed anywhere: the pool record travels
+; by pointer (spawn cells, task arguments), mailbox-style.
+;
+;   let pool TaskPool.create(4 as i64)
+;   let g TaskGroup.create()
+;   ...TaskPool.submit(pool, &task_fn, arg_i, g) per task...
+;   TaskGroup.wait(g)                 ; blocks until every task finished
+;   TaskGroup.dispose(g)
+;   TaskPool.shutdown(pool)           ; drain queued work, join workers
+;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
 ; join, send, or receive), 107 poller failure (create/arm/wait or
 ; set_nonblocking), 108 fiber stack overflow (guard page hit), 109
 ; thread spawn/join failure, 110 send on a closed mailbox, 111 worker
-; pool failure (pipe creation).
+; pool failure (pipe creation), 112 task pool/group pipe failure.
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
@@ -295,6 +339,11 @@ function close(fd: int) returns int extern
 ; Atomic load (milestone 2.4; cas/store are declared in root_pages.scaly).
 ; Like all scaly_atomic_* names this is emitter-lowered, never a symbol.
 function scaly_atomic_load_u64(p: pointer[u64]) returns u64 extern
+
+; Atomic fetch-add (milestone 3.2 — the task-group pending counter).
+; Old-value convention like every scaly_atomic_*; decrement by adding
+; (0 - 1) as u64. Emitter-lowered, never a symbol.
+function scaly_atomic_add_u64(p: pointer[u64], v: u64) returns u64 extern
 
 ; TCP helpers (shim-owned: sockaddr_in layout is OS-specific, and accept
 ; needs the errno mapping). listen returns a nonblocking listening fd on
@@ -2055,5 +2104,326 @@ define Thread
         let rc pthread_join(t, null)
         if rc <> (0 as i32)
             exit 109
+    }
+}
+
+; A completion group (milestone 3.2): counts a wave of submitted tasks
+; and lets the submitter block until every one finished. The record
+; rides its OWN heap page — work items are bump-allocated on it by the
+; submitter (single submitting thread per group; workers only read
+; them) and the whole page dies in dispose. The pipe is the completion
+; wake: the finish that takes pending to zero writes one byte; wait
+; re-checks the counter after every byte, so stale bytes from earlier
+; zero-crossings (waves reusing one group) are harmless. Reusable:
+; submit a wave, wait, submit the next.
+define TaskGroup
+(
+    pending: u64                 ; in-flight tasks (atomic)
+    pipe_read: i32               ; wait blocks reading here
+    pipe_write: i32              ; last completion writes one byte
+)
+{
+    ; Create a group on its own heap page. Traps (exit 112) when the
+    ; OS refuses a pipe.
+    procedure create() returns pointer[TaskGroup]
+    {
+        let p Page.allocate_page_traced("TaskGroup.record_page")
+        let g p.allocate(sizeof TaskGroup, alignof TaskGroup) as pointer[TaskGroup]
+        set g.pending: 0 as u64
+        var fds u8[8]
+        let rc pipe(fds as pointer[i32])
+        if rc <> (0 as i32)
+            exit 112
+        set g.pipe_read: *(fds as pointer[i32])
+        set g.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
+        g
+    }
+
+    ; One task finished: drop the pending count; the drop to zero wakes
+    ; the waiter. Runs on worker threads — the counter is the only
+    ; shared word, the pipe write is atomic for one byte.
+    procedure finish_one(g: pointer[TaskGroup])
+    {
+        let pp &g.pending
+        let old scaly_atomic_add_u64(pp, (0 - 1) as u64)
+        if old = (1 as u64)
+        {
+            var one u8[1]
+            set *(one as pointer[u8]): 1 as u8
+            scaly_eio_write(g.pipe_write, one as pointer[void], 1 as size_t)
+        }
+    }
+
+    ; Block until every submitted task of the wave finished. Call from
+    ; the SUBMITTING thread, after all submits (a submit racing a wait
+    ; could let a stale zero-crossing byte end the wait early). Blocks
+    ; the whole thread — main-context use, not inside a scheduled task.
+    procedure wait(g: pointer[TaskGroup])
+    {
+        let pp &g.pending
+        while scaly_atomic_load_u64(pp) > (0 as u64)
+        {
+            var byte u8[1]
+            let n scaly_eio_read(g.pipe_read, byte as pointer[void], 1 as size_t)
+            if n <> (1 as i64)
+                exit 112
+        }
+    }
+
+    ; Free the group: close the pipe, release the record page (every
+    ; work item of every wave goes with it). Only after wait returned —
+    ; nothing may touch the record or its items anymore.
+    procedure dispose(g: pointer[TaskGroup])
+    {
+        close(g.pipe_write as int)
+        close(g.pipe_read as int)
+        let gp Page.get(g as pointer[void])
+        gp.deallocate_extensions()
+        Page.release_page_traced(gp, "TaskGroup.record_page")
+    }
+}
+
+; One submitted task (milestone 3.2). Lives on its group's page (the
+; submitter allocates, workers only read, dispose frees wholesale).
+define TaskItem
+(
+    next: pointer[TaskItem]
+    fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
+    arg: pointer[void]
+    group: pointer[TaskGroup]
+)
+
+; One worker's work deque (milestone 3.2): a spinlocked FIFO — the
+; submitter appends round-robin, the owner pops, thieves pop too. The
+; lock is the whole synchronization story (bucket_lock pattern:
+; critical sections are a few pointer moves); the stealing is in the
+; DISTRIBUTION — N deques instead of one shared queue keep submitters
+; and workers off each other's locks until a worker actually runs dry.
+define TaskDeque
+(
+    lock: u64                    ; spinlock (bucket_lock pattern)
+    head: pointer[TaskItem]
+    tail: pointer[TaskItem]
+)
+{
+    procedure acquire(d: pointer[TaskDeque])
+    {
+        let lp &d.lock
+        repeat
+        {
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+                break
+        }
+    }
+
+    procedure release(d: pointer[TaskDeque])
+    {
+        let lp &d.lock
+        scaly_atomic_store_u64(lp, 0 as u64)
+    }
+}
+
+; The work-stealing pool (milestone 3.2) — see the module header for
+; the design and the contracts. The record, the deques, the worker
+; spawn cells, and the join handles all ride the pool's own heap page;
+; workers reach everything through their spawn cell (a worker thread
+; never sees the creator's thread-local globals — the milestone-2.4
+; lesson).
+define TaskPool
+(
+    deques: pointer[TaskDeque]   ; nworkers records, on the pool page
+    nworkers: i64
+    next_deque: i64              ; round-robin submit cursor (a plain
+                                 ; load-balancing hint: racy submitters
+                                 ; only skew the distribution)
+    stolen: u64                  ; items taken from a foreign deque
+                                 ; (atomic; observability for tests)
+    pipe_read: i32               ; workers block reading here
+    pipe_write: i32              ; one byte written per submitted item
+    handles: pointer[size_t]     ; worker join handles (creator-written)
+)
+{
+    ; The idx-th worker's deque.
+    function deque_at(pl: pointer[TaskPool], idx: i64) returns pointer[TaskDeque]
+        ((pl.deques as size_t) + ((idx as size_t) * sizeof TaskDeque)) as pointer[TaskDeque]
+
+    ; How many items workers stole from a foreign deque — observability
+    ; for tests (the count is timing-dependent, assert nothing strict).
+    function steal_count(pl: pointer[TaskPool]) returns u64
+    {
+        let sp &pl.stolen
+        scaly_atomic_load_u64(sp)
+    }
+
+    ; Start a pool of nworkers OS threads (clamped to at least one).
+    ; Traps (exit 112) when the OS refuses the pipe; a refused thread
+    ; traps in Thread.spawn (exit 109).
+    procedure create(nworkers: i64) returns pointer[TaskPool]
+    {
+        var n nworkers
+        if n < (1 as i64)
+            set n: 1 as i64
+        let p Page.allocate_page_traced("TaskPool.pool_page")
+        let pl p.allocate(sizeof TaskPool, alignof TaskPool) as pointer[TaskPool]
+        set pl.nworkers: n
+        set pl.next_deque: 0 as i64
+        set pl.stolen: 0 as u64
+        var fds u8[8]
+        let rc pipe(fds as pointer[i32])
+        if rc <> (0 as i32)
+            exit 112
+        set pl.pipe_read: *(fds as pointer[i32])
+        set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
+        set pl.deques: p.allocate((n as size_t) * sizeof TaskDeque, alignof TaskDeque) as pointer[TaskDeque]
+        set pl.handles: p.allocate((n * (8 as i64)) as size_t, 8 as size_t) as pointer[size_t]
+        var i 0 as i64
+        while i < n
+        {
+            let d TaskPool.deque_at(pl, i)
+            set d.lock: 0 as u64
+            set d.head: null
+            set d.tail: null
+            set i: i + (1 as i64)
+        }
+        ; Worker spawn cells {pool, index}, 16 bytes each on the pool
+        ; page — the worker's only door to the pool.
+        let cells p.allocate((n * (16 as i64)) as size_t, 8 as size_t) as pointer[size_t]
+        set i: 0 as i64
+        while i < n
+        {
+            let c ((cells as size_t) + ((i * (16 as i64)) as size_t)) as pointer[size_t]
+            set *c: pl as size_t
+            set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): i as size_t
+            let h Thread.spawn(&task_worker, c as pointer[void])
+            set *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t]): h
+            set i: i + (1 as i64)
+        }
+        pl
+    }
+
+    ; Submit fn(arg) — a task entry, `procedure fn(arg: pointer[void])
+    ; returns pointer[void]` taken with &fn — into the pool under the
+    ; given group. Never blocks. The item rides the group's page (one
+    ; submitting thread per group); the pending increment comes FIRST
+    ; (a task may finish before submit returns), the deque push BEFORE
+    ; the pipe byte (a woken worker must find an item).
+    procedure submit(pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], g: pointer[TaskGroup])
+    {
+        let pp &g.pending
+        let old scaly_atomic_add_u64(pp, 1 as u64)
+        let host Page.get(g as pointer[void])
+        let w host.allocate(sizeof TaskItem, alignof TaskItem) as pointer[TaskItem]
+        set w.next: null
+        set w.fn: fn
+        set w.arg: arg
+        set w.group: g
+        var idx pl.next_deque
+        if idx >= pl.nworkers
+            set idx: 0 as i64
+        set pl.next_deque: idx + (1 as i64)
+        let d TaskPool.deque_at(pl, idx)
+        TaskDeque.acquire(d)
+        if d.tail = null
+        {
+            set d.head: w
+            set d.tail: w
+        }
+        else
+        {
+            let tl d.tail
+            set tl.next: w
+            set d.tail: w
+        }
+        TaskDeque.release(d)
+        var one u8[1]
+        set *(one as pointer[u8]): 1 as u8
+        scaly_eio_write(pl.pipe_write, one as pointer[void], 1 as size_t)
+    }
+
+    ; Take one item: own deque first, then steal round-robin from the
+    ; others. Only called after a pipe byte was consumed, so at least
+    ; one item exists SOMEWHERE — a scan pass can still race a push in
+    ; flight, hence the outer retry loop (bounded by that push's
+    ; completion).
+    procedure take(pl: pointer[TaskPool], start: i64) returns pointer[TaskItem]
+    {
+        repeat
+        {
+            var k 0 as i64
+            while k < pl.nworkers
+            {
+                var idx start + k
+                if idx >= pl.nworkers
+                    set idx: idx - pl.nworkers
+                let d TaskPool.deque_at(pl, idx)
+                TaskDeque.acquire(d)
+                var w d.head
+                if w <> null
+                {
+                    set d.head: w.next
+                    if d.head = null
+                        set d.tail: null
+                    set w.next: null
+                }
+                TaskDeque.release(d)
+                if w <> null
+                {
+                    if k > (0 as i64)
+                    {
+                        let sp &pl.stolen
+                        let old scaly_atomic_add_u64(sp, 1 as u64)
+                    }
+                    return w
+                }
+                set k: k + (1 as i64)
+            }
+        }
+    }
+
+    ; Shut the pool down: closing the pipe's write end lets the workers
+    ; drain every remaining byte (queued work still runs), then hands
+    ; each blocked read a 0 — the worker exits and is joined (each
+    ; reclaims its own allocator state through the spawn trampoline).
+    ; Only when no group has work in flight that another thread still
+    ; waits on; the pool is gone afterwards — create a new one to
+    ; continue.
+    procedure shutdown(pl: pointer[TaskPool])
+    {
+        close(pl.pipe_write as int)
+        var i 0 as i64
+        while i < pl.nworkers
+        {
+            let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
+            Thread.join(h)
+            set i: i + (1 as i64)
+        }
+        close(pl.pipe_read as int)
+        let pp Page.get(pl as pointer[void])
+        pp.deallocate_extensions()
+        Page.release_page_traced(pp, "TaskPool.pool_page")
+    }
+}
+
+; A pool worker (milestone 3.2): consume one pipe byte (blocks between
+; items; 0 = shutdown), take the item it vouches for (own deque first,
+; then steal), run it, count it done. The task's allocations root on
+; THIS thread's allocator and unwind with the entry frame — one region
+; per task; results the task keeps go into caller-owned disjoint slots
+; (see the module header). Runs on its own OS thread: everything it
+; touches arrives through the spawn cell.
+procedure task_worker(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    let pl (*cell) as pointer[TaskPool]
+    let me ((*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as i64)
+    repeat
+    {
+        var byte u8[1]
+        let n scaly_eio_read(pl.pipe_read, byte as pointer[void], 1 as size_t)
+        if n <> (1 as i64)
+            return null
+        let w TaskPool.take(pl, me)
+        let res scaly_call_ptr(w.fn, w.arg)
+        TaskGroup.finish_one(w.group)
     }
 }
