@@ -257,6 +257,7 @@ define PlannedFor
     get_iterator_method: String     ; Mangled name of get_iterator
     next_method: String             ; Mangled name of next
     loop_label: String              ; Loop label for labeled break/continue
+    is_parallel: bool               ; `parallel for` — body must verify parallelizable
 )
 
 define PlannedWhile

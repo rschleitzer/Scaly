@@ -483,7 +483,9 @@ function handle_expression(syntax: ExpressionSyntax) returns Expression
         when choose_syntax: ChooseSyntax
             Expression.Choose(handle_choose(choose_syntax))
         when for_syntax: ForSyntax
-            Expression.For(handle_for(for_syntax))
+            Expression.For(handle_for(for_syntax, false))
+        when parallel_for_syntax: ParallelForSyntax
+            Expression.For(handle_parallel_for(parallel_for_syntax))
         when while_syntax: WhileSyntax
             Expression.While(handle_while(while_syntax))
         when try_syntax: TrySyntax
@@ -796,7 +798,7 @@ function handle_action(syntax: ActionSyntax) returns Action
             Action(Vector[Operand](0), Vector[Operand](0))
 }
 
-function handle_for(syntax: ForSyntax) returns For
+function handle_for(syntax: ForSyntax, is_parallel: bool) returns For
 {
     let expr handle_operands(syntax.operation)
     let body handle_action(syntax.action)
@@ -809,8 +811,24 @@ function handle_for(syntax: ForSyntax) returns For
         syntax.variable,
         expr,
         body,
-        for_label
+        for_label,
+        is_parallel
     )
+}
+
+; A `parallel for` models as an ordinary For with the parallel flag set;
+; the TaskPlanner verifies the body after planning.
+function handle_parallel_for(syntax: ParallelForSyntax) returns For
+{
+    let as_for ForSyntax(
+        syntax.start,
+        syntax.end,
+        syntax.variable,
+        syntax.annotation,
+        syntax.operation,
+        syntax.name,
+        syntax.action)
+    handle_for(as_for, true)
 }
 
 function handle_while(syntax: WhileSyntax) returns While

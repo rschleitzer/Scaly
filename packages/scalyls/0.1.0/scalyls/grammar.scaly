@@ -102,6 +102,8 @@ define grammar
             return true
         if word = "package"
             return true
+        if word = "parallel"
+            return true
         false
     }
 }

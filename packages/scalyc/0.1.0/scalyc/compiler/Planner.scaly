@@ -15060,7 +15060,8 @@ define Planner
                 element_type,
                 get_iter_name,
                 next_name,
-                f.loop_label
+                f.loop_label,
+                f.is_parallel
             )
         }
 

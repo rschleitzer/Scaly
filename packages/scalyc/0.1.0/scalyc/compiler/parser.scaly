@@ -90,6 +90,7 @@ define Parser
         keywords_builder.add("when")
         keywords_builder.add("while")
         keywords_builder.add("package")
+        keywords_builder.add("parallel")
         Vector[String](keywords_builder)
     }
 
@@ -2690,6 +2691,16 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.For(node)
+        choose parse_parallelfor()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return ExpressionSyntax.ParallelFor(node)
         choose parse_while()
             when err: Error
             {
@@ -4445,6 +4456,86 @@ define Parser
         let end lexer.position
 
         ForSyntax(start, end, variable, annotation, operation, name, action)
+    }
+
+    function parse_parallelfor(this: Parser) returns ParallelForSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("parallel")
+            throw ParserError.Different(DifferentSyntax())
+
+        if ~lexer.parse_keyword("for")
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected 'for'"))
+
+        let variable lexer.parse_identifier(keywords)
+        if variable.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let annotation_start lexer.position
+        var annotation: ref[TypeAnnotationSyntax]? null
+        choose parse_typeannotation()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid {}
+            }
+            when success: Success
+                set annotation: TypeAnnotationSyntax(success.start, success.end, success.type)
+
+        if ~lexer.parse_keyword("in")
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected 'in'"))
+
+        let operation_start lexer.position
+        var operation: ref[Vector[OperandSyntax]]?
+        choose parse_operand_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different
+                        throw ParserError.Invalid(InvalidSyntax(operation_start, lexer.position, "expected Operand"))
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set operation: success
+
+        if ~lexer.parse_colon()
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
+
+        let name_start lexer.position
+        var name: ref[LabelSyntax]? null
+        choose parse_label()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set name: LabelSyntax(success.start, success.end, success.name)
+
+        lexer.parse_colon()
+
+        let action_start lexer.position
+        var action: ActionSyntax
+        choose parse_action()
+            when err: Error
+            {
+                choose err
+                    when d: Different
+                        throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, "expected Action"))
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set action: success
+
+        let end lexer.position
+
+        ParallelForSyntax(start, end, variable, annotation, operation, name, action)
     }
 
     function parse_label(this: Parser) returns LabelSyntax throws ParserError

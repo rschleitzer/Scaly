@@ -50,6 +50,12 @@ define TaskPlanner
         loops_total: size_t
         loops_parallel: size_t
 
+        ; Milestone 3.1 verification mode: classify ONLY `parallel for`
+        ; loops, and record just the BLOCKED ones (verdict = the bare
+        ; blocker reason). The cli prints each entry as a hard
+        ; `error:` diagnostic and fails the compile.
+        verify_mode: bool
+
         ; The plan's flat function/global vectors, for purity and
         ; mutable-global lookups by mangled name during classification.
         plan_functions: ref[Vector[PlannedFunction]]?
@@ -90,6 +96,7 @@ define TaskPlanner
             set report_verdicts: Array[String]^this()
             set loops_total: 0
             set loops_parallel: 0
+            set verify_mode: false
             set plan_functions: null
             set plan_globals: null
             set current_file: String^this("")
@@ -130,6 +137,16 @@ define TaskPlanner
                 for stmt in plan.statements
                     this.find_statement(stmt)
             }
+        }
+
+        ; Milestone 3.1 entry point: hard verification of `parallel for`
+        ; loops. Same walk as analyze, but classify_for skips unmarked
+        ; loops and records only the blocked ones — one report entry per
+        ; failing loop for the cli's error printer.
+        function verify(this: TaskPlanner, plan: Plan, entry_file: String)
+        {
+            set verify_mode: true
+            this.analyze(plan, entry_file)
         }
 
         ; ================================================================
@@ -367,6 +384,9 @@ define TaskPlanner
 
         function classify_for(this: TaskPlanner, fr: PlannedFor)
         {
+            if verify_mode
+                if fr.is_parallel = false
+                    return
             set cls_locals.length: 0
             set cls_blocked: false
             set cls_reason: String^this("")
@@ -374,6 +394,18 @@ define TaskPlanner
             set cls_depth: 0
             this.cls_action(fr.body)
             set loops_total: loops_total + 1
+            if verify_mode
+            {
+                if cls_blocked
+                {
+                    let vfile_copy String^this(current_file)
+                    report_files.add vfile_copy
+                    report_offsets.add(fr.loc.start)
+                    let reason_copy String^this(cls_reason)
+                    report_verdicts.add reason_copy
+                }
+                return
+            }
             ; Report strings must live on the TaskPlanner's own page —
             ; a default-local copy dangles by print time (the use-vis
             ; report's `String^this` + bound-local-add idiom).

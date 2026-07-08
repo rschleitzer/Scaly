@@ -308,6 +308,7 @@
     <content link = Match
     <content link = Lambda
     <content link = For
+    <content link = ParallelFor
     <content link = While
     <content link = Choose
     <content link = Try
@@ -522,6 +523,18 @@
     <content colon                                 optional
     <content link = Action                                  property = action
 
+<syntax id = ParallelFor
+    <content link = parallel
+    <content link = for
+    <content identifier                                     property = variable
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = in
+    <content link = Operand               multiple          property = operation
+    <content colon
+    <content link = Label                          optional property = name
+    <content colon                                 optional
+    <content link = Action                                  property = action
+
 <syntax id = Label
     <content link = label
     <content identifier                                     property = name
@@ -646,6 +659,7 @@
 <keyword id = when
 <keyword id = while
 <keyword id = package
+<keyword id = parallel
 
 <punctuation id = dot               value = "."
 <punctuation id = comma             value = ","

@@ -1,0 +1,21 @@
+; Milestone 3.1: `parallel for` with a provably parallelizable body —
+; disjoint Vector.put slots indexed by the loop variable (the canonical
+; parallel result target) plus per-iteration locals. Must compile and run.
+var results Vector[int](10)
+parallel for i in 10
+{
+    let doubled i * 2
+    results.put(i, doubled)
+}
+
+var sum 0
+for i in 10
+{
+    let v results.get i
+    if v <> null
+        set sum: sum + (*v)
+}
+if sum = 90
+    print "PASS\n"
+if sum <> 90
+    print "FAIL\n"

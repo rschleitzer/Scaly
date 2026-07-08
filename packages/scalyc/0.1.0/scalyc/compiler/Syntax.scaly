@@ -159,6 +159,17 @@ define LabelSyntax
     name: String
 )
 
+define ParallelForSyntax
+(
+    start: size_t
+    end: size_t
+    variable: String
+    annotation: ref[TypeAnnotationSyntax]?
+    operation: ref[Vector[OperandSyntax]]?
+    name: ref[LabelSyntax]?
+    action: ActionSyntax
+)
+
 define ForSyntax
 (
     start: size_t
@@ -459,6 +470,7 @@ define ExpressionSyntax union (
     Match: MatchSyntax
     Lambda: LambdaSyntax
     For: ForSyntax
+    ParallelFor: ParallelForSyntax
     While: WhileSyntax
     Choose: ChooseSyntax
     Try: TrySyntax
