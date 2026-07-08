@@ -1,0 +1,28 @@
+; Cross-thread hello (stage-2 milestone 2.1): Thread.spawn runs a Scaly
+; procedure on a second OS thread through the pthread_create/join direct
+; externs; Thread.join waits for it. The entry obeys the NO-ALLOCATION
+; CONVENTION (fiber.scaly module header — allocator globals stay
+; process-global until milestone 2.2): it allocates NOTHING — it prints
+; a cstring literal (Console.print is strlen+write, allocation-free) and
+; computes into a caller-owned stack cell. Main proves the round trip
+; after the join; the strict print order (thread before join, main
+; after) makes the output deterministic.
+; Expected: hello from thread answer 42 done
+
+procedure thread_entry(arg: pointer[void]) returns pointer[void]
+{
+    Console.print "hello from thread "
+    let cell arg as pointer[i64]
+    let v *cell
+    set *cell: v + (1 as i64)
+    null
+}
+
+var cell u8[8]
+set *(cell as pointer[i64]): 41 as i64
+let t Thread.spawn(&thread_entry, cell as pointer[void])
+Thread.join(t)
+let v *(cell as pointer[i64])
+if v = (42 as i64)
+    Console.print "answer 42 "
+Console.println "done"

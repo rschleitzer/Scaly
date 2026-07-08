@@ -163,10 +163,35 @@
 ; exit 108 instead of an anonymous signal; every other fault re-crashes
 ; with the default action, exactly as without the handler.
 ;
+; Thread primitive (milestone 2.1): pthread_create/pthread_join as
+; DIRECT externs — fixed prototypes, no variadics, no errno, and
+; pthread_t is a pointer-sized value on every LP64 target (a pointer on
+; darwin, unsigned long on linux glibc), carried as size_t. Per the shim
+; containment rule none of this needs C. Thread.spawn runs a Scaly
+; procedure on a second OS thread; Thread.join waits for it. The entry
+; signature is `procedure entry(arg: pointer[void]) returns pointer[void]`
+; (take it with &entry; return null — the result is discarded).
+;
+; NO-ALLOCATION CONVENTION (until milestone 2.2): every allocator
+; global (heap_head, stack_head/stack_top, root-page scratch, the fiber
+; globals below) is process-global and unsynchronized — a spawned
+; thread that allocates corrupts the spawner's allocator state. Until
+; milestone 2.2 makes that state thread-local, a thread entry MUST NOT
+; ALLOCATE: no page allocation, no String/object/container
+; construction, no fibers, schedulers, or channels. Allowed: pure
+; computation over spawner-provided memory, syscall-style externs, and
+; Console.print/println of cstring literals (strlen+write —
+; allocation-free by construction). tests/fiber/thread_hello.scaly is
+; the demonstrator.
+;
+;   let t Thread.spawn(&entry, arg)   ; arg: pointer[void], handed to entry
+;   Thread.join(t)                    ; blocks until entry returned
+;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
 ; join, send, or receive), 107 poller failure (create/arm/wait or
-; set_nonblocking), 108 fiber stack overflow (guard page hit).
+; set_nonblocking), 108 fiber stack overflow (guard page hit), 109
+; thread spawn/join failure.
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
@@ -199,6 +224,12 @@ procedure scaly_eio_accept(fd: i32) returns i32 extern
 ; reads globals only) decides whether the fault address is a fiber guard
 ; hit: 1 = report + exit 108, 0 = default action (plain crash).
 procedure scaly_guard_install(classify: pointer[void]) returns i32 extern
+
+; Thread primitive (milestone 2.1). Direct externs per the containment
+; rule: fixed prototypes, POSIX-uniform, no errno. pthread_t is opaque
+; and pointer-sized on all four LP64 targets — carried as size_t.
+procedure pthread_create(thread: pointer[size_t], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
+procedure pthread_join(thread: size_t, retval: pointer[void]) returns i32 extern
 
 ; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
 ; stack-arg ABI); mmap's offset is 64-bit on both OSes.
@@ -1086,5 +1117,34 @@ define Io
             set r: scaly_eio_accept(fd)
         }
         r
+    }
+}
+
+; An OS thread (milestone 2.1) — the raw primitive under everything in
+; stage 2. The spawned entry MUST NOT ALLOCATE until milestone 2.2 makes
+; the allocator globals thread-local: see the no-allocation convention
+; in the module header.
+define Thread
+{
+    ; Run entry (a `procedure (arg: pointer[void]) returns pointer[void]`,
+    ; taken with &entry) on a new OS thread; arg is handed to it verbatim.
+    ; Returns the thread handle for Thread.join. Traps (exit 109) when
+    ; the OS refuses a thread.
+    procedure spawn(fn: pointer[void], arg: pointer[void]) returns size_t
+    {
+        var handle u8[8]
+        let hp handle as pointer[size_t]
+        let rc pthread_create(hp, null, fn, arg)
+        if rc <> (0 as i32)
+            exit 109
+        *hp
+    }
+
+    ; Wait until the thread's entry returned (its result is discarded).
+    procedure join(t: size_t)
+    {
+        let rc pthread_join(t, null)
+        if rc <> (0 as i32)
+            exit 109
     }
 }
