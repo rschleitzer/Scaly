@@ -112,6 +112,39 @@ define Page
         bucket_unlock b
     }
 
+    ; Attributed variants of allocate_page/release_page for the
+    ; standalone, hand-matched alloc/release pairs in fiber.scaly and
+    ; File.scaly (worker-pool records, mailbox records, offload cells)
+    ; — pages NOT owned by the region-lifecycle machinery
+    ; (deallocate_extensions always frees those together), so a missed
+    ; release on an odd error path is a real, silent HeapBucket leak.
+    ; `site` is a hand-authored label, not an automatic call-site name
+    ; — Scaly has no caller-name introspection without Emitter
+    ; cooperation (see SCALY_TRACE_HEAP in root_pages.scaly). Use the
+    ; SAME site string at the matching alloc and release call; a
+    ; mismatched label shows up as a permanent false imbalance.
+    ;
+    ; KNOWN BUG (2026-07-08, CLAUDE-history.md Finding 3, unfixed): the
+    ; `site` string arrives garbled inside this function's body when
+    ; SCALY_TRACE_HEAP is armed — a pointer[const_char] argument forwarded
+    ; through a no-`this` concept static gets corrupted, reproducible
+    ; same-package and cross-package. Real allocation/release behavior is
+    ; unaffected (the corrupted value is only ever read by the tracer),
+    ; so SCALY_TRACE_HEAP still correctly reports THAT and HOW MANY pages
+    ; leaked per site, just not a readable site name yet.
+    function allocate_page_traced(site: pointer[const_char]) returns pointer[Page]
+    {
+        let page Page.allocate_page()
+        scaly_heap_trace_alloc site
+        page
+    }
+
+    function release_page_traced(p: pointer[Page], site: pointer[const_char])
+    {
+        Page.release_page(p)
+        scaly_heap_trace_release site
+    }
+
     ; How many dead buckets THIS thread has drained and freed
     ; (teardown proof for tests; the counter is thread-local).
     function reclaimed_dead_buckets() returns i64

@@ -340,7 +340,7 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
     let arg_slot (raw as size_t + (8 as size_t)) as pointer[size_t]
     let arg_v *arg_slot
     let host Page.get(raw)
-    Page.release_page host
+    Page.release_page_traced(host, "Thread.spawn_cell")
     scaly_call_ptr(fn_v as pointer[void], arg_v as pointer[void])
     ; Milestone-2.5 residuals: shut down the thread's I/O worker pool
     ; (joins the workers — each reclaims its own state through this
@@ -1563,7 +1563,7 @@ define Io
         var pl io_pool as pointer[IoPool]
         if pl = null
         {
-            let p Page.allocate_page()
+            let p Page.allocate_page_traced("Io.pool_page")
             set pl: p.allocate(sizeof IoPool, alignof IoPool) as pointer[IoPool]
             var fds u8[8]
             let rc pipe(fds as pointer[i32])
@@ -1604,7 +1604,7 @@ define Io
         set io_offloads: io_offloads + (1 as i64)
         ; The work record rides on its own heap page — freed below once
         ; the result is consumed.
-        let p Page.allocate_page()
+        let p Page.allocate_page_traced("Io.work_page")
         let w p.allocate(sizeof IoWork, alignof IoWork) as pointer[IoWork]
         set w.next: null
         set w.fn: fn
@@ -1657,7 +1657,7 @@ define Io
         let res w.result
         let wp Page.get(w as pointer[void])
         wp.deallocate_extensions()
-        Page.release_page(wp)
+        Page.release_page_traced(wp, "Io.work_page")
         res
     }
 
@@ -1696,7 +1696,7 @@ define Io
         close(pl.pipe_read as int)
         let pp Page.get(pl as pointer[void])
         pp.deallocate_extensions()
-        Page.release_page(pp)
+        Page.release_page_traced(pp, "Io.pool_page")
         set io_pool: null
     }
 
@@ -1805,7 +1805,7 @@ define Mailbox
     ; scheduler's region). The creator holds the first send handle.
     procedure create() returns pointer[Mailbox]
     {
-        let p Page.allocate_page()
+        let p Page.allocate_page_traced("Mailbox.record_page")
         let m p.allocate(sizeof Mailbox, alignof Mailbox) as pointer[Mailbox]
         set m.lock: 0 as u64
         set m.senders: 1 as i64
@@ -1825,7 +1825,7 @@ define Mailbox
     {
         let mp Page.get(m as pointer[void])
         mp.deallocate_extensions()
-        Page.release_page(mp)
+        Page.release_page_traced(mp, "Mailbox.record_page")
     }
 
     ; Register one more send handle. Call BEFORE handing the mailbox to
@@ -2036,7 +2036,7 @@ define Thread
     ; starts; the trampoline releases it.
     procedure spawn(fn: pointer[void], arg: pointer[void]) returns size_t
     {
-        let p Page.allocate_page()
+        let p Page.allocate_page_traced("Thread.spawn_cell")
         let cell p.allocate(16 as size_t, 8 as size_t) as pointer[size_t]
         set *cell: fn as size_t
         let slot1 (cell as size_t + (8 as size_t)) as pointer[size_t]

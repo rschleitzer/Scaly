@@ -120,14 +120,14 @@ define File
     function read_to_string_offloaded(path: String) returns String
     {
         let pc path.to_c_string()
-        let p Page.allocate_page()
+        let p Page.allocate_page_traced("File.read_cell")
         let cell p.allocate(24 as size_t, 8 as size_t) as pointer[size_t]
         set *cell: pc as size_t
         let opened Io.offload(&file_open_worker, cell as pointer[void])
         if opened = null
         {
             p.deallocate_extensions()
-            Page.release_page(p)
+            Page.release_page_traced(p, "File.read_cell")
             return String()
         }
         let size *(((cell as size_t) + (8 as size_t)) as pointer[size_t])
@@ -136,7 +136,7 @@ define File
         set *(((cell as size_t) + (16 as size_t)) as pointer[size_t]): buffer as size_t
         Io.offload(&file_read_close_worker, cell as pointer[void])
         p.deallocate_extensions()
-        Page.release_page(p)
+        Page.release_page_traced(p, "File.read_cell")
         ret
     }
 
@@ -163,14 +163,14 @@ define File
         let pc path.to_c_string()
         let buf contents.get_buffer()
         let len contents.get_length()
-        let p Page.allocate_page()
+        let p Page.allocate_page_traced("File.write_cell")
         let cell p.allocate(24 as size_t, 8 as size_t) as pointer[size_t]
         set *cell: pc as size_t
         set *(((cell as size_t) + (8 as size_t)) as pointer[size_t]): buf as size_t
         set *(((cell as size_t) + (16 as size_t)) as pointer[size_t]): len
         let res Io.offload(&file_write_worker, cell as pointer[void])
         p.deallocate_extensions()
-        Page.release_page(p)
+        Page.release_page_traced(p, "File.write_cell")
         res <> null
     }
 }

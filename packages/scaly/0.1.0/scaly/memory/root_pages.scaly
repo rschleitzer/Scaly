@@ -17,7 +17,10 @@
 ; holds the bucket header; pages 1..BUCKET_PAGES-1 are usable.
 ;
 ; The trace counters are Scaly-owned mutable module globals. Diagnostics go
-; to stderr via write(2, ...) below.
+; to stderr via write(2, ...) below. SCALY_TRACE_HEAP (near the bottom of
+; this file) is the HeapBucket-page counterpart: per-site alloc/release
+; counters, sites hand-labeled at the call site (Page.allocate_page_traced
+; / release_page_traced in Page.scaly) rather than named automatically.
 ;
 ; Guard semantics: `if X ACTION` runs ACTION when X is true, then falls
 ; through. It's an early-exit when the condition holds.
@@ -486,12 +489,12 @@ procedure scaly_trace_dump()
     while i < trace_count
     {
         let e trace_entries + i
-        if (*e).push_count = (*e).pop_count
+        if e.push_count <> e.pop_count
         {
-            let pushes (*e).push_count
-            let pops (*e).pop_count
+            let pushes e.push_count
+            let pops e.pop_count
             scaly_eputs "scaly_trace_root: UNBALANCED "
-            scaly_eputs((*e).name)
+            scaly_eputs(e.name)
             scaly_eputs " push="
             scaly_eputi pushes
             scaly_eputs " pop="
@@ -532,7 +535,7 @@ function scaly_trace_find_or_add(name: pointer[const_char]) returns pointer[Trac
     while i < trace_count
     {
         let e trace_entries + i
-        if strcmp((*e).name, name) = 0
+        if strcmp(e.name, name) = 0
             return e
         set i: i + 1
     }
@@ -543,9 +546,22 @@ function scaly_trace_find_or_add(name: pointer[const_char]) returns pointer[Trac
     ; strdup is required because JIT modules (which own the source of
     ; each `name` via CreateGlobalStringPtr) are disposed between test
     ; runs; without interning, later strcmps would walk freed memory.
-    set (*new_entry).name: strdup(name) as pointer[const_char]
-    set (*new_entry).push_count: 0
-    set (*new_entry).pop_count: 0
+    ;
+    ; Field access below is PLAIN `.` (auto-deref through the pointer),
+    ; never `(*new_entry).field` — that explicit-deref form silently
+    ; operates on a dereferenced VALUE COPY instead of the pointee: a
+    ; `set (*p).field: v` through it doesn't persist, and a read gives
+    ; back a stale copy rather than a crash, so nothing catches it at
+    ; the call site. This whole trace mechanism was written that way
+    ; from the start and shipped for years — nothing ever caught it
+    ; because scaly_trace_push/pop were never actually CALLED anywhere
+    ; (the self-hosted Emitter never re-wired the per-function
+    ; instrumentation the retired C++ stage-0 used to emit), so this
+    ; code path never ran until SCALY_TRACE_HEAP below made someone
+    ; actually call it for the first time.
+    set new_entry.name: strdup(name) as pointer[const_char]
+    set new_entry.push_count: 0
+    set new_entry.pop_count: 0
     set trace_count: trace_count + 1
     new_entry
 }
@@ -557,7 +573,7 @@ procedure scaly_trace_push(name: pointer[const_char])
         return
     let e scaly_trace_find_or_add name
     if e <> null
-        set (*e).push_count: (*e).push_count + 1
+        set e.push_count: e.push_count + 1
 }
 
 procedure scaly_trace_pop(name: pointer[const_char])
@@ -567,5 +583,119 @@ procedure scaly_trace_pop(name: pointer[const_char])
         return
     let e scaly_trace_find_or_add name
     if e <> null
-        set (*e).pop_count: (*e).pop_count + 1
+        set e.pop_count: e.pop_count + 1
 }
+
+; --------------------------------------------------------------------------
+; SCALY_TRACE_HEAP diagnostic: per-site alloc/release counters for
+; HeapBucket pages. SCALY_TRACE_ROOT above never actually fires — it would
+; need the Emitter to synthesize a push/pop call at every function's
+; prologue/epilogue with that function's own name, and that instrumentation
+; was never carried over from the retired C++ stage-0 into the self-hosted
+; Emitter, so trace_push/trace_pop are presently uncalled dead code. Heap
+; pages have no such automatic naming opportunity anyway — they're pulled
+; from ordinary function bodies (Page.allocate_page_traced /
+; release_page_traced, Page.scaly), so each call site hand-labels itself
+; with a `site` string instead. Off by default; armed on the first
+; alloc/release if $SCALY_TRACE_HEAP is set at that moment. Shares
+; TraceEntry/TRACE_MAX with the root-page table above but keeps its own
+; state — heap-page churn rate has nothing to do with root-page churn, and
+; mixing the two tables would make an "all balanced" report ambiguous
+; about which kind of page it covers.
+; --------------------------------------------------------------------------
+
+mutable heap_trace_enabled:           i64 0
+mutable heap_trace_atexit_registered: i64 0
+mutable heap_trace_count:             i64 0
+mutable heap_trace_entries:           pointer[TraceEntry] null
+
+procedure scaly_heap_trace_dump()
+{
+    var i 0 as i64
+    var any false
+    while i < heap_trace_count
+    {
+        let e heap_trace_entries + i
+        if e.push_count <> e.pop_count
+        {
+            let allocs e.push_count
+            let releases e.pop_count
+            scaly_eputs "scaly_trace_heap: UNBALANCED "
+            scaly_eputs(e.name)
+            scaly_eputs " alloc="
+            scaly_eputi allocs
+            scaly_eputs " release="
+            scaly_eputi releases
+            scaly_eputs " leak="
+            scaly_eputi(allocs - releases)
+            scaly_eputnl()
+            set any: true
+        }
+        set i: i + 1
+    }
+    if any
+        return
+    scaly_eputs "scaly_trace_heap: all heap-page alloc/release balanced"
+    scaly_eputnl()
+}
+
+procedure scaly_rt_register_heap_trace()
+{
+    ; Already armed — nothing to do.
+    if heap_trace_atexit_registered <> 0
+        return
+    set heap_trace_atexit_registered: 1
+    ; Env var not set — leave trace disabled.
+    if getenv("SCALY_TRACE_HEAP") = null
+        return
+    set heap_trace_enabled: 1
+    let bytes TRACE_MAX * (sizeof TraceEntry)
+    set heap_trace_entries: aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
+    atexit(&scaly_heap_trace_dump)
+}
+
+function scaly_heap_trace_find_or_add(name: pointer[const_char]) returns pointer[TraceEntry]
+{
+    var i 0 as i64
+    while i < heap_trace_count
+    {
+        let e heap_trace_entries + i
+        if strcmp(e.name, name) = 0
+            return e
+        set i: i + 1
+    }
+    ; Table full — give up rather than corrupting.
+    if heap_trace_count >= TRACE_MAX as i64
+        return null as pointer[TraceEntry]
+    let new_entry heap_trace_entries + heap_trace_count
+    ; strdup for the same reason as scaly_trace_find_or_add: JIT-owned
+    ; name strings don't survive module disposal between test runs.
+    ; Plain `.` field access — see scaly_trace_find_or_add's comment on
+    ; why `(*new_entry).field` is the wrong idiom here.
+    set new_entry.name: strdup(name) as pointer[const_char]
+    set new_entry.push_count: 0
+    set new_entry.pop_count: 0
+    set heap_trace_count: heap_trace_count + 1
+    new_entry
+}
+
+procedure scaly_heap_trace_alloc(site: pointer[const_char])
+{
+    scaly_rt_register_heap_trace()
+    if heap_trace_enabled = 0
+        return
+    let e scaly_heap_trace_find_or_add site
+    if e <> null
+        set e.push_count: e.push_count + 1
+}
+
+procedure scaly_heap_trace_release(site: pointer[const_char])
+{
+    scaly_rt_register_heap_trace()
+    if heap_trace_enabled = 0
+        return
+    let e scaly_heap_trace_find_or_add site
+    if e <> null
+        set e.pop_count: e.pop_count + 1
+}
+
