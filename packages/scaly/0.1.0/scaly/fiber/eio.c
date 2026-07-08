@@ -41,31 +41,82 @@
 
 #include <sys/event.h>
 
+/* kevent(2) takes a changelist and an eventlist in the SAME syscall, so
+ * arms are buffered here and submitted with the next wait — one syscall
+ * where the epoll backend needs one epoll_ctl per arm. A full buffer
+ * flushes early (submit-only kevent), so batching degrades gracefully,
+ * never drops. Single-threaded by design in stage 1 (like the runtime's
+ * current_scheduler global); becomes per-poller state in stage 2.
+ * Per-change kernel errors come back as EV_ERROR entries in the eventlist
+ * (not a -1 return); any such entry is a genuine bug (e.g. a closed fd)
+ * and fails the wait loudly, matching the old arm-time rc check. */
+#define SCALY_EIO_MAX_CHANGES 256
+static struct kevent scaly_eio_changes[SCALY_EIO_MAX_CHANGES];
+static int scaly_eio_nchanges = 0;
+static int scaly_eio_changes_q = -1;
+
 int scaly_eio_create(void)
 {
     return kqueue();
 }
 
+static int scaly_eio_flush(int q)
+{
+    int rc = 0;
+    if (scaly_eio_nchanges > 0)
+        rc = kevent(q, scaly_eio_changes, scaly_eio_nchanges, 0, 0, 0);
+    scaly_eio_nchanges = 0;
+    return rc < 0 ? -1 : 0;
+}
+
 int scaly_eio_arm(int q, int fd, int for_write, void* tag)
 {
-    struct kevent ch;
-    EV_SET(&ch, fd, for_write ? EVFILT_WRITE : EVFILT_READ,
+    if (scaly_eio_changes_q != q)
+    {
+        /* a different queue's arms are pending: flush them there first */
+        if (scaly_eio_changes_q >= 0 && scaly_eio_flush(scaly_eio_changes_q) < 0)
+            return -1;
+        scaly_eio_changes_q = q;
+    }
+    if (scaly_eio_nchanges == SCALY_EIO_MAX_CHANGES && scaly_eio_flush(q) < 0)
+        return -1;
+    EV_SET(&scaly_eio_changes[scaly_eio_nchanges], fd,
+           for_write ? EVFILT_WRITE : EVFILT_READ,
            EV_ADD | EV_ONESHOT, 0, 0, tag);
-    return kevent(q, &ch, 1, 0, 0, 0);
+    scaly_eio_nchanges++;
+    return 0;
 }
 
 int scaly_eio_wait(int q, void** tags, int max)
 {
     struct kevent evs[SCALY_EIO_MAX_EVENTS];
-    int n, i;
+    struct kevent* chg = 0;
+    int nchg = 0, n, i, out = 0;
     if (max > SCALY_EIO_MAX_EVENTS)
         max = SCALY_EIO_MAX_EVENTS;
+    if (scaly_eio_changes_q == q)
+    {
+        chg = scaly_eio_changes;
+        nchg = scaly_eio_nchanges;
+        scaly_eio_nchanges = 0;
+    }
     do
-        n = kevent(q, 0, 0, evs, max, 0);
+    {
+        n = kevent(q, chg, nchg, evs, max, 0);
+        /* EINTR fires during the wait, AFTER the changelist was applied;
+         * chg stays for the retry anyway — re-adding an identical oneshot
+         * event is idempotent (same fd/filter/udata overwrites). */
+    }
     while (n < 0 && errno == EINTR);
+    if (n < 0)
+        return -1;
     for (i = 0; i < n; i++)
-        tags[i] = evs[i].udata;
-    return n;
+    {
+        if (evs[i].flags & EV_ERROR)
+            return -1;
+        tags[out++] = evs[i].udata;
+    }
+    return out;
 }
 
 #else
