@@ -19794,7 +19794,7 @@ define Planner
                         let cur_fn instantiated_functions.get escape_fn_index
                         if cur_fn <> null
                             set this.file: String^this(cur_fn.file)
-                        this.add_diagnostic(op.loc, "use after send - Channel.send transferred ownership of this message region to the receiver, which may free it at any suspension point; copy what you need out of the message before sending, or receive it back over a channel")
+                        this.add_diagnostic(op.loc, "use after send - the send transferred ownership of this message region to the receiver, which may free it at any suspension point; copy what you need out of the message before sending, or receive it back over a channel")
                         set move_found: true
                     }
                 }
@@ -19846,7 +19846,16 @@ define Planner
                 when call: Call
                 {
                     this.move_walk_operands(call.args)
+                    ; Both channel types move their message: the
+                    ; rendezvous Channel and the cross-thread Mailbox
+                    ; (milestone 2.4) — same ownership rule, same
+                    ; last-argument message slot.
+                    var is_send false
                     if call.mangled_name = "_ZN7Channel4sendEP7ChannelPv"
+                        set is_send: true
+                    if call.mangled_name = "_ZN7Mailbox4sendEP7MailboxPv"
+                        set is_send: true
+                    if is_send
                         if call.args <> null
                             if call.args.length >= (2 as size_t)
                             {
