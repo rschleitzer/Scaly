@@ -1,0 +1,189 @@
+; Minimal HTTP server (milestone 1.6): fiber-per-connection over the
+; milestone-1.5 accept path. An acceptor task loops Io.accept and spawns
+; one handler task per connection (the accepted fd travels through
+; Scheduler.spawn_arg / task_arg, cast through size_t). A handler reads
+; until the empty line ends the request head, region-allocates its
+; response String, writes it, closes — HTTP/1.0, one request per
+; connection. The client task drives four sequential conversations:
+; three GETs (200 with a 13-byte body) and one garbage request (400).
+; Region-per-connection proof: the dispatcher reaps a finished handler
+; eagerly, so all four handler regions (each allocated at least a
+; String) are torn down by the time the run drains — the freed-bucket
+; counter says so (a cleanly returned task pops its root pages as its
+; frames unwind, so the bucket count is the teardown proof, one region
+; per handler).
+; Expected: ok1 ok2 ok3 ok4 handlers-freed done
+
+function close(fd: i32) returns i32 extern
+
+mutable listen_fd: int 0
+mutable server_port: int 0
+
+; True when the last four bytes received so far are CRLF CRLF — the
+; request head is complete (no bodies in this demo, so the terminator
+; can only sit at the tail).
+function head_complete(buf: pointer[u8], total: int) returns bool
+{
+    if total < 4
+        return false
+    var ok true
+    if (*(buf + (total - 4)) as int) <> 13
+        set ok: false
+    if (*(buf + (total - 3)) as int) <> 10
+        set ok: false
+    if (*(buf + (total - 2)) as int) <> 13
+        set ok: false
+    if (*(buf + (total - 1)) as int) <> 10
+        set ok: false
+    ok
+}
+
+; Write all of data[0..len) to fd, suspending on would-block.
+procedure write_all(fd: i32, data: size_t, len: size_t)
+{
+    var off (0 as size_t)
+    while off < len
+    {
+        let w Io.write(fd, (data + off) as pointer[void], len - off)
+        if w < 0
+            exit 5
+        set off: off + (w as size_t)
+    }
+}
+
+; One connection, one fiber, one region: parse the request head, send
+; the response, close. The fd arrives as the spawn argument.
+procedure handle_connection()
+{
+    let fd (Scheduler.task_arg() as size_t) as i32
+    Io.set_nonblocking(fd)
+    var buf u8[512]
+    var total 0
+    while not head_complete(buf as pointer[u8], total)
+    {
+        if total >= 508
+            exit 3
+        let n Io.read(fd, ((buf as size_t) + (total as size_t)) as pointer[void], (512 - total) as size_t)
+        if n <= 0
+            exit 3
+        set total: total + (n as int)
+    }
+    var is_get false
+    if total >= 4
+    {
+        var m 0
+        if (*(buf + 0) as int) = 71
+            set m: m + 1
+        if (*(buf + 1) as int) = 69
+            set m: m + 1
+        if (*(buf + 2) as int) = 84
+            set m: m + 1
+        if (*(buf + 3) as int) = 32
+            set m: m + 1
+        if m = 4
+            set is_get: true
+    }
+    var resp String("HTTP/1.0 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+    if is_get
+        set resp: String("HTTP/1.0 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, Scaly!")
+    let data resp.c_data() as size_t
+    let len resp.get_length()
+    write_all(fd, data, len)
+    close(fd)
+}
+
+procedure acceptor()
+{
+    var i 0
+    while i < 4
+    {
+        let cfd Io.accept(listen_fd as i32)
+        if cfd = ((0 - 1) as i32)
+            exit 2
+        Scheduler.spawn_arg(&handle_connection, (cfd as size_t) as pointer[void])
+        set i: i + 1
+    }
+}
+
+; One conversation: connect, send the request, read to EOF, check the
+; status digits (bytes 9..11) and the byte count. Returns true on the
+; expected response.
+procedure converse(req: String, want_total: int, d1: int, d2: int, d3: int) returns bool
+{
+    let fd Io.connect(server_port as i32)
+    if fd = ((0 - 1) as i32)
+        exit 4
+    Io.set_nonblocking(fd)
+    let data req.c_data() as size_t
+    let len req.get_length()
+    write_all(fd, data, len)
+    var buf u8[256]
+    var total 0
+    var open true
+    while open
+    {
+        let n Io.read(fd, ((buf as size_t) + (total as size_t)) as pointer[void], (256 - total) as size_t)
+        if n < 0
+            exit 6
+        if n = 0
+            set open: false
+        else
+            set total: total + (n as int)
+    }
+    close(fd)
+    if total <> want_total
+        return false
+    if (*(buf + 9) as int) <> d1
+        return false
+    if (*(buf + 10) as int) <> d2
+        return false
+    if (*(buf + 11) as int) <> d3
+        return false
+    true
+}
+
+procedure client()
+{
+    var i 1
+    while i <= 3
+    {
+        let req String("GET / HTTP/1.0\r\n\r\n")
+        let ok converse(req, 71, 50, 48, 48)
+        if ok
+        {
+            if i = 1
+                Console.print "ok1 "
+            if i = 2
+                Console.print "ok2 "
+            if i = 3
+                Console.print "ok3 "
+        }
+        set i: i + 1
+    }
+    let bad String("BLURB / HTTP/1.0\r\n\r\n")
+    let ok4 converse(bad, 66, 52, 48, 48)
+    if ok4
+        Console.print "ok4 "
+}
+
+let page Page.allocate_page()
+let lfd Io.listen(0 as i32)
+if lfd = ((0 - 1) as i32)
+    exit 1
+set listen_fd: lfd as int
+let port Io.local_port(lfd)
+if port = ((0 - 1) as i32)
+    exit 1
+set server_port: port as int
+let sched Scheduler.create(page)
+let b0 Fiber.freed_bucket_count()
+let ta Scheduler.spawn(&acceptor)
+let tc Scheduler.spawn(&client)
+Scheduler.run()
+Scheduler.join(ta)
+Scheduler.join(tc)
+close(lfd)
+if Fiber.freed_bucket_count() >= (b0 + (4 as i64))
+    Console.print "handlers-freed "
+Console.println "done"
+Page.release_page(page)

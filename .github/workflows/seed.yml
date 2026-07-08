@@ -75,6 +75,9 @@ jobs:
       - name: Fiber suite (context-switch ping-pong, milestone 1.1)
         run: tests/fiber/run.sh dist/seed/scalyc_seed
 
+      - name: The 10k demo (fiber-per-connection HTTP, milestone 1.6)
+        run: tests/fiber/bench/run.sh dist/seed/scalyc_seed
+
       - name: Upload native compiler
         uses: actions/upload-artifact@v4
         with:

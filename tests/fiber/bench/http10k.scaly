@@ -1,0 +1,175 @@
+; The 10k demo (milestone 1.6): 10,000 concurrent HTTP connections
+; through one single-threaded fiber scheduler — fiber per connection,
+; region per connection.
+;
+; Shape: main pairs every connection itself — connect (client fd,
+; stashed), accept (instant: the connection is already pending), spawn
+; the handler task with the accepted fd — so the listen backlog never
+; holds more than one embryo (a 10k connect storm against a backlog of
+; 64 is kernel-dependent chaos; pairing sidesteps it). When the run
+; starts, all 10,000 handlers read into emptiness and park on the
+; poller — 10,000 fds armed on one kqueue/epoll instance. A driver
+; task then writes all 10,000 requests; readiness wakes the handlers
+; in poll batches, each parses the request head, region-allocates its
+; response String, writes, closes, finishes — and the dispatcher reaps
+; its whole fiber region on the spot, so the count of LIVE regions
+; stays around a poll batch while 10,000 regions pass through (the
+; freed-bucket counter >= 10000 at the end proves they all died with
+; their connections — a cleanly returned task pops its root pages as
+; its frames unwind, so buckets are the teardown proof). Main then
+; reads the 10,000 responses back and validates status and byte count.
+;
+; Needs ~20,050 file descriptors — bench/run.sh raises the limit.
+; Expected: 10000 ok freed
+
+function close(fd: i32) returns i32 extern
+
+mutable listen_fd: int 0
+mutable cfds: pointer[void] null
+mutable conn_count: int 0
+
+function cfd_at(i: int) returns i32
+    *(((cfds as size_t) + ((i * 4) as size_t)) as pointer[i32])
+
+; True when the last four bytes received so far are CRLF CRLF (the
+; request has no body, so the head terminator can only sit at the tail).
+function head_complete(buf: pointer[u8], total: int) returns bool
+{
+    if total < 4
+        return false
+    var ok true
+    if (*(buf + (total - 4)) as int) <> 13
+        set ok: false
+    if (*(buf + (total - 3)) as int) <> 10
+        set ok: false
+    if (*(buf + (total - 2)) as int) <> 13
+        set ok: false
+    if (*(buf + (total - 1)) as int) <> 10
+        set ok: false
+    ok
+}
+
+; Write all of data[0..len) to fd, suspending on would-block.
+procedure write_all(fd: i32, data: size_t, len: size_t)
+{
+    var off (0 as size_t)
+    while off < len
+    {
+        let w Io.write(fd, (data + off) as pointer[void], len - off)
+        if w < 0
+            exit 5
+        set off: off + (w as size_t)
+    }
+}
+
+; One connection, one fiber, one region.
+procedure handle_connection()
+{
+    let fd (Scheduler.task_arg() as size_t) as i32
+    Io.set_nonblocking(fd)
+    var buf u8[256]
+    var total 0
+    while not head_complete(buf as pointer[u8], total)
+    {
+        if total >= 252
+            exit 3
+        let n Io.read(fd, ((buf as size_t) + (total as size_t)) as pointer[void], (256 - total) as size_t)
+        if n <= 0
+            exit 3
+        set total: total + (n as int)
+    }
+    let resp String("HTTP/1.0 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, Scaly!")
+    let data resp.c_data() as size_t
+    let len resp.get_length()
+    write_all(fd, data, len)
+    close(fd)
+}
+
+; Fires all 10,000 requests. Runs after every handler parked, so the
+; poller multiplexes the full connection count at once.
+procedure driver()
+{
+    let req String("GET / HTTP/1.0\r\n\r\n")
+    let data req.c_data() as size_t
+    let len req.get_length()
+    var i 0
+    while i < conn_count
+    {
+        write_all(cfd_at(i), data, len)
+        set i: i + 1
+    }
+}
+
+let page Page.allocate_page()
+let lfd Io.listen(0 as i32)
+if lfd = ((0 - 1) as i32)
+    exit 1
+set listen_fd: lfd as int
+let port Io.local_port(lfd)
+if port = ((0 - 1) as i32)
+    exit 1
+let sched Scheduler.create(page)
+let n 10000
+set conn_count: n
+set cfds: page.allocate((n * 4) as size_t, 4 as size_t)
+
+; Pair up all connections: connect, accept, hand the fd to a fresh
+; handler task (which stays queued — nothing dispatches during setup).
+var i 0
+while i < n
+{
+    let cfd Io.connect(port)
+    if cfd = ((0 - 1) as i32)
+        exit 4
+    Io.set_nonblocking(cfd)
+    set *(((cfds as size_t) + ((i * 4) as size_t)) as pointer[i32]): cfd
+    let sfd Io.accept(lfd)
+    if sfd = ((0 - 1) as i32)
+        exit 2
+    Scheduler.spawn_arg(&handle_connection, (sfd as size_t) as pointer[void])
+    set i: i + 1
+}
+
+let b0 Fiber.freed_bucket_count()
+let td Scheduler.spawn(&driver)
+Scheduler.run()
+close(lfd)
+
+; Read every response back and validate: 71 bytes, status digits 200.
+var ok_count 0
+var j 0
+while j < n
+{
+    let fd cfd_at(j)
+    var buf u8[128]
+    var total 0
+    var open true
+    while open
+    {
+        let r Io.read(fd, ((buf as size_t) + (total as size_t)) as pointer[void], (128 - total) as size_t)
+        if r < 0
+            exit 6
+        if r = 0
+            set open: false
+        else
+            set total: total + (r as int)
+    }
+    close(fd)
+    var good true
+    if total <> 71
+        set good: false
+    if (*(buf + 9) as int) <> 50
+        set good: false
+    if (*(buf + 10) as int) <> 48
+        set good: false
+    if (*(buf + 11) as int) <> 48
+        set good: false
+    if good
+        set ok_count: ok_count + 1
+    set j: j + 1
+}
+if ok_count = n
+    Console.print "10000 ok "
+if Fiber.freed_bucket_count() >= (b0 + (10000 as i64))
+    Console.println "freed"
+Page.release_page(page)

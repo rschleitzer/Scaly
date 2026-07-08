@@ -59,8 +59,9 @@
 ; survive the spawning fiber's region teardown). Fiber.resume is only
 ; ever called from the main context (Scheduler.run / a main-context
 ; join); a task that joins blocks on the target's waiter chain and
-; yields back to the dispatcher — no nested resumes. join disposes the
-; finished task's whole fiber region (Fiber.dispose) exactly once.
+; yields back to the dispatcher — no nested resumes. A finished task's
+; whole fiber region is disposed exactly once, eagerly by the
+; dispatcher (see milestone 1.6 below).
 ;
 ;   procedure my_task()
 ;   {
@@ -131,6 +132,21 @@
 ;   let port Io.local_port(lfd)      ; the kernel's port assignment
 ;   let cfd Io.accept(lfd)           ; suspends; -1 = hard error
 ;   let fd Io.connect(port)          ; -1 = failure
+;
+; The 10k demo (milestone 1.6): fiber-per-connection servers need two
+; final pieces. spawn_arg passes one pointer-sized argument to a task
+; (an accepted fd, cast through size_t) — the task reads it back with
+; Scheduler.task_arg. And the dispatcher reaps eagerly: the moment a
+; task finishes, Scheduler.step disposes its whole fiber region (stack,
+; buckets, pages) — a connection handler's region dies WITH the
+; connection, so 10k sequentially-completing handlers keep a flat
+; memory peak instead of 10k live regions awaiting a join. join still
+; blocks until the task finished; reaping stays idempotent (a later
+; join returns 0 pages).
+;
+;   let t Scheduler.spawn_arg(&handler, (fd as size_t) as pointer[void])
+;   ; inside handler:
+;   let fd (Scheduler.task_arg() as size_t) as i32
 ;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
@@ -363,6 +379,7 @@ define SchedTask
     done: bool
     disposed: bool
     msg: pointer[void]           ; in-flight channel message while parked
+    arg: pointer[void]           ; spawn_arg's argument (task_arg reads it)
 )
 
 ; The calling shape of a task record viewed as a delegate value: the
@@ -440,9 +457,11 @@ define Scheduler
     }
 
     ; Create a task for the given zero-argument procedure (take it with
-    ; &my_task) and put it at the ready-queue tail. Callable from the
-    ; main context and from inside a running task alike.
-    procedure spawn(fn: pointer[void]) returns pointer[SchedTask]
+    ; &my_task), hand it one pointer-sized argument (readable inside the
+    ; task via Scheduler.task_arg — cast an fd through size_t), and put
+    ; it at the ready-queue tail. Callable from the main context and
+    ; from inside a running task alike.
+    procedure spawn_arg(fn: pointer[void], arg: pointer[void]) returns pointer[SchedTask]
     {
         let s current_scheduler as pointer[Scheduler]
         let host s.host
@@ -454,8 +473,22 @@ define Scheduler
         set t.done: false
         set t.disposed: false
         set t.msg: null
+        set t.arg: arg
         Scheduler.enqueue(t)
         t
+    }
+
+    ; spawn_arg without an argument.
+    procedure spawn(fn: pointer[void]) returns pointer[SchedTask]
+        Scheduler.spawn_arg(fn, null)
+
+    ; The running task's spawn_arg argument (null on the main context).
+    procedure task_arg() returns pointer[void]
+    {
+        let me current_task as pointer[SchedTask]
+        if me = null
+            return null
+        me.arg
     }
 
     ; Give up the current time slice: requeue the running task at the
@@ -470,8 +503,11 @@ define Scheduler
         }
     }
 
-    ; Run one ready task until it yields or finishes. Returns false when
-    ; the ready queue is empty.
+    ; Run one ready task until it yields or finishes. A task that
+    ; finished is reaped ON THE SPOT — its whole fiber region (stack,
+    ; buckets, pages) dies with it, milestone 1.6's "the region dies
+    ; with the connection" — after waking its joiners. Returns false
+    ; when the ready queue is empty.
     procedure step() returns bool
     {
         let t Scheduler.dequeue()
@@ -484,6 +520,7 @@ define Scheduler
         {
             set t.done: true
             Scheduler.wake_waiters(t)
+            Scheduler.reap(t)
         }
         true
     }
@@ -553,11 +590,13 @@ define Scheduler
         false
     }
 
-    ; Dispose a finished task's fiber region exactly once. Returns the
-    ; number of root pages freed (0 when already reaped — and usually 0
-    ; for a task that ran to completion: its frames unwound before
-    ; finish, so the disposal frees the fiber's cached stack buckets and
-    ; the mmap'd stack; watch Fiber.freed_bucket_count for the proof).
+    ; Dispose a finished task's fiber region exactly once. The
+    ; dispatcher already reaps eagerly (step), so this normally finds
+    ; the task disposed and returns 0; it stays as the idempotence
+    ; anchor for join and for callers holding a task record. (A cleanly
+    ; returned task leaves 0 live pages anyway — its frames unwound
+    ; before finish; watch Fiber.freed_bucket_count for the teardown
+    ; proof.)
     procedure reap(t: pointer[SchedTask]) returns int
     {
         if t.disposed
@@ -579,9 +618,10 @@ define Scheduler
             exit 106
     }
 
-    ; Wait until t finished, then free its fiber's whole region via
-    ; Fiber.dispose; returns the number of root pages freed. From the
-    ; main context this drives the dispatcher itself; from inside a
+    ; Wait until t finished. The dispatcher reaps eagerly, so the
+    ; fiber's region is normally gone already (the reap here returns 0
+    ; then — it only frees when a caller disposed nothing yet). From
+    ; the main context this drives the dispatcher itself; from inside a
     ; task it blocks on t's waiter chain and yields to the dispatcher.
     procedure join(t: pointer[SchedTask]) returns int
     {
