@@ -1,0 +1,20 @@
+; SCALY_TRACE_HEAP cross-thread balance (process-global `shared_` table):
+; the spawn cell is allocated by main (Thread.spawn) and released by the
+; child (scaly_thread_start). With the old per-thread trace tables every
+; such pair reported a phantom leak on the spawner and the dump ran once
+; per traced thread; the shared table balances the pair and registers the
+; atexit dump exactly once, during single-threaded arming.
+; Expected: trace-done
+; ExpectedErr: all heap-page alloc/release balanced
+
+function setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
+
+procedure idle_entry(arg: pointer[void]) returns pointer[void]
+    null
+
+let sc setenv("SCALY_TRACE_HEAP", "1", 1 as i32)
+let ta Thread.spawn(&idle_entry, null as pointer[void])
+let tb Thread.spawn(&idle_entry, null as pointer[void])
+Thread.join(ta)
+Thread.join(tb)
+Console.println "trace-done"

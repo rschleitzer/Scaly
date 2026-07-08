@@ -9,6 +9,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z8PageNode = type { ptr, ptr }
 %_Z17StackBucketHeader = type { ptr, ptr }
 %_Z10TraceEntry = type { ptr, i64, i64 }
+%_Z15HeapTraceHeader = type { i64, i64, ptr }
 %_Z6VectorIiE = type { i64, ptr }
 %_Z14VectorIteratorIiE = type { ptr, i64 }
 %_Z5SliceIiE = type { ptr, i64 }
@@ -209,10 +210,8 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @trace_entries = thread_local global ptr null
 @"9TRACE_MAX" = constant i64 8192
 @fmt_scratch = thread_local global ptr null
-@heap_trace_enabled = thread_local global i64 0
-@heap_trace_atexit_registered = thread_local global i64 0
-@heap_trace_count = thread_local global i64 0
-@heap_trace_entries = thread_local global ptr null
+@shared_heap_trace_state = global i64 0
+@shared_heap_trace = global ptr null
 @"11HASH_PRIMES" = constant [30 x i64] [i64 3, i64 5, i64 11, i64 23, i64 53, i64 97, i64 193, i64 389, i64 769, i64 1543, i64 3079, i64 6151, i64 12289, i64 24593, i64 49157, i64 98317, i64 196613, i64 393241, i64 786433, i64 1572869, i64 3145739, i64 6291469, i64 12582917, i64 25165843, i64 50331653, i64 100663319, i64 201326611, i64 402653189, i64 805306457, i64 1610612741]
 @"8SIZE_MAX" = constant i64 -1
 @"11PACKED_SIZE" = constant i64 9
@@ -1777,63 +1776,73 @@ if.end2:                                          ; preds = %if.then1, %if.end
 
 define linkonce_odr void @_Z21scaly_heap_trace_dumpv() {
 entry:
-  %i = alloca i64, align 8
-  store i64 0, ptr %i, align 1
   %any = alloca i1, align 1
+  %i = alloca i64, align 8
+  %global.load = load ptr, ptr @shared_heap_trace, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  store i64 0, ptr %i, align 1
   store i1 false, ptr %any, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end, %entry
+while.cond:                                       ; preds = %if.end7, %if.end
   %i1 = load i64, ptr %i, align 8
-  %global.load = load i64, ptr @heap_trace_count, align 8
-  %lt = icmp slt i64 %i1, %global.load
+  %load.struct = load %_Z15HeapTraceHeader, ptr %global.load, align 8
+  %count = extractvalue %_Z15HeapTraceHeader %load.struct, 1
+  %lt = icmp slt i64 %i1, %count
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load2 = load ptr, ptr @heap_trace_entries, align 8
+  %load.struct2 = load %_Z15HeapTraceHeader, ptr %global.load, align 8
+  %entries = extractvalue %_Z15HeapTraceHeader %load.struct2, 2
   %i3 = load i64, ptr %i, align 8
-  %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %global.load2, i64 %i3
-  %load.struct = load %_Z10TraceEntry, ptr %ptr.add, align 8
-  %push_count = extractvalue %_Z10TraceEntry %load.struct, 1
+  %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %entries, i64 %i3
   %load.struct4 = load %_Z10TraceEntry, ptr %ptr.add, align 8
-  %pop_count = extractvalue %_Z10TraceEntry %load.struct4, 2
+  %push_count = extractvalue %_Z10TraceEntry %load.struct4, 1
+  %load.struct5 = load %_Z10TraceEntry, ptr %ptr.add, align 8
+  %pop_count = extractvalue %_Z10TraceEntry %load.struct5, 2
   %ne = icmp ne i64 %push_count, %pop_count
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %any10 = load i1, ptr %any, align 1
-  br i1 %any10, label %if.then11, label %if.end12
+  %any13 = load i1, ptr %any, align 1
+  br i1 %any13, label %if.then14, label %if.end15
 
-if.then:                                          ; preds = %while.body
-  %load.struct5 = load %_Z10TraceEntry, ptr %ptr.add, align 8
-  %push_count6 = extractvalue %_Z10TraceEntry %load.struct5, 1
-  %load.struct7 = load %_Z10TraceEntry, ptr %ptr.add, align 8
-  %pop_count8 = extractvalue %_Z10TraceEntry %load.struct7, 2
+if.then6:                                         ; preds = %while.body
+  %load.struct8 = load %_Z10TraceEntry, ptr %ptr.add, align 8
+  %push_count9 = extractvalue %_Z10TraceEntry %load.struct8, 1
+  %load.struct10 = load %_Z10TraceEntry, ptr %ptr.add, align 8
+  %pop_count11 = extractvalue %_Z10TraceEntry %load.struct10, 2
   call void @_Z11scaly_eputsP10const_char(ptr @.str.9)
   %field.inplace = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
   call void @_Z11scaly_eputsP10const_char(ptr %deref.recv)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.10)
-  call void @_Z11scaly_eputi3i64(i64 %push_count6)
+  call void @_Z11scaly_eputi3i64(i64 %push_count9)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.11)
-  call void @_Z11scaly_eputi3i64(i64 %pop_count8)
+  call void @_Z11scaly_eputi3i64(i64 %pop_count11)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.12)
-  %sub = sub i64 %push_count6, %pop_count8
+  %sub = sub i64 %push_count9, %pop_count11
   call void @_Z11scaly_eputi3i64(i64 %sub)
   call void @_Z12scaly_eputnlv()
   store i1 true, ptr %any, align 1
-  br label %if.end
+  br label %if.end7
 
-if.end:                                           ; preds = %if.then, %while.body
-  %i9 = load i64, ptr %i, align 8
-  %add = add i64 %i9, 1
+if.end7:                                          ; preds = %if.then6, %while.body
+  %i12 = load i64, ptr %i, align 8
+  %add = add i64 %i12, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then11:                                        ; preds = %while.exit
+if.then14:                                        ; preds = %while.exit
   ret void
 
-if.end12:                                         ; preds = %while.exit
+if.end15:                                         ; preds = %while.exit
   call void @_Z11scaly_eputsP10const_char(ptr @.str.13)
   call void @_Z12scaly_eputnlv()
   ret void
@@ -1841,7 +1850,7 @@ if.end12:                                         ; preds = %while.exit
 
 define linkonce_odr void @_Z28scaly_rt_register_heap_tracev() {
 entry:
-  %global.load = load i64, ptr @heap_trace_atexit_registered, align 8
+  %global.load = load i64, ptr @shared_heap_trace_state, align 8
   %ne = icmp ne i64 %global.load, 0
   br i1 %ne, label %if.then, label %if.end
 
@@ -1849,23 +1858,58 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  store i64 1, ptr @heap_trace_atexit_registered, align 8
   %call = call ptr @getenv(ptr @.str.14)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then1, label %if.end2
 
 if.then1:                                         ; preds = %if.end
+  store i64 1, ptr @shared_heap_trace_state, align 8
   ret void
 
 if.end2:                                          ; preds = %if.end
-  store i64 1, ptr @heap_trace_enabled, align 8
-  %call3 = call ptr @aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
-  store ptr %call3, ptr @heap_trace_entries, align 8
-  %call4 = call i64 @atexit(ptr @_Z21scaly_heap_trace_dumpv)
+  %call3 = call ptr @aligned_alloc(i64 8, i64 ptrtoint (ptr getelementptr (%_Z15HeapTraceHeader, ptr null, i32 1) to i64))
+  %lock = getelementptr inbounds %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 0
+  store i64 0, ptr %lock, align 8
+  %count = getelementptr inbounds %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 1
+  store i64 0, ptr %count, align 8
+  %call4 = call ptr @aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
+  %entries = getelementptr inbounds %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 2
+  store ptr %call4, ptr %entries, align 8
+  store ptr %call3, ptr @shared_heap_trace, align 8
+  store i64 2, ptr @shared_heap_trace_state, align 8
+  %call5 = call i64 @atexit(ptr @_Z21scaly_heap_trace_dumpv)
   ret void
 }
 
-define linkonce_odr ptr @_Z28scaly_heap_trace_find_or_addP10const_char(ptr %0) {
+define linkonce_odr void @_Z15heap_trace_lockP15HeapTraceHeader(ptr %0) {
+entry:
+  %addr.gep = getelementptr inbounds %_Z15HeapTraceHeader, ptr %0, i32 0, i32 0
+  br label %repeat.body
+
+repeat.body:                                      ; preds = %if.end, %entry
+  %1 = cmpxchg ptr %addr.gep, i64 0, i64 1 seq_cst seq_cst, align 8
+  %cas.old = extractvalue { i64, i1 } %1, 0
+  %eq = icmp eq i64 %cas.old, 0
+  br i1 %eq, label %if.then, label %if.end
+
+repeat.exit:                                      ; preds = %if.then
+  ret void
+
+if.then:                                          ; preds = %repeat.body
+  br label %repeat.exit
+
+if.end:                                           ; preds = %repeat.body
+  br label %repeat.body
+}
+
+define linkonce_odr void @_Z17heap_trace_unlockP15HeapTraceHeader(ptr %0) {
+entry:
+  %addr.gep = getelementptr inbounds %_Z15HeapTraceHeader, ptr %0, i32 0, i32 0
+  store atomic i64 0, ptr %addr.gep seq_cst, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %0, ptr %1) {
 entry:
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -1873,24 +1917,27 @@ entry:
 
 while.cond:                                       ; preds = %if.end, %entry
   %i1 = load i64, ptr %i, align 8
-  %global.load = load i64, ptr @heap_trace_count, align 8
-  %lt = icmp slt i64 %i1, %global.load
+  %load.struct = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %count = extractvalue %_Z15HeapTraceHeader %load.struct, 1
+  %lt = icmp slt i64 %i1, %count
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load2 = load ptr, ptr @heap_trace_entries, align 8
+  %load.struct2 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %entries = extractvalue %_Z15HeapTraceHeader %load.struct2, 2
   %i3 = load i64, ptr %i, align 8
-  %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %global.load2, i64 %i3
+  %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %entries, i64 %i3
   %field.inplace = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i64 @strcmp(ptr %deref.recv, ptr %0)
+  %call = call i64 @strcmp(ptr %deref.recv, ptr %1)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %global.load5 = load i64, ptr @heap_trace_count, align 8
-  %ge = icmp sge i64 %global.load5, 8192
-  br i1 %ge, label %if.then6, label %if.end7
+  %load.struct5 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %count6 = extractvalue %_Z15HeapTraceHeader %load.struct5, 1
+  %ge = icmp sge i64 %count6, 8192
+  br i1 %ge, label %if.then7, label %if.end8
 
 if.then:                                          ; preds = %while.body
   ret ptr %ptr.add
@@ -1901,77 +1948,87 @@ if.end:                                           ; preds = %while.body
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then6:                                         ; preds = %while.exit
+if.then7:                                         ; preds = %while.exit
   ret ptr null
 
-if.end7:                                          ; preds = %while.exit
-  %global.load8 = load ptr, ptr @heap_trace_entries, align 8
-  %global.load9 = load i64, ptr @heap_trace_count, align 8
-  %ptr.add10 = getelementptr inbounds %_Z10TraceEntry, ptr %global.load8, i64 %global.load9
-  %call11 = call ptr @strdup(ptr %0)
-  %name = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add10, i32 0, i32 0
-  store ptr %call11, ptr %name, align 8
-  %push_count = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add10, i32 0, i32 1
+if.end8:                                          ; preds = %while.exit
+  %load.struct9 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %entries10 = extractvalue %_Z15HeapTraceHeader %load.struct9, 2
+  %load.struct11 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %count12 = extractvalue %_Z15HeapTraceHeader %load.struct11, 1
+  %ptr.add13 = getelementptr inbounds %_Z10TraceEntry, ptr %entries10, i64 %count12
+  %call14 = call ptr @strdup(ptr %1)
+  %name = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add13, i32 0, i32 0
+  store ptr %call14, ptr %name, align 8
+  %push_count = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add13, i32 0, i32 1
   store i64 0, ptr %push_count, align 8
-  %pop_count = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add10, i32 0, i32 2
+  %pop_count = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add13, i32 0, i32 2
   store i64 0, ptr %pop_count, align 8
-  %global.load12 = load i64, ptr @heap_trace_count, align 8
-  %add13 = add i64 %global.load12, 1
-  store i64 %add13, ptr @heap_trace_count, align 8
-  ret ptr %ptr.add10
+  %load.struct15 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %count16 = extractvalue %_Z15HeapTraceHeader %load.struct15, 1
+  %add17 = add i64 %count16, 1
+  %count18 = getelementptr inbounds %_Z15HeapTraceHeader, ptr %0, i32 0, i32 1
+  store i64 %add17, ptr %count18, align 8
+  ret ptr %ptr.add13
 }
 
 define linkonce_odr void @_Z22scaly_heap_trace_allocP10const_char(ptr %0) {
 entry:
   call void @_Z28scaly_rt_register_heap_tracev()
-  %global.load = load i64, ptr @heap_trace_enabled, align 8
-  %eq = icmp eq i64 %global.load, 0
-  br i1 %eq, label %if.then, label %if.end
+  %global.load = load i64, ptr @shared_heap_trace_state, align 8
+  %ne = icmp ne i64 %global.load, 2
+  br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call ptr @_Z28scaly_heap_trace_find_or_addP10const_char(ptr %0)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then1, label %if.end2
+  %global.load1 = load ptr, ptr @shared_heap_trace, align 8
+  call void @_Z15heap_trace_lockP15HeapTraceHeader(ptr %global.load1)
+  %call = call ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %global.load1, ptr %0)
+  %ne2 = icmp ne ptr %call, null
+  br i1 %ne2, label %if.then3, label %if.end4
 
-if.then1:                                         ; preds = %if.end
+if.then3:                                         ; preds = %if.end
   %load.struct = load %_Z10TraceEntry, ptr %call, align 8
   %push_count = extractvalue %_Z10TraceEntry %load.struct, 1
   %add = add i64 %push_count, 1
-  %push_count3 = getelementptr inbounds %_Z10TraceEntry, ptr %call, i32 0, i32 1
-  store i64 %add, ptr %push_count3, align 8
-  br label %if.end2
+  %push_count5 = getelementptr inbounds %_Z10TraceEntry, ptr %call, i32 0, i32 1
+  store i64 %add, ptr %push_count5, align 8
+  br label %if.end4
 
-if.end2:                                          ; preds = %if.then1, %if.end
+if.end4:                                          ; preds = %if.then3, %if.end
+  call void @_Z17heap_trace_unlockP15HeapTraceHeader(ptr %global.load1)
   ret void
 }
 
 define linkonce_odr void @_Z24scaly_heap_trace_releaseP10const_char(ptr %0) {
 entry:
   call void @_Z28scaly_rt_register_heap_tracev()
-  %global.load = load i64, ptr @heap_trace_enabled, align 8
-  %eq = icmp eq i64 %global.load, 0
-  br i1 %eq, label %if.then, label %if.end
+  %global.load = load i64, ptr @shared_heap_trace_state, align 8
+  %ne = icmp ne i64 %global.load, 2
+  br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call ptr @_Z28scaly_heap_trace_find_or_addP10const_char(ptr %0)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then1, label %if.end2
+  %global.load1 = load ptr, ptr @shared_heap_trace, align 8
+  call void @_Z15heap_trace_lockP15HeapTraceHeader(ptr %global.load1)
+  %call = call ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %global.load1, ptr %0)
+  %ne2 = icmp ne ptr %call, null
+  br i1 %ne2, label %if.then3, label %if.end4
 
-if.then1:                                         ; preds = %if.end
+if.then3:                                         ; preds = %if.end
   %load.struct = load %_Z10TraceEntry, ptr %call, align 8
   %pop_count = extractvalue %_Z10TraceEntry %load.struct, 2
   %add = add i64 %pop_count, 1
-  %pop_count3 = getelementptr inbounds %_Z10TraceEntry, ptr %call, i32 0, i32 2
-  store i64 %add, ptr %pop_count3, align 8
-  br label %if.end2
+  %pop_count5 = getelementptr inbounds %_Z10TraceEntry, ptr %call, i32 0, i32 2
+  store i64 %add, ptr %pop_count5, align 8
+  br label %if.end4
 
-if.end2:                                          ; preds = %if.then1, %if.end
+if.end4:                                          ; preds = %if.then3, %if.end
+  call void @_Z17heap_trace_unlockP15HeapTraceHeader(ptr %global.load1)
   ret void
 }
 
