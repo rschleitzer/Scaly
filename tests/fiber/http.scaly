@@ -7,11 +7,9 @@
 ; connection. The client task drives four sequential conversations:
 ; three GETs (200 with a 13-byte body) and one garbage request (400).
 ; Region-per-connection proof: the dispatcher reaps a finished handler
-; eagerly, so all four handler regions (each allocated at least a
-; String) are torn down by the time the run drains — the freed-bucket
-; counter says so (a cleanly returned task pops its root pages as its
-; frames unwind, so the bucket count is the teardown proof, one region
-; per handler).
+; eagerly, so all four handler regions are torn down by the time the
+; run drains — Fiber.freed_region_count ticks once per disposed fiber:
+; exactly 6 here (4 handlers + acceptor + client).
 ; Expected: ok1 ok2 ok3 ok4 handlers-freed done
 
 function close(fd: i32) returns i32 extern
@@ -176,14 +174,14 @@ if port = ((0 - 1) as i32)
     exit 1
 set server_port: port as int
 let sched Scheduler.create(page)
-let b0 Fiber.freed_bucket_count()
+let r0 Fiber.freed_region_count()
 let ta Scheduler.spawn(&acceptor)
 let tc Scheduler.spawn(&client)
 Scheduler.run()
 Scheduler.join(ta)
 Scheduler.join(tc)
 close(lfd)
-if Fiber.freed_bucket_count() >= (b0 + (4 as i64))
+if Fiber.freed_region_count() = (r0 + (6 as i64))
     Console.print "handlers-freed "
 Console.println "done"
 Page.release_page(page)

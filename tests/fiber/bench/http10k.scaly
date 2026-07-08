@@ -13,11 +13,11 @@
 ; in poll batches, each parses the request head, region-allocates its
 ; response String, writes, closes, finishes — and the dispatcher reaps
 ; its whole fiber region on the spot, so the count of LIVE regions
-; stays around a poll batch while 10,000 regions pass through (the
-; freed-bucket counter >= 10000 at the end proves they all died with
-; their connections — a cleanly returned task pops its root pages as
-; its frames unwind, so buckets are the teardown proof). Main then
-; reads the 10,000 responses back and validates status and byte count.
+; stays around a poll batch while 10,000 regions pass through —
+; Fiber.freed_region_count ticks once per disposed fiber, exactly
+; 10,001 here (10,000 handlers + the driver), proving every region
+; died with its connection. Main then reads the 10,000 responses back
+; and validates status and byte count.
 ;
 ; Needs ~20,050 file descriptors — bench/run.sh raises the limit.
 ; Expected: 10000 ok freed
@@ -130,7 +130,7 @@ while i < n
     set i: i + 1
 }
 
-let b0 Fiber.freed_bucket_count()
+let r0 Fiber.freed_region_count()
 let td Scheduler.spawn(&driver)
 Scheduler.run()
 close(lfd)
@@ -170,6 +170,6 @@ while j < n
 }
 if ok_count = n
     Console.print "10000 ok "
-if Fiber.freed_bucket_count() >= (b0 + (10000 as i64))
+if Fiber.freed_region_count() = (r0 + (10001 as i64))
     Console.println "freed"
 Page.release_page(page)

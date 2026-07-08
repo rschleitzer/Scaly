@@ -206,8 +206,13 @@ mutable current_fiber: pointer[void] null
 mutable current_scheduler: pointer[void] null
 mutable current_task: pointer[void] null
 
-; Wholesale-teardown counters — the milestone-1.2 "pages provably freed"
-; trace. Read them through Fiber.freed_page_count / freed_bucket_count.
+; Wholesale-teardown counters. fiber_regions_freed ticks ONCE PER DISPOSED
+; FIBER and is THE teardown proof (Fiber.freed_region_count) — use it in
+; tests. The finer-grained pair underneath needs care: a cleanly returned
+; fiber POPS its root pages as its frames unwind, so fiber_pages_freed only
+; grows for fibers torn down mid-flight, and fiber_buckets_freed counts
+; allocator caches (nonzero only when the fiber allocated at all).
+mutable fiber_regions_freed: i64 0
 mutable fiber_pages_freed: i64 0
 mutable fiber_buckets_freed: i64 0
 
@@ -221,6 +226,11 @@ define Fiber
     done: bool
 )
 {
+    ; How many fiber regions have been disposed — one tick per fiber,
+    ; whether or not it ever allocated. The teardown proof for tests.
+    function freed_region_count() returns i64
+        fiber_regions_freed
+
     function freed_page_count() returns i64
         fiber_pages_freed
 
@@ -361,6 +371,7 @@ define Fiber
         if mrc <> (0 as i32)
             exit 105
         set fiber_pages_freed: fiber_pages_freed + (pages_freed as i64)
+        set fiber_regions_freed: fiber_regions_freed + (1 as i64)
         pages_freed
     }
 }
