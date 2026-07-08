@@ -360,6 +360,9 @@ procedure LLVMSetInitializer(global_var: LLVMValueRef, constant_val: LLVMValueRe
 ; Set global constant
 procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: int) extern
 
+; Mark a global as thread-local (one instance per OS thread)
+procedure LLVMSetThreadLocal(global_var: LLVMValueRef, is_thread_local: int) extern
+
 ; Query whether a global is marked constant (0 = mutable global)
 function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns int extern
 

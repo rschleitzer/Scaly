@@ -3870,6 +3870,11 @@ define Emitter
                     if global.value = null
                         LLVMSetInitializer(gv, LLVMConstNull global_type)
                     LLVMSetGlobalConstant(gv, 0)
+                    ; M2.2: every mutable module global is thread-local —
+                    ; the allocator state (stack_top/heap_head) is a
+                    ; per-thread stack discipline, and any process-shared
+                    ; mutable would be a data race under threads.
+                    LLVMSetThreadLocal(gv, 1)
                 }
                 if global.is_mutable = false
                     LLVMSetGlobalConstant(gv, 1)
