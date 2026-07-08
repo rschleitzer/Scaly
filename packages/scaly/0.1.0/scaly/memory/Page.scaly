@@ -30,17 +30,19 @@ define Page
             set heap_head: create_heap_bucket()
 
         let b heap_head
-        ; Invariant: b.bitmap != 0 (we unlink full buckets below).
+        ; The bucket lock (milestone 2.3) serializes the bitmap against
+        ; cross-thread frees. Invariant: b.bitmap != 0 (we unlink full
+        ; buckets below, and remote frees only SET bits — the lowest set
+        ; bit stays set until WE clear it).
+        bucket_lock b
         let slot ctz_u64 b.bitmap
         set b.bitmap: b.bitmap & ~((1 as u64) << slot)
 
-        let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
-        let page page_addr as pointer[Page]
-        reset_page page
-
         if b.bitmap = 0
         {
-            ; Bucket is now full — unlink from the free list.
+            ; Bucket is now full — unlink from the free list. Still under
+            ; the lock: a remote free into this bucket must observe either
+            ; in-chain-and-not-full or unlinked-and-full, never the middle.
             set heap_head: b.next
             if heap_head <> null
                 set heap_head.prev: null
@@ -48,6 +50,11 @@ define Page
             set b.next: null
             set b.prev: null
         }
+        bucket_unlock b
+
+        let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
+        let page page_addr as pointer[Page]
+        reset_page page
 
         page
     }
@@ -65,12 +72,20 @@ define Page
         let b heap_bucket_of p
         let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - (1 as size_t)
 
+        bucket_lock b
         let was_full b.bitmap = 0
         set b.bitmap: b.bitmap | ((1 as u64) << slot)
 
         if was_full
         {
-            ; Bucket had been full; rejoin the free list at the head.
+            ; Bucket had been full ⇒ it was unlinked ⇒ it belongs to NO
+            ; thread's chain. ADOPT it into the freeing thread's chain:
+            ; with thread_local heap_head (milestone 2.2) we may not be
+            ; the thread that allocated from it, and the bucket lock
+            ; makes exactly one freer observe the full→free transition.
+            ; heap_head is ours (TLS), and its bucket's next/prev are
+            ; only ever written by us — chain buckets are never full, so
+            ; no remote freer takes this branch on them.
             set b.next: heap_head
             set b.prev: null
             if heap_head <> null
@@ -78,6 +93,7 @@ define Page
 
             set heap_head: b
         }
+        bucket_unlock b
     }
 
     function allocate_root_page() returns pointer[Page]

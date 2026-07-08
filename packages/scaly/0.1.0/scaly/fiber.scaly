@@ -180,12 +180,18 @@
 ; and stack pool. The milestone-2.1 no-allocation convention is lifted:
 ; a thread entry may allocate freely — pages, Strings, containers,
 ; fibers, schedulers, channels — all on its private state
-; (tests/fiber/thread_alloc.scaly is the demonstrator). What remains
-; forbidden until milestone 2.3 (freelist safety) is CROSS-THREAD page
-; hand-off: release_page mutates the owning HeapBucket's bitmap and
-; free list unsynchronized, so a page must be allocated AND freed by
-; the same thread — regions are thread-confined, and channels only
-; connect fibers of one thread.
+; (tests/fiber/thread_alloc.scaly is the demonstrator).
+;
+; Freelist safety (milestone 2.3): CROSS-THREAD page hand-off is safe —
+; a per-bucket spinlock (root_pages.scaly bucket_lock, built on the
+; Emitter's atomic primitives) serializes the bitmap and the
+; chain-membership transitions, and a thread that frees into a full
+; (hence orphaned) bucket ADOPTS it into its own chain. A page may be
+; allocated on one thread and released on another
+; (tests/fiber/thread_churn.scaly). Still per-thread: schedulers,
+; fibers, and channels — Channel statics run on the current thread's
+; scheduler, so channels connect fibers of ONE thread; cross-thread
+; channels are a later milestone.
 ;
 ;   let t Thread.spawn(&entry, arg)   ; arg: pointer[void], handed to entry
 ;   Thread.join(t)                    ; blocks until entry returned

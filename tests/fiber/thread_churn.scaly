@@ -1,0 +1,124 @@
+; Cross-thread region churn (stage-2 milestone 2.3, freelist safety):
+; pages allocated by ONE thread are freed by ANOTHER. Main fills three
+; whole heap buckets (189 pages — every bucket goes FULL and is
+; unlinked), hands the interleaved halves to two worker threads, and
+; each worker frees its half CONCURRENTLY with the other: both hammer
+; the SAME buckets' bitmaps through the per-bucket spinlock, and
+; whichever freer observes a bucket's full→free transition ADOPTS it
+; into its own thread's chain. Each worker then churns locally
+; (allocate/release rounds on its own chain). After the join, main runs
+; three buckets' worth of allocate/release again, proving its freelist
+; survived. Workers print nothing; output stays deterministic. The
+; workers' chains (incl. adopted buckets) leak at thread exit — the
+; documented 2.3 residual (no thread-exit hook yet).
+; Expected: churn-ok done
+
+procedure churn_entry(arg: pointer[void]) returns pointer[void]
+{
+    ; arg: cell array; [0] = count, [1..count] = pages to free.
+    let cells arg as pointer[size_t]
+    let count *cells
+    var i: size_t 1
+    while i <= count
+    {
+        let slot (cells as size_t + i * (8 as size_t)) as pointer[size_t]
+        let v *slot
+        Page.release_page(v as pointer[Page])
+        set i: i + (1 as size_t)
+    }
+
+    ; Local churn on the (partly adopted) chain: allocate and free.
+    var own u8[512]
+    let own_cells own as pointer[size_t]
+    var round 0
+    while round < 8
+    {
+        var k: size_t 0
+        while k < (60 as size_t)
+        {
+            let q Page.allocate_page()
+            let slot (own_cells as size_t + k * (8 as size_t)) as pointer[size_t]
+            set *slot: q as size_t
+            set k: k + (1 as size_t)
+        }
+        set k: 0 as size_t
+        while k < (60 as size_t)
+        {
+            let slot (own_cells as size_t + k * (8 as size_t)) as pointer[size_t]
+            let v *slot
+            Page.release_page(v as pointer[Page])
+            set k: k + (1 as size_t)
+        }
+        set round: round + 1
+    }
+    null
+}
+
+; Fill three buckets completely: 3 * 63 = 189 pages.
+var pages u8[1520]
+let page_cells pages as pointer[size_t]
+var i: size_t 0
+while i < (189 as size_t)
+{
+    let p Page.allocate_page()
+    let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
+    set *slot: p as size_t
+    set i: i + (1 as size_t)
+}
+
+; Interleave: worker A frees even indices, worker B odd — both threads
+; free into every bucket.
+var half_a u8[768]
+var half_b u8[768]
+let cells_a half_a as pointer[size_t]
+let cells_b half_b as pointer[size_t]
+var na: size_t 0
+var nb: size_t 0
+set i: 0 as size_t
+while i < (189 as size_t)
+{
+    let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
+    let v *slot
+    if (i & (1 as size_t)) = (0 as size_t)
+    {
+        set na: na + (1 as size_t)
+        let dst (cells_a as size_t + na * (8 as size_t)) as pointer[size_t]
+        set *dst: v
+    }
+    if (i & (1 as size_t)) <> (0 as size_t)
+    {
+        set nb: nb + (1 as size_t)
+        let dst (cells_b as size_t + nb * (8 as size_t)) as pointer[size_t]
+        set *dst: v
+    }
+    set i: i + (1 as size_t)
+}
+set *cells_a: na
+set *cells_b: nb
+
+let ta Thread.spawn(&churn_entry, half_a as pointer[void])
+let tb Thread.spawn(&churn_entry, half_b as pointer[void])
+Thread.join(ta)
+Thread.join(tb)
+
+; The freelist must still work: run three buckets' worth of
+; allocate/release through main's chain again.
+set i: 0 as size_t
+while i < (189 as size_t)
+{
+    let p Page.allocate_page()
+    let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
+    set *slot: p as size_t
+    set i: i + (1 as size_t)
+}
+set i: 0 as size_t
+while i < (189 as size_t)
+{
+    let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
+    let v *slot
+    Page.release_page(v as pointer[Page])
+    set i: i + (1 as size_t)
+}
+
+Console.print "churn-ok "
+Console.println "done"

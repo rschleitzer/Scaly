@@ -44,6 +44,7 @@ define HeapBucketHeader
     prev: pointer[HeapBucketHeader]
     next: pointer[HeapBucketHeader]
     bitmap: u64
+    lock: u64
 )
 
 ; The per-thread allocator state (stack_head, stack_top, heap_head —
@@ -183,6 +184,43 @@ function stack_bucket_of(p: pointer[Page]) returns pointer[StackBucketHeader]
 function heap_bucket_of(p: pointer[Page]) returns pointer[HeapBucketHeader]
     (p as size_t & ~BUCKET_MASK) as pointer[HeapBucketHeader]
 
+; Atomic primitives (milestone 2.3). These extern names never exist as
+; symbols — the Emitter lowers the calls to atomicrmw/cmpxchg/atomic
+; load+store instructions (emit_atomic_call, all seq_cst). They may not
+; live in the C shim: atomics are neither OS-specific, variadic, nor
+; errno-bound (containment rule), and the libatomic ABI symbols are not
+; uniformly linkable across the four targets.
+function scaly_atomic_cas_u64(p: pointer[u64], expected: u64, desired: u64) returns u64 extern
+procedure scaly_atomic_store_u64(p: pointer[u64], v: u64) extern
+
+; Per-bucket spinlock (milestone 2.3, freelist safety). With thread_local
+; allocator state (milestone 2.2) each thread owns a heap-bucket CHAIN,
+; but a page may be FREED by a different thread than the one whose chain
+; its bucket sits in — release_page reaches the bucket by address mask.
+; The lock serializes everything that touches one bucket's shared state:
+; the bitmap, and the chain-membership transitions (unlink-on-full in
+; allocate_page, adopt-on-free in release_page). Chain next/prev fields
+; are only ever written by the chain's OWNER thread (a bucket in a chain
+; is never full, so no remote freer takes the adoption branch on it) —
+; one bucket lock at a time, no ordering, no deadlock. Critical sections
+; are a handful of instructions and contention needs a cross-thread free
+; hitting the same bucket, so a bare spin (no backoff) is fine.
+procedure bucket_lock(b: pointer[HeapBucketHeader])
+{
+    let lp &b.lock
+    repeat
+    {
+        if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+            break
+    }
+}
+
+procedure bucket_unlock(b: pointer[HeapBucketHeader])
+{
+    let lp &b.lock
+    scaly_atomic_store_u64(lp, 0 as u64)
+}
+
 function first_usable_page(bucket: pointer[void]) returns pointer[Page]
     (bucket as size_t + PAGE_SIZE) as pointer[Page]
 
@@ -235,6 +273,7 @@ function create_heap_bucket() returns pointer[HeapBucketHeader]
     set hb.prev: null
     set hb.next: null
     set hb.bitmap: BITMAP_ALL_FREE
+    set hb.lock: 0 as u64
     hb
 }
 
