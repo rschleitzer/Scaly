@@ -10156,6 +10156,41 @@ define Planner
                         if this.operand_is_string_constant(result)
                             set result: this.fold_string_operand_to_char(result, rhs.result_type)
 
+                    ; Unknown identifier on either side of a binary
+                    ; operator: a bare, chain-free, single-segment Type
+                    ; operand that names NOTHING reachable would flow into
+                    ; the intrinsic fall-through, emit as null, and
+                    ; SILENTLY DROP the whole statement — the class that
+                    ; hid the reading-a-later-planned-module's-constant
+                    ; trap (BITMAP_ALL_FREE from Page.scaly) and every
+                    ; plain typo in a comparison. Report loudly instead;
+                    ; visibility-hidden names get the same use hint as
+                    ; function-not-found.
+                    let lhs_unknown this.unknown_identifier_name(result)
+                    if lhs_unknown.get_length() > 0
+                    {
+                        var lsb StringBuilder()
+                        lsb.append "unknown identifier: "
+                        lsb.append lhs_unknown
+                        let lvis this.use_vis_hint(lhs_unknown)
+                        if lvis.get_length() > 0
+                            lsb.append lvis
+                        this.add_diagnostic(result.loc, lsb.to_string())
+                        return result
+                    }
+                    let rhs_unknown this.unknown_identifier_name(rhs)
+                    if rhs_unknown.get_length() > 0
+                    {
+                        var rsb StringBuilder()
+                        rsb.append "unknown identifier: "
+                        rsb.append rhs_unknown
+                        let rvis this.use_vis_hint(rhs_unknown)
+                        if rvis.get_length() > 0
+                            rsb.append rvis
+                        this.add_diagnostic(rhs.loc, rsb.to_string())
+                        return result
+                    }
+
                     let resolved this.resolve_operator_call(
                         op_name, result.result_type, rhs.result_type
                     )
@@ -13575,6 +13610,100 @@ define Planner
                         }
                     }
 
+                    ; First segment names a MUTABLE module global
+                    ; (`set heap_head.prev: b`, `let n heap_head.prev`).
+                    ; Mirrors the local-binding branch above: auto-deref a
+                    ; pointer/ref global's inner type, resolve the rest as
+                    ; a field chain, return a GlobalRef operand CARRYING
+                    ; the chain — emit_operand GEPs off the loaded global
+                    ; on reads, emit_action's GlobalRef arm (s189)
+                    ; pre-loads the base for stores. Without this branch
+                    ; the operand fell through to a dotted Type and the
+                    ; enclosing statement was DROPPED SILENTLY (the
+                    ; heap_head.prev list-integrity stores never emitted).
+                    ; Method hops and unresolvable fields keep the
+                    ; fall-through (no instance dispatch on globals).
+                    let g_dot this.lookup_global(first_name)
+                    if g_dot <> null
+                    {
+                        let gg (*g_dot)
+                        if gg.is_mutable
+                        {
+                            var grest_arr Array[String]()
+                            var gk: size_t 1
+                            while gk < t.name.length
+                            {
+                                let gseg_ptr t.name.get gk
+                                if gseg_ptr <> null
+                                    grest_arr.add((*gseg_ptr))
+                                set gk: gk + 1
+                            }
+                            var grest_vec Vector[String](grest_arr)
+                            var gbase_for_chain gg.global_type
+                            if gg.global_type.name = "pointer"
+                            {
+                                if gg.global_type.generics <> null
+                                {
+                                    let ggen (*gg.global_type.generics)
+                                    if ggen.length > 0
+                                    {
+                                        let gip ggen.get 0
+                                        if gip <> null
+                                            set gbase_for_chain: (*gip)
+                                    }
+                                }
+                            }
+                            if gg.global_type.name = "ref"
+                            {
+                                if gg.global_type.generics <> null
+                                {
+                                    let ggen (*gg.global_type.generics)
+                                    if ggen.length > 0
+                                    {
+                                        let gip ggen.get 0
+                                        if gip <> null
+                                            set gbase_for_chain: (*gip)
+                                    }
+                                }
+                            }
+                            let gchain this.resolve_member_access(gbase_for_chain, grest_vec)
+                            var g_has_method: bool false
+                            var gci: size_t 0
+                            while gci < gchain.length
+                            {
+                                let gmp gchain.get gci
+                                if gmp <> null
+                                {
+                                    if (*gmp).is_method
+                                        set g_has_method: true
+                                }
+                                set gci: gci + 1
+                            }
+                            if g_has_method = false
+                            {
+                                if gchain.length > 0
+                                {
+                                    var gaccess_holder Vector[PlannedMemberAccess](gchain)
+                                    let glast_ptr gchain.get(gchain.length - 1)
+                                    var gfinal_type gg.global_type
+                                    if glast_ptr <> null
+                                        set gfinal_type: (*glast_ptr).result_type
+                                    return PlannedOperand(
+                                        loc,
+                                        PlannedExpression.GlobalRef(PlannedGlobalRef(
+                                            loc,
+                                            gg.name,
+                                            gg.mangled_name,
+                                            gg.global_type
+                                        )),
+                                        &gaccess_holder,
+                                        gfinal_type
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     ; Implicit-this multi-segment fallback: when first_name
                     ; matches a property of T (where this: pointer[T]),
                     ; build a chain starting from `this` with all segments
@@ -16880,6 +17009,73 @@ define Planner
         ; the collapsed source's type.
         ; ================================================================
 
+        ; unknown_identifier_name: when a collapsed operand is a bare,
+        ; chain-free, SINGLE-segment Type expression that names nothing
+        ; reachable — not a local (that would have planned as Variable),
+        ; module global, function (a bare top-level function name is a
+        ; legal function-pointer value), concept, delegate, operator,
+        ; primitive, or generic type parameter — return that name;
+        ; otherwise "". Such an operand emits as null downstream and used
+        ; to drop the enclosing statement SILENTLY. Dotted names keep the
+        ; lenient path (namespace machinery owns them).
+        function unknown_identifier_name(this: Planner, op: PlannedOperand) returns String
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > 0
+                    return ""
+            }
+            choose op.expr
+                when uty: PlannedType
+                {
+                    let name uty.name
+                    if name.get_length() = 0
+                        return ""
+                    if name.contains(".")
+                        return ""
+                    if Planner.is_operator_name(name)
+                        return ""
+                    if this.is_operator(name)
+                        return ""
+                    if Planner.get_operator_precedence(name) > 0
+                        return ""
+                    if Planner.is_primitive_type_name(name)
+                        return ""
+                    if Planner.is_generic_type_param_name(name)
+                        return ""
+                    if this.is_delegate_type(name)
+                        return ""
+                    if this.is_function(name)
+                        return ""
+                    ; A registered concept exempts — EXCEPT when its
+                    ; definition is a Global: then the value should have
+                    ; resolved through lookup_global below, and a miss IS
+                    ; the planning-order trap (the global's module plans
+                    ; after this body), not a legitimate type reference.
+                    let uic this.lookup_concept(name)
+                    if uic <> null
+                    {
+                        var concept_is_global: bool false
+                        choose (*uic).definition
+                            when ug: Global
+                                set concept_is_global: true
+                            else
+                                0
+                        if concept_is_global = false
+                            return ""
+                    }
+                    if this.lookup_global(name) <> null
+                        return ""
+                    if this.lookup_local_binding(name) <> null
+                        return ""
+                    return name
+                }
+                else
+                    return ""
+            ""
+        }
+
         function plan_action(this: Planner, a: Action) returns PlannedAction
         {
             ; Read-and-clear the tail-return flag: only THIS (outermost body)
@@ -16897,6 +17093,25 @@ define Planner
 
             let planned_target_flat this.plan_operands(a.target)
             let planned_target_collapsed this.collapse_operand_sequence(planned_target_flat)
+
+            ; Unknown assignment target: a `set` target that collapsed to a
+            ; bare Type expression names nothing assignable — locals plan
+            ; as Variable, module globals as GlobalRef, deref/subscript
+            ; targets as Call. The emitter's target dispatch has no arm
+            ; for a Type and dropped the whole statement silently (typo'd
+            ; `set` names; a later-planned module's global as target).
+            if a.target.length > 0
+                choose planned_target_collapsed.expr
+                    when unresolved_target: PlannedType
+                    {
+                        var tsb StringBuilder()
+                        tsb.append "unknown assignment target: "
+                        tsb.append unresolved_target.name
+                        this.add_diagnostic(planned_target_collapsed.loc, tsb.to_string())
+                        0
+                    }
+                    else
+                        0
 
             ; Double-quoted char literal as the IMPLICIT return (tail) of a
             ; char/u8-returning function (`function CHAR_X() returns char "]"`).
@@ -25812,6 +26027,16 @@ define Planner
             ; references (main.scaly -> cli.scaly etc.) before it
             ; starts planning the primary module's members.
             this.register_sibling_programs()
+
+            ; NOTE: a pre-pass planning all module globals here (so bodies
+            ; could read LATER-planned modules' globals) was tried and
+            ; REVERTED 2026-07-08: plan_global results that are not
+            ; returned into the plan tree are never rp-promoted, so the
+            ; recorded PlannedGlobal's type Strings DANGLE once the
+            ; pre-pass frames unwind (global_type.name read back as
+            ; garbage). Cross-module-order global reads are instead a
+            ; hard "unknown identifier" diagnostic (collapse's binary
+            ; loop + plan_action's set-target check).
 
             ; NOTE (s176): registering struct layouts for loaded-package
             ; concrete structures here (register_struct_layouts_in_module#

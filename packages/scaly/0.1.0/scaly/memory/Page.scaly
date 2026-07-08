@@ -105,7 +105,7 @@ define Page
             ; nothing allocates from it; bits only get set), so the two
             ; branches never collide. The check lives in root_pages
             ; (drain_dead_bucket) — BITMAP_ALL_FREE is not resolvable
-            ; from this earlier-planned module.
+            ; from this earlier-planned module (hard diagnostic).
             if drain_dead_bucket(b)
                 return
         }

@@ -1,0 +1,15 @@
+; xfail: unknown assignment target: countre
+; A `set` whose target names nothing (typo, or a later-planned module's
+; global) collapsed to a bare Type operand; the emitter's target
+; dispatch has no arm for a Type and dropped the whole statement
+; SILENTLY. plan_action reports it as a hard diagnostic now.
+
+mutable counter: i64 0
+
+procedure bump()
+{
+    set countre: counter + (1 as i64)
+}
+
+bump()
+print "done\n"

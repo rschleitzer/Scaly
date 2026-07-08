@@ -1,0 +1,46 @@
+; Member store and read through a mutable module global
+; (`set head.prev: n` / `head.prev`). The planner used to resolve
+; dotted names only against LOCAL bindings — a global base fell through
+; to a dotted Type operand and the statement was DROPPED SILENTLY
+; (the runtime's heap_head.prev list-integrity stores never emitted,
+; latent since s189). plan_type_operand now returns a GlobalRef operand
+; carrying the member chain; emit_operand GEPs off the loaded global on
+; reads, emit_action's GlobalRef arm pre-loads the base for stores.
+
+define Node
+(
+    prev: pointer[Node]
+    next: pointer[Node]
+)
+
+mutable head: pointer[Node] null
+
+function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+
+procedure hang(n: pointer[Node])
+{
+    if head <> null
+        set head.prev: n
+}
+
+let a aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
+set a.prev: null
+set a.next: null
+let b aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
+set b.prev: null
+set b.next: null
+
+set head: a
+hang b
+
+var ok true
+; Read back through the global member chain.
+if head.prev <> b
+    set ok: false
+; The store went through the POINTED-TO node, not the global slot.
+if head <> a
+    set ok: false
+if a.prev <> b
+    set ok: false
+if ok
+    print "PASS\n"

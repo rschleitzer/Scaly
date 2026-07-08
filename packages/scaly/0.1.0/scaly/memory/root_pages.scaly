@@ -228,8 +228,8 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader])
 ; last live page, unlock and free the bucket, report true — the caller
 ; must not touch it again. Lives HERE, not in Page.scaly: BITMAP_ALL_FREE
 ; is this module's constant, and module globals resolve in planning
-; order (Page is planned first — reading the constant from there drops
-; the statement silently).
+; order (Page is planned first — reading the constant from there is a
+; hard "unknown identifier" diagnostic).
 function drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
 {
     if b.dead = (0 as u64)

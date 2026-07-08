@@ -1,0 +1,22 @@
+; xfail: unknown identifier: LIMIT
+; Reading a module global that is planned LATER (here: defined later in
+; the file; the in-tree case was Page.scaly reading root_pages'
+; BITMAP_ALL_FREE — a later-planned module) used to DROP the enclosing
+; statement silently: the name fell through to a bare Type operand, the
+; emitter emitted null for it, and the whole comparison vanished. It is
+; a hard "unknown identifier" diagnostic now (collapse_operand_sequence
+; binary loop). A pre-pass that planned all globals up front was tried
+; and reverted — plan results not returned into the plan tree dangle.
+
+function limit_matches(x: u64) returns bool
+{
+    if x = LIMIT
+        return true
+    false
+}
+
+define LIMIT u64 0x7FFFFFFFFFFFFFFF
+
+if limit_matches(5 as u64)
+    print "boom\n"
+print "done\n"
