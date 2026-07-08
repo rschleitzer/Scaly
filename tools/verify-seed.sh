@@ -56,10 +56,11 @@ echo "verify: regression suite"
 tests/regress/run.sh "$SC" || fail "regression suite"
 
 # scalyls language server (when the seed shipped it): on THIS target, link it
-# from seed/scalyls.ll (host-independent IR, like the compiler seed) and
-# smoke-test an LSP initialize round-trip. Best-effort: skipped if LLVM 18 is
-# not resolvable. Mirrors install.sh's link path (incl. lld on Linux).
-if [ -f seed/scalyls.ll ]; then
+# from the committed seed IR — scalyls' own main + root plus the scalyc and
+# scaly packages it depends on, and the fcontext/eio runtime objects — the
+# same objects tools/seed.sh links a fresh mint from. Smoke-test an LSP
+# initialize round-trip. Best-effort: skipped if LLVM 18 is not resolvable.
+if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ]; then
   echo "verify: scalyls language server"
   # shellcheck disable=SC1091
   . tools/llvm-env.sh 2>/dev/null || true
@@ -70,10 +71,15 @@ if [ -f seed/scalyls.ll ]; then
         command -v "$c" >/dev/null 2>&1 && { LD_ARG="-fuse-ld=$c"; break; }
       done
     fi
-    "$LLC" -relocation-model=pic -filetype=obj seed/scalyls.ll -o "$WORK/scalyls.o" \
-      >/dev/null 2>&1 || fail "llc scalyls.ll"
+    for f in scalyls_main scalyls scalyc scaly; do
+      "$LLC" -relocation-model=pic -filetype=obj "seed/$f.ll" -o "$WORK/$f.o" \
+        >/dev/null 2>&1 || fail "llc $f.ll"
+    done
+    CLANG="${CLANG:-clang}" tools/fcontext.sh "$WORK/fcontext.o" >/dev/null 2>&1 || fail "fcontext assembly"
+    CLANG="${CLANG:-clang}" tools/eio.sh "$WORK/eio.o" >/dev/null 2>&1 || fail "eio shim compile"
     # shellcheck disable=SC2086
-    "${CLANG:-clang}" $LD_ARG "$WORK/scalyls.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
+    "${CLANG:-clang}" $LD_ARG "$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" \
+      "$WORK/scaly.o" "$WORK/fcontext.o" "$WORK/eio.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
       -o "$WORK/scalyls" 2>/dev/null || fail "link scalyls"
     python3 - "$WORK/scalyls" <<'PY' || fail "scalyls smoke (initialize)"
 import sys, json, subprocess
