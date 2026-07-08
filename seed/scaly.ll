@@ -219,6 +219,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @current_fiber = global ptr null
 @current_scheduler = global ptr null
 @current_task = global ptr null
+@fiber_regions_freed = global i64 0
 @fiber_pages_freed = global i64 0
 @fiber_buckets_freed = global i64 0
 @.str = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
@@ -20816,6 +20817,12 @@ declare i32 @mprotect(ptr, i64, i32)
 
 declare i32 @getpagesize()
 
+define linkonce_odr i64 @_ZN5Fiber18freed_region_countEv() {
+entry:
+  %global.load = load i64, ptr @fiber_regions_freed, align 8
+  ret i64 %global.load
+}
+
 define linkonce_odr i64 @_ZN5Fiber16freed_page_countEv() {
 entry:
   %global.load = load i64, ptr @fiber_pages_freed, align 8
@@ -21066,8 +21073,11 @@ if.end39:                                         ; preds = %if.then38, %while.e
   %pages_freed41 = load i64, ptr %pages_freed, align 8
   %add42 = add i64 %global.load40, %pages_freed41
   store i64 %add42, ptr @fiber_pages_freed, align 8
-  %pages_freed43 = load i64, ptr %pages_freed, align 8
-  ret i64 %pages_freed43
+  %global.load43 = load i64, ptr @fiber_regions_freed, align 8
+  %add44 = add i64 %global.load43, 1
+  store i64 %add44, ptr @fiber_regions_freed, align 8
+  %pages_freed45 = load i64, ptr %pages_freed, align 8
+  ret i64 %pages_freed45
 }
 
 define linkonce_odr void @_ZN5FiberC1Ev(ptr %0) {
