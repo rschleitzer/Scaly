@@ -56,8 +56,10 @@ if [ "$MODE" = selfhosted ]; then
         "$LLC" -relocation-model=pic -filetype=obj "$LSO/$f.ll" -o "$LSO/$f.o" \
             || { echo "FAIL  llc $f"; exit 1; }
     done
-    # scaly.o references the fiber context-switch primitives (vendored asm).
+    # scaly.o references the fiber context-switch primitives (vendored asm)
+    # and the evented-I/O backend shim (kqueue/epoll C).
     tools/fcontext.sh "$LSO/fcontext.o" || { echo "FAIL  fcontext assembly"; exit 1; }
+    tools/eio.sh "$LSO/eio.o" || { echo "FAIL  eio shim compile"; exit 1; }
 fi
 
 # Build a scalyls CONSUMER program (json_test / echo): $1=src $2=out-binary.
@@ -65,7 +67,7 @@ lsp_build_prog() {
     if [ "$MODE" = selfhosted ]; then
         ( ulimit -s 65520; "$SCALYC" -S --no-tests -o "$LSO/prog.ll" "$1" ) || return 1
         "$LLC" -relocation-model=pic -filetype=obj "$LSO/prog.ll" -o "$LSO/prog.o" || return 1
-        clang "$LSO/prog.o" "$LSO/scalyls.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "${LINK[@]}" -o "$2" 2>/dev/null
+        clang "$LSO/prog.o" "$LSO/scalyls.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "${LINK[@]}" -o "$2" 2>/dev/null
     else
         "$SCALYC" -o "$2" "$1" "${LINK[@]}" 2>/dev/null
     fi
@@ -74,7 +76,7 @@ lsp_build_prog() {
 # Build the scalyls SERVER (main.scaly): $1=out-binary.
 lsp_build_server() {
     if [ "$MODE" = selfhosted ]; then
-        clang "$LSO/scalyls_main.o" "$LSO/scalyls.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "${LINK[@]}" -o "$1" 2>/dev/null
+        clang "$LSO/scalyls_main.o" "$LSO/scalyls.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "${LINK[@]}" -o "$1" 2>/dev/null
     else
         "$SCALYC" -o "$1" packages/scalyls/0.1.0/main.scaly "${LINK[@]}" 2>/dev/null
     fi

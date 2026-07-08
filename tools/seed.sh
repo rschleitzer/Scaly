@@ -84,9 +84,11 @@ done
 # mul/ptrtoint-getelementptr constexprs; llc-18 accepts them. The final link
 # is plain object linking, so any clang/cc works.)
 # fcontext.o supplies the fiber context-switch primitives that scaly.ll's
-# Fiber procedures reference (vendored assembly, host-arch-selected).
+# Fiber procedures reference (vendored assembly, host-arch-selected);
+# eio.o the evented-I/O backend (kqueue/epoll, cpp-selected C shim).
 CLANG="$CLANG" tools/fcontext.sh "$OUT/fcontext.o" || fail "fcontext assembly"
-if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" \
+CLANG="$CLANG" tools/eio.sh "$OUT/eio.o" || fail "eio shim compile"
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
   grep -v 'reexported library' "$OUT/link.log" || true
   fail "link (undefined symbols)"
@@ -152,7 +154,7 @@ echo "seed: emitting scalyls roots with $OUT/scalyc_seed (self-hosted)"
 for f in scalyls_main scalyls; do
   "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
 done
-if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" \
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"

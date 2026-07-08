@@ -95,15 +95,49 @@
 ;   Channel.send(ch, msg)            ; msg: pointer[void], ownership moves
 ;   let msg Channel.receive(ch)
 ;
+; Evented I/O (milestone 1.5): suspending read/write over a per-scheduler
+; readiness poller. The backend is a small C shim (fiber/eio.c, kqueue on
+; darwin / epoll on linux, selected by the preprocessor; tools/eio.sh
+; compiles it into eio.o beside fcontext.o) — it cannot live in Scaly
+; code because the committed seed ships ONE scaly.ll for all four
+; targets, and because two calls need C: fcntl is variadic (a
+; fixed-prototype extern silently drops the third argument on arm64),
+; and errno is a thread-local macro (the shim maps EAGAIN/EWOULDBLOCK
+; to -2). Io.read/Io.write try the nonblocking syscall and, on
+; would-block, arm the fd (oneshot) and park the running task; the
+; dispatcher blocks in the poller exactly when the ready queue is empty
+; but I/O waiters exist (Scheduler.step_or_wait), and wakes each task
+; whose readiness arrived. Exit 106 keeps its meaning: ready queue
+; empty, NO I/O waiters, tasks still blocked. From the main context an
+; Io call arms the fd with a null tag and drives the dispatcher until
+; its own event fires. At most one parked task per fd (the epoll
+; backend keeps one entry per fd).
+;
+;   Io.set_nonblocking(fd)           ; fd: i32, once per fd
+;   let n Io.read(fd, buf, count)    ; suspends; 0 = EOF, -1 = hard error
+;   let n Io.write(fd, buf, count)   ; suspends; partial writes possible
+;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
-; deadlock (ready queue empty while tasks are still blocked in join,
-; send, or receive).
+; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
+; join, send, or receive), 107 poller failure (create/arm/wait or
+; set_nonblocking).
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
 
 function scaly_make_context(stack_top: pointer[void], fn: pointer[void]) returns pointer[void] extern
 procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern
+
+; Evented-I/O backend shim (fiber/eio.c — kqueue/epoll behind one C API).
+; Readiness registration is oneshot: an armed fd fires once, then must be
+; re-armed. wait blocks until at least one event and fills tags (the void*
+; handed to arm). read/write return -2 for would-block, -1 for hard errors.
+function scaly_eio_create() returns i32 extern
+function scaly_eio_arm(q: i32, fd: i32, for_write: i32, tag: pointer[void]) returns i32 extern
+function scaly_eio_wait(q: i32, tags: pointer[void], max: i32) returns i32 extern
+function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
+procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 
 ; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
 ; stack-arg ABI); mmap's offset is 64-bit on both OSes.
@@ -330,7 +364,9 @@ define Scheduler
     host: pointer[Page]          ; task records, fibers, and queue live here
     head: pointer[SchedTask]     ; FIFO ready queue
     tail: pointer[SchedTask]
-    blocked: int                 ; tasks waiting in a join
+    blocked: int                 ; tasks waiting in a join, send/receive, or Io
+    eio: i32                     ; readiness poller fd (-1 until first Io use)
+    io_waiting: int              ; tasks parked on fd readiness
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -343,6 +379,8 @@ define Scheduler
         set s.head: null
         set s.tail: null
         set s.blocked: 0
+        set s.eio: (0 - 1) as i32
+        set s.io_waiting: 0
         set current_scheduler: s as pointer[void]
         s
     }
@@ -442,6 +480,56 @@ define Scheduler
         set t.waiter: null
     }
 
+    ; Block in the poller until at least one armed fd fires, then wake
+    ; every parked task whose readiness arrived (requeue, unblock).
+    ; Returns true when the main context's own event (null tag) fired.
+    ; Only ever runs on the main context (the dispatcher).
+    procedure poll_io() returns bool
+    {
+        let s current_scheduler as pointer[Scheduler]
+        var tagbuf u8[512]
+        let n scaly_eio_wait(s.eio, tagbuf as pointer[void], 64 as i32)
+        if n = ((0 - 1) as i32)
+            exit 107
+        var main_woke false
+        var i 0
+        while i < (n as i64)
+        {
+            let raw *(((tagbuf as size_t) + ((i * 8) as size_t)) as pointer[size_t])
+            if raw = (0 as size_t)
+            {
+                set main_woke: true
+            }
+            else
+            {
+                let t raw as pointer[SchedTask]
+                Scheduler.enqueue(t)
+                set s.blocked: s.blocked - 1
+                set s.io_waiting: s.io_waiting - 1
+            }
+            set i: i + 1
+        }
+        main_woke
+    }
+
+    ; Run one ready task; when the ready queue is empty but tasks await
+    ; fd readiness, block in the poller and wake them. Returns false
+    ; only when nothing can run again without outside help (queue
+    ; empty, no I/O waiters) — the caller decides whether remaining
+    ; blocked tasks make that a deadlock.
+    procedure step_or_wait() returns bool
+    {
+        if Scheduler.step()
+            return true
+        let s current_scheduler as pointer[Scheduler]
+        if s.io_waiting > 0
+        {
+            Scheduler.poll_io()
+            return true
+        }
+        false
+    }
+
     ; Dispose a finished task's fiber region exactly once. Returns the
     ; number of root pages freed (0 when already reaped — and usually 0
     ; for a task that ran to completion: its frames unwound before
@@ -455,11 +543,12 @@ define Scheduler
         Fiber.dispose(t.fiber)
     }
 
-    ; Round-robin over the ready queue until it drains. Traps (exit 106)
-    ; if tasks are still blocked in join then — a join deadlock.
+    ; Round-robin over the ready queue until it drains, blocking in the
+    ; poller while I/O waiters remain. Traps (exit 106) if tasks are
+    ; still blocked then — a join/channel deadlock.
     procedure run()
     {
-        while Scheduler.step()
+        while Scheduler.step_or_wait()
         {
         }
         let s current_scheduler as pointer[Scheduler]
@@ -478,7 +567,7 @@ define Scheduler
         {
             while not t.done
             {
-                if not Scheduler.step()
+                if not Scheduler.step_or_wait()
                     exit 106
             }
             return Scheduler.reap(t)
@@ -615,7 +704,7 @@ define Channel
         {
             repeat
             {
-                if not Scheduler.step()
+                if not Scheduler.step_or_wait()
                     exit 106
                 let r2 Channel.pop_receiver(c)
                 if r2 <> null
@@ -647,7 +736,7 @@ define Channel
         {
             repeat
             {
-                if not Scheduler.step()
+                if not Scheduler.step_or_wait()
                     exit 106
                 let s2 Channel.pop_sender(c)
                 if s2 <> null
@@ -661,5 +750,100 @@ define Channel
         let got me.msg
         set me.msg: null
         got
+    }
+}
+
+; Suspending I/O over the scheduler's readiness poller (milestone 1.5).
+; A file descriptor must be nonblocking (Io.set_nonblocking, once); read
+; and write try the syscall and park the running task on would-block.
+; The backend (kqueue/epoll) lives in the eio C shim — see the module
+; header. At most one parked task per fd at a time.
+define Io
+{
+    ; The current scheduler's poller fd, created lazily on first use.
+    ; (i32-to-i64 casts zero-extend, so a sign test must compare against
+    ; -1 as i32 — the shim's failure value — not cast and check < 0.)
+    procedure ensure_poll() returns i32
+    {
+        let s current_scheduler as pointer[Scheduler]
+        var q s.eio
+        if q = ((0 - 1) as i32)
+        {
+            set q: scaly_eio_create()
+            if q = ((0 - 1) as i32)
+                exit 107
+            set s.eio: q
+        }
+        q
+    }
+
+    ; Put the fd into nonblocking mode (fcntl lives in the shim: it is
+    ; variadic in libc, unreachable through a fixed-prototype extern).
+    procedure set_nonblocking(fd: i32)
+    {
+        let rc scaly_eio_set_nonblocking(fd)
+        if rc <> (0 as i32)
+            exit 107
+    }
+
+    ; Park until fd is ready. A task arms the fd (oneshot, tagged with
+    ; its record) and yields to the dispatcher; the main context arms
+    ; with a null tag and drives the dispatcher until its event fires,
+    ; running ready tasks first (mirrors a main-context join).
+    procedure park(fd: i32, for_write: bool)
+    {
+        let q Io.ensure_poll()
+        var wr (0 as i32)
+        if for_write
+            set wr: (1 as i32)
+        let me current_task as pointer[SchedTask]
+        if me = null
+        {
+            let arc scaly_eio_arm(q, fd, wr, null)
+            if arc <> (0 as i32)
+                exit 107
+            repeat
+            {
+                if not Scheduler.step()
+                {
+                    if Scheduler.poll_io()
+                        return
+                }
+            }
+        }
+        let arc2 scaly_eio_arm(q, fd, wr, me as pointer[void])
+        if arc2 <> (0 as i32)
+            exit 107
+        let s current_scheduler as pointer[Scheduler]
+        set s.blocked: s.blocked + 1
+        set s.io_waiting: s.io_waiting + 1
+        Fiber.yield()
+    }
+
+    ; Read up to count bytes; suspends while the fd has nothing to
+    ; offer. Returns the byte count, 0 at EOF, -1 on a hard error.
+    procedure read(fd: i32, buf: pointer[void], count: size_t) returns i64
+    {
+        var r scaly_eio_read(fd, buf, count)
+        while r = ((0 - 2) as i64)
+        {
+            Io.park(fd, false)
+            set r: scaly_eio_read(fd, buf, count)
+        }
+        r
+    }
+
+    ; Write up to count bytes; suspends while the fd cannot take data.
+    ; Returns the byte count written (partial writes possible), -1 on a
+    ; hard error.
+    procedure write(fd: i32, buf: pointer[void], count: size_t) returns i64
+    {
+        var r scaly_eio_write(fd, buf, count)
+        while r = ((0 - 2) as i64)
+        {
+            Io.park(fd, true)
+            set r: scaly_eio_write(fd, buf, count)
+        }
+        r
     }
 }

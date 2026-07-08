@@ -1,0 +1,46 @@
+; Milestone 1.5, main-context leg: an Io call OUTSIDE any task arms its
+; fd with a null tag and drives the dispatcher itself (running ready
+; tasks first, then blocking in the poller) until its own event fires —
+; mirroring a main-context join. Here main parks in Io.read on the empty
+; socket; driving the dispatcher runs the writer task, whose bytes then
+; wake the main context through the poller.
+; Expected: t m done
+
+function socketpair(domain: i32, sotype: i32, protocol: i32, sv: pointer[void]) returns i32 extern
+function close(fd: i32) returns i32 extern
+
+mutable task_fd: int 0
+
+procedure writer()
+{
+    let fd task_fd as i32
+    var buf u8[1]
+    set *(buf + 0): (109 as u8)
+    Io.write(fd, buf as pointer[void], 1)
+    Console.print "t "
+}
+
+let page Page.allocate_page()
+let svbuf page.allocate(8, 4) as pointer[void]
+let sprc socketpair((1 as i32), (1 as i32), (0 as i32), svbuf)
+if sprc <> (0 as i32)
+    exit 1
+let main_fd *(svbuf as pointer[i32]) as int
+set task_fd: *(((svbuf as size_t) + 4) as pointer[i32]) as int
+Io.set_nonblocking(main_fd as i32)
+Io.set_nonblocking(task_fd as i32)
+let sched Scheduler.create(page)
+let tw Scheduler.spawn(&writer)
+var rbuf u8[8]
+let n Io.read(main_fd as i32, rbuf as pointer[void], 8)
+if n = 1
+{
+    if (*(rbuf + 0) as int) = 109
+        Console.print "m "
+}
+Scheduler.run()
+Scheduler.join(tw)
+close(main_fd as i32)
+close(task_fd as i32)
+Console.println "done"
+Page.release_page(page)

@@ -1,0 +1,89 @@
+; Milestone 1.5 demonstrator: an echo server talking to itself in one
+; process. A server task and a client task share a socketpair (no ports,
+; no external tooling); both fds are nonblocking, so every read/write
+; goes through Io's suspend-on-would-block path and the dispatcher's
+; poller (kqueue/epoll via the eio shim). The rendezvous through the
+; kernel socket buffer makes the interleaving deterministic: each side
+; parks until the other's bytes arrive. The client closes its side when
+; done; the server sees EOF (read 0) — delivered through the same
+; readiness mechanics — and finishes.
+; Expected: s ok1 s ok2 s ok3 eof done
+
+function socketpair(domain: i32, sotype: i32, protocol: i32, sv: pointer[void]) returns i32 extern
+function close(fd: i32) returns i32 extern
+
+mutable server_fd: int 0
+mutable client_fd: int 0
+
+procedure server()
+{
+    let fd server_fd as i32
+    var buf u8[64]
+    var running true
+    while running
+    {
+        let n Io.read(fd, buf as pointer[void], 64)
+        if n < 0
+            exit 2
+        if n = 0
+        {
+            Console.print "eof "
+            set running: false
+        }
+        else
+        {
+            Console.print "s "
+            Io.write(fd, buf as pointer[void], n as size_t)
+        }
+    }
+    close(fd)
+}
+
+procedure client()
+{
+    let fd client_fd as i32
+    var buf u8[8]
+    var i 1
+    while i <= 3
+    {
+        set *(buf + 0): ((96 + i) as u8)
+        Io.write(fd, buf as pointer[void], 1)
+        var rbuf u8[8]
+        let n Io.read(fd, rbuf as pointer[void], 8)
+        var ok false
+        if n = 1
+        {
+            if (*(rbuf + 0) as int) = (96 + i)
+                set ok: true
+        }
+        if ok
+        {
+            if i = 1
+                Console.print "ok1 "
+            if i = 2
+                Console.print "ok2 "
+            if i = 3
+                Console.print "ok3 "
+        }
+        set i: i + 1
+    }
+    close(fd)
+}
+
+let page Page.allocate_page()
+let svbuf page.allocate(8, 4) as pointer[void]
+let sprc socketpair((1 as i32), (1 as i32), (0 as i32), svbuf)
+if sprc <> (0 as i32)
+    exit 1
+set server_fd: *(svbuf as pointer[i32]) as int
+set client_fd: *(((svbuf as size_t) + 4) as pointer[i32]) as int
+Io.set_nonblocking(server_fd as i32)
+Io.set_nonblocking(client_fd as i32)
+let sched Scheduler.create(page)
+let ts Scheduler.spawn(&server)
+let tc Scheduler.spawn(&client)
+Scheduler.run()
+Scheduler.join(ts)
+Scheduler.join(tc)
+Console.println "done"
+Page.release_page(page)
