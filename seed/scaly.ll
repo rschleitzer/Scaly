@@ -20816,6 +20816,10 @@ declare i32 @scaly_eio_accept(i32)
 
 declare i32 @scaly_guard_install(ptr)
 
+declare i32 @pthread_create(ptr, ptr, ptr, ptr)
+
+declare i32 @pthread_join(i64, ptr)
+
 declare ptr @mmap(ptr, i64, i32, i32, i32, i64)
 
 declare i32 @munmap(ptr, i64)
@@ -22188,6 +22192,40 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %r3 = load i32, ptr %r, align 4
   ret i32 %r3
+}
+
+define linkonce_odr i64 @_ZN6Thread5spawnEPvPv(ptr %0, ptr %1) {
+entry:
+  %handle = alloca [8 x i8], align 1
+  %arr.ptr = getelementptr inbounds [8 x i8], ptr %handle, i64 0, i64 0
+  %handle1 = alloca ptr, align 8
+  store ptr %arr.ptr, ptr %handle1, align 8
+  %handle2 = load ptr, ptr %handle1, align 8
+  %call = call i32 @pthread_create(ptr %handle2, ptr null, ptr %0, ptr %1)
+  %ne = icmp ne i32 %call, 0
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 109)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %deref = load i64, ptr %handle2, align 8
+  ret i64 %deref
+}
+
+define linkonce_odr void @_ZN6Thread4joinEm(i64 %0) {
+entry:
+  %call = call i32 @pthread_join(i64 %0, ptr null)
+  %ne = icmp ne i32 %call, 0
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 109)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  ret void
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
