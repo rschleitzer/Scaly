@@ -1,0 +1,73 @@
+; Milestone 1.3 demonstrator: N tasks round-robin. The scheduler wraps
+; the started/finish entry protocol away — a task is a plain zero-arg
+; procedure spawned with &name; Scheduler.yield requeues it at the tail,
+; so three tasks interleave in strict spawn order. Each task region-
+; allocates; join disposes each finished fiber's region (a cleanly
+; returned task leaves 0 live pages — its frames already unwound — so
+; the teardown proof is the freed-bucket counter: one region per task).
+; Expected: a b c a b c a b c done freed
+
+procedure worker_a()
+{
+    var i 0
+    while i < 3
+    {
+        var k 0
+        while k < 20
+        {
+            let s String("alpha payload alpha payload alpha payload")
+            set k: k + 1
+        }
+        Console.print "a "
+        Scheduler.yield()
+        set i: i + 1
+    }
+}
+
+procedure worker_b()
+{
+    var i 0
+    while i < 3
+    {
+        var k 0
+        while k < 20
+        {
+            let s String("beta payload beta payload beta payload")
+            set k: k + 1
+        }
+        Console.print "b "
+        Scheduler.yield()
+        set i: i + 1
+    }
+}
+
+procedure worker_c()
+{
+    var i 0
+    while i < 3
+    {
+        var k 0
+        while k < 20
+        {
+            let s String("gamma payload gamma payload gamma payload")
+            set k: k + 1
+        }
+        Console.print "c "
+        Scheduler.yield()
+        set i: i + 1
+    }
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let ta Scheduler.spawn(&worker_a)
+let tb Scheduler.spawn(&worker_b)
+let tc Scheduler.spawn(&worker_c)
+Scheduler.run()
+Console.print "done "
+let na Scheduler.join(ta)
+let nb Scheduler.join(tb)
+let nc Scheduler.join(tc)
+if Fiber.freed_bucket_count() >= (3 as i64)
+    Console.println "freed"
+Page.release_page(page)

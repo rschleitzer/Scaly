@@ -1,5 +1,6 @@
-; Fibers (self-scaling stage 1): context-switch primitives (milestone 1.1)
-; and Fiber regions (milestone 1.2).
+; Fibers (self-scaling stage 1): context-switch primitives (milestone 1.1),
+; Fiber regions (milestone 1.2), and the round-robin scheduler
+; (milestone 1.3).
 ;
 ; Context switch: vendored assembly under fiber/ (fcontext_arm64.S AAPCS64,
 ; fcontext_x86_64.S SysV — the two ABIs covering all four LP64 targets),
@@ -36,7 +37,7 @@
 ; by design — its root pages are not popped one by one; the region dies
 ; wholesale in Fiber.dispose.
 ;
-; Entry protocol (milestone 1.2 — the scheduler in 1.3 will wrap this):
+; Entry protocol (milestone 1.2 — the raw Fiber layer):
 ;   procedure my_fiber(first_ctx: pointer[void])
 ;   {
 ;       Fiber.started first_ctx    ; hand the resumer's context to the record
@@ -46,6 +47,33 @@
 ;   let f Fiber.create(page, &my_fiber)
 ;   while Fiber.resume(f) { ... }
 ;   let freed Fiber.dispose(f)
+;
+; Scheduler (milestone 1.3): a round-robin dispatcher over a FIFO ready
+; queue that wraps the started/finish entry protocol away — a task is a
+; plain ZERO-ARGUMENT procedure. The trampoline trick: a delegate value
+; is a pointer to a closure record whose slot 0 is the thunk, so a
+; SchedTask record with the task's function pointer as its FIRST field
+; is itself a callable delegate value; scheduler_entry casts the running
+; task to TaskFn and calls the user procedure indirectly. Task records,
+; fibers, and the queue all live on the scheduler's host page (they must
+; survive the spawning fiber's region teardown). Fiber.resume is only
+; ever called from the main context (Scheduler.run / a main-context
+; join); a task that joins blocks on the target's waiter chain and
+; yields back to the dispatcher — no nested resumes. join disposes the
+; finished task's whole fiber region (Fiber.dispose) exactly once.
+;
+;   procedure my_task()
+;   {
+;       ...work; Scheduler.yield() to give up the slice...
+;       ...Scheduler.spawn(&other) / Scheduler.join(t) as needed...
+;   }
+;   let s Scheduler.create(page)
+;   let t Scheduler.spawn(&my_task)
+;   Scheduler.run()                ; until the ready queue drains
+;   let freed Scheduler.join(t)    ; reap: dispose the fiber's region
+;
+; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
+; deadlock (ready queue empty while tasks are still blocked in join).
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
@@ -74,6 +102,12 @@ define FIBER_STACK_SIZE size_t 0x20000
 ; The running fiber (null = main context). Single-threaded by design in
 ; stage 1; becomes per-thread state in stage 2.
 mutable current_fiber: pointer[void] null
+
+; The active scheduler (pointer[Scheduler]) and the task it is currently
+; running (pointer[SchedTask], null = main context). Single-threaded by
+; design in stage 1, like current_fiber.
+mutable current_scheduler: pointer[void] null
+mutable current_task: pointer[void] null
 
 ; Wholesale-teardown counters — the milestone-1.2 "pages provably freed"
 ; trace. Read them through Fiber.freed_page_count / freed_bucket_count.
@@ -231,5 +265,206 @@ define Fiber
             exit 105
         set fiber_pages_freed: fiber_pages_freed + (pages_freed as i64)
         pages_freed
+    }
+}
+
+; A scheduled task. The entry function pointer MUST stay the FIRST field:
+; the record doubles as the delegate closure record scheduler_entry calls
+; through (slot 0 = thunk). The next link serves double duty — ready-queue
+; link while the task is queued, waiter-chain link while it is blocked in
+; join (a task is never both).
+define SchedTask
+(
+    entry: pointer[void]         ; the task's zero-argument procedure
+    fiber: pointer[Fiber]
+    next: pointer[SchedTask]
+    waiter: pointer[SchedTask]   ; tasks blocked joining this one
+    done: bool
+    disposed: bool
+)
+
+; The calling shape of a task record viewed as a delegate value: the
+; thunk in slot 0 receives the record pointer itself as a hidden first
+; argument, which a zero-argument Scaly procedure ignores (safe on both
+; LP64 ABIs — the argument register is simply unread).
+define TaskFn delegate() returns void
+
+; The fiber entry of every scheduled task: wraps the started/finish
+; protocol around an indirect call of the task's own procedure. The
+; dispatcher stores the task into current_task before resuming.
+procedure scheduler_entry(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+    let f current_task as TaskFn
+    f()
+    Fiber.finish()
+}
+
+define Scheduler
+(
+    host: pointer[Page]          ; task records, fibers, and queue live here
+    head: pointer[SchedTask]     ; FIFO ready queue
+    tail: pointer[SchedTask]
+    blocked: int                 ; tasks waiting in a join
+)
+{
+    ; Create the scheduler on the given page and make it current. All
+    ; spawned task records and fiber stacks are anchored on this page,
+    ; so they survive any spawning fiber's region teardown.
+    procedure create(host: pointer[Page]) returns pointer[Scheduler]
+    {
+        let s host.allocate(sizeof Scheduler, alignof Scheduler) as pointer[Scheduler]
+        set s.host: host
+        set s.head: null
+        set s.tail: null
+        set s.blocked: 0
+        set current_scheduler: s as pointer[void]
+        s
+    }
+
+    ; Append a task to the ready-queue tail (round-robin order).
+    procedure enqueue(t: pointer[SchedTask])
+    {
+        let s current_scheduler as pointer[Scheduler]
+        set t.next: null
+        if s.tail = null
+        {
+            set s.head: t
+            set s.tail: t
+            return
+        }
+        let tl s.tail
+        set tl.next: t
+        set s.tail: t
+    }
+
+    ; Pop the ready-queue head (null when the queue is empty).
+    procedure dequeue() returns pointer[SchedTask]
+    {
+        let s current_scheduler as pointer[Scheduler]
+        let t s.head
+        if t <> null
+        {
+            set s.head: t.next
+            if s.head = null
+                set s.tail: null
+            set t.next: null
+        }
+        t
+    }
+
+    ; Create a task for the given zero-argument procedure (take it with
+    ; &my_task) and put it at the ready-queue tail. Callable from the
+    ; main context and from inside a running task alike.
+    procedure spawn(fn: pointer[void]) returns pointer[SchedTask]
+    {
+        let s current_scheduler as pointer[Scheduler]
+        let host s.host
+        let t host.allocate(sizeof SchedTask, alignof SchedTask) as pointer[SchedTask]
+        set t.entry: fn
+        set t.fiber: Fiber.create(host, &scheduler_entry)
+        set t.next: null
+        set t.waiter: null
+        set t.done: false
+        set t.disposed: false
+        Scheduler.enqueue(t)
+        t
+    }
+
+    ; Give up the current time slice: requeue the running task at the
+    ; tail and return to the dispatcher. A no-op on the main context.
+    procedure yield()
+    {
+        let me current_task as pointer[SchedTask]
+        if me <> null
+        {
+            Scheduler.enqueue(me)
+            Fiber.yield()
+        }
+    }
+
+    ; Run one ready task until it yields or finishes. Returns false when
+    ; the ready queue is empty.
+    procedure step() returns bool
+    {
+        let t Scheduler.dequeue()
+        if t = null
+            return false
+        set current_task: t as pointer[void]
+        let more Fiber.resume(t.fiber)
+        set current_task: null
+        if not more
+        {
+            set t.done: true
+            Scheduler.wake_waiters(t)
+        }
+        true
+    }
+
+    ; Move every task blocked on t back to the ready queue.
+    procedure wake_waiters(t: pointer[SchedTask])
+    {
+        let s current_scheduler as pointer[Scheduler]
+        var w t.waiter
+        while w <> null
+        {
+            let n w.next
+            Scheduler.enqueue(w)
+            set s.blocked: s.blocked - 1
+            set w: n
+        }
+        set t.waiter: null
+    }
+
+    ; Dispose a finished task's fiber region exactly once. Returns the
+    ; number of root pages freed (0 when already reaped — and usually 0
+    ; for a task that ran to completion: its frames unwound before
+    ; finish, so the disposal frees the fiber's cached stack buckets and
+    ; the mmap'd stack; watch Fiber.freed_bucket_count for the proof).
+    procedure reap(t: pointer[SchedTask]) returns int
+    {
+        if t.disposed
+            return 0
+        set t.disposed: true
+        Fiber.dispose(t.fiber)
+    }
+
+    ; Round-robin over the ready queue until it drains. Traps (exit 106)
+    ; if tasks are still blocked in join then — a join deadlock.
+    procedure run()
+    {
+        while Scheduler.step()
+        {
+        }
+        let s current_scheduler as pointer[Scheduler]
+        if s.blocked > 0
+            exit 106
+    }
+
+    ; Wait until t finished, then free its fiber's whole region via
+    ; Fiber.dispose; returns the number of root pages freed. From the
+    ; main context this drives the dispatcher itself; from inside a
+    ; task it blocks on t's waiter chain and yields to the dispatcher.
+    procedure join(t: pointer[SchedTask]) returns int
+    {
+        let me current_task as pointer[SchedTask]
+        if me = null
+        {
+            while not t.done
+            {
+                if not Scheduler.step()
+                    exit 106
+            }
+            return Scheduler.reap(t)
+        }
+        if not t.done
+        {
+            let s current_scheduler as pointer[Scheduler]
+            set me.next: t.waiter
+            set t.waiter: me
+            set s.blocked: s.blocked + 1
+            Fiber.yield()
+        }
+        Scheduler.reap(t)
     }
 }

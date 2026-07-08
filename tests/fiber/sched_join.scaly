@@ -1,0 +1,71 @@
+; Milestone 1.3 demonstrator: nested fibers. A parent task spawns two
+; children mid-run and joins them from INSIDE its own fiber: it parks on
+; the target's waiter chain and yields to the dispatcher (no nested
+; resumes), gets woken when the child finishes, and its join disposes
+; the child's whole fiber region. The freed-bucket counter deltas prove
+; both child regions died inside the parent's joins, and the parent's
+; own region dies in the main-context join afterwards.
+; Expected: p1 c1 c2 c1 c2 cfreed p2 done freed
+
+procedure child_one()
+{
+    var i 0
+    while i < 2
+    {
+        var k 0
+        while k < 20
+        {
+            let s String("child one payload child one payload")
+            set k: k + 1
+        }
+        Console.print "c1 "
+        Scheduler.yield()
+        set i: i + 1
+    }
+}
+
+procedure child_two()
+{
+    var i 0
+    while i < 2
+    {
+        var k 0
+        while k < 20
+        {
+            let s String("child two payload child two payload")
+            set k: k + 1
+        }
+        Console.print "c2 "
+        Scheduler.yield()
+        set i: i + 1
+    }
+}
+
+procedure parent()
+{
+    var k 0
+    while k < 20
+    {
+        let s String("parent payload parent payload parent payload")
+        set k: k + 1
+    }
+    Console.print "p1 "
+    let b0 Fiber.freed_bucket_count()
+    let c1 Scheduler.spawn(&child_one)
+    let c2 Scheduler.spawn(&child_two)
+    let n1 Scheduler.join(c1)
+    let n2 Scheduler.join(c2)
+    if Fiber.freed_bucket_count() >= (b0 + (2 as i64))
+        Console.print "cfreed "
+    Console.print "p2 "
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let tp Scheduler.spawn(&parent)
+Scheduler.run()
+Console.print "done "
+let np Scheduler.join(tp)
+if Fiber.freed_bucket_count() >= (3 as i64)
+    Console.println "freed"
+Page.release_page(page)
