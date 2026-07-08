@@ -123,15 +123,6 @@ define Page
     ; cooperation (see SCALY_TRACE_HEAP in root_pages.scaly). Use the
     ; SAME site string at the matching alloc and release call; a
     ; mismatched label shows up as a permanent false imbalance.
-    ;
-    ; KNOWN BUG (2026-07-08, CLAUDE-history.md Finding 3, unfixed): the
-    ; `site` string arrives garbled inside this function's body when
-    ; SCALY_TRACE_HEAP is armed — a pointer[const_char] argument forwarded
-    ; through a no-`this` concept static gets corrupted, reproducible
-    ; same-package and cross-package. Real allocation/release behavior is
-    ; unaffected (the corrupted value is only ever read by the tracer),
-    ; so SCALY_TRACE_HEAP still correctly reports THAT and HOW MANY pages
-    ; leaked per site, just not a readable site name yet.
     function allocate_page_traced(site: pointer[const_char]) returns pointer[Page]
     {
         let page Page.allocate_page()

@@ -8654,6 +8654,13 @@ define Planner
                                                 null
                                             )
                                             var sitems_arr Array[PlannedItem]()
+                                            ; Collected alongside sitems_arr so the MethodMatch
+                                            ; carries parameter_types — the String→const_char /
+                                            ; char-fold coercions below key off it; with null a
+                                            ; string LITERAL bound to a pointer[const_char] static
+                                            ; param passed the String { ptr } record address
+                                            ; instead of the cstr (history Finding 3).
+                                            var sparams_arr Array[PlannedType]()
                                             var spi: size_t 0
                                             while spi < sfn.input.length
                                             {
@@ -8663,14 +8670,17 @@ define Planner
                                                     if p_ptr.type <> null
                                                     {
                                                         let pt (*p_ptr.type)
+                                                        let spt this.plan_type(pt)
                                                         sitems_arr.add(PlannedItem(
-                                                            result.loc, false, null, &^this this.plan_type(pt), null
+                                                            result.loc, false, null, &^this spt, null
                                                         ))
+                                                        sparams_arr.add spt
                                                     }
                                                 }
                                                 set spi: spi + 1
                                             }
                                             var sitems_holder Vector[PlannedItem](sitems_arr)
+                                            var sparams_holder Vector[PlannedType](sparams_arr)
                                             ; Page-param flag mirrors plan_function#'s
                                             ; has_page: explicit page_parameter OR an
                                             ; implicit return-page (struct-returning fns
@@ -8703,7 +8713,7 @@ define Planner
                                                 null,
                                                 smangled,
                                                 s_rt,
-                                                null,
+                                                &sparams_holder,
                                                 s_pp,
                                                 s_can_throw,
                                                 s_throws,

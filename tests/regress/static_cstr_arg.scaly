@@ -1,0 +1,50 @@
+; A string literal (and a String variable) bound to a pointer[const_char]
+; parameter of a no-`this` concept static method coerces to the plain
+; NUL-terminated cstr, not the { ptr } String record address (2026-07-08,
+; CLAUDE-history.md Finding 3: the s155 static-call path built its
+; MethodMatch with parameter_types = null, skipping the String→const_char
+; and char-fold coercions; a String LOCAL additionally arrives ptr-kind in
+; emit_as and fell through the ptr→ptr no-op instead of get_buffer).
+; Expected: PASS
+
+define Echo
+(
+    dummy: int
+)
+{
+    function len_of(s: pointer[const_char]) returns int
+    {
+        var n 0
+        while *(s + n) <> (0 as char)
+            set n: n + 1
+        n
+    }
+
+    function code_of(c: char) returns int
+        c as int
+}
+
+var failures 0
+
+; literal → static pointer[const_char] param
+if Echo.len_of("hello") <> 5
+    set failures: failures + 1
+
+; pointer variable → same param
+let p ("worlds!" as pointer[const_char])
+if Echo.len_of(p) <> 7
+    set failures: failures + 1
+
+; String LOCAL → same param (content pointer, not the record address)
+var s String("stringy!")
+if Echo.len_of(s) <> 8
+    set failures: failures + 1
+
+; char literal folds into a static char param ("x" = 120)
+if Echo.code_of("x") <> 120
+    set failures: failures + 1
+
+if failures = 0
+    print "PASS\n"
+else
+    print "FAIL\n"

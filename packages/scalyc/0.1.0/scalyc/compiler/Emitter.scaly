@@ -5721,6 +5721,37 @@ define Emitter
         result
     }
 
+    ; Like target_is_cstr_pointer but WITHOUT pointer[void] — the ptr-kind
+    ; String coercion in emit_as keys off this, and a String cast to
+    ; pointer[void] (Page.get(this as pointer[void]) in String methods)
+    ; must keep the record address, not the content buffer.
+    function target_is_char_pointer(this, t: PlannedType) returns bool
+    {
+        var result: bool false
+        if t.name = "pointer"
+            if t.generics <> null
+            {
+                let gs (*t.generics)
+                if gs.length > 0
+                {
+                    let ip gs.get 0
+                    if ip <> null
+                    {
+                        let inner (*ip)
+                        if inner.name = "const_char"
+                            set result: true
+                        if inner.name = "i8"
+                            set result: true
+                        if inner.name = "char"
+                            set result: true
+                        if inner.name = "u8"
+                            set result: true
+                    }
+                }
+            }
+        result
+    }
+
     ; A private module-level `[1 x i8] c"\00"` global, the canonical valid
     ; empty C string. An empty Scaly String is `{ null }` (the s186 design),
     ; so its get_buffer()/c_data() yields null — but a C callee that
@@ -10532,6 +10563,19 @@ define Emitter
         if src_kind = LLVMTypeKind.Struct()
             if dst_kind = ptr_kind
                 if this.target_is_cstr_pointer(as_expr.target_type)
+                    return this.coerce_string_value_to_cstr(src_value)
+
+        ; String local/binding → pointer[const_char]: a `var s String(...)`
+        ; local holds a POINTER to the region-allocated String record, so it
+        ; arrives here ptr-kind, not struct-kind — without this it fell
+        ; through to the ptr→ptr no-op below and the record address (not the
+        ; content) reached the C-string position (garbage bytes). get_buffer
+        ; takes the record pointer as `this` directly. pointer[void] targets
+        ; are EXCLUDED: `this as pointer[void]` inside String methods
+        ; (Page.get) must keep the record address.
+        if src_kind = ptr_kind
+            if this.target_is_char_pointer(as_expr.target_type)
+                if as_inner.result_type.name = "String"
                     return this.coerce_string_value_to_cstr(src_value)
 
         ; Pointer to pointer: bitcast
