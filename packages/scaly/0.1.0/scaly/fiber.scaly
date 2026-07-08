@@ -148,10 +148,25 @@
 ;   ; inside handler:
 ;   let fd (Scheduler.task_arg() as size_t) as i32
 ;
+; Stage-2 warm-up (milestone 2.0): stack pooling, sized spawns, and
+; overflow diagnostics. Fiber.dispose returns a DEFAULT-SIZED stack to a
+; process-global pool instead of munmapping it; Fiber.create reuses a
+; pooled stack (guard page already in place — no mmap, no mprotect), so
+; sequential fiber churn stops paying two syscalls plus VMA bookkeeping
+; per fiber. Custom-sized stacks (Scheduler.spawn_sized for tasks known
+; to run flat or deep) bypass the pool and munmap as before. The pool
+; holds the high-water mark of CONCURRENT fibers; Fiber.drain_stack_pool
+; hands everything back to the OS. And the first Fiber.create installs a
+; SIGSEGV/SIGBUS handler (shim-owned: sigaltstack/sigaction layouts are
+; OS-specific) whose classifier recognizes a fault inside the RUNNING
+; fiber's guard page — a fiber stack overflow dies with a message and
+; exit 108 instead of an anonymous signal; every other fault re-crashes
+; with the default action, exactly as without the handler.
+;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
 ; join, send, or receive), 107 poller failure (create/arm/wait or
-; set_nonblocking).
+; set_nonblocking), 108 fiber stack overflow (guard page hit).
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
@@ -177,6 +192,13 @@ procedure scaly_eio_tcp_listen(port: i32) returns i32 extern
 function scaly_eio_tcp_port(fd: i32) returns i32 extern
 procedure scaly_eio_tcp_connect(port: i32) returns i32 extern
 procedure scaly_eio_accept(fd: i32) returns i32 extern
+
+; Guard-page overflow diagnostics (shim-owned: struct sigaction and
+; stack_t layouts are OS-specific). Installs a SIGSEGV/SIGBUS handler on
+; an alternate stack; classify (a unary Scaly function, signal context —
+; reads globals only) decides whether the fault address is a fiber guard
+; hit: 1 = report + exit 108, 0 = default action (plain crash).
+procedure scaly_guard_install(classify: pointer[void]) returns i32 extern
 
 ; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
 ; stack-arg ABI); mmap's offset is 64-bit on both OSes.
@@ -216,6 +238,21 @@ mutable fiber_regions_freed: i64 0
 mutable fiber_pages_freed: i64 0
 mutable fiber_buckets_freed: i64 0
 
+; The stack pool (milestone 2.0): a LIFO of freed DEFAULT-SIZED fiber
+; stacks, threaded through the stacks themselves — the entry is two
+; size_t slots [next, size] at stack_base + guard page. Single-threaded
+; like every fiber global (per-thread in stage 2). Custom sizes are not
+; pooled: a mixed pool would let an odd-sized head block reuse.
+mutable stack_pool: pointer[void] null
+mutable fiber_stacks_pooled: i64 0
+mutable fiber_stacks_reused: i64 0
+
+; Guard-page fault classifier state: installed once, reads only globals
+; (it runs in signal context). guard_page_size is cached at create time
+; so the classifier calls nothing at all.
+mutable guard_installed: bool false
+mutable guard_page_size: size_t 0
+
 define Fiber
 (
     ctx: pointer[void]           ; the suspended (non-running) side's context
@@ -237,6 +274,49 @@ define Fiber
     function freed_bucket_count() returns i64
         fiber_buckets_freed
 
+    function pooled_stack_count() returns i64
+        fiber_stacks_pooled
+
+    function reused_stack_count() returns i64
+        fiber_stacks_reused
+
+    ; Pop a pooled stack (base address) when the pool head matches the
+    ; requested size; null otherwise. Only default-sized stacks are ever
+    ; pooled, so a custom-size request simply misses.
+    procedure take_pooled_stack(size: size_t) returns pointer[void]
+    {
+        let e stack_pool
+        if e = null
+            return null
+        let entry e as pointer[size_t]
+        let esize *(((e as size_t) + (8 as size_t)) as pointer[size_t])
+        if esize <> size
+            return null
+        set stack_pool: (*entry) as pointer[void]
+        set fiber_stacks_pooled: fiber_stacks_pooled - (1 as i64)
+        set fiber_stacks_reused: fiber_stacks_reused + (1 as i64)
+        ((e as size_t) - guard_page_size) as pointer[void]
+    }
+
+    ; Hand every pooled stack back to the OS.
+    procedure drain_stack_pool()
+    {
+        var e stack_pool
+        while e <> null
+        {
+            let entry e as pointer[size_t]
+            let next (*entry) as pointer[void]
+            let size *(((e as size_t) + (8 as size_t)) as pointer[size_t])
+            let base ((e as size_t) - guard_page_size) as pointer[void]
+            let mrc munmap(base, size)
+            if mrc <> (0 as i32)
+                exit 105
+            set fiber_stacks_pooled: fiber_stacks_pooled - (1 as i64)
+            set e: next
+        }
+        set stack_pool: null
+    }
+
     ; Swap the StackBucket allocator state between the process globals and
     ; the record. Called at every context crossing, keeping the invariant
     ; that the record holds the NON-running side's state.
@@ -251,19 +331,31 @@ define Fiber
     }
 
     ; Create a suspended fiber. The record lives on the given page; the
-    ; entry function fn (take it with &my_fiber) runs on a fresh mmap'd
-    ; stack with a PROT_NONE guard page at the low end, and allocates into
-    ; its own region.
+    ; entry function fn (take it with &my_fiber) runs on a pooled or
+    ; freshly mmap'd stack with a PROT_NONE guard page at the low end,
+    ; and allocates into its own region. The first create installs the
+    ; guard-page overflow handler (best-effort diagnostic — a failed
+    ; install just keeps the plain-crash behavior).
     procedure create_sized(host: pointer[Page], fn: pointer[void], size: size_t) returns pointer[Fiber]
     {
         let f host.allocate(sizeof Fiber, alignof Fiber) as pointer[Fiber]
-        let base mmap(null, size, PROT_READ_WRITE, MAP_ANON_PRIVATE, (0 - 1) as i32, 0 as i64)
-        if (base as i64) = ((0 - 1) as i64)
-            exit 103
         let guard_size getpagesize() as size_t
-        let grc mprotect(base, guard_size, PROT_NONE)
-        if grc <> (0 as i32)
-            exit 104
+        set guard_page_size: guard_size
+        if not guard_installed
+        {
+            set guard_installed: true
+            scaly_guard_install(&fiber_guard_hit)
+        }
+        var base Fiber.take_pooled_stack(size)
+        if base = null
+        {
+            set base: mmap(null, size, PROT_READ_WRITE, MAP_ANON_PRIVATE, (0 - 1) as i32, 0 as i64)
+            if (base as i64) = ((0 - 1) as i64)
+                exit 103
+            let grc mprotect(base, guard_size, PROT_NONE)
+            if grc <> (0 as i32)
+                exit 104
+        }
         let top ((base as size_t) + size) as pointer[void]
         set f.ctx: scaly_make_context(top, fn)
         set f.stack_base: base
@@ -367,13 +459,47 @@ define Fiber
         }
         set f.saved_head: null
         set f.saved_top: null
-        let mrc munmap(f.stack_base, f.stack_size)
-        if mrc <> (0 as i32)
-            exit 105
+        ; Default-sized stacks go to the pool (entry = [next, size] right
+        ; above the guard page); custom sizes go back to the OS.
+        if f.stack_size = FIBER_STACK_SIZE
+        {
+            let e ((f.stack_base as size_t) + guard_page_size) as pointer[size_t]
+            set *e: stack_pool as size_t
+            set *(((e as size_t) + (8 as size_t)) as pointer[size_t]): f.stack_size
+            set stack_pool: e as pointer[void]
+            set fiber_stacks_pooled: fiber_stacks_pooled + (1 as i64)
+        }
+        else
+        {
+            let mrc munmap(f.stack_base, f.stack_size)
+            if mrc <> (0 as i32)
+                exit 105
+        }
         set fiber_pages_freed: fiber_pages_freed + (pages_freed as i64)
         set fiber_regions_freed: fiber_regions_freed + (1 as i64)
         pages_freed
     }
+}
+
+; Is addr inside the RUNNING fiber's guard page? The overflow classifier
+; the shim's signal handler calls (signal context: reads globals only,
+; calls nothing). Only running code can overflow its own stack, so the
+; current fiber suffices; on the main context (or a miss) the handler
+; falls through to the default action.
+function fiber_guard_hit(addr: pointer[void]) returns i32
+{
+    let f current_fiber as pointer[Fiber]
+    if f = null
+        return 0 as i32
+    let lo f.stack_base as size_t
+    let hi lo + guard_page_size
+    let a addr as size_t
+    if a >= lo
+    {
+        if a < hi
+            return 1 as i32
+    }
+    0 as i32
 }
 
 ; A scheduled task. The entry function pointer MUST stay the FIRST field:
@@ -468,17 +594,18 @@ define Scheduler
     }
 
     ; Create a task for the given zero-argument procedure (take it with
-    ; &my_task), hand it one pointer-sized argument (readable inside the
-    ; task via Scheduler.task_arg — cast an fd through size_t), and put
-    ; it at the ready-queue tail. Callable from the main context and
-    ; from inside a running task alike.
-    procedure spawn_arg(fn: pointer[void], arg: pointer[void]) returns pointer[SchedTask]
+    ; &my_task) on a fiber stack of the given size, hand it one
+    ; pointer-sized argument (readable inside the task via
+    ; Scheduler.task_arg — cast an fd through size_t), and put it at the
+    ; ready-queue tail. Callable from the main context and from inside a
+    ; running task alike. Non-default stack sizes bypass the stack pool.
+    procedure spawn_sized(fn: pointer[void], arg: pointer[void], size: size_t) returns pointer[SchedTask]
     {
         let s current_scheduler as pointer[Scheduler]
         let host s.host
         let t host.allocate(sizeof SchedTask, alignof SchedTask) as pointer[SchedTask]
         set t.entry: fn
-        set t.fiber: Fiber.create(host, &scheduler_entry)
+        set t.fiber: Fiber.create_sized(host, &scheduler_entry, size)
         set t.next: null
         set t.waiter: null
         set t.done: false
@@ -487,6 +614,13 @@ define Scheduler
         set t.arg: arg
         Scheduler.enqueue(t)
         t
+    }
+
+    ; spawn_sized with the default stack size.
+    procedure spawn_arg(fn: pointer[void], arg: pointer[void]) returns pointer[SchedTask]
+    {
+        let size FIBER_STACK_SIZE
+        Scheduler.spawn_sized(fn, arg, size)
     }
 
     ; spawn_arg without an argument.

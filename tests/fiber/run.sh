@@ -21,16 +21,25 @@ if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\
   tools/eio.sh /tmp/eio.o && ar rcs /tmp/libscaly.a /tmp/eio.o
 fi
 
+# Per-test comment lines: "; Expected:" = exact stdout, optional
+# "; ExpectedExit:" = exit code (default 0), optional "; ExpectedErr:" =
+# substring that must appear on stderr (for crash-diagnostic tests).
 pass=0; fail=0; failures=()
 for f in tests/fiber/*.scaly; do
   t=$(basename "$f" .scaly)
   expected=$(sed -n 's/^; Expected: //p' "$f")
+  want_rc=$(sed -n 's/^; ExpectedExit: //p' "$f"); want_rc=${want_rc:-0}
+  want_err=$(sed -n 's/^; ExpectedErr: //p' "$f")
   bin=/tmp/fiber_$t; rm -f "$bin"
   if ! "$STAGE" -o "$bin" "$f" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); continue
   fi
-  out=$("$bin" 2>/dev/null); rc=$?
-  if [ "$rc" = "0" ] && [ "$out" = "$expected" ]; then
+  out=$("$bin" 2>"/tmp/fiber_$t.err"); rc=$?
+  ok=1
+  [ "$rc" = "$want_rc" ] || ok=0
+  [ "$out" = "$expected" ] || ok=0
+  if [ -n "$want_err" ] && ! grep -q "$want_err" "/tmp/fiber_$t.err"; then ok=0; fi
+  if [ "$ok" = "1" ]; then
     pass=$((pass+1))
   else
     fail=$((fail+1)); failures+=("$t: rc=$rc '$out'")

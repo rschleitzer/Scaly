@@ -1,0 +1,46 @@
+; Stack pooling + sized spawns (milestone 2.0). One hundred sequential
+; spawn/run cycles: each task's default-sized stack returns to the pool
+; at eager reap and the next spawn reuses it — after the first cycle no
+; new stack is ever mmap'd, so the pool never holds more than one entry
+; and 99 reuses accumulate. A custom-sized task (spawn_sized) bypasses
+; the pool on both sides: it neither steals the pooled default stack nor
+; joins the pool at dispose. drain_stack_pool hands the cached stack
+; back to the OS (munmap is rc-checked, exit 105).
+; Expected: reused sized done
+
+procedure nop()
+{
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+var i 0
+while i < 100
+{
+    Scheduler.spawn(&nop)
+    Scheduler.run()
+    set i: i + 1
+}
+var ok true
+if Fiber.reused_stack_count() < (99 as i64)
+    set ok: false
+if Fiber.pooled_stack_count() <> (1 as i64)
+    set ok: false
+if ok
+    Console.print "reused "
+
+let r0 Fiber.reused_stack_count()
+let ts Scheduler.spawn_sized(&nop, null, 0x10000 as size_t)
+Scheduler.run()
+var sized_ok true
+if Fiber.reused_stack_count() <> r0
+    set sized_ok: false
+if Fiber.pooled_stack_count() <> (1 as i64)
+    set sized_ok: false
+if sized_ok
+    Console.print "sized "
+
+Fiber.drain_stack_pool()
+if Fiber.pooled_stack_count() = (0 as i64)
+    Console.println "done"
+Page.release_page(page)

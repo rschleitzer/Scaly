@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -244,6 +245,52 @@ int scaly_eio_tcp_connect(int port)
         return -1;
     }
     return fd;
+}
+
+/* Fiber guard-page overflow diagnostics (shim-owned per containment rule
+ * (a): struct sigaction and stack_t layouts are OS-specific, and the
+ * handler must run on an alternate stack — the overflowed fiber stack has
+ * no room left). The classifier is a Scaly function that reads globals
+ * only; when it recognizes the fault address as the running fiber's guard
+ * page, the process dies with a message and exit 108. Any other fault
+ * resets to the default action and RETURNS — re-executing the faulting
+ * access then crashes exactly as without the handler (signal, core,
+ * si_addr all preserved). */
+static int (*scaly_guard_classify)(void*);
+static char scaly_guard_altstack[32768];
+
+static void scaly_guard_handler(int sig, siginfo_t* si, void* ctx)
+{
+    (void)ctx;
+    if (scaly_guard_classify && si && scaly_guard_classify(si->si_addr))
+    {
+        static const char msg[] = "fiber stack overflow (guard page hit)\n";
+        ssize_t w = write(2, msg, sizeof msg - 1);
+        (void)w;
+        _exit(108);
+    }
+    signal(sig, SIG_DFL);
+}
+
+int scaly_guard_install(int (*classify)(void*))
+{
+    stack_t ss;
+    struct sigaction sa;
+    scaly_guard_classify = classify;
+    ss.ss_sp = scaly_guard_altstack;
+    ss.ss_size = sizeof scaly_guard_altstack;
+    ss.ss_flags = 0;
+    if (sigaltstack(&ss, 0) < 0)
+        return -1;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_sigaction = scaly_guard_handler;
+    sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGSEGV, &sa, 0) < 0)
+        return -1;
+    if (sigaction(SIGBUS, &sa, 0) < 0)
+        return -1;
+    return 0;
 }
 
 /* Accept a pending connection. Returns the new fd (blocking mode — the

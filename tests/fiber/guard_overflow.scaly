@@ -1,0 +1,31 @@
+; Guard-page overflow diagnostics (milestone 2.0). A task recurses with
+; a ~half-KB frame until the fiber stack hits the PROT_NONE guard page;
+; the handler installed by the first Fiber.create classifies the fault
+; address as the running fiber's guard and turns the anonymous SIGBUS/
+; SIGSEGV into a message on stderr and exit 108. Nothing may appear on
+; stdout ("unreachable" would).
+; ExpectedExit: 108
+; ExpectedErr: fiber stack overflow
+
+procedure burn(depth: int) returns int
+{
+    var pad u8[512]
+    set *(pad + 0): (depth as u8)
+    if depth > 1000000
+        return depth
+    let r burn(depth + 1)
+    r + (*(pad + 0) as int)
+}
+
+procedure worker()
+{
+    let d burn(0)
+    Console.print "unreachable "
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+Scheduler.spawn(&worker)
+Scheduler.run()
+Console.print "unreachable "
+Page.release_page(page)
