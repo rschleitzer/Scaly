@@ -521,6 +521,18 @@ define Planner
         current_fn_fpt_fields: Array[size_t]
         current_fn_fpt_regions: Array[size_t]
 
+        ; Channel use-after-send move checker (milestone 1.4): per-function
+        ; state, rebuilt per walked function like the alias/closure sets.
+        ; move_moved_names holds binding names whose message region was
+        ; transferred by a Channel.send (tombstoned to "" on re-binding);
+        ; move_alias_names/roots map a bare reference alias (`let q m`) to
+        ; its root name so a use of either flags. move_found short-circuits
+        ; after the first reported violation.
+        move_moved_names: Array[String]
+        move_alias_names: Array[String]
+        move_alias_roots: Array[String]
+        move_found: bool
+
         ; Transitive page-need set (interprocedural escape forwarding). Names
         ; of functions that need the caller's page ONLY because their body
         ; forwards rp to a sibling that needs one (the escape-machinery
@@ -728,6 +740,10 @@ define Planner
             set current_fn_fpt_names: Array[String]^this()
             set current_fn_fpt_fields: Array[size_t]^this()
             set current_fn_fpt_regions: Array[size_t]^this()
+            set move_moved_names: Array[String]^this()
+            set move_alias_names: Array[String]^this()
+            set move_alias_roots: Array[String]^this()
+            set move_found: false
             set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
             set concept_origin_files: Array[String]^this()
@@ -19362,6 +19378,533 @@ define Planner
             }
         }
 
+        ; ===== Channel use-after-send move checker (milestone 1.4) =====
+        ; Channel.send transfers OWNERSHIP of the message region to the
+        ; receiver, so any later use of the sent binding in the same
+        ; function is a use-after-send (the receiver may free the region at
+        ; any suspension point). Intra-procedural, conservative-fatal, and
+        ; independent of the escape summary: a linear evaluation-order walk
+        ; over each Plan body tracks bare binding NAMES — a Channel.send
+        ; call (matched by mangled name) marks its message argument's root
+        ; name moved; any later read (including passing it to a callee, or
+        ; a second send) flags. A fresh `let` / bare `set` of the name
+        ; un-moves it (a new value); a bare reference alias (`let q m`,
+        ; casts/parens peeled) maps to its root so a use of either flags.
+        ; Branch arms walk linearly, so a use in the sibling else-branch of
+        ; a send flags too (conservative maybe-moved merge). A loop body
+        ; whose walk moved a new name is walked a second time, catching
+        ; wrap-around uses (use textually before the send, hit on the next
+        ; iteration). Residuals (missed, rule-3 style): a message reached
+        ; through a field/global/deref is not tracked; an interior pointer
+        ; DERIVED from the sent object via a call (`mp.allocate(...)`) is
+        ; not tracked; re-assigning a moved alias's root un-moves the
+        ; alias's uses too. Pure checker: it only reads the Plan and only
+        ; appends diagnostics, so clean code emits byte-identical IR.
+
+        ; Index of name in the alias map, -1 when unmapped.
+        function move_alias_index(this: Planner, name: String) returns int
+        {
+            var i: size_t 0
+            while i < move_alias_names.length
+            {
+                let np move_alias_names.get i
+                if np <> null
+                    if (*np) = name
+                        return i as int
+                set i: i + 1
+            }
+            -1
+        }
+
+        ; Tombstone every moved fact and alias mapping for name — the name
+        ; just received a fresh value (a new binding or a bare re-set).
+        function move_unmark(this: Planner, name: String)
+        {
+            var i: size_t 0
+            while i < move_moved_names.length
+            {
+                let p move_moved_names.get i
+                if p <> null
+                    if (*p) = name
+                        move_moved_names.put(i, String(""))
+                set i: i + 1
+            }
+            var j: size_t 0
+            while j < move_alias_names.length
+            {
+                let a move_alias_names.get j
+                if a <> null
+                    if (*a) = name
+                        move_alias_names.put(j, String(""))
+                set j: j + 1
+            }
+        }
+
+        ; Mark the sent operand's root name moved. Peels as-casts and
+        ; single-value parens/derefs; only a bare Variable (no member hop)
+        ; marks — a sent field/global/call-result has no bare name to
+        ; track (documented residual).
+        function move_mark_sent(this: Planner, op: PlannedOperand)
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > (0 as size_t)
+                    return
+            }
+            choose op.expr
+                when v: Variable
+                {
+                    let idx this.move_alias_index(v.name)
+                    if idx >= 0
+                    {
+                        let rp move_alias_roots.get(idx as size_t)
+                        if rp <> null
+                            move_moved_names.add(String((*rp)))
+                        return
+                    }
+                    move_moved_names.add(String(v.name))
+                }
+                when a: As
+                {
+                    if a.value <> null
+                    {
+                        let r a.value
+                        this.move_mark_sent((*r))
+                    }
+                }
+                else
+                {
+                    let inner this.peel_operand(op)
+                    if inner <> null
+                        this.move_mark_sent((*inner))
+                }
+        }
+
+        ; Record bind_name as an alias of the bare variable op reads
+        ; (root-resolved, so alias chains collapse to one root).
+        function move_note_alias(this: Planner, bind_name: String, op: PlannedOperand)
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > (0 as size_t)
+                    return
+            }
+            choose op.expr
+                when v: Variable
+                {
+                    let idx this.move_alias_index(v.name)
+                    if idx >= 0
+                    {
+                        let rp move_alias_roots.get(idx as size_t)
+                        if rp <> null
+                        {
+                            move_alias_names.add(String(bind_name))
+                            move_alias_roots.add(String((*rp)))
+                        }
+                        return
+                    }
+                    move_alias_names.add(String(bind_name))
+                    move_alias_roots.add(String(v.name))
+                }
+                when a: As
+                {
+                    if a.value <> null
+                    {
+                        let r a.value
+                        this.move_note_alias(bind_name, (*r))
+                    }
+                }
+                else
+                {
+                    let inner this.peel_operand(op)
+                    if inner <> null
+                        this.move_note_alias(bind_name, (*inner))
+                }
+        }
+
+        ; A binding gives its name a fresh value: clear stale facts, then
+        ; record a bare reference alias (`let q m`, cast/paren peeled) so a
+        ; send of either name flags a use of the other.
+        function move_note_binding(this: Planner, binding: PlannedBinding)
+        {
+            if binding.binding_item.name = null
+                return
+            let bind_name (*binding.binding_item.name)
+            this.move_unmark(bind_name)
+            if binding.operation <> null
+            {
+                let bops (*binding.operation)
+                if bops.length > 0
+                {
+                    let bop0 bops.get 0
+                    if bop0 <> null
+                    {
+                        let bo bop0.unwrap()
+                        if Planner.is_reference_like(bo.result_type)
+                            this.move_note_alias(bind_name, bo)
+                    }
+                }
+            }
+        }
+
+        ; A read of a moved (channel-sent) name — directly or through the
+        ; alias map — is a hard use-after-send diagnostic.
+        function move_check_use(this: Planner, op: PlannedOperand)
+        {
+            if move_found
+                return
+            choose op.expr
+                when v: Variable
+                {
+                    var is_moved false
+                    let idx this.move_alias_index(v.name)
+                    if idx >= 0
+                    {
+                        let rp move_alias_roots.get(idx as size_t)
+                        if rp <> null
+                            if this.array_contains_name(move_moved_names, (*rp))
+                                set is_moved: true
+                    }
+                    else
+                    {
+                        if this.array_contains_name(move_moved_names, v.name)
+                            set is_moved: true
+                    }
+                    if is_moved
+                    {
+                        ; Post-pass: report against the walked function's own
+                        ; file (same re-fetch as the escape call check).
+                        let cur_fn instantiated_functions.get escape_fn_index
+                        if cur_fn <> null
+                            set this.file: String^this(cur_fn.file)
+                        this.add_diagnostic(op.loc, "use after send - Channel.send transferred ownership of this message region to the receiver, which may free it at any suspension point; copy what you need out of the message before sending, or receive it back over a channel")
+                        set move_found: true
+                    }
+                }
+                else
+                    0
+        }
+
+        function move_walk_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if move_found
+                return
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                if move_found
+                    return
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.move_walk_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        function move_walk_statement_ref(this: Planner, stmt: ref[PlannedStatement]?)
+        {
+            if move_found
+                return
+            if stmt <> null
+            {
+                let s stmt
+                this.move_walk_statement((*s))
+            }
+        }
+
+        ; Walk one operand in evaluation order: check the read first, then
+        ; recurse (arms mirror escape_walk_operand, plus Repeat). At a
+        ; Channel.send call the args are walked FIRST (a second send of a
+        ; moved name is itself a use), then the message argument (the last
+        ; arg) is marked moved. Loop bodies re-walk once when their first
+        ; walk moved a new name (wrap-around uses).
+        function move_walk_operand(this: Planner, op: PlannedOperand)
+        {
+            if move_found
+                return
+            this.move_check_use(op)
+            choose op.expr
+                when call: Call
+                {
+                    this.move_walk_operands(call.args)
+                    if call.mangled_name = "_ZN7Channel4sendEP7ChannelPv"
+                        if call.args <> null
+                            if call.args.length >= (2 as size_t)
+                            {
+                                let mp_ call.args.get(call.args.length - (1 as size_t))
+                                if mp_ <> null
+                                    this.move_mark_sent(mp_.unwrap())
+                            }
+                }
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.move_walk_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.move_walk_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.move_walk_operands(iff.condition)
+                    this.move_walk_statement_ref(iff.consequent)
+                    this.move_walk_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.move_walk_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.move_walk_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.move_walk_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.move_walk_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.move_walk_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.move_walk_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.move_walk_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.move_walk_operands(fr.expr)
+                    let before move_moved_names.length
+                    this.move_walk_action(fr.body)
+                    if move_moved_names.length <> before
+                        this.move_walk_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.move_walk_operands(wh.cond.operation)
+                    let before move_moved_names.length
+                    this.move_walk_action(wh.body)
+                    if move_moved_names.length <> before
+                    {
+                        this.move_walk_operands(wh.cond.operation)
+                        this.move_walk_action(wh.body)
+                    }
+                }
+                when rp: Repeat
+                {
+                    let before move_moved_names.length
+                    this.move_walk_action(rp.body)
+                    if move_moved_names.length <> before
+                        this.move_walk_action(rp.body)
+                }
+                when tr: Try
+                {
+                    this.move_walk_operands(tr.cond.operation)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.move_walk_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.move_walk_statement_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.move_walk_operand((*r))
+                    }
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.move_walk_operand((*r))
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.move_walk_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.move_walk_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                else
+                    0
+        }
+
+        function move_walk_statement(this: Planner, stmt: PlannedStatement)
+        {
+            if move_found
+                return
+            choose stmt
+                when action: Action
+                    this.move_walk_action(action)
+                when binding: Binding
+                {
+                    ; The initializer's reads happen BEFORE the name gets its
+                    ; fresh value: walk (use-check) first, then note the
+                    ; binding (un-move + alias recording).
+                    this.move_walk_operands(binding.operation)
+                    this.move_note_binding(binding)
+                }
+                when ret: Return
+                    this.move_walk_operands(ret.result)
+                when throw_stmt: Throw
+                    this.move_walk_operands(throw_stmt.result)
+                when brk: Break
+                    this.move_walk_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        ; Walk one action: the source's reads first; a bare `set name: ...`
+        ; target then un-moves the name (fresh value, e.g. re-arming a
+        ; message variable in a producer loop) — any other target shape
+        ; (field store, deref) READS the base and is use-checked.
+        function move_walk_action(this: Planner, act: PlannedAction)
+        {
+            if move_found
+                return
+            this.move_walk_operands(act.source)
+            var retargeted false
+            if act.target <> null
+            {
+                let t (*act.target)
+                if t.length = 1
+                {
+                    let tp_ t.get 0
+                    if tp_ <> null
+                    {
+                        let top tp_.unwrap()
+                        var bare true
+                        if top.member_access <> null
+                        {
+                            let ma (*top.member_access)
+                            if ma.length > (0 as size_t)
+                                set bare: false
+                        }
+                        if bare
+                            choose top.expr
+                                when v: Variable
+                                {
+                                    this.move_unmark(v.name)
+                                    set retargeted: true
+                                }
+                                else
+                                    0
+                    }
+                }
+            }
+            if retargeted = false
+                this.move_walk_operands(act.target)
+        }
+
+        ; Post-pass entry (after the escape checks): use-after-send over
+        ; every instantiated function. Programs without channel sends walk
+        ; each body once against empty name sets and record nothing.
+        function check_channel_moves(this: Planner)
+        {
+            set move_found: false
+            var i: size_t 0
+            for func in instantiated_functions
+            {
+                if move_found = false
+                {
+                    set escape_fn_index: i
+                    set move_moved_names.length: 0
+                    set move_alias_names.length: 0
+                    set move_alias_roots.length: 0
+                    choose func.impl
+                        when action: Action
+                            this.move_walk_action(action)
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+        }
+
         ; Page inference: re-stamp the allocation lifetime of a promotable
         ; operand. Shared by rule 2 (return-escape -> caller page `Call`) and
         ; rule 3 (store-into-`this`-field -> receiver page `Reference("this")`).
@@ -25306,6 +25849,11 @@ define Planner
             ; Runs once instantiated_functions is fully populated; appends a
             ; hard diagnostic (failed at cli.run) on a detected escape.
             this.check_interprocedural_escapes()
+
+            ; Channel move checker (milestone 1.4): a use of a channel-sent
+            ; message binding after its Channel.send is a hard diagnostic
+            ; (ownership of the message region moved to the receiver).
+            this.check_channel_moves()
 
             var stmts_holder Vector[PlannedStatement](planned_stmts)
             var structs_holder Vector[PlannedStructure](instantiated_structures)

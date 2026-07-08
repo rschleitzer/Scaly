@@ -61,6 +61,33 @@ for f in tests/escape/posp_*.scaly; do
   fi
 done
 
+# Channel use-after-send move checker (milestone 1.4) — needs the PRELUDE
+# (Channel/Scheduler/Page statics).
+# negm_* : a use of a channel-sent message binding -> MUST reject with a
+#          "use after send" diagnostic.
+# posm_* : fresh-per-iteration / re-armed / unrelated uses -> MUST compile.
+for f in tests/escape/negm_*.scaly; do
+  [ -e "$f" ] || continue
+  t=$(basename "$f" .scaly)
+  out=$( ( ulimit -s 65520; "$CC" -c -o /tmp/esc_$t.o "$f" ) 2>&1 ); rc=$?
+  if [ $rc -ne 0 ] && echo "$out" | grep -q "use after send"; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$t: expected rejection, got rc=$rc")
+  fi
+done
+
+for f in tests/escape/posm_*.scaly; do
+  [ -e "$f" ] || continue
+  t=$(basename "$f" .scaly)
+  out=$( ( ulimit -s 65520; "$CC" -c -o /tmp/esc_$t.o "$f" ) 2>&1 ); rc=$?
+  if [ $rc -eq 0 ]; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$t: expected compile, got rc=$rc: $out")
+  fi
+done
+
 # Multi-file diagnostic LOCATION: the escape is in mfloc_helper.scaly (a
 # sub-module of mfloc_main.scaly). The diagnostic must name the HELPER file at
 # its real line (13), not the entry file. Guards per-diagnostic file tracking.
