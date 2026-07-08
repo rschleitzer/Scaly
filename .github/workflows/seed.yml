@@ -64,7 +64,18 @@ jobs:
 
       - name: Install deps (macOS)
         if: runner.os == 'macOS'
-        run: brew install llvm@18
+        run: |
+          brew install llvm@18
+          # The 10k demo needs ~20,050 fds in one process; runner images ship
+          # kern.maxfilesperproc=10240 (setrlimit accepts more but the kernel
+          # caps there — accept fails with EMFILE). Raise both sysctls; the
+          # bench script SKIPs itself if this ever stops working.
+          if [ "$(sysctl -n kern.maxfiles)" -lt 40960 ]; then
+            sudo sysctl -w kern.maxfiles=40960
+          fi
+          if [ "$(sysctl -n kern.maxfilesperproc)" -lt 30720 ]; then
+            sudo sysctl -w kern.maxfilesperproc=30720
+          fi
 
       - name: Build + verify seed (bootstrap, link, hello, AOT, fixed point)
         run: tools/seed.sh

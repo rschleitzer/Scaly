@@ -14,6 +14,16 @@ if [ "$hard" != "unlimited" ] && [ "$hard" -lt "$NEED" ]; then
   echo "http10k: SKIP (fd hard limit $hard < $NEED)"
   exit 0
 fi
+# On darwin, setrlimit happily accepts values ABOVE kern.maxfilesperproc but
+# the kernel still caps there (accept then fails with EMFILE mid-benchmark) —
+# so the sysctl, not ulimit, is the real gate. CI raises it with sudo.
+if [ "$(uname -s)" = "Darwin" ]; then
+  mfp=$(sysctl -n kern.maxfilesperproc 2>/dev/null || echo 0)
+  if [ "$mfp" -lt "$NEED" ]; then
+    echo "http10k: SKIP (kern.maxfilesperproc $mfp < $NEED)"
+    exit 0
+  fi
+fi
 if ! ulimit -n $NEED 2>/dev/null; then
   echo "http10k: SKIP (cannot raise fd soft limit to $NEED)"
   exit 0
