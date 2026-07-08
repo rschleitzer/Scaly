@@ -186,7 +186,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z12ListIteratorIcE = type { ptr }
 %_Z14StringIterator = type { ptr, ptr }
 %_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, i1 }
-%_Z9Scheduler = type { ptr, ptr, ptr, i64 }
+%_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64 }
 %_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr }
 %_Z7Channel = type { ptr, ptr, ptr, ptr }
 
@@ -20788,6 +20788,18 @@ declare ptr @scaly_make_context(ptr, ptr)
 
 declare ptr @scaly_jump_context(ptr)
 
+declare i32 @scaly_eio_create()
+
+declare i32 @scaly_eio_arm(i32, i32, i32, ptr)
+
+declare i32 @scaly_eio_wait(i32, ptr, i32)
+
+declare i32 @scaly_eio_set_nonblocking(i32)
+
+declare i64 @scaly_eio_read(i32, ptr, i64)
+
+declare i64 @scaly_eio_write(i32, ptr, i64)
+
 declare ptr @mmap(ptr, i64, i32, i32, i32, i64)
 
 declare i32 @munmap(ptr, i64)
@@ -21076,6 +21088,10 @@ entry:
   store ptr null, ptr %tail, align 8
   %blocked = getelementptr inbounds %_Z9Scheduler, ptr %call, i32 0, i32 3
   store i64 0, ptr %blocked, align 8
+  %eio = getelementptr inbounds %_Z9Scheduler, ptr %call, i32 0, i32 4
+  store i32 -1, ptr %eio, align 4
+  %io_waiting = getelementptr inbounds %_Z9Scheduler, ptr %call, i32 0, i32 5
+  store i64 0, ptr %io_waiting, align 8
   store ptr %call, ptr @current_scheduler, align 8
   ret ptr %call
 }
@@ -21241,6 +21257,101 @@ if.end3:                                          ; preds = %if.then2, %if.end
   ret i1 true
 }
 
+define linkonce_odr i1 @_ZN9Scheduler7poll_ioEv() {
+entry:
+  %i = alloca i64, align 8
+  %main_woke = alloca i1, align 1
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %tagbuf = alloca [512 x i8], align 1
+  %arr.ptr = getelementptr inbounds [512 x i8], ptr %tagbuf, i64 0, i64 0
+  %tagbuf1 = alloca ptr, align 8
+  store ptr %arr.ptr, ptr %tagbuf1, align 8
+  %field.inplace = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 4
+  %field.val = load i32, ptr %field.inplace, align 4
+  %tagbuf2 = load ptr, ptr %tagbuf1, align 8
+  %call = call i32 @scaly_eio_wait(i32 %field.val, ptr %tagbuf2, i32 64)
+  %eq = icmp eq i32 %call, -1
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 107)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  store i1 false, ptr %main_woke, align 1
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end8, %if.end
+  %i3 = load i64, ptr %i, align 8
+  %as.zext = zext i32 %call to i64
+  %lt = icmp slt i64 %i3, %as.zext
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %tagbuf4 = load ptr, ptr %tagbuf1, align 8
+  %as.ptrtoint = ptrtoint ptr %tagbuf4 to i64
+  %i5 = load i64, ptr %i, align 8
+  %mul = mul i64 %i5, 8
+  %add = add i64 %as.ptrtoint, %mul
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %deref = load i64, ptr %as.inttoptr, align 8
+  %eq6 = icmp eq i64 %deref, 0
+  br i1 %eq6, label %if.then7, label %if.else
+
+while.exit:                                       ; preds = %while.cond
+  %main_woke16 = load i1, ptr %main_woke, align 1
+  ret i1 %main_woke16
+
+if.then7:                                         ; preds = %while.body
+  store i1 true, ptr %main_woke, align 1
+  br label %if.end8
+
+if.else:                                          ; preds = %while.body
+  %as.inttoptr9 = inttoptr i64 %deref to ptr
+  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %as.inttoptr9)
+  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
+  %sub = sub i64 %blocked, 1
+  %blocked10 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 3
+  store i64 %sub, ptr %blocked10, align 8
+  %load.struct11 = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting = extractvalue %_Z9Scheduler %load.struct11, 5
+  %sub12 = sub i64 %io_waiting, 1
+  %io_waiting13 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 5
+  store i64 %sub12, ptr %io_waiting13, align 8
+  br label %if.end8
+
+if.end8:                                          ; preds = %if.else, %if.then7
+  %i14 = load i64, ptr %i, align 8
+  %add15 = add i64 %i14, 1
+  store i64 %add15, ptr %i, align 1
+  br label %while.cond
+}
+
+define linkonce_odr i1 @_ZN9Scheduler12step_or_waitEv() {
+entry:
+  %call = call i1 @_ZN9Scheduler4stepEv()
+  br i1 %call, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 true
+
+if.end:                                           ; preds = %entry
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting = extractvalue %_Z9Scheduler %load.struct, 5
+  %gt = icmp sgt i64 %io_waiting, 0
+  br i1 %gt, label %if.then1, label %if.end2
+
+if.then1:                                         ; preds = %if.end
+  %call3 = call i1 @_ZN9Scheduler7poll_ioEv()
+  ret i1 true
+
+if.end2:                                          ; preds = %if.end
+  ret i1 false
+}
+
 define linkonce_odr i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %0) {
 entry:
   %load.struct = load %_Z9SchedTask, ptr %0, align 8
@@ -21264,7 +21375,7 @@ entry:
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %entry
-  %call = call i1 @_ZN9Scheduler4stepEv()
+  %call = call i1 @_ZN9Scheduler12step_or_waitEv()
   br i1 %call, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -21307,7 +21418,7 @@ while.cond:                                       ; preds = %if.end3, %if.then
   br i1 %not, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %call = call i1 @_ZN9Scheduler4stepEv()
+  %call = call i1 @_ZN9Scheduler12step_or_waitEv()
   %not1 = xor i1 %call, true
   br i1 %not1, label %if.then2, label %if.end3
 
@@ -21541,7 +21652,7 @@ if.end2:                                          ; preds = %repeat.exit, %if.en
   ret void
 
 repeat.body:                                      ; preds = %if.end9, %if.then1
-  %call3 = call i1 @_ZN9Scheduler4stepEv()
+  %call3 = call i1 @_ZN9Scheduler12step_or_waitEv()
   %not = xor i1 %call3, true
   br i1 %not, label %if.then4, label %if.end5
 
@@ -21599,7 +21710,7 @@ if.end3:                                          ; preds = %repeat.exit, %if.en
   ret ptr %msg
 
 repeat.body:                                      ; preds = %if.end10, %if.then2
-  %call4 = call i1 @_ZN9Scheduler4stepEv()
+  %call4 = call i1 @_ZN9Scheduler12step_or_waitEv()
   %not = xor i1 %call4, true
   br i1 %not, label %if.then5, label %if.end6
 
@@ -21626,6 +21737,175 @@ if.end10:                                         ; preds = %if.end6
 define linkonce_odr void @_ZN7ChannelC1Ev(ptr %0) {
 entry:
   ret void
+}
+
+define linkonce_odr i32 @_ZN2Io11ensure_pollEv() {
+entry:
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
+  %eio = extractvalue %_Z9Scheduler %load.struct, 4
+  %q = alloca i32, align 4
+  store i32 %eio, ptr %q, align 1
+  %q1 = load i32, ptr %q, align 4
+  %eq = icmp eq i32 %q1, -1
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %call = call i32 @scaly_eio_create()
+  store i32 %call, ptr %q, align 1
+  %q2 = load i32, ptr %q, align 4
+  %eq3 = icmp eq i32 %q2, -1
+  br i1 %eq3, label %if.then4, label %if.end5
+
+if.end:                                           ; preds = %if.end5, %entry
+  %q8 = load i32, ptr %q, align 4
+  ret i32 %q8
+
+if.then4:                                         ; preds = %if.then
+  call void @exit(i64 107)
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.then
+  %q6 = load i32, ptr %q, align 4
+  %eio7 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 4
+  store i32 %q6, ptr %eio7, align 4
+  br label %if.end
+}
+
+define linkonce_odr void @_ZN2Io15set_nonblockingE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_set_nonblocking(i32 %0)
+  %ne = icmp ne i32 %call, 0
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 107)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  ret void
+}
+
+define linkonce_odr void @_ZN2Io4parkE3i32b(i32 %0, i1 %1) {
+entry:
+  %call = call i32 @_ZN2Io11ensure_pollEv()
+  %wr = alloca i32, align 4
+  store i32 0, ptr %wr, align 1
+  br i1 %1, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  store i32 1, ptr %wr, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %global.load = load ptr, ptr @current_task, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then1, label %if.end2
+
+if.then1:                                         ; preds = %if.end
+  %wr3 = load i32, ptr %wr, align 4
+  %call4 = call i32 @scaly_eio_arm(i32 %call, i32 %0, i32 %wr3, ptr null)
+  %ne = icmp ne i32 %call4, 0
+  br i1 %ne, label %if.then5, label %if.end6
+
+if.end2:                                          ; preds = %repeat.exit, %if.end
+  %wr13 = load i32, ptr %wr, align 4
+  %call14 = call i32 @scaly_eio_arm(i32 %call, i32 %0, i32 %wr13, ptr %global.load)
+  %ne15 = icmp ne i32 %call14, 0
+  br i1 %ne15, label %if.then16, label %if.end17
+
+if.then5:                                         ; preds = %if.then1
+  call void @exit(i64 107)
+  br label %if.end6
+
+if.end6:                                          ; preds = %if.then5, %if.then1
+  br label %repeat.body
+
+repeat.body:                                      ; preds = %if.end9, %if.end6
+  %call7 = call i1 @_ZN9Scheduler4stepEv()
+  %not = xor i1 %call7, true
+  br i1 %not, label %if.then8, label %if.end9
+
+repeat.exit:                                      ; No predecessors!
+  br label %if.end2
+
+if.then8:                                         ; preds = %repeat.body
+  %call10 = call i1 @_ZN9Scheduler7poll_ioEv()
+  br i1 %call10, label %if.then11, label %if.end12
+
+if.end9:                                          ; preds = %if.end12, %repeat.body
+  br label %repeat.body
+
+if.then11:                                        ; preds = %if.then8
+  ret void
+
+if.end12:                                         ; preds = %if.then8
+  br label %if.end9
+
+if.then16:                                        ; preds = %if.end2
+  call void @exit(i64 107)
+  br label %if.end17
+
+if.end17:                                         ; preds = %if.then16, %if.end2
+  %global.load18 = load ptr, ptr @current_scheduler, align 8
+  %load.struct = load %_Z9Scheduler, ptr %global.load18, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
+  %add = add i64 %blocked, 1
+  %blocked19 = getelementptr inbounds %_Z9Scheduler, ptr %global.load18, i32 0, i32 3
+  store i64 %add, ptr %blocked19, align 8
+  %load.struct20 = load %_Z9Scheduler, ptr %global.load18, align 8
+  %io_waiting = extractvalue %_Z9Scheduler %load.struct20, 5
+  %add21 = add i64 %io_waiting, 1
+  %io_waiting22 = getelementptr inbounds %_Z9Scheduler, ptr %global.load18, i32 0, i32 5
+  store i64 %add21, ptr %io_waiting22, align 8
+  call void @_ZN5Fiber5yieldEv()
+  ret void
+}
+
+define linkonce_odr i64 @_ZN2Io4readE3i32Pvm(i32 %0, ptr %1, i64 %2) {
+entry:
+  %call = call i64 @scaly_eio_read(i32 %0, ptr %1, i64 %2)
+  %r = alloca i64, align 8
+  store i64 %call, ptr %r, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %r1 = load i64, ptr %r, align 8
+  %eq = icmp eq i64 %r1, -2
+  br i1 %eq, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  call void @_ZN2Io4parkE3i32b(i32 %0, i1 false)
+  %call2 = call i64 @scaly_eio_read(i32 %0, ptr %1, i64 %2)
+  store i64 %call2, ptr %r, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %r3 = load i64, ptr %r, align 8
+  ret i64 %r3
+}
+
+define linkonce_odr i64 @_ZN2Io5writeE3i32Pvm(i32 %0, ptr %1, i64 %2) {
+entry:
+  %call = call i64 @scaly_eio_write(i32 %0, ptr %1, i64 %2)
+  %r = alloca i64, align 8
+  store i64 %call, ptr %r, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %r1 = load i64, ptr %r, align 8
+  %eq = icmp eq i64 %r1, -2
+  br i1 %eq, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  call void @_ZN2Io4parkE3i32b(i32 %0, i1 true)
+  %call2 = call i64 @scaly_eio_write(i32 %0, ptr %1, i64 %2)
+  store i64 %call2, ptr %r, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %r3 = load i64, ptr %r, align 8
+  ret i64 %r3
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
