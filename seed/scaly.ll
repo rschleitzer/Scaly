@@ -2,7 +2,7 @@
 source_filename = "scaly"
 target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 
-%_Z16HeapBucketHeader = type { ptr, ptr, i64, i64 }
+%_Z16HeapBucketHeader = type { ptr, ptr, i64, i64, i64 }
 %_Z16PageListIterator = type { ptr }
 %_Z8PageList = type { ptr }
 %_Z4Page = type { ptr, ptr, ptr, %_Z8PageList }
@@ -194,6 +194,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @heap_head = thread_local global ptr null
 @stack_head = thread_local global ptr null
 @stack_top = thread_local global ptr null
+@dead_buckets_reclaimed = thread_local global i64 0
 @"12BUCKET_PAGES" = constant i64 64
 @"11BUCKET_SIZE" = constant i64 262144
 @"11BUCKET_MASK" = constant i64 262143
@@ -455,8 +456,8 @@ if.then8:                                         ; preds = %if.end
   br i1 %ne, label %if.then11, label %if.end12
 
 if.end9:                                          ; preds = %if.end12, %if.end
-  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %call)
-  ret void
+  %eq13 = icmp eq i1 %eq4, false
+  br i1 %eq13, label %if.then14, label %if.end15
 
 if.then11:                                        ; preds = %if.then8
   br label %if.end12
@@ -464,6 +465,20 @@ if.then11:                                        ; preds = %if.then8
 if.end12:                                         ; preds = %if.then11, %if.then8
   store ptr %call, ptr @heap_head, align 8
   br label %if.end9
+
+if.then14:                                        ; preds = %if.end9
+  %call16 = call i1 @_Z17drain_dead_bucketP16HeapBucketHeader(ptr %call)
+  br i1 %call16, label %if.then17, label %if.end18
+
+if.end15:                                         ; preds = %if.end18, %if.end9
+  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %call)
+  ret void
+
+if.then17:                                        ; preds = %if.then14
+  ret void
+
+if.end18:                                         ; preds = %if.then14
+  br label %if.end15
 }
 
 define linkonce_odr ptr @_ZN4Page8allocateEmm(ptr %0, i64 %1, i64 %2) {
@@ -725,6 +740,12 @@ if.end:                                           ; No predecessors!
 define linkonce_odr void @_ZN16PageListIteratorC1Ev(ptr %0) {
 entry:
   ret void
+}
+
+define linkonce_odr i64 @_ZN4Page22reclaimed_dead_bucketsEv() {
+entry:
+  %global.load = load i64, ptr @dead_buckets_reclaimed, align 8
+  ret i64 %global.load
 }
 
 define linkonce_odr ptr @_ZN4Page18allocate_root_pageEv() {
@@ -1108,6 +1129,112 @@ entry:
   ret void
 }
 
+define linkonce_odr i1 @_Z17drain_dead_bucketP16HeapBucketHeader(ptr %0) {
+entry:
+  %load.struct = load %_Z16HeapBucketHeader, ptr %0, align 8
+  %dead = extractvalue %_Z16HeapBucketHeader %load.struct, 4
+  %eq = icmp eq i64 %dead, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z16HeapBucketHeader, ptr %0, align 8
+  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct1, 2
+  %ne = icmp ne i64 %bitmap, 9223372036854775807
+  br i1 %ne, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  ret i1 false
+
+if.end3:                                          ; preds = %if.end
+  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %0)
+  %global.load = load i64, ptr @dead_buckets_reclaimed, align 8
+  %add = add i64 %global.load, 1
+  store i64 %add, ptr @dead_buckets_reclaimed, align 8
+  call void @free(ptr %0)
+  ret i1 true
+}
+
+define linkonce_odr void @_Z28scaly_thread_release_bucketsv() {
+entry:
+  %hb = alloca ptr, align 8
+  %global.load = load ptr, ptr @stack_head, align 8
+  %sb = alloca ptr, align 8
+  store ptr %global.load, ptr %sb, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %sb1 = load ptr, ptr %sb, align 8
+  %ne = icmp ne ptr %sb1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %sb2 = load ptr, ptr %sb, align 8
+  %load.struct = load %_Z17StackBucketHeader, ptr %sb2, align 8
+  %next = extractvalue %_Z17StackBucketHeader %load.struct, 1
+  %sb3 = load ptr, ptr %sb, align 8
+  call void @free(ptr %sb3)
+  store ptr %next, ptr %sb, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  store ptr null, ptr @stack_head, align 8
+  store ptr null, ptr @stack_top, align 8
+  %global.load4 = load ptr, ptr @heap_head, align 8
+  store ptr %global.load4, ptr %hb, align 1
+  br label %while.cond5
+
+while.cond5:                                      ; preds = %if.end22, %while.exit
+  %hb8 = load ptr, ptr %hb, align 8
+  %ne9 = icmp ne ptr %hb8, null
+  br i1 %ne9, label %while.body6, label %while.exit7
+
+while.body6:                                      ; preds = %while.cond5
+  %hb10 = load ptr, ptr %hb, align 8
+  %load.struct11 = load %_Z16HeapBucketHeader, ptr %hb10, align 8
+  %next12 = extractvalue %_Z16HeapBucketHeader %load.struct11, 1
+  %hb13 = load ptr, ptr %hb, align 8
+  call void @_Z11bucket_lockP16HeapBucketHeader(ptr %hb13)
+  %hb14 = load ptr, ptr %hb, align 8
+  %load.struct15 = load %_Z16HeapBucketHeader, ptr %hb14, align 8
+  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct15, 2
+  %eq = icmp eq i64 %bitmap, 9223372036854775807
+  %eq16 = icmp eq i1 %eq, false
+  br i1 %eq16, label %if.then, label %if.end
+
+while.exit7:                                      ; preds = %while.cond5
+  store ptr null, ptr @heap_head, align 8
+  ret void
+
+if.then:                                          ; preds = %while.body6
+  %ptr.load = load ptr, ptr %hb, align 8
+  %dead = getelementptr inbounds %_Z16HeapBucketHeader, ptr %ptr.load, i32 0, i32 4
+  store i64 1, ptr %dead, align 8
+  %ptr.load17 = load ptr, ptr %hb, align 8
+  %next18 = getelementptr inbounds %_Z16HeapBucketHeader, ptr %ptr.load17, i32 0, i32 1
+  store ptr null, ptr %next18, align 8
+  %ptr.load19 = load ptr, ptr %hb, align 8
+  %prev = getelementptr inbounds %_Z16HeapBucketHeader, ptr %ptr.load19, i32 0, i32 0
+  store ptr null, ptr %prev, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.body6
+  %hb20 = load ptr, ptr %hb, align 8
+  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %hb20)
+  br i1 %eq, label %if.then21, label %if.end22
+
+if.then21:                                        ; preds = %if.end
+  %hb23 = load ptr, ptr %hb, align 8
+  call void @free(ptr %hb23)
+  br label %if.end22
+
+if.end22:                                         ; preds = %if.then21, %if.end
+  store ptr %next12, ptr %hb, align 1
+  br label %while.cond5
+}
+
 define linkonce_odr ptr @_Z17first_usable_pagePv(ptr %0) {
 entry:
   %as.ptrtoint = ptrtoint ptr %0 to i64
@@ -1187,6 +1314,8 @@ if.end:                                           ; preds = %if.then, %entry
   store i64 9223372036854775807, ptr %bitmap, align 8
   %lock = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 3
   store i64 0, ptr %lock, align 8
+  %dead = getelementptr inbounds %_Z16HeapBucketHeader, ptr %call, i32 0, i32 4
+  store i64 0, ptr %dead, align 8
   ret ptr %call
 }
 
@@ -20858,6 +20987,71 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 
 declare i32 @pthread_join(i64, ptr)
 
+declare ptr @scaly_call_ptr(ptr, ptr)
+
+define linkonce_odr void @_ZN5Fiber16drain_stack_poolEv() {
+entry:
+  %global.load = load ptr, ptr @stack_pool, align 8
+  %e = alloca ptr, align 8
+  store ptr %global.load, ptr %e, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %e1 = load ptr, ptr %e, align 8
+  %ne = icmp ne ptr %e1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %e2 = load ptr, ptr %e, align 8
+  %deref = load i64, ptr %e2, align 8
+  %as.inttoptr = inttoptr i64 %deref to ptr
+  %e3 = load ptr, ptr %e, align 8
+  %as.ptrtoint = ptrtoint ptr %e3 to i64
+  %add = add i64 %as.ptrtoint, 8
+  %as.inttoptr4 = inttoptr i64 %add to ptr
+  %deref5 = load i64, ptr %as.inttoptr4, align 8
+  %e6 = load ptr, ptr %e, align 8
+  %as.ptrtoint7 = ptrtoint ptr %e6 to i64
+  %global.load8 = load i64, ptr @guard_page_size, align 8
+  %sub = sub i64 %as.ptrtoint7, %global.load8
+  %as.inttoptr9 = inttoptr i64 %sub to ptr
+  %call = call i32 @munmap(ptr %as.inttoptr9, i64 %deref5)
+  %ne10 = icmp ne i32 %call, 0
+  br i1 %ne10, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  store ptr null, ptr @stack_pool, align 8
+  ret void
+
+if.then:                                          ; preds = %while.body
+  call void @exit(i64 105)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.body
+  %global.load11 = load i64, ptr @fiber_stacks_pooled, align 8
+  %sub12 = sub i64 %global.load11, 1
+  store i64 %sub12, ptr @fiber_stacks_pooled, align 8
+  store ptr %as.inttoptr, ptr %e, align 1
+  br label %while.cond
+}
+
+define linkonce_odr ptr @_Z18scaly_thread_startPv(ptr %0) {
+entry:
+  %deref = load i64, ptr %0, align 8
+  %as.ptrtoint = ptrtoint ptr %0 to i64
+  %add = add i64 %as.ptrtoint, 8
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %deref1 = load i64, ptr %as.inttoptr, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  call void @_ZN4Page12release_pageEP4Page(ptr %call)
+  %as.inttoptr2 = inttoptr i64 %deref to ptr
+  %as.inttoptr3 = inttoptr i64 %deref1 to ptr
+  %1 = call ptr %as.inttoptr2(ptr %as.inttoptr3)
+  call void @_ZN5Fiber16drain_stack_poolEv()
+  call void @_Z28scaly_thread_release_bucketsv()
+  ret ptr null
+}
+
 declare ptr @mmap(ptr, i64, i32, i32, i32, i64)
 
 declare i32 @munmap(ptr, i64)
@@ -20931,52 +21125,6 @@ if.end2:                                          ; preds = %if.end
   %sub10 = sub i64 %as.ptrtoint8, %global.load9
   %as.inttoptr11 = inttoptr i64 %sub10 to ptr
   ret ptr %as.inttoptr11
-}
-
-define linkonce_odr void @_ZN5Fiber16drain_stack_poolEv() {
-entry:
-  %global.load = load ptr, ptr @stack_pool, align 8
-  %e = alloca ptr, align 8
-  store ptr %global.load, ptr %e, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %e1 = load ptr, ptr %e, align 8
-  %ne = icmp ne ptr %e1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %e2 = load ptr, ptr %e, align 8
-  %deref = load i64, ptr %e2, align 8
-  %as.inttoptr = inttoptr i64 %deref to ptr
-  %e3 = load ptr, ptr %e, align 8
-  %as.ptrtoint = ptrtoint ptr %e3 to i64
-  %add = add i64 %as.ptrtoint, 8
-  %as.inttoptr4 = inttoptr i64 %add to ptr
-  %deref5 = load i64, ptr %as.inttoptr4, align 8
-  %e6 = load ptr, ptr %e, align 8
-  %as.ptrtoint7 = ptrtoint ptr %e6 to i64
-  %global.load8 = load i64, ptr @guard_page_size, align 8
-  %sub = sub i64 %as.ptrtoint7, %global.load8
-  %as.inttoptr9 = inttoptr i64 %sub to ptr
-  %call = call i32 @munmap(ptr %as.inttoptr9, i64 %deref5)
-  %ne10 = icmp ne i32 %call, 0
-  br i1 %ne10, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  store ptr null, ptr @stack_pool, align 8
-  ret void
-
-if.then:                                          ; preds = %while.body
-  call void @exit(i64 105)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %while.body
-  %global.load11 = load i64, ptr @fiber_stacks_pooled, align 8
-  %sub12 = sub i64 %global.load11, 1
-  store i64 %sub12, ptr @fiber_stacks_pooled, align 8
-  store ptr %as.inttoptr, ptr %e, align 1
-  br label %while.cond
 }
 
 define linkonce_odr void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %0) {
@@ -22234,13 +22382,22 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr i64 @_ZN6Thread5spawnEPvPv(ptr %0, ptr %1) {
 entry:
+  %call = call ptr @_ZN4Page13allocate_pageEv()
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 16, i64 8)
+  %as.ptrtoint = ptrtoint ptr %0 to i64
+  store i64 %as.ptrtoint, ptr %call1, align 8
+  %as.ptrtoint2 = ptrtoint ptr %call1 to i64
+  %add = add i64 %as.ptrtoint2, 8
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %as.ptrtoint3 = ptrtoint ptr %1 to i64
+  store i64 %as.ptrtoint3, ptr %as.inttoptr, align 8
   %handle = alloca [8 x i8], align 1
   %arr.ptr = getelementptr inbounds [8 x i8], ptr %handle, i64 0, i64 0
-  %handle1 = alloca ptr, align 8
-  store ptr %arr.ptr, ptr %handle1, align 8
-  %handle2 = load ptr, ptr %handle1, align 8
-  %call = call i32 @pthread_create(ptr %handle2, ptr null, ptr %0, ptr %1)
-  %ne = icmp ne i32 %call, 0
+  %handle4 = alloca ptr, align 8
+  store ptr %arr.ptr, ptr %handle4, align 8
+  %handle5 = load ptr, ptr %handle4, align 8
+  %call6 = call i32 @pthread_create(ptr %handle5, ptr null, ptr @_Z18scaly_thread_startPv, ptr %call1)
+  %ne = icmp ne i32 %call6, 0
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -22248,7 +22405,7 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %deref = load i64, ptr %handle2, align 8
+  %deref = load i64, ptr %handle5, align 8
   ret i64 %deref
 }
 
