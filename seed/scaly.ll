@@ -185,6 +185,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z4NodeIcE = type { i8, ptr }
 %_Z12ListIteratorIcE = type { ptr }
 %_Z14StringIterator = type { ptr, ptr }
+%_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, i1 }
 
 @"9PAGE_SIZE" = constant i64 4096
 @heap_head = global ptr null
@@ -208,6 +209,13 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @"8SEEK_END" = constant i64 2
 @"4F_OK" = constant i64 0
 @"4F_OK.1" = constant i64 0
+@"16MAP_ANON_PRIVATE" = constant i32 4130
+@"9PROT_NONE" = constant i32 0
+@"15PROT_READ_WRITE" = constant i32 3
+@"16FIBER_STACK_SIZE" = constant i64 131072
+@current_fiber = global ptr null
+@fiber_pages_freed = global i64 0
+@fiber_buckets_freed = global i64 0
 @.str = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
 @.str.2 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
 @.str.3 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
@@ -20774,6 +20782,273 @@ if.end6:                                          ; preds = %if.end
 declare ptr @scaly_make_context(ptr, ptr)
 
 declare ptr @scaly_jump_context(ptr)
+
+declare ptr @mmap(ptr, i64, i32, i32, i32, i64)
+
+declare i32 @munmap(ptr, i64)
+
+declare i32 @mprotect(ptr, i64, i32)
+
+declare i32 @getpagesize()
+
+define linkonce_odr i64 @_ZN5Fiber16freed_page_countEv() {
+entry:
+  %global.load = load i64, ptr @fiber_pages_freed, align 8
+  ret i64 %global.load
+}
+
+define linkonce_odr i64 @_ZN5Fiber18freed_bucket_countEv() {
+entry:
+  %global.load = load i64, ptr @fiber_buckets_freed, align 8
+  ret i64 %global.load
+}
+
+define linkonce_odr void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %0) {
+entry:
+  %global.load = load ptr, ptr @stack_head, align 8
+  %global.load1 = load ptr, ptr @stack_top, align 8
+  %load.struct = load %_Z5Fiber, ptr %0, align 8
+  %saved_head = extractvalue %_Z5Fiber %load.struct, 3
+  store ptr %saved_head, ptr @stack_head, align 8
+  %load.struct2 = load %_Z5Fiber, ptr %0, align 8
+  %saved_top = extractvalue %_Z5Fiber %load.struct2, 4
+  store ptr %saved_top, ptr @stack_top, align 8
+  %saved_head3 = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 3
+  store ptr %global.load, ptr %saved_head3, align 8
+  %saved_top4 = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 4
+  store ptr %global.load1, ptr %saved_top4, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5Fiber12create_sizedEP4PagePvm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z5Fiber, ptr null, i32 1) to i64), i64 8)
+  %call1 = call ptr @mmap(ptr null, i64 %2, i32 3, i64 4130, i32 -1, i64 0)
+  %as.ptrtoint = ptrtoint ptr %call1 to i64
+  %eq = icmp eq i64 %as.ptrtoint, -1
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 103)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %call2 = call i32 @getpagesize()
+  %as.zext = zext i32 %call2 to i64
+  %call3 = call i32 @mprotect(ptr %call1, i64 %as.zext, i32 0)
+  %ne = icmp ne i32 %call3, 0
+  br i1 %ne, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end
+  call void @exit(i64 104)
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.end
+  %as.ptrtoint6 = ptrtoint ptr %call1 to i64
+  %add = add i64 %as.ptrtoint6, %2
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %call7 = call ptr @scaly_make_context(ptr %as.inttoptr, ptr %1)
+  %ctx = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 0
+  store ptr %call7, ptr %ctx, align 8
+  %stack_base = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 1
+  store ptr %call1, ptr %stack_base, align 8
+  %stack_size = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 2
+  store i64 %2, ptr %stack_size, align 8
+  %saved_head = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 3
+  store ptr null, ptr %saved_head, align 8
+  %saved_top = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 4
+  store ptr null, ptr %saved_top, align 8
+  %done = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 5
+  store i1 false, ptr %done, align 1
+  ret ptr %call
+}
+
+define linkonce_odr ptr @_ZN5Fiber6createEP4PagePv(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN5Fiber12create_sizedEP4PagePvm(ptr %0, ptr %1, i64 131072)
+  ret ptr %call
+}
+
+define linkonce_odr i1 @_ZN5Fiber6resumeEP5Fiber(ptr %0) {
+entry:
+  %load.struct = load %_Z5Fiber, ptr %0, align 8
+  %done = extractvalue %_Z5Fiber %load.struct, 5
+  br i1 %done, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %global.load = load ptr, ptr @current_fiber, align 8
+  store ptr %0, ptr @current_fiber, align 8
+  call void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %0)
+  %field.inplace = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @scaly_jump_context(ptr %deref.recv)
+  %ctx = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 0
+  store ptr %call, ptr %ctx, align 8
+  store ptr %global.load, ptr @current_fiber, align 8
+  %load.struct1 = load %_Z5Fiber, ptr %0, align 8
+  %done2 = extractvalue %_Z5Fiber %load.struct1, 5
+  %not = xor i1 %done2, true
+  ret i1 %not
+}
+
+define linkonce_odr void @_ZN5Fiber7startedEPv(ptr %0) {
+entry:
+  %global.load = load ptr, ptr @current_fiber, align 8
+  %ctx = getelementptr inbounds %_Z5Fiber, ptr %global.load, i32 0, i32 0
+  store ptr %0, ptr %ctx, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5Fiber5yieldEv() {
+entry:
+  %global.load = load ptr, ptr @current_fiber, align 8
+  call void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %global.load)
+  %field.inplace = getelementptr inbounds %_Z5Fiber, ptr %global.load, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @scaly_jump_context(ptr %deref.recv)
+  %ctx = getelementptr inbounds %_Z5Fiber, ptr %global.load, i32 0, i32 0
+  store ptr %call, ptr %ctx, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5Fiber6finishEv() {
+entry:
+  %global.load = load ptr, ptr @current_fiber, align 8
+  %done = getelementptr inbounds %_Z5Fiber, ptr %global.load, i32 0, i32 5
+  store i1 true, ptr %done, align 1
+  call void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %global.load)
+  %field.inplace = getelementptr inbounds %_Z5Fiber, ptr %global.load, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @scaly_jump_context(ptr %deref.recv)
+  ret void
+}
+
+define linkonce_odr i64 @_ZN5Fiber7disposeEP5Fiber(ptr %0) {
+entry:
+  %last = alloca ptr, align 8
+  %p = alloca ptr, align 8
+  %pages_freed = alloca i64, align 8
+  store i64 0, ptr %pages_freed, align 1
+  %load.struct = load %_Z5Fiber, ptr %0, align 8
+  %saved_head = extractvalue %_Z5Fiber %load.struct, 3
+  %bucket = alloca ptr, align 8
+  store ptr %saved_head, ptr %bucket, align 1
+  %live = alloca i1, align 1
+  store i1 true, ptr %live, align 1
+  %load.struct1 = load %_Z5Fiber, ptr %0, align 8
+  %saved_top = extractvalue %_Z5Fiber %load.struct1, 4
+  %eq = icmp eq ptr %saved_top, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  store i1 false, ptr %live, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end5, %if.end
+  %bucket2 = load ptr, ptr %bucket, align 8
+  %ne = icmp ne ptr %bucket2, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %live3 = load i1, ptr %live, align 1
+  br i1 %live3, label %if.then4, label %if.end5
+
+while.exit:                                       ; preds = %while.cond
+  %saved_head31 = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 3
+  store ptr null, ptr %saved_head31, align 8
+  %saved_top32 = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 4
+  store ptr null, ptr %saved_top32, align 8
+  %field.inplace33 = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 1
+  %deref.recv34 = load ptr, ptr %field.inplace33, align 8
+  %field.inplace35 = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 2
+  %field.val = load i64, ptr %field.inplace35, align 8
+  %call36 = call i32 @munmap(ptr %deref.recv34, i64 %field.val)
+  %ne37 = icmp ne i32 %call36, 0
+  br i1 %ne37, label %if.then38, label %if.end39
+
+if.then4:                                         ; preds = %while.body
+  %bucket6 = load ptr, ptr %bucket, align 8
+  %call = call ptr @_Z17first_usable_pagePv(ptr %bucket6)
+  store ptr %call, ptr %p, align 1
+  %bucket7 = load ptr, ptr %bucket, align 8
+  %call8 = call ptr @_Z16last_usable_pagePv(ptr %bucket7)
+  store ptr %call8, ptr %last, align 1
+  %field.inplace = getelementptr inbounds %_Z5Fiber, ptr %0, i32 0, i32 4
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call9 = call ptr @_Z15stack_bucket_ofP4Page(ptr %deref.recv)
+  %bucket10 = load ptr, ptr %bucket, align 8
+  %eq11 = icmp eq ptr %bucket10, %call9
+  br i1 %eq11, label %if.then12, label %if.end13
+
+if.end5:                                          ; preds = %while.exit18, %while.body
+  %bucket27 = load ptr, ptr %bucket, align 8
+  %load.struct28 = load %_Z17StackBucketHeader, ptr %bucket27, align 8
+  %next = extractvalue %_Z17StackBucketHeader %load.struct28, 1
+  %bucket29 = load ptr, ptr %bucket, align 8
+  call void @free(ptr %bucket29)
+  %global.load = load i64, ptr @fiber_buckets_freed, align 8
+  %add30 = add i64 %global.load, 1
+  store i64 %add30, ptr @fiber_buckets_freed, align 8
+  store ptr %next, ptr %bucket, align 1
+  br label %while.cond
+
+if.then12:                                        ; preds = %if.then4
+  %load.struct14 = load %_Z5Fiber, ptr %0, align 8
+  %saved_top15 = extractvalue %_Z5Fiber %load.struct14, 4
+  store ptr %saved_top15, ptr %last, align 1
+  store i1 false, ptr %live, align 1
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %if.then4
+  br label %while.cond16
+
+while.cond16:                                     ; preds = %while.body17, %if.end13
+  %p19 = load ptr, ptr %p, align 8
+  %as.ptrtoint = ptrtoint ptr %p19 to i64
+  %last20 = load ptr, ptr %last, align 8
+  %as.ptrtoint21 = ptrtoint ptr %last20 to i64
+  %le = icmp ule i64 %as.ptrtoint, %as.ptrtoint21
+  br i1 %le, label %while.body17, label %while.exit18
+
+while.body17:                                     ; preds = %while.cond16
+  %p22 = load ptr, ptr %p, align 8
+  call void @_ZN4Page21deallocate_extensionsEv(ptr %p22)
+  %pages_freed23 = load i64, ptr %pages_freed, align 8
+  %add = add i64 %pages_freed23, 1
+  store i64 %add, ptr %pages_freed, align 1
+  %p24 = load ptr, ptr %p, align 8
+  %as.ptrtoint25 = ptrtoint ptr %p24 to i64
+  %add26 = add i64 %as.ptrtoint25, 4096
+  %as.inttoptr = inttoptr i64 %add26 to ptr
+  store ptr %as.inttoptr, ptr %p, align 1
+  br label %while.cond16
+
+while.exit18:                                     ; preds = %while.cond16
+  br label %if.end5
+
+if.then38:                                        ; preds = %while.exit
+  call void @exit(i64 105)
+  br label %if.end39
+
+if.end39:                                         ; preds = %if.then38, %while.exit
+  %global.load40 = load i64, ptr @fiber_pages_freed, align 8
+  %pages_freed41 = load i64, ptr %pages_freed, align 8
+  %add42 = add i64 %global.load40, %pages_freed41
+  store i64 %add42, ptr @fiber_pages_freed, align 8
+  %pages_freed43 = load i64, ptr %pages_freed, align 8
+  ret i64 %pages_freed43
+}
+
+define linkonce_odr void @_ZN5FiberC1Ev(ptr %0) {
+entry:
+  ret void
+}
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #0
