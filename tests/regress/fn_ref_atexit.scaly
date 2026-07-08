@@ -1,0 +1,26 @@
+; Regression: `&fn` as a call argument plans a FunctionRef instead of being
+; silently dropped (the stage-0 feature was lost in the port — even
+; root_pages' `atexit(&scaly_trace_dump)` vanished from the emitted seed).
+; Zero-arg form verified at runtime via atexit; unary form verified by the
+; call landing at all (scaly_check receives the non-null symbol address).
+
+procedure atexit(cb: pointer[void]) returns int extern
+
+procedure on_exit_handler()
+{
+    print "PASS"
+}
+
+procedure unary_cb(data: pointer[void])
+{
+    print "unary"
+}
+
+procedure check(p: pointer[void])
+{
+    if p = null
+        print "FAIL null fn ref"
+}
+
+check(&unary_cb)
+atexit(&on_exit_handler)

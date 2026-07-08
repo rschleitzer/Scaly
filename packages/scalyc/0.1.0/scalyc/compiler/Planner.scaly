@@ -6680,6 +6680,113 @@ define Planner
                             }
                         }
 
+                        ; &fn — address of a free function/procedure
+                        ; (atexit(&scaly_trace_dump), scaly_make_context(top,
+                        ; &fiber_main)). The bare name fell through
+                        ; plan_type_operand#'s local/global/property lookups
+                        ; to a Type operand; when it names a non-generic
+                        ; module-level routine of arity 0 or 1, `&` yields
+                        ; the symbol's address as a FunctionRef typed
+                        ; pointer[void] (emit_function_ref declares a stub
+                        ; when unseen). Explicit-`&` context ONLY — the
+                        ; bare-name form stays untouched so parenless
+                        ; single-arg call resolution never sees a
+                        ; FunctionRef head. Extern targets keep their C
+                        ; name; Scaly targets get the free-function
+                        ; Itanium mangling. Stage-0 mirror:
+                        ; Planner.cpp:10532-10561 (zero-arg; unary added
+                        ; for fiber entry callbacks).
+                        if prefix_name = "&"
+                        {
+                            var fref_name: String ""
+                            var fref_found: bool false
+                            var fref_chain_empty: bool true
+                            if rest_result.member_access <> null
+                            {
+                                let frma (*rest_result.member_access)
+                                if frma.length > 0
+                                    set fref_chain_empty: false
+                            }
+                            if fref_chain_empty
+                            {
+                                choose rest_result.expr
+                                    when fty: PlannedType
+                                    {
+                                        set fref_name: fty.name
+                                        set fref_found: true
+                                    }
+                                    else
+                                        0
+                            }
+                            if fref_found
+                            {
+                                let fref_cands this.lookup_functions(fref_name)
+                                if fref_cands.length > 0
+                                {
+                                    let fc_ptr fref_cands.get 0
+                                    if fc_ptr <> null
+                                    {
+                                        var fref_arity_ok: bool false
+                                        if (*fc_ptr).parameters.length = 0
+                                        {
+                                            if (*fc_ptr).input.length < 2
+                                                set fref_arity_ok: true
+                                        }
+                                        if fref_arity_ok
+                                        {
+                                            var fref_mangled fref_name
+                                            if Planner.is_extern_impl((*fc_ptr).implementation) = false
+                                            {
+                                                var fparam_arr Array[PlannedType]()
+                                                var fpi: size_t 0
+                                                while fpi < (*fc_ptr).input.length
+                                                {
+                                                    let fitem_ptr (*fc_ptr).input.get fpi
+                                                    if fitem_ptr <> null
+                                                    {
+                                                        if (*fitem_ptr).type <> null
+                                                        {
+                                                            let fit (*(*fitem_ptr).type)
+                                                            let fpt this.plan_type(fit)
+                                                            fparam_arr.add fpt
+                                                        }
+                                                    }
+                                                    set fpi: fpi + 1
+                                                }
+                                                var fparam_vec Vector[PlannedType](fparam_arr)
+                                                var fref_has_page: bool false
+                                                if (*fc_ptr).page_parameter <> null
+                                                    set fref_has_page: true
+                                                set fref_mangled: Planner.mangle_free_function_from_types(fref_name, fparam_vec, fref_has_page)
+                                            }
+                                            let fref_ty Planner.make_pointer_type(Planner.make_void_type())
+                                            let fref PlannedFunctionRef(result.loc, fref_mangled, fref_ty)
+                                            let fref_op PlannedOperand(
+                                                result.loc,
+                                                PlannedExpression.FunctionRef fref,
+                                                null,
+                                                fref_ty
+                                            )
+                                            if consumed >= ops.length
+                                                return fref_op
+                                            var fcont_arr Array[PlannedOperand]()
+                                            fcont_arr.add fref_op
+                                            var fcc: size_t consumed
+                                            while fcc < ops.length
+                                            {
+                                                let f_ptr ops.get fcc
+                                                if f_ptr <> null
+                                                    fcont_arr.add((*f_ptr))
+                                                set fcc: fcc + 1
+                                            }
+                                            var fcont_vec Vector[PlannedOperand](fcont_arr)
+                                            return this.collapse_operand_sequence(fcont_vec)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         let mangled this.mangle_unary_operator(
                             prefix_name, rest_result.result_type
                         )
