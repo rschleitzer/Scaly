@@ -363,6 +363,15 @@ procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: int) exte
 ; Mark a global as thread-local (one instance per OS thread)
 procedure LLVMSetThreadLocal(global_var: LLVMValueRef, is_thread_local: int) extern
 
+; Atomic instruction builders (M2.3). The enum params are C ints:
+; LLVMAtomicRMWBinOp (Add=1, And=3, Or=5), LLVMAtomicOrdering
+; (SequentiallyConsistent=7).
+function LLVMBuildAtomicRMW(builder: LLVMBuilderRef, op: i32, ptr: LLVMValueRef, val: LLVMValueRef, ordering: i32, single_thread: i32) returns LLVMValueRef extern
+function LLVMBuildAtomicCmpXchg(builder: LLVMBuilderRef, ptr: LLVMValueRef, cmp: LLVMValueRef, new_val: LLVMValueRef, success_ordering: i32, failure_ordering: i32, single_thread: i32) returns LLVMValueRef extern
+
+; Set the atomic ordering of a load or store instruction
+procedure LLVMSetOrdering(inst: LLVMValueRef, ordering: i32) extern
+
 ; Query whether a global is marked constant (0 = mutable global)
 function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns int extern
 

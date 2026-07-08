@@ -5778,6 +5778,69 @@ define Emitter
     }
 
     ; Emit a function/operator call
+    ; M2.3: atomic primitives. The scaly_atomic_* names are declared as
+    ; plain externs in the stdlib but NO such symbols exist anywhere —
+    ; the emitter lowers the calls to atomic INSTRUCTIONS instead
+    ; (atomicrmw / cmpxchg / atomic load+store, all seq_cst, align 8).
+    ; Atomics are neither OS-specific, variadic, nor errno-bound, so per
+    ; the shim containment rule they may not live in C; the libatomic
+    ; ABI symbols are not uniformly linkable across the four targets.
+    ; Returns a null handle when the callee is not an atomic name.
+    ;   scaly_atomic_load_u64(p) / scaly_atomic_store_u64(p, v)
+    ;   scaly_atomic_or_u64 / and_u64 / add_u64 (p, v) returns OLD value
+    ;   scaly_atomic_cas_u64(p, expected, desired) returns OLD value
+    function emit_atomic_call(this, call: PlannedCall) returns LLVMValueRef
+    {
+        if call.mangled_name.starts_with("scaly_atomic_") = false
+            return LLVMValueRef null
+        if call.args = null
+            return LLVMValueRef null
+        let seq_cst 7 as i32
+        let arg0 call.args.get 0
+        if arg0 = null
+            return LLVMValueRef null
+        var ptr emit_operand(arg0.unwrap())
+        if call.mangled_name = "scaly_atomic_load_u64"
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ld LLVMBuildLoad2(builder, i64_ty, ptr, "atomic.load")
+            LLVMSetOrdering(ld, seq_cst)
+            LLVMSetAlignment(ld, 8 as u32)
+            return ld
+        }
+        if call.args.length < (2 as size_t)
+            return LLVMValueRef null
+        let arg1 call.args.get 1
+        if arg1 = null
+            return LLVMValueRef null
+        var val emit_operand(arg1.unwrap())
+        if call.mangled_name = "scaly_atomic_store_u64"
+        {
+            let st LLVMBuildStore(builder, val, ptr)
+            LLVMSetOrdering(st, seq_cst)
+            LLVMSetAlignment(st, 8 as u32)
+            return st
+        }
+        if call.mangled_name = "scaly_atomic_or_u64"
+            return LLVMBuildAtomicRMW(builder, 5 as i32, ptr, val, seq_cst, 0 as i32)
+        if call.mangled_name = "scaly_atomic_and_u64"
+            return LLVMBuildAtomicRMW(builder, 3 as i32, ptr, val, seq_cst, 0 as i32)
+        if call.mangled_name = "scaly_atomic_add_u64"
+            return LLVMBuildAtomicRMW(builder, 1 as i32, ptr, val, seq_cst, 0 as i32)
+        if call.mangled_name = "scaly_atomic_cas_u64"
+        {
+            if call.args.length < (3 as size_t)
+                return LLVMValueRef null
+            let arg2 call.args.get 2
+            if arg2 = null
+                return LLVMValueRef null
+            var desired emit_operand(arg2.unwrap())
+            let pair LLVMBuildAtomicCmpXchg(builder, ptr, val, desired, seq_cst, seq_cst, 0 as i32)
+            return LLVMBuildExtractValue(builder, pair, 0, "cas.old")
+        }
+        LLVMValueRef null
+    }
+
     function emit_call(this, call: PlannedCall) returns LLVMValueRef
     {
         ; Indirect call through a function pointer value (Phase-1 JIT). args[0]
@@ -5845,6 +5908,12 @@ define Emitter
             else
                 return emit_intrinsic_function call
         }
+
+        ; M2.3: scaly_atomic_* extern names lower to atomic instructions,
+        ; never to calls (no such symbols exist at link time).
+        let atomic_val emit_atomic_call call
+        if atomic_val.handle <> null
+            return atomic_val
 
         ; s80: Itanium C1 constructor calls — mangled name contains "C1E"
         ; between the class encoding and parameter encoding. Allocate the

@@ -1,0 +1,46 @@
+; M2.3 atomic primitives: the scaly_atomic_* extern names never exist as
+; symbols — the Emitter lowers the calls to atomicrmw/cmpxchg/atomic
+; load+store instructions (emit_atomic_call). This runs the whole set
+; single-threaded and checks the OLD-value return convention; the
+; cross-thread exercise lives in tests/fiber/thread_churn.scaly.
+
+function scaly_atomic_load_u64(p: pointer[u64]) returns u64 extern
+procedure scaly_atomic_store_u64(p: pointer[u64], v: u64) extern
+function scaly_atomic_or_u64(p: pointer[u64], v: u64) returns u64 extern
+function scaly_atomic_and_u64(p: pointer[u64], v: u64) returns u64 extern
+function scaly_atomic_add_u64(p: pointer[u64], v: u64) returns u64 extern
+function scaly_atomic_cas_u64(p: pointer[u64], expected: u64, desired: u64) returns u64 extern
+
+var cell u8[8]
+let p cell as pointer[u64]
+scaly_atomic_store_u64(p, 0x0F as u64)
+var ok true
+
+if scaly_atomic_load_u64(p) <> (0x0F as u64)
+    set ok: false
+if scaly_atomic_or_u64(p, 0xF0 as u64) <> (0x0F as u64)
+    set ok: false
+if scaly_atomic_load_u64(p) <> (0xFF as u64)
+    set ok: false
+if scaly_atomic_and_u64(p, 0x3C as u64) <> (0xFF as u64)
+    set ok: false
+if scaly_atomic_load_u64(p) <> (0x3C as u64)
+    set ok: false
+if scaly_atomic_add_u64(p, 6 as u64) <> (0x3C as u64)
+    set ok: false
+if scaly_atomic_load_u64(p) <> (0x42 as u64)
+    set ok: false
+
+; CAS failure: expected mismatches, value unchanged, returns current
+if scaly_atomic_cas_u64(p, 1 as u64, 7 as u64) <> (0x42 as u64)
+    set ok: false
+if scaly_atomic_load_u64(p) <> (0x42 as u64)
+    set ok: false
+; CAS success: returns old, stores desired
+if scaly_atomic_cas_u64(p, 0x42 as u64, 7 as u64) <> (0x42 as u64)
+    set ok: false
+if scaly_atomic_load_u64(p) <> (7 as u64)
+    set ok: false
+
+if ok
+    print "PASS\n"
