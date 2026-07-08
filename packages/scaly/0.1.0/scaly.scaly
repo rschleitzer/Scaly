@@ -1,9 +1,12 @@
 define scaly
 {
+    ; fiber before io: the io module routes Console/File through the
+    ; fiber module's Io layer (milestone 2.5), and a module must be
+    ; declared before the modules that depend on it.
     module memory
     module containers
-    module io
     module fiber
+    module io
 
     ; Test entry point that calls all module tests
     function test() returns int

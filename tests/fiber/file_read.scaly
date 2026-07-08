@@ -1,0 +1,42 @@
+; Colorless file I/O (milestone 2.5): the SAME File calls that block on
+; the main context suspend inside a task — the blocking operation runs
+; on a worker thread while other tasks keep going. Task A writes and
+; re-reads a file; each File call offloads and parks A, so task B runs
+; and prints while A's write is still in flight ("b" precedes
+; "content-ok" deterministically). offload_count proves the worker
+; path took both operations; the main-context re-read after the run
+; proves the blocking leg of the same API.
+; Expected: b content-ok offloads main-ok done
+
+procedure task_a()
+{
+    let path String("/tmp/scaly_m25_file.txt")
+    let content String("colorless file i/o via worker threads")
+    if File.write_from_string(path, content) = false
+        exit 1
+    let back File.read_to_string(path)
+    if back = content
+        Console.print "content-ok "
+    if Io.offload_count() >= (2 as i64)
+        Console.print "offloads "
+}
+
+procedure task_b()
+{
+    Console.print "b "
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let ta Scheduler.spawn(&task_a)
+let tb Scheduler.spawn(&task_b)
+Scheduler.run()
+; The blocking leg: same call, no task — runs in place.
+let path String("/tmp/scaly_m25_file.txt")
+let expected String("colorless file i/o via worker threads")
+let back File.read_to_string(path)
+if back = expected
+    Console.print "main-ok "
+unlink(path.to_c_string())
+Console.println "done"
+Page.release_page(page)

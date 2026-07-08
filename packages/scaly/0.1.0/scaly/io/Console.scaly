@@ -1,14 +1,15 @@
 use scaly.memory.runtime
+use scaly.fiber.Io
 
-; Use write() syscall directly - fd 1 is stdout
-define STDOUT_FD: int 1
-
+; stdout is fd 1. Writes go through the Io layer (milestone 2.5), so
+; the same call blocks normally, suspends inside a task once the fd is
+; nonblocking, and needs no scheduler at all — colorless I/O.
 define Console
 {
     function print(message: pointer[const_char])
     {
         var len strlen message
-        write(STDOUT_FD, message as pointer[void], len)
+        Io.write_all(1 as i32, message as pointer[void], len)
     }
 
     function println(message: pointer[const_char])
@@ -21,6 +22,6 @@ define Console
         ; mirroring cli.print_diagnostics#'s numeric `10 as char` compare.
         var nl: u8 (10 as u8)
         let nl_ptr &nl
-        write(STDOUT_FD, nl_ptr as pointer[void], 1 as size_t)
+        Io.write_all(1 as i32, nl_ptr as pointer[void], 1 as size_t)
     }
 }

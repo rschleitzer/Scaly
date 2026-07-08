@@ -208,11 +208,45 @@
 ; the eio shim (EVFILT_USER/eventfd) that remote senders poke. exit 106
 ; is unchanged for programs without mailbox parks.
 ;
+; Colorless stdlib I/O (milestone 2.5): the same Console/File call
+; blocks on the main context, suspends inside a task, and needs no
+; scheduler at all — suspension is a runtime property, not a type
+; color. Three legs:
+;
+; 1. No-scheduler fallback: an Io call on a thread WITHOUT a scheduler
+;    waits for readiness in poll(2) instead of parking (struct pollfd
+;    and the POLLIN/POLLOUT values are layout-uniform across all four
+;    LP64 targets, so poll is a direct extern per the containment
+;    rule). Io no longer requires a scheduler.
+; 2. Console writes through Io.write_all (loops over partial writes):
+;    plain write on a blocking stdout, suspending inside a task once
+;    the fd is nonblocking.
+; 3. File I/O offloads to worker threads: readiness pollers are useless
+;    for REGULAR FILES (always "ready", reads still block on disk), so
+;    Io.offload ships a blocking operation — a `procedure fn(arg:
+;    pointer[void]) returns pointer[void]` — to a worker thread and
+;    parks the requesting task; the worker wakes it through the
+;    milestone-2.4 inject queue + wake handle. On the main context (or
+;    without a scheduler) the operation simply runs in place. The pool
+;    is per REQUESTING thread (the pool pointer is a thread-local
+;    global; no Scaly mutable global is process-wide since milestone
+;    2.2), grows lazily up to IO_POOL_WORKERS, and its workers block in
+;    a 1-byte pipe read between items (one byte written per queued
+;    item). An offloaded operation runs on ANOTHER THREAD: it must not
+;    read thread-local globals of the requester, and it roots its
+;    result (if any) on its own fresh heap page — the requester
+;    consumes and frees it like a mailbox message. Workers live until
+;    process exit (like poller and wake fds, they are not reclaimed).
+;
+;   let res Io.offload(&blocking_op, arg)   ; parks in a task; runs
+;                                           ; in place otherwise
+;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
 ; join, send, or receive), 107 poller failure (create/arm/wait or
 ; set_nonblocking), 108 fiber stack overflow (guard page hit), 109
-; thread spawn/join failure, 110 send on a closed mailbox.
+; thread spawn/join failure, 110 send on a closed mailbox, 111 worker
+; pool failure (pipe creation).
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
@@ -295,6 +329,22 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
     null
 }
 
+; POSIX poll(2) — the no-scheduler readiness wait (milestone 2.5).
+; struct pollfd (int fd, short events, short revents) and POLLIN=1 /
+; POLLOUT=4 are identical on darwin and linux, so per the containment
+; rule this is a direct extern, not a shim call. nfds_t is 32-bit on
+; darwin and 64-bit on linux: the constant 1 passed as i32 materializes
+; with the upper register half zeroed on both ABIs.
+procedure poll(fds: pointer[void], nfds: i32, timeout: i32) returns i32 extern
+
+; POSIX pipe(2) — the worker pool's blocking wait channel (milestone
+; 2.5). int[2] on both OSes: direct extern.
+procedure pipe(fds: pointer[i32]) returns i32 extern
+
+; Worker-pool cap per requesting thread (milestone 2.5). Beyond it a
+; queued item waits for the next worker to come free.
+define IO_POOL_WORKERS i64 4
+
 ; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
 ; stack-arg ABI); mmap's offset is 64-bit on both OSes.
 function mmap(addr: pointer[void], length: size_t, prot: i32, flags: i32, fd: i32, offset: i64) returns pointer[void] extern
@@ -341,6 +391,14 @@ mutable fiber_buckets_freed: i64 0
 mutable stack_pool: pointer[void] null
 mutable fiber_stacks_pooled: i64 0
 mutable fiber_stacks_reused: i64 0
+
+; This thread's blocking-operation worker pool (milestone 2.5,
+; pointer[IoPool]; null until the first Io.offload from a task) and the
+; count of operations shipped to a worker — the suspension proof for
+; tests. Thread-local like every mutable global: each requesting thread
+; grows its own pool.
+mutable io_pool: pointer[void] null
+mutable io_offloads: i64 0
 
 ; Guard-page fault classifier state: installed once, reads only globals
 ; (it runs in signal context). guard_page_size is cached at create time
@@ -1163,11 +1221,104 @@ define Channel
     }
 }
 
+; One queued blocking operation (milestone 2.5). The record lives on
+; its own heap page (requester-allocated, requester-freed after the
+; result is consumed); the worker writes result before the inject that
+; wakes the requester publishes it.
+define IoWork
+(
+    next: pointer[IoWork]
+    fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
+    arg: pointer[void]
+    result: pointer[void]
+    task: pointer[SchedTask]     ; the parked requester
+)
+
+; A requesting thread's worker pool (milestone 2.5): a spinlocked work
+; FIFO plus a pipe whose bytes count queued items — an idle worker
+; blocks in a 1-byte read, so waiting needs no condvars (their struct
+; layouts are OS-specific and would grow the shim). The record lives on
+; its own heap page: workers reach it through their spawn argument,
+; never through the requester's thread-local globals.
+define IoPool
+(
+    lock: u64                    ; spinlock (bucket_lock pattern)
+    head: pointer[IoWork]        ; queued operations, FIFO
+    tail: pointer[IoWork]
+    pipe_read: i32               ; workers block reading here
+    pipe_write: i32              ; one byte written per queued item
+    workers: i64                 ; spawned workers (never shrinks)
+    idle: i64                    ; workers blocked in the pipe read
+)
+{
+    ; The pool spinlock — same CAS pattern as the mailbox and the
+    ; root_pages bucket_lock: critical sections are a few pointer
+    ; moves, one lock at a time.
+    procedure acquire(pl: pointer[IoPool])
+    {
+        let lp &pl.lock
+        repeat
+        {
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+                break
+        }
+    }
+
+    procedure release(pl: pointer[IoPool])
+    {
+        let lp &pl.lock
+        scaly_atomic_store_u64(lp, 0 as u64)
+    }
+}
+
+; A pool worker (milestone 2.5): block in the 1-byte pipe read (one
+; byte = one queued item), pop one operation, run it, publish the
+; result, wake the requesting task through its home scheduler's inject
+; queue — exactly a remote mailbox sender's wake path. Runs on its own
+; OS thread: everything it touches arrives through the pool pointer
+; (the requester's thread-local globals are invisible here — the
+; milestone-2.4 lesson). Allocation happens only inside the shipped
+; operation, on this worker's own thread-local allocator; a result
+; lives on its own heap page, freed cross-thread by the requester
+; (safe since milestone 2.3). The loop never returns.
+procedure io_worker(arg: pointer[void]) returns pointer[void]
+{
+    let pl arg as pointer[IoPool]
+    repeat
+    {
+        IoPool.acquire(pl)
+        set pl.idle: pl.idle + (1 as i64)
+        IoPool.release(pl)
+        var byte u8[1]
+        let n scaly_eio_read(pl.pipe_read, byte as pointer[void], 1 as size_t)
+        if n <> (1 as i64)
+            return null
+        IoPool.acquire(pl)
+        set pl.idle: pl.idle - (1 as i64)
+        let w pl.head
+        if w <> null
+        {
+            set pl.head: w.next
+            if pl.head = null
+                set pl.tail: null
+            set w.next: null
+        }
+        IoPool.release(pl)
+        if w <> null
+        {
+            set w.result: scaly_call_ptr(w.fn, w.arg)
+            let t w.task
+            Scheduler.inject_task(t.home as pointer[Scheduler], t)
+        }
+    }
+}
+
 ; Suspending I/O over the scheduler's readiness poller (milestone 1.5).
 ; A file descriptor must be nonblocking (Io.set_nonblocking, once); read
 ; and write try the syscall and park the running task on would-block.
 ; The backend (kqueue/epoll) lives in the eio C shim — see the module
-; header. At most one parked task per fd at a time.
+; header. At most one parked task per fd at a time. Since milestone 2.5
+; no scheduler is required: without one, would-block waits in poll(2).
 define Io
 {
     ; The current scheduler's poller fd, created lazily on first use.
@@ -1219,12 +1370,37 @@ define Io
             exit 107
     }
 
+    ; Block until fd is ready, scheduler-free (milestone 2.5): a plain
+    ; poll(2) on one fd, infinite timeout. The result is advisory — the
+    ; caller retries its syscall, which reports any hard error itself
+    ; (an EINTR or POLLNVAL just loops through one more retry).
+    procedure wait_ready(fd: i32, for_write: bool)
+    {
+        var pfd u8[8]
+        set *(pfd as pointer[i32]): fd
+        ; POLLIN=1 / POLLOUT=4 on both OSes. Inlined, not module
+        ; constants: scalyls defines its own POLLIN and the two global
+        ; symbols would collide in a whole-stack link.
+        var ev 1 as i32
+        if for_write
+            set ev: 4 as i32
+        ; events is the u16 at offset 4 (revents at 6 is poll's to fill).
+        set *(((pfd as size_t) + (4 as size_t)) as pointer[u16]): ev as u16
+        poll(pfd as pointer[void], 1 as i32, (0 - 1) as i32)
+    }
+
     ; Park until fd is ready. A task arms the fd (oneshot, tagged with
     ; its record) and yields to the dispatcher; the main context arms
     ; with a null tag and drives the dispatcher until its event fires,
-    ; running ready tasks first (mirrors a main-context join).
+    ; running ready tasks first (mirrors a main-context join). Without
+    ; any scheduler (milestone 2.5) the wait is a plain poll(2).
     procedure park(fd: i32, for_write: bool)
     {
+        if current_scheduler = null
+        {
+            Io.wait_ready(fd, for_write)
+            return
+        }
         let q Io.ensure_poll()
         var wr (0 as i32)
         if for_write
@@ -1311,6 +1487,133 @@ define Io
             set r: scaly_eio_accept(fd)
         }
         r
+    }
+
+    ; Write the WHOLE buffer, looping over partial writes (milestone
+    ; 2.5 — Console goes through here). Colorless: suspends inside a
+    ; task on a nonblocking fd, drives the dispatcher from the main
+    ; context, plain-blocks without a scheduler. False on a hard error.
+    procedure write_all(fd: i32, buf: pointer[void], count: size_t) returns bool
+    {
+        var done 0 as size_t
+        while done < count
+        {
+            let r Io.write(fd, ((buf as size_t) + done) as pointer[void], count - done)
+            if r <= (0 as i64)
+                return false
+            set done: done + (r as size_t)
+        }
+        true
+    }
+
+    ; Is the caller running inside a scheduled task? File and friends
+    ; branch on this: offload inside a task, plain blocking call
+    ; otherwise — whether an operation suspends is a runtime property.
+    function in_task() returns bool
+        current_task <> null
+
+    ; How many blocking operations this thread shipped to a worker —
+    ; the suspension proof for tests.
+    function offload_count() returns i64
+        io_offloads
+
+    ; This thread's worker pool, created lazily on first offload.
+    procedure ensure_pool() returns pointer[IoPool]
+    {
+        var pl io_pool as pointer[IoPool]
+        if pl = null
+        {
+            let p Page.allocate_page()
+            set pl: p.allocate(sizeof IoPool, alignof IoPool) as pointer[IoPool]
+            var fds u8[8]
+            let rc pipe(fds as pointer[i32])
+            if rc <> (0 as i32)
+                exit 111
+            set pl.lock: 0 as u64
+            set pl.head: null
+            set pl.tail: null
+            set pl.pipe_read: *(fds as pointer[i32])
+            set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
+            set pl.workers: 0 as i64
+            set pl.idle: 0 as i64
+            set io_pool: pl as pointer[void]
+        }
+        pl
+    }
+
+    ; Run fn(arg) — a blocking operation, `procedure fn(arg:
+    ; pointer[void]) returns pointer[void]` taken with &fn — without
+    ; stalling the scheduler (milestone 2.5). Inside a task the call is
+    ; shipped to a worker thread and the task parks until the result
+    ; arrives (the worker wakes it through the milestone-2.4 inject
+    ; queue + wake handle); on the main context, or without a
+    ; scheduler, fn runs right here and blocks — the colorless
+    ; fallback. fn runs on ANOTHER THREAD: it must not read this
+    ; thread's thread-local globals, and a non-null result must be
+    ; rooted on its own fresh heap page — the caller consumes and frees
+    ; it like a mailbox message. arg may point into the caller's
+    ; region: the requesting frame outlives the call.
+    procedure offload(fn: pointer[void], arg: pointer[void]) returns pointer[void]
+    {
+        let me current_task as pointer[SchedTask]
+        if me = null
+            return scaly_call_ptr(fn, arg)
+        Io.ensure_wake()
+        let pl Io.ensure_pool()
+        set io_offloads: io_offloads + (1 as i64)
+        ; The work record rides on its own heap page — freed below once
+        ; the result is consumed.
+        let p Page.allocate_page()
+        let w p.allocate(sizeof IoWork, alignof IoWork) as pointer[IoWork]
+        set w.next: null
+        set w.fn: fn
+        set w.arg: arg
+        set w.result: null
+        set w.task: me
+        ; Queue the work; grow the pool when no worker is idle (up to
+        ; the cap — beyond it the item waits for the next free worker).
+        IoPool.acquire(pl)
+        if pl.tail = null
+        {
+            set pl.head: w
+            set pl.tail: w
+        }
+        else
+        {
+            let tl pl.tail
+            set tl.next: w
+            set pl.tail: w
+        }
+        var grow false
+        if pl.idle = (0 as i64)
+        {
+            if pl.workers < IO_POOL_WORKERS
+            {
+                set pl.workers: pl.workers + (1 as i64)
+                set grow: true
+            }
+        }
+        IoPool.release(pl)
+        if grow
+            Thread.spawn(&io_worker, pl as pointer[void])
+        ; One byte per item: an idle worker's blocking read consumes
+        ; exactly one and pops exactly one.
+        var one u8[1]
+        set *(one as pointer[u8]): 1 as u8
+        scaly_eio_write(pl.pipe_write, one as pointer[void], 1 as size_t)
+        ; Park like a mailbox receive: blocked + chan_parked keep
+        ; step_or_wait blocking in the poller until the worker's inject
+        ; arrives (drain_inject undoes both counters).
+        let s current_scheduler as pointer[Scheduler]
+        set s.blocked: s.blocked + 1
+        set s.chan_parked: s.chan_parked + 1
+        Fiber.yield()
+        ; Woken: the worker published the result before the inject.
+        let res w.result
+        let wp Page.get(w as pointer[void])
+        wp.deallocate_extensions()
+        Page.release_page(wp)
+        res
     }
 }
 

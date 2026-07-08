@@ -1,5 +1,7 @@
 use scaly.containers.String
 use scaly.memory.runtime
+use scaly.memory.Page
+use scaly.fiber.Io
 
 ; C stdio constants
 define SEEK_SET: int 0
@@ -9,6 +11,53 @@ define SEEK_END: int 2
 ; C unistd constants
 define F_OK: int 0
 
+; The blocking read shipped to a worker thread (milestone 2.5). Runs on
+; the worker: arg is the NUL-terminated path (it points into the
+; requester's region, which stays alive while the requester parks); the
+; result is a {length, buffer-pointer} cell rooted on its own fresh
+; heap page (the buffer may spill into the page's oversized/extension
+; chain) — the requester copies the bytes out and frees the page. Null
+; when the file cannot be opened.
+procedure file_read_worker(arg: pointer[void]) returns pointer[void]
+{
+    var file fopen(arg as pointer[const_char], "rb")
+    if file = null
+        return null
+    fseek(file, 0, SEEK_END)
+    let size ftell file
+    rewind file
+    let p Page.allocate_page()
+    let cell p.allocate(16 as size_t, 8 as size_t) as pointer[size_t]
+    set *cell: size as size_t
+    var buf null as pointer[void]
+    if size > 0
+    {
+        set buf: p.allocate(size as size_t, 8 as size_t)
+        fread(buf, 1, size as size_t, file)
+    }
+    set *(((cell as size_t) + (8 as size_t)) as pointer[size_t]): buf as size_t
+    fclose file
+    cell as pointer[void]
+}
+
+; The blocking write shipped to a worker thread (milestone 2.5). arg is
+; a {path, buffer, length} request cell in the requester's care; the
+; result is null on failure, a non-null sentinel on success (nothing to
+; free — no result page).
+procedure file_write_worker(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    let path (*cell) as pointer[const_char]
+    let data (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[void]
+    let len *(((cell as size_t) + (16 as size_t)) as pointer[size_t])
+    var file fopen(path, "wb")
+    if file = null
+        return null
+    fwrite(data, 1, len, file)
+    fclose file
+    (1 as size_t) as pointer[void]
+}
+
 define File
 {
     function exists(path: String) returns bool
@@ -17,8 +66,14 @@ define File
         access(path_c_string, F_OK) = 0
     }
 
+    ; Colorless (milestone 2.5): inside a task the blocking read runs
+    ; on a worker thread while the task parks; on the main context (or
+    ; without a scheduler) it blocks right here — same call, same
+    ; result.
     function read_to_string(path: String) returns String
     {
+        if Io.in_task()
+            return File.read_to_string_offloaded(path)
         var file fopen(path.to_c_string(), "rb")
         if file = null
             return String()
@@ -33,8 +88,35 @@ define File
         ret
     }
 
+    ; The task path of read_to_string: offload the blocking read, copy
+    ; the bytes out of the worker's result page, free it.
+    function read_to_string_offloaded(path: String) returns String
+    {
+        let pc path.to_c_string()
+        let cell Io.offload(&file_read_worker, pc as pointer[void])
+        if cell = null
+            return String()
+        let len *(cell as pointer[size_t])
+        let data (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[const_char]
+        let cp Page.get(cell)
+        if len = (0 as size_t)
+        {
+            cp.deallocate_extensions()
+            Page.release_page(cp)
+            return String()
+        }
+        var ret String(data, len)
+        cp.deallocate_extensions()
+        Page.release_page(cp)
+        ret
+    }
+
+    ; Colorless like read_to_string: offloads inside a task, blocks
+    ; otherwise.
     function write_from_string(path: String, contents: String) returns bool
     {
+        if Io.in_task()
+            return File.write_from_string_offloaded(path, contents)
         var file fopen(path.to_c_string(), "wb")
         if file = null
             return false
@@ -42,5 +124,24 @@ define File
         fwrite(contents.get_buffer(), 1, contents.get_length(), file)
         fclose file
         true
+    }
+
+    ; The task path of write_from_string: pack a {path, buffer, length}
+    ; request cell on its own heap page (path and buffer point into the
+    ; requester's region — alive while parked), offload, free the cell.
+    function write_from_string_offloaded(path: String, contents: String) returns bool
+    {
+        let pc path.to_c_string()
+        let buf contents.get_buffer()
+        let len contents.get_length()
+        let p Page.allocate_page()
+        let cell p.allocate(24 as size_t, 8 as size_t) as pointer[size_t]
+        set *cell: pc as size_t
+        set *(((cell as size_t) + (8 as size_t)) as pointer[size_t]): buf as size_t
+        set *(((cell as size_t) + (16 as size_t)) as pointer[size_t]): len
+        let res Io.offload(&file_write_worker, cell as pointer[void])
+        p.deallocate_extensions()
+        Page.release_page(p)
+        res <> null
     }
 }
