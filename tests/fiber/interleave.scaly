@@ -1,0 +1,64 @@
+; Two fibers resumed alternately, each region-allocating between yields.
+; This is the case the per-fiber allocator swap exists for: without it,
+; interleaved root-page pushes from two fibers would violate the shared
+; StackBucket's strict LIFO discipline (scaly_release_root_page aborts).
+; Both regions are disposed wholesale at the end.
+; Expected: a b a b a b done freed
+
+procedure worker_a(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+    var i 0
+    while i < 3
+    {
+        var k 0
+        while k < 20
+        {
+            let s String("alpha payload alpha payload alpha payload")
+            set k: k + 1
+        }
+        Console.print "a "
+        Fiber.yield()
+        set i: i + 1
+    }
+    Fiber.finish()
+}
+
+procedure worker_b(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+    var i 0
+    while i < 3
+    {
+        var k 0
+        while k < 20
+        {
+            let s String("beta payload beta payload beta payload")
+            set k: k + 1
+        }
+        Console.print "b "
+        Fiber.yield()
+        set i: i + 1
+    }
+    Fiber.finish()
+}
+
+let page Page.allocate_page()
+let fa Fiber.create(page, &worker_a)
+let fb Fiber.create(page, &worker_b)
+var more true
+while more
+{
+    set more: false
+    if Fiber.resume(fa)
+        set more: true
+    if Fiber.resume(fb)
+        set more: true
+}
+Console.print "done "
+let na Fiber.dispose(fa)
+let nb Fiber.dispose(fb)
+if na > 0
+    if nb > 0
+        Console.println "freed"
+Page.release_page(page)

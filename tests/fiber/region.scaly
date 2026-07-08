@@ -1,0 +1,44 @@
+; Milestone 1.2 demonstrator: a fiber owns an mmap'd guard-paged stack and
+; its own region. The worker region-allocates across yields (enough Strings
+; to overflow its first local page into extension pages), finishes, and
+; Fiber.dispose frees the whole region wholesale — the teardown counters
+; prove the fiber's pages and its own stack bucket existed and were freed
+; (munmap is rc-checked inside dispose, exit 105 on failure).
+; Expected: work work work done region-freed
+
+procedure worker(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+    var i 0
+    while i < 3
+    {
+        var k 0
+        while k < 40
+        {
+            let s String("region payload region payload region payload region payload")
+            set k: k + 1
+        }
+        Console.print "work "
+        Fiber.yield()
+        set i: i + 1
+    }
+    Fiber.finish()
+}
+
+let page Page.allocate_page()
+let f Fiber.create(page, &worker)
+while Fiber.resume(f)
+{
+}
+Console.print "done "
+let freed Fiber.dispose(f)
+var ok true
+if freed < 1
+    set ok: false
+if Fiber.freed_bucket_count() < (1 as i64)
+    set ok: false
+if Fiber.freed_page_count() < (1 as i64)
+    set ok: false
+if ok
+    Console.println "region-freed"
+Page.release_page(page)

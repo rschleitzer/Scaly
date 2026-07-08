@@ -1,19 +1,235 @@
-; Fiber context-switch primitives (self-scaling stage 1, milestone 1.1).
+; Fibers (self-scaling stage 1): context-switch primitives (milestone 1.1)
+; and Fiber regions (milestone 1.2).
 ;
-; Implemented in vendored assembly under fiber/ (fcontext_arm64.S AAPCS64,
+; Context switch: vendored assembly under fiber/ (fcontext_arm64.S AAPCS64,
 ; fcontext_x86_64.S SysV — the two ABIs covering all four LP64 targets),
 ; Boost.Context fcontext style: a context is a stack pointer to a frame of
 ; callee-saved registers. tools/fcontext.sh assembles the host's file with
-; clang; every libscaly.a build archives the object alongside libscaly.o.
+; clang; every libscaly.a build archives the object alongside libscaly.o,
+; and the seed/compiler links carry it too (the Fiber procedures below
+; reference the switcher). API (no transfer_t struct return): the resumed
+; side receives the JUMPER's fresh context in the first argument register —
+; a fresh context's entry function gets it as its argument, a suspended
+; context gets it as scaly_jump_context's return value. An entry function
+; must never return (it traps).
 ;
-; API (no transfer_t struct return): the resumed side receives the JUMPER's
-; fresh context in the first argument register — a fresh context's entry
-; function gets it as its argument, a suspended context gets it as
-; scaly_jump_context's return value. An entry function must never return
-; (it traps); fiber completion arrives with the scheduler in milestone 1.3.
+; Fiber regions (milestone 1.2): a Fiber owns an mmap'd stack (guard page
+; at the bottom, no growing in v1) and is its OWN REGION ROOT — it starts
+; with empty StackBucket allocator state (stack_head/stack_top), so the
+; first function-local page allocated inside the fiber creates a fresh
+; bucket chain belonging to the fiber. resume/yield/finish swap that
+; per-fiber allocator state with the resuming side's at EVERY context
+; crossing (the Fiber record always holds the non-running side's context +
+; allocator state). The HeapBucket allocator (heap_head) stays
+; process-global: it is bitmap-managed, not LIFO, so single-threaded
+; fibers can interleave extension/exclusive-page traffic safely. dispose
+; frees the fiber's whole region wholesale: every root page still on its
+; stack (extension + exclusive chains included), the stack buckets
+; themselves, then the mmap'd stack.
 ;
-; Unreferenced by the scaly package itself, so these emit no `declare` into
-; scaly.ll (fixpoint-safe, same pattern as memory/runtime.scaly's read).
+; The API lives as statics on the Fiber concept (Fiber.create / resume /
+; started / yield / finish / dispose): user programs resolve cross-package
+; concept statics reliably, unlike free functions with concept-pointer
+; parameters (planner gap, 2026-07-08).
+;
+; NOTE: SCALY_TRACE_ROOT reports a fiber's entry procedure as unbalanced
+; by design — its root pages are not popped one by one; the region dies
+; wholesale in Fiber.dispose.
+;
+; Entry protocol (milestone 1.2 — the scheduler in 1.3 will wrap this):
+;   procedure my_fiber(first_ctx: pointer[void])
+;   {
+;       Fiber.started first_ctx    ; hand the resumer's context to the record
+;       ...work; Fiber.yield() as often as needed...
+;       Fiber.finish()             ; never returns
+;   }
+;   let f Fiber.create(page, &my_fiber)
+;   while Fiber.resume(f) { ... }
+;   let freed Fiber.dispose(f)
+
+use scaly.memory.Page
+use scaly.memory.StackBucketHeader
 
 function scaly_make_context(stack_top: pointer[void], fn: pointer[void]) returns pointer[void] extern
 procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern
+
+; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
+; stack-arg ABI); mmap's offset is 64-bit on both OSes.
+function mmap(addr: pointer[void], length: size_t, prot: i32, flags: i32, fd: i32, offset: i64) returns pointer[void] extern
+function munmap(addr: pointer[void], length: size_t) returns i32 extern
+function mprotect(addr: pointer[void], len: size_t, prot: i32) returns i32 extern
+function getpagesize() returns i32 extern
+
+; MAP_PRIVATE (0x2, both OSes) | MAP_ANON (darwin, 0x1000) | MAP_ANONYMOUS
+; (linux, 0x20). The union works on both OSes: 0x1000 on linux is
+; MAP_EXECUTABLE and 0x20 on darwin is MAP_RENAME — both documented as
+; ignored. Verified on arm64-darwin; the linux legs run in CI.
+define MAP_ANON_PRIVATE i32 0x1022
+define PROT_NONE i32 0
+define PROT_READ_WRITE i32 3
+
+; Default fiber stack: 128 KB including the guard page (no growing in v1).
+define FIBER_STACK_SIZE size_t 0x20000
+
+; The running fiber (null = main context). Single-threaded by design in
+; stage 1; becomes per-thread state in stage 2.
+mutable current_fiber: pointer[void] null
+
+; Wholesale-teardown counters — the milestone-1.2 "pages provably freed"
+; trace. Read them through Fiber.freed_page_count / freed_bucket_count.
+mutable fiber_pages_freed: i64 0
+mutable fiber_buckets_freed: i64 0
+
+define Fiber
+(
+    ctx: pointer[void]           ; the suspended (non-running) side's context
+    stack_base: pointer[void]    ; mmap base; guard page at the bottom
+    stack_size: size_t
+    saved_head: pointer[StackBucketHeader]  ; the non-running side's ...
+    saved_top: pointer[Page]                ; ... StackBucket allocator state
+    done: bool
+)
+{
+    function freed_page_count() returns i64
+        fiber_pages_freed
+
+    function freed_bucket_count() returns i64
+        fiber_buckets_freed
+
+    ; Swap the StackBucket allocator state between the process globals and
+    ; the record. Called at every context crossing, keeping the invariant
+    ; that the record holds the NON-running side's state.
+    procedure swap_allocator(f: pointer[Fiber])
+    {
+        let h stack_head
+        let t stack_top
+        set stack_head: f.saved_head
+        set stack_top: f.saved_top
+        set f.saved_head: h
+        set f.saved_top: t
+    }
+
+    ; Create a suspended fiber. The record lives on the given page; the
+    ; entry function fn (take it with &my_fiber) runs on a fresh mmap'd
+    ; stack with a PROT_NONE guard page at the low end, and allocates into
+    ; its own region.
+    procedure create_sized(host: pointer[Page], fn: pointer[void], size: size_t) returns pointer[Fiber]
+    {
+        let f host.allocate(sizeof Fiber, alignof Fiber) as pointer[Fiber]
+        let base mmap(null, size, PROT_READ_WRITE, MAP_ANON_PRIVATE, (0 - 1) as i32, 0 as i64)
+        if (base as i64) = ((0 - 1) as i64)
+            exit 103
+        let guard_size getpagesize() as size_t
+        let grc mprotect(base, guard_size, PROT_NONE)
+        if grc <> (0 as i32)
+            exit 104
+        let top ((base as size_t) + size) as pointer[void]
+        set f.ctx: scaly_make_context(top, fn)
+        set f.stack_base: base
+        set f.stack_size: size
+        set f.saved_head: null    ; fresh region: the fiber's first local page
+        set f.saved_top: null     ; creates its own bucket chain
+        set f.done: false
+        f
+    }
+
+    procedure create(host: pointer[Page], fn: pointer[void]) returns pointer[Fiber]
+    {
+        let size FIBER_STACK_SIZE
+        Fiber.create_sized(host, fn, size)
+    }
+
+    ; Run the fiber until it yields or finishes. Returns true when the
+    ; fiber can be resumed again, false once it finished (or was done).
+    procedure resume(f: pointer[Fiber]) returns bool
+    {
+        if f.done
+            return false
+        let prev current_fiber
+        set current_fiber: f as pointer[void]
+        Fiber.swap_allocator(f)
+        set f.ctx: scaly_jump_context(f.ctx)
+        set current_fiber: prev
+        not f.done
+    }
+
+    ; First statement of every fiber entry function: stores the resumer's
+    ; context (the entry argument) into the record, establishing the
+    ; record invariant. The resume that jumped here already swapped the
+    ; allocator state.
+    procedure started(first_ctx: pointer[void])
+    {
+        let f current_fiber as pointer[Fiber]
+        set f.ctx: first_ctx
+    }
+
+    ; Suspend the running fiber and return to its resumer. Returns when
+    ; the fiber is resumed again.
+    procedure yield()
+    {
+        let f current_fiber as pointer[Fiber]
+        Fiber.swap_allocator(f)
+        set f.ctx: scaly_jump_context(f.ctx)
+    }
+
+    ; Finish the running fiber: marks it done and returns to the resumer
+    ; for good. Never returns (resume refuses a done fiber; if the entry
+    ; function itself ever returned, the switcher traps).
+    procedure finish()
+    {
+        let f current_fiber as pointer[Fiber]
+        set f.done: true
+        Fiber.swap_allocator(f)
+        scaly_jump_context(f.ctx)
+    }
+
+    ; Free the fiber's whole region and stack: deallocate the extension
+    ; and exclusive chains of every root page still on the fiber's stack
+    ; (they return to the shared heap buckets), free the fiber's stack
+    ; buckets, then munmap the fiber stack. Returns the number of root
+    ; pages torn down. Call after the fiber finished (or to kill it — a
+    ; disposed fiber must never be resumed).
+    procedure dispose(f: pointer[Fiber]) returns int
+    {
+        var pages_freed 0
+        var bucket f.saved_head
+        ; Buckets from the head up to saved_top's bucket hold live root
+        ; pages (in the top bucket only up to saved_top); buckets beyond
+        ; that are empty caches kept by allocate_root_page — freed below,
+        ; nothing to tear down inside.
+        var live true
+        if f.saved_top = null
+            set live: false
+        while bucket <> null
+        {
+            if live
+            {
+                var p first_usable_page(bucket as pointer[void])
+                var last last_usable_page(bucket as pointer[void])
+                let top_bucket stack_bucket_of(f.saved_top)
+                if bucket = top_bucket
+                {
+                    set last: f.saved_top
+                    set live: false
+                }
+                while (p as size_t) <= (last as size_t)
+                {
+                    p.deallocate_extensions()
+                    set pages_freed: pages_freed + 1
+                    set p: ((p as size_t) + PAGE_SIZE) as pointer[Page]
+                }
+            }
+            let next_bucket bucket.next
+            free(bucket as pointer[void])
+            set fiber_buckets_freed: fiber_buckets_freed + (1 as i64)
+            set bucket: next_bucket
+        }
+        set f.saved_head: null
+        set f.saved_top: null
+        let mrc munmap(f.stack_base, f.stack_size)
+        if mrc <> (0 as i32)
+            exit 105
+        set fiber_pages_freed: fiber_pages_freed + (pages_freed as i64)
+        pages_freed
+    }
+}
