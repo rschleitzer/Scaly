@@ -1429,6 +1429,7 @@ if.end2:                                          ; preds = %if.end
   store i64 1, ptr @trace_enabled, align 8
   %call3 = call ptr @aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
   store ptr %call3, ptr @trace_entries, align 8
+  %call4 = call i64 @atexit(ptr @_Z16scaly_trace_dumpv)
   ret void
 }
 
