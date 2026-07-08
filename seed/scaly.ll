@@ -187,7 +187,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z14StringIterator = type { ptr, ptr }
 %_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, i1 }
 %_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64 }
-%_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr }
+%_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr }
 %_Z7Channel = type { ptr, ptr, ptr, ptr }
 
 @"9PAGE_SIZE" = constant i64 4096
@@ -21163,7 +21163,7 @@ if.end6:                                          ; preds = %if.then5, %if.then
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN9Scheduler5spawnEPv(ptr %0) {
+define linkonce_odr ptr @_ZN9Scheduler9spawn_argEPvPv(ptr %0, ptr %1) {
 entry:
   %global.load = load ptr, ptr @current_scheduler, align 8
   %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
@@ -21184,8 +21184,31 @@ entry:
   store i1 false, ptr %disposed, align 1
   %msg = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 6
   store ptr null, ptr %msg, align 8
+  %arg = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 7
+  store ptr %1, ptr %arg, align 8
   call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %call)
   ret ptr %call
+}
+
+define linkonce_odr ptr @_ZN9Scheduler5spawnEPv(ptr %0) {
+entry:
+  %call = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr %0, ptr null)
+  ret ptr %call
+}
+
+define linkonce_odr ptr @_ZN9Scheduler8task_argEv() {
+entry:
+  %global.load = load ptr, ptr @current_task, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct = load %_Z9SchedTask, ptr %global.load, align 8
+  %arg = extractvalue %_Z9SchedTask %load.struct, 7
+  ret ptr %arg
 }
 
 define linkonce_odr void @_ZN9Scheduler5yieldEv() {
@@ -21237,6 +21260,24 @@ while.exit:                                       ; preds = %while.cond
   ret void
 }
 
+define linkonce_odr i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %0) {
+entry:
+  %load.struct = load %_Z9SchedTask, ptr %0, align 8
+  %disposed = extractvalue %_Z9SchedTask %load.struct, 5
+  br i1 %disposed, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %disposed1 = getelementptr inbounds %_Z9SchedTask, ptr %0, i32 0, i32 5
+  store i1 true, ptr %disposed1, align 1
+  %field.inplace = getelementptr inbounds %_Z9SchedTask, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call i64 @_ZN5Fiber7disposeEP5Fiber(ptr %deref.recv)
+  ret i64 %call
+}
+
 define linkonce_odr i1 @_ZN9Scheduler4stepEv() {
 entry:
   %call = call ptr @_ZN9Scheduler7dequeueEv()
@@ -21259,6 +21300,7 @@ if.then2:                                         ; preds = %if.end
   %done = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 4
   store i1 true, ptr %done, align 1
   call void @_ZN9Scheduler12wake_waitersEP9SchedTask(ptr %call)
+  %call4 = call i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %call)
   br label %if.end3
 
 if.end3:                                          ; preds = %if.then2, %if.end
@@ -21358,24 +21400,6 @@ if.then1:                                         ; preds = %if.end
 
 if.end2:                                          ; preds = %if.end
   ret i1 false
-}
-
-define linkonce_odr i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %0) {
-entry:
-  %load.struct = load %_Z9SchedTask, ptr %0, align 8
-  %disposed = extractvalue %_Z9SchedTask %load.struct, 5
-  br i1 %disposed, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %disposed1 = getelementptr inbounds %_Z9SchedTask, ptr %0, i32 0, i32 5
-  store i1 true, ptr %disposed1, align 1
-  %field.inplace = getelementptr inbounds %_Z9SchedTask, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i64 @_ZN5Fiber7disposeEP5Fiber(ptr %deref.recv)
-  ret i64 %call
 }
 
 define linkonce_odr void @_ZN9Scheduler3runEv() {
