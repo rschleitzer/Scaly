@@ -52,7 +52,8 @@ echo "bootstrap: ROOT -> stage1"
 # generics that would otherwise be undefined at link).
 echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive)"
 ( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
-rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o
+tools/fcontext.sh /tmp/fcontext.o
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o
 
 echo "bootstrap: stage1 -> stage2"
 ( ulimit -s 65520

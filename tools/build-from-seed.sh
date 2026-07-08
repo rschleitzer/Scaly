@@ -93,8 +93,11 @@ echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 # symbols, and --no-tests drops the test_* orchestrators (which reference
 # uninstantiated generics and would otherwise leave undefined symbols in the
 # single archive object). Built with the compiler we just produced — C++-free.
+# fcontext.o adds the fiber context-switch primitives (vendored assembly,
+# packages/scaly/0.1.0/scaly/fiber/) — clang assembles the host's ABI file.
 "$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
-ar rcs /tmp/libscaly.a /tmp/libscaly.o
+tools/fcontext.sh /tmp/fcontext.o
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 
 # Build the scalyls language server from its seed, when committed. scalyls is

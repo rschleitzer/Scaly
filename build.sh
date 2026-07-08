@@ -23,4 +23,5 @@ if [ "$1" = "test" ]; then
     tests/regress/run.sh scalyc/build/scalyc
     tests/selfhosted/run.sh scalyc/build/scalyc
     tests/target/run.sh scalyc/build/scalyc
+    tests/fiber/run.sh scalyc/build/scalyc
 fi

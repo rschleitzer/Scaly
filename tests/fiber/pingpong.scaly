@@ -1,0 +1,30 @@
+; Milestone 1.1 demonstrator: stackful context-switch ping-pong through the
+; vendored AAPCS64 / SysV x86-64 switchers archived in libscaly.a. The extern
+; declarations come from the prelude (scaly.fiber module) — nothing local.
+; The fiber entry function receives the jumper's context as its argument and
+; must never return; each scaly_jump_context returns the (fresh) context of
+; whoever jumped to us.
+; Expected: ping pong ping pong ping pong done
+
+procedure fiber_main(first_ctx: pointer[void])
+{
+    var mctx first_ctx
+    repeat
+    {
+        Console.print "pong "
+        set mctx: scaly_jump_context(mctx)
+    }
+}
+
+let stack_mem aligned_alloc(4096, 65536)
+let stack_top ((stack_mem as size_t) + (65536 as size_t)) as pointer[void]
+let fiber_fn &fiber_main
+var fctx scaly_make_context(stack_top, fiber_fn)
+var i: int 0
+while i < 3
+{
+    Console.print "ping "
+    set fctx: scaly_jump_context(fctx)
+    set i: i + 1
+}
+Console.println "done"

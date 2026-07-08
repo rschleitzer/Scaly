@@ -43,7 +43,9 @@ echo "install: building runtime archive lib/libscaly.a"
 mkdir -p "$REPO/lib"
 "$BIN" -c --no-prelude --no-tests -o "$REPO/lib/libscaly.o" \
     "$REPO/packages/scaly/0.1.0/scaly.scaly"
-ar rcs "$REPO/lib/libscaly.a" "$REPO/lib/libscaly.o"
+tools/fcontext.sh "$REPO/lib/fcontext.o"
+rm -f "$REPO/lib/libscaly.a"
+ar rcs "$REPO/lib/libscaly.a" "$REPO/lib/libscaly.o" "$REPO/lib/fcontext.o"
 
 WRAPPER="$BINDIR/scalyc"
 TMP=$(mktemp)
@@ -61,7 +63,8 @@ export SCALY_HOME="\${SCALY_HOME:-$REPO}"
 if [ ! -f "\$SCALY_HOME/lib/libscaly.a" ]; then
     "\$SCALY_HOME/scalyc/build/scalyc" -c --no-prelude --no-tests \\
         -o "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/packages/scaly/0.1.0/scaly.scaly" >/dev/null 2>&1 \\
-        && ar rcs "\$SCALY_HOME/lib/libscaly.a" "\$SCALY_HOME/lib/libscaly.o"
+        && "\$SCALY_HOME/tools/fcontext.sh" "\$SCALY_HOME/lib/fcontext.o" >/dev/null 2>&1 \\
+        && ar rcs "\$SCALY_HOME/lib/libscaly.a" "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/lib/fcontext.o"
 fi
 
 exec "\$SCALY_HOME/scalyc/build/scalyc" "\$@"

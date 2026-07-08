@@ -1,0 +1,19 @@
+; Fiber context-switch primitives (self-scaling stage 1, milestone 1.1).
+;
+; Implemented in vendored assembly under fiber/ (fcontext_arm64.S AAPCS64,
+; fcontext_x86_64.S SysV — the two ABIs covering all four LP64 targets),
+; Boost.Context fcontext style: a context is a stack pointer to a frame of
+; callee-saved registers. tools/fcontext.sh assembles the host's file with
+; clang; every libscaly.a build archives the object alongside libscaly.o.
+;
+; API (no transfer_t struct return): the resumed side receives the JUMPER's
+; fresh context in the first argument register — a fresh context's entry
+; function gets it as its argument, a suspended context gets it as
+; scaly_jump_context's return value. An entry function must never return
+; (it traps); fiber completion arrives with the scheduler in milestone 1.3.
+;
+; Unreferenced by the scaly package itself, so these emit no `declare` into
+; scaly.ll (fixpoint-safe, same pattern as memory/runtime.scaly's read).
+
+function scaly_make_context(stack_top: pointer[void], fn: pointer[void]) returns pointer[void] extern
+procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern

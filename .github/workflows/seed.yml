@@ -72,6 +72,9 @@ jobs:
       - name: Cross-emit sanity (--target all four object formats)
         run: tests/target/run.sh dist/seed/scalyc_seed
 
+      - name: Fiber suite (context-switch ping-pong, milestone 1.1)
+        run: tests/fiber/run.sh dist/seed/scalyc_seed
+
       - name: Upload native compiler
         uses: actions/upload-artifact@v4
         with:
