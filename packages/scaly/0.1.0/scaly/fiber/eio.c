@@ -46,15 +46,17 @@
  * arms are buffered here and submitted with the next wait — one syscall
  * where the epoll backend needs one epoll_ctl per arm. A full buffer
  * flushes early (submit-only kevent), so batching degrades gracefully,
- * never drops. Single-threaded by design in stage 1 (like the runtime's
- * current_scheduler global); becomes per-poller state in stage 2.
+ * never drops. THREAD-LOCAL since milestone 2.4: every thread may run
+ * its own scheduler + poller, and arm/wait always happen on the
+ * poller's home thread (cross-thread wakes go through scaly_eio_wake,
+ * which submits its own kevent and never touches this buffer).
  * Per-change kernel errors come back as EV_ERROR entries in the eventlist
  * (not a -1 return); any such entry is a genuine bug (e.g. a closed fd)
  * and fails the wait loudly, matching the old arm-time rc check. */
 #define SCALY_EIO_MAX_CHANGES 256
-static struct kevent scaly_eio_changes[SCALY_EIO_MAX_CHANGES];
-static int scaly_eio_nchanges = 0;
-static int scaly_eio_changes_q = -1;
+static __thread struct kevent scaly_eio_changes[SCALY_EIO_MAX_CHANGES];
+static __thread int scaly_eio_nchanges = 0;
+static __thread int scaly_eio_changes_q = -1;
 
 int scaly_eio_create(void)
 {
@@ -120,6 +122,31 @@ int scaly_eio_wait(int q, void** tags, int max)
     return out;
 }
 
+/* Cross-thread wake channel (milestone 2.4, shim rule (a): EVFILT_USER is
+ * kqueue-only, eventfd is linux-only). wake_create registers a persistent
+ * user event on q that reports `tag` when triggered; EV_CLEAR resets it on
+ * retrieval, so no rearm and no drain. Returns the wake handle (the user
+ * event's ident here, the eventfd on linux), -1 on failure. scaly_eio_wake
+ * may be called from ANY thread — it submits its own kevent and never
+ * touches the thread-local arm buffer; triggers before or during a wait
+ * are never lost (a pending trigger completes the next wait immediately),
+ * and multiple triggers coalesce into one report. */
+int scaly_eio_wake_create(int q, void* tag)
+{
+    struct kevent ev;
+    EV_SET(&ev, 1, EVFILT_USER, EV_ADD | EV_CLEAR, 0, 0, tag);
+    if (kevent(q, &ev, 1, 0, 0, 0) < 0)
+        return -1;
+    return 1;
+}
+
+int scaly_eio_wake(int q, int w)
+{
+    struct kevent ev;
+    EV_SET(&ev, w, EVFILT_USER, 0, NOTE_TRIGGER, 0, 0);
+    return kevent(q, &ev, 1, 0, 0, 0) < 0 ? -1 : 0;
+}
+
 #else
 
 #include <sys/epoll.h>
@@ -153,6 +180,42 @@ int scaly_eio_wait(int q, void** tags, int max)
     for (i = 0; i < n; i++)
         tags[i] = evs[i].data.ptr;
     return n;
+}
+
+/* Cross-thread wake channel (milestone 2.4): an eventfd registered
+ * edge-triggered (EPOLLET, NOT oneshot) reporting `tag`. Edge-triggered
+ * means each write is reported exactly once and the counter never needs
+ * a reset read — a write before or during an epoll_wait completes that
+ * wait, writes between waits coalesce into one report. Returns the
+ * eventfd (the wake handle scaly_eio_wake writes to), -1 on failure.
+ * scaly_eio_wake may be called from ANY thread. */
+#include <sys/eventfd.h>
+
+int scaly_eio_wake_create(int q, void* tag)
+{
+    struct epoll_event ev;
+    int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (fd < 0)
+        return -1;
+    ev.events = EPOLLIN | EPOLLET;
+    ev.data.ptr = tag;
+    if (epoll_ctl(q, EPOLL_CTL_ADD, fd, &ev) < 0)
+    {
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
+int scaly_eio_wake(int q, int w)
+{
+    unsigned long long one = 1;
+    ssize_t r;
+    (void)q;
+    do
+        r = write(w, &one, sizeof one);
+    while (r < 0 && errno == EINTR);
+    return r == (ssize_t)sizeof one ? 0 : -1;
 }
 
 #endif

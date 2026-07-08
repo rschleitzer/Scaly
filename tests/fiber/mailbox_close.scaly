@@ -1,0 +1,74 @@
+; Milestone 2.4 close semantics: a fiber TASK parked on a mailbox
+; receive is woken across threads — first by remote sends (the inject
+; queue + wake handle path: the receiver parks before the sender thread
+; even starts sending), finally by the last sender's close_sender,
+; after which the drained receive returns null. The sender thread runs
+; NO scheduler: sends never block, so a sender needs none. Scheduler.run
+; proves the exit-106 semantics stay sound: while the receiver is
+; parked on the mailbox the dispatcher blocks on the wake handle
+; instead of trapping, and after the close everything drains to a
+; clean exit.
+; Expected: sum3 done
+
+define Msg
+(
+    value: int
+)
+
+mutable box: pointer[void] null
+mutable total: i64 0
+
+procedure receiver()
+{
+    let m box as pointer[Mailbox]
+    var running true
+    while running
+    {
+        let raw Mailbox.receive(m)
+        if raw = null
+        {
+            set running: false
+        }
+        else
+        {
+            let msg raw as pointer[Msg]
+            let v msg.value
+            set total: total + (v as i64)
+            let mp Page.get(raw)
+            mp.deallocate_extensions()
+            Page.release_page(mp)
+        }
+    }
+}
+
+procedure sender(arg: pointer[void]) returns pointer[void]
+{
+    let m arg as pointer[Mailbox]
+    var i 1
+    while i <= 2
+    {
+        let mp Page.allocate_page()
+        let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+        set msg.value: i
+        Mailbox.send(m, msg as pointer[void])
+        set i: i + 1
+    }
+    Mailbox.close_sender(m)
+    null
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let m Mailbox.create()
+set box: m as pointer[void]
+; The spawned thread inherits the creator's handle; main keeps none.
+let t Scheduler.spawn(&receiver)
+let th Thread.spawn(&sender, m as pointer[void])
+Scheduler.run()
+let np Scheduler.join(t)
+Thread.join(th)
+if total = (3 as i64)
+    Console.print "sum3 "
+Mailbox.dispose(m)
+Page.release_page(page)
+Console.println "done"

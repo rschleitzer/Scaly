@@ -189,18 +189,30 @@
 ; (hence orphaned) bucket ADOPTS it into its own chain. A page may be
 ; allocated on one thread and released on another
 ; (tests/fiber/thread_churn.scaly). Still per-thread: schedulers,
-; fibers, and channels — Channel statics run on the current thread's
-; scheduler, so channels connect fibers of ONE thread; cross-thread
-; channels are a later milestone.
+; fibers, and the rendezvous Channel — its statics run on the current
+; thread's scheduler, so it connects fibers of ONE thread; the
+; cross-thread channel is the Mailbox (milestone 2.4, below).
 ;
 ;   let t Thread.spawn(&entry, arg)   ; arg: pointer[void], handed to entry
 ;   Thread.join(t)                    ; blocks until entry returned
+;
+; Cross-thread channels (milestone 2.4): Mailbox — an ASYNC ownership
+; channel connecting fibers/threads across OS threads; the rendezvous
+; Channel stays the single-thread legacy type (see the Mailbox concept
+; header for the decision and the full contract). Sends never block,
+; only receives wait; a sender-handle count closes the mailbox when the
+; last sender retires, waking parked receivers with null — deadlock
+; prevention by acyclic channel topology instead of detection. Infra:
+; SchedTask.home (the spawning scheduler), a per-scheduler MPSC inject
+; queue (CAS Treiber stack, drained at every step) and a wake handle in
+; the eio shim (EVFILT_USER/eventfd) that remote senders poke. exit 106
+; is unchanged for programs without mailbox parks.
 ;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
 ; join, send, or receive), 107 poller failure (create/arm/wait or
 ; set_nonblocking), 108 fiber stack overflow (guard page hit), 109
-; thread spawn/join failure.
+; thread spawn/join failure, 110 send on a closed mailbox.
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
@@ -218,6 +230,19 @@ function scaly_eio_wait(q: i32, tags: pointer[void], max: i32) returns i32 exter
 function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
 procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+
+; Cross-thread wake channel (milestone 2.4, shim rule (a): EVFILT_USER is
+; kqueue-only, eventfd is linux-only). wake_create registers a persistent
+; edge-style user event on q reporting tag when triggered; returns the
+; wake handle scaly_eio_wake takes (-1 on failure). scaly_eio_wake may be
+; called from ANY thread; triggers before or during a wait complete that
+; wait, multiple triggers coalesce into one report.
+function scaly_eio_wake_create(q: i32, tag: pointer[void]) returns i32 extern
+procedure scaly_eio_wake(q: i32, w: i32) returns i32 extern
+
+; Atomic load (milestone 2.4; cas/store are declared in root_pages.scaly).
+; Like all scaly_atomic_* names this is emitter-lowered, never a symbol.
+function scaly_atomic_load_u64(p: pointer[u64]) returns u64 extern
 
 ; TCP helpers (shim-owned: sockaddr_in layout is OS-specific, and accept
 ; needs the errno mapping). listen returns a nonblocking listening fd on
@@ -587,6 +612,9 @@ define SchedTask
     disposed: bool
     msg: pointer[void]           ; in-flight channel message while parked
     arg: pointer[void]           ; spawn_arg's argument (task_arg reads it)
+    ; home: the spawning scheduler (milestone 2.4) — a remote mailbox
+    ; sender routes wakes through it.
+    home: pointer[void]
 )
 
 ; The calling shape of a task record viewed as a delegate value: the
@@ -614,6 +642,10 @@ define Scheduler
     blocked: int                 ; tasks waiting in a join, send/receive, or Io
     eio: i32                     ; readiness poller fd (-1 until first Io use)
     io_waiting: int              ; tasks parked on fd readiness
+    wake: i32                    ; cross-thread wake handle (-1 until armed)
+    inject: u64                  ; MPSC inject queue: Treiber stack of
+                                 ; SchedTasks pushed by remote threads
+    chan_parked: int             ; tasks parked on a Mailbox receive
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -628,6 +660,9 @@ define Scheduler
         set s.blocked: 0
         set s.eio: (0 - 1) as i32
         set s.io_waiting: 0
+        set s.wake: (0 - 1) as i32
+        set s.inject: 0 as u64
+        set s.chan_parked: 0
         set current_scheduler: s as pointer[void]
         s
     }
@@ -682,6 +717,7 @@ define Scheduler
         set t.disposed: false
         set t.msg: null
         set t.arg: arg
+        set t.home: s as pointer[void]
         Scheduler.enqueue(t)
         t
     }
@@ -718,13 +754,89 @@ define Scheduler
         }
     }
 
+    ; Push a mailbox receiver onto its HOME scheduler's inject queue and
+    ; poke that scheduler's wake handle (milestone 2.4). Called from a
+    ; REMOTE thread: the only shared state touched is the atomic Treiber
+    ; head (the task's next field is ours to write until the CAS
+    ; publishes it) and the wake syscall; the home scheduler's counters
+    ; are adjusted by its own drain_inject. The receiver armed the wake
+    ; handle before parking, so the racy read of home.eio/home.wake sees
+    ; initialized values (published by the mailbox lock).
+    procedure inject_task(home: pointer[Scheduler], t: pointer[SchedTask])
+    {
+        let hp &home.inject
+        repeat
+        {
+            let h scaly_atomic_load_u64(hp)
+            set t.next: (h as size_t) as pointer[SchedTask]
+            if scaly_atomic_cas_u64(hp, h, t as u64) = h
+                break
+        }
+        Scheduler.wake_remote(home)
+    }
+
+    ; Poke a scheduler's wake handle so a poll_io blocked on it returns.
+    ; Safe from any thread; a scheduler that never armed a wake (no
+    ; mailbox receive yet) is simply not waiting — nothing to poke.
+    procedure wake_remote(home: pointer[Scheduler])
+    {
+        let q home.eio
+        if q = ((0 - 1) as i32)
+            return
+        let w home.wake
+        if w = ((0 - 1) as i32)
+            return
+        scaly_eio_wake(q, w)
+    }
+
+    ; Move every remotely-injected mailbox receiver to the ready queue
+    ; (milestone 2.4). Runs only on the scheduler's own thread (start of
+    ; every step), so the counter updates are owner-writes; the detach
+    ; CAS is the only contended access. The Treiber stack is LIFO —
+    ; reversed here so cross-thread wakes keep arrival order.
+    procedure drain_inject()
+    {
+        let s current_scheduler as pointer[Scheduler]
+        let hp &s.inject
+        var h scaly_atomic_load_u64(hp)
+        if h = (0 as u64)
+            return
+        repeat
+        {
+            let got scaly_atomic_cas_u64(hp, h, 0 as u64)
+            if got = h
+                break
+            set h: got
+        }
+        var rev null as pointer[SchedTask]
+        var t (h as size_t) as pointer[SchedTask]
+        while t <> null
+        {
+            let nx t.next
+            set t.next: rev
+            set rev: t
+            set t: nx
+        }
+        while rev <> null
+        {
+            let nx rev.next
+            Scheduler.enqueue(rev)
+            set s.blocked: s.blocked - 1
+            set s.chan_parked: s.chan_parked - 1
+            set rev: nx
+        }
+    }
+
     ; Run one ready task until it yields or finishes. A task that
     ; finished is reaped ON THE SPOT — its whole fiber region (stack,
     ; buckets, pages) dies with it, milestone 1.6's "the region dies
     ; with the connection" — after waking its joiners. Returns false
-    ; when the ready queue is empty.
+    ; when the ready queue is empty. Remotely-injected mailbox
+    ; receivers are drained into the ready queue first (every dispatch
+    ; loop runs through here, so no loop needs its own drain).
     procedure step() returns bool
     {
+        Scheduler.drain_inject()
         let t Scheduler.dequeue()
         if t = null
             return false
@@ -777,10 +889,21 @@ define Scheduler
             }
             else
             {
-                let t raw as pointer[SchedTask]
-                Scheduler.enqueue(t)
-                set s.blocked: s.blocked - 1
-                set s.io_waiting: s.io_waiting - 1
+                if raw = (1 as size_t)
+                {
+                    ; The wake handle fired (milestone 2.4): a remote
+                    ; thread pushed onto the inject queue or closed a
+                    ; mailbox. Nothing to do here — the next step()
+                    ; drains the inject queue, and a main-context
+                    ; mailbox waiter re-checks its queue on return.
+                }
+                else
+                {
+                    let t raw as pointer[SchedTask]
+                    Scheduler.enqueue(t)
+                    set s.blocked: s.blocked - 1
+                    set s.io_waiting: s.io_waiting - 1
+                }
             }
             set i: i + 1
         }
@@ -788,16 +911,25 @@ define Scheduler
     }
 
     ; Run one ready task; when the ready queue is empty but tasks await
-    ; fd readiness, block in the poller and wake them. Returns false
-    ; only when nothing can run again without outside help (queue
-    ; empty, no I/O waiters) — the caller decides whether remaining
-    ; blocked tasks make that a deadlock.
+    ; fd readiness, block in the poller and wake them. Tasks parked on a
+    ; Mailbox receive (milestone 2.4) also justify blocking: a remote
+    ; sender's inject + wake (or the last sender's close) gets them
+    ; moving again — that is the cross-thread replacement for exit 106,
+    ; which keeps its exact meaning for programs without mailbox parks.
+    ; Returns false only when nothing can run again without outside
+    ; help — the caller decides whether remaining blocked tasks make
+    ; that a deadlock.
     procedure step_or_wait() returns bool
     {
         if Scheduler.step()
             return true
         let s current_scheduler as pointer[Scheduler]
         if s.io_waiting > 0
+        {
+            Scheduler.poll_io()
+            return true
+        }
+        if s.chan_parked > 0
         {
             Scheduler.poll_io()
             return true
@@ -1055,6 +1187,29 @@ define Io
         q
     }
 
+    ; Arm the current scheduler's cross-thread wake handle (milestone
+    ; 2.4), creating the poller first if needed. Idempotent; called by
+    ; Mailbox.receive BEFORE any park so a remote sender's wake_remote
+    ; always finds initialized eio/wake fields. The tag is the sentinel
+    ; 1 — poll_io recognizes it as "drain the inject queue / re-check
+    ; the mailbox" (0 stays the main context's own-event tag, real
+    ; pointers stay Io-parked tasks).
+    procedure ensure_wake() returns i32
+    {
+        let q Io.ensure_poll()
+        let s current_scheduler as pointer[Scheduler]
+        var w s.wake
+        if w = ((0 - 1) as i32)
+        {
+            let tag (1 as size_t) as pointer[void]
+            set w: scaly_eio_wake_create(q, tag)
+            if w = ((0 - 1) as i32)
+                exit 107
+            set s.wake: w
+        }
+        w
+    }
+
     ; Put the fd into nonblocking mode (fcntl lives in the shim: it is
     ; variadic in libc, unreachable through a fixed-prototype extern).
     procedure set_nonblocking(fd: i32)
@@ -1156,6 +1311,300 @@ define Io
             set r: scaly_eio_accept(fd)
         }
         r
+    }
+}
+
+; A mailbox node: one queued message. Allocated on the MESSAGE'S OWN page
+; (the sender owns the message until the send, so the bump allocation is
+; race-free) and freed with the message region by the receiver — the
+; queue needs no allocator of its own and nothing to track.
+define MailNode
+(
+    next: pointer[MailNode]
+    msg: pointer[void]
+)
+
+; An async ownership channel (milestone 2.4) — the CROSS-THREAD channel
+; type. The rendezvous Channel above stays as the single-thread legacy
+; (deliberate decision: a rendezvous message may be null — channel tests
+; use null as an end-of-stream sentinel — while the mailbox RESERVES
+; null as the closed signal; and rendezvous backpressure is a contract
+; of its own, not just test timing). Deadlock PREVENTION instead of
+; detection: sends NEVER block (v1 unbounded — the message is an owned
+; region, enqueue and move on), only receives wait; keep the channel
+; topology acyclic along the spawn tree (discipline for now, the
+; stage-3 TaskPlanner enforces it structurally later) and no wait cycle
+; can form. Sender lifetime is explicit: create hands the creator ONE
+; send handle, add_sender registers another BEFORE it is handed over,
+; close_sender retires one — when the last retires the mailbox is
+; CLOSED and every parked receiver wakes with null (after the queue
+; drains: close is a termination signal, not a discard). Ownership
+; moves with the send exactly like the rendezvous channel: message =
+; object graph rooted on its own heap page, the receiver frees it.
+;
+; Threading contract (v1): senders may live on ANY thread and need no
+; scheduler (sends never park). All receivers of one mailbox live on
+; ONE thread, which needs a scheduler; receive parks the running task
+; (or drives the dispatcher from the main context) and a remote sender
+; wakes the receiver through its home scheduler's inject queue +
+; wake handle. exit 106 keeps its meaning unchanged for programs
+; without mailbox parks.
+;
+;   let m Mailbox.create()            ; on its own heap page; 1 send handle
+;   Mailbox.add_sender(m)             ; before handing m to another sender
+;   Mailbox.send(m, msg)              ; never blocks; msg non-null, page-rooted
+;   Mailbox.close_sender(m)           ; last close → receivers wake with null
+;   let msg Mailbox.receive(m)        ; null = closed and drained
+;   Mailbox.dispose(m)                ; receiver, after null: free the record
+define Mailbox
+(
+    lock: u64                        ; spinlock (bucket_lock pattern)
+    senders: i64                     ; live send handles; 0 = closed
+    closed: bool
+    head: pointer[MailNode]          ; queued messages, FIFO
+    tail: pointer[MailNode]
+    recv_head: pointer[SchedTask]    ; parked receivers, FIFO
+    recv_tail: pointer[SchedTask]
+    ; recv_sched: the receiving thread's scheduler — where a
+    ; queued-node send pokes the wake handle.
+    recv_sched: pointer[void]
+)
+{
+    ; The mailbox spinlock — same CAS pattern as root_pages bucket_lock:
+    ; critical sections are a few pointer moves, one lock at a time.
+    procedure acquire(m: pointer[Mailbox])
+    {
+        let lp &m.lock
+        repeat
+        {
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+                break
+        }
+    }
+
+    procedure release(m: pointer[Mailbox])
+    {
+        let lp &m.lock
+        scaly_atomic_store_u64(lp, 0 as u64)
+    }
+
+    ; Create a mailbox on its OWN heap page (like a message: the record
+    ; is shared cross-thread and must not sit in any fiber's or
+    ; scheduler's region). The creator holds the first send handle.
+    procedure create() returns pointer[Mailbox]
+    {
+        let p Page.allocate_page()
+        let m p.allocate(sizeof Mailbox, alignof Mailbox) as pointer[Mailbox]
+        set m.lock: 0 as u64
+        set m.senders: 1 as i64
+        set m.closed: false
+        set m.head: null
+        set m.tail: null
+        set m.recv_head: null
+        set m.recv_tail: null
+        set m.recv_sched: null
+        m
+    }
+
+    ; Free the mailbox record's page. Only the receiver calls this,
+    ; after receive returned null (closed and drained) — every sender
+    ; retired its handle, nothing can touch the record anymore.
+    procedure dispose(m: pointer[Mailbox])
+    {
+        let mp Page.get(m as pointer[void])
+        mp.deallocate_extensions()
+        Page.release_page(mp)
+    }
+
+    ; Register one more send handle. Call BEFORE handing the mailbox to
+    ; the new sender (spawn argument, cell, ...) — registering from the
+    ; new thread would race the creator's close_sender.
+    procedure add_sender(m: pointer[Mailbox])
+    {
+        Mailbox.acquire(m)
+        set m.senders: m.senders + (1 as i64)
+        Mailbox.release(m)
+    }
+
+    ; Hand a woken receiver back to its dispatcher: same thread →
+    ; straight to the ready queue (the counters are ours); other thread
+    ; → inject queue + wake (its drain_inject adjusts the counters).
+    procedure route(r: pointer[SchedTask])
+    {
+        if r.home = current_scheduler
+        {
+            let s current_scheduler as pointer[Scheduler]
+            Scheduler.enqueue(r)
+            set s.blocked: s.blocked - 1
+            set s.chan_parked: s.chan_parked - 1
+            return
+        }
+        Scheduler.inject_task(r.home as pointer[Scheduler], r)
+    }
+
+    procedure pop_receiver(m: pointer[Mailbox]) returns pointer[SchedTask]
+    {
+        let t m.recv_head
+        if t <> null
+        {
+            set m.recv_head: t.next
+            if m.recv_head = null
+                set m.recv_tail: null
+            set t.next: null
+        }
+        t
+    }
+
+    ; Send msg through the mailbox. NEVER BLOCKS: the node is queued and
+    ; the sender moves on. OWNERSHIP OF THE MESSAGE REGION MOVES TO THE
+    ; RECEIVER — the sender must not touch msg afterwards. msg must be
+    ; non-null (null is the closed signal) and rooted on its own heap
+    ; page (Page.allocate_page — the node rides on it). Sending on a
+    ; closed mailbox is a handle-discipline bug and traps (exit 110).
+    ; Callable from any thread; no scheduler needed on the sender side.
+    procedure send(m: pointer[Mailbox], msg: pointer[void])
+    {
+        let host Page.get(msg)
+        let n host.allocate(sizeof MailNode, alignof MailNode) as pointer[MailNode]
+        set n.next: null
+        set n.msg: msg
+        Mailbox.acquire(m)
+        if m.closed
+        {
+            Mailbox.release(m)
+            exit 110
+        }
+        if m.tail = null
+        {
+            set m.head: n
+            set m.tail: n
+        }
+        else
+        {
+            let tl m.tail
+            set tl.next: n
+            set m.tail: n
+        }
+        let r Mailbox.pop_receiver(m)
+        let rs m.recv_sched
+        Mailbox.release(m)
+        if r <> null
+        {
+            Mailbox.route(r)
+            return
+        }
+        ; No parked receiver — poke a possible main-context waiter on
+        ; the receiving thread (spurious pokes are harmless: waiters
+        ; re-check the queue on every wake).
+        if rs <> null
+        {
+            if rs <> current_scheduler
+                Scheduler.wake_remote(rs as pointer[Scheduler])
+        }
+    }
+
+    ; Retire one send handle. The LAST retirement closes the mailbox:
+    ; every parked receiver is woken (it finds the queue, then null) and
+    ; a main-context waiter on the receiving thread is poked. Wakes are
+    ; routed after the lock drops — inject/wake need no lock, and the
+    ; receivers were detached atomically.
+    procedure close_sender(m: pointer[Mailbox])
+    {
+        Mailbox.acquire(m)
+        set m.senders: m.senders - (1 as i64)
+        if m.senders > (0 as i64)
+        {
+            Mailbox.release(m)
+            return
+        }
+        set m.closed: true
+        var chain m.recv_head
+        set m.recv_head: null
+        set m.recv_tail: null
+        let rs m.recv_sched
+        Mailbox.release(m)
+        while chain <> null
+        {
+            let nx chain.next
+            set chain.next: null
+            Mailbox.route(chain)
+            set chain: nx
+        }
+        if rs <> null
+        {
+            if rs <> current_scheduler
+                Scheduler.wake_remote(rs as pointer[Scheduler])
+        }
+    }
+
+    ; Receive the next message; null means closed AND drained. The
+    ; caller assumes ownership of the message region and frees it when
+    ; done (deallocate_extensions + Page.release_page on Page.get —
+    ; the queue node goes with it). Blocks until a message or the
+    ; close arrives: a task parks on the receiver FIFO (woken it just
+    ; re-checks the queue — the message travels in the queue, not in
+    ; the task's msg slot), the main context drives the dispatcher and
+    ; blocks on the wake handle when nothing is runnable. The receiving
+    ; thread needs a scheduler (Scheduler.create) — the wake handle is
+    ; armed here BEFORE any park so remote senders always find it.
+    procedure receive(m: pointer[Mailbox]) returns pointer[void]
+    {
+        Io.ensure_wake()
+        let me current_task as pointer[SchedTask]
+        repeat
+        {
+            Mailbox.acquire(m)
+            let n m.head
+            if n <> null
+            {
+                set m.head: n.next
+                if m.head = null
+                    set m.tail: null
+                Mailbox.release(m)
+                return n.msg
+            }
+            if m.closed
+            {
+                Mailbox.release(m)
+                return null
+            }
+            set m.recv_sched: current_scheduler
+            if me = null
+            {
+                ; Main context: run ready tasks / poll Io waiters; when
+                ; nothing is runnable, block on the wake handle (a send
+                ; or close from a remote thread pokes it; a poke that
+                ; raced ahead completes the poll immediately).
+                Mailbox.release(m)
+                if not Scheduler.step_or_wait()
+                    Scheduler.poll_io()
+            }
+            else
+            {
+                ; Task: park on the receiver FIFO. The counters are
+                ; bumped after the lock drops but BEFORE the yield —
+                ; a remote sender may pop us the moment the lock is
+                ; released, but its inject is only drained by this
+                ; thread's dispatcher, i.e. after the yield below.
+                set me.next: null
+                if m.recv_tail = null
+                {
+                    set m.recv_head: me
+                    set m.recv_tail: me
+                }
+                else
+                {
+                    let tl m.recv_tail
+                    set tl.next: me
+                    set m.recv_tail: me
+                }
+                Mailbox.release(m)
+                let s current_scheduler as pointer[Scheduler]
+                set s.blocked: s.blocked + 1
+                set s.chan_parked: s.chan_parked + 1
+                Fiber.yield()
+            }
+        }
     }
 }
 

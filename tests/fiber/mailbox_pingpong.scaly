@@ -1,0 +1,100 @@
+; Milestone 2.4 demonstrator: CROSS-THREAD ping-pong over two mailboxes.
+; Main sends requests to a worker OS thread and waits (main-context
+; receive: drives the dispatcher, then blocks on the wake handle); the
+; worker runs its own scheduler and receives on the main context of its
+; thread. Every message rides its own heap page and crosses the thread
+; boundary with ownership (alloc on one thread, free on the other —
+; safe since milestone 2.3). Mutable globals are thread_local since
+; milestone 2.2, so the worker gets both mailboxes through the spawn
+; cell, never through a global. Close semantics drive the shutdown:
+; main retires its request-handle → the worker's receive returns null →
+; the worker retires its response-handle → main's drained receive
+; returns null.
+; Expected: pong3 drained done
+
+define Msg
+(
+    value: int
+)
+
+procedure worker(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    let rq_v *cell
+    let slot1 ((arg as size_t) + (8 as size_t)) as pointer[size_t]
+    let rs_v *slot1
+    let rq rq_v as pointer[Mailbox]
+    let rs rs_v as pointer[Mailbox]
+    ; The receiving side needs a scheduler on its thread.
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    var running true
+    while running
+    {
+        let raw Mailbox.receive(rq)
+        if raw = null
+        {
+            set running: false
+        }
+        else
+        {
+            let m raw as pointer[Msg]
+            let v m.value
+            let mp Page.get(raw)
+            mp.deallocate_extensions()
+            Page.release_page(mp)
+            let rp Page.allocate_page()
+            let r rp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+            set r.value: v + 1
+            Mailbox.send(rs, r as pointer[void])
+        }
+    }
+    Mailbox.close_sender(rs)
+    Mailbox.dispose(rq)
+    Page.release_page(page)
+    null
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let rq Mailbox.create()
+let rs Mailbox.create()
+; Hand the response-handle to the worker: register it BEFORE the spawn.
+Mailbox.add_sender(rs)
+; Main keeps no response-handle of its own — retire the creator's.
+Mailbox.close_sender(rs)
+let cp Page.allocate_page()
+let cell cp.allocate(16 as size_t, 8 as size_t) as pointer[size_t]
+set *cell: rq as size_t
+let slot1 ((cell as size_t) + (8 as size_t)) as pointer[size_t]
+set *slot1: rs as size_t
+let th Thread.spawn(&worker, cell as pointer[void])
+var v 0
+var i 0
+while i < 3
+{
+    let mp Page.allocate_page()
+    let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+    set m.value: v
+    Mailbox.send(rq, m as pointer[void])
+    let raw Mailbox.receive(rs)
+    let r raw as pointer[Msg]
+    set v: r.value
+    let pp Page.get(raw)
+    pp.deallocate_extensions()
+    Page.release_page(pp)
+    set i: i + 1
+}
+if v = 3
+    Console.print "pong3 "
+; Retire the request-handle: the worker's receive wakes with null.
+Mailbox.close_sender(rq)
+; The response mailbox closes when the worker retires its handle.
+let tail Mailbox.receive(rs)
+if tail = null
+    Console.print "drained "
+Mailbox.dispose(rs)
+Thread.join(th)
+Page.release_page(cp)
+Page.release_page(page)
+Console.println "done"
