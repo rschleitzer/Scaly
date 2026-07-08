@@ -1,0 +1,1525 @@
+; TaskPlanner.scaly - Stage-3 Plan→Plan pass between Planner and Emitter.
+;
+; Milestone 3.0: EMISSION-NEUTRAL analysis only. The pass walks the finished
+; Plan and classifies every `for` loop body: is it provably parallelizable?
+; A body qualifies when
+;   - every call resolves to a pure Scaly function, an intrinsic, an
+;     operator, or a frame-local construction (Local/Unspecified life);
+;     purity is PROVED transitively, not just read off the function/
+;     procedure keyword (the prelude's `print` is a `function` whose body
+;     calls the `puts` extern) — see effectively_pure below,
+;   - every write lands in a binding declared inside the body, or in a
+;     disjoint Vector slot (`put` whose index reads the loop variable —
+;     the canonical parallel result target),
+;   - control never leaves the loop early (no return/throw, no break of
+;     the loop itself), and
+;   - no mutable module global is read or written (mutable globals are
+;     thread-local since M2.2 — a task on another worker thread would see
+;     a DIFFERENT cell).
+; Everything else records the FIRST blocking construct as the reason.
+;
+; The analysis is deliberately conservative and advisory: it only reads the
+; Plan and appends report lines, so it is byte-identical-neutral on emission.
+; It runs only behind the `--task-plan` CLI flag (the `--use-vis`
+; measurement-report precedent). Milestone 3.1 turns the same classification
+; into a hard planner diagnostic for explicit `parallel for` syntax;
+; milestones 3.2/3.3 add the work-stealing runtime and the outlining
+; emission (closure machinery; one region per task).
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+
+define TaskPlanner
+{
+    ; ========================================================================
+    ; TaskPlanner - the per-compilation-unit analysis state.
+    ;
+    ; Report entries are three parallel Arrays (one slot per `for` loop, in
+    ; walk order): the owning function's source file, the loop's byte offset
+    ; in that file, and the verdict text ("parallel" or "blocked: <reason>").
+    ; The cli formats them file:line:col like print_diagnostics does.
+    ; ========================================================================
+
+    define TaskPlanner
+    (
+        report_files: Array[String]
+        report_offsets: Array[size_t]
+        report_verdicts: Array[String]
+        loops_total: size_t
+        loops_parallel: size_t
+
+        ; The plan's flat function/global vectors, for purity and
+        ; mutable-global lookups by mangled name during classification.
+        plan_functions: ref[Vector[PlannedFunction]]?
+        plan_globals: ref[Vector[PlannedGlobal]]?
+
+        ; Source file of the function whose body is currently walked
+        ; (PlannedFunction.file; the entry file for top-level statements).
+        current_file: String
+
+        ; Per-classification scratch, reset by classify_for. cls_locals
+        ; holds names bound INSIDE the loop body (flat, never popped —
+        ; a conservative over-approximation is fine for a report; a
+        ; shadowing inner binding can mask a same-named outer write).
+        cls_locals: Array[String]
+        cls_blocked: bool
+        cls_reason: String
+        cls_loop_var: String
+        ; Nesting depth below the classified loop: a `break` at depth 0
+        ; exits the classified loop itself (blocker); deeper breaks only
+        ; exit an inner loop.
+        cls_depth: size_t
+
+        ; Transitive-purity memo: mangled name -> 1 (effect-free) / 0.
+        ; pure_stack holds the names currently being walked (recursion
+        ; among effect-free functions is effect-free unless a concrete
+        ; violation turns up elsewhere in the cycle).
+        pure_memo_names: Array[String]
+        pure_memo_flags: Array[size_t]
+        pure_stack: Array[String]
+        ; Violation flag of the purity walk currently in flight.
+        pw_impure: bool
+    )
+    {
+        init()
+        {
+            set report_files: Array[String]^this()
+            set report_offsets: Array[size_t]^this()
+            set report_verdicts: Array[String]^this()
+            set loops_total: 0
+            set loops_parallel: 0
+            set plan_functions: null
+            set plan_globals: null
+            set current_file: String^this("")
+            set cls_locals: Array[String]^this()
+            set cls_blocked: false
+            set cls_reason: String^this("")
+            set cls_loop_var: String^this("")
+            set cls_depth: 0
+            set pure_memo_names: Array[String]^this()
+            set pure_memo_flags: Array[size_t]^this()
+            set pure_stack: Array[String]^this()
+            set pw_impure: false
+        }
+
+        ; ================================================================
+        ; Entry point: walk every planned function body plus the program's
+        ; top-level statements and record one verdict per `for` loop.
+        ; ================================================================
+        function analyze(this: TaskPlanner, plan: Plan, entry_file: String)
+        {
+            set plan_functions: plan.functions
+            set plan_globals: plan.globals
+            if plan.functions <> null
+            {
+                for func in plan.functions
+                {
+                    set current_file: String^this(func.file)
+                    choose func.impl
+                        when action: Action
+                            this.find_action(action)
+                        else
+                            0
+                }
+            }
+            if plan.statements <> null
+            {
+                set current_file: String^this(entry_file)
+                for stmt in plan.statements
+                    this.find_statement(stmt)
+            }
+        }
+
+        ; ================================================================
+        ; Finder: recurse over every statement/operand; each `for` met is
+        ; classified, then its body is walked further so nested loops get
+        ; their own entries. Lambda bodies are skipped like the escape and
+        ; move walkers skip them — monomorphized lambdas appear as their
+        ; own entries in plan.functions.
+        ; ================================================================
+
+        function find_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.find_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        function find_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        {
+            if stmt <> null
+            {
+                let s stmt
+                this.find_statement((*s))
+            }
+        }
+
+        function find_action(this: TaskPlanner, act: PlannedAction)
+        {
+            this.find_operands(act.source)
+            this.find_operands(act.target)
+        }
+
+        function find_statement(this: TaskPlanner, stmt: PlannedStatement)
+        {
+            choose stmt
+                when action: Action
+                    this.find_action(action)
+                when binding: Binding
+                    this.find_operands(binding.operation)
+                when ret: Return
+                    this.find_operands(ret.result)
+                when throw_stmt: Throw
+                    this.find_operands(throw_stmt.result)
+                when brk: Break
+                    this.find_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        function find_operand(this: TaskPlanner, op: PlannedOperand)
+        {
+            choose op.expr
+                when call: Call
+                    this.find_operands(call.args)
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.find_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.find_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.find_operands(iff.condition)
+                    this.find_statement_ref(iff.consequent)
+                    this.find_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.find_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.find_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.find_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.find_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.find_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.find_operands(fr.expr)
+                    this.classify_for(fr)
+                    this.find_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.find_operands(wh.cond.operation)
+                    this.find_action(wh.body)
+                }
+                when rp: Repeat
+                    this.find_action(rp.body)
+                when tr: Try
+                {
+                    this.find_operands(tr.cond.operation)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.find_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.find_operand((*r))
+                    }
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.find_operand((*r))
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.find_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.find_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when bx: Box
+                {
+                    if bx.value <> null
+                    {
+                        let r bx.value
+                        this.find_operand((*r))
+                    }
+                }
+                else
+                    0
+        }
+
+        ; ================================================================
+        ; Classifier: walk ONE loop body; the first blocking construct
+        ; records a reason and short-circuits the rest of the walk (the
+        ; move checker's move_found discipline).
+        ; ================================================================
+
+        function classify_for(this: TaskPlanner, fr: PlannedFor)
+        {
+            set cls_locals.length: 0
+            set cls_blocked: false
+            set cls_reason: String^this("")
+            set cls_loop_var: String^this(fr.identifier)
+            set cls_depth: 0
+            this.cls_action(fr.body)
+            set loops_total: loops_total + 1
+            ; Report strings must live on the TaskPlanner's own page —
+            ; a default-local copy dangles by print time (the use-vis
+            ; report's `String^this` + bound-local-add idiom).
+            let file_copy String^this(current_file)
+            report_files.add file_copy
+            report_offsets.add(fr.loc.start)
+            if cls_blocked
+            {
+                var sb StringBuilder()
+                sb.append "blocked: "
+                sb.append cls_reason
+                let verdict sb.to_string()
+                let verdict_copy String^this(verdict)
+                report_verdicts.add verdict_copy
+            }
+            if cls_blocked = false
+            {
+                set loops_parallel: loops_parallel + 1
+                let par_copy String^this("parallel")
+                report_verdicts.add par_copy
+            }
+        }
+
+        ; Record the first blocker. Later calls are no-ops.
+        function block(this: TaskPlanner, reason: String)
+        {
+            if cls_blocked
+                return
+            set cls_blocked: true
+            set cls_reason: String^this(reason)
+        }
+
+        function block_named(this: TaskPlanner, prefix: String, name: String)
+        {
+            if cls_blocked
+                return
+            var sb StringBuilder()
+            sb.append prefix
+            sb.append name
+            let msg sb.to_string()
+            set cls_blocked: true
+            set cls_reason: String^this(msg)
+        }
+
+        ; Is name bound inside the classified loop body? The loop variable
+        ; itself counts: it is per-iteration state (each iteration sees a
+        ; different element/index).
+        function is_local(this: TaskPlanner, name: String) returns bool
+        {
+            if name = cls_loop_var
+                return true
+            var i: size_t 0
+            while i < cls_locals.length
+            {
+                let p cls_locals.get i
+                if p <> null
+                    if (*p) = name
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; Does the operand tree read the given name? Used to accept a
+        ; Vector.put whose index is derived from the loop variable
+        ; (disjoint-slot write). Conservative: unknown shapes read nothing,
+        ; so an index that hides the loop variable behind them stays a
+        ; blocker (never a false "parallel").
+        function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) returns bool
+        {
+            choose op.expr
+                when v: Variable
+                {
+                    if v.name = name
+                        return true
+                }
+                when call: Call
+                {
+                    if call.args <> null
+                    {
+                        var i: size_t 0
+                        while i < call.args.length
+                        {
+                            let ap call.args.get i
+                            if ap <> null
+                                if this.operand_reads_name(ap.unwrap(), name)
+                                    return true
+                            set i: i + 1
+                        }
+                    }
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        if this.operand_reads_name((*r), name)
+                            return true
+                    }
+                }
+                else
+                    0
+            false
+        }
+
+        function cls_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if cls_blocked
+                return
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                if cls_blocked
+                    return
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.cls_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        function cls_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        {
+            if cls_blocked
+                return
+            if stmt <> null
+            {
+                let s stmt
+                this.cls_statement((*s))
+            }
+        }
+
+        ; Walk one action: reads first, then the write target. A bare `set
+        ; name:` into a body-local binding is fine; anything whose root
+        ; lives outside the loop is a cross-iteration conflict.
+        function cls_action(this: TaskPlanner, act: PlannedAction)
+        {
+            if cls_blocked
+                return
+            this.cls_operands(act.source)
+            if cls_blocked
+                return
+            if act.target <> null
+                this.cls_write_target((*act.target))
+        }
+
+        function cls_write_target(this: TaskPlanner, t: Vector[PlannedOperand])
+        {
+            if cls_blocked
+                return
+            if t.length <> (1 as size_t)
+            {
+                this.block("compound assignment target")
+                return
+            }
+            let tp_ t.get 0
+            if tp_ = null
+                return
+            let top tp_.unwrap()
+            choose top.expr
+                when v: Variable
+                {
+                    if this.is_local(v.name) = false
+                        this.block_named("writes loop-external ", v.name)
+                }
+                when g: GlobalRef
+                    this.block_named("writes mutable global ", g.name)
+                else
+                    this.block("indirect write")
+        }
+
+        function cls_statement(this: TaskPlanner, stmt: PlannedStatement)
+        {
+            if cls_blocked
+                return
+            choose stmt
+                when action: Action
+                    this.cls_action(action)
+                when binding: Binding
+                {
+                    this.cls_operands(binding.operation)
+                    if binding.binding_item.name <> null
+                    {
+                        let bn_copy String^this((*binding.binding_item.name))
+                        cls_locals.add bn_copy
+                    }
+                }
+                when ret: Return
+                    this.block("early exit (return)")
+                when throw_stmt: Throw
+                    this.block("early exit (throw)")
+                when brk: Break
+                {
+                    if cls_depth = (0 as size_t)
+                    {
+                        this.block("early exit (break)")
+                        return
+                    }
+                    if brk.loop_label.get_length() > (0 as size_t)
+                    {
+                        this.block("early exit (labeled break)")
+                        return
+                    }
+                    this.cls_operands(brk.result)
+                }
+                when cont: Continue
+                    0
+        }
+
+        function cls_operand(this: TaskPlanner, op: PlannedOperand)
+        {
+            if cls_blocked
+                return
+            choose op.expr
+                when call: Call
+                    this.cls_call(call)
+                when v: Variable
+                    0
+                when g: GlobalRef
+                    this.check_global_read(g)
+                when tp: Tuple
+                {
+                    this.check_life(tp.life)
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.cls_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.cls_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.cls_operands(iff.condition)
+                    if iff.prop <> null
+                    {
+                        let pn_copy String^this(iff.prop.name)
+                        cls_locals.add pn_copy
+                    }
+                    this.cls_statement_ref(iff.consequent)
+                    this.cls_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.cls_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.cls_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.cls_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.cls_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.cls_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                let wn_copy String^this(w.name)
+                                cls_locals.add wn_copy
+                                this.cls_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.cls_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.cls_operands(fr.expr)
+                    let fi_copy String^this(fr.identifier)
+                    cls_locals.add fi_copy
+                    set cls_depth: cls_depth + 1
+                    this.cls_action(fr.body)
+                    set cls_depth: cls_depth - 1
+                }
+                when wh: While
+                {
+                    this.cls_operands(wh.cond.operation)
+                    if wh.cond.binding_item.name <> null
+                    {
+                        let whn_copy String^this((*wh.cond.binding_item.name))
+                        cls_locals.add whn_copy
+                    }
+                    set cls_depth: cls_depth + 1
+                    this.cls_action(wh.body)
+                    set cls_depth: cls_depth - 1
+                }
+                when rp: Repeat
+                {
+                    set cls_depth: cls_depth + 1
+                    this.cls_action(rp.body)
+                    set cls_depth: cls_depth - 1
+                }
+                when tr: Try
+                {
+                    this.cls_operands(tr.cond.operation)
+                    if tr.cond.binding_item.name <> null
+                    {
+                        let trn_copy String^this((*tr.cond.binding_item.name))
+                        cls_locals.add trn_copy
+                    }
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                let cn_copy String^this(w.name)
+                                cls_locals.add cn_copy
+                                this.cls_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.cls_statement_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.cls_operand((*r))
+                    }
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.cls_operand((*r))
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.cls_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    this.check_life(mx.life)
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.cls_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when lm: Lambda
+                    this.block("lambda in body")
+                when cl: Closure
+                    this.block("closure value in body")
+                when fref: FunctionRef
+                    this.block("function reference in body")
+                when bx: Box
+                    this.block("boxes onto an external page")
+                else
+                    0
+        }
+
+        ; A frame-local allocation (Local/Unspecified life) stays inside
+        ; the iteration; a Call life (caller page) or Reference life
+        ; (^this / ^named page) escapes the loop frame.
+        function check_life(this: TaskPlanner, life: Lifetime)
+        {
+            if cls_blocked
+                return
+            choose life
+                when l: Local
+                    0
+                when u: Unspecified
+                    0
+                else
+                    this.block("non-local allocation")
+        }
+
+        ; Reading a MUTABLE module global blocks: since M2.2 every mutable
+        ; global (except `shared_`) is thread-local, so a task running on a
+        ; worker thread reads a different cell than the spawner. The
+        ; allocator's own state cells are sanctioned — RBMM allocation is
+        ; per-task by design (one region per task).
+        function check_global_read(this: TaskPlanner, g: PlannedGlobalRef)
+        {
+            if cls_blocked
+                return
+            if plan_globals = null
+                return
+            for global in plan_globals
+            {
+                if global.mangled_name = g.mangled_name
+                {
+                    if global.is_mutable
+                        if this.global_is_sanctioned(global.name) = false
+                            this.block_named("reads mutable global ", g.name)
+                    return
+                }
+            }
+        }
+
+        ; ================================================================
+        ; Sanctioned effects. A task allocates in its OWN region, so the
+        ; RBMM machinery — allocator externs, allocator/tracer state
+        ; cells, atomic primitives (the allocator's cross-thread free
+        ; discipline), and abort-class trap reporting — does not break
+        ; parallelizability. Everything else observable (I/O, scheduler
+        ; state, process control beyond abort) does.
+        ; ================================================================
+
+        function extern_is_benign(this: TaskPlanner, name: String) returns bool
+        {
+            if name.starts_with("scaly_atomic_")
+                return true
+            if name = "aligned_alloc"
+                return true
+            if name = "malloc"
+                return true
+            if name = "calloc"
+                return true
+            if name = "realloc"
+                return true
+            if name = "free"
+                return true
+            if name = "memcpy"
+                return true
+            if name = "memmove"
+                return true
+            if name = "memset"
+                return true
+            if name = "memcmp"
+                return true
+            if name = "strlen"
+                return true
+            if name = "strcmp"
+                return true
+            if name = "strncmp"
+                return true
+            if name = "strdup"
+                return true
+            if name = "exit"
+                return true
+            if name = "scaly_eputs"
+                return true
+            if name = "scaly_eputi"
+                return true
+            if name = "scaly_eputnl"
+                return true
+            false
+        }
+
+        function global_is_sanctioned(this: TaskPlanner, name: String) returns bool
+        {
+            if name = "heap_head"
+                return true
+            if name = "stack_head"
+                return true
+            if name = "stack_top"
+                return true
+            if name = "dead_buckets_reclaimed"
+                return true
+            if name = "trace_enabled"
+                return true
+            if name = "trace_atexit_registered"
+                return true
+            if name = "trace_count"
+                return true
+            if name = "trace_entries"
+                return true
+            if name = "fmt_scratch"
+                return true
+            if name = "shared_heap_trace_state"
+                return true
+            if name = "shared_heap_trace"
+                return true
+            false
+        }
+
+        ; ================================================================
+        ; Transitive purity. `pure` on a PlannedFunction is a DECLARATION
+        ; (function vs procedure keyword), not a proof. effectively_pure
+        ; proves the absence of observable effects: the body — and every
+        ; body reachable through its calls — contains no non-benign
+        ; extern, no indirect call, no unsanctioned mutable-global touch,
+        ; and no lambda/closure value (conservative). Nested callees are
+        ; NOT required to be declared pure: a pure function legitimately
+        ; drives mutating container procedures (Array.add, Vector.put) on
+        ; its frame-local state; the declared-pure contract of the DIRECT
+        ; callee (checked in callee_verdict) keeps loop-visible inputs
+        ; immutable. Memoized per mangled name.
+        ; ================================================================
+
+        function memo_purity(this: TaskPlanner, mangled: String, is_pure: bool)
+        {
+            let m_copy String^this(mangled)
+            pure_memo_names.add m_copy
+            var flag: size_t 0
+            if is_pure
+                set flag: 1
+            pure_memo_flags.add flag
+        }
+
+        function effectively_pure(this: TaskPlanner, mangled: String) returns bool
+        {
+            var i: size_t 0
+            while i < pure_memo_names.length
+            {
+                let p pure_memo_names.get i
+                if p <> null
+                {
+                    if (*p) = mangled
+                    {
+                        let f pure_memo_flags.get i
+                        if f <> null
+                            return (*f) = (1 as size_t)
+                        return false
+                    }
+                }
+                set i: i + 1
+            }
+            var j: size_t 0
+            while j < pure_stack.length
+            {
+                let sp pure_stack.get j
+                if sp <> null
+                    if (*sp) = mangled
+                        return true
+                set j: j + 1
+            }
+            if plan_functions = null
+                return false
+            ; plan.functions can hold BOTH an extern declaration entry and
+            ; the Action definition for one mangled name (cross-module
+            ; declaration duplicates) — a body wins over a declaration.
+            var saw_extern false
+            var extern_benign false
+            for func in plan_functions
+            {
+                if func.mangled_name = mangled
+                {
+                    choose func.impl
+                        when action: Action
+                        {
+                            let sm_copy String^this(mangled)
+                            pure_stack.add sm_copy
+                            let saved pw_impure
+                            set pw_impure: false
+                            this.pw_action(action)
+                            var is_pure true
+                            if pw_impure
+                                set is_pure: false
+                            set pw_impure: saved
+                            set pure_stack.length: pure_stack.length - (1 as size_t)
+                            this.memo_purity(mangled, is_pure)
+                            return is_pure
+                        }
+                        when e: Extern
+                        {
+                            set saw_extern: true
+                            if this.extern_is_benign(func.name)
+                                set extern_benign: true
+                        }
+                        else
+                        {
+                            this.memo_purity(mangled, true)
+                            return true
+                        }
+                }
+            }
+            if saw_extern
+            {
+                this.memo_purity(mangled, extern_benign)
+                return extern_benign
+            }
+            this.memo_purity(mangled, false)
+            false
+        }
+
+        ; The purity walk: recurse over a callee body looking for effect
+        ; violations. Same arm coverage as the finder; only calls and
+        ; global touches carry logic.
+        function pw_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if pw_impure
+                return
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                if pw_impure
+                    return
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.pw_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        function pw_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        {
+            if pw_impure
+                return
+            if stmt <> null
+            {
+                let s stmt
+                this.pw_statement((*s))
+            }
+        }
+
+        ; Writes to LOCAL state are what procedures are for — only a
+        ; global store is an observable effect here.
+        function pw_action(this: TaskPlanner, act: PlannedAction)
+        {
+            if pw_impure
+                return
+            this.pw_operands(act.source)
+            if pw_impure
+                return
+            if act.target <> null
+            {
+                let t (*act.target)
+                var i: size_t 0
+                while i < t.length
+                {
+                    let tp_ t.get i
+                    if tp_ <> null
+                    {
+                        let top tp_.unwrap()
+                        choose top.expr
+                            when g: GlobalRef
+                            {
+                                if this.global_is_sanctioned(g.name) = false
+                                    set pw_impure: true
+                            }
+                            else
+                                this.pw_operand(top)
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+
+        function pw_statement(this: TaskPlanner, stmt: PlannedStatement)
+        {
+            if pw_impure
+                return
+            choose stmt
+                when action: Action
+                    this.pw_action(action)
+                when binding: Binding
+                    this.pw_operands(binding.operation)
+                when ret: Return
+                    this.pw_operands(ret.result)
+                when throw_stmt: Throw
+                    this.pw_operands(throw_stmt.result)
+                when brk: Break
+                    this.pw_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        function pw_global(this: TaskPlanner, g: PlannedGlobalRef)
+        {
+            if pw_impure
+                return
+            if plan_globals = null
+                return
+            for global in plan_globals
+            {
+                if global.mangled_name = g.mangled_name
+                {
+                    if global.is_mutable
+                        if this.global_is_sanctioned(global.name) = false
+                            set pw_impure: true
+                    return
+                }
+            }
+        }
+
+        function pw_call(this: TaskPlanner, call: PlannedCall)
+        {
+            if pw_impure
+                return
+            this.pw_operands(call.args)
+            if pw_impure
+                return
+            if call.is_indirect
+            {
+                set pw_impure: true
+                return
+            }
+            if call.is_intrinsic
+                return
+            if call.is_operator
+                return
+            if this.is_construction_name(call.name)
+                return
+            if this.effectively_pure(call.mangled_name) = false
+                set pw_impure: true
+        }
+
+        function pw_operand(this: TaskPlanner, op: PlannedOperand)
+        {
+            if pw_impure
+                return
+            choose op.expr
+                when call: Call
+                    this.pw_call(call)
+                when g: GlobalRef
+                    this.pw_global(g)
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.pw_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.pw_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.pw_operands(iff.condition)
+                    this.pw_statement_ref(iff.consequent)
+                    this.pw_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.pw_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.pw_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.pw_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.pw_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.pw_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.pw_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.pw_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.pw_operands(fr.expr)
+                    this.pw_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.pw_operands(wh.cond.operation)
+                    this.pw_action(wh.body)
+                }
+                when rp: Repeat
+                    this.pw_action(rp.body)
+                when tr: Try
+                {
+                    this.pw_operands(tr.cond.operation)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.pw_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.pw_statement_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.pw_operand((*r))
+                    }
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.pw_operand((*r))
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.pw_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.pw_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when lm: Lambda
+                    set pw_impure: true
+                when cl: Closure
+                    set pw_impure: true
+                when fref: FunctionRef
+                    set pw_impure: true
+                when bx: Box
+                {
+                    if bx.value <> null
+                    {
+                        let r bx.value
+                        this.pw_operand((*r))
+                    }
+                }
+                else
+                    0
+        }
+
+        function cls_call(this: TaskPlanner, call: PlannedCall)
+        {
+            if cls_blocked
+                return
+            this.cls_operands(call.args)
+            if cls_blocked
+                return
+            if call.is_indirect
+            {
+                this.block("indirect call")
+                return
+            }
+            if call.is_intrinsic
+                return
+            if call.is_operator
+                return
+            if call.can_throw
+            {
+                this.block_named("throwing call ", call.name)
+                return
+            }
+            ; Constructions (a capitalized Type name, or the reserved `init`
+            ; constructor) are fine when they allocate frame-locally; the
+            ; lifetime says where the value lands.
+            if this.is_construction_name(call.name)
+            {
+                this.check_life(call.life)
+                return
+            }
+            ; The canonical disjoint result target: `results.put(i, v)` on a
+            ; Vector. A body-local receiver may be written freely; an
+            ; external receiver qualifies only when the index reads the
+            ; loop variable (disjoint slots per iteration).
+            if call.name = "put"
+            {
+                if this.put_is_disjoint(call)
+                    return
+                this.block("put with loop-invariant index into an external vector")
+                return
+            }
+            this.callee_verdict(call)
+        }
+
+        function is_construction_name(this: TaskPlanner, name: String) returns bool
+        {
+            if name = "init"
+                return true
+            if name.get_length() = (0 as size_t)
+                return false
+            let c name.get(0 as size_t)
+            if c >= (65 as char)
+                if c <= (90 as char)
+                    return true
+            false
+        }
+
+        ; put(receiver, index, element): receiver = args[0], index = args[1].
+        function put_is_disjoint(this: TaskPlanner, call: PlannedCall) returns bool
+        {
+            if call.args = null
+                return false
+            if call.args.length < (3 as size_t)
+                return false
+            let recv_ptr call.args.get 0
+            if recv_ptr <> null
+            {
+                let recv recv_ptr.unwrap()
+                var recv_bare true
+                if recv.member_access <> null
+                {
+                    let ma (*recv.member_access)
+                    if ma.length > (0 as size_t)
+                        set recv_bare: false
+                }
+                if recv_bare
+                    choose recv.expr
+                        when v: Variable
+                        {
+                            if this.is_local(v.name)
+                                return true
+                        }
+                        else
+                            0
+            }
+            let idx_ptr call.args.get 1
+            if idx_ptr <> null
+                if this.operand_reads_name(idx_ptr.unwrap(), cls_loop_var)
+                    return true
+            false
+        }
+
+        ; A direct callee must be transitively effect-free
+        ; (effectively_pure — the function keyword alone is a claim). A
+        ; declared-pure callee is then fine outright (inputs immutable).
+        ; An effect-free PROCEDURE mutates only through its arguments, so
+        ; it is fine when every named argument root is bound inside the
+        ; loop body (per-iteration state) — that admits `local_sb.append
+        ; local_x` while blocking `outer_list.add x` (order-dependent).
+        function callee_verdict(this: TaskPlanner, call: PlannedCall)
+        {
+            if cls_blocked
+                return
+            if plan_functions = null
+            {
+                this.block_named("unresolved callee ", call.name)
+                return
+            }
+            ; Declaration duplicates: a body entry wins over an extern
+            ; declaration for the same mangled name (see effectively_pure).
+            var saw_extern false
+            var extern_benign false
+            for func in plan_functions
+            {
+                if func.mangled_name = call.mangled_name
+                {
+                    choose func.impl
+                        when action: Action
+                        {
+                            if this.effectively_pure(call.mangled_name) = false
+                            {
+                                this.block_named("transitively impure call ", call.name)
+                                return
+                            }
+                            if func.pure
+                                return
+                            if this.args_are_body_local(call) = false
+                                this.block_named("mutating call on loop-external state: ", call.name)
+                            return
+                        }
+                        when e: Extern
+                        {
+                            set saw_extern: true
+                            if this.extern_is_benign(func.name)
+                                set extern_benign: true
+                        }
+                        else
+                            return
+                }
+            }
+            if saw_extern
+            {
+                if extern_benign = false
+                    this.block_named("extern call ", call.name)
+                return
+            }
+            this.block_named("unresolved callee ", call.name)
+        }
+
+        ; Every argument whose root is a NAMED binding must be body-local;
+        ; constants, call results, and constructions are per-evaluation
+        ; temporaries (a mutation of one is invisible to later
+        ; iterations). `&x` / deref operator chains recurse to the named
+        ; root inside.
+        function args_are_body_local(this: TaskPlanner, call: PlannedCall) returns bool
+        {
+            if call.args = null
+                return true
+            var i: size_t 0
+            while i < call.args.length
+            {
+                let ap call.args.get i
+                if ap <> null
+                    if this.arg_root_local(ap.unwrap()) = false
+                        return false
+                set i: i + 1
+            }
+            true
+        }
+
+        function arg_root_local(this: TaskPlanner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when v: Variable
+                    return this.is_local(v.name)
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        return this.arg_root_local((*r))
+                    }
+                }
+                when inner: Call
+                {
+                    if inner.is_operator
+                    {
+                        if inner.args <> null
+                        {
+                            var i: size_t 0
+                            while i < inner.args.length
+                            {
+                                let ap inner.args.get i
+                                if ap <> null
+                                    if this.arg_root_local(ap.unwrap()) = false
+                                        return false
+                                set i: i + 1
+                            }
+                        }
+                    }
+                    return true
+                }
+                else
+                    0
+            true
+        }
+    }
+}

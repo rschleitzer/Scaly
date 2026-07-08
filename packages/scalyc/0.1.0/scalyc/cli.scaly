@@ -25,6 +25,7 @@ function unlink(path: pointer[const_char]) returns int extern
 use scalyc.compiler.Modeler
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
+use scalyc.compiler.TaskPlanner
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
@@ -62,6 +63,7 @@ define Options
     no_tests: bool          ; --no-tests: omit test/test_* functions (seed build)
     use_vis: bool           ; --use-vis: advisory use-visibility measurement
     no_use_vis: bool        ; --no-use-vis: disable strict use visibility
+    task_plan: bool         ; --task-plan: stage-3 parallelizability report
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -89,6 +91,7 @@ define Options
         set no_tests: false
         set use_vis: false
         set no_use_vis: false
+        set task_plan: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -180,6 +183,10 @@ define cli
                 else if arg = "--no-use-vis"
                 {
                     set opts.no_use_vis: true
+                }
+                else if arg = "--task-plan"
+                {
+                    set opts.task_plan: true
                 }
                 else if arg = "--jit"
                 {
@@ -485,6 +492,17 @@ define cli
         {
             cli.print_diagnostics(&planner, opts.input_file, source)
             return 4
+        }
+
+        ; --task-plan: stage-3 TaskPlanner parallelizability report
+        ; (advisory, milestone 3.0 — mirrors the --use-vis measurement
+        ; precedent). Runs only when requested, so the default pipeline
+        ; emits byte-identically with the pass compiled in.
+        if opts.task_plan
+        {
+            var task_planner TaskPlanner.TaskPlanner()
+            task_planner.analyze(plan, opts.input_file)
+            cli.print_task_plan(&task_planner)
         }
 
         if opts.verbose
@@ -886,6 +904,84 @@ define cli
                     if (*lp) = 1
                         msg.append " [lazy]"
                 }
+                let msg_str msg.to_string()
+                Console.println(msg_str.to_c_string())
+            }
+            set i: i + 1
+        }
+    }
+
+    ; --task-plan report (stage-3 milestone 3.0): aggregate counts plus one
+    ; line per `for` loop, file:line:col like print_diagnostics — the byte
+    ; offset is relative to the loop's own source file, so re-read the file
+    ; when it changes (entries arrive grouped by file, one read per file).
+    function print_task_plan(tp: ref[TaskPlanner.TaskPlanner])
+    {
+        var head StringBuilder()
+        head.append "task-plan: "
+        head.append(cli.format_size(tp.loops_total))
+        head.append " for-loops, "
+        head.append(cli.format_size(tp.loops_parallel))
+        head.append " parallelizable"
+        let head_str head.to_string()
+        Console.println(head_str.to_c_string())
+
+        var cur_path String("")
+        var cur_src String("")
+        var have_src false
+        var i: size_t 0
+        while i < tp.report_files.length
+        {
+            let fp tp.report_files.get i
+            let op_ tp.report_offsets.get i
+            let vp tp.report_verdicts.get i
+            if fp <> null
+            {
+                var need_read false
+                if have_src = false
+                    set need_read: true
+                if cur_path <> (*fp)
+                    set need_read: true
+                if need_read
+                {
+                    set cur_path: String((*fp))
+                    set cur_src: File.read_to_string((*fp))
+                    set have_src: true
+                }
+                var line: size_t 1
+                var col: size_t 1
+                let src_len cur_src.get_length()
+                var target: size_t 0
+                if op_ <> null
+                    set target: (*op_)
+                if target > src_len
+                    set target: src_len
+                var off: size_t 0
+                while off < target
+                {
+                    ; Numeric LF compare (see print_diagnostics).
+                    let c cur_src.get off
+                    if c = (10 as char)
+                    {
+                        set line: line + 1
+                        set col: 1
+                    }
+                    else
+                    {
+                        set col: col + 1
+                    }
+                    set off: off + 1
+                }
+                var msg StringBuilder()
+                msg.append "task-plan: "
+                msg.append((*fp))
+                msg.append ":"
+                msg.append(cli.format_size(line))
+                msg.append ":"
+                msg.append(cli.format_size(col))
+                msg.append ": "
+                if vp <> null
+                    msg.append((*vp))
                 let msg_str msg.to_string()
                 Console.println(msg_str.to_c_string())
             }
