@@ -1,0 +1,71 @@
+; Milestone 1.4 demonstrator: producer/consumer over a rendezvous
+; channel with region-ownership transfer. Each message is rooted on its
+; own HeapBucket page (Page.allocate_page) — fiber-independent, so it
+; survives the producer's region teardown; ownership moves with the
+; send, and the consumer frees each message region after use
+; (deallocate_extensions + Page.release_page on Page.get). A null
+; message is the end-of-stream sentinel. The rendezvous interleaving is
+; deterministic: the producer parks when the consumer is not already
+; waiting (s r s s r r), and the sum proves every payload arrived.
+; Expected: s r s s r r sum6 done
+
+define Msg
+(
+    value: int
+)
+
+mutable chan: pointer[void] null
+
+procedure producer()
+{
+    let c chan as pointer[Channel]
+    var i 1
+    while i <= 3
+    {
+        let mp Page.allocate_page()
+        let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+        set m.value: i
+        Console.print "s "
+        Channel.send(c, m as pointer[void])
+        set i: i + 1
+    }
+    Channel.send(c, null)
+}
+
+procedure consumer()
+{
+    let c chan as pointer[Channel]
+    var sum 0
+    var running true
+    while running
+    {
+        let raw Channel.receive(c)
+        if raw = null
+        {
+            set running: false
+        }
+        else
+        {
+            let m raw as pointer[Msg]
+            set sum: sum + m.value
+            Console.print "r "
+            let mp Page.get(raw)
+            mp.deallocate_extensions()
+            Page.release_page(mp)
+        }
+    }
+    if sum = 6
+        Console.print "sum6 "
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let ch Channel.create()
+set chan: ch as pointer[void]
+let tp Scheduler.spawn(&producer)
+let tc Scheduler.spawn(&consumer)
+Scheduler.run()
+let np Scheduler.join(tp)
+let nc Scheduler.join(tc)
+Console.println "done"
+Page.release_page(page)

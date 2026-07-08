@@ -72,8 +72,32 @@
 ;   Scheduler.run()                ; until the ready queue drains
 ;   let freed Scheduler.join(t)    ; reap: dispose the fiber's region
 ;
+; Channels (milestone 1.4): single-threaded rendezvous channels with
+; region-ownership transfer. A message is an opaque pointer to an object
+; graph rooted on its OWN HeapBucket page (Page.allocate_page) — heap
+; pages are process-global, not part of any fiber's region, so a message
+; survives the sending fiber's wholesale teardown by construction. send
+; TRANSFERS ownership: after send the sender must not touch the message
+; again (the escape checker's use-after-send rule enforces this); the
+; receiver frees the message region when done (deallocate_extensions +
+; Page.release_page on Page.get of the message).
+;
+; Rendezvous (unbuffered): send blocks until a receiver takes the
+; message, receive blocks until a sender offers one. Blocking reuses the
+; scheduler's park-and-wake mechanics — a parked task sits on the
+; channel's sender/receiver FIFO (next as the chain link, msg as the
+; in-flight slot) and counts as blocked, so a drain with parked channel
+; waiters traps as the same join deadlock (exit 106). From the main
+; context, send/receive drive the dispatcher (Scheduler.step) until a
+; partner parks, like a main-context join.
+;
+;   let ch Channel.create()          ; on the current scheduler's host page
+;   Channel.send(ch, msg)            ; msg: pointer[void], ownership moves
+;   let msg Channel.receive(ch)
+;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
-; deadlock (ready queue empty while tasks are still blocked in join).
+; deadlock (ready queue empty while tasks are still blocked in join,
+; send, or receive).
 
 use scaly.memory.Page
 use scaly.memory.StackBucketHeader
@@ -281,6 +305,7 @@ define SchedTask
     waiter: pointer[SchedTask]   ; tasks blocked joining this one
     done: bool
     disposed: bool
+    msg: pointer[void]           ; in-flight channel message while parked
 )
 
 ; The calling shape of a task record viewed as a delegate value: the
@@ -367,6 +392,7 @@ define Scheduler
         set t.waiter: null
         set t.done: false
         set t.disposed: false
+        set t.msg: null
         Scheduler.enqueue(t)
         t
     }
@@ -466,5 +492,174 @@ define Scheduler
             Fiber.yield()
         }
         Scheduler.reap(t)
+    }
+}
+
+; A rendezvous channel (milestone 1.4). Both wait queues are FIFOs of
+; parked SchedTasks chained through next (a task is never queued, joining,
+; and channel-parked at once); a parked sender carries its message in
+; msg, a woken receiver finds the delivered message there. The channel
+; record lives on the current scheduler's host page.
+define Channel
+(
+    send_head: pointer[SchedTask]    ; parked senders, in send order
+    send_tail: pointer[SchedTask]
+    recv_head: pointer[SchedTask]    ; parked receivers, in arrival order
+    recv_tail: pointer[SchedTask]
+)
+{
+    ; Create a channel on the current scheduler's host page (a scheduler
+    ; must exist; channels are meaningless without one).
+    procedure create() returns pointer[Channel]
+    {
+        let s current_scheduler as pointer[Scheduler]
+        let host s.host
+        let c host.allocate(sizeof Channel, alignof Channel) as pointer[Channel]
+        set c.send_head: null
+        set c.send_tail: null
+        set c.recv_head: null
+        set c.recv_tail: null
+        c
+    }
+
+    procedure push_sender(c: pointer[Channel], t: pointer[SchedTask])
+    {
+        set t.next: null
+        if c.send_tail = null
+        {
+            set c.send_head: t
+            set c.send_tail: t
+            return
+        }
+        let tl c.send_tail
+        set tl.next: t
+        set c.send_tail: t
+    }
+
+    procedure pop_sender(c: pointer[Channel]) returns pointer[SchedTask]
+    {
+        let t c.send_head
+        if t <> null
+        {
+            set c.send_head: t.next
+            if c.send_head = null
+                set c.send_tail: null
+            set t.next: null
+        }
+        t
+    }
+
+    procedure push_receiver(c: pointer[Channel], t: pointer[SchedTask])
+    {
+        set t.next: null
+        if c.recv_tail = null
+        {
+            set c.recv_head: t
+            set c.recv_tail: t
+            return
+        }
+        let tl c.recv_tail
+        set tl.next: t
+        set c.recv_tail: t
+    }
+
+    procedure pop_receiver(c: pointer[Channel]) returns pointer[SchedTask]
+    {
+        let t c.recv_head
+        if t <> null
+        {
+            set c.recv_head: t.next
+            if c.recv_head = null
+                set c.recv_tail: null
+            set t.next: null
+        }
+        t
+    }
+
+    ; Hand msg to a parked receiver: deliver, unblock, requeue. Internal.
+    procedure deliver(r: pointer[SchedTask], msg: pointer[void])
+    {
+        let s current_scheduler as pointer[Scheduler]
+        set r.msg: msg
+        Scheduler.enqueue(r)
+        set s.blocked: s.blocked - 1
+    }
+
+    ; Take a parked sender's message: unblock and requeue the sender
+    ; (its send completes), return the message. Internal.
+    procedure accept(snd: pointer[SchedTask]) returns pointer[void]
+    {
+        let s current_scheduler as pointer[Scheduler]
+        let m snd.msg
+        set snd.msg: null
+        Scheduler.enqueue(snd)
+        set s.blocked: s.blocked - 1
+        m
+    }
+
+    ; Send msg through the channel. OWNERSHIP OF THE MESSAGE REGION MOVES
+    ; TO THE RECEIVER — the sender must not touch msg afterwards. Blocks
+    ; until a receiver takes the message: a task parks on the sender
+    ; queue; the main context drives the dispatcher until a receiver
+    ; parks (empty ready queue then = deadlock, exit 106).
+    procedure send(c: pointer[Channel], msg: pointer[void])
+    {
+        let r Channel.pop_receiver(c)
+        if r <> null
+        {
+            Channel.deliver(r, msg)
+            return
+        }
+        let me current_task as pointer[SchedTask]
+        if me = null
+        {
+            repeat
+            {
+                if not Scheduler.step()
+                    exit 106
+                let r2 Channel.pop_receiver(c)
+                if r2 <> null
+                {
+                    Channel.deliver(r2, msg)
+                    return
+                }
+            }
+        }
+        let s current_scheduler as pointer[Scheduler]
+        set me.msg: msg
+        Channel.push_sender(c, me)
+        set s.blocked: s.blocked + 1
+        Fiber.yield()
+    }
+
+    ; Receive the next message; blocks until a sender offers one (task:
+    ; parks on the receiver queue; main context: drives the dispatcher).
+    ; The caller assumes ownership of the message region and frees it
+    ; when done:  let mp Page.get(msg); mp.deallocate_extensions();
+    ; Page.release_page(mp)
+    procedure receive(c: pointer[Channel]) returns pointer[void]
+    {
+        let snd Channel.pop_sender(c)
+        if snd <> null
+            return Channel.accept(snd)
+        let me current_task as pointer[SchedTask]
+        if me = null
+        {
+            repeat
+            {
+                if not Scheduler.step()
+                    exit 106
+                let s2 Channel.pop_sender(c)
+                if s2 <> null
+                    return Channel.accept(s2)
+            }
+        }
+        let s current_scheduler as pointer[Scheduler]
+        Channel.push_receiver(c, me)
+        set s.blocked: s.blocked + 1
+        Fiber.yield()
+        let got me.msg
+        set me.msg: null
+        got
     }
 }
