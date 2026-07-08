@@ -147,6 +147,17 @@ int scaly_eio_wake(int q, int w)
     return kevent(q, &ev, 1, 0, 0, 0) < 0 ? -1 : 0;
 }
 
+/* Close the wake channel (milestone 2.5 residual). Shim-owned (rule a):
+ * whether the wake handle IS a file descriptor is OS-specific — here it
+ * is just the user event's ident (kernel state of the queue itself), so
+ * deregister it; on linux it is an eventfd that must be closed. */
+int scaly_eio_wake_close(int q, int w)
+{
+    struct kevent ev;
+    EV_SET(&ev, w, EVFILT_USER, EV_DELETE, 0, 0, 0);
+    return kevent(q, &ev, 1, 0, 0, 0) < 0 ? -1 : 0;
+}
+
 #else
 
 #include <sys/epoll.h>
@@ -216,6 +227,15 @@ int scaly_eio_wake(int q, int w)
         r = write(w, &one, sizeof one);
     while (r < 0 && errno == EINTR);
     return r == (ssize_t)sizeof one ? 0 : -1;
+}
+
+/* Close the wake channel (milestone 2.5 residual). Shim-owned (rule a):
+ * the handle is a real eventfd here — deregister and close it; on
+ * darwin it is only a kqueue ident. */
+int scaly_eio_wake_close(int q, int w)
+{
+    epoll_ctl(q, EPOLL_CTL_DEL, w, 0);
+    return close(w);
 }
 
 #endif

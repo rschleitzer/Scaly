@@ -11,33 +11,49 @@ define SEEK_END: int 2
 ; C unistd constants
 define F_OK: int 0
 
-; The blocking read shipped to a worker thread (milestone 2.5). Runs on
-; the worker: arg is the NUL-terminated path (it points into the
-; requester's region, which stays alive while the requester parks); the
-; result is a {length, buffer-pointer} cell rooted on its own fresh
-; heap page (the buffer may spill into the page's oversized/extension
-; chain) — the requester copies the bytes out and frees the page. Null
-; when the file cannot be opened.
-procedure file_read_worker(arg: pointer[void]) returns pointer[void]
+; The blocking open+measure shipped to a worker thread (milestone 2.5,
+; zero-copy read). arg is the {path, size, buffer} request cell in the
+; requester's care (alive while it parks): opens the file, measures it,
+; writes FILE* and size back INTO the cell. Null when the file cannot
+; be opened; a non-null sentinel otherwise — no result page.
+procedure file_open_worker(arg: pointer[void]) returns pointer[void]
 {
-    var file fopen(arg as pointer[const_char], "rb")
+    let cell arg as pointer[size_t]
+    var file fopen((*cell) as pointer[const_char], "rb")
     if file = null
         return null
     fseek(file, 0, SEEK_END)
     let size ftell file
     rewind file
-    let p Page.allocate_page()
-    let cell p.allocate(16 as size_t, 8 as size_t) as pointer[size_t]
-    set *cell: size as size_t
-    var buf null as pointer[void]
-    if size > 0
-    {
-        set buf: p.allocate(size as size_t, 8 as size_t)
-        fread(buf, 1, size as size_t, file)
-    }
-    set *(((cell as size_t) + (8 as size_t)) as pointer[size_t]): buf as size_t
+    set *cell: file as size_t
+    set *(((cell as size_t) + (8 as size_t)) as pointer[size_t]): size as size_t
+    (1 as size_t) as pointer[void]
+}
+
+; The blocking read+close (the second leg): freads the whole file
+; straight into the requester's String buffer named in the cell — the
+; requester is parked, its region quiescent, so the cross-thread write
+; is race-free and no copy is paid. A short read is ignored exactly
+; like the blocking path's single unchecked fread. Always closes.
+procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    let file (*cell) as pointer[void]
+    let size *(((cell as size_t) + (8 as size_t)) as pointer[size_t])
+    let buf (*(((cell as size_t) + (16 as size_t)) as pointer[size_t])) as pointer[void]
+    if size > (0 as size_t)
+        fread(buf, 1, size, file)
     fclose file
-    cell as pointer[void]
+    (1 as size_t) as pointer[void]
+}
+
+; The blocking existence probe (milestone 2.5 residual): access(2) on a
+; worker; sentinel result, no pages.
+procedure file_access_worker(arg: pointer[void]) returns pointer[void]
+{
+    if access(arg as pointer[const_char], F_OK) = 0
+        return (1 as size_t) as pointer[void]
+    null
 }
 
 ; The blocking write shipped to a worker thread (milestone 2.5). arg is
@@ -60,8 +76,16 @@ procedure file_write_worker(arg: pointer[void]) returns pointer[void]
 
 define File
 {
+    ; Colorless like the rest (milestone 2.5 residual): the access(2)
+    ; probe blocks on disk metadata just like a read does.
     function exists(path: String) returns bool
     {
+        if Io.in_task()
+        {
+            let pc path.to_c_string()
+            let r Io.offload(&file_access_worker, pc as pointer[void])
+            return r <> null
+        }
         let path_c_string path.to_c_string()
         access(path_c_string, F_OK) = 0
     }
@@ -88,26 +112,31 @@ define File
         ret
     }
 
-    ; The task path of read_to_string: offload the blocking read, copy
-    ; the bytes out of the worker's result page, free it.
+    ; The task path of read_to_string: two offloads — open+measure,
+    ; then fread straight into the String's own buffer (allocated here
+    ; between the two, on the caller's page by the normal inference) +
+    ; close. Zero copies and no result pages; the request cell is the
+    ; in/out block.
     function read_to_string_offloaded(path: String) returns String
     {
         let pc path.to_c_string()
-        let cell Io.offload(&file_read_worker, pc as pointer[void])
-        if cell = null
-            return String()
-        let len *(cell as pointer[size_t])
-        let data (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[const_char]
-        let cp Page.get(cell)
-        if len = (0 as size_t)
+        let p Page.allocate_page()
+        let cell p.allocate(24 as size_t, 8 as size_t) as pointer[size_t]
+        set *cell: pc as size_t
+        let opened Io.offload(&file_open_worker, cell as pointer[void])
+        if opened = null
         {
-            cp.deallocate_extensions()
-            Page.release_page(cp)
+            p.deallocate_extensions()
+            Page.release_page(p)
             return String()
         }
-        var ret String(data, len)
-        cp.deallocate_extensions()
-        Page.release_page(cp)
+        let size *(((cell as size_t) + (8 as size_t)) as pointer[size_t])
+        var ret String(size)
+        let buffer ret.get_buffer()
+        set *(((cell as size_t) + (16 as size_t)) as pointer[size_t]): buffer as size_t
+        Io.offload(&file_read_close_worker, cell as pointer[void])
+        p.deallocate_extensions()
+        Page.release_page(p)
         ret
     }
 

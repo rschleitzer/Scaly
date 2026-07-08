@@ -1,0 +1,60 @@
+; Worker-pool + poller reclamation (milestone 2.5 residuals). First on
+; the main thread: a task's file I/O spawns pool workers; Io.drain_pool
+; joins them (pool_worker_count drops to 0) and the next offload builds
+; a fresh pool. Then the thread-exit hook: 400 short-lived threads each
+; run a scheduler plus offloaded file I/O; without the automatic
+; drain_pool/close_poller in the spawn trampoline their pipe, poller
+; and wake fds (3-4 per thread) would blow the default open-file limit
+; (256 on darwin, 1024 on linux) long before the loop ends.
+; Expected: drained reused threads-ok done
+
+procedure reader_task()
+{
+    let path String("/tmp/scaly_m25_reclaim.txt")
+    let back File.read_to_string(path)
+    let expected String("reclaim me")
+    if back <> expected
+        exit 5
+}
+
+procedure thread_entry(arg: pointer[void]) returns pointer[void]
+{
+    var page Page.allocate_page()
+    let sched Scheduler.create(page)
+    let t Scheduler.spawn(&reader_task)
+    Scheduler.run()
+    Page.release_page(page)
+    null
+}
+
+let path String("/tmp/scaly_m25_reclaim.txt")
+let content String("reclaim me")
+File.write_from_string(path, content)
+
+var page Page.allocate_page()
+let sched Scheduler.create(page)
+let t1 Scheduler.spawn(&reader_task)
+Scheduler.run()
+if Io.pool_worker_count() > (0 as i64)
+{
+    Io.drain_pool()
+    if Io.pool_worker_count() = (0 as i64)
+        Console.print "drained "
+}
+let t2 Scheduler.spawn(&reader_task)
+Scheduler.run()
+if Io.pool_worker_count() > (0 as i64)
+    Console.print "reused "
+Io.drain_pool()
+
+var i 0
+while i < 400
+{
+    let th Thread.spawn(&thread_entry, null)
+    Thread.join(th)
+    set i: i + 1
+}
+Console.print "threads-ok "
+unlink(path.to_c_string())
+Console.println "done"
+Page.release_page(page)

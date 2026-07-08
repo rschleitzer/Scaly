@@ -1,15 +1,54 @@
 use scaly.containers.String
 use scaly.memory.runtime
+use scaly.fiber.Io
 
 ; C unistd constants
 define F_OK: int 0
 
+; The blocking metadata probes shipped to a worker thread (milestone
+; 2.5 residual — stat-class calls block on disk like reads do). Each
+; takes the NUL-terminated path (in the requester's region, alive while
+; it parks) and returns a non-null sentinel for true/success — no
+; result pages.
+procedure dir_access_worker(arg: pointer[void]) returns pointer[void]
+{
+    if access(arg as pointer[const_char], F_OK) = 0
+        return (1 as size_t) as pointer[void]
+    null
+}
+
+procedure dir_isdir_worker(arg: pointer[void]) returns pointer[void]
+{
+    var dir opendir(arg as pointer[const_char])
+    if dir = null
+        return null
+    closedir dir
+    (1 as size_t) as pointer[void]
+}
+
+procedure dir_create_worker(arg: pointer[void]) returns pointer[void]
+{
+    if mkdir(arg as pointer[const_char], 493) = 0
+        return (1 as size_t) as pointer[void]
+    null
+}
+
+procedure dir_remove_worker(arg: pointer[void]) returns pointer[void]
+{
+    if rmdir(arg as pointer[const_char]) = 0
+        return (1 as size_t) as pointer[void]
+    null
+}
+
 define Directory
 {
-    ; Check if a path exists (file or directory)
+    ; Check if a path exists (file or directory). Colorless (milestone
+    ; 2.5): offloads inside a task, blocks otherwise.
     function exists(path: String) returns bool
     {
         let path_c_string path.to_c_string()
+        if Io.in_task()
+            return Io.offload(&dir_access_worker, path_c_string as pointer[void]) <> null
         access(path_c_string, F_OK) = 0
     }
 
@@ -17,6 +56,8 @@ define Directory
     function is_directory(path: String) returns bool
     {
         let path_c_string path.to_c_string()
+        if Io.in_task()
+            return Io.offload(&dir_isdir_worker, path_c_string as pointer[void]) <> null
         var dir opendir path_c_string
         if dir = null
             return false
@@ -28,12 +69,16 @@ define Directory
     function create(path: String) returns bool
     {
         let path_c_string path.to_c_string()
+        if Io.in_task()
+            return Io.offload(&dir_create_worker, path_c_string as pointer[void]) <> null
         mkdir(path_c_string, 493) = 0 ; 0755 in octal = 493
     }
 
     function remove(path: String) returns bool
     {
         let path_c_string path.to_c_string()
+        if Io.in_task()
+            return Io.offload(&dir_remove_worker, path_c_string as pointer[void]) <> null
         rmdir(path_c_string) = 0
     }
 }

@@ -233,10 +233,16 @@
 ;    2.2), grows lazily up to IO_POOL_WORKERS, and its workers block in
 ;    a 1-byte pipe read between items (one byte written per queued
 ;    item). An offloaded operation runs on ANOTHER THREAD: it must not
-;    read thread-local globals of the requester, and it roots its
-;    result (if any) on its own fresh heap page — the requester
-;    consumes and frees it like a mailbox message. Workers live until
-;    process exit (like poller and wake fds, they are not reclaimed).
+;    read thread-local globals of the requester; results either travel
+;    on their own fresh heap page (mailbox-message style) or are
+;    written into requester-owned memory named in the request cell —
+;    the requester is parked, its region quiescent, so such writes are
+;    race-free (File's read leg freads straight into the String's
+;    buffer this way, zero copies). At thread exit the trampoline
+;    drains the pool (Io.drain_pool: pipe write end closed -> workers
+;    read 0 and exit -> joined; pool page freed) and closes the
+;    scheduler's poller + wake handle (Io.close_poller); both are also
+;    callable directly — the next use lazily rebuilds.
 ;
 ;   let res Io.offload(&blocking_op, arg)   ; parks in a task; runs
 ;                                           ; in place otherwise
@@ -273,6 +279,18 @@ procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i6
 ; wait, multiple triggers coalesce into one report.
 function scaly_eio_wake_create(q: i32, tag: pointer[void]) returns i32 extern
 procedure scaly_eio_wake(q: i32, w: i32) returns i32 extern
+
+; Close the wake channel (milestone 2.5 residual). Shim-owned (rule a):
+; whether the wake handle is a real fd is OS-specific — an eventfd on
+; linux (deregistered + closed), a kqueue ident on darwin (the user
+; event is deregistered; it dies with the queue anyway).
+procedure scaly_eio_wake_close(q: i32, w: i32) returns i32 extern
+
+; POSIX close(2) — pool pipes and pollers at thread exit (milestone 2.5
+; residual). Declared (int)->(int) to MATCH scalyls's existing declare:
+; the whole-program llvm-link sees ONE `close` declaration across the
+; linked roots (a type-mismatched pair would conflict).
+function close(fd: int) returns int extern
 
 ; Atomic load (milestone 2.4; cas/store are declared in root_pages.scaly).
 ; Like all scaly_atomic_* names this is emitter-lowered, never a symbol.
@@ -324,6 +342,13 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
     let host Page.get(raw)
     Page.release_page host
     scaly_call_ptr(fn_v as pointer[void], arg_v as pointer[void])
+    ; Milestone-2.5 residuals: shut down the thread's I/O worker pool
+    ; (joins the workers — each reclaims its own state through this
+    ; very trampoline) and close its scheduler's poller + wake handle,
+    ; BEFORE the allocator reclaim below (drain_pool frees pages, and
+    ; after the reclaim there is no allocator state left).
+    Io.drain_pool()
+    Io.close_poller()
     Fiber.drain_stack_pool()
     scaly_thread_release_buckets()
     null
@@ -399,6 +424,14 @@ mutable fiber_stacks_reused: i64 0
 ; grows its own pool.
 mutable io_pool: pointer[void] null
 mutable io_offloads: i64 0
+
+; This thread's poller/wake fd MIRRORS (milestone 2.5 residual), stored
+; as fd+1 so the constant initializer 0 means "none". close_poller at
+; thread exit reads THESE, never the Scheduler record — a thread entry
+; may have released the scheduler's host page before returning, and a
+; freed heap page can be re-allocated by another thread at any moment.
+mutable io_poller_fd: int 0
+mutable io_wake_fd: int 0
 
 ; Guard-page fault classifier state: installed once, reads only globals
 ; (it runs in signal context). guard_page_size is cached at create time
@@ -1247,8 +1280,13 @@ define IoPool
     tail: pointer[IoWork]
     pipe_read: i32               ; workers block reading here
     pipe_write: i32              ; one byte written per queued item
-    workers: i64                 ; spawned workers (never shrinks)
+    workers: i64                 ; spawned workers (grows to the cap
+                                 ; until drain_pool resets the pool)
     idle: i64                    ; workers blocked in the pipe read
+    ; Worker join handles (IO_POOL_WORKERS slots on the pool page) —
+    ; drain_pool joins each. Requester-written only (one requesting
+    ; thread per pool), so no lock is needed.
+    handles: pointer[size_t]
 )
 {
     ; The pool spinlock — same CAS pattern as the mailbox and the
@@ -1334,6 +1372,7 @@ define Io
             if q = ((0 - 1) as i32)
                 exit 107
             set s.eio: q
+            set io_poller_fd: (q as int) + 1
         }
         q
     }
@@ -1357,6 +1396,7 @@ define Io
             if w = ((0 - 1) as i32)
                 exit 107
             set s.wake: w
+            set io_wake_fd: (w as int) + 1
         }
         w
     }
@@ -1536,6 +1576,7 @@ define Io
             set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
             set pl.workers: 0 as i64
             set pl.idle: 0 as i64
+            set pl.handles: p.allocate((IO_POOL_WORKERS * (8 as i64)) as size_t, 8 as size_t) as pointer[size_t]
             set io_pool: pl as pointer[void]
         }
         pl
@@ -1595,7 +1636,11 @@ define Io
         }
         IoPool.release(pl)
         if grow
-            Thread.spawn(&io_worker, pl as pointer[void])
+        {
+            let h Thread.spawn(&io_worker, pl as pointer[void])
+            let idx pl.workers - (1 as i64)
+            set *(((pl.handles as size_t) + ((idx * (8 as i64)) as size_t)) as pointer[size_t]): h
+        }
         ; One byte per item: an idle worker's blocking read consumes
         ; exactly one and pops exactly one.
         var one u8[1]
@@ -1614,6 +1659,70 @@ define Io
         wp.deallocate_extensions()
         Page.release_page(wp)
         res
+    }
+
+    ; Live workers of this thread's pool (0 after drain_pool) — the
+    ; reclamation proof for tests.
+    function pool_worker_count() returns i64
+    {
+        let pl io_pool as pointer[IoPool]
+        if pl = null
+            return 0 as i64
+        pl.workers
+    }
+
+    ; Shut down this thread's worker pool (milestone 2.5 residual):
+    ; closing the pipe's write end hands every idle worker's 1-byte
+    ; read a 0 — its loop exits and the thread ends (an in-flight
+    ; operation finishes first; its wake was already routed). Join the
+    ; workers (each reclaims its own allocator state through the spawn
+    ; trampoline), close the read end, free the pool page. Runs
+    ; automatically at thread exit (scaly_thread_start) and is callable
+    ; any time — the next offload builds a fresh pool. Must not run
+    ; while a task is parked on an offloaded operation.
+    procedure drain_pool()
+    {
+        let pl io_pool as pointer[IoPool]
+        if pl = null
+            return
+        close(pl.pipe_write as int)
+        var i 0 as i64
+        while i < pl.workers
+        {
+            let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
+            Thread.join(h)
+            set i: i + (1 as i64)
+        }
+        close(pl.pipe_read as int)
+        let pp Page.get(pl as pointer[void])
+        pp.deallocate_extensions()
+        Page.release_page(pp)
+        set io_pool: null
+    }
+
+    ; Close this thread's poller and wake handle (milestone 2.5
+    ; residual), read from the TLS fd mirrors — NEVER from the
+    ; Scheduler record, which may sit on a page the thread entry
+    ; already released. The wake close goes through the shim: whether
+    ; the handle is a real fd is OS-specific (an eventfd on linux, a
+    ; kqueue ident on darwin). Runs automatically at thread exit —
+    ; end-of-scheduler-life only: a still-live scheduler would keep
+    ; polling its (now closed) fd and trap. Sequential schedulers on
+    ; one thread overwrite the mirror; the earlier poller's fds are
+    ; the documented leak of that rare pattern.
+    procedure close_poller()
+    {
+        let q io_poller_fd
+        if q = 0
+            return
+        let w io_wake_fd
+        if w <> 0
+        {
+            scaly_eio_wake_close((q - 1) as i32, (w - 1) as i32)
+            set io_wake_fd: 0
+        }
+        close(q - 1)
+        set io_poller_fd: 0
     }
 }
 
