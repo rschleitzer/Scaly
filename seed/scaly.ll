@@ -206,6 +206,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @"9TRACE_MAX" = constant i64 8192
 @fmt_scratch = thread_local global ptr null
 @"11HASH_PRIMES" = constant [30 x i64] [i64 3, i64 5, i64 11, i64 23, i64 53, i64 97, i64 193, i64 389, i64 769, i64 1543, i64 3079, i64 6151, i64 12289, i64 24593, i64 49157, i64 98317, i64 196613, i64 393241, i64 786433, i64 1572869, i64 3145739, i64 6291469, i64 12582917, i64 25165843, i64 50331653, i64 100663319, i64 201326611, i64 402653189, i64 805306457, i64 1610612741]
+@"8SIZE_MAX" = constant i64 -1
 @"11PACKED_SIZE" = constant i64 9
 @"9STDOUT_FD" = constant i64 1
 @"8SEEK_SET" = constant i64 0
@@ -319,22 +320,25 @@ if.then7:                                         ; preds = %if.end
 if.end8:                                          ; preds = %if.end12, %if.end
   call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %global.load1)
   %as.ptrtoint = ptrtoint ptr %global.load1 to i64
-  %zext14 = zext i32 %call2 to i64
-  %add = add i64 %zext14, 1
+  %zext15 = zext i32 %call2 to i64
+  %add = add i64 %zext15, 1
   %mul = mul i64 %add, 4096
-  %add15 = add i64 %as.ptrtoint, %mul
-  %as.inttoptr = inttoptr i64 %add15 to ptr
+  %add16 = add i64 %as.ptrtoint, %mul
+  %as.inttoptr = inttoptr i64 %add16 to ptr
   call void @_Z10reset_pageP4Page(ptr %as.inttoptr)
   ret ptr %as.inttoptr
 
 if.then11:                                        ; preds = %if.then7
+  %gv.load = load ptr, ptr @heap_head, align 8
+  %prev = getelementptr inbounds %_Z16HeapBucketHeader, ptr %gv.load, i32 0, i32 0
+  store ptr null, ptr %prev, align 8
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.then7
   %next13 = getelementptr inbounds %_Z16HeapBucketHeader, ptr %global.load1, i32 0, i32 1
   store ptr null, ptr %next13, align 8
-  %prev = getelementptr inbounds %_Z16HeapBucketHeader, ptr %global.load1, i32 0, i32 0
-  store ptr null, ptr %prev, align 8
+  %prev14 = getelementptr inbounds %_Z16HeapBucketHeader, ptr %global.load1, i32 0, i32 0
+  store ptr null, ptr %prev14, align 8
   br label %if.end8
 }
 
@@ -456,29 +460,32 @@ if.then8:                                         ; preds = %if.end
   br i1 %ne, label %if.then11, label %if.end12
 
 if.end9:                                          ; preds = %if.end12, %if.end
-  %eq13 = icmp eq i1 %eq4, false
-  br i1 %eq13, label %if.then14, label %if.end15
+  %eq14 = icmp eq i1 %eq4, false
+  br i1 %eq14, label %if.then15, label %if.end16
 
 if.then11:                                        ; preds = %if.then8
+  %gv.load = load ptr, ptr @heap_head, align 8
+  %prev13 = getelementptr inbounds %_Z16HeapBucketHeader, ptr %gv.load, i32 0, i32 0
+  store ptr %call, ptr %prev13, align 8
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.then8
   store ptr %call, ptr @heap_head, align 8
   br label %if.end9
 
-if.then14:                                        ; preds = %if.end9
-  %call16 = call i1 @_Z17drain_dead_bucketP16HeapBucketHeader(ptr %call)
-  br i1 %call16, label %if.then17, label %if.end18
+if.then15:                                        ; preds = %if.end9
+  %call17 = call i1 @_Z17drain_dead_bucketP16HeapBucketHeader(ptr %call)
+  br i1 %call17, label %if.then18, label %if.end19
 
-if.end15:                                         ; preds = %if.end18, %if.end9
+if.end16:                                         ; preds = %if.end19, %if.end9
   call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %call)
   ret void
 
-if.then17:                                        ; preds = %if.then14
+if.then18:                                        ; preds = %if.then15
   ret void
 
-if.end18:                                         ; preds = %if.then14
-  br label %if.end15
+if.end19:                                         ; preds = %if.then15
+  br label %if.end16
 }
 
 define linkonce_odr ptr @_ZN4Page8allocateEmm(ptr %0, i64 %1, i64 %2) {
@@ -16562,15 +16569,28 @@ if.end:                                           ; preds = %while.body
   store i64 %add, ptr %ti, align 1
   br label %while.cond
 
-while.cond7:                                      ; preds = %while.exit
+while.cond7:                                      ; preds = %if.end14, %while.exit
   %i10 = load i64, ptr %i, align 8
+  %lt11 = icmp ult i64 %i10, -1
+  br i1 %lt11, label %while.body8, label %while.exit9
+
+while.body8:                                      ; preds = %while.cond7
+  %i12 = load i64, ptr %i, align 8
+  %call = call i1 @_ZN7hashing8is_primeEm(i64 %i12)
+  br i1 %call, label %if.then13, label %if.end14
+
+while.exit9:                                      ; preds = %while.cond7
   ret i64 %0
 
-while.body8:                                      ; No predecessors!
-  unreachable
+if.then13:                                        ; preds = %while.body8
+  %i15 = load i64, ptr %i, align 8
+  ret i64 %i15
 
-while.exit9:                                      ; No predecessors!
-  unreachable
+if.end14:                                         ; preds = %while.body8
+  %i16 = load i64, ptr %i, align 8
+  %add17 = add i64 %i16, 2
+  store i64 %add17, ptr %i, align 1
+  br label %while.cond7
 }
 
 define linkonce_odr i64 @_ZN7hashing4hashEPcm(ptr %0, i64 %1) {
