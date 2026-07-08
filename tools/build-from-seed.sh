@@ -81,8 +81,13 @@ if [ "$(uname -s)" = "Linux" ]; then
     done
 fi
 
+# The fiber context-switch primitives (vendored assembly, selected by host
+# arch) — scaly's Fiber procedures reference them, so every link that
+# includes the scaly package needs the object.
+tools/fcontext.sh "$WORK/fcontext.o"
+
 mkdir -p "$(dirname "$OUT")"
-${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" \
+${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT"
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"
@@ -96,7 +101,7 @@ echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 # fcontext.o adds the fiber context-switch primitives (vendored assembly,
 # packages/scaly/0.1.0/scaly/fiber/) — clang assembles the host's ABI file.
 "$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
-tools/fcontext.sh /tmp/fcontext.o
+cp "$WORK/fcontext.o" /tmp/fcontext.o
 rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 
@@ -131,7 +136,7 @@ if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -
         fi
         SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
-    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" \
+    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" \
         -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 fi
