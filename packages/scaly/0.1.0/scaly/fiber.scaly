@@ -117,6 +117,21 @@
 ;   let n Io.read(fd, buf, count)    ; suspends; 0 = EOF, -1 = hard error
 ;   let n Io.write(fd, buf, count)   ; suspends; partial writes possible
 ;
+; TCP accept path (milestone 1.5 follow-up): localhost TCP sockets and a
+; suspending accept. Socket setup lives in the shim too — sockaddr_in's
+; layout is OS-specific (darwin leads with sin_len, linux with a 16-bit
+; family), so Scaly code cannot fill one portably — and accept needs the
+; shim's errno mapping (would-block -> -2). Io.accept parks exactly like
+; Io.read: readiness on a listening fd means a connection is pending.
+; connect performs a blocking handshake (instant against a live local
+; listener); the accepted/connected fd stays blocking until
+; Io.set_nonblocking.
+;
+;   let lfd Io.listen(port)          ; 0 = ephemeral; -1 = failure
+;   let port Io.local_port(lfd)      ; the kernel's port assignment
+;   let cfd Io.accept(lfd)           ; suspends; -1 = hard error
+;   let fd Io.connect(port)          ; -1 = failure
+;
 ; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
 ; join, send, or receive), 107 poller failure (create/arm/wait or
@@ -138,6 +153,14 @@ function scaly_eio_wait(q: i32, tags: pointer[void], max: i32) returns i32 exter
 function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
 procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+
+; TCP helpers (shim-owned: sockaddr_in layout is OS-specific, and accept
+; needs the errno mapping). listen returns a nonblocking listening fd on
+; 127.0.0.1:port (0 = ephemeral); accept returns -2 for would-block.
+procedure scaly_eio_tcp_listen(port: i32) returns i32 extern
+function scaly_eio_tcp_port(fd: i32) returns i32 extern
+procedure scaly_eio_tcp_connect(port: i32) returns i32 extern
+procedure scaly_eio_accept(fd: i32) returns i32 extern
 
 ; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
 ; stack-arg ABI); mmap's offset is 64-bit on both OSes.
@@ -843,6 +866,39 @@ define Io
         {
             Io.park(fd, true)
             set r: scaly_eio_write(fd, buf, count)
+        }
+        r
+    }
+
+    ; A nonblocking TCP socket listening on 127.0.0.1:port (0 asks the
+    ; kernel for an ephemeral port; Io.local_port reads the assignment).
+    ; Returns the fd, -1 on failure. Socket setup lives in the shim:
+    ; sockaddr_in's layout is OS-specific.
+    procedure listen(port: i32) returns i32
+        scaly_eio_tcp_listen(port)
+
+    ; The local port a bound socket ended up on (-1 on failure).
+    function local_port(fd: i32) returns i32
+        scaly_eio_tcp_port(fd)
+
+    ; Connect to 127.0.0.1:port — blocking handshake (instant against a
+    ; live local listener); call Io.set_nonblocking on the result before
+    ; suspending I/O. Returns the fd, -1 on failure.
+    procedure connect(port: i32) returns i32
+        scaly_eio_tcp_connect(port)
+
+    ; Accept a connection; suspends while none is pending (readiness on
+    ; a listening fd = pending connection). Returns the new fd (still
+    ; blocking — Io.set_nonblocking it for suspending I/O), -1 on a
+    ; hard error. (Sign tests on i32 must compare against -1 as i32:
+    ; casts zero-extend.)
+    procedure accept(fd: i32) returns i32
+    {
+        var r scaly_eio_accept(fd)
+        while r = ((0 - 2) as i32)
+        {
+            Io.park(fd, false)
+            set r: scaly_eio_accept(fd)
         }
         r
     }

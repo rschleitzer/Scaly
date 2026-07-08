@@ -1,0 +1,97 @@
+; Accept path (milestone 1.5 follow-up): the echo conversation from
+; echo.scaly over real localhost TCP instead of a socketpair. Main binds
+; an ephemeral listening socket (port 0; Io.local_port reads the kernel's
+; assignment — no fixed port, so parallel CI runs cannot collide). The
+; server task parks in Io.accept until the client task's connect lands —
+; readiness on the listening fd, delivered through the same oneshot
+; poller mechanics as read/write readiness — then echoes until EOF. The
+; client's connect is a blocking handshake (instant against the live
+; listener); both conversation fds go nonblocking, so the rendezvous
+; through the kernel socket buffers stays deterministic exactly as in
+; echo.scaly.
+; Expected: s ok1 s ok2 s ok3 eof done
+
+function close(fd: i32) returns i32 extern
+
+mutable listen_fd: int 0
+mutable server_port: int 0
+
+procedure server()
+{
+    let cfd Io.accept(listen_fd as i32)
+    if cfd = ((0 - 1) as i32)
+        exit 2
+    Io.set_nonblocking(cfd)
+    var buf u8[64]
+    var running true
+    while running
+    {
+        let n Io.read(cfd, buf as pointer[void], 64)
+        if n < 0
+            exit 3
+        if n = 0
+        {
+            Console.print "eof "
+            set running: false
+        }
+        else
+        {
+            Console.print "s "
+            Io.write(cfd, buf as pointer[void], n as size_t)
+        }
+    }
+    close(cfd)
+}
+
+procedure client()
+{
+    let fd Io.connect(server_port as i32)
+    if fd = ((0 - 1) as i32)
+        exit 4
+    Io.set_nonblocking(fd)
+    var buf u8[8]
+    var i 1
+    while i <= 3
+    {
+        set *(buf + 0): ((96 + i) as u8)
+        Io.write(fd, buf as pointer[void], 1)
+        var rbuf u8[8]
+        let n Io.read(fd, rbuf as pointer[void], 8)
+        var ok false
+        if n = 1
+        {
+            if (*(rbuf + 0) as int) = (96 + i)
+                set ok: true
+        }
+        if ok
+        {
+            if i = 1
+                Console.print "ok1 "
+            if i = 2
+                Console.print "ok2 "
+            if i = 3
+                Console.print "ok3 "
+        }
+        set i: i + 1
+    }
+    close(fd)
+}
+
+let page Page.allocate_page()
+let lfd Io.listen(0 as i32)
+if lfd = ((0 - 1) as i32)
+    exit 1
+set listen_fd: lfd as int
+let port Io.local_port(lfd)
+if port = ((0 - 1) as i32)
+    exit 1
+set server_port: port as int
+let sched Scheduler.create(page)
+let ts Scheduler.spawn(&server)
+let tc Scheduler.spawn(&client)
+Scheduler.run()
+Scheduler.join(ts)
+Scheduler.join(tc)
+close(lfd)
+Console.println "done"
+Page.release_page(page)

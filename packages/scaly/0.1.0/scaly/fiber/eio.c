@@ -19,10 +19,20 @@
  * At most one armed waiter per fd at a time (epoll has one entry per fd;
  * kqueue could hold read+write separately, but the API contracts to the
  * intersection).
+ *
+ * The TCP helpers (listen/port/connect/accept) are shim-owned for the
+ * same cross-targetness reason: struct sockaddr_in's layout is
+ * OS-specific (darwin leads with a sin_len byte, linux with a 16-bit
+ * sin_family), so Scaly code cannot fill one portably; and accept needs
+ * the same errno mapping as read/write (EAGAIN/EWOULDBLOCK -> -2).
  */
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #define SCALY_EIO_MAX_EVENTS 64
@@ -123,4 +133,83 @@ long scaly_eio_write(int fd, const void* buf, unsigned long count)
     if (r < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
         return -2;
     return r;
+}
+
+/* A nonblocking TCP socket listening on 127.0.0.1:port (port 0 asks the
+ * kernel for an ephemeral port — scaly_eio_tcp_port reads the assignment).
+ * Returns the fd, -1 on failure. */
+int scaly_eio_tcp_listen(int port)
+{
+    struct sockaddr_in addr;
+    int one = 1;
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0)
+        return -1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+    memset(&addr, 0, sizeof addr);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((unsigned short)port);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if (bind(fd, (struct sockaddr*)&addr, sizeof addr) < 0
+        || listen(fd, 64) < 0
+        || scaly_eio_set_nonblocking(fd) < 0)
+    {
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
+/* The local port a bound socket ended up on, -1 on failure. */
+int scaly_eio_tcp_port(int fd)
+{
+    struct sockaddr_in addr;
+    socklen_t len = sizeof addr;
+    if (getsockname(fd, (struct sockaddr*)&addr, &len) < 0)
+        return -1;
+    return ntohs(addr.sin_port);
+}
+
+/* Connect to 127.0.0.1:port with a blocking handshake (instant against a
+ * live local listener; the caller makes the fd nonblocking afterwards for
+ * suspending I/O). Returns the fd, -1 on failure. */
+int scaly_eio_tcp_connect(int port)
+{
+    struct sockaddr_in addr;
+    int rc;
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0)
+        return -1;
+    memset(&addr, 0, sizeof addr);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((unsigned short)port);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    do
+        rc = connect(fd, (struct sockaddr*)&addr, sizeof addr);
+    while (rc < 0 && errno == EINTR);
+    if (rc < 0)
+    {
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
+/* Accept a pending connection. Returns the new fd (blocking mode — the
+ * caller decides), -2 when none is pending (park on readability), -1 on
+ * a hard error. A connection that died in the backlog (ECONNABORTED) is
+ * skipped, not reported. */
+int scaly_eio_accept(int fd)
+{
+    for (;;)
+    {
+        int c = accept(fd, 0, 0);
+        if (c >= 0)
+            return c;
+        if (errno == EINTR || errno == ECONNABORTED)
+            continue;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return -2;
+        return -1;
+    }
 }
