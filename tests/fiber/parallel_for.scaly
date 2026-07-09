@@ -1,0 +1,114 @@
+; `parallel for` outlining emission (stage-3 milestone 3.3): verified
+; bodies are outlined into private task functions and dispatched to
+; this thread's ncpu default pool; the loop site submits one cell per
+; iteration (element + captures, bump-allocated on the wave's group
+; page) and parks in TaskGroup.wait until the wave finished. Covered
+; here: an integer-range loop with captured locals (a Vector result
+; target, a scalar, a string read in every task), per-task allocation
+; (String locals open the task's own region on the worker thread),
+; nested sequential control flow (for/if/continue), and an
+; iterator-based parallel loop over a Vector.
+; Expected: parallel-for-ok done
+
+define Item(idx: size_t, val: i64)
+
+; Pure leaf work — proved effect-free transitively by the TaskPlanner.
+function accumulate(n: int) returns int
+{
+    var acc 0
+    var k 0
+    while k < 50
+    {
+        set acc: acc + n + k
+        set k: k + 1
+    }
+    acc
+}
+
+; ---- Wave 1: range loop, captured vector + scalar; nested
+; if/continue; per-task String allocation (the construction opens the
+; task's own region on the worker thread — stdlib CALLS on it would be
+; extern declares in a user program, unprovable to the TaskPlanner, so
+; the body sticks to constructions, operators, and user functions).
+let bias 7
+var results Vector[int](32)
+parallel for i in 32
+{
+    let s String("task-local")
+    if i = 5
+    {
+        results.put(i, 0 - bias)
+        continue
+    }
+    var acc accumulate(i * 2 + bias)
+    for k in 3
+        set acc: acc + (k as int)
+    results.put(i, acc)
+}
+
+var sum 0
+var i 0
+while i < 32
+{
+    let v results.get(i as size_t)
+    if v <> null
+        set sum: sum + (*v)
+    set i: i + 1
+}
+; Reference: recompute sequentially.
+var want 0
+set i: 0
+while i < 32
+{
+    if i = 5
+        set want: want - bias
+    if i <> 5
+    {
+        var acc accumulate(i * 2 + bias)
+        set acc: acc + 3
+        set want: want + acc
+    }
+    set i: i + 1
+}
+if sum <> want
+{
+    Console.println "wave1-sum-bad"
+    exit 1
+}
+
+; ---- Wave 2: iterator-based parallel loop — record elements carry
+; their own slot index, the canonical disjoint write. (Record elements
+; are the established for-in-vector shape; a SCALAR element used
+; directly as a value mis-derefs in the sequential loop as well — a
+; pre-existing iterator gap, not a 3.3 one.)
+var items Vector[Item](16)
+var j: size_t 0
+while j < (16 as size_t)
+{
+    items.put(j, Item(j, j as i64))
+    set j: j + 1
+}
+var results2 Vector[i64](16)
+parallel for item in items
+{
+    let n item.val
+    results2.put(item.idx, n * n * n)
+}
+
+var sum2 0 as i64
+set j: 0 as size_t
+while j < (16 as size_t)
+{
+    let v results2.get j
+    if v <> null
+        set sum2: sum2 + (*v)
+    set j: j + 1
+}
+if sum2 <> (14400 as i64)
+{
+    Console.println "wave2-sum-bad"
+    exit 1
+}
+
+Console.print "parallel-for-ok "
+Console.println "done"

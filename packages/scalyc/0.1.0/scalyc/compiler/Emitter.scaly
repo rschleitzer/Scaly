@@ -248,6 +248,15 @@ define Emitter
     ; The scope-exit release pass skips pinned slots; pins expire
     ; with their enclosing statement window.
     temp_pinned: ref[Array[LLVMValueRef]]?
+    ; Milestone 3.3: `parallel for` capture-scan scratch. parfor_locals
+    ; holds the names bound inside the scanned body (scoped — callers
+    ; save/restore the length around nested scopes); parfor_captures
+    ; collects every free name that resolves in the enclosing scope.
+    ; Scratch for ONE scan at a time: emit_parallel_for copies the
+    ; result out before it emits the body (a nested parallel for
+    ; would rescan into the same arrays).
+    parfor_locals: ref[Array[String]]?
+    parfor_captures: ref[Array[String]]?
 )
 {
     init(cfg: EmitterConfig)
@@ -297,6 +306,8 @@ define Emitter
         set temp_stmt_log: Array[size_t]^this()
         set temp_stmt_log_start: 0
         set temp_pinned: Array[LLVMValueRef]^this()
+        set parfor_locals: Array[String]^this()
+        set parfor_captures: Array[String]^this()
     }
 
     ; ========================================================================
@@ -9765,6 +9776,13 @@ define Emitter
     ; Emit a for loop
     function emit_for(this, for_expr: PlannedFor) returns LLVMValueRef
     {
+        ; Milestone 3.3: a `parallel for` (its body verified
+        ; parallelizable by TaskPlanner.verify on every compile)
+        ; dispatches its iterations to the default task pool instead
+        ; of running sequentially.
+        if for_expr.is_parallel
+            return emit_parallel_for for_expr
+
         ; Check if iterator-based or integer range loop
         if for_expr.is_iterator_loop
             return emit_for_iterator for_expr
@@ -9974,6 +9992,729 @@ define Emitter
         ; Exit block
         LLVMPositionBuilderAtEnd(builder, exit_block)
         pop_loop()
+
+        LLVMValueRef null
+    }
+
+    ; ========================================================================
+    ; Milestone 3.3: `parallel for` outlining emission.
+    ;
+    ; The body (verified parallelizable by TaskPlanner.verify — an
+    ; unverifiable body failed the compile with rc 4 long before emission)
+    ; is outlined into a private `ptr(ptr)` task function; the loop site
+    ; becomes a submit driver. Per iteration one cell struct
+    ; {element, captures...} is bump-allocated on the task group's own
+    ; page (the 3.2 work-item discipline: the submitter writes, workers
+    ; only read, TaskGroup.dispose frees the wave wholesale) and
+    ; dispatched to this thread's ncpu-sized default pool
+    ; (TaskPool.default_pool); TaskGroup.wait then parks the submitter
+    ; until the wave finished — which is exactly what makes the captured
+    ; frame reads and the disjoint-slot result writes race-free.
+    ;
+    ; Captures are the body's free names that resolve in the enclosing
+    ; scope. A name bound to an ALLOCA slot travels as the slot CONTENT
+    ; and is rebuilt as a same-typed alloca inside the task function, so
+    ; emit_variable's alloca/pointer distinctions behave identically on
+    ; both sides; a plain SSA value travels by value. The body cannot
+    ; write any of them (verification blocks loop-external writes), so
+    ; copy semantics are unobservable.
+    ;
+    ; The task function allocates on the WORKER's thread-local allocator:
+    ; get_or_create_local_page inside it opens the task's own region,
+    ; released in the epilogue — one region per task, by construction.
+    ; ========================================================================
+
+    ; Record a body-bound name (scoped: scanners save/restore the
+    ; length of parfor_locals around nested scopes).
+    procedure parfor_add_local(this, name: String)
+        parfor_locals.add name
+
+    function parfor_is_local(this, name: String) returns bool
+    {
+        var i: size_t 0
+        while i < parfor_locals.length
+        {
+            let p parfor_locals.get i
+            if p <> null
+                if (*p) = name
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; A free name becomes a capture when it is not body-bound, not
+    ; already recorded, and actually resolves to a local of the
+    ; enclosing function (names that resolve to nothing here are
+    ; globals, functions, or namespaces — not frame state).
+    procedure parfor_add_capture(this, name: String)
+    {
+        if parfor_is_local(name)
+            return
+        var i: size_t 0
+        while i < parfor_captures.length
+        {
+            let p parfor_captures.get i
+            if p <> null
+                if (*p) = name
+                    return
+            set i: i + 1
+        }
+        let v lookup_variable name
+        if v.handle = null
+            return
+        parfor_captures.add name
+    }
+
+    procedure parfor_scan_operands(this, ops: ref[Vector[PlannedOperand]]?)
+    {
+        if ops = null
+            return
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+                parfor_scan_operand(op_ptr.unwrap())
+            set i: i + 1
+        }
+    }
+
+    procedure parfor_scan_statement_ref(this, stmt: ref[PlannedStatement]?)
+    {
+        if stmt <> null
+        {
+            let s stmt
+            parfor_scan_statement((*s))
+        }
+    }
+
+    procedure parfor_scan_action(this, act: PlannedAction)
+    {
+        parfor_scan_operands(act.source)
+        if act.target <> null
+            parfor_scan_operands(act.target)
+    }
+
+    procedure parfor_scan_statement(this, stmt: PlannedStatement)
+    {
+        choose stmt
+            when action: Action
+                parfor_scan_action(action)
+            when binding: Binding
+            {
+                parfor_scan_operands(binding.operation)
+                if binding.binding_item.name <> null
+                    parfor_add_local((*binding.binding_item.name))
+            }
+            when ret: Return
+                parfor_scan_operands(ret.result)
+            when throw_stmt: Throw
+                parfor_scan_operands(throw_stmt.result)
+            when brk: Break
+                parfor_scan_operands(brk.result)
+            when cont: Continue
+                0
+    }
+
+    procedure parfor_scan_operand(this, op: PlannedOperand)
+    {
+        choose op.expr
+            when v: Variable
+                parfor_add_capture(v.name)
+            when call: Call
+                parfor_scan_operands(call.args)
+            when tp: Tuple
+            {
+                if tp.components <> null
+                {
+                    var i: size_t 0
+                    while i < tp.components.length
+                    {
+                        let c_ptr tp.components.get i
+                        if c_ptr <> null
+                            parfor_scan_operands(c_ptr.value)
+                        set i: i + 1
+                    }
+                }
+            }
+            when blk: Block
+            {
+                let blk_mark parfor_locals.length
+                if blk.statements <> null
+                {
+                    var i: size_t 0
+                    while i < blk.statements.length
+                    {
+                        let s_ptr blk.statements.get i
+                        if s_ptr <> null
+                            parfor_scan_statement(s_ptr.unwrap())
+                        set i: i + 1
+                    }
+                }
+                set parfor_locals.length: blk_mark
+            }
+            when iff: If
+            {
+                parfor_scan_operands(iff.condition)
+                let then_mark parfor_locals.length
+                if iff.prop <> null
+                    parfor_add_local(iff.prop.name)
+                parfor_scan_statement_ref(iff.consequent)
+                set parfor_locals.length: then_mark
+                let else_mark parfor_locals.length
+                parfor_scan_statement_ref(iff.alternative)
+                set parfor_locals.length: else_mark
+            }
+            when mt: Match
+            {
+                parfor_scan_operands(mt.condition)
+                if mt.branches <> null
+                {
+                    var i: size_t 0
+                    while i < mt.branches.length
+                    {
+                        let br_ptr mt.branches.get i
+                        if br_ptr <> null
+                        {
+                            let br (*br_ptr)
+                            if br.cases <> null
+                            {
+                                var ci: size_t 0
+                                while ci < br.cases.length
+                                {
+                                    let cs_ptr br.cases.get ci
+                                    if cs_ptr <> null
+                                    {
+                                        let cs (*cs_ptr)
+                                        parfor_scan_operands(cs.condition)
+                                    }
+                                    set ci: ci + 1
+                                }
+                            }
+                            let br_mark parfor_locals.length
+                            parfor_scan_statement_ref(br.consequent)
+                            set parfor_locals.length: br_mark
+                        }
+                        set i: i + 1
+                    }
+                }
+                let mt_mark parfor_locals.length
+                parfor_scan_statement_ref(mt.alternative)
+                set parfor_locals.length: mt_mark
+            }
+            when ch: Choose
+            {
+                parfor_scan_operands(ch.condition)
+                if ch.cases <> null
+                {
+                    var i: size_t 0
+                    while i < ch.cases.length
+                    {
+                        let w_ptr ch.cases.get i
+                        if w_ptr <> null
+                        {
+                            let w (*w_ptr)
+                            let case_mark parfor_locals.length
+                            parfor_add_local(w.name)
+                            parfor_scan_statement_ref(w.consequent)
+                            set parfor_locals.length: case_mark
+                        }
+                        set i: i + 1
+                    }
+                }
+                let ch_mark parfor_locals.length
+                parfor_scan_statement_ref(ch.alternative)
+                set parfor_locals.length: ch_mark
+            }
+            when fr: For
+            {
+                parfor_scan_operands(fr.expr)
+                let for_mark parfor_locals.length
+                parfor_add_local(fr.identifier)
+                parfor_scan_action(fr.body)
+                set parfor_locals.length: for_mark
+            }
+            when wh: While
+            {
+                parfor_scan_operands(wh.cond.operation)
+                let wh_mark parfor_locals.length
+                if wh.cond.binding_item.name <> null
+                    parfor_add_local((*wh.cond.binding_item.name))
+                parfor_scan_action(wh.body)
+                set parfor_locals.length: wh_mark
+            }
+            when rp: Repeat
+                parfor_scan_action(rp.body)
+            when tr: Try
+            {
+                parfor_scan_operands(tr.cond.operation)
+                let tr_mark parfor_locals.length
+                if tr.cond.binding_item.name <> null
+                    parfor_add_local((*tr.cond.binding_item.name))
+                if tr.catches <> null
+                {
+                    var i: size_t 0
+                    while i < tr.catches.length
+                    {
+                        let w_ptr tr.catches.get i
+                        if w_ptr <> null
+                        {
+                            let w (*w_ptr)
+                            let catch_mark parfor_locals.length
+                            parfor_add_local(w.name)
+                            parfor_scan_statement_ref(w.consequent)
+                            set parfor_locals.length: catch_mark
+                        }
+                        set i: i + 1
+                    }
+                }
+                parfor_scan_statement_ref(tr.alternative)
+                set parfor_locals.length: tr_mark
+            }
+            when is_expr: Is
+            {
+                if is_expr.value <> null
+                {
+                    let r is_expr.value
+                    parfor_scan_operand((*r))
+                }
+            }
+            when as_expr: As
+            {
+                if as_expr.value <> null
+                {
+                    let r as_expr.value
+                    parfor_scan_operand((*r))
+                }
+            }
+            when vc: VariantConstruction
+            {
+                if vc.value <> null
+                {
+                    let r vc.value
+                    parfor_scan_operand((*r))
+                }
+            }
+            when mx: Matrix
+            {
+                if mx.operations <> null
+                {
+                    var i: size_t 0
+                    while i < mx.operations.length
+                    {
+                        let row_ptr mx.operations.get i
+                        if row_ptr <> null
+                            parfor_scan_operands(row_ptr)
+                        set i: i + 1
+                    }
+                }
+            }
+            when bx: Box
+            {
+                if bx.value <> null
+                {
+                    let r bx.value
+                    parfor_scan_operand((*r))
+                }
+            }
+            else
+                0
+    }
+
+    ; Look up or declare a runtime symbol with the given type — the 3.3
+    ; dispatch calls (TaskPool/TaskGroup/Page.get/Page.allocate), keyed
+    ; by mangled name like every emitter runtime declare.
+    function get_parfor_runtime_fn(this, mangled: String, fn_ty: LLVMTypeRef) returns LLVMValueRef
+    {
+        var f lookup_function_cache(mangled)
+        if f.handle = null
+            set f: LLVMGetNamedFunction(llvm_module, mangled.c_data())
+        if f.handle = null
+        {
+            set f: LLVMAddFunction(llvm_module, mangled.c_data(), fn_ty)
+            LLVMSetLinkage(f, LLVMLinkage.External())
+            cache_function(mangled, f)
+        }
+        f
+    }
+
+    function emit_parallel_for(this, for_expr: PlannedFor) returns LLVMValueRef
+    {
+        ; ---- Collect the captures (plan-side scan, no IR). Copy the
+        ; result out of the scratch right away: emitting the body below
+        ; may meet a NESTED parallel for, which rescans.
+        set parfor_locals.length: 0
+        set parfor_captures.length: 0
+        parfor_add_local(for_expr.identifier)
+        parfor_scan_action(for_expr.body)
+        var cap_names Array[String]()
+        var ci: size_t 0
+        while ci < parfor_captures.length
+        {
+            let nm_ptr parfor_captures.get ci
+            if nm_ptr <> null
+            {
+                let nm (*nm_ptr)
+                cap_names.add nm
+            }
+            set ci: ci + 1
+        }
+        let cap_count cap_names.length
+
+        ; ---- Evaluate the sequence expression in the ENCLOSING
+        ; function (range end value / collection), like the sequential
+        ; loop does first thing.
+        let seq_value emit_operands for_expr.expr
+        if seq_value.handle = null
+            return LLVMValueRef null
+
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        let i64_ty LLVMInt64TypeInContext(context)
+        let void_ty LLVMVoidTypeInContext(context)
+
+        ; ---- Materialize the captured values (loop-invariant — the
+        ; body cannot write them). An alloca-backed name travels as the
+        ; slot content; anything else travels as the SSA value itself.
+        var cap_values Vector[LLVMValueRef](cap_count + 1)
+        var cap_slot_tys Vector[LLVMTypeRef](cap_count + 1)
+        var cap_from_slot Vector[size_t](cap_count + 1)
+        set ci: 0
+        while ci < cap_count
+        {
+            let nm_ptr cap_names.get ci
+            if nm_ptr = null
+                return LLVMValueRef null
+            let nm (*nm_ptr)
+            let v lookup_variable nm
+            if v.handle = null
+                return LLVMValueRef null
+            let v_alloca LLVMIsAAllocaInst(v)
+            if v_alloca.handle <> null
+            {
+                let slot_ty LLVMGetAllocatedType(v)
+                let content LLVMBuildLoad2(builder, slot_ty, v, "parfor.cap")
+                cap_values.put(ci, content)
+                cap_slot_tys.put(ci, slot_ty)
+                cap_from_slot.put(ci, 1 as size_t)
+            }
+            if v_alloca.handle = null
+            {
+                cap_values.put(ci, v)
+                let v_ty LLVMTypeOf(v)
+                cap_slot_tys.put(ci, v_ty)
+                cap_from_slot.put(ci, 0 as size_t)
+            }
+            set ci: ci + 1
+        }
+
+        ; ---- The cell struct: field 0 = the element (range index by
+        ; value / iterator element pointer), fields 1..n = captures.
+        var elem_slot_ty ptr_ty
+        if for_expr.is_iterator_loop = false
+            set elem_slot_ty: LLVMTypeOf(seq_value)
+        var cell_field_tys Vector[LLVMTypeRef](cap_count + 1)
+        cell_field_tys.put(0, elem_slot_ty)
+        set ci: 0
+        while ci < cap_count
+        {
+            let st cap_slot_tys.get ci
+            if st = null
+                return LLVMValueRef null
+            cell_field_tys.put(ci + 1, (*st))
+            set ci: ci + 1
+        }
+        let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (cap_count + 1) as int, 0)
+
+        ; ---- Outline the body into a private task function ptr(ptr).
+        ; Private linkage: llvm-link renames on collision, so the
+        ; auto-uniquified "parfor" names can never merge across roots.
+        var pf_param_tys Vector[LLVMTypeRef](1)
+        pf_param_tys.put(0, ptr_ty)
+        let pf_fn_ty LLVMFunctionType(ptr_ty, pf_param_tys.data, 1, 0)
+        let task_fn LLVMAddFunction(llvm_module, "parfor", pf_fn_ty)
+        LLVMSetLinkage(task_fn, LLVMLinkage.Private())
+
+        ; Save the per-function emitter state, then switch to the task
+        ; function. The temp-pool window moves so the outlined body can
+        ; never recycle an enclosing function's slot (cross-function
+        ; alloca reuse); entries created inside are dropped again on
+        ; restore. Debug locations stay off inside the task function:
+        ; it has no DISubprogram, and clear_debug_location's null scope
+        ; makes every set_debug_location a no-op (locations scoped to
+        ; the enclosing function would be invalid here).
+        let saved_block LLVMGetInsertBlock(builder)
+        let saved_function current_function
+        let saved_local_page function_local_page
+        let saved_can_throw current_function_can_throw
+        let saved_di_scope current_di_scope
+        let saved_pool_start temp_pool_start
+        let saved_pool_len temp_pool_slots.length
+        let saved_log_start temp_stmt_log_start
+        let saved_log_len temp_stmt_log.length
+        let saved_pinned_len temp_pinned.length
+
+        set current_function: task_fn
+        set function_local_page: LLVMValueRef(null)
+        set current_function_can_throw: false
+        clear_debug_location()
+        set temp_pool_start: temp_pool_slots.length
+        set temp_stmt_log_start: temp_stmt_log.length
+
+        let pf_entry_name "entry"
+        let pf_entry LLVMAppendBasicBlockInContext(context, task_fn, pf_entry_name.c_data())
+        LLVMPositionBuilderAtEnd(builder, pf_entry)
+        enter_scope()
+
+        ; Rebind the loop variable and every capture from the cell.
+        let cell_arg LLVMGetParam(task_fn, 0)
+        let elem_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, 0, "parfor.elem.ptr")
+        let elem_val LLVMBuildLoad2(builder, elem_slot_ty, elem_gep, for_expr.identifier.c_data())
+        define_variable(for_expr.identifier, elem_val)
+        set ci: 0
+        while ci < cap_count
+        {
+            let nm_ptr cap_names.get ci
+            let nm (*nm_ptr)
+            let st_ptr cap_slot_tys.get ci
+            let slot_ty (*st_ptr)
+            let cap_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (ci + 1) as int, "parfor.cap.ptr")
+            let cap_val LLVMBuildLoad2(builder, slot_ty, cap_gep, nm.c_data())
+            let fs_ptr cap_from_slot.get ci
+            var rebuild_slot: size_t 0
+            if fs_ptr <> null
+                set rebuild_slot: (*fs_ptr)
+            if rebuild_slot = (1 as size_t)
+            {
+                let cap_slot LLVMBuildAlloca(builder, slot_ty, nm.c_data())
+                LLVMBuildStore(builder, cap_val, cap_slot)
+                define_variable(nm, cap_slot)
+            }
+            if rebuild_slot = (0 as size_t)
+                define_variable(nm, cap_val)
+            set ci: ci + 1
+        }
+
+        ; The body. `continue` of this loop ends the iteration — both
+        ; loop targets are the return block (break/early exits were
+        ; verification blockers, they cannot occur).
+        let pf_ret_block create_block("parfor.ret")
+        push_loop(pf_ret_block, pf_ret_block, for_expr.loop_label, LLVMValueRef(null))
+        emit_action for_expr.body
+        let pf_body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+        if pf_body_term.handle = null
+            LLVMBuildBr(builder, pf_ret_block)
+        pop_loop()
+        exit_scope()
+
+        ; Epilogue: release the task's local region (one region per
+        ; task — no-op when the body never allocated), return null.
+        LLVMPositionBuilderAtEnd(builder, pf_ret_block)
+        emit_release_local_page()
+        let pf_null LLVMConstNull(ptr_ty)
+        LLVMBuildRet(builder, pf_null)
+
+        ; Terminate any dangling blocks (mirrors emit_function_body's
+        ; final sweep).
+        var pf_bb LLVMGetFirstBasicBlock(task_fn)
+        while pf_bb.handle <> null
+        {
+            let pf_term LLVMGetBasicBlockTerminator(pf_bb)
+            if pf_term.handle = null
+            {
+                LLVMPositionBuilderAtEnd(builder, pf_bb)
+                LLVMBuildUnreachable builder
+            }
+            set pf_bb: LLVMGetNextBasicBlock(pf_bb)
+        }
+
+        ; Restore the enclosing function's emitter state.
+        set temp_pool_slots.length: saved_pool_len
+        set temp_pool_types.length: saved_pool_len
+        set temp_pool_free.length: saved_pool_len
+        set temp_pool_start: saved_pool_start
+        set temp_stmt_log.length: saved_log_len
+        set temp_stmt_log_start: saved_log_start
+        set temp_pinned.length: saved_pinned_len
+        set current_function: saved_function
+        set function_local_page: saved_local_page
+        set current_function_can_throw: saved_can_throw
+        set current_di_scope: saved_di_scope
+        LLVMPositionBuilderAtEnd(builder, saved_block)
+        if config.emit_debug_info
+            set_debug_location(for_expr.loc)
+
+        ; ---- The dispatch driver, back at the loop site.
+        let dp_ty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
+        let dp_fn get_parfor_runtime_fn("_ZN8TaskPool12default_poolEv", dp_ty)
+        let gc_ty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
+        let gc_fn get_parfor_runtime_fn("_ZN9TaskGroup6createEv", gc_ty)
+        var p1_tys Vector[LLVMTypeRef](1)
+        p1_tys.put(0, ptr_ty)
+        let pget_ty LLVMFunctionType(ptr_ty, p1_tys.data, 1, 0)
+        let pget_fn get_parfor_runtime_fn("_Z3getPv", pget_ty)
+        let gv_ty LLVMFunctionType(void_ty, p1_tys.data, 1, 0)
+        let gw_fn get_parfor_runtime_fn("_ZN9TaskGroup4waitEP9TaskGroup", gv_ty)
+        let gd_fn get_parfor_runtime_fn("_ZN9TaskGroup7disposeEP9TaskGroup", gv_ty)
+        var alloc_tys Vector[LLVMTypeRef](3)
+        alloc_tys.put(0, ptr_ty)
+        alloc_tys.put(1, i64_ty)
+        alloc_tys.put(2, i64_ty)
+        let alloc_ty LLVMFunctionType(ptr_ty, alloc_tys.data, 3, 0)
+        let alloc_fn get_parfor_runtime_fn("_ZN4Page8allocateEmm", alloc_ty)
+        var sub_tys Vector[LLVMTypeRef](4)
+        sub_tys.put(0, ptr_ty)
+        sub_tys.put(1, ptr_ty)
+        sub_tys.put(2, ptr_ty)
+        sub_tys.put(3, ptr_ty)
+        let sub_ty LLVMFunctionType(void_ty, sub_tys.data, 4, 0)
+        let sub_fn get_parfor_runtime_fn("_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup", sub_ty)
+
+        let pool LLVMBuildCall2(builder, dp_ty, dp_fn, null as pointer[LLVMValueRef], 0, "parfor.pool")
+        let group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
+        var pget_args Vector[LLVMValueRef](1)
+        pget_args.put(0, group)
+        let gpage LLVMBuildCall2(builder, pget_ty, pget_fn, pget_args.data, 1, "parfor.gpage")
+        let cell_size llvm_type_abi_size(cell_ty)
+        let cell_size_const LLVMConstInt(i64_ty, cell_size, 0)
+        let cell_align_const LLVMConstInt(i64_ty, 8, 0)
+
+        if for_expr.is_iterator_loop
+        {
+            ; Iterator driver: the sequential skeleton, its body
+            ; replaced by cell-fill + submit. next() runs on the
+            ; SUBMITTER; the element pointer (into the collection,
+            ; which outlives the parked wait) rides the cell.
+            var collection_ptr seq_value
+            let coll_type LLVMTypeOf(seq_value)
+            let coll_kind LLVMGetTypeKind(coll_type)
+            if coll_kind <> LLVMTypeKind.Pointer()
+            {
+                set collection_ptr: entry_alloca(coll_type, "parfor.coll.tmp")
+                LLVMBuildStore(builder, seq_value, collection_ptr)
+            }
+            let get_iter_fn LLVMGetNamedFunction(llvm_module, for_expr.get_iterator_method.c_data())
+            if get_iter_fn.handle = null
+                return LLVMValueRef null
+            let iter_type map_type for_expr.iterator_type
+            let iter_alloca entry_alloca(iter_type, "parfor.iter")
+            let rp_val lookup_variable("rp")
+            var page_arg: LLVMValueRef rp_val
+            if page_arg.handle = null
+                set page_arg: get_or_create_local_page()
+            if page_arg.handle = null
+                return LLVMValueRef null
+            var gi_args Vector[LLVMValueRef](3)
+            var gi_tys Vector[LLVMTypeRef](3)
+            gi_args.put(0, iter_alloca)
+            gi_args.put(1, page_arg)
+            gi_args.put(2, collection_ptr)
+            gi_tys.put(0, ptr_ty)
+            gi_tys.put(1, ptr_ty)
+            gi_tys.put(2, ptr_ty)
+            let gi_fn_ty LLVMFunctionType(void_ty, gi_tys.data, 3, 0)
+            LLVMBuildCall2(builder, gi_fn_ty, get_iter_fn, gi_args.data, 3, "")
+            let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
+            if next_fn.handle = null
+                return LLVMValueRef null
+
+            let cond_block create_block("pfor.cond")
+            let body_block create_block("pfor.body")
+            let exit_block create_block("pfor.exit")
+            LLVMBuildBr(builder, cond_block)
+
+            LLVMPositionBuilderAtEnd(builder, cond_block)
+            var next_args Vector[LLVMValueRef](1)
+            var next_tys Vector[LLVMTypeRef](1)
+            next_args.put(0, iter_alloca)
+            next_tys.put(0, ptr_ty)
+            let next_fn_ty LLVMFunctionType(ptr_ty, next_tys.data, 1, 0)
+            let next_result LLVMBuildCall2(builder, next_fn_ty, next_fn, next_args.data, 1, "parfor.next")
+            let next_null LLVMConstNull(ptr_ty)
+            let iter_done LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), next_result, next_null, "parfor.done")
+            LLVMBuildCondBr(builder, iter_done, exit_block, body_block)
+
+            LLVMPositionBuilderAtEnd(builder, body_block)
+            var it_alloc_args Vector[LLVMValueRef](3)
+            it_alloc_args.put(0, gpage)
+            it_alloc_args.put(1, cell_size_const)
+            it_alloc_args.put(2, cell_align_const)
+            let it_cell LLVMBuildCall2(builder, alloc_ty, alloc_fn, it_alloc_args.data, 3, "parfor.cell")
+            let it_elem_gep LLVMBuildStructGEP2(builder, cell_ty, it_cell, 0, "parfor.cell.elem")
+            LLVMBuildStore(builder, next_result, it_elem_gep)
+            set ci: 0
+            while ci < cap_count
+            {
+                let cv_ptr cap_values.get ci
+                let cap_gep2 LLVMBuildStructGEP2(builder, cell_ty, it_cell, (ci + 1) as int, "parfor.cell.cap")
+                LLVMBuildStore(builder, (*cv_ptr), cap_gep2)
+                set ci: ci + 1
+            }
+            var it_sub_args Vector[LLVMValueRef](4)
+            it_sub_args.put(0, pool)
+            it_sub_args.put(1, task_fn)
+            it_sub_args.put(2, it_cell)
+            it_sub_args.put(3, group)
+            LLVMBuildCall2(builder, sub_ty, sub_fn, it_sub_args.data, 4, "")
+            LLVMBuildBr(builder, cond_block)
+
+            LLVMPositionBuilderAtEnd(builder, exit_block)
+        }
+        if for_expr.is_iterator_loop = false
+        {
+            ; Range driver: count 0..end-1, one cell + submit each.
+            let index_type elem_slot_ty
+            let loop_counter entry_alloca(index_type, "parfor.counter")
+            let zero LLVMConstInt(index_type, 0, 0)
+            LLVMBuildStore(builder, zero, loop_counter)
+            let cond_block create_block("pfor.cond")
+            let body_block create_block("pfor.body")
+            let exit_block create_block("pfor.exit")
+            LLVMBuildBr(builder, cond_block)
+
+            LLVMPositionBuilderAtEnd(builder, cond_block)
+            let cur_index LLVMBuildLoad2(builder, index_type, loop_counter, "parfor.i")
+            let range_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), cur_index, seq_value, "parfor.cmp")
+            LLVMBuildCondBr(builder, range_more, body_block, exit_block)
+
+            LLVMPositionBuilderAtEnd(builder, body_block)
+            var rg_alloc_args Vector[LLVMValueRef](3)
+            rg_alloc_args.put(0, gpage)
+            rg_alloc_args.put(1, cell_size_const)
+            rg_alloc_args.put(2, cell_align_const)
+            let rg_cell LLVMBuildCall2(builder, alloc_ty, alloc_fn, rg_alloc_args.data, 3, "parfor.cell")
+            let rg_elem_gep LLVMBuildStructGEP2(builder, cell_ty, rg_cell, 0, "parfor.cell.elem")
+            LLVMBuildStore(builder, cur_index, rg_elem_gep)
+            set ci: 0
+            while ci < cap_count
+            {
+                let cv_ptr cap_values.get ci
+                let cap_gep3 LLVMBuildStructGEP2(builder, cell_ty, rg_cell, (ci + 1) as int, "parfor.cell.cap")
+                LLVMBuildStore(builder, (*cv_ptr), cap_gep3)
+                set ci: ci + 1
+            }
+            var rg_sub_args Vector[LLVMValueRef](4)
+            rg_sub_args.put(0, pool)
+            rg_sub_args.put(1, task_fn)
+            rg_sub_args.put(2, rg_cell)
+            rg_sub_args.put(3, group)
+            LLVMBuildCall2(builder, sub_ty, sub_fn, rg_sub_args.data, 4, "")
+            let one LLVMConstInt(index_type, 1, 0)
+            let next_index LLVMBuildAdd(builder, cur_index, one, "parfor.i.next")
+            LLVMBuildStore(builder, next_index, loop_counter)
+            LLVMBuildBr(builder, cond_block)
+
+            LLVMPositionBuilderAtEnd(builder, exit_block)
+        }
+
+        ; The wave barrier: park until every task finished, then free
+        ; the cells wholesale with the group.
+        var gw_args Vector[LLVMValueRef](1)
+        gw_args.put(0, group)
+        LLVMBuildCall2(builder, gv_ty, gw_fn, gw_args.data, 1, "")
+        var gd_args Vector[LLVMValueRef](1)
+        gd_args.put(0, group)
+        LLVMBuildCall2(builder, gv_ty, gd_fn, gd_args.data, 1, "")
 
         LLVMValueRef null
     }
