@@ -1,10 +1,12 @@
-; Milestone 1.4 demonstrator: main-context receive + the sender-death
-; proof. The main context receives by driving the dispatcher (like a
+; Main-context receive + the sender-death proof over the unified async
+; channel. The main context receives by driving the dispatcher (like a
 ; main-context join), then joins the producer — disposing its WHOLE
 ; fiber region — and only afterwards reads the message content. The
 ; message lives on its own heap page, so it survives the sender's
 ; wholesale teardown (the freed-bucket delta proves the producer's
-; region actually died).
+; region actually died). The producer fiber borrows the creator's send
+; handle; main retires it after the receive and disposes the drained
+; channel.
 ; Expected: sent joined value7 freed done
 
 define Msg
@@ -48,5 +50,9 @@ mp.deallocate_extensions()
 Page.release_page(mp)
 if Fiber.freed_bucket_count() > buckets_before
     Console.print "freed "
+Channel.close_sender(ch)
+let tail Channel.receive(ch)
+if tail = null
+    Channel.dispose(ch)
 Console.println "done"
 Page.release_page(page)

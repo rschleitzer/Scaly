@@ -19857,14 +19857,11 @@ define Planner
                 when call: Call
                 {
                     this.move_walk_operands(call.args)
-                    ; Both channel types move their message: the
-                    ; rendezvous Channel and the cross-thread Mailbox
-                    ; (milestone 2.4) — same ownership rule, same
-                    ; last-argument message slot.
+                    ; Channel.send moves its message (the last argument).
+                    ; One channel type since the Channel/Mailbox
+                    ; unification — same ownership rule as always.
                     var is_send false
                     if call.mangled_name = "_ZN7Channel4sendEP7ChannelPv"
-                        set is_send: true
-                    if call.mangled_name = "_ZN7Mailbox4sendEP7MailboxPv"
                         set is_send: true
                     if is_send
                         if call.args <> null

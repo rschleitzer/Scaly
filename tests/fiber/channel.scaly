@@ -1,13 +1,14 @@
-; Milestone 1.4 demonstrator: producer/consumer over a rendezvous
-; channel with region-ownership transfer. Each message is rooted on its
+; Producer/consumer over the unified async ownership channel, single-
+; threaded: both ends are fibers on one scheduler. Sends never block,
+; so the producer queues all three messages and closes before the
+; consumer first runs (s s s r r r); the sum proves every payload
+; arrived, the null after the close ends the consumer, which then
+; disposes the drained channel record. Each message is rooted on its
 ; own HeapBucket page (Page.allocate_page) — fiber-independent, so it
 ; survives the producer's region teardown; ownership moves with the
 ; send, and the consumer frees each message region after use
-; (deallocate_extensions + Page.release_page on Page.get). A null
-; message is the end-of-stream sentinel. The rendezvous interleaving is
-; deterministic: the producer parks when the consumer is not already
-; waiting (s r s s r r), and the sum proves every payload arrived.
-; Expected: s r s s r r sum6 done
+; (deallocate_extensions + Page.release_page on Page.get).
+; Expected: s s s r r r sum6 done
 
 define Msg
 (
@@ -29,7 +30,7 @@ procedure producer()
         Channel.send(c, m as pointer[void])
         set i: i + 1
     }
-    Channel.send(c, null)
+    Channel.close_sender(c)
 }
 
 procedure consumer()
@@ -56,6 +57,7 @@ procedure consumer()
     }
     if sum = 6
         Console.print "sum6 "
+    Channel.dispose(c)
 }
 
 let page Page.allocate_page()
