@@ -226448,10 +226448,11 @@ entry:
     i8 2, label %choose.when
     i8 4, label %choose.when1
     i8 19, label %choose.when18
+    i8 5, label %choose.when28
   ]
 
-choose.end:                                       ; preds = %choose.else, %if.end23, %if.end5, %if.end
-  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end ], [ undef, %if.end5 ], [ undef, %if.end23 ]
+choose.end:                                       ; preds = %choose.else, %if.end33, %if.end23, %if.end5, %if.end
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end ], [ undef, %if.end5 ], [ undef, %if.end23 ], [ undef, %if.end33 ]
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
@@ -226543,6 +226544,107 @@ if.then26:                                        ; preds = %if.then22
 
 if.end27:                                         ; preds = %if.then22
   br label %if.end23
+
+choose.when28:                                    ; preds = %entry
+  %"variant.c_data().ptr29" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
+  %variant.val30 = load %_Z12PlannedTuple, ptr %"variant.c_data().ptr29", align 8
+  %components = extractvalue %_Z12PlannedTuple %variant.val30, 1
+  %ne31 = icmp ne ptr %components, null
+  br i1 %ne31, label %if.then32, label %if.end33
+
+if.then32:                                        ; preds = %choose.when28
+  store i64 0, ptr %i, align 1
+  br label %while.cond34
+
+if.end33:                                         ; preds = %while.exit36, %choose.when28
+  br label %choose.end
+
+while.cond34:                                     ; preds = %if.end47, %if.then32
+  %i37 = load i64, ptr %i, align 8
+  %components38 = extractvalue %_Z12PlannedTuple %variant.val30, 1
+  %deref39 = load %_Z6VectorI6StringE, ptr %components38, align 8
+  %length40 = extractvalue %_Z6VectorI6StringE %deref39, 0
+  %lt41 = icmp ult i64 %i37, %length40
+  br i1 %lt41, label %while.body35, label %while.exit36
+
+while.body35:                                     ; preds = %while.cond34
+  %components42 = extractvalue %_Z12PlannedTuple %variant.val30, 1
+  %i43 = load i64, ptr %i, align 8
+  %call44 = call ptr @_ZN6VectorI16PlannedComponentE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %components42, i64 %i43)
+  %ne45 = icmp ne ptr %call44, null
+  br i1 %ne45, label %if.then46, label %if.end47
+
+while.exit36:                                     ; preds = %while.cond34
+  br label %if.end33
+
+if.then46:                                        ; preds = %while.body35
+  %field.inplace = getelementptr inbounds %_Z16PlannedComponent, ptr %call44, i32 0, i32 2
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call48 = call i1 @_ZN11TaskPlanner18operands_read_nameE6OptionIR6VectorI14PlannedOperandEE6String(ptr %0, ptr %deref.recv, ptr %2)
+  br i1 %call48, label %if.then49, label %if.end50
+
+if.end47:                                         ; preds = %if.end50, %while.body35
+  %i51 = load i64, ptr %i, align 8
+  %add52 = add i64 %i51, 1
+  store i64 %add52, ptr %i, align 1
+  br label %while.cond34
+
+if.then49:                                        ; preds = %if.then46
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 true
+
+if.end50:                                         ; preds = %if.then46
+  br label %if.end47
+}
+
+define linkonce_odr i1 @_ZN11TaskPlanner18operands_read_nameE6OptionIR6VectorI14PlannedOperandEE6String(ptr %0, ptr %1, ptr %2) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %i = alloca i64, align 8
+  %eq = icmp eq ptr %1, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end4, %if.end
+  %i1 = load i64, ptr %i, align 8
+  %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %lt = icmp ult i64 %i1, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %call = call ptr @_ZN6VectorI14PlannedOperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 %i2)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then3, label %if.end4
+
+while.exit:                                       ; preds = %while.cond
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 false
+
+if.then3:                                         ; preds = %while.body
+  %call5 = call i1 @_ZN11TaskPlanner18operand_reads_nameE14PlannedOperand6String(ptr %0, ptr %call, ptr %2)
+  br i1 %call5, label %if.then6, label %if.end7
+
+if.end4:                                          ; preds = %if.end7, %while.body
+  %i8 = load i64, ptr %i, align 8
+  %add = add i64 %i8, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+if.then6:                                         ; preds = %if.then3
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 true
+
+if.end7:                                          ; preds = %if.then3
+  br label %if.end4
 }
 
 define linkonce_odr void @_ZN11TaskPlanner11cls_operandE14PlannedOperand(ptr %0, ptr %1) {
