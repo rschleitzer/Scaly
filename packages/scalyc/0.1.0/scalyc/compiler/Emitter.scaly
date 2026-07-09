@@ -257,6 +257,12 @@ define Emitter
     ; would rescan into the same arrays).
     parfor_locals: ref[Array[String]]?
     parfor_captures: ref[Array[String]]?
+    ; Milestone 4.2: static body-weight memo (mangled name -> saturated
+    ; weight) plus the stack of names currently being weighed (recursion
+    ; falls back to the flat call cost instead of diverging).
+    weight_memo_names: ref[Array[String]]?
+    weight_memo_vals: ref[Array[size_t]]?
+    weight_stack: ref[Array[String]]?
 )
 {
     init(cfg: EmitterConfig)
@@ -308,6 +314,9 @@ define Emitter
         set temp_pinned: Array[LLVMValueRef]^this()
         set parfor_locals: Array[String]^this()
         set parfor_captures: Array[String]^this()
+        set weight_memo_names: Array[String]^this()
+        set weight_memo_vals: Array[size_t]^this()
+        set weight_stack: Array[String]^this()
     }
 
     ; ========================================================================
@@ -10027,22 +10036,27 @@ define Emitter
     ; ========================================================================
     ; Milestone 3.3: `parallel for` outlining emission.
     ; Milestone 4.1: chunked sub-range dispatch.
+    ; Milestone 4.2: deferred adaptive driver.
     ;
     ; The body (verified parallelizable by TaskPlanner.verify — an
     ; unverifiable body failed the compile with rc 4 long before emission)
     ; is outlined into a private `ptr(ptr)` task function that runs a
-    ; SUB-RANGE [lo,hi) of iterations; the loop site becomes a submit
-    ; driver placing k = min(max(n,1), 4*ncpu) chunk cells
-    ; {lo, hi, captures...} (iterator loops: {buf, lo, hi, captures...}
-    ; over a drained flat element-pointer array) — bump-allocated on the
-    ; task group's own page (the 3.2 work-item discipline: the submitter
+    ; SUB-RANGE [lo,hi) of iterations. The loop site (4.2) no longer
+    ; submits eagerly: iterations run INLINE with backoff-spaced clock
+    ; checkpoints, and only once the measured work clears the fork gate
+    ; is the REMAINING range chunked into cells {lo, hi, captures...}
+    ; (iterator loops: {buf, lo, hi, captures...} over a flat element-
+    ; pointer array drained at fork time) — bump-allocated on the task
+    ; group's own page (the 3.2 work-item discipline: the submitter
     ; writes, workers only read, TaskGroup.dispose frees the wave
     ; wholesale) and dispatched to this thread's ncpu-sized default pool
     ; (TaskPool.default_pool); TaskGroup.wait then parks the submitter
     ; until the wave finished — which is exactly what makes the captured
     ; frame reads and the disjoint-slot result writes race-free.
     ; Disjointness is range-agnostic (proven for [0,n) ⇒ proven for
-    ; every sub-range), so chunking needs no re-proof.
+    ; every sub-range), so forking a RUNNING loop at an arbitrary
+    ; boundary needs no re-proof. Short loops finish inline before the
+    ; gate can clear and provably never touch pool or group.
     ;
     ; Captures are the body's free names that resolve in the enclosing
     ; scope. A name bound to an ALLOCA slot travels as the slot CONTENT
@@ -10056,7 +10070,7 @@ define Emitter
     ; get_or_create_local_page inside it opens the task's own region,
     ; released in the epilogue — one region per CHUNK (entry-hoisted by
     ; get_or_create_local_page; per-iteration recycling would rework the
-    ; local-page machinery — 4.2 material if churn bodies need it).
+    ; local-page machinery — still open, revisit if churn bodies need it).
     ; ========================================================================
 
     ; Record a body-bound name (scoped: scanners save/restore the
@@ -10374,6 +10388,418 @@ define Emitter
         f
     }
 
+    ; ------------------------------------------------------------------
+    ; Milestone 4.2: static body weight. A relative, saturating estimate
+    ; of one iteration's work, used ONLY to place the deferred driver's
+    ; first calibration checkpoint: known-tiny bodies skip early clock
+    ; reads entirely, bodies containing calls or inner loops check almost
+    ; immediately. The fork decision itself runs on MEASURED time —
+    ; static weight cannot see runtime trip counts or data-dependent
+    ; cost. Model: leaf = 1, construction = 16, intrinsic/operator = 1,
+    ; extern/unresolved/indirect/recursive call = 64, direct call with a
+    ; body = the callee's memoized weight, inner loop = body x 64;
+    ; branches are summed (overshoot only moves the first check earlier).
+    ; ------------------------------------------------------------------
+
+    function parfor_wadd(this, a: size_t, b: size_t) returns size_t
+    {
+        let cap 1048576 as size_t
+        if a >= cap
+            return cap
+        if b >= cap
+            return cap
+        let s a + b
+        if s >= cap
+            return cap
+        s
+    }
+
+    function parfor_wmul(this, a: size_t, b: size_t) returns size_t
+    {
+        let cap 1048576 as size_t
+        if a = (0 as size_t)
+            return 0 as size_t
+        if a >= cap
+            return cap
+        let lim cap / a
+        if b >= lim
+            return cap
+        a * b
+    }
+
+    function parfor_weight_is_construction(this, name: String) returns bool
+    {
+        if name = "init"
+            return true
+        if name.get_length() = (0 as size_t)
+            return false
+        let c name.get(0 as size_t)
+        if c >= (65 as char)
+            if c <= (90 as char)
+                return true
+        false
+    }
+
+    ; Weight of a callee body by mangled name, memoized. A name being
+    ; weighed further up the walk (recursion) and an unresolved or
+    ; extern name all fall back to the flat call cost. Declaration
+    ; duplicates: a body entry wins over an extern declare for the same
+    ; mangled name (the TaskPlanner's effectively_pure discipline).
+    function parfor_weight_fn(this, mangled: String) returns size_t
+    {
+        var i: size_t 0
+        while i < weight_memo_names.length
+        {
+            let p weight_memo_names.get i
+            if p <> null
+            {
+                if (*p) = mangled
+                {
+                    let v weight_memo_vals.get i
+                    if v <> null
+                        return (*v)
+                    return 64 as size_t
+                }
+            }
+            set i: i + 1
+        }
+        var j: size_t 0
+        while j < weight_stack.length
+        {
+            let sp weight_stack.get j
+            if sp <> null
+                if (*sp) = mangled
+                    return 64 as size_t
+            set j: j + 1
+        }
+        if current_plan = null
+            return 64 as size_t
+        if current_plan.functions = null
+            return 64 as size_t
+        for func in current_plan.functions
+        {
+            if func.mangled_name = mangled
+            {
+                choose func.impl
+                    when action: Action
+                    {
+                        weight_stack.add mangled
+                        let w parfor_weight_action(action)
+                        set weight_stack.length: weight_stack.length - (1 as size_t)
+                        weight_memo_names.add mangled
+                        weight_memo_vals.add w
+                        return w
+                    }
+                    else
+                        0
+            }
+        }
+        weight_memo_names.add mangled
+        weight_memo_vals.add(64 as size_t)
+        64 as size_t
+    }
+
+    function parfor_weight_operands(this, ops: ref[Vector[PlannedOperand]]?) returns size_t
+    {
+        if ops = null
+            return 0 as size_t
+        var w: size_t 0
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+            {
+                let ow parfor_weight_operand(op_ptr.unwrap())
+                set w: parfor_wadd(w, ow)
+            }
+            set i: i + 1
+        }
+        w
+    }
+
+    function parfor_weight_statement_ref(this, stmt: ref[PlannedStatement]?) returns size_t
+    {
+        if stmt <> null
+        {
+            let s stmt
+            return parfor_weight_statement((*s))
+        }
+        0 as size_t
+    }
+
+    function parfor_weight_action(this, act: PlannedAction) returns size_t
+    {
+        var w parfor_weight_operands(act.source)
+        if act.target <> null
+        {
+            let tw parfor_weight_operands(act.target)
+            set w: parfor_wadd(w, tw)
+        }
+        parfor_wadd(w, 1 as size_t)
+    }
+
+    function parfor_weight_statement(this, stmt: PlannedStatement) returns size_t
+    {
+        choose stmt
+            when action: Action
+                return parfor_weight_action(action)
+            when binding: Binding
+            {
+                let w parfor_weight_operands(binding.operation)
+                return parfor_wadd(w, 1 as size_t)
+            }
+            when ret: Return
+            {
+                let w parfor_weight_operands(ret.result)
+                return parfor_wadd(w, 1 as size_t)
+            }
+            when throw_stmt: Throw
+            {
+                let w parfor_weight_operands(throw_stmt.result)
+                return parfor_wadd(w, 1 as size_t)
+            }
+            when brk: Break
+            {
+                let w parfor_weight_operands(brk.result)
+                return parfor_wadd(w, 1 as size_t)
+            }
+            when cont: Continue
+                return 1 as size_t
+        1 as size_t
+    }
+
+    function parfor_weight_call(this, call: PlannedCall) returns size_t
+    {
+        var w parfor_weight_operands(call.args)
+        if call.is_intrinsic
+            return parfor_wadd(w, 1 as size_t)
+        if call.is_operator
+            return parfor_wadd(w, 1 as size_t)
+        if call.is_indirect
+            return parfor_wadd(w, 64 as size_t)
+        if parfor_weight_is_construction(call.name)
+            return parfor_wadd(w, 16 as size_t)
+        let fw parfor_weight_fn(call.mangled_name)
+        parfor_wadd(w, fw)
+    }
+
+    function parfor_weight_operand(this, op: PlannedOperand) returns size_t
+    {
+        choose op.expr
+            when call: Call
+                return parfor_weight_call(call)
+            when tp: Tuple
+            {
+                var w: size_t 1
+                if tp.components <> null
+                {
+                    var i: size_t 0
+                    while i < tp.components.length
+                    {
+                        let c_ptr tp.components.get i
+                        if c_ptr <> null
+                        {
+                            let cw parfor_weight_operands(c_ptr.value)
+                            set w: parfor_wadd(w, cw)
+                        }
+                        set i: i + 1
+                    }
+                }
+                return w
+            }
+            when blk: Block
+            {
+                var w: size_t 0
+                if blk.statements <> null
+                {
+                    var i: size_t 0
+                    while i < blk.statements.length
+                    {
+                        let s_ptr blk.statements.get i
+                        if s_ptr <> null
+                        {
+                            let sw parfor_weight_statement(s_ptr.unwrap())
+                            set w: parfor_wadd(w, sw)
+                        }
+                        set i: i + 1
+                    }
+                }
+                return w
+            }
+            when iff: If
+            {
+                var w parfor_weight_operands(iff.condition)
+                let cw parfor_weight_statement_ref(iff.consequent)
+                set w: parfor_wadd(w, cw)
+                let aw parfor_weight_statement_ref(iff.alternative)
+                set w: parfor_wadd(w, aw)
+                return parfor_wadd(w, 1 as size_t)
+            }
+            when mt: Match
+            {
+                var w parfor_weight_operands(mt.condition)
+                if mt.branches <> null
+                {
+                    var i: size_t 0
+                    while i < mt.branches.length
+                    {
+                        let br_ptr mt.branches.get i
+                        if br_ptr <> null
+                        {
+                            let br (*br_ptr)
+                            if br.cases <> null
+                            {
+                                var ci: size_t 0
+                                while ci < br.cases.length
+                                {
+                                    let cs_ptr br.cases.get ci
+                                    if cs_ptr <> null
+                                    {
+                                        let cs (*cs_ptr)
+                                        let ccw parfor_weight_operands(cs.condition)
+                                        set w: parfor_wadd(w, ccw)
+                                    }
+                                    set ci: ci + 1
+                                }
+                            }
+                            let bw parfor_weight_statement_ref(br.consequent)
+                            set w: parfor_wadd(w, bw)
+                        }
+                        set i: i + 1
+                    }
+                }
+                let mw parfor_weight_statement_ref(mt.alternative)
+                return parfor_wadd(w, mw)
+            }
+            when ch: Choose
+            {
+                var w parfor_weight_operands(ch.condition)
+                if ch.cases <> null
+                {
+                    var i: size_t 0
+                    while i < ch.cases.length
+                    {
+                        let w_ptr ch.cases.get i
+                        if w_ptr <> null
+                        {
+                            let cse (*w_ptr)
+                            let ccw parfor_weight_statement_ref(cse.consequent)
+                            set w: parfor_wadd(w, ccw)
+                        }
+                        set i: i + 1
+                    }
+                }
+                let aw parfor_weight_statement_ref(ch.alternative)
+                return parfor_wadd(w, aw)
+            }
+            when fr: For
+            {
+                let ew parfor_weight_operands(fr.expr)
+                let bw parfor_weight_action(fr.body)
+                let lw parfor_wmul(bw, 64 as size_t)
+                return parfor_wadd(ew, lw)
+            }
+            when wh: While
+            {
+                let cw parfor_weight_operands(wh.cond.operation)
+                let bw parfor_weight_action(wh.body)
+                let per parfor_wadd(cw, bw)
+                return parfor_wmul(per, 64 as size_t)
+            }
+            when rp: Repeat
+            {
+                let bw parfor_weight_action(rp.body)
+                return parfor_wmul(bw, 64 as size_t)
+            }
+            when tr: Try
+            {
+                var w parfor_weight_operands(tr.cond.operation)
+                if tr.catches <> null
+                {
+                    var i: size_t 0
+                    while i < tr.catches.length
+                    {
+                        let w_ptr tr.catches.get i
+                        if w_ptr <> null
+                        {
+                            let cse (*w_ptr)
+                            let ccw parfor_weight_statement_ref(cse.consequent)
+                            set w: parfor_wadd(w, ccw)
+                        }
+                        set i: i + 1
+                    }
+                }
+                let aw parfor_weight_statement_ref(tr.alternative)
+                return parfor_wadd(w, aw)
+            }
+            when is_expr: Is
+            {
+                if is_expr.value <> null
+                {
+                    let r is_expr.value
+                    let iw parfor_weight_operand((*r))
+                    return parfor_wadd(iw, 1 as size_t)
+                }
+                return 1 as size_t
+            }
+            when as_expr: As
+            {
+                if as_expr.value <> null
+                {
+                    let r as_expr.value
+                    return parfor_weight_operand((*r))
+                }
+                return 1 as size_t
+            }
+            when vc: VariantConstruction
+            {
+                if vc.value <> null
+                {
+                    let r vc.value
+                    let vw parfor_weight_operand((*r))
+                    return parfor_wadd(vw, 1 as size_t)
+                }
+                return 1 as size_t
+            }
+            when mx: Matrix
+            {
+                var w: size_t 1
+                if mx.operations <> null
+                {
+                    var i: size_t 0
+                    while i < mx.operations.length
+                    {
+                        let row_ptr mx.operations.get i
+                        if row_ptr <> null
+                        {
+                            let rw parfor_weight_operands(row_ptr)
+                            set w: parfor_wadd(w, rw)
+                        }
+                        set i: i + 1
+                    }
+                }
+                return w
+            }
+            when bx: Box
+            {
+                if bx.value <> null
+                {
+                    let r bx.value
+                    let bw parfor_weight_operand((*r))
+                    return parfor_wadd(bw, 16 as size_t)
+                }
+                return 16 as size_t
+            }
+            when lm: Lambda
+                return 64 as size_t
+            when cl: Closure
+                return 64 as size_t
+            else
+                return 1 as size_t
+        1 as size_t
+    }
+
     function emit_parallel_for(this, for_expr: PlannedFor) returns LLVMValueRef
     {
         ; ---- Collect the captures (plan-side scan, no IR). Copy the
@@ -10654,7 +11080,31 @@ define Emitter
         if config.emit_debug_info
             set_debug_location(for_expr.loc)
 
-        ; ---- The dispatch driver, back at the loop site.
+        ; ---- The deferred adaptive driver (4.2), back at the loop
+        ; site. Iterations run INLINE in the enclosing function (the
+        ; body's second emission besides the outlined chunk runner)
+        ; with backoff-spaced calibration checkpoints (i == next_check,
+        ; doubling): the first hit only records the clock base, later
+        ; hits measure elapsed time, and once past the noise floor the
+        ; fork gate is evaluated — a range loop projects the REMAINING
+        ; time (remaining x measured per-iteration cost), an iterator
+        ; loop (remaining unknowable) forks once elapsed alone proves
+        ; the loop long. Elapsed only ever over-measures (preemption
+        ; inflates it), so timing noise forks EARLIER, never starves a
+        ; long loop. The static body weight places the FIRST checkpoint:
+        ; known-tiny bodies read no clock for their first ~256 weight
+        ; units of work, bodies with calls or inner loops check almost
+        ; immediately (static weight cannot see runtime trip counts, so
+        ; the fork decision itself runs on measured time). Short and
+        ; fast loops run to completion inline and provably never create
+        ; the pool or the group; an empty range exits before the first
+        ; checkpoint. The fork path chunks the remaining range by the
+        ; MEASURED per-iteration cost — heavy bodies get single-
+        ; iteration chunks (the 4.1 imbalance-tail fix), tiny bodies
+        ; get volume-floored chunks (no per-cell flood) — and always
+        ; submits at least one chunk (range: i < n at the checkpoint;
+        ; iterator: the in-hand element), so TaskGroup.wait never waits
+        ; on an empty group.
         let dp_ty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
         let dp_fn get_parfor_runtime_fn("_ZN8TaskPool12default_poolEv", dp_ty)
         let gc_ty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
@@ -10681,31 +11131,174 @@ define Emitter
         let sub_fn get_parfor_runtime_fn("_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup", sub_ty)
         let np_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
         let np_fn get_parfor_runtime_fn("_ZN8TaskPool4ncpuEv", np_ty)
+        let now_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
+        let now_fn get_parfor_runtime_fn("scaly_eio_now_ns", now_ty)
 
-        let pool LLVMBuildCall2(builder, dp_ty, dp_fn, null as pointer[LLVMValueRef], 0, "parfor.pool")
-        let group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
-        var pget_args Vector[LLVMValueRef](1)
-        pget_args.put(0, group)
-        let gpage LLVMBuildCall2(builder, pget_ty, pget_fn, pget_args.data, 1, "parfor.gpage")
         let cell_size llvm_type_abi_size(cell_ty)
         let cell_size_const LLVMConstInt(i64_ty, cell_size, 0)
         let cell_align_const LLVMConstInt(i64_ty, 8, 0)
 
-        ; Iteration count (i64) and, for iterator loops, the drained
-        ; flat element-pointer array — the chunk submit loop below
-        ; consumes both.
-        var chunk_n: LLVMValueRef LLVMValueRef(null)
-        var chunk_src: LLVMValueRef LLVMValueRef(null)
+        ; Driver constants (one weight unit ~ 1ns as a guess; the 4.2
+        ; design note has the derivations): first checkpoint from the
+        ; static weight, calibration noise floor 4096ns, range fork
+        ; gate 131072ns of projected remaining work, iterator fork gate
+        ; 65536ns elapsed, per-chunk volume floor 16384ns (kept <<10
+        ; like the measured per-iteration cost), 4x steal oversubmit.
+        var body_weight parfor_weight_action(for_expr.body)
+        if body_weight = (0 as size_t)
+            set body_weight: 1 as size_t
+        var check0: size_t (256 as size_t) / body_weight
+        if check0 = (0 as size_t)
+            set check0: 1 as size_t
+        let check0_const LLVMConstInt(i64_ty, check0, 0)
+        let c0 LLVMConstInt(i64_ty, 0, 0)
+        let c1 LLVMConstInt(i64_ty, 1, 0)
+        let c2 LLVMConstInt(i64_ty, 2, 0)
+        let c10 LLVMConstInt(i64_ty, 10, 0)
+        let c_noise LLVMConstInt(i64_ty, 4096, 0)
+        let c_fork LLVMConstInt(i64_ty, 131072, 0)
+        let c_iterfork LLVMConstInt(i64_ty, 65536, 0)
+        let c_minchunk LLVMConstInt(i64_ty, 16777216, 0)
+        let c_oversub LLVMConstInt(i64_ty, 4, 0)
 
+        ; Driver state slots; the fork paths hand the shared dispatch
+        ; its inputs through slots too (no phis across block seams).
+        let iv_drv entry_alloca(i64_ty, "parfor.i")
+        let nc_slot entry_alloca(i64_ty, "parfor.nextcheck")
+        let t0_slot entry_alloca(i64_ty, "parfor.t0")
+        let i0_slot entry_alloca(i64_ty, "parfor.i0")
+        let st_slot entry_alloca(i64_ty, "parfor.fork.lo")
+        let en_slot entry_alloca(i64_ty, "parfor.fork.n")
+        let p1k_slot entry_alloca(i64_ty, "parfor.fork.p1k")
+        let buf_slot entry_alloca(ptr_ty, "parfor.fork.buf")
+        let grp_slot entry_alloca(ptr_ty, "parfor.fork.grp")
+        let gpage_slot entry_alloca(ptr_ty, "parfor.fork.gpage")
+        LLVMBuildStore(builder, c0, iv_drv)
+        LLVMBuildStore(builder, check0_const, nc_slot)
+        LLVMBuildStore(builder, c0, t0_slot)
+        LLVMBuildStore(builder, c0, i0_slot)
+        let buf_null LLVMConstNull(ptr_ty)
+        LLVMBuildStore(builder, buf_null, buf_slot)
+
+        let dispatch_block create_block("pfor.dispatch")
+        let done_block create_block("pfor.done")
+
+        if for_expr.is_iterator_loop = false
+        {
+            ; ---- Range inline loop. The count in i64 (a narrower
+            ; index sign-extends; the inline body rebuilds the source
+            ; width per iteration like the task function does).
+            var n64 seq_value
+            let nw LLVMGetIntTypeWidth(index_ty)
+            if nw < 64
+                set n64: LLVMBuildSExt(builder, seq_value, i64_ty, "parfor.n64")
+
+            let il_cond create_block("pfor.inl.cond")
+            let il_chk create_block("pfor.inl.chk")
+            let il_body create_block("pfor.inl.body")
+            let il_inc create_block("pfor.inl.inc")
+            let rc_block create_block("pfor.check")
+            let rc_first create_block("pfor.check.first")
+            let rc_meas create_block("pfor.check.meas")
+            let rc_later create_block("pfor.check.later")
+            let rc_decide create_block("pfor.check.decide")
+            let rc_fork create_block("pfor.fork")
+            LLVMBuildBr(builder, il_cond)
+
+            LLVMPositionBuilderAtEnd(builder, il_cond)
+            let il_i LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.cur")
+            let il_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), il_i, n64, "parfor.inl.more")
+            LLVMBuildCondBr(builder, il_more, il_chk, done_block)
+
+            LLVMPositionBuilderAtEnd(builder, il_chk)
+            let il_nc LLVMBuildLoad2(builder, i64_ty, nc_slot, "parfor.nc")
+            let il_hit LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), il_i, il_nc, "parfor.chk.hit")
+            LLVMBuildCondBr(builder, il_hit, rc_block, il_body)
+
+            ; The inline body: the index rebinds per iteration in its
+            ; source width; `continue` targets the increment block.
+            LLVMPositionBuilderAtEnd(builder, il_body)
+            enter_scope()
+            let ib_i LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.body")
+            var il_bind ib_i
+            if nw < 64
+                set il_bind: LLVMBuildTrunc(builder, ib_i, index_ty, for_expr.identifier.c_data())
+            define_variable(for_expr.identifier, il_bind)
+            push_loop(done_block, il_inc, for_expr.loop_label, LLVMValueRef(null))
+            emit_action for_expr.body
+            let il_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+            if il_term.handle = null
+                LLVMBuildBr(builder, il_inc)
+            pop_loop()
+            exit_scope()
+
+            LLVMPositionBuilderAtEnd(builder, il_inc)
+            let il_iinc LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.inc")
+            let il_next LLVMBuildAdd(builder, il_iinc, c1, "parfor.i.next")
+            LLVMBuildStore(builder, il_next, iv_drv)
+            LLVMBuildBr(builder, il_cond)
+
+            ; Checkpoint: one clock read; the first hit only records
+            ; the base and doubles ahead.
+            LLVMPositionBuilderAtEnd(builder, rc_block)
+            let rc_t LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.t")
+            let rc_t0 LLVMBuildLoad2(builder, i64_ty, t0_slot, "parfor.t0v")
+            let rc_isfirst LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), rc_t0, c0, "parfor.chk.isfirst")
+            LLVMBuildCondBr(builder, rc_isfirst, rc_first, rc_meas)
+
+            LLVMPositionBuilderAtEnd(builder, rc_first)
+            LLVMBuildStore(builder, rc_t, t0_slot)
+            LLVMBuildStore(builder, il_i, i0_slot)
+            let rcf_nc LLVMBuildMul(builder, il_i, c2, "parfor.nc.dbl")
+            LLVMBuildStore(builder, rcf_nc, nc_slot)
+            LLVMBuildBr(builder, il_body)
+
+            LLVMPositionBuilderAtEnd(builder, rc_meas)
+            let rc_elapsed LLVMBuildSub(builder, rc_t, rc_t0, "parfor.elapsed")
+            let rc_calib LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), rc_elapsed, c_noise, "parfor.calib")
+            LLVMBuildCondBr(builder, rc_calib, rc_decide, rc_later)
+
+            LLVMPositionBuilderAtEnd(builder, rc_later)
+            let rcl_nc LLVMBuildMul(builder, il_i, c2, "parfor.nc.dbl2")
+            LLVMBuildStore(builder, rcl_nc, nc_slot)
+            LLVMBuildBr(builder, il_body)
+
+            ; Decide: fork iff the projected remaining time clears the
+            ; gate. per1k = elapsed<<10 / iterations-since-base (the
+            ; <<10 scale keeps sub-ns iterations away from a zero).
+            LLVMPositionBuilderAtEnd(builder, rc_decide)
+            let rc_i0 LLVMBuildLoad2(builder, i64_ty, i0_slot, "parfor.i0v")
+            let rc_iters LLVMBuildSub(builder, il_i, rc_i0, "parfor.iters")
+            let rc_e10 LLVMBuildShl(builder, rc_elapsed, c10, "parfor.e10")
+            let rc_p1k LLVMBuildSDiv(builder, rc_e10, rc_iters, "parfor.p1k")
+            let rc_rem LLVMBuildSub(builder, n64, il_i, "parfor.rem")
+            let rc_proj0 LLVMBuildMul(builder, rc_rem, rc_p1k, "parfor.proj0")
+            let rc_proj LLVMBuildAShr(builder, rc_proj0, c10, "parfor.proj")
+            let rc_dofork LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), rc_proj, c_fork, "parfor.dofork")
+            LLVMBuildCondBr(builder, rc_dofork, rc_fork, rc_later)
+
+            ; Fork: the remaining [i, n) leaves through the shared
+            ; dispatch. i < n held at the checkpoint, so at least one
+            ; iteration is submitted.
+            LLVMPositionBuilderAtEnd(builder, rc_fork)
+            let rf_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
+            var rf_pget_args Vector[LLVMValueRef](1)
+            rf_pget_args.put(0, rf_group)
+            let rf_gpage LLVMBuildCall2(builder, pget_ty, pget_fn, rf_pget_args.data, 1, "parfor.gpage")
+            LLVMBuildStore(builder, il_i, st_slot)
+            LLVMBuildStore(builder, n64, en_slot)
+            LLVMBuildStore(builder, rc_p1k, p1k_slot)
+            LLVMBuildStore(builder, rf_group, grp_slot)
+            LLVMBuildStore(builder, rf_gpage, gpage_slot)
+            LLVMBuildBr(builder, dispatch_block)
+        }
         if for_expr.is_iterator_loop
         {
-            ; Iterator driver (4.1): next() cannot be range-split, so
-            ; the SUBMITTER drains the iterator into a flat element-
-            ; pointer array on the group page (doubling growth;
-            ; retired buffers stay on the page until dispose — bounded
-            ; by 2n pointers total), then chunks over [0,n). The
-            ; element pointers reach into the collection, which
-            ; outlives the parked wait.
+            ; ---- Iterator inline loop: next() runs in the cond block,
+            ; so the per-element measurement includes it. Nothing pool-
+            ; or group-touching happens before the fork fires; a short
+            ; iterator loop never allocates the drain buffer either
+            ; (4.1 always drained up front).
             var collection_ptr seq_value
             let coll_type LLVMTypeOf(seq_value)
             let coll_kind LLVMGetTypeKind(coll_type)
@@ -10738,25 +11331,119 @@ define Emitter
             let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
             if next_fn.handle = null
                 return LLVMValueRef null
+            var next_args Vector[LLVMValueRef](1)
+            var next_tys Vector[LLVMTypeRef](1)
+            next_args.put(0, iter_alloca)
+            next_tys.put(0, ptr_ty)
+            let next_fn_ty LLVMFunctionType(ptr_ty, next_tys.data, 1, 0)
+            let next_null LLVMConstNull(ptr_ty)
+
+            let it_cond create_block("pfor.it.cond")
+            let it_chk create_block("pfor.it.chk")
+            let it_body create_block("pfor.it.body")
+            let it_inc create_block("pfor.it.inc")
+            let ic_block create_block("pfor.check")
+            let ic_first create_block("pfor.check.first")
+            let ic_meas create_block("pfor.check.meas")
+            let ic_later create_block("pfor.check.later")
+            let ic_fork create_block("pfor.fork")
+            LLVMBuildBr(builder, it_cond)
+
+            LLVMPositionBuilderAtEnd(builder, it_cond)
+            let it_e LLVMBuildCall2(builder, next_fn_ty, next_fn, next_args.data, 1, "parfor.next")
+            let it_done LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), it_e, next_null, "parfor.it.done")
+            LLVMBuildCondBr(builder, it_done, done_block, it_chk)
+
+            LLVMPositionBuilderAtEnd(builder, it_chk)
+            let it_i LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.cur")
+            let it_nc LLVMBuildLoad2(builder, i64_ty, nc_slot, "parfor.nc")
+            let it_hit LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), it_i, it_nc, "parfor.chk.hit")
+            LLVMBuildCondBr(builder, it_hit, ic_block, it_body)
+
+            ; The inline body: element pointer from next(), plus the
+            ; scalar load where the element is an arithmetic scalar.
+            LLVMPositionBuilderAtEnd(builder, it_body)
+            enter_scope()
+            var it_bind it_e
+            if for_expr.element_is_scalar
+            {
+                let it_sc_ty scalar_element_value_type(for_expr.element_type)
+                set it_bind: LLVMBuildLoad2(builder, it_sc_ty, it_e, for_expr.identifier.c_data())
+            }
+            define_variable(for_expr.identifier, it_bind)
+            push_loop(done_block, it_inc, for_expr.loop_label, LLVMValueRef(null))
+            emit_action for_expr.body
+            let it_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+            if it_term.handle = null
+                LLVMBuildBr(builder, it_inc)
+            pop_loop()
+            exit_scope()
+
+            LLVMPositionBuilderAtEnd(builder, it_inc)
+            let it_iinc LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.inc")
+            let it_next2 LLVMBuildAdd(builder, it_iinc, c1, "parfor.i.next")
+            LLVMBuildStore(builder, it_next2, iv_drv)
+            LLVMBuildBr(builder, it_cond)
+
+            ; Checkpoint. The iterator gate is elapsed-only (remaining
+            ; is unknowable before draining); the gate constant sits
+            ; above the noise floor, so clearing it implies calibrated.
+            LLVMPositionBuilderAtEnd(builder, ic_block)
+            let ic_t LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.t")
+            let ic_t0 LLVMBuildLoad2(builder, i64_ty, t0_slot, "parfor.t0v")
+            let ic_isfirst LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), ic_t0, c0, "parfor.chk.isfirst")
+            LLVMBuildCondBr(builder, ic_isfirst, ic_first, ic_meas)
+
+            LLVMPositionBuilderAtEnd(builder, ic_first)
+            LLVMBuildStore(builder, ic_t, t0_slot)
+            LLVMBuildStore(builder, it_i, i0_slot)
+            let icf_nc LLVMBuildMul(builder, it_i, c2, "parfor.nc.dbl")
+            LLVMBuildStore(builder, icf_nc, nc_slot)
+            LLVMBuildBr(builder, it_body)
+
+            LLVMPositionBuilderAtEnd(builder, ic_meas)
+            let ic_elapsed LLVMBuildSub(builder, ic_t, ic_t0, "parfor.elapsed")
+            let ic_dofork LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), ic_elapsed, c_iterfork, "parfor.dofork")
+            LLVMBuildCondBr(builder, ic_dofork, ic_fork, ic_later)
+
+            LLVMPositionBuilderAtEnd(builder, ic_later)
+            let icl_nc LLVMBuildMul(builder, it_i, c2, "parfor.nc.dbl2")
+            LLVMBuildStore(builder, icl_nc, nc_slot)
+            LLVMBuildBr(builder, it_body)
+
+            ; Fork: drain the REST of the iterator — seeded with the
+            ; in-hand element, so at least one element is submitted —
+            ; into a flat element-pointer array on the group page
+            ; (doubling growth; retired buffers stay on the page until
+            ; dispose), then leave through the shared dispatch over
+            ; [0, m). The element pointers reach into the collection,
+            ; which outlives the parked wait.
+            LLVMPositionBuilderAtEnd(builder, ic_fork)
+            let if_i0 LLVMBuildLoad2(builder, i64_ty, i0_slot, "parfor.i0v")
+            let if_iters LLVMBuildSub(builder, it_i, if_i0, "parfor.iters")
+            let if_e10 LLVMBuildShl(builder, ic_elapsed, c10, "parfor.e10")
+            let if_p1k LLVMBuildSDiv(builder, if_e10, if_iters, "parfor.p1k")
+            let if_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
+            var if_pget_args Vector[LLVMValueRef](1)
+            if_pget_args.put(0, if_group)
+            let if_gpage LLVMBuildCall2(builder, pget_ty, pget_fn, if_pget_args.data, 1, "parfor.gpage")
 
             let dr_cap entry_alloca(i64_ty, "parfor.dr.cap")
             let dr_n entry_alloca(i64_ty, "parfor.dr.n")
             let dr_buf entry_alloca(ptr_ty, "parfor.dr.buf")
             let dr_ci entry_alloca(i64_ty, "parfor.dr.ci")
-            let dr_c0 LLVMConstInt(i64_ty, 0, 0)
-            let dr_c1 LLVMConstInt(i64_ty, 1, 0)
-            let dr_c2 LLVMConstInt(i64_ty, 2, 0)
             let dr_c8 LLVMConstInt(i64_ty, 8, 0)
             let dr_c256 LLVMConstInt(i64_ty, 256, 0)
+            let dr_bytes0 LLVMConstInt(i64_ty, 2048, 0)
             LLVMBuildStore(builder, dr_c256, dr_cap)
-            LLVMBuildStore(builder, dr_c0, dr_n)
-            let dr_bytes0 LLVMBuildMul(builder, dr_c256, dr_c8, "parfor.dr.bytes0")
             var dr_a0 Vector[LLVMValueRef](3)
-            dr_a0.put(0, gpage)
+            dr_a0.put(0, if_gpage)
             dr_a0.put(1, dr_bytes0)
             dr_a0.put(2, dr_c8)
             let dr_buf0 LLVMBuildCall2(builder, alloc_ty, alloc_fn, dr_a0.data, 3, "parfor.dr.buf0")
             LLVMBuildStore(builder, dr_buf0, dr_buf)
+            LLVMBuildStore(builder, it_e, dr_buf0)
+            LLVMBuildStore(builder, c1, dr_n)
 
             let dr_cond create_block("pfor.drain.cond")
             let dr_have create_block("pfor.drain.have")
@@ -10769,15 +11456,9 @@ define Emitter
             LLVMBuildBr(builder, dr_cond)
 
             LLVMPositionBuilderAtEnd(builder, dr_cond)
-            var next_args Vector[LLVMValueRef](1)
-            var next_tys Vector[LLVMTypeRef](1)
-            next_args.put(0, iter_alloca)
-            next_tys.put(0, ptr_ty)
-            let next_fn_ty LLVMFunctionType(ptr_ty, next_tys.data, 1, 0)
-            let next_result LLVMBuildCall2(builder, next_fn_ty, next_fn, next_args.data, 1, "parfor.next")
-            let next_null LLVMConstNull(ptr_ty)
-            let iter_done LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), next_result, next_null, "parfor.done")
-            LLVMBuildCondBr(builder, iter_done, dr_done, dr_have)
+            let dr_e LLVMBuildCall2(builder, next_fn_ty, next_fn, next_args.data, 1, "parfor.dr.next")
+            let dr_fin LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), dr_e, next_null, "parfor.dr.fin")
+            LLVMBuildCondBr(builder, dr_fin, dr_done, dr_have)
 
             LLVMPositionBuilderAtEnd(builder, dr_have)
             let dh_n LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.dr.nv")
@@ -10786,15 +11467,15 @@ define Emitter
             LLVMBuildCondBr(builder, dh_full, dr_grow, dr_put)
 
             LLVMPositionBuilderAtEnd(builder, dr_grow)
-            let dg_cap2 LLVMBuildMul(builder, dh_cap, dr_c2, "parfor.dr.cap2")
+            let dg_cap2 LLVMBuildMul(builder, dh_cap, c2, "parfor.dr.cap2")
             let dg_bytes LLVMBuildMul(builder, dg_cap2, dr_c8, "parfor.dr.gbytes")
             var dg_args Vector[LLVMValueRef](3)
-            dg_args.put(0, gpage)
+            dg_args.put(0, if_gpage)
             dg_args.put(1, dg_bytes)
             dg_args.put(2, dr_c8)
             let dg_nbuf LLVMBuildCall2(builder, alloc_ty, alloc_fn, dg_args.data, 3, "parfor.dr.nbuf")
             let dg_obuf LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.dr.obuf")
-            LLVMBuildStore(builder, dr_c0, dr_ci)
+            LLVMBuildStore(builder, c0, dr_ci)
             LLVMBuildBr(builder, dr_copy_cond)
 
             LLVMPositionBuilderAtEnd(builder, dr_copy_cond)
@@ -10809,7 +11490,7 @@ define Emitter
             let dc_val LLVMBuildLoad2(builder, ptr_ty, dc_src, "parfor.dr.val")
             let dc_dst LLVMBuildGEP2(builder, ptr_ty, dg_nbuf, dc_sidx.data, 1, "parfor.dr.dst")
             LLVMBuildStore(builder, dc_val, dc_dst)
-            let dc_i1 LLVMBuildAdd(builder, dc_i, dr_c1, "parfor.dr.ci1")
+            let dc_i1 LLVMBuildAdd(builder, dc_i, c1, "parfor.dr.ci1")
             LLVMBuildStore(builder, dc_i1, dr_ci)
             LLVMBuildBr(builder, dr_copy_cond)
 
@@ -10819,66 +11500,71 @@ define Emitter
             LLVMBuildBr(builder, dr_put)
 
             LLVMPositionBuilderAtEnd(builder, dr_put)
-            let dp_buf LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.dr.bufv")
-            let dp_n LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.dr.n2")
-            var dp_idx Vector[LLVMValueRef](1)
-            dp_idx.put(0, dp_n)
-            let dp_slot LLVMBuildGEP2(builder, ptr_ty, dp_buf, dp_idx.data, 1, "parfor.dr.slot")
-            LLVMBuildStore(builder, next_result, dp_slot)
-            let dp_n1 LLVMBuildAdd(builder, dp_n, dr_c1, "parfor.dr.n1")
-            LLVMBuildStore(builder, dp_n1, dr_n)
+            let du_buf LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.dr.bufv")
+            let du_n LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.dr.n2")
+            var du_idx Vector[LLVMValueRef](1)
+            du_idx.put(0, du_n)
+            let du_slot LLVMBuildGEP2(builder, ptr_ty, du_buf, du_idx.data, 1, "parfor.dr.slot")
+            LLVMBuildStore(builder, dr_e, du_slot)
+            let du_n1 LLVMBuildAdd(builder, du_n, c1, "parfor.dr.n1")
+            LLVMBuildStore(builder, du_n1, dr_n)
             LLVMBuildBr(builder, dr_cond)
 
             LLVMPositionBuilderAtEnd(builder, dr_done)
-            set chunk_n: LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.n")
-            set chunk_src: LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.buf.final")
-        }
-        if for_expr.is_iterator_loop = false
-        {
-            ; Range driver (4.1): only the count in i64 (a narrower
-            ; index sign-extends; the task function rebuilds the
-            ; source width per iteration).
-            set chunk_n: seq_value
-            let nw LLVMGetIntTypeWidth(index_ty)
-            if nw < 64
-                set chunk_n: LLVMBuildSExt(builder, seq_value, i64_ty, "parfor.n64")
+            let dd_m LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.m")
+            let dd_buf LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.buf.final")
+            LLVMBuildStore(builder, c0, st_slot)
+            LLVMBuildStore(builder, dd_m, en_slot)
+            LLVMBuildStore(builder, if_p1k, p1k_slot)
+            LLVMBuildStore(builder, dd_buf, buf_slot)
+            LLVMBuildStore(builder, if_group, grp_slot)
+            LLVMBuildStore(builder, if_gpage, gpage_slot)
+            LLVMBuildBr(builder, dispatch_block)
         }
 
-        ; ---- Chunk submit loop: k = min(max(n,1), 4*ncpu) sub-range
-        ; cells (4x oversubmit lets the steal path balance uneven
-        ; bodies; max(n,1) keeps the division alive for empty counts —
-        ; such chunks run zero iterations).
-        let sb_c0 LLVMConstInt(i64_ty, 0, 0)
-        let sb_c1 LLVMConstInt(i64_ty, 1, 0)
-        let sb_c4 LLVMConstInt(i64_ty, 4, 0)
-        let sb_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu")
-        let sb_k0 LLVMBuildMul(builder, sb_ncpu, sb_c4, "parfor.k0")
-        let sb_npos LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), chunk_n, sb_c1, "parfor.npos")
-        let sb_nmax LLVMBuildSelect(builder, sb_npos, chunk_n, sb_c1, "parfor.nmax")
-        let sb_klt LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_nmax, sb_k0, "parfor.klt")
-        let sb_k LLVMBuildSelect(builder, sb_klt, sb_nmax, sb_k0, "parfor.k")
-        let sb_km1 LLVMBuildSub(builder, sb_k, sb_c1, "parfor.km1")
-        let sb_nk LLVMBuildAdd(builder, chunk_n, sb_km1, "parfor.nk")
-        let sb_chunk LLVMBuildSDiv(builder, sb_nk, sb_k, "parfor.chunksz")
+        ; ---- Shared dispatch: chunk the remaining range by the
+        ; MEASURED per-iteration cost and hand it to the pool. The
+        ; parked wait is what makes the captured-frame reads and the
+        ; disjoint-slot result writes race-free.
+        LLVMPositionBuilderAtEnd(builder, dispatch_block)
+        let ds_lo0 LLVMBuildLoad2(builder, i64_ty, st_slot, "parfor.d.lo0")
+        let ds_n LLVMBuildLoad2(builder, i64_ty, en_slot, "parfor.d.n")
+        let ds_p1k0 LLVMBuildLoad2(builder, i64_ty, p1k_slot, "parfor.d.p1k0")
+        let ds_grp LLVMBuildLoad2(builder, ptr_ty, grp_slot, "parfor.d.grp")
+        let ds_gpage LLVMBuildLoad2(builder, ptr_ty, gpage_slot, "parfor.d.gpage")
+        let ds_buf LLVMBuildLoad2(builder, ptr_ty, buf_slot, "parfor.d.buf")
+        ; chunk = max(1, MIN_CHUNK<<10 / per1k, remaining / (4*ncpu)).
+        let ds_p1kpos LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), ds_p1k0, c0, "parfor.d.p1kpos")
+        let ds_p1k LLVMBuildSelect(builder, ds_p1kpos, ds_p1k0, c1, "parfor.d.p1k")
+        let ds_minc LLVMBuildSDiv(builder, c_minchunk, ds_p1k, "parfor.d.minc")
+        let ds_rem LLVMBuildSub(builder, ds_n, ds_lo0, "parfor.d.rem")
+        let ds_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu")
+        let ds_denom LLVMBuildMul(builder, ds_ncpu, c_oversub, "parfor.d.denom")
+        let ds_bal LLVMBuildSDiv(builder, ds_rem, ds_denom, "parfor.d.bal")
+        let ds_gt LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), ds_minc, ds_bal, "parfor.d.gt")
+        let ds_chunk0 LLVMBuildSelect(builder, ds_gt, ds_minc, ds_bal, "parfor.d.chunk0")
+        let ds_cpos LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), ds_chunk0, c0, "parfor.d.cpos")
+        let ds_chunk LLVMBuildSelect(builder, ds_cpos, ds_chunk0, c1, "parfor.d.chunk")
+        let ds_pool LLVMBuildCall2(builder, dp_ty, dp_fn, null as pointer[LLVMValueRef], 0, "parfor.pool")
+
         let sb_slot entry_alloca(i64_ty, "parfor.c.slot")
-        LLVMBuildStore(builder, sb_c0, sb_slot)
+        LLVMBuildStore(builder, ds_lo0, sb_slot)
         let sb_cond create_block("pfor.sub.cond")
         let sb_body create_block("pfor.sub.body")
         let sb_done create_block("pfor.sub.done")
         LLVMBuildBr(builder, sb_cond)
 
         LLVMPositionBuilderAtEnd(builder, sb_cond)
-        let sb_c LLVMBuildLoad2(builder, i64_ty, sb_slot, "parfor.c")
-        let sb_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_c, sb_k, "parfor.sub.more")
+        let sb_lo LLVMBuildLoad2(builder, i64_ty, sb_slot, "parfor.c.lo")
+        let sb_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_lo, ds_n, "parfor.sub.more")
         LLVMBuildCondBr(builder, sb_more, sb_body, sb_done)
 
         LLVMPositionBuilderAtEnd(builder, sb_body)
-        let sb_lo LLVMBuildMul(builder, sb_c, sb_chunk, "parfor.chunk.lo")
-        let sb_hi0 LLVMBuildAdd(builder, sb_lo, sb_chunk, "parfor.chunk.hi0")
-        let sb_hilt LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_hi0, chunk_n, "parfor.hilt")
-        let sb_hi LLVMBuildSelect(builder, sb_hilt, sb_hi0, chunk_n, "parfor.chunk.hi")
+        let sb_hi0 LLVMBuildAdd(builder, sb_lo, ds_chunk, "parfor.chunk.hi0")
+        let sb_hilt LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_hi0, ds_n, "parfor.hilt")
+        let sb_hi LLVMBuildSelect(builder, sb_hilt, sb_hi0, ds_n, "parfor.chunk.hi")
         var sb_alloc_args Vector[LLVMValueRef](3)
-        sb_alloc_args.put(0, gpage)
+        sb_alloc_args.put(0, ds_gpage)
         sb_alloc_args.put(1, cell_size_const)
         sb_alloc_args.put(2, cell_align_const)
         let sb_cell LLVMBuildCall2(builder, alloc_ty, alloc_fn, sb_alloc_args.data, 3, "parfor.cell")
@@ -10886,7 +11572,7 @@ define Emitter
         if for_expr.is_iterator_loop
         {
             let sb_buf_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, 0, "parfor.cell.buf")
-            LLVMBuildStore(builder, chunk_src, sb_buf_gep)
+            LLVMBuildStore(builder, ds_buf, sb_buf_gep)
             set sb_fi: 1 as size_t
         }
         let sb_lo_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, sb_fi as int, "parfor.cell.lo")
@@ -10902,25 +11588,26 @@ define Emitter
             set ci: ci + 1
         }
         var sb_sub_args Vector[LLVMValueRef](4)
-        sb_sub_args.put(0, pool)
+        sb_sub_args.put(0, ds_pool)
         sb_sub_args.put(1, task_fn)
         sb_sub_args.put(2, sb_cell)
-        sb_sub_args.put(3, group)
+        sb_sub_args.put(3, ds_grp)
         LLVMBuildCall2(builder, sub_ty, sub_fn, sb_sub_args.data, 4, "")
-        let sb_cn LLVMBuildAdd(builder, sb_c, sb_c1, "parfor.c.next")
-        LLVMBuildStore(builder, sb_cn, sb_slot)
+        LLVMBuildStore(builder, sb_hi, sb_slot)
         LLVMBuildBr(builder, sb_cond)
 
-        LLVMPositionBuilderAtEnd(builder, sb_done)
-
-        ; The wave barrier: park until every task finished, then free
+        ; The wave barrier: park until every chunk finished, then free
         ; the cells + the drained buffers wholesale with the group.
+        LLVMPositionBuilderAtEnd(builder, sb_done)
         var gw_args Vector[LLVMValueRef](1)
-        gw_args.put(0, group)
+        gw_args.put(0, ds_grp)
         LLVMBuildCall2(builder, gv_ty, gw_fn, gw_args.data, 1, "")
         var gd_args Vector[LLVMValueRef](1)
-        gd_args.put(0, group)
+        gd_args.put(0, ds_grp)
         LLVMBuildCall2(builder, gv_ty, gd_fn, gd_args.data, 1, "")
+        LLVMBuildBr(builder, done_block)
+
+        LLVMPositionBuilderAtEnd(builder, done_block)
 
         LLVMValueRef null
     }

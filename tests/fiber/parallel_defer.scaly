@@ -1,0 +1,212 @@
+; Deferred adaptive `parallel for` dispatch (stage-4 milestone 4.2):
+; iterations run inline with backoff-spaced clock checkpoints; only a
+; loop whose MEASURED remaining work clears the fork gate hands its
+; remaining range to the pool. TaskPool.submit_count makes both sides
+; observable: the short range wave, the empty wave, and the short
+; iterator wave keep their total work far below the calibration noise
+; floor, so they must never submit (they provably never touch pool or
+; group); the two heavy waves (a ~µs-per-iteration spin body — heavy
+; at RUNTIME, statically inconspicuous, which is exactly what the
+; calibration exists for) must fork mid-loop, and their sums verify
+; the warmup-prefix + forked-suffix split, capture transport into the
+; chunk cells, and `continue` on both the inline and the chunked path.
+; Expected: parallel-defer-ok done
+
+define Item(idx: size_t, val: i64)
+
+; Pure leaf work, ~µs scale per call at runtime.
+function spin(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (20000 as i64)
+    {
+        set acc: acc + k
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+; Create the pool up front so submit deltas are observable from zero.
+let pool TaskPool.default_pool()
+
+; ---- Wave A: short range — total work far below the noise floor.
+var r1 Vector[int](64)
+parallel for i in 64
+{
+    let v i * 3
+    r1.put(i, v)
+}
+var s1 0
+var i 0
+while i < 64
+{
+    let v r1.get(i as size_t)
+    if v <> null
+        set s1: s1 + (*v)
+    set i: i + 1
+}
+if s1 <> 6048
+{
+    Console.println "waveA-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveA-forked"
+    exit 1
+}
+
+; ---- Wave B: empty range — exits before the first checkpoint.
+let zero_n 0
+var r2 Vector[int](1)
+parallel for z in zero_n
+{
+    let v z + 1
+    r2.put(z, v)
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveB-forked"
+    exit 1
+}
+
+; ---- Wave C: short iterator — no fork, no drain buffer either.
+var items Vector[Item](32)
+var j: size_t 0
+while j < (32 as size_t)
+{
+    items.put(j, Item(j, j as i64))
+    set j: j + 1
+}
+var r3 Vector[i64](32)
+parallel for item in items
+{
+    let n item.val
+    r3.put(item.idx, n * 5)
+}
+var s3 0 as i64
+set j: 0 as size_t
+while j < (32 as size_t)
+{
+    let v r3.get j
+    if v <> null
+        set s3: s3 + (*v)
+    set j: j + 1
+}
+if s3 <> (2480 as i64)
+{
+    Console.println "waveC-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveC-forked"
+    exit 1
+}
+
+; ---- Wave D: heavy range — must fork mid-loop. `bias` rides the
+; chunk cells as a capture; i = 2 continues on the inline warmup
+; path, i = 200 on the chunked path (the fork fires within the first
+; few µs-scale iterations).
+let bias 7
+var r4 Vector[i64](256)
+parallel for h in 256
+{
+    if h = 2
+    {
+        r4.put(h, (0 - bias) as i64)
+        continue
+    }
+    if h = 200
+    {
+        r4.put(h, (0 - bias) as i64)
+        continue
+    }
+    let v spin(h as i64) + (bias as i64)
+    r4.put(h, v)
+}
+var s4 0 as i64
+set i: 0
+while i < 256
+{
+    let v r4.get(i as size_t)
+    if v <> null
+        set s4: s4 + (*v)
+    set i: i + 1
+}
+; Reference: recompute sequentially.
+var w4 0 as i64
+set i: 0
+while i < 256
+{
+    if i = 2
+        set w4: w4 - (7 as i64)
+    if i = 200
+        set w4: w4 - (7 as i64)
+    if i <> 2
+        if i <> 200
+        {
+            let v spin(i as i64) + (7 as i64)
+            set w4: w4 + v
+        }
+    set i: i + 1
+}
+if s4 <> w4
+{
+    Console.println "waveD-sum-bad"
+    exit 1
+}
+let subsD TaskPool.submit_count(pool)
+if subsD = (0 as u64)
+{
+    Console.println "waveD-no-fork"
+    exit 1
+}
+
+; ---- Wave E: heavy iterator — the elapsed gate must fork and drain
+; the rest into chunk cells; element pointers and the capture arrive
+; on the workers.
+var items2 Vector[Item](256)
+set j: 0 as size_t
+while j < (256 as size_t)
+{
+    items2.put(j, Item(j, j as i64))
+    set j: j + 1
+}
+var r5 Vector[i64](256)
+parallel for item in items2
+{
+    let v spin(item.val) + (bias as i64)
+    r5.put(item.idx, v)
+}
+var s5 0 as i64
+set j: 0 as size_t
+while j < (256 as size_t)
+{
+    let v r5.get j
+    if v <> null
+        set s5: s5 + (*v)
+    set j: j + 1
+}
+var w5 0 as i64
+set i: 0
+while i < 256
+{
+    let v spin(i as i64) + (7 as i64)
+    set w5: w5 + v
+    set i: i + 1
+}
+if s5 <> w5
+{
+    Console.println "waveE-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) = subsD
+{
+    Console.println "waveE-no-fork"
+    exit 1
+}
+
+Console.print "parallel-defer-ok "
+Console.println "done"

@@ -439,3 +439,14 @@ int scaly_eio_ncpu(void)
         return 1;
     return (int)n;
 }
+
+/* Monotonic nanosecond clock — the deferred parallel-for driver's
+ * calibration source (stage-4 milestone 4.2). Shim rule (a): the
+ * CLOCK_MONOTONIC clockid VALUE is OS-specific (glibc 1, darwin 6),
+ * so a Scaly extern cannot pass it portably. */
+long scaly_eio_now_ns(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000000000L + ts.tv_nsec;
+}
