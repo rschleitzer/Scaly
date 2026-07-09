@@ -191,7 +191,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr }
 %_Z6IoPool = type { i64, ptr, ptr, i32, i32, i64, i64, ptr }
 %_Z6IoWork = type { ptr, ptr, ptr, ptr, ptr }
-%_Z7Channel = type { i64, i64, i1, ptr, ptr, ptr, ptr, ptr }
+%_Z7Channel = type { i64, i64, i1, ptr, ptr, ptr, ptr, ptr, i64, i64, ptr, ptr }
 %_Z11ChannelNode = type { ptr, ptr }
 %_Z9TaskGroup = type { i64, i32, i32 }
 %_Z9TaskDeque = type { i64, ptr, ptr }
@@ -22970,7 +22970,7 @@ entry:
   ret void
 }
 
-define linkonce_odr ptr @_ZN7Channel6createEv() {
+define linkonce_odr ptr @_ZN7Channel14create_boundedE3i64(i64 %0) {
 entry:
   %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.40)
   %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z7Channel, ptr null, i32 1) to i64), i64 8)
@@ -22990,7 +22990,21 @@ entry:
   store ptr null, ptr %recv_tail, align 8
   %recv_sched = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 7
   store ptr null, ptr %recv_sched, align 8
+  %capacity = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 8
+  store i64 %0, ptr %capacity, align 8
+  %count = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 9
+  store i64 0, ptr %count, align 8
+  %send_head = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 10
+  store ptr null, ptr %send_head, align 8
+  %send_tail = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 11
+  store ptr null, ptr %send_tail, align 8
   ret ptr %call1
+}
+
+define linkonce_odr ptr @_ZN7Channel6createEv() {
+entry:
+  %call = call ptr @_ZN7Channel14create_boundedE3i64(i64 0)
+  ret ptr %call
 }
 
 define linkonce_odr void @_ZN7Channel7disposeEP7Channel(ptr %0) {
@@ -23074,80 +23088,240 @@ if.end6:                                          ; preds = %if.then5, %if.then
   br label %if.end
 }
 
+define linkonce_odr ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0) {
+entry:
+  %load.struct = load %_Z7Channel, ptr %0, align 8
+  %send_head = extractvalue %_Z7Channel %load.struct, 10
+  %ne = icmp ne ptr %send_head, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z9SchedTask, ptr %send_head, align 8
+  %next = extractvalue %_Z9SchedTask %load.struct1, 2
+  %send_head2 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 10
+  store ptr %next, ptr %send_head2, align 8
+  %load.struct3 = load %_Z7Channel, ptr %0, align 8
+  %send_head4 = extractvalue %_Z7Channel %load.struct3, 10
+  %eq = icmp eq ptr %send_head4, null
+  br i1 %eq, label %if.then5, label %if.end6
+
+if.end:                                           ; preds = %if.end6, %entry
+  ret ptr %send_head
+
+if.then5:                                         ; preds = %if.then
+  %send_tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr null, ptr %send_tail, align 8
+  br label %if.end6
+
+if.end6:                                          ; preds = %if.then5, %if.then
+  %next7 = getelementptr inbounds %_Z9SchedTask, ptr %send_head, i32 0, i32 2
+  store ptr null, ptr %next7, align 8
+  br label %if.end
+}
+
 define linkonce_odr void @_ZN7Channel4sendEP7ChannelPv(ptr %0, ptr %1) {
 entry:
+  %ran = alloca i1, align 1
+  %room = alloca i1, align 1
   %call = call ptr @_ZN4Page3getEPv(ptr %1)
   %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z11ChannelNode, ptr null, i32 1) to i64), i64 8)
   %next = getelementptr inbounds %_Z11ChannelNode, ptr %call1, i32 0, i32 0
   store ptr null, ptr %next, align 8
   %msg = getelementptr inbounds %_Z11ChannelNode, ptr %call1, i32 0, i32 1
   store ptr %1, ptr %msg, align 8
-  call void @_ZN7Channel7acquireEP7Channel(ptr %0)
-  %load.struct = load %_Z7Channel, ptr %0, align 8
-  %closed = extractvalue %_Z7Channel %load.struct, 2
-  br i1 %closed, label %if.then, label %if.end
+  %global.load = load ptr, ptr @current_task, align 8
+  %ne = icmp ne ptr %global.load, null
+  br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  call void @exit(i64 110)
+  %load.struct = load %_Z7Channel, ptr %0, align 8
+  %capacity = extractvalue %_Z7Channel %load.struct, 8
+  %gt = icmp sgt i64 %capacity, 0
+  br i1 %gt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %if.end3, %entry
+  br label %repeat.body
+
+if.then2:                                         ; preds = %if.then
+  %call4 = call i32 @_ZN2Io11ensure_wakeEv()
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct2 = load %_Z7Channel, ptr %0, align 8
-  %tail = extractvalue %_Z7Channel %load.struct2, 4
-  %eq = icmp eq ptr %tail, null
-  br i1 %eq, label %if.then3, label %if.else
+repeat.body:                                      ; preds = %if.end47, %if.end
+  call void @_ZN7Channel7acquireEP7Channel(ptr %0)
+  %load.struct5 = load %_Z7Channel, ptr %0, align 8
+  %closed = extractvalue %_Z7Channel %load.struct5, 2
+  br i1 %closed, label %if.then6, label %if.end7
 
-if.then3:                                         ; preds = %if.end
+repeat.exit:                                      ; No predecessors!
+  ret void
+
+if.then6:                                         ; preds = %repeat.body
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
+  call void @exit(i64 110)
+  br label %if.end7
+
+if.end7:                                          ; preds = %if.then6, %repeat.body
+  store i1 true, ptr %room, align 1
+  %load.struct8 = load %_Z7Channel, ptr %0, align 8
+  %capacity9 = extractvalue %_Z7Channel %load.struct8, 8
+  %gt10 = icmp sgt i64 %capacity9, 0
+  br i1 %gt10, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %if.end7
+  %load.struct13 = load %_Z7Channel, ptr %0, align 8
+  %count = extractvalue %_Z7Channel %load.struct13, 9
+  %load.struct14 = load %_Z7Channel, ptr %0, align 8
+  %capacity15 = extractvalue %_Z7Channel %load.struct14, 8
+  %ge = icmp sge i64 %count, %capacity15
+  br i1 %ge, label %if.then16, label %if.end17
+
+if.end12:                                         ; preds = %if.end17, %if.end7
+  %room18 = load i1, ptr %room, align 1
+  br i1 %room18, label %if.then19, label %if.end20
+
+if.then16:                                        ; preds = %if.then11
+  store i1 false, ptr %room, align 1
+  br label %if.end17
+
+if.end17:                                         ; preds = %if.then16, %if.then11
+  br label %if.end12
+
+if.then19:                                        ; preds = %if.end12
+  %load.struct21 = load %_Z7Channel, ptr %0, align 8
+  %tail = extractvalue %_Z7Channel %load.struct21, 4
+  %eq = icmp eq ptr %tail, null
+  br i1 %eq, label %if.then22, label %if.else
+
+if.end20:                                         ; preds = %if.end12
+  %eq44 = icmp eq ptr %global.load, null
+  br i1 %eq44, label %if.then45, label %if.else46
+
+if.then22:                                        ; preds = %if.then19
   %head = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 3
   store ptr %call1, ptr %head, align 8
-  %tail5 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
-  store ptr %call1, ptr %tail5, align 8
-  br label %if.end4
+  %tail24 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
+  store ptr %call1, ptr %tail24, align 8
+  br label %if.end23
 
-if.else:                                          ; preds = %if.end
-  %load.struct6 = load %_Z7Channel, ptr %0, align 8
-  %tail7 = extractvalue %_Z7Channel %load.struct6, 4
-  %next8 = getelementptr inbounds %_Z11ChannelNode, ptr %tail7, i32 0, i32 0
-  store ptr %call1, ptr %next8, align 8
-  %tail9 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
-  store ptr %call1, ptr %tail9, align 8
-  br label %if.end4
+if.else:                                          ; preds = %if.then19
+  %load.struct25 = load %_Z7Channel, ptr %0, align 8
+  %tail26 = extractvalue %_Z7Channel %load.struct25, 4
+  %next27 = getelementptr inbounds %_Z11ChannelNode, ptr %tail26, i32 0, i32 0
+  store ptr %call1, ptr %next27, align 8
+  %tail28 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
+  store ptr %call1, ptr %tail28, align 8
+  br label %if.end23
 
-if.end4:                                          ; preds = %if.else, %if.then3
-  %call10 = call ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0)
-  %load.struct11 = load %_Z7Channel, ptr %0, align 8
-  %recv_sched = extractvalue %_Z7Channel %load.struct11, 7
+if.end23:                                         ; preds = %if.else, %if.then22
+  %load.struct29 = load %_Z7Channel, ptr %0, align 8
+  %count30 = extractvalue %_Z7Channel %load.struct29, 9
+  %add = add i64 %count30, 1
+  %count31 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 9
+  store i64 %add, ptr %count31, align 8
+  %call32 = call ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0)
+  %load.struct33 = load %_Z7Channel, ptr %0, align 8
+  %recv_sched = extractvalue %_Z7Channel %load.struct33, 7
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %ne = icmp ne ptr %call10, null
-  br i1 %ne, label %if.then12, label %if.end13
+  %ne34 = icmp ne ptr %call32, null
+  br i1 %ne34, label %if.then35, label %if.end36
 
-if.then12:                                        ; preds = %if.end4
-  call void @_ZN7Channel5routeEP9SchedTask(ptr %call10)
+if.then35:                                        ; preds = %if.end23
+  call void @_ZN7Channel5routeEP9SchedTask(ptr %call32)
   ret void
 
-if.end13:                                         ; preds = %if.end4
-  %ne14 = icmp ne ptr %recv_sched, null
-  br i1 %ne14, label %if.then15, label %if.end16
+if.end36:                                         ; preds = %if.end23
+  %ne37 = icmp ne ptr %recv_sched, null
+  br i1 %ne37, label %if.then38, label %if.end39
 
-if.then15:                                        ; preds = %if.end13
-  %global.load = load ptr, ptr @current_scheduler, align 8
-  %ne17 = icmp ne ptr %recv_sched, %global.load
-  br i1 %ne17, label %if.then18, label %if.end19
+if.then38:                                        ; preds = %if.end36
+  %global.load40 = load ptr, ptr @current_scheduler, align 8
+  %ne41 = icmp ne ptr %recv_sched, %global.load40
+  br i1 %ne41, label %if.then42, label %if.end43
 
-if.end16:                                         ; preds = %if.end19, %if.end13
+if.end39:                                         ; preds = %if.end43, %if.end36
   ret void
 
-if.then18:                                        ; preds = %if.then15
+if.then42:                                        ; preds = %if.then38
   call void @_ZN9Scheduler11wake_remoteEP9Scheduler(ptr %recv_sched)
-  br label %if.end19
+  br label %if.end43
 
-if.end19:                                         ; preds = %if.then18, %if.then15
-  br label %if.end16
+if.end43:                                         ; preds = %if.then42, %if.then38
+  br label %if.end39
+
+if.then45:                                        ; preds = %if.end20
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
+  store i1 false, ptr %ran, align 1
+  %global.load48 = load ptr, ptr @current_scheduler, align 8
+  %ne49 = icmp ne ptr %global.load48, null
+  br i1 %ne49, label %if.then50, label %if.end51
+
+if.else46:                                        ; preds = %if.end20
+  %next57 = getelementptr inbounds %_Z9SchedTask, ptr %global.load, i32 0, i32 2
+  store ptr null, ptr %next57, align 8
+  %load.struct58 = load %_Z7Channel, ptr %0, align 8
+  %send_tail = extractvalue %_Z7Channel %load.struct58, 11
+  %eq59 = icmp eq ptr %send_tail, null
+  br i1 %eq59, label %if.then60, label %if.else61
+
+if.end47:                                         ; preds = %if.end62, %if.end55
+  br label %repeat.body
+
+if.then50:                                        ; preds = %if.then45
+  %call52 = call i1 @_ZN9Scheduler4stepEv()
+  store i1 %call52, ptr %ran, align 1
+  br label %if.end51
+
+if.end51:                                         ; preds = %if.then50, %if.then45
+  %ran53 = load i1, ptr %ran, align 1
+  %not = xor i1 %ran53, true
+  br i1 %not, label %if.then54, label %if.end55
+
+if.then54:                                        ; preds = %if.end51
+  %call56 = call i32 @poll(ptr null, i32 0, i32 1)
+  br label %if.end55
+
+if.end55:                                         ; preds = %if.then54, %if.end51
+  br label %if.end47
+
+if.then60:                                        ; preds = %if.else46
+  %send_head = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 10
+  store ptr %global.load, ptr %send_head, align 8
+  %send_tail63 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr %global.load, ptr %send_tail63, align 8
+  br label %if.end62
+
+if.else61:                                        ; preds = %if.else46
+  %load.struct64 = load %_Z7Channel, ptr %0, align 8
+  %send_tail65 = extractvalue %_Z7Channel %load.struct64, 11
+  %next66 = getelementptr inbounds %_Z9SchedTask, ptr %send_tail65, i32 0, i32 2
+  store ptr %global.load, ptr %next66, align 8
+  %send_tail67 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr %global.load, ptr %send_tail67, align 8
+  br label %if.end62
+
+if.end62:                                         ; preds = %if.else61, %if.then60
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
+  %global.load68 = load ptr, ptr @current_scheduler, align 8
+  %load.struct69 = load %_Z9Scheduler, ptr %global.load68, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct69, 3
+  %add70 = add i64 %blocked, 1
+  %blocked71 = getelementptr inbounds %_Z9Scheduler, ptr %global.load68, i32 0, i32 3
+  store i64 %add70, ptr %blocked71, align 8
+  %load.struct72 = load %_Z9Scheduler, ptr %global.load68, align 8
+  %chan_parked = extractvalue %_Z9Scheduler %load.struct72, 8
+  %add73 = add i64 %chan_parked, 1
+  %chan_parked74 = getelementptr inbounds %_Z9Scheduler, ptr %global.load68, i32 0, i32 8
+  store i64 %add73, ptr %chan_parked74, align 8
+  call void @_ZN5Fiber5yieldEv()
+  br label %if.end47
 }
 
 define linkonce_odr void @_ZN7Channel12close_senderEP7Channel(ptr %0) {
 entry:
+  %schain = alloca ptr, align 8
   %chain = alloca ptr, align 8
   call void @_ZN7Channel7acquireEP7Channel(ptr %0)
   %load.struct = load %_Z7Channel, ptr %0, align 8
@@ -23175,45 +23349,72 @@ if.end:                                           ; preds = %entry
   %recv_tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
   store ptr null, ptr %recv_tail, align 8
   %load.struct6 = load %_Z7Channel, ptr %0, align 8
-  %recv_sched = extractvalue %_Z7Channel %load.struct6, 7
+  %send_head = extractvalue %_Z7Channel %load.struct6, 10
+  store ptr %send_head, ptr %schain, align 1
+  %send_head7 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 10
+  store ptr null, ptr %send_head7, align 8
+  %send_tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr null, ptr %send_tail, align 8
+  %load.struct8 = load %_Z7Channel, ptr %0, align 8
+  %recv_sched = extractvalue %_Z7Channel %load.struct8, 7
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %if.end
-  %chain7 = load ptr, ptr %chain, align 8
-  %ne = icmp ne ptr %chain7, null
+  %chain9 = load ptr, ptr %chain, align 8
+  %ne = icmp ne ptr %chain9, null
   br i1 %ne, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %chain8 = load ptr, ptr %chain, align 8
-  %load.struct9 = load %_Z9SchedTask, ptr %chain8, align 8
-  %next = extractvalue %_Z9SchedTask %load.struct9, 2
+  %chain10 = load ptr, ptr %chain, align 8
+  %load.struct11 = load %_Z9SchedTask, ptr %chain10, align 8
+  %next = extractvalue %_Z9SchedTask %load.struct11, 2
   %ptr.load = load ptr, ptr %chain, align 8
-  %next10 = getelementptr inbounds %_Z9SchedTask, ptr %ptr.load, i32 0, i32 2
-  store ptr null, ptr %next10, align 8
-  %chain11 = load ptr, ptr %chain, align 8
-  call void @_ZN7Channel5routeEP9SchedTask(ptr %chain11)
+  %next12 = getelementptr inbounds %_Z9SchedTask, ptr %ptr.load, i32 0, i32 2
+  store ptr null, ptr %next12, align 8
+  %chain13 = load ptr, ptr %chain, align 8
+  call void @_ZN7Channel5routeEP9SchedTask(ptr %chain13)
   store ptr %next, ptr %chain, align 1
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  %ne12 = icmp ne ptr %recv_sched, null
-  br i1 %ne12, label %if.then13, label %if.end14
+  br label %while.cond14
 
-if.then13:                                        ; preds = %while.exit
+while.cond14:                                     ; preds = %while.body15, %while.exit
+  %schain17 = load ptr, ptr %schain, align 8
+  %ne18 = icmp ne ptr %schain17, null
+  br i1 %ne18, label %while.body15, label %while.exit16
+
+while.body15:                                     ; preds = %while.cond14
+  %schain19 = load ptr, ptr %schain, align 8
+  %load.struct20 = load %_Z9SchedTask, ptr %schain19, align 8
+  %next21 = extractvalue %_Z9SchedTask %load.struct20, 2
+  %ptr.load22 = load ptr, ptr %schain, align 8
+  %next23 = getelementptr inbounds %_Z9SchedTask, ptr %ptr.load22, i32 0, i32 2
+  store ptr null, ptr %next23, align 8
+  %schain24 = load ptr, ptr %schain, align 8
+  call void @_ZN7Channel5routeEP9SchedTask(ptr %schain24)
+  store ptr %next21, ptr %schain, align 1
+  br label %while.cond14
+
+while.exit16:                                     ; preds = %while.cond14
+  %ne25 = icmp ne ptr %recv_sched, null
+  br i1 %ne25, label %if.then26, label %if.end27
+
+if.then26:                                        ; preds = %while.exit16
   %global.load = load ptr, ptr @current_scheduler, align 8
-  %ne15 = icmp ne ptr %recv_sched, %global.load
-  br i1 %ne15, label %if.then16, label %if.end17
+  %ne28 = icmp ne ptr %recv_sched, %global.load
+  br i1 %ne28, label %if.then29, label %if.end30
 
-if.end14:                                         ; preds = %if.end17, %while.exit
+if.end27:                                         ; preds = %if.end30, %while.exit16
   ret void
 
-if.then16:                                        ; preds = %if.then13
+if.then29:                                        ; preds = %if.then26
   call void @_ZN9Scheduler11wake_remoteEP9Scheduler(ptr %recv_sched)
-  br label %if.end17
+  br label %if.end30
 
-if.end17:                                         ; preds = %if.then16, %if.then13
-  br label %if.end14
+if.end30:                                         ; preds = %if.then29, %if.then26
+  br label %if.end27
 }
 
 define linkonce_odr ptr @_ZN7Channel7receiveEP7Channel(ptr %0) {
@@ -23222,7 +23423,7 @@ entry:
   %global.load = load ptr, ptr @current_task, align 8
   br label %repeat.body
 
-repeat.body:                                      ; preds = %if.end14, %entry
+repeat.body:                                      ; preds = %if.end20, %entry
   call void @_ZN7Channel7acquireEP7Channel(ptr %0)
   %load.struct = load %_Z7Channel, ptr %0, align 8
   %head = extractvalue %_Z7Channel %load.struct, 3
@@ -23243,9 +23444,9 @@ if.then:                                          ; preds = %repeat.body
   br i1 %eq, label %if.then5, label %if.end6
 
 if.end:                                           ; preds = %repeat.body
-  %load.struct8 = load %_Z7Channel, ptr %0, align 8
-  %closed = extractvalue %_Z7Channel %load.struct8, 2
-  br i1 %closed, label %if.then9, label %if.end10
+  %load.struct14 = load %_Z7Channel, ptr %0, align 8
+  %closed = extractvalue %_Z7Channel %load.struct14, 2
+  br i1 %closed, label %if.then15, label %if.end16
 
 if.then5:                                         ; preds = %if.then
   %tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
@@ -23253,77 +23454,91 @@ if.then5:                                         ; preds = %if.then
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %if.then
+  %load.struct7 = load %_Z7Channel, ptr %0, align 8
+  %count = extractvalue %_Z7Channel %load.struct7, 9
+  %sub = sub i64 %count, 1
+  %count8 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 9
+  store i64 %sub, ptr %count8, align 8
+  %call9 = call ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0)
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %load.struct7 = load %_Z11ChannelNode, ptr %head, align 8
-  %msg = extractvalue %_Z11ChannelNode %load.struct7, 1
+  %ne10 = icmp ne ptr %call9, null
+  br i1 %ne10, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %if.end6
+  call void @_ZN7Channel5routeEP9SchedTask(ptr %call9)
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %if.end6
+  %load.struct13 = load %_Z11ChannelNode, ptr %head, align 8
+  %msg = extractvalue %_Z11ChannelNode %load.struct13, 1
   ret ptr %msg
 
-if.then9:                                         ; preds = %if.end
+if.then15:                                        ; preds = %if.end
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   ret ptr null
 
-if.end10:                                         ; preds = %if.end
-  %global.load11 = load ptr, ptr @current_scheduler, align 8
+if.end16:                                         ; preds = %if.end
+  %global.load17 = load ptr, ptr @current_scheduler, align 8
   %recv_sched = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 7
-  store ptr %global.load11, ptr %recv_sched, align 8
-  %eq12 = icmp eq ptr %global.load, null
-  br i1 %eq12, label %if.then13, label %if.else
+  store ptr %global.load17, ptr %recv_sched, align 8
+  %eq18 = icmp eq ptr %global.load, null
+  br i1 %eq18, label %if.then19, label %if.else
 
-if.then13:                                        ; preds = %if.end10
+if.then19:                                        ; preds = %if.end16
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %call15 = call i1 @_ZN9Scheduler12step_or_waitEv()
-  %not = xor i1 %call15, true
-  br i1 %not, label %if.then16, label %if.end17
+  %call21 = call i1 @_ZN9Scheduler12step_or_waitEv()
+  %not = xor i1 %call21, true
+  br i1 %not, label %if.then22, label %if.end23
 
-if.else:                                          ; preds = %if.end10
-  %next19 = getelementptr inbounds %_Z9SchedTask, ptr %global.load, i32 0, i32 2
-  store ptr null, ptr %next19, align 8
-  %load.struct20 = load %_Z7Channel, ptr %0, align 8
-  %recv_tail = extractvalue %_Z7Channel %load.struct20, 6
-  %eq21 = icmp eq ptr %recv_tail, null
-  br i1 %eq21, label %if.then22, label %if.else23
+if.else:                                          ; preds = %if.end16
+  %next25 = getelementptr inbounds %_Z9SchedTask, ptr %global.load, i32 0, i32 2
+  store ptr null, ptr %next25, align 8
+  %load.struct26 = load %_Z7Channel, ptr %0, align 8
+  %recv_tail = extractvalue %_Z7Channel %load.struct26, 6
+  %eq27 = icmp eq ptr %recv_tail, null
+  br i1 %eq27, label %if.then28, label %if.else29
 
-if.end14:                                         ; preds = %if.end24, %if.end17
+if.end20:                                         ; preds = %if.end30, %if.end23
   br label %repeat.body
 
-if.then16:                                        ; preds = %if.then13
-  %call18 = call i1 @_ZN9Scheduler7poll_ioEv()
-  br label %if.end17
+if.then22:                                        ; preds = %if.then19
+  %call24 = call i1 @_ZN9Scheduler7poll_ioEv()
+  br label %if.end23
 
-if.end17:                                         ; preds = %if.then16, %if.then13
-  br label %if.end14
+if.end23:                                         ; preds = %if.then22, %if.then19
+  br label %if.end20
 
-if.then22:                                        ; preds = %if.else
+if.then28:                                        ; preds = %if.else
   %recv_head = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 5
   store ptr %global.load, ptr %recv_head, align 8
-  %recv_tail25 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
-  store ptr %global.load, ptr %recv_tail25, align 8
-  br label %if.end24
+  %recv_tail31 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
+  store ptr %global.load, ptr %recv_tail31, align 8
+  br label %if.end30
 
-if.else23:                                        ; preds = %if.else
-  %load.struct26 = load %_Z7Channel, ptr %0, align 8
-  %recv_tail27 = extractvalue %_Z7Channel %load.struct26, 6
-  %next28 = getelementptr inbounds %_Z9SchedTask, ptr %recv_tail27, i32 0, i32 2
-  store ptr %global.load, ptr %next28, align 8
-  %recv_tail29 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
-  store ptr %global.load, ptr %recv_tail29, align 8
-  br label %if.end24
+if.else29:                                        ; preds = %if.else
+  %load.struct32 = load %_Z7Channel, ptr %0, align 8
+  %recv_tail33 = extractvalue %_Z7Channel %load.struct32, 6
+  %next34 = getelementptr inbounds %_Z9SchedTask, ptr %recv_tail33, i32 0, i32 2
+  store ptr %global.load, ptr %next34, align 8
+  %recv_tail35 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
+  store ptr %global.load, ptr %recv_tail35, align 8
+  br label %if.end30
 
-if.end24:                                         ; preds = %if.else23, %if.then22
+if.end30:                                         ; preds = %if.else29, %if.then28
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %global.load30 = load ptr, ptr @current_scheduler, align 8
-  %load.struct31 = load %_Z9Scheduler, ptr %global.load30, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct31, 3
+  %global.load36 = load ptr, ptr @current_scheduler, align 8
+  %load.struct37 = load %_Z9Scheduler, ptr %global.load36, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct37, 3
   %add = add i64 %blocked, 1
-  %blocked32 = getelementptr inbounds %_Z9Scheduler, ptr %global.load30, i32 0, i32 3
-  store i64 %add, ptr %blocked32, align 8
-  %load.struct33 = load %_Z9Scheduler, ptr %global.load30, align 8
-  %chan_parked = extractvalue %_Z9Scheduler %load.struct33, 8
-  %add34 = add i64 %chan_parked, 1
-  %chan_parked35 = getelementptr inbounds %_Z9Scheduler, ptr %global.load30, i32 0, i32 8
-  store i64 %add34, ptr %chan_parked35, align 8
+  %blocked38 = getelementptr inbounds %_Z9Scheduler, ptr %global.load36, i32 0, i32 3
+  store i64 %add, ptr %blocked38, align 8
+  %load.struct39 = load %_Z9Scheduler, ptr %global.load36, align 8
+  %chan_parked = extractvalue %_Z9Scheduler %load.struct39, 8
+  %add40 = add i64 %chan_parked, 1
+  %chan_parked41 = getelementptr inbounds %_Z9Scheduler, ptr %global.load36, i32 0, i32 8
+  store i64 %add40, ptr %chan_parked41, align 8
   call void @_ZN5Fiber5yieldEv()
-  br label %if.end14
+  br label %if.end20
 }
 
 define linkonce_odr void @_ZN7ChannelC1Ev(ptr %0) {
