@@ -60,11 +60,18 @@ define TaskPlanner
         ; (PlannedFunction.file; the entry file for top-level statements).
         current_file: String
 
-        ; Per-classification scratch, reset by classify_for. cls_locals
+        ; Per-classification scratch, reset by classify_body. cls_locals
         ; holds names bound INSIDE the loop body (flat, never popped —
         ; a conservative over-approximation is fine for a report; a
         ; shadowing inner binding can mask a same-named outer write).
         cls_locals: Array[String]
+        ; Alias soundness (4.4): body-introduced names whose initializer,
+        ; scrutinee, or sequence can hand them a REFERENCE into
+        ; loop-external state. `let r outer` launders `r.add i` past the
+        ; name-based locality checks otherwise — an aliased name is
+        ; treated as loop-external (writes and mutating calls block;
+        ; reads stay fine). Overrides cls_locals in is_local.
+        cls_aliased: Array[String]
         cls_blocked: bool
         cls_reason: String
         cls_loop_var: String
@@ -95,6 +102,7 @@ define TaskPlanner
             set plan_globals: null
             set current_file: String^this("")
             set cls_locals: Array[String]^this()
+            set cls_aliased: Array[String]^this()
             set cls_blocked: false
             set cls_reason: String^this("")
             set cls_loop_var: String^this("")
@@ -399,6 +407,7 @@ define TaskPlanner
         function classify_body(this: TaskPlanner, fr: PlannedFor)
         {
             set cls_locals.length: 0
+            set cls_aliased.length: 0
             set cls_blocked: false
             set cls_reason: String^this("")
             set cls_loop_var: String^this(fr.identifier)
@@ -465,9 +474,20 @@ define TaskPlanner
 
         ; Is name bound inside the classified loop body? The loop variable
         ; itself counts: it is per-iteration state (each iteration sees a
-        ; different element/index).
+        ; different element/index). An ALIASED name (see cls_aliased) is
+        ; loop-external no matter what — aliasing wins over a same-named
+        ; local binding (conservative under the flat never-popped scratch).
         function is_local(this: TaskPlanner, name: String) returns bool
         {
+            var ai: size_t 0
+            while ai < cls_aliased.length
+            {
+                let ap cls_aliased.get ai
+                if ap <> null
+                    if (*ap) = name
+                        return false
+                set ai: ai + 1
+            }
             if name = cls_loop_var
                 return true
             var i: size_t 0
@@ -480,6 +500,134 @@ define TaskPlanner
                 set i: i + 1
             }
             false
+        }
+
+        ; Record a body-introduced name (binding, if-prop, choose-when,
+        ; while/try condition binding, inner-for element): a name whose
+        ; initializer / scrutinee / sequence can hand it a reference into
+        ; loop-external state is an ALIAS, not a local — writes and
+        ; mutating calls through it must block exactly like the external
+        ; itself (the laundering counterexample: `let r outer` + `r.add i`).
+        function add_body_name(this: TaskPlanner, name: String, aliases_external: bool)
+        {
+            let n_copy String^this(name)
+            if aliases_external
+            {
+                cls_aliased.add n_copy
+                return
+            }
+            cls_locals.add n_copy
+        }
+
+        ; Can the value produced by ops carry a reference into
+        ; loop-external state? Per operand: a SCALAR result never can
+        ; (copies of arithmetic values alias nothing, whatever the
+        ; expression shape — this keeps `set acc: acc + captured` and
+        ; index math untainted). A non-scalar result aliases when the
+        ; expression reaches a loop-external name: a bare external read
+        ; IS the alias; call results can point into their arguments
+        ; (Vector.get returns a ref INTO the vector) and constructions
+        ; can store passed references, so calls taint when any argument
+        ; does; unknown shapes taint conservatively (never a false
+        ; "parallel").
+        function ops_alias_external(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if ops = null
+                return false
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    if this.op_aliases_external(op_ptr.unwrap())
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        function op_aliases_external(this: TaskPlanner, op: PlannedOperand) returns bool
+        {
+            if this.value_can_alias(op.result_type) = false
+                return false
+            choose op.expr
+                when v: Variable
+                {
+                    if this.is_local(v.name)
+                        return false
+                    true
+                }
+                when c: Constant
+                    false
+                when t: Type
+                    false
+                when g: GlobalRef
+                    false
+                when call: Call
+                    this.ops_alias_external(call.args)
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                if this.ops_alias_external(c_ptr.value)
+                                    return true
+                            set i: i + 1
+                        }
+                    }
+                    false
+                }
+                else
+                    true
+        }
+
+        ; A copied SCALAR value cannot carry a reference into its source;
+        ; records, unions, String (shares its buffer until reallocation)
+        ; and pointer/ref (which ARE references) all can. Mirrors
+        ; Planner.is_scalar_value_type_name's list.
+        function value_can_alias(this: TaskPlanner, t: PlannedType) returns bool
+        {
+            if t.name = "bool"
+                return false
+            if t.name = "int"
+                return false
+            if t.name = "uint"
+                return false
+            if t.name = "char"
+                return false
+            if t.name = "i8"
+                return false
+            if t.name = "i16"
+                return false
+            if t.name = "i32"
+                return false
+            if t.name = "i64"
+                return false
+            if t.name = "u8"
+                return false
+            if t.name = "u16"
+                return false
+            if t.name = "u32"
+                return false
+            if t.name = "u64"
+                return false
+            if t.name = "f32"
+                return false
+            if t.name = "f64"
+                return false
+            if t.name = "float"
+                return false
+            if t.name = "double"
+                return false
+            if t.name = "size_t"
+                return false
+            if t.name = "size"
+                return false
+            true
         }
 
         ; Does the operand tree read the given name? Used to accept a
@@ -564,7 +712,39 @@ define TaskPlanner
             if cls_blocked
                 return
             if act.target <> null
+            {
                 this.cls_write_target((*act.target))
+                if cls_blocked
+                    return
+                ; Alias soundness: a `set LOCAL: <expr reaching
+                ; loop-external state>` (whole-variable or member) re-seats
+                ; the local as an alias — later writes and mutating calls
+                ; through it must block like the external itself.
+                this.retaint_write_target((*act.target), act.source)
+            }
+        }
+
+        function retaint_write_target(this: TaskPlanner, t: Vector[PlannedOperand], src: ref[Vector[PlannedOperand]]?)
+        {
+            if t.length <> (1 as size_t)
+                return
+            let tp_ t.get 0
+            if tp_ = null
+                return
+            let top tp_.unwrap()
+            choose top.expr
+                when v: Variable
+                {
+                    if this.is_local(v.name) = false
+                        return
+                    if this.ops_alias_external(src)
+                    {
+                        let an_copy String^this(v.name)
+                        cls_aliased.add an_copy
+                    }
+                }
+                else
+                    0
         }
 
         function cls_write_target(this: TaskPlanner, t: Vector[PlannedOperand])
@@ -604,8 +784,8 @@ define TaskPlanner
                     this.cls_operands(binding.operation)
                     if binding.binding_item.name <> null
                     {
-                        let bn_copy String^this((*binding.binding_item.name))
-                        cls_locals.add bn_copy
+                        let bn_alias this.ops_alias_external(binding.operation)
+                        this.add_body_name((*binding.binding_item.name), bn_alias)
                     }
                 }
                 when ret: Return
@@ -675,8 +855,9 @@ define TaskPlanner
                     this.cls_operands(iff.condition)
                     if iff.prop <> null
                     {
-                        let pn_copy String^this(iff.prop.name)
-                        cls_locals.add pn_copy
+                        ; The null-narrow binding aliases the tested value.
+                        let ic_alias this.ops_alias_external(iff.condition)
+                        this.add_body_name(iff.prop.name, ic_alias)
                     }
                     this.cls_statement_ref(iff.consequent)
                     this.cls_statement_ref(iff.alternative)
@@ -717,6 +898,8 @@ define TaskPlanner
                 when ch: Choose
                 {
                     this.cls_operands(ch.condition)
+                    ; A when-binding aliases the scrutinee's variant payload.
+                    let ch_alias this.ops_alias_external(ch.condition)
                     if ch.cases <> null
                     {
                         var i: size_t 0
@@ -726,8 +909,7 @@ define TaskPlanner
                             if w_ptr <> null
                             {
                                 let w (*w_ptr)
-                                let wn_copy String^this(w.name)
-                                cls_locals.add wn_copy
+                                this.add_body_name(w.name, ch_alias)
                                 this.cls_statement_ref(w.consequent)
                             }
                             set i: i + 1
@@ -738,8 +920,13 @@ define TaskPlanner
                 when fr: For
                 {
                     this.cls_operands(fr.expr)
-                    let fi_copy String^this(fr.identifier)
-                    cls_locals.add fi_copy
+                    ; An inner loop's element aliases the sequence — and
+                    ; unlike the CLASSIFIED loop's variable it is NOT
+                    ; per-iteration-disjoint: every outer iteration walks
+                    ; ALL elements, so an external sequence's elements are
+                    ; shared across workers.
+                    let fe_alias this.ops_alias_external(fr.expr)
+                    this.add_body_name(fr.identifier, fe_alias)
                     set cls_depth: cls_depth + 1
                     this.cls_action(fr.body)
                     set cls_depth: cls_depth - 1
@@ -749,8 +936,8 @@ define TaskPlanner
                     this.cls_operands(wh.cond.operation)
                     if wh.cond.binding_item.name <> null
                     {
-                        let whn_copy String^this((*wh.cond.binding_item.name))
-                        cls_locals.add whn_copy
+                        let wc_alias this.ops_alias_external(wh.cond.operation)
+                        this.add_body_name((*wh.cond.binding_item.name), wc_alias)
                     }
                     set cls_depth: cls_depth + 1
                     this.cls_action(wh.body)
@@ -767,8 +954,8 @@ define TaskPlanner
                     this.cls_operands(tr.cond.operation)
                     if tr.cond.binding_item.name <> null
                     {
-                        let trn_copy String^this((*tr.cond.binding_item.name))
-                        cls_locals.add trn_copy
+                        let tc_alias this.ops_alias_external(tr.cond.operation)
+                        this.add_body_name((*tr.cond.binding_item.name), tc_alias)
                     }
                     if tr.catches <> null
                     {
@@ -1485,8 +1672,14 @@ define TaskPlanner
                                 this.block_named("transitively impure call ", call.name)
                                 return
                             }
-                            if func.pure
-                                return
+                            ; The `function` keyword is a purity CONTRACT the
+                            ; compiler does not enforce — the stdlib itself
+                            ; declares argument-mutating methods as functions
+                            ; (List.add writes this.head). An effectively-pure
+                            ; callee can still write through whatever its
+                            ; arguments reach, so every non-scalar argument
+                            ; root must be per-iteration state (scalars pass
+                            ; by copy and cannot be written through).
                             if this.args_are_body_local(call) = false
                                 this.block_named("mutating call on loop-external state: ", call.name)
                             return
@@ -1504,7 +1697,18 @@ define TaskPlanner
             if saw_extern
             {
                 if extern_benign = false
+                {
                     this.block_named("extern call ", call.name)
+                    return
+                }
+                ; Atomics are race-free by definition — the sanctioned
+                ; cross-thread mechanism stays admitted on any target.
+                if call.name.starts_with("scaly_atomic_")
+                    return
+                ; The benign whitelist includes WRITERS (memcpy/memmove/
+                ; memset, free): same argument discipline as body callees.
+                if this.args_are_body_local(call) = false
+                    this.block_named("extern write on loop-external state: ", call.name)
                 return
             }
             this.block_named("unresolved callee ", call.name)
@@ -1533,9 +1737,16 @@ define TaskPlanner
 
         function arg_root_local(this: TaskPlanner, op: PlannedOperand) returns bool
         {
+            ; A by-value SCALAR cannot be written through, whatever
+            ; expression produced it (keeps index math, captured counts
+            ; and other read-only scalar inputs admitted).
+            if this.value_can_alias(op.result_type) = false
+                return true
             choose op.expr
                 when v: Variable
                     return this.is_local(v.name)
+                when c: Constant
+                    return true
                 when as_expr: As
                 {
                     if as_expr.value <> null
@@ -1546,26 +1757,28 @@ define TaskPlanner
                 }
                 when inner: Call
                 {
-                    if inner.is_operator
+                    ; A call result (operator, construction or plain call)
+                    ; can alias at most what its own arguments reach — it
+                    ; is per-iteration state iff every argument root is.
+                    if inner.args <> null
                     {
-                        if inner.args <> null
+                        var i: size_t 0
+                        while i < inner.args.length
                         {
-                            var i: size_t 0
-                            while i < inner.args.length
-                            {
-                                let ap inner.args.get i
-                                if ap <> null
-                                    if this.arg_root_local(ap.unwrap()) = false
-                                        return false
-                                set i: i + 1
-                            }
+                            let ap inner.args.get i
+                            if ap <> null
+                                if this.arg_root_local(ap.unwrap()) = false
+                                    return false
+                            set i: i + 1
                         }
                     }
                     return true
                 }
                 else
                     0
-            true
+            ; Unknown shapes: conservatively loop-external (never a
+            ; false "parallel").
+            false
         }
     }
 }

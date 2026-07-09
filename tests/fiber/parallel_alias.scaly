@@ -1,0 +1,157 @@
+; Alias soundness (milestone 4.4 follow-up): the classifier must not
+; let a body launder loop-external mutable state past the name-based
+; locality checks. Every negative wave here carries a body heavy
+; enough (~10µs × 64 iterations >> the 131µs fork gate) that a
+; mis-classification WOULD fork — the submit counter staying at zero
+; proves the loop was blocked, and the value checks prove sequential
+; semantics. Wave A: direct mutating call on an external receiver
+; (`acc.add v` — the `function` keyword is not trusted; List.add
+; writes this.head). Wave B: `let r acc` alias laundering. Wave C:
+; `set t: acc` re-seating a body-local as an alias. Wave D: positive
+; control — the canonical disjoint-slot wave on the same site scale
+; MUST still fork (no over-tainting).
+;
+; Expected: parallel-alias-ok done
+
+; Pure leaf, ~10µs scale. spin_big(seed) = seed + 799980000.
+function spin_big(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (40000 as i64)
+    {
+        set acc: acc + k
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+procedure wave_direct(acc: List[i64])
+{
+    for i in 64
+    {
+        let v spin_big(i as i64)
+        acc.add v
+    }
+}
+
+procedure wave_let_alias(acc: List[i64])
+{
+    for i in 64
+    {
+        let v spin_big(i as i64)
+        let r acc
+        r.add v
+    }
+}
+
+procedure wave_set_alias(acc: List[i64])
+{
+    for i in 64
+    {
+        let v spin_big(i as i64)
+        var t List[i64]()
+        set t: acc
+        t.add v
+    }
+}
+
+procedure wave_control(r: Vector[i64], n: int)
+{
+    for i in n
+    {
+        let v spin_big(i as i64)
+        r.put(i, v)
+    }
+}
+
+function lsum(l: List[i64]) returns i64
+{
+    var s 0 as i64
+    for x in l
+        set s: s + x
+    s
+}
+
+function vsum(r: Vector[i64], n: size_t) returns i64
+{
+    var s 0 as i64
+    var i: size_t 0
+    while i < n
+    {
+        let p r.get i
+        if p <> null
+            set s: s + (*p)
+        set i: i + 1
+    }
+    s
+}
+
+let pool TaskPool.default_pool()
+
+; sum over i in 0..63 of (i + 799980000) = 64*799980000 + 2016
+let want_sum 51198722016 as i64
+
+; ---- Wave A: direct external receiver.
+var la List[i64]()
+wave_direct(la)
+if lsum(la) <> want_sum
+{
+    Console.println "waveA-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveA-forked"
+    exit 1
+}
+
+; ---- Wave B: let-alias laundering.
+var lb List[i64]()
+wave_let_alias(lb)
+if lsum(lb) <> want_sum
+{
+    Console.println "waveB-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveB-forked"
+    exit 1
+}
+
+; ---- Wave C: set re-seats a local as an alias. Value semantics: the
+; List VALUE is copied into t's slot, so the adds land in the copy and
+; lc stays empty — but the copy SHARES the node structure/page, so the
+; classifier must still treat t as an alias and keep the loop
+; sequential (submit count is the real assertion).
+var lc List[i64]()
+wave_set_alias(lc)
+if lsum(lc) <> (0 as i64)
+{
+    Console.println "waveC-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveC-forked"
+    exit 1
+}
+
+; ---- Wave D: positive control — same scale, canonical disjoint
+; slots; the fix must not have over-tainted the legit pattern.
+var rd Vector[i64](64)
+wave_control(rd, 64)
+if vsum(rd, 64 as size_t) <> want_sum
+{
+    Console.println "waveD-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) = (0 as u64)
+{
+    Console.println "waveD-no-fork"
+    exit 1
+}
+
+Console.print "parallel-alias-ok "
+Console.println "done"
