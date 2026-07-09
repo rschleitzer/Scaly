@@ -843,7 +843,8 @@ define TaskPlanner
         }
 
         ; Reading a MUTABLE module global blocks: since M2.2 every mutable
-        ; global (except `shared_`) is thread-local, so a task running on a
+        ; global (except `shared` declarations) is thread-local, so a task
+        ; running on a
         ; worker thread reads a different cell than the spawner. The
         ; allocator's own state cells are sanctioned — RBMM allocation is
         ; per-task by design (one region per task).
@@ -935,9 +936,9 @@ define TaskPlanner
                 return true
             if name = "fmt_scratch"
                 return true
-            if name = "shared_heap_trace_state"
+            if name = "heap_trace_state"
                 return true
-            if name = "shared_heap_trace"
+            if name = "heap_trace"
                 return true
             false
         }

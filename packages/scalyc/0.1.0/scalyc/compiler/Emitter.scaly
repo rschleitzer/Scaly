@@ -3919,11 +3919,8 @@ define Emitter
                     ; discipline: initialize while the process is still
                     ; single-threaded (anything before the first
                     ; Thread.spawn returns) or mutate via scaly_atomic_*.
-                    ; The legacy `shared_` name-prefix exemption remains
-                    ; until the tree is migrated to the keyword (4.3).
                     if global.is_shared = false
-                        if global.mangled_name.starts_with("shared_") = false
-                            LLVMSetThreadLocal(gv, 1)
+                        LLVMSetThreadLocal(gv, 1)
                 }
                 if global.is_mutable = false
                     LLVMSetGlobalConstant(gv, 1)

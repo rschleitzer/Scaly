@@ -77,8 +77,8 @@ define TraceEntry
 )
 
 ; Header of the PROCESS-global heap-trace table (SCALY_TRACE_HEAP below).
-; Reached through the `shared_heap_trace` global — `shared_`-prefixed
-; mutables are exempt from the M2.2 blanket thread_local, so every thread
+; Reached through the `heap_trace` global — `shared` declarations are
+; exempt from the M2.2 blanket thread_local, so every thread
 ; sees the same table and a cross-thread alloc/release pair balances.
 ; `lock` is a bucket_lock-style spinlock guarding find-or-add + counter
 ; bumps; the atexit dump reads without it (single-threaded by then).
@@ -616,7 +616,7 @@ procedure scaly_trace_pop(name: pointer[const_char])
 ; mixing the two tables would make an "all balanced" report ambiguous
 ; about which kind of page it covers.
 ;
-; The table is PROCESS-global (`shared_` globals, HeapTraceHeader above) so
+; The table is PROCESS-global (`shared` globals, HeapTraceHeader above) so
 ; a cross-thread alloc/release pair balances — the spawn-cell pattern
 ; (alloc in Thread.spawn on the spawner, release in scaly_thread_start on
 ; the child) is the NORM for traced pages, and per-thread tables reported
@@ -630,12 +630,12 @@ procedure scaly_trace_pop(name: pointer[const_char])
 ; --------------------------------------------------------------------------
 
 ; 0 = unarmed, 1 = armed-disabled (env var absent), 2 = armed-enabled.
-mutable shared_heap_trace_state: u64 0
-mutable shared_heap_trace: pointer[HeapTraceHeader] null
+shared heap_trace_state: u64 0
+shared heap_trace: pointer[HeapTraceHeader] null
 
 procedure scaly_heap_trace_dump()
 {
-    let hdr shared_heap_trace
+    let hdr heap_trace
     if hdr = null
         return
     var i 0 as i64
@@ -671,12 +671,12 @@ procedure scaly_rt_register_heap_trace()
     ; Already armed (either way) — nothing to do. See the header comment:
     ; the 0→1/2 transition provably runs single-threaded, so plain
     ; loads/stores suffice here.
-    if shared_heap_trace_state <> (0 as u64)
+    if heap_trace_state <> (0 as u64)
         return
     ; Env var not set — leave trace disabled.
     if getenv("SCALY_TRACE_HEAP") = null
     {
-        set shared_heap_trace_state: 1 as u64
+        set heap_trace_state: 1 as u64
         return
     }
     let hdr aligned_alloc(8, (sizeof HeapTraceHeader) as i64) as pointer[HeapTraceHeader]
@@ -684,8 +684,8 @@ procedure scaly_rt_register_heap_trace()
     set hdr.count: 0 as i64
     let bytes TRACE_MAX * (sizeof TraceEntry)
     set hdr.entries: aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
-    set shared_heap_trace: hdr
-    set shared_heap_trace_state: 2 as u64
+    set heap_trace: hdr
+    set heap_trace_state: 2 as u64
     atexit(&scaly_heap_trace_dump)
 }
 
@@ -737,9 +737,9 @@ function scaly_heap_trace_find_or_add(hdr: pointer[HeapTraceHeader], name: point
 procedure scaly_heap_trace_alloc(site: pointer[const_char])
 {
     scaly_rt_register_heap_trace()
-    if shared_heap_trace_state <> (2 as u64)
+    if heap_trace_state <> (2 as u64)
         return
-    let hdr shared_heap_trace
+    let hdr heap_trace
     heap_trace_lock hdr
     let e scaly_heap_trace_find_or_add(hdr, site)
     if e <> null
@@ -750,9 +750,9 @@ procedure scaly_heap_trace_alloc(site: pointer[const_char])
 procedure scaly_heap_trace_release(site: pointer[const_char])
 {
     scaly_rt_register_heap_trace()
-    if shared_heap_trace_state <> (2 as u64)
+    if heap_trace_state <> (2 as u64)
         return
-    let hdr shared_heap_trace
+    let hdr heap_trace
     heap_trace_lock hdr
     let e scaly_heap_trace_find_or_add(hdr, site)
     if e <> null

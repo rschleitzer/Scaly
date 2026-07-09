@@ -135,6 +135,8 @@ define symbols
                 return symbols.symbol_object(source, m.name, 2 as i64, m.start, m.end, "[]")
             when mut: MutableSyntax
                 return symbols.symbol_object(source, mut.binding.name, 13 as i64, mut.start, mut.end, "[]")
+            when sh: SharedSyntax
+                return symbols.symbol_object(source, sh.binding.name, 13 as i64, sh.start, sh.end, "[]")
             when priv: PrivateSyntax
                 return symbols.export_symbol(source, priv.export_)
             when e: EmptySyntax
@@ -571,6 +573,8 @@ define symbols
             when m: ModuleSyntax
                 return symbols.fold_range(source, m.start, m.end)
             when mut: MutableSyntax
+                return ""
+            when sh: SharedSyntax
                 return ""
             when priv: PrivateSyntax
                 return symbols.fold_export(source, priv.export_)
@@ -1630,6 +1634,8 @@ define symbols
                 return ""
             when mut: MutableSyntax
                 return ""
+            when sh: SharedSyntax
+                return ""
             when priv: PrivateSyntax
                 return symbols.st_export(source, priv.export_)
             when e: EmptySyntax
@@ -2168,6 +2174,8 @@ define symbols
                 return symbols.completion_item(m.name, 9 as i64)
             when mut: MutableSyntax
                 return symbols.completion_item(mut.binding.name, 6 as i64)
+            when sh: SharedSyntax
+                return symbols.completion_item(sh.binding.name, 6 as i64)
             when priv: PrivateSyntax
                 return symbols.completion_export(source, priv.export_)
             when e: EmptySyntax
@@ -3495,6 +3503,8 @@ define symbols
                 return ""
             when mut: MutableSyntax
                 return ""
+            when sh: SharedSyntax
+                return ""
             when priv: PrivateSyntax
                 return symbols.mem_export(source, priv.export_, receiver)
             when e: EmptySyntax
@@ -3732,6 +3742,8 @@ define symbols
                 return symbols.hover_leaf(m.start, m.end, offset, "module", String(m.name))
             when mut: MutableSyntax
                 return symbols.hover_leaf(mut.start, mut.end, offset, "mutable", String(mut.binding.name))
+            when sh: SharedSyntax
+                return symbols.hover_leaf(sh.start, sh.end, offset, "shared", String(sh.binding.name))
             when priv: PrivateSyntax
                 return symbols.hover_export(source, priv.export_, offset)
             when e: EmptySyntax
@@ -4094,6 +4106,8 @@ define symbols
                 return symbols.def_match(source, uri, String(m.name), name, m.start)
             when mut: MutableSyntax
                 return symbols.def_match(source, uri, String(mut.binding.name), name, mut.start)
+            when sh: SharedSyntax
+                return symbols.def_match(source, uri, String(sh.binding.name), name, sh.start)
             when priv: PrivateSyntax
                 return symbols.def_export(source, uri, priv.export_, name)
             when e: EmptySyntax
@@ -5776,6 +5790,8 @@ define symbols
                 return symbols.ws_item(source, uri, String(m.name), 2 as i64, m.start, m.end, "", "", "")
             when mut: MutableSyntax
                 return symbols.ws_item(source, uri, String(mut.binding.name), 13 as i64, mut.start, mut.end, "", "", "")
+            when sh: SharedSyntax
+                return symbols.ws_item(source, uri, String(sh.binding.name), 13 as i64, sh.start, sh.end, "", "", "")
             when priv: PrivateSyntax
                 return symbols.ws_export(source, uri, priv.export_)
             when e: EmptySyntax
@@ -9026,6 +9042,8 @@ define symbols
             when m: ModuleSyntax
                 return ""
             when mut: MutableSyntax
+                return ""
+            when sh: SharedSyntax
                 return ""
             when priv: PrivateSyntax
                 return symbols.sig_export(source, priv.export_, name, active)

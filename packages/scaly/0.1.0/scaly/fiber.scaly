@@ -277,7 +277,7 @@
 ; group, wait only after every submit of the wave, dispose only after
 ; wait, shutdown only when no group has work in flight; wait blocks the
 ; calling THREAD (call it from the main context, not inside a scheduled
-; task). No shared_ global is needed anywhere: the pool record travels
+; task). No shared global is needed anywhere: the pool record travels
 ; by pointer (spawn cells, task arguments), channel-style.
 ;
 ;   let pool TaskPool.create(4 as i64)
@@ -416,21 +416,21 @@ define DeadlockState
 ; bounds detection latency), short enough that a deadlock traps promptly.
 define CHAN_DEADLOCK_MS i32 100
 
-; Process-global — NOT thread_local (the `shared_` prefix exempts it, like
-; the heap tracer). Allocated once, single-threaded, on first touch (the
+; Process-global — NOT thread_local (`shared` declaration, like the heap
+; tracer). Allocated once, single-threaded, on first touch (the
 ; first Thread.spawn or the first channel wait, both on the main thread
 ; before any concurrency); `threads` starts at 1 for the main thread.
-mutable shared_deadlock: pointer[DeadlockState] null
+shared deadlock_state: pointer[DeadlockState] null
 
 procedure ensure_deadlock_state()
 {
-    if shared_deadlock <> null
+    if deadlock_state <> null
         return
     let d aligned_alloc(8, (sizeof DeadlockState) as i64) as pointer[DeadlockState]
     set d.threads: 1 as u64
     set d.blocked: 0 as u64
     set d.epoch: 0 as u64
-    set shared_deadlock: d
+    set deadlock_state: d
 }
 
 ; Note a channel wake event (queued send / close / routed task) so a
@@ -438,7 +438,7 @@ procedure ensure_deadlock_state()
 ; deadlock. Cheap no-op until the state exists (no waiter can exist yet).
 procedure deadlock_event()
 {
-    let d shared_deadlock
+    let d deadlock_state
     if d = null
         return
     let ep &d.epoch
@@ -474,7 +474,7 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
     Io.close_poller()
     ; This thread can no longer send or wake — drop it from the deadlock
     ; census so the remaining threads' next bounded wait can conclude.
-    let d shared_deadlock
+    let d deadlock_state
     if d <> null
     {
         let tp &d.threads
@@ -1120,7 +1120,7 @@ define Scheduler
             ; event (epoch stable) and every live thread blocked, no wake
             ; can ever come.
             ensure_deadlock_state()
-            let d shared_deadlock
+            let d deadlock_state
             let ep &d.epoch
             let bp &d.blocked
             let tp &d.threads
@@ -2190,7 +2190,7 @@ define Thread
         ; trampoline drops the count at exit). Single-threaded on the
         ; first spawn — the state is created here if needed.
         ensure_deadlock_state()
-        let d shared_deadlock
+        let d deadlock_state
         let tp &d.threads
         scaly_atomic_add_u64(tp, 1 as u64)
         var handle u8[8]

@@ -1,4 +1,4 @@
-; SCALY_TRACE_HEAP cross-thread balance (process-global `shared_` table):
+; SCALY_TRACE_HEAP cross-thread balance (process-global `shared` table):
 ; the spawn cell is allocated by main (Thread.spawn) and released by the
 ; child (scaly_thread_start). With the old per-thread trace tables every
 ; such pair reported a phantom leak on the spawner and the dump ran once
