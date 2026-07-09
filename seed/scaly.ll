@@ -188,12 +188,11 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z14StringIterator = type { ptr, ptr }
 %_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, i1 }
 %_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64 }
-%_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr, ptr }
-%_Z7Channel = type { ptr, ptr, ptr, ptr }
+%_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr }
 %_Z6IoPool = type { i64, ptr, ptr, i32, i32, i64, i64, ptr }
 %_Z6IoWork = type { ptr, ptr, ptr, ptr, ptr }
-%_Z7Mailbox = type { i64, i64, i1, ptr, ptr, ptr, ptr, ptr }
-%_Z8MailNode = type { ptr, ptr }
+%_Z7Channel = type { i64, i64, i1, ptr, ptr, ptr, ptr, ptr }
+%_Z11ChannelNode = type { ptr, ptr }
 %_Z9TaskGroup = type { i64, i32, i32 }
 %_Z9TaskDeque = type { i64, ptr, ptr }
 %_Z8TaskPool = type { ptr, i64, i64, i64, i32, i32, ptr }
@@ -284,8 +283,8 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @.str.37 = private unnamed_addr constant [13 x i8] c"Io.work_page\00", align 1
 @.str.38 = private unnamed_addr constant [13 x i8] c"Io.work_page\00", align 1
 @.str.39 = private unnamed_addr constant [13 x i8] c"Io.pool_page\00", align 1
-@.str.40 = private unnamed_addr constant [20 x i8] c"Mailbox.record_page\00", align 1
-@.str.41 = private unnamed_addr constant [20 x i8] c"Mailbox.record_page\00", align 1
+@.str.40 = private unnamed_addr constant [20 x i8] c"Channel.record_page\00", align 1
+@.str.41 = private unnamed_addr constant [20 x i8] c"Channel.record_page\00", align 1
 @.str.42 = private unnamed_addr constant [18 x i8] c"Thread.spawn_cell\00", align 1
 @.str.43 = private unnamed_addr constant [22 x i8] c"TaskGroup.record_page\00", align 1
 @.str.44 = private unnamed_addr constant [22 x i8] c"TaskGroup.record_page\00", align 1
@@ -21719,11 +21718,9 @@ entry:
   store i1 false, ptr %done, align 1
   %disposed = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 5
   store i1 false, ptr %disposed, align 1
-  %msg = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 6
-  store ptr null, ptr %msg, align 8
-  %arg = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 7
+  %arg = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 6
   store ptr %1, ptr %arg, align 8
-  %home = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 8
+  %home = getelementptr inbounds %_Z9SchedTask, ptr %call, i32 0, i32 7
   store ptr %global.load, ptr %home, align 8
   call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %call)
   ret ptr %call
@@ -21752,7 +21749,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct = load %_Z9SchedTask, ptr %global.load, align 8
-  %arg = extractvalue %_Z9SchedTask %load.struct, 7
+  %arg = extractvalue %_Z9SchedTask %load.struct, 6
   ret ptr %arg
 }
 
@@ -22198,286 +22195,6 @@ entry:
   ret void
 }
 
-define linkonce_odr ptr @_ZN7Channel6createEv() {
-entry:
-  %global.load = load ptr, ptr @current_scheduler, align 8
-  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
-  %host = extractvalue %_Z9Scheduler %load.struct, 0
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %host, i64 ptrtoint (ptr getelementptr (%_Z7Channel, ptr null, i32 1) to i64), i64 8)
-  %send_head = getelementptr inbounds %_Z7Channel, ptr %call, i32 0, i32 0
-  store ptr null, ptr %send_head, align 8
-  %send_tail = getelementptr inbounds %_Z7Channel, ptr %call, i32 0, i32 1
-  store ptr null, ptr %send_tail, align 8
-  %recv_head = getelementptr inbounds %_Z7Channel, ptr %call, i32 0, i32 2
-  store ptr null, ptr %recv_head, align 8
-  %recv_tail = getelementptr inbounds %_Z7Channel, ptr %call, i32 0, i32 3
-  store ptr null, ptr %recv_tail, align 8
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN7Channel11push_senderEP7ChannelP9SchedTask(ptr %0, ptr %1) {
-entry:
-  %next = getelementptr inbounds %_Z9SchedTask, ptr %1, i32 0, i32 2
-  store ptr null, ptr %next, align 8
-  %load.struct = load %_Z7Channel, ptr %0, align 8
-  %send_tail = extractvalue %_Z7Channel %load.struct, 1
-  %eq = icmp eq ptr %send_tail, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %send_head = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %send_head, align 8
-  %send_tail1 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %send_tail1, align 8
-  ret void
-
-if.end:                                           ; preds = %entry
-  %load.struct2 = load %_Z7Channel, ptr %0, align 8
-  %send_tail3 = extractvalue %_Z7Channel %load.struct2, 1
-  %next4 = getelementptr inbounds %_Z9SchedTask, ptr %send_tail3, i32 0, i32 2
-  store ptr %1, ptr %next4, align 8
-  %send_tail5 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %send_tail5, align 8
-  ret void
-}
-
-define linkonce_odr ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0) {
-entry:
-  %load.struct = load %_Z7Channel, ptr %0, align 8
-  %send_head = extractvalue %_Z7Channel %load.struct, 0
-  %ne = icmp ne ptr %send_head, null
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %load.struct1 = load %_Z9SchedTask, ptr %send_head, align 8
-  %next = extractvalue %_Z9SchedTask %load.struct1, 2
-  %send_head2 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 0
-  store ptr %next, ptr %send_head2, align 8
-  %load.struct3 = load %_Z7Channel, ptr %0, align 8
-  %send_head4 = extractvalue %_Z7Channel %load.struct3, 0
-  %eq = icmp eq ptr %send_head4, null
-  br i1 %eq, label %if.then5, label %if.end6
-
-if.end:                                           ; preds = %if.end6, %entry
-  ret ptr %send_head
-
-if.then5:                                         ; preds = %if.then
-  %send_tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 1
-  store ptr null, ptr %send_tail, align 8
-  br label %if.end6
-
-if.end6:                                          ; preds = %if.then5, %if.then
-  %next7 = getelementptr inbounds %_Z9SchedTask, ptr %send_head, i32 0, i32 2
-  store ptr null, ptr %next7, align 8
-  br label %if.end
-}
-
-define linkonce_odr void @_ZN7Channel13push_receiverEP7ChannelP9SchedTask(ptr %0, ptr %1) {
-entry:
-  %next = getelementptr inbounds %_Z9SchedTask, ptr %1, i32 0, i32 2
-  store ptr null, ptr %next, align 8
-  %load.struct = load %_Z7Channel, ptr %0, align 8
-  %recv_tail = extractvalue %_Z7Channel %load.struct, 3
-  %eq = icmp eq ptr %recv_tail, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %recv_head = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 2
-  store ptr %1, ptr %recv_head, align 8
-  %recv_tail1 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 3
-  store ptr %1, ptr %recv_tail1, align 8
-  ret void
-
-if.end:                                           ; preds = %entry
-  %load.struct2 = load %_Z7Channel, ptr %0, align 8
-  %recv_tail3 = extractvalue %_Z7Channel %load.struct2, 3
-  %next4 = getelementptr inbounds %_Z9SchedTask, ptr %recv_tail3, i32 0, i32 2
-  store ptr %1, ptr %next4, align 8
-  %recv_tail5 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 3
-  store ptr %1, ptr %recv_tail5, align 8
-  ret void
-}
-
-define linkonce_odr ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0) {
-entry:
-  %load.struct = load %_Z7Channel, ptr %0, align 8
-  %recv_head = extractvalue %_Z7Channel %load.struct, 2
-  %ne = icmp ne ptr %recv_head, null
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %load.struct1 = load %_Z9SchedTask, ptr %recv_head, align 8
-  %next = extractvalue %_Z9SchedTask %load.struct1, 2
-  %recv_head2 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 2
-  store ptr %next, ptr %recv_head2, align 8
-  %load.struct3 = load %_Z7Channel, ptr %0, align 8
-  %recv_head4 = extractvalue %_Z7Channel %load.struct3, 2
-  %eq = icmp eq ptr %recv_head4, null
-  br i1 %eq, label %if.then5, label %if.end6
-
-if.end:                                           ; preds = %if.end6, %entry
-  ret ptr %recv_head
-
-if.then5:                                         ; preds = %if.then
-  %recv_tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 3
-  store ptr null, ptr %recv_tail, align 8
-  br label %if.end6
-
-if.end6:                                          ; preds = %if.then5, %if.then
-  %next7 = getelementptr inbounds %_Z9SchedTask, ptr %recv_head, i32 0, i32 2
-  store ptr null, ptr %next7, align 8
-  br label %if.end
-}
-
-define linkonce_odr void @_ZN7Channel7deliverEP9SchedTaskPv(ptr %0, ptr %1) {
-entry:
-  %global.load = load ptr, ptr @current_scheduler, align 8
-  %msg = getelementptr inbounds %_Z9SchedTask, ptr %0, i32 0, i32 6
-  store ptr %1, ptr %msg, align 8
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %0)
-  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
-  %sub = sub i64 %blocked, 1
-  %blocked1 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 3
-  store i64 %sub, ptr %blocked1, align 8
-  ret void
-}
-
-define linkonce_odr ptr @_ZN7Channel6acceptEP9SchedTask(ptr %0) {
-entry:
-  %global.load = load ptr, ptr @current_scheduler, align 8
-  %load.struct = load %_Z9SchedTask, ptr %0, align 8
-  %msg = extractvalue %_Z9SchedTask %load.struct, 6
-  %msg1 = getelementptr inbounds %_Z9SchedTask, ptr %0, i32 0, i32 6
-  store ptr null, ptr %msg1, align 8
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %0)
-  %load.struct2 = load %_Z9Scheduler, ptr %global.load, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct2, 3
-  %sub = sub i64 %blocked, 1
-  %blocked3 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 3
-  store i64 %sub, ptr %blocked3, align 8
-  ret ptr %msg
-}
-
-define linkonce_odr void @_ZN7Channel4sendEP7ChannelPv(ptr %0, ptr %1) {
-entry:
-  %call = call ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_ZN7Channel7deliverEP9SchedTaskPv(ptr %call, ptr %1)
-  ret void
-
-if.end:                                           ; preds = %entry
-  %global.load = load ptr, ptr @current_task, align 8
-  %eq = icmp eq ptr %global.load, null
-  br i1 %eq, label %if.then1, label %if.end2
-
-if.then1:                                         ; preds = %if.end
-  br label %repeat.body
-
-if.end2:                                          ; preds = %repeat.exit, %if.end
-  %global.load10 = load ptr, ptr @current_scheduler, align 8
-  %msg = getelementptr inbounds %_Z9SchedTask, ptr %global.load, i32 0, i32 6
-  store ptr %1, ptr %msg, align 8
-  call void @_ZN7Channel11push_senderEP7ChannelP9SchedTask(ptr %0, ptr %global.load)
-  %load.struct = load %_Z9Scheduler, ptr %global.load10, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
-  %add = add i64 %blocked, 1
-  %blocked11 = getelementptr inbounds %_Z9Scheduler, ptr %global.load10, i32 0, i32 3
-  store i64 %add, ptr %blocked11, align 8
-  call void @_ZN5Fiber5yieldEv()
-  ret void
-
-repeat.body:                                      ; preds = %if.end9, %if.then1
-  %call3 = call i1 @_ZN9Scheduler12step_or_waitEv()
-  %not = xor i1 %call3, true
-  br i1 %not, label %if.then4, label %if.end5
-
-repeat.exit:                                      ; No predecessors!
-  br label %if.end2
-
-if.then4:                                         ; preds = %repeat.body
-  call void @exit(i64 106)
-  br label %if.end5
-
-if.end5:                                          ; preds = %if.then4, %repeat.body
-  %call6 = call ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0)
-  %ne7 = icmp ne ptr %call6, null
-  br i1 %ne7, label %if.then8, label %if.end9
-
-if.then8:                                         ; preds = %if.end5
-  call void @_ZN7Channel7deliverEP9SchedTaskPv(ptr %call6, ptr %1)
-  ret void
-
-if.end9:                                          ; preds = %if.end5
-  br label %repeat.body
-}
-
-define linkonce_odr ptr @_ZN7Channel7receiveEP7Channel(ptr %0) {
-entry:
-  %call = call ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %call1 = call ptr @_ZN7Channel6acceptEP9SchedTask(ptr %call)
-  ret ptr %call1
-
-if.end:                                           ; preds = %entry
-  %global.load = load ptr, ptr @current_task, align 8
-  %eq = icmp eq ptr %global.load, null
-  br i1 %eq, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  br label %repeat.body
-
-if.end3:                                          ; preds = %repeat.exit, %if.end
-  %global.load12 = load ptr, ptr @current_scheduler, align 8
-  call void @_ZN7Channel13push_receiverEP7ChannelP9SchedTask(ptr %0, ptr %global.load)
-  %load.struct = load %_Z9Scheduler, ptr %global.load12, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
-  %add = add i64 %blocked, 1
-  %blocked13 = getelementptr inbounds %_Z9Scheduler, ptr %global.load12, i32 0, i32 3
-  store i64 %add, ptr %blocked13, align 8
-  call void @_ZN5Fiber5yieldEv()
-  %load.struct14 = load %_Z9SchedTask, ptr %global.load, align 8
-  %msg = extractvalue %_Z9SchedTask %load.struct14, 6
-  %msg15 = getelementptr inbounds %_Z9SchedTask, ptr %global.load, i32 0, i32 6
-  store ptr null, ptr %msg15, align 8
-  ret ptr %msg
-
-repeat.body:                                      ; preds = %if.end10, %if.then2
-  %call4 = call i1 @_ZN9Scheduler12step_or_waitEv()
-  %not = xor i1 %call4, true
-  br i1 %not, label %if.then5, label %if.end6
-
-repeat.exit:                                      ; No predecessors!
-  br label %if.end3
-
-if.then5:                                         ; preds = %repeat.body
-  call void @exit(i64 106)
-  br label %if.end6
-
-if.end6:                                          ; preds = %if.then5, %repeat.body
-  %call7 = call ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0)
-  %ne8 = icmp ne ptr %call7, null
-  br i1 %ne8, label %if.then9, label %if.end10
-
-if.then9:                                         ; preds = %if.end6
-  %call11 = call ptr @_ZN7Channel6acceptEP9SchedTask(ptr %call7)
-  ret ptr %call11
-
-if.end10:                                         ; preds = %if.end6
-  br label %repeat.body
-}
-
-define linkonce_odr void @_ZN7ChannelC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
 define linkonce_odr void @_ZN6IoPool7acquireEP6IoPool(ptr %0) {
 entry:
   %addr.gep = getelementptr inbounds %_Z6IoPool, ptr %0, i32 0, i32 0
@@ -22588,7 +22305,7 @@ if.then19:                                        ; preds = %if.end10
   %load.struct23 = load %_Z6IoWork, ptr %head, align 8
   %task = extractvalue %_Z6IoWork %load.struct23, 4
   %load.struct24 = load %_Z9SchedTask, ptr %task, align 8
-  %home = extractvalue %_Z9SchedTask %load.struct24, 8
+  %home = extractvalue %_Z9SchedTask %load.struct24, 7
   call void @_ZN9Scheduler11inject_taskEP9SchedulerP9SchedTask(ptr %home, ptr %task)
   br label %if.end20
 
@@ -23225,9 +22942,9 @@ if.end3:                                          ; preds = %if.then2, %if.end
   ret void
 }
 
-define linkonce_odr void @_ZN7Mailbox7acquireEP7Mailbox(ptr %0) {
+define linkonce_odr void @_ZN7Channel7acquireEP7Channel(ptr %0) {
 entry:
-  %addr.gep = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 0
+  %addr.gep = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 0
   br label %repeat.body
 
 repeat.body:                                      ; preds = %if.end, %entry
@@ -23246,37 +22963,37 @@ if.end:                                           ; preds = %repeat.body
   br label %repeat.body
 }
 
-define linkonce_odr void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0) {
+define linkonce_odr void @_ZN7Channel7releaseEP7Channel(ptr %0) {
 entry:
-  %addr.gep = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 0
+  %addr.gep = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 0
   store atomic i64 0, ptr %addr.gep seq_cst, align 8
   ret void
 }
 
-define linkonce_odr ptr @_ZN7Mailbox6createEv() {
+define linkonce_odr ptr @_ZN7Channel6createEv() {
 entry:
   %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.40)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z7Mailbox, ptr null, i32 1) to i64), i64 8)
-  %lock = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 0
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z7Channel, ptr null, i32 1) to i64), i64 8)
+  %lock = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 0
   store i64 0, ptr %lock, align 8
-  %senders = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 1
+  %senders = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 1
   store i64 1, ptr %senders, align 8
-  %closed = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 2
+  %closed = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 2
   store i1 false, ptr %closed, align 1
-  %head = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 3
+  %head = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 3
   store ptr null, ptr %head, align 8
-  %tail = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 4
+  %tail = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 4
   store ptr null, ptr %tail, align 8
-  %recv_head = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 5
+  %recv_head = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 5
   store ptr null, ptr %recv_head, align 8
-  %recv_tail = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 6
+  %recv_tail = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 6
   store ptr null, ptr %recv_tail, align 8
-  %recv_sched = getelementptr inbounds %_Z7Mailbox, ptr %call1, i32 0, i32 7
+  %recv_sched = getelementptr inbounds %_Z7Channel, ptr %call1, i32 0, i32 7
   store ptr null, ptr %recv_sched, align 8
   ret ptr %call1
 }
 
-define linkonce_odr void @_ZN7Mailbox7disposeEP7Mailbox(ptr %0) {
+define linkonce_odr void @_ZN7Channel7disposeEP7Channel(ptr %0) {
 entry:
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call)
@@ -23284,22 +23001,22 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN7Mailbox10add_senderEP7Mailbox(ptr %0) {
+define linkonce_odr void @_ZN7Channel10add_senderEP7Channel(ptr %0) {
 entry:
-  call void @_ZN7Mailbox7acquireEP7Mailbox(ptr %0)
-  %load.struct = load %_Z7Mailbox, ptr %0, align 8
-  %senders = extractvalue %_Z7Mailbox %load.struct, 1
+  call void @_ZN7Channel7acquireEP7Channel(ptr %0)
+  %load.struct = load %_Z7Channel, ptr %0, align 8
+  %senders = extractvalue %_Z7Channel %load.struct, 1
   %add = add i64 %senders, 1
-  %senders1 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 1
+  %senders1 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 1
   store i64 %add, ptr %senders1, align 8
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   ret void
 }
 
-define linkonce_odr void @_ZN7Mailbox5routeEP9SchedTask(ptr %0) {
+define linkonce_odr void @_ZN7Channel5routeEP9SchedTask(ptr %0) {
 entry:
   %load.struct = load %_Z9SchedTask, ptr %0, align 8
-  %home = extractvalue %_Z9SchedTask %load.struct, 8
+  %home = extractvalue %_Z9SchedTask %load.struct, 7
   %global.load = load ptr, ptr @current_scheduler, align 8
   %eq = icmp eq ptr %home, %global.load
   br i1 %eq, label %if.then, label %if.end
@@ -23321,25 +23038,25 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct7 = load %_Z9SchedTask, ptr %0, align 8
-  %home8 = extractvalue %_Z9SchedTask %load.struct7, 8
+  %home8 = extractvalue %_Z9SchedTask %load.struct7, 7
   call void @_ZN9Scheduler11inject_taskEP9SchedulerP9SchedTask(ptr %home8, ptr %0)
   ret void
 }
 
-define linkonce_odr ptr @_ZN7Mailbox12pop_receiverEP7Mailbox(ptr %0) {
+define linkonce_odr ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0) {
 entry:
-  %load.struct = load %_Z7Mailbox, ptr %0, align 8
-  %recv_head = extractvalue %_Z7Mailbox %load.struct, 5
+  %load.struct = load %_Z7Channel, ptr %0, align 8
+  %recv_head = extractvalue %_Z7Channel %load.struct, 5
   %ne = icmp ne ptr %recv_head, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct1 = load %_Z9SchedTask, ptr %recv_head, align 8
   %next = extractvalue %_Z9SchedTask %load.struct1, 2
-  %recv_head2 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 5
+  %recv_head2 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 5
   store ptr %next, ptr %recv_head2, align 8
-  %load.struct3 = load %_Z7Mailbox, ptr %0, align 8
-  %recv_head4 = extractvalue %_Z7Mailbox %load.struct3, 5
+  %load.struct3 = load %_Z7Channel, ptr %0, align 8
+  %recv_head4 = extractvalue %_Z7Channel %load.struct3, 5
   %eq = icmp eq ptr %recv_head4, null
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -23347,7 +23064,7 @@ if.end:                                           ; preds = %if.end6, %entry
   ret ptr %recv_head
 
 if.then5:                                         ; preds = %if.then
-  %recv_tail = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 6
+  %recv_tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
   store ptr null, ptr %recv_tail, align 8
   br label %if.end6
 
@@ -23357,56 +23074,56 @@ if.end6:                                          ; preds = %if.then5, %if.then
   br label %if.end
 }
 
-define linkonce_odr void @_ZN7Mailbox4sendEP7MailboxPv(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN7Channel4sendEP7ChannelPv(ptr %0, ptr %1) {
 entry:
   %call = call ptr @_ZN4Page3getEPv(ptr %1)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8MailNode, ptr null, i32 1) to i64), i64 8)
-  %next = getelementptr inbounds %_Z8MailNode, ptr %call1, i32 0, i32 0
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z11ChannelNode, ptr null, i32 1) to i64), i64 8)
+  %next = getelementptr inbounds %_Z11ChannelNode, ptr %call1, i32 0, i32 0
   store ptr null, ptr %next, align 8
-  %msg = getelementptr inbounds %_Z8MailNode, ptr %call1, i32 0, i32 1
+  %msg = getelementptr inbounds %_Z11ChannelNode, ptr %call1, i32 0, i32 1
   store ptr %1, ptr %msg, align 8
-  call void @_ZN7Mailbox7acquireEP7Mailbox(ptr %0)
-  %load.struct = load %_Z7Mailbox, ptr %0, align 8
-  %closed = extractvalue %_Z7Mailbox %load.struct, 2
+  call void @_ZN7Channel7acquireEP7Channel(ptr %0)
+  %load.struct = load %_Z7Channel, ptr %0, align 8
+  %closed = extractvalue %_Z7Channel %load.struct, 2
   br i1 %closed, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   call void @exit(i64 110)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct2 = load %_Z7Mailbox, ptr %0, align 8
-  %tail = extractvalue %_Z7Mailbox %load.struct2, 4
+  %load.struct2 = load %_Z7Channel, ptr %0, align 8
+  %tail = extractvalue %_Z7Channel %load.struct2, 4
   %eq = icmp eq ptr %tail, null
   br i1 %eq, label %if.then3, label %if.else
 
 if.then3:                                         ; preds = %if.end
-  %head = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 3
+  %head = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 3
   store ptr %call1, ptr %head, align 8
-  %tail5 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 4
+  %tail5 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
   store ptr %call1, ptr %tail5, align 8
   br label %if.end4
 
 if.else:                                          ; preds = %if.end
-  %load.struct6 = load %_Z7Mailbox, ptr %0, align 8
-  %tail7 = extractvalue %_Z7Mailbox %load.struct6, 4
-  %next8 = getelementptr inbounds %_Z8MailNode, ptr %tail7, i32 0, i32 0
+  %load.struct6 = load %_Z7Channel, ptr %0, align 8
+  %tail7 = extractvalue %_Z7Channel %load.struct6, 4
+  %next8 = getelementptr inbounds %_Z11ChannelNode, ptr %tail7, i32 0, i32 0
   store ptr %call1, ptr %next8, align 8
-  %tail9 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 4
+  %tail9 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
   store ptr %call1, ptr %tail9, align 8
   br label %if.end4
 
 if.end4:                                          ; preds = %if.else, %if.then3
-  %call10 = call ptr @_ZN7Mailbox12pop_receiverEP7Mailbox(ptr %0)
-  %load.struct11 = load %_Z7Mailbox, ptr %0, align 8
-  %recv_sched = extractvalue %_Z7Mailbox %load.struct11, 7
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  %call10 = call ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0)
+  %load.struct11 = load %_Z7Channel, ptr %0, align 8
+  %recv_sched = extractvalue %_Z7Channel %load.struct11, 7
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   %ne = icmp ne ptr %call10, null
   br i1 %ne, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end4
-  call void @_ZN7Mailbox5routeEP9SchedTask(ptr %call10)
+  call void @_ZN7Channel5routeEP9SchedTask(ptr %call10)
   ret void
 
 if.end13:                                         ; preds = %if.end4
@@ -23429,37 +23146,37 @@ if.end19:                                         ; preds = %if.then18, %if.then
   br label %if.end16
 }
 
-define linkonce_odr void @_ZN7Mailbox12close_senderEP7Mailbox(ptr %0) {
+define linkonce_odr void @_ZN7Channel12close_senderEP7Channel(ptr %0) {
 entry:
   %chain = alloca ptr, align 8
-  call void @_ZN7Mailbox7acquireEP7Mailbox(ptr %0)
-  %load.struct = load %_Z7Mailbox, ptr %0, align 8
-  %senders = extractvalue %_Z7Mailbox %load.struct, 1
+  call void @_ZN7Channel7acquireEP7Channel(ptr %0)
+  %load.struct = load %_Z7Channel, ptr %0, align 8
+  %senders = extractvalue %_Z7Channel %load.struct, 1
   %sub = sub i64 %senders, 1
-  %senders1 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 1
+  %senders1 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 1
   store i64 %sub, ptr %senders1, align 8
-  %load.struct2 = load %_Z7Mailbox, ptr %0, align 8
-  %senders3 = extractvalue %_Z7Mailbox %load.struct2, 1
+  %load.struct2 = load %_Z7Channel, ptr %0, align 8
+  %senders3 = extractvalue %_Z7Channel %load.struct2, 1
   %gt = icmp sgt i64 %senders3, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   ret void
 
 if.end:                                           ; preds = %entry
-  %closed = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 2
+  %closed = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 2
   store i1 true, ptr %closed, align 1
-  %load.struct4 = load %_Z7Mailbox, ptr %0, align 8
-  %recv_head = extractvalue %_Z7Mailbox %load.struct4, 5
+  %load.struct4 = load %_Z7Channel, ptr %0, align 8
+  %recv_head = extractvalue %_Z7Channel %load.struct4, 5
   store ptr %recv_head, ptr %chain, align 1
-  %recv_head5 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 5
+  %recv_head5 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 5
   store ptr null, ptr %recv_head5, align 8
-  %recv_tail = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 6
+  %recv_tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
   store ptr null, ptr %recv_tail, align 8
-  %load.struct6 = load %_Z7Mailbox, ptr %0, align 8
-  %recv_sched = extractvalue %_Z7Mailbox %load.struct6, 7
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  %load.struct6 = load %_Z7Channel, ptr %0, align 8
+  %recv_sched = extractvalue %_Z7Channel %load.struct6, 7
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %if.end
@@ -23475,7 +23192,7 @@ while.body:                                       ; preds = %while.cond
   %next10 = getelementptr inbounds %_Z9SchedTask, ptr %ptr.load, i32 0, i32 2
   store ptr null, ptr %next10, align 8
   %chain11 = load ptr, ptr %chain, align 8
-  call void @_ZN7Mailbox5routeEP9SchedTask(ptr %chain11)
+  call void @_ZN7Channel5routeEP9SchedTask(ptr %chain11)
   store ptr %next, ptr %chain, align 1
   br label %while.cond
 
@@ -23499,16 +23216,16 @@ if.end17:                                         ; preds = %if.then16, %if.then
   br label %if.end14
 }
 
-define linkonce_odr ptr @_ZN7Mailbox7receiveEP7Mailbox(ptr %0) {
+define linkonce_odr ptr @_ZN7Channel7receiveEP7Channel(ptr %0) {
 entry:
   %call = call i32 @_ZN2Io11ensure_wakeEv()
   %global.load = load ptr, ptr @current_task, align 8
   br label %repeat.body
 
 repeat.body:                                      ; preds = %if.end14, %entry
-  call void @_ZN7Mailbox7acquireEP7Mailbox(ptr %0)
-  %load.struct = load %_Z7Mailbox, ptr %0, align 8
-  %head = extractvalue %_Z7Mailbox %load.struct, 3
+  call void @_ZN7Channel7acquireEP7Channel(ptr %0)
+  %load.struct = load %_Z7Channel, ptr %0, align 8
+  %head = extractvalue %_Z7Channel %load.struct, 3
   %ne = icmp ne ptr %head, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -23516,44 +23233,44 @@ repeat.exit:                                      ; No predecessors!
   ret ptr null
 
 if.then:                                          ; preds = %repeat.body
-  %load.struct1 = load %_Z8MailNode, ptr %head, align 8
-  %next = extractvalue %_Z8MailNode %load.struct1, 0
-  %head2 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 3
+  %load.struct1 = load %_Z11ChannelNode, ptr %head, align 8
+  %next = extractvalue %_Z11ChannelNode %load.struct1, 0
+  %head2 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 3
   store ptr %next, ptr %head2, align 8
-  %load.struct3 = load %_Z7Mailbox, ptr %0, align 8
-  %head4 = extractvalue %_Z7Mailbox %load.struct3, 3
+  %load.struct3 = load %_Z7Channel, ptr %0, align 8
+  %head4 = extractvalue %_Z7Channel %load.struct3, 3
   %eq = icmp eq ptr %head4, null
   br i1 %eq, label %if.then5, label %if.end6
 
 if.end:                                           ; preds = %repeat.body
-  %load.struct8 = load %_Z7Mailbox, ptr %0, align 8
-  %closed = extractvalue %_Z7Mailbox %load.struct8, 2
+  %load.struct8 = load %_Z7Channel, ptr %0, align 8
+  %closed = extractvalue %_Z7Channel %load.struct8, 2
   br i1 %closed, label %if.then9, label %if.end10
 
 if.then5:                                         ; preds = %if.then
-  %tail = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 4
+  %tail = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 4
   store ptr null, ptr %tail, align 8
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %if.then
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
-  %load.struct7 = load %_Z8MailNode, ptr %head, align 8
-  %msg = extractvalue %_Z8MailNode %load.struct7, 1
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
+  %load.struct7 = load %_Z11ChannelNode, ptr %head, align 8
+  %msg = extractvalue %_Z11ChannelNode %load.struct7, 1
   ret ptr %msg
 
 if.then9:                                         ; preds = %if.end
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   ret ptr null
 
 if.end10:                                         ; preds = %if.end
   %global.load11 = load ptr, ptr @current_scheduler, align 8
-  %recv_sched = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 7
+  %recv_sched = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 7
   store ptr %global.load11, ptr %recv_sched, align 8
   %eq12 = icmp eq ptr %global.load, null
   br i1 %eq12, label %if.then13, label %if.else
 
 if.then13:                                        ; preds = %if.end10
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   %call15 = call i1 @_ZN9Scheduler12step_or_waitEv()
   %not = xor i1 %call15, true
   br i1 %not, label %if.then16, label %if.end17
@@ -23561,8 +23278,8 @@ if.then13:                                        ; preds = %if.end10
 if.else:                                          ; preds = %if.end10
   %next19 = getelementptr inbounds %_Z9SchedTask, ptr %global.load, i32 0, i32 2
   store ptr null, ptr %next19, align 8
-  %load.struct20 = load %_Z7Mailbox, ptr %0, align 8
-  %recv_tail = extractvalue %_Z7Mailbox %load.struct20, 6
+  %load.struct20 = load %_Z7Channel, ptr %0, align 8
+  %recv_tail = extractvalue %_Z7Channel %load.struct20, 6
   %eq21 = icmp eq ptr %recv_tail, null
   br i1 %eq21, label %if.then22, label %if.else23
 
@@ -23577,23 +23294,23 @@ if.end17:                                         ; preds = %if.then16, %if.then
   br label %if.end14
 
 if.then22:                                        ; preds = %if.else
-  %recv_head = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 5
+  %recv_head = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 5
   store ptr %global.load, ptr %recv_head, align 8
-  %recv_tail25 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 6
+  %recv_tail25 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
   store ptr %global.load, ptr %recv_tail25, align 8
   br label %if.end24
 
 if.else23:                                        ; preds = %if.else
-  %load.struct26 = load %_Z7Mailbox, ptr %0, align 8
-  %recv_tail27 = extractvalue %_Z7Mailbox %load.struct26, 6
+  %load.struct26 = load %_Z7Channel, ptr %0, align 8
+  %recv_tail27 = extractvalue %_Z7Channel %load.struct26, 6
   %next28 = getelementptr inbounds %_Z9SchedTask, ptr %recv_tail27, i32 0, i32 2
   store ptr %global.load, ptr %next28, align 8
-  %recv_tail29 = getelementptr inbounds %_Z7Mailbox, ptr %0, i32 0, i32 6
+  %recv_tail29 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 6
   store ptr %global.load, ptr %recv_tail29, align 8
   br label %if.end24
 
 if.end24:                                         ; preds = %if.else23, %if.then22
-  call void @_ZN7Mailbox7releaseEP7Mailbox(ptr %0)
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   %global.load30 = load ptr, ptr @current_scheduler, align 8
   %load.struct31 = load %_Z9Scheduler, ptr %global.load30, align 8
   %blocked = extractvalue %_Z9Scheduler %load.struct31, 3
@@ -23609,7 +23326,7 @@ if.end24:                                         ; preds = %if.else23, %if.then
   br label %if.end14
 }
 
-define linkonce_odr void @_ZN7MailboxC1Ev(ptr %0) {
+define linkonce_odr void @_ZN7ChannelC1Ev(ptr %0) {
 entry:
   ret void
 }
