@@ -1,0 +1,104 @@
+; Default task pool with ncpu-based worker count (milestone 3.3
+; groundwork): TaskPool.default_pool() lazily builds this thread's pool
+; with TaskPool.ncpu() workers behind a TLS cell, repeat calls return
+; the SAME pool, and a wave submitted to it completes. A spawned thread
+; builds its OWN default pool and runs a wave too — its exit trampoline
+; shuts that pool down (TaskPool.drain_default). The heap trace proves
+; the teardown: a missed drain leaves the child's TaskPool.pool_page
+; unbalanced and the atexit dump would not print the balanced line.
+; Expected: default-pool-ok done
+; ExpectedErr: all heap-page alloc/release balanced
+
+function setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
+
+; Square the index into slot [index] of the caller's vector (the 3.2
+; disjoint-slot cell shape: {index, data, length}).
+procedure square_task(arg: pointer[void]) returns pointer[void]
+{
+    let cell arg as pointer[size_t]
+    let i *cell
+    let dp (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[i64]
+    let len *(((cell as size_t) + (16 as size_t)) as pointer[size_t])
+    var v Vector[i64](dp, len)
+    let n i as i64
+    v.put(i, n * n)
+    null
+}
+
+; Run a 20-task wave through THIS thread's default pool and write the
+; slot sum into the caller's result cell. The second default_pool()
+; call must hand back the same pool — a fresh one per call would spawn
+; ncpu threads per wave.
+procedure run_wave(arg: pointer[void]) returns pointer[void]
+{
+    let out arg as pointer[size_t]
+    let pool TaskPool.default_pool()
+    let again TaskPool.default_pool()
+    if (pool as size_t) <> (again as size_t)
+        exit 3
+    let g TaskGroup.create()
+    var results Vector[i64](20 as size_t)
+    var cells u8[480]
+    let cbase cells as pointer[size_t]
+    var i: size_t 0
+    while i < (20 as size_t)
+    {
+        let c ((cbase as size_t) + (i * (24 as size_t))) as pointer[size_t]
+        set *c: i
+        set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): results.data as size_t
+        set *(((c as size_t) + (16 as size_t)) as pointer[size_t]): results.length
+        TaskPool.submit(pool, &square_task, c as pointer[void], g)
+        set i: i + (1 as size_t)
+    }
+    TaskGroup.wait(g)
+    var sum 0 as i64
+    set i: 0 as size_t
+    while i < (20 as size_t)
+    {
+        let v results.get i
+        if v <> null
+            set sum: sum + (*v)
+        set i: i + (1 as size_t)
+    }
+    TaskGroup.dispose(g)
+    set *out: sum as size_t
+    null
+}
+
+let sc setenv("SCALY_TRACE_HEAP", "1", 1 as i32)
+
+if TaskPool.ncpu() < (1 as i64)
+    exit 2
+
+; A spawned thread's wave: its default pool must be created AND torn
+; down again entirely within the thread's lifetime.
+var child_cell u8[8]
+let ccp child_cell as pointer[size_t]
+set *ccp: 0 as size_t
+let t Thread.spawn(&run_wave, child_cell as pointer[void])
+Thread.join(t)
+if (*ccp) <> (2470 as size_t)
+{
+    Console.println "child-sum-bad"
+    exit 1
+}
+
+; Main's own wave through main's own default pool.
+var main_cell u8[8]
+let mcp main_cell as pointer[size_t]
+set *mcp: 0 as size_t
+let r run_wave(main_cell as pointer[void])
+if (*mcp) <> (2470 as size_t)
+{
+    Console.println "main-sum-bad"
+    exit 1
+}
+
+; Main's default pool normally lives until process exit — drain it
+; explicitly here so the trace balances, and again to prove the drain
+; is idempotent and leaves the TLS cell reusable.
+TaskPool.drain_default()
+TaskPool.drain_default()
+
+Console.print "default-pool-ok "
+Console.println "done"

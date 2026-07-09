@@ -330,6 +330,11 @@ procedure scaly_eio_wake(q: i32, w: i32) returns i32 extern
 ; event is deregistered; it dies with the queue anyway).
 procedure scaly_eio_wake_close(q: i32, w: i32) returns i32 extern
 
+; Online CPU count (milestone 3.3, shim rule (a): the _SC_NPROCESSORS_ONLN
+; constant's value is OS-specific). The ncpu-based worker default for
+; TaskPool.default_pool. Never less than 1.
+function scaly_eio_ncpu() returns i32 extern
+
 ; POSIX close(2) — pool pipes and pollers at thread exit (milestone 2.5
 ; residual). Declared (int)->(int) to MATCH scalyls's existing declare:
 ; the whole-program llvm-link sees ONE `close` declaration across the
@@ -391,11 +396,13 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
     let host Page.get(raw)
     Page.release_page_traced(host, "Thread.spawn_cell")
     scaly_call_ptr(fn_v as pointer[void], arg_v as pointer[void])
-    ; Milestone-2.5 residuals: shut down the thread's I/O worker pool
-    ; (joins the workers — each reclaims its own state through this
-    ; very trampoline) and close its scheduler's poller + wake handle,
-    ; BEFORE the allocator reclaim below (drain_pool frees pages, and
-    ; after the reclaim there is no allocator state left).
+    ; Milestone-2.5/3.3 residuals: shut down the thread's default task
+    ; pool and I/O worker pool (joining workers — each reclaims its own
+    ; state through this very trampoline) and close its scheduler's
+    ; poller + wake handle, BEFORE the allocator reclaim below (the
+    ; drains free pages, and after the reclaim there is no allocator
+    ; state left).
+    TaskPool.drain_default()
     Io.drain_pool()
     Io.close_poller()
     Fiber.drain_stack_pool()
@@ -481,6 +488,14 @@ mutable io_offloads: i64 0
 ; freed heap page can be re-allocated by another thread at any moment.
 mutable io_poller_fd: int 0
 mutable io_wake_fd: int 0
+
+; This thread's default task pool (milestone 3.3, pointer[TaskPool];
+; null until the first TaskPool.default_pool call — the `parallel for`
+; dispatch target). Thread-local like the I/O pool: the pool pointer
+; rides a TLS cell, no process-global mutable state needed. A spawned
+; thread's pool is shut down by the exit trampoline (drain_default);
+; the main thread's lives until process exit.
+mutable task_default_pool: pointer[void] null
 
 ; Guard-page fault classifier state: installed once, reads only globals
 ; (it runs in signal context). guard_page_size is cached at create time
@@ -2401,6 +2416,39 @@ define TaskPool
         let pp Page.get(pl as pointer[void])
         pp.deallocate_extensions()
         Page.release_page_traced(pp, "TaskPool.pool_page")
+    }
+
+    ; Online CPU count — the worker default for default_pool (3.3).
+    function ncpu() returns i64
+        scaly_eio_ncpu() as i64
+
+    ; This thread's default pool, created on first demand with ncpu
+    ; workers — the dispatch target of the `parallel for` emission.
+    ; Reached through the TLS cell task_default_pool (never handed to
+    ; another thread's TLS — workers reach the pool via their spawn
+    ; cells like any pool).
+    procedure default_pool() returns pointer[TaskPool]
+    {
+        if task_default_pool <> null
+            return task_default_pool as pointer[TaskPool]
+        let pl TaskPool.create(TaskPool.ncpu())
+        set task_default_pool: pl as pointer[void]
+        pl
+    }
+
+    ; Shut this thread's default pool down if one was created. Called by
+    ; the thread-exit trampoline BEFORE allocator reclaim (shutdown joins
+    ; the workers and frees the pool page). Safe there: every `parallel
+    ; for` waits on its group before continuing, so nothing is in flight
+    ; when the thread's entry has returned.
+    procedure drain_default()
+    {
+        if task_default_pool <> null
+        {
+            let pl task_default_pool as pointer[TaskPool]
+            set task_default_pool: null
+            TaskPool.shutdown(pl)
+        }
     }
 }
 

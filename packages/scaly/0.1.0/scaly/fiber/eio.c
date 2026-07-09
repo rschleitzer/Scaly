@@ -394,3 +394,16 @@ int scaly_eio_accept(int fd)
         return -1;
     }
 }
+
+/* Online CPU count — the ncpu-based worker default for task pools
+ * (stage-3 milestone 3.3). Shim rule (a): the _SC_NPROCESSORS_ONLN
+ * constant's VALUE is OS-specific (darwin 58, glibc 84), so a Scaly
+ * extern cannot pass it portably — the seed ships one scaly.ll for
+ * all targets. Never less than 1. */
+int scaly_eio_ncpu(void)
+{
+    long n = sysconf(_SC_NPROCESSORS_ONLN);
+    if (n < 1)
+        return 1;
+    return (int)n;
+}
