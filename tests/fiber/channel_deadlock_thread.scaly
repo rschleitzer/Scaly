@@ -1,0 +1,30 @@
+; Deadlock detection across threads: the main thread blocks receiving on
+; channel A while a worker thread blocks receiving on channel B; each
+; channel keeps a live (never-sending) send handle so neither closes, and
+; neither thread ever sends. With every live thread blocked in a channel
+; wait and no wake in flight, the bounded wait trips the global quiescence
+; check and traps exit 106 instead of hanging. (Before the fix a cross-
+; thread wait cycle hung forever — only single-thread cycles hit exit 106
+; via Scheduler.run.)
+; ExpectedExit: 106
+
+procedure worker(arg: pointer[void]) returns pointer[void]
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    ; The channel arrives through the spawn arg — mutable globals are
+    ; thread_local (M2.2), so a global would read as null here.
+    let b arg as pointer[Channel]
+    let raw Channel.receive(b)
+    null
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let cb Channel.create()
+let th Thread.spawn(&worker, cb as pointer[void])
+let ca Channel.create()
+let raw Channel.receive(ca)
+Thread.join(th)
+Console.println "unreachable"
+Page.release_page(page)

@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 
 #define SCALY_EIO_MAX_EVENTS 64
@@ -90,10 +91,13 @@ int scaly_eio_arm(int q, int fd, int for_write, void* tag)
     return 0;
 }
 
-int scaly_eio_wait(int q, void** tags, int max)
+/* ms < 0 blocks until an event fires; ms >= 0 returns 0 if the timeout
+ * elapses first (the deadlock-detection wait, milestone 2.4 residual). */
+static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
 {
     struct kevent evs[SCALY_EIO_MAX_EVENTS];
     struct kevent* chg = 0;
+    struct timespec ts, *tsp = 0;
     int nchg = 0, n, i, out = 0;
     if (max > SCALY_EIO_MAX_EVENTS)
         max = SCALY_EIO_MAX_EVENTS;
@@ -103,9 +107,15 @@ int scaly_eio_wait(int q, void** tags, int max)
         nchg = scaly_eio_nchanges;
         scaly_eio_nchanges = 0;
     }
+    if (ms >= 0)
+    {
+        ts.tv_sec = ms / 1000;
+        ts.tv_nsec = (long)(ms % 1000) * 1000000L;
+        tsp = &ts;
+    }
     do
     {
-        n = kevent(q, chg, nchg, evs, max, 0);
+        n = kevent(q, chg, nchg, evs, max, tsp);
         /* EINTR fires during the wait, AFTER the changelist was applied;
          * chg stays for the retry anyway — re-adding an identical oneshot
          * event is idempotent (same fd/filter/udata overwrites). */
@@ -120,6 +130,16 @@ int scaly_eio_wait(int q, void** tags, int max)
         tags[out++] = evs[i].udata;
     }
     return out;
+}
+
+int scaly_eio_wait(int q, void** tags, int max)
+{
+    return scaly_eio_wait_ms(q, tags, max, -1);
+}
+
+int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
+{
+    return scaly_eio_wait_ms(q, tags, max, ms);
 }
 
 /* Cross-thread wake channel (milestone 2.4, shim rule (a): EVFILT_USER is
@@ -179,18 +199,30 @@ int scaly_eio_arm(int q, int fd, int for_write, void* tag)
     return rc;
 }
 
-int scaly_eio_wait(int q, void** tags, int max)
+/* ms < 0 blocks until an event fires; ms >= 0 returns 0 if the timeout
+ * elapses first (the deadlock-detection wait, milestone 2.4 residual). */
+static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
 {
     struct epoll_event evs[SCALY_EIO_MAX_EVENTS];
     int n, i;
     if (max > SCALY_EIO_MAX_EVENTS)
         max = SCALY_EIO_MAX_EVENTS;
     do
-        n = epoll_wait(q, evs, max, -1);
+        n = epoll_wait(q, evs, max, ms);
     while (n < 0 && errno == EINTR);
     for (i = 0; i < n; i++)
         tags[i] = evs[i].data.ptr;
     return n;
+}
+
+int scaly_eio_wait(int q, void** tags, int max)
+{
+    return scaly_eio_wait_ms(q, tags, max, -1);
+}
+
+int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
+{
+    return scaly_eio_wait_ms(q, tags, max, ms);
 }
 
 /* Cross-thread wake channel (milestone 2.4): an eventfd registered

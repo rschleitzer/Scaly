@@ -307,6 +307,9 @@ procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern
 function scaly_eio_create() returns i32 extern
 function scaly_eio_arm(q: i32, fd: i32, for_write: i32, tag: pointer[void]) returns i32 extern
 function scaly_eio_wait(q: i32, tags: pointer[void], max: i32) returns i32 extern
+; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
+; bounded wait behind cross-thread deadlock detection, M2.4 residual).
+function scaly_eio_wait_timeout(q: i32, tags: pointer[void], max: i32, ms: i32) returns i32 extern
 function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
 procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
@@ -374,6 +377,74 @@ procedure pthread_join(thread: size_t, retval: pointer[void]) returns i32 extern
 ; first argument).
 function scaly_call_ptr(fn: pointer[void], arg: pointer[void]) returns pointer[void] extern
 
+function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+
+; ---- Cross-thread deadlock detection (milestone 2.4 residual) ----
+;
+; A single-thread channel deadlock is caught by exit 106 (Scheduler.run /
+; join see the ready queue drained with tasks still blocked). The cross-
+; thread case used to hang forever: a receiver parked on a channel whose
+; only sender is itself blocked has no local signal that no wake will ever
+; come. This closes the SOUND part of that gap without risking a false
+; trap.
+;
+; State (one process-global record, reached by every thread): `threads`
+; over-approximates the live threads that could still send or wake (every
+; OS thread is counted from spawn to exit — over-counting only ever misses
+; a deadlock, never invents one); `blocked` counts threads currently
+; inside a channel-motivated poller wait; `epoch` is bumped on every event
+; that could wake such a waiter (a queued send, a close, a routed task).
+; A channel wait is BOUNDED (CHAN_DEADLOCK_MS): on timeout, if no channel
+; event occurred while we waited (epoch unchanged) AND every live thread
+; is blocked on a channel (`blocked >= threads`), no send/wake can ever
+; arrive, so it is a genuine deadlock → exit 106. Sound because a thread
+; not blocked here (running, sleep-polling a bounded send, or waiting on
+; real I/O with io_waiting > 0) keeps `blocked < threads`, and any wake in
+; flight bumps the epoch or returns the wait with events. It is NOT
+; complete: an unrelated idle background thread (e.g. a pooled worker
+; parked on its pipe) is counted in `threads` but never in `blocked`, so
+; it masks detection — that case still hangs, exactly as before.
+define DeadlockState
+(
+    threads: u64
+    blocked: u64
+    epoch: u64
+)
+
+; Bounded channel-wait timeout: long enough that the idle re-check cost is
+; nil (a real wake pokes the poller and returns at once; the timeout only
+; bounds detection latency), short enough that a deadlock traps promptly.
+define CHAN_DEADLOCK_MS i32 100
+
+; Process-global — NOT thread_local (the `shared_` prefix exempts it, like
+; the heap tracer). Allocated once, single-threaded, on first touch (the
+; first Thread.spawn or the first channel wait, both on the main thread
+; before any concurrency); `threads` starts at 1 for the main thread.
+mutable shared_deadlock: pointer[DeadlockState] null
+
+procedure ensure_deadlock_state()
+{
+    if shared_deadlock <> null
+        return
+    let d aligned_alloc(8, (sizeof DeadlockState) as i64) as pointer[DeadlockState]
+    set d.threads: 1 as u64
+    set d.blocked: 0 as u64
+    set d.epoch: 0 as u64
+    set shared_deadlock: d
+}
+
+; Note a channel wake event (queued send / close / routed task) so a
+; waiter that observed quiescence just before it does not misread it as a
+; deadlock. Cheap no-op until the state exists (no waiter can exist yet).
+procedure deadlock_event()
+{
+    let d shared_deadlock
+    if d = null
+        return
+    let ep &d.epoch
+    scaly_atomic_add_u64(ep, 1 as u64)
+}
+
 ; The pthread entry of every Thread.spawn (milestone 2.3b): unpacks the
 ; spawn cell ({fn, arg} on their own heap page, released BEFORE the
 ; entry runs — cross-thread frees are safe since 2.3), runs the user
@@ -401,6 +472,14 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
     TaskPool.drain_default()
     Io.drain_pool()
     Io.close_poller()
+    ; This thread can no longer send or wake — drop it from the deadlock
+    ; census so the remaining threads' next bounded wait can conclude.
+    let d shared_deadlock
+    if d <> null
+    {
+        let tp &d.threads
+        scaly_atomic_add_u64(tp, (0 as u64) - (1 as u64))
+    }
     Fiber.drain_stack_pool()
     scaly_thread_release_buckets()
     null
@@ -1024,7 +1103,43 @@ define Scheduler
     {
         let s current_scheduler as pointer[Scheduler]
         var tagbuf u8[512]
-        let n scaly_eio_wait(s.eio, tagbuf as pointer[void], 64 as i32)
+        var n 0 as i32
+        if s.io_waiting > 0
+        {
+            ; At least one fd-readiness waiter: block until the OS reports
+            ; progress. External I/O is never a channel deadlock, so this
+            ; leg is unbounded exactly as before.
+            set n: scaly_eio_wait(s.eio, tagbuf as pointer[void], 64 as i32)
+        }
+        else
+        {
+            ; Purely channel-motivated (task channel parks, or a main-
+            ; context channel wait): bound the wait so a global channel
+            ; deadlock is trapped (exit 106) instead of hanging. Mark this
+            ; thread blocked around the wait; on a timeout with no channel
+            ; event (epoch stable) and every live thread blocked, no wake
+            ; can ever come.
+            ensure_deadlock_state()
+            let d shared_deadlock
+            let ep &d.epoch
+            let bp &d.blocked
+            let tp &d.threads
+            let e0 scaly_atomic_load_u64(ep)
+            scaly_atomic_add_u64(bp, 1 as u64)
+            set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[void], 64 as i32, CHAN_DEADLOCK_MS)
+            if n = (0 as i32)
+            {
+                let e1 scaly_atomic_load_u64(ep)
+                if e1 = e0
+                {
+                    let nb scaly_atomic_load_u64(bp)
+                    let nt scaly_atomic_load_u64(tp)
+                    if nb >= nt
+                        exit 106
+                }
+            }
+            scaly_atomic_add_u64(bp, (0 as u64) - (1 as u64))
+        }
         if n = ((0 - 1) as i32)
             exit 107
         var main_woke false
@@ -1257,6 +1372,12 @@ define Io
         var q s.eio
         if q = ((0 - 1) as i32)
         {
+            ; This scheduler has no poller yet, so a non-zero fd mirror
+            ; belongs to a PRIOR scheduler on this thread (the sequential-
+            ; schedulers-on-one-thread pattern — M2.4/2.5 residual). Reap
+            ; it now instead of leaking its poller + wake fds; the prior
+            ; scheduler is defunct (this thread moved on to a new one).
+            Io.close_poller()
             set q: scaly_eio_create()
             if q = ((0 - 1) as i32)
                 exit 107
@@ -1762,6 +1883,7 @@ define Channel
     ; → inject queue + wake (its drain_inject adjusts the counters).
     procedure route(r: pointer[SchedTask])
     {
+        deadlock_event()
         if r.home = current_scheduler
         {
             let s current_scheduler as pointer[Scheduler]
@@ -1855,6 +1977,9 @@ define Channel
                     set m.tail: n
                 }
                 set m.count: m.count + (1 as i64)
+                ; A queued message lets a waiting receiver progress —
+                ; note the event so a concurrent deadlock check re-arms.
+                deadlock_event()
                 let r Channel.pop_receiver(m)
                 let rs m.recv_sched
                 Channel.release(m)
@@ -1927,6 +2052,8 @@ define Channel
             return
         }
         set m.closed: true
+        ; Close wakes every parked receiver (with null) — note the event.
+        deadlock_event()
         var chain m.recv_head
         set m.recv_head: null
         set m.recv_tail: null
@@ -2058,6 +2185,14 @@ define Thread
         set *cell: fn as size_t
         let slot1 (cell as size_t + (8 as size_t)) as pointer[size_t]
         set *slot1: arg as size_t
+        ; Count the new thread in the deadlock census BEFORE it starts, so
+        ; it is a known potential sender before it can do anything (the
+        ; trampoline drops the count at exit). Single-threaded on the
+        ; first spawn — the state is created here if needed.
+        ensure_deadlock_state()
+        let d shared_deadlock
+        let tp &d.threads
+        scaly_atomic_add_u64(tp, 1 as u64)
         var handle u8[8]
         let hp handle as pointer[size_t]
         let rc pthread_create(hp, null, &scaly_thread_start, cell as pointer[void])

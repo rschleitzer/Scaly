@@ -1,0 +1,14 @@
+; Deadlock detection, single thread: a lone main-context receiver on a
+; channel with a live send handle (held by main itself, never used) can
+; never make progress — no other thread exists to send, and the channel
+; is not closed. The bounded channel wait detects that every live thread
+; is blocked with no event in flight and traps exit 106 instead of
+; hanging forever (the pre-fix behavior).
+; ExpectedExit: 106
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let ch Channel.create()
+let raw Channel.receive(ch)
+Console.println "unreachable"
+Page.release_page(page)
