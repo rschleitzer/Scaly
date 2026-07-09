@@ -1,0 +1,211 @@
+; HotSpot per-site accumulation (stage-4 milestone 4.3): every
+; `parallel for` site carries thread-local volume/calibration
+; accumulators and one shared published per-iteration cost. Wave 1: a
+; tiny cold site never accumulates enough volume to matter and never
+; submits. Wave 2: a short-but-hot site (thousands of executions)
+; crosses the volume threshold, wall-to-wall-measures a few
+; executions, publishes its cost, and settles PROMOTED-SEQUENTIAL —
+; still zero submits (its total is far below the head-fork gate), and
+; from then on zero clock reads too. Waves 3/4 (range + iterator):
+; one heavy execution forks mid-loop (the 4.2 gate) and PUBLISHES the
+; measured cost; a following SHORT execution of the same site — too
+; short for the cold gates on this hardware — forks anyway from the
+; persisted calibration (head-fork; the iterator forks at its C-th
+; element by counter compare alone). Sums verify every execution,
+; including capture transport through the promoted dispatch.
+; Expected: parallel-hotspot-ok done
+
+; Pure leaf work. spin(seed) = seed + 1999000.
+function spin(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (2000 as i64)
+    {
+        set acc: acc + k
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+; Heavier leaf, ~10µs scale. spin_big(seed) = seed + 799980000.
+function spin_big(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (40000 as i64)
+    {
+        set acc: acc + k
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+define Item(idx: size_t, val: i64)
+
+procedure wave_tiny(r: Vector[i64])
+{
+    parallel for i in 32
+        r.put(i, (i * 3) as i64)
+}
+
+procedure wave_hot(r: Vector[i64])
+{
+    parallel for i in 8
+    {
+        let v spin(i as i64)
+        r.put(i, v)
+    }
+}
+
+procedure wave_range(r: Vector[i64], n: int, bias: i64)
+{
+    parallel for i in n
+    {
+        let v spin_big(i as i64) + bias
+        r.put(i, v)
+    }
+}
+
+procedure wave_iter(r: Vector[i64], items: Vector[Item], bias: i64)
+{
+    parallel for item in items
+    {
+        let v spin_big(item.val) + bias
+        r.put(item.idx, v)
+    }
+}
+
+function vsum(r: Vector[i64], n: size_t) returns i64
+{
+    var s 0 as i64
+    var j: size_t 0
+    while j < n
+    {
+        let v r.get j
+        if v <> null
+            set s: s + (*v)
+        set j: j + 1
+    }
+    s
+}
+
+; Create the pool up front so submit deltas are observable from zero.
+let pool TaskPool.default_pool()
+
+; ---- Wave 1: tiny cold site — 300 executions stay far below the
+; volume threshold; never submits, never reads a clock.
+var r1 Vector[i64](32)
+var e 0
+while e < 300
+{
+    wave_tiny(r1)
+    set e: e + 1
+}
+if vsum(r1, 32 as size_t) <> (1488 as i64)
+{
+    Console.println "wave1-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "wave1-forked"
+    exit 1
+}
+
+; ---- Wave 2: short-but-hot site — crosses the volume threshold,
+; calibrates, promotes to zero-clock sequential; still zero submits.
+var r2 Vector[i64](8)
+set e: 0
+while e < 3000
+{
+    wave_hot(r2)
+    set e: e + 1
+}
+if vsum(r2, 8 as size_t) <> (15992028 as i64)
+{
+    Console.println "wave2-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "wave2-forked"
+    exit 1
+}
+
+; ---- Wave 3: per-site persistence (range). One heavy execution
+; forks via the measured 4.2 gate and publishes the cost ...
+let bias 7 as i64
+var r3 Vector[i64](512)
+wave_range(r3, 512, bias)
+if vsum(r3, 512 as size_t) <> (409589894400 as i64)
+{
+    Console.println "wave3-sum-bad"
+    exit 1
+}
+let subs3 TaskPool.submit_count(pool)
+if subs3 = (0 as u64)
+{
+    Console.println "wave3-no-fork"
+    exit 1
+}
+; ... and a short execution of the SAME site forks from the persisted
+; calibration (head-fork over the whole range).
+var r3b Vector[i64](16)
+wave_range(r3b, 16, bias)
+if vsum(r3b, 16 as size_t) <> (12799680232 as i64)
+{
+    Console.println "wave3b-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) = subs3
+{
+    Console.println "wave3b-no-fork"
+    exit 1
+}
+
+; ---- Wave 4: per-site persistence (iterator). Same shape; the
+; promoted short execution forks at its C-th element without ever
+; reading a clock.
+var items Vector[Item](512)
+var j: size_t 0
+while j < (512 as size_t)
+{
+    items.put(j, Item(j, j as i64))
+    set j: j + 1
+}
+var r4 Vector[i64](512)
+wave_iter(r4, items, bias)
+if vsum(r4, 512 as size_t) <> (409589894400 as i64)
+{
+    Console.println "wave4-sum-bad"
+    exit 1
+}
+let subs4 TaskPool.submit_count(pool)
+if subs4 = subs3
+{
+    Console.println "wave4-no-fork"
+    exit 1
+}
+var items2 Vector[Item](16)
+set j: 0 as size_t
+while j < (16 as size_t)
+{
+    items2.put(j, Item(j, j as i64))
+    set j: j + 1
+}
+var r4b Vector[i64](16)
+wave_iter(r4b, items2, bias)
+if vsum(r4b, 16 as size_t) <> (12799680232 as i64)
+{
+    Console.println "wave4b-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) = subs4
+{
+    Console.println "wave4b-no-fork"
+    exit 1
+}
+
+Console.print "parallel-hotspot-ok "
+Console.println "done"

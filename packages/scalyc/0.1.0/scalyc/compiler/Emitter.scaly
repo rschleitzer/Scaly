@@ -11160,6 +11160,56 @@ define Emitter
         let c_iterfork LLVMConstInt(i64_ty, 65536, 0)
         let c_minchunk LLVMConstInt(i64_ty, 16777216, 0)
         let c_oversub LLVMConstInt(i64_ty, 4, 0)
+        ; 4.3 HotSpot per-site constants: promotion volume threshold
+        ; (~1ms of weight-units accumulated per thread), the volume
+        ; saturation cap (2^40 — keeps the accumulator from ever
+        ; wrapping), the calibration publish floor (16384ns measured),
+        ; the per-execution measurement clamp (2x the cold fork gate —
+        ; an inline-completed loop cannot legitimately take much longer,
+        ; so one preemption outlier cannot poison the calibration), and
+        ; the promoted head-fork gate: the SAME 131072ns profitability
+        ; bar as the cold gate (<<10 like the per-iteration cost it
+        ; divides) — promotion moves the decision to the loop HEAD
+        ; (full-range capture, no warmup, zero clock reads), it does
+        ; not lower the bar (measured: forking ~100us of work wins
+        ; less than 2x on 10 cores — not worth the energy).
+        let c_hotvol LLVMConstInt(i64_ty, 1048576, 0)
+        let volcap_v (1048576 as size_t) * (1048576 as size_t)
+        let c_volcap LLVMConstInt(i64_ty, volcap_v, 0)
+        let c_calmin LLVMConstInt(i64_ty, 16384, 0)
+        let c_caliters LLVMConstInt(i64_ty, 512, 0)
+        let c_calelmax LLVMConstInt(i64_ty, 262144, 0)
+        let c_forkp LLVMConstInt(i64_ty, 134217728, 0)
+        let bw_const LLVMConstInt(i64_ty, body_weight, 0)
+
+        ; ---- 4.3 HotSpot per-site state. Four site-private globals:
+        ; a thread-local work-volume accumulator plus thread-local
+        ; calibration sums (per-site, per-thread — no synchronization),
+        ; and ONE process-shared cell holding the published measured
+        ; per-iteration cost (<<10; 0 = cold, >0 = promoted) — written
+        ; rarely (at a fork, or when the calibration floor is reached),
+        ; read once per execution. Private linkage like the task fn:
+        ; llvm-link renames on collision, opt strips the copies orphaned
+        ; by linkonce_odr dedup.
+        let sv_name "parfor.site.vol"
+        let site_vol LLVMAddGlobal(llvm_module, i64_ty, sv_name.c_data())
+        LLVMSetInitializer(site_vol, c0)
+        LLVMSetLinkage(site_vol, LLVMLinkage.Private())
+        LLVMSetThreadLocal(site_vol, 1)
+        let sc_name "parfor.site.calns"
+        let site_calns LLVMAddGlobal(llvm_module, i64_ty, sc_name.c_data())
+        LLVMSetInitializer(site_calns, c0)
+        LLVMSetLinkage(site_calns, LLVMLinkage.Private())
+        LLVMSetThreadLocal(site_calns, 1)
+        let si_name "parfor.site.caliters"
+        let site_caliters LLVMAddGlobal(llvm_module, i64_ty, si_name.c_data())
+        LLVMSetInitializer(site_caliters, c0)
+        LLVMSetLinkage(site_caliters, LLVMLinkage.Private())
+        LLVMSetThreadLocal(site_caliters, 1)
+        let sp_name "parfor.site.p1k"
+        let site_p1k LLVMAddGlobal(llvm_module, i64_ty, sp_name.c_data())
+        LLVMSetInitializer(site_p1k, c0)
+        LLVMSetLinkage(site_p1k, LLVMLinkage.Private())
 
         ; Driver state slots; the fork paths hand the shared dispatch
         ; its inputs through slots too (no phis across block seams).
@@ -11173,15 +11223,24 @@ define Emitter
         let buf_slot entry_alloca(ptr_ty, "parfor.fork.buf")
         let grp_slot entry_alloca(ptr_ty, "parfor.fork.grp")
         let gpage_slot entry_alloca(ptr_ty, "parfor.fork.gpage")
+        let entryp_slot entry_alloca(i64_ty, "parfor.entryp")
+        let tentry_slot entry_alloca(i64_ty, "parfor.tentry")
+        let fp1k_slot entry_alloca(i64_ty, "parfor.fp1k")
         LLVMBuildStore(builder, c0, iv_drv)
         LLVMBuildStore(builder, check0_const, nc_slot)
         LLVMBuildStore(builder, c0, t0_slot)
         LLVMBuildStore(builder, c0, i0_slot)
+        LLVMBuildStore(builder, c0, tentry_slot)
         let buf_null LLVMConstNull(ptr_ty)
         LLVMBuildStore(builder, buf_null, buf_slot)
 
         let dispatch_block create_block("pfor.dispatch")
         let done_block create_block("pfor.done")
+        let xa_block create_block("pfor.exit.acct")
+        let xa_n_block create_block("pfor.exit.n")
+        let xa_acct_block create_block("pfor.exit.add")
+        let xa_meas_block create_block("pfor.exit.meas")
+        let xa_pub_block create_block("pfor.exit.pub")
 
         if for_expr.is_iterator_loop = false
         {
@@ -11203,12 +11262,67 @@ define Emitter
             let rc_later create_block("pfor.check.later")
             let rc_decide create_block("pfor.check.decide")
             let rc_fork create_block("pfor.fork")
+            let rg_prom create_block("pfor.gate.prom")
+            let rg_prom_fork create_block("pfor.gate.headfork")
+            let rg_prom_seq create_block("pfor.gate.seq")
+            let rg_cold create_block("pfor.gate.cold")
+            let rg_hot create_block("pfor.gate.hot")
+
+            ; ---- 4.3 entry gate: a promoted site (published per-
+            ; iteration cost > 0) decides at the HEAD from persisted
+            ; calibration — fork the WHOLE range when the projected
+            ; total clears the promoted gate (n >= C, C = gate/cost;
+            ; the division dodges the n*cost overflow; C floors at 1
+            ; so an empty range can never hand the dispatch a zero
+            ; wave), else run plain sequential with the checkpoint
+            ; sentinel parked at n (never matched — zero clock reads).
+            ; A cold site whose thread-local volume crossed the hot
+            ; threshold measures this execution wall-to-wall (entry
+            ; clock here, exit clock in the accounting block) so a
+            ; short-but-hot loop calibrates without ever reaching an
+            ; in-loop checkpoint.
+            let eg_p LLVMBuildLoad2(builder, i64_ty, site_p1k, "parfor.sitep")
+            LLVMBuildStore(builder, eg_p, entryp_slot)
+            let eg_isprom LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), eg_p, c0, "parfor.gate.isprom")
+            LLVMBuildCondBr(builder, eg_isprom, rg_prom, rg_cold)
+
+            LLVMPositionBuilderAtEnd(builder, rg_prom)
+            let eg_c0 LLVMBuildSDiv(builder, c_forkp, eg_p, "parfor.gate.c0")
+            let eg_cpos LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), eg_c0, c0, "parfor.gate.cpos")
+            let eg_c LLVMBuildSelect(builder, eg_cpos, eg_c0, c1, "parfor.gate.c")
+            let eg_fits LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), n64, eg_c, "parfor.gate.fits")
+            LLVMBuildCondBr(builder, eg_fits, rg_prom_fork, rg_prom_seq)
+
+            LLVMPositionBuilderAtEnd(builder, rg_prom_fork)
+            let hf_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
+            var hf_pget_args Vector[LLVMValueRef](1)
+            hf_pget_args.put(0, hf_group)
+            let hf_gpage LLVMBuildCall2(builder, pget_ty, pget_fn, hf_pget_args.data, 1, "parfor.gpage")
+            LLVMBuildStore(builder, c0, st_slot)
+            LLVMBuildStore(builder, n64, en_slot)
+            LLVMBuildStore(builder, eg_p, p1k_slot)
+            LLVMBuildStore(builder, hf_group, grp_slot)
+            LLVMBuildStore(builder, hf_gpage, gpage_slot)
+            LLVMBuildBr(builder, dispatch_block)
+
+            LLVMPositionBuilderAtEnd(builder, rg_prom_seq)
+            LLVMBuildStore(builder, n64, nc_slot)
+            LLVMBuildBr(builder, il_cond)
+
+            LLVMPositionBuilderAtEnd(builder, rg_cold)
+            let eg_vol LLVMBuildLoad2(builder, i64_ty, site_vol, "parfor.volv")
+            let eg_ishot LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), eg_vol, c_hotvol, "parfor.gate.ishot")
+            LLVMBuildCondBr(builder, eg_ishot, rg_hot, il_cond)
+
+            LLVMPositionBuilderAtEnd(builder, rg_hot)
+            let eg_t LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.tentry")
+            LLVMBuildStore(builder, eg_t, tentry_slot)
             LLVMBuildBr(builder, il_cond)
 
             LLVMPositionBuilderAtEnd(builder, il_cond)
             let il_i LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.cur")
             let il_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), il_i, n64, "parfor.inl.more")
-            LLVMBuildCondBr(builder, il_more, il_chk, done_block)
+            LLVMBuildCondBr(builder, il_more, il_chk, xa_block)
 
             LLVMPositionBuilderAtEnd(builder, il_chk)
             let il_nc LLVMBuildLoad2(builder, i64_ty, nc_slot, "parfor.nc")
@@ -11279,8 +11393,11 @@ define Emitter
 
             ; Fork: the remaining [i, n) leaves through the shared
             ; dispatch. i < n held at the checkpoint, so at least one
-            ; iteration is submitted.
+            ; iteration is submitted. The measured cost is published to
+            ; the site cell first — one fork promotes the site for every
+            ; later execution on any thread (4.3).
             LLVMPositionBuilderAtEnd(builder, rc_fork)
+            LLVMBuildStore(builder, rc_p1k, site_p1k)
             let rf_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
             var rf_pget_args Vector[LLVMValueRef](1)
             rf_pget_args.put(0, rf_group)
@@ -11347,12 +11464,42 @@ define Emitter
             let ic_meas create_block("pfor.check.meas")
             let ic_later create_block("pfor.check.later")
             let ic_fork create_block("pfor.fork")
+            let ic_prom create_block("pfor.check.prom")
+            let ic_clock create_block("pfor.check.clock")
+            let ic_forkm create_block("pfor.check.forkm")
+            let ig_prom create_block("pfor.gate.prom")
+            let ig_cold create_block("pfor.gate.cold")
+            let ig_hot create_block("pfor.gate.hot")
+
+            ; ---- 4.3 entry gate (iterator): a promoted site parks the
+            ; checkpoint at the C-th element — reaching it forks with
+            ; the persisted cost by pure counter compare, no clock read
+            ; on the promoted path; an iterator that ends earlier ran a
+            ; plain sequential loop. Cold/hot mirror the range gate.
+            let ig_p LLVMBuildLoad2(builder, i64_ty, site_p1k, "parfor.sitep")
+            LLVMBuildStore(builder, ig_p, entryp_slot)
+            let ig_isprom LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), ig_p, c0, "parfor.gate.isprom")
+            LLVMBuildCondBr(builder, ig_isprom, ig_prom, ig_cold)
+
+            LLVMPositionBuilderAtEnd(builder, ig_prom)
+            let ig_c LLVMBuildSDiv(builder, c_forkp, ig_p, "parfor.gate.c")
+            LLVMBuildStore(builder, ig_c, nc_slot)
+            LLVMBuildBr(builder, it_cond)
+
+            LLVMPositionBuilderAtEnd(builder, ig_cold)
+            let ig_vol LLVMBuildLoad2(builder, i64_ty, site_vol, "parfor.volv")
+            let ig_ishot LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), ig_vol, c_hotvol, "parfor.gate.ishot")
+            LLVMBuildCondBr(builder, ig_ishot, ig_hot, it_cond)
+
+            LLVMPositionBuilderAtEnd(builder, ig_hot)
+            let ig_t LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.tentry")
+            LLVMBuildStore(builder, ig_t, tentry_slot)
             LLVMBuildBr(builder, it_cond)
 
             LLVMPositionBuilderAtEnd(builder, it_cond)
             let it_e LLVMBuildCall2(builder, next_fn_ty, next_fn, next_args.data, 1, "parfor.next")
             let it_done LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), it_e, next_null, "parfor.it.done")
-            LLVMBuildCondBr(builder, it_done, done_block, it_chk)
+            LLVMBuildCondBr(builder, it_done, xa_block, it_chk)
 
             LLVMPositionBuilderAtEnd(builder, it_chk)
             let it_i LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.cur")
@@ -11388,7 +11535,19 @@ define Emitter
             ; Checkpoint. The iterator gate is elapsed-only (remaining
             ; is unknowable before draining); the gate constant sits
             ; above the noise floor, so clearing it implies calibrated.
+            ; A promoted site (4.3) reaches the checkpoint exactly at
+            ; the C-th element and forks with the persisted cost — no
+            ; clock is ever read on that path.
             LLVMPositionBuilderAtEnd(builder, ic_block)
+            let ic_ep LLVMBuildLoad2(builder, i64_ty, entryp_slot, "parfor.ep")
+            let ic_isprom LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), ic_ep, c0, "parfor.chk.isprom")
+            LLVMBuildCondBr(builder, ic_isprom, ic_prom, ic_clock)
+
+            LLVMPositionBuilderAtEnd(builder, ic_prom)
+            LLVMBuildStore(builder, ic_ep, fp1k_slot)
+            LLVMBuildBr(builder, ic_fork)
+
+            LLVMPositionBuilderAtEnd(builder, ic_clock)
             let ic_t LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.t")
             let ic_t0 LLVMBuildLoad2(builder, i64_ty, t0_slot, "parfor.t0v")
             let ic_isfirst LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), ic_t0, c0, "parfor.chk.isfirst")
@@ -11404,12 +11563,23 @@ define Emitter
             LLVMPositionBuilderAtEnd(builder, ic_meas)
             let ic_elapsed LLVMBuildSub(builder, ic_t, ic_t0, "parfor.elapsed")
             let ic_dofork LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), ic_elapsed, c_iterfork, "parfor.dofork")
-            LLVMBuildCondBr(builder, ic_dofork, ic_fork, ic_later)
+            LLVMBuildCondBr(builder, ic_dofork, ic_forkm, ic_later)
 
             LLVMPositionBuilderAtEnd(builder, ic_later)
             let icl_nc LLVMBuildMul(builder, it_i, c2, "parfor.nc.dbl2")
             LLVMBuildStore(builder, icl_nc, nc_slot)
             LLVMBuildBr(builder, it_body)
+
+            ; Measured fork: the per-iteration cost from the elapsed
+            ; window, handed to the fork through the slot (the promoted
+            ; path stores the persisted cost instead).
+            LLVMPositionBuilderAtEnd(builder, ic_forkm)
+            let if_i0 LLVMBuildLoad2(builder, i64_ty, i0_slot, "parfor.i0v")
+            let if_iters LLVMBuildSub(builder, it_i, if_i0, "parfor.iters")
+            let if_e10 LLVMBuildShl(builder, ic_elapsed, c10, "parfor.e10")
+            let if_p1k LLVMBuildSDiv(builder, if_e10, if_iters, "parfor.p1k")
+            LLVMBuildStore(builder, if_p1k, fp1k_slot)
+            LLVMBuildBr(builder, ic_fork)
 
             ; Fork: drain the REST of the iterator — seeded with the
             ; in-hand element, so at least one element is submitted —
@@ -11417,12 +11587,12 @@ define Emitter
             ; (doubling growth; retired buffers stay on the page until
             ; dispose), then leave through the shared dispatch over
             ; [0, m). The element pointers reach into the collection,
-            ; which outlives the parked wait.
+            ; which outlives the parked wait. Publishing the cost to
+            ; the site cell promotes the site (a promoted re-publish
+            ; stores the same value back — harmless).
             LLVMPositionBuilderAtEnd(builder, ic_fork)
-            let if_i0 LLVMBuildLoad2(builder, i64_ty, i0_slot, "parfor.i0v")
-            let if_iters LLVMBuildSub(builder, it_i, if_i0, "parfor.iters")
-            let if_e10 LLVMBuildShl(builder, ic_elapsed, c10, "parfor.e10")
-            let if_p1k LLVMBuildSDiv(builder, if_e10, if_iters, "parfor.p1k")
+            let if_fp LLVMBuildLoad2(builder, i64_ty, fp1k_slot, "parfor.fp1kv")
+            LLVMBuildStore(builder, if_fp, site_p1k)
             let if_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
             var if_pget_args Vector[LLVMValueRef](1)
             if_pget_args.put(0, if_group)
@@ -11515,12 +11685,73 @@ define Emitter
             let dd_buf LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.buf.final")
             LLVMBuildStore(builder, c0, st_slot)
             LLVMBuildStore(builder, dd_m, en_slot)
-            LLVMBuildStore(builder, if_p1k, p1k_slot)
+            LLVMBuildStore(builder, if_fp, p1k_slot)
             LLVMBuildStore(builder, dd_buf, buf_slot)
             LLVMBuildStore(builder, if_group, grp_slot)
             LLVMBuildStore(builder, if_gpage, gpage_slot)
             LLVMBuildBr(builder, dispatch_block)
         }
+
+        ; ---- 4.3 exit accounting: runs on inline completions ONLY (a
+        ; forked wave leaves through the dispatch, and its wall time
+        ; would include the parked wait). Promoted executions skip it
+        ; (their state is final); empty executions carry no signal.
+        ; Cold: one thread-local add of iterations x static weight —
+        ; no clock. Hot: the exit clock closes the wall-to-wall
+        ; measurement; elapsed is clamped (one preemption outlier must
+        ; not poison the calibration) and accumulated until the publish
+        ; floor, then the measured per-iteration cost (<<10) goes to
+        ; the shared site cell — the site is promoted for every thread
+        ; from then on, and both the volume and calibration accumulators
+        ; go quiet (the promoted path never touches them again).
+        LLVMPositionBuilderAtEnd(builder, xa_block)
+        let xa_ep LLVMBuildLoad2(builder, i64_ty, entryp_slot, "parfor.x.ep")
+        let xa_isprom LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), xa_ep, c0, "parfor.x.isprom")
+        LLVMBuildCondBr(builder, xa_isprom, done_block, xa_n_block)
+
+        LLVMPositionBuilderAtEnd(builder, xa_n_block)
+        let xa_iters LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.x.iters")
+        let xa_ran LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), xa_iters, c0, "parfor.x.ran")
+        LLVMBuildCondBr(builder, xa_ran, xa_acct_block, done_block)
+
+        LLVMPositionBuilderAtEnd(builder, xa_acct_block)
+        let xa_add LLVMBuildMul(builder, xa_iters, bw_const, "parfor.x.add")
+        let xa_v0 LLVMBuildLoad2(builder, i64_ty, site_vol, "parfor.x.v0")
+        let xa_v1 LLVMBuildAdd(builder, xa_v0, xa_add, "parfor.x.v1")
+        let xa_over LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), xa_v1, c_volcap, "parfor.x.over")
+        let xa_v2 LLVMBuildSelect(builder, xa_over, c_volcap, xa_v1, "parfor.x.v2")
+        LLVMBuildStore(builder, xa_v2, site_vol)
+        let xa_t0 LLVMBuildLoad2(builder, i64_ty, tentry_slot, "parfor.x.t0")
+        let xa_hot LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), xa_t0, c0, "parfor.x.hot")
+        LLVMBuildCondBr(builder, xa_hot, xa_meas_block, done_block)
+
+        LLVMPositionBuilderAtEnd(builder, xa_meas_block)
+        let xa_te LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.x.te")
+        let xa_el0 LLVMBuildSub(builder, xa_te, xa_t0, "parfor.x.el0")
+        let xa_big LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), xa_el0, c_calelmax, "parfor.x.big")
+        let xa_el LLVMBuildSelect(builder, xa_big, c_calelmax, xa_el0, "parfor.x.el")
+        let xa_cn0 LLVMBuildLoad2(builder, i64_ty, site_calns, "parfor.x.cn0")
+        let xa_cn1 LLVMBuildAdd(builder, xa_cn0, xa_el, "parfor.x.cn1")
+        LLVMBuildStore(builder, xa_cn1, site_calns)
+        let xa_ci0 LLVMBuildLoad2(builder, i64_ty, site_caliters, "parfor.x.ci0")
+        let xa_ci1 LLVMBuildAdd(builder, xa_ci0, xa_iters, "parfor.x.ci1")
+        LLVMBuildStore(builder, xa_ci1, site_caliters)
+        ; Publish needs BOTH floors: enough measured time (16384ns) AND
+        ; enough accumulated iterations (512) — averaging over many
+        ; windows keeps one clamped preemption outlier from inflating
+        ; the published cost enough to head-fork a nanosecond loop.
+        let xa_ready0 LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), xa_cn1, c_calmin, "parfor.x.ready0")
+        let xa_enough LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), xa_ci1, c_caliters, "parfor.x.enough")
+        let xa_ready LLVMBuildAnd(builder, xa_ready0, xa_enough, "parfor.x.ready")
+        LLVMBuildCondBr(builder, xa_ready, xa_pub_block, done_block)
+
+        LLVMPositionBuilderAtEnd(builder, xa_pub_block)
+        let xa_e10 LLVMBuildShl(builder, xa_cn1, c10, "parfor.x.e10")
+        let xa_p LLVMBuildSDiv(builder, xa_e10, xa_ci1, "parfor.x.p")
+        let xa_ppos LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), xa_p, c0, "parfor.x.ppos")
+        let xa_pf LLVMBuildSelect(builder, xa_ppos, xa_p, c1, "parfor.x.pf")
+        LLVMBuildStore(builder, xa_pf, site_p1k)
+        LLVMBuildBr(builder, done_block)
 
         ; ---- Shared dispatch: chunk the remaining range by the
         ; MEASURED per-iteration cost and hand it to the pool. The
