@@ -186,6 +186,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z4NodeIcE = type { i8, ptr }
 %_Z12ListIteratorIcE = type { ptr }
 %_Z14StringIterator = type { ptr, ptr }
+%_Z13DeadlockState = type { i64, i64, i64 }
 %_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, i1 }
 %_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64 }
 %_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr }
@@ -218,6 +219,8 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @"11HASH_PRIMES" = constant [30 x i64] [i64 3, i64 5, i64 11, i64 23, i64 53, i64 97, i64 193, i64 389, i64 769, i64 1543, i64 3079, i64 6151, i64 12289, i64 24593, i64 49157, i64 98317, i64 196613, i64 393241, i64 786433, i64 1572869, i64 3145739, i64 6291469, i64 12582917, i64 25165843, i64 50331653, i64 100663319, i64 201326611, i64 402653189, i64 805306457, i64 1610612741]
 @"8SIZE_MAX" = constant i64 -1
 @"11PACKED_SIZE" = constant i64 9
+@"16CHAN_DEADLOCK_MS" = constant i32 100
+@shared_deadlock = global ptr null
 @"15IO_POOL_WORKERS" = constant i64 4
 @"16MAP_ANON_PRIVATE" = constant i32 4130
 @"9PROT_NONE" = constant i32 0
@@ -21067,6 +21070,8 @@ declare i32 @scaly_eio_arm(i32, i32, i32, ptr)
 
 declare i32 @scaly_eio_wait(i32, ptr, i32)
 
+declare i32 @scaly_eio_wait_timeout(i32, ptr, i32, i32)
+
 declare i32 @scaly_eio_set_nonblocking(i32)
 
 declare i64 @scaly_eio_read(i32, ptr, i64)
@@ -21102,6 +21107,42 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 declare i32 @pthread_join(i64, ptr)
 
 declare ptr @scaly_call_ptr(ptr, ptr)
+
+define linkonce_odr void @_Z21ensure_deadlock_statev() {
+entry:
+  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %ne = icmp ne ptr %global.load, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call = call ptr @aligned_alloc(i64 8, i64 ptrtoint (ptr getelementptr (%_Z13DeadlockState, ptr null, i32 1) to i64))
+  %threads = getelementptr inbounds %_Z13DeadlockState, ptr %call, i32 0, i32 0
+  store i64 1, ptr %threads, align 8
+  %blocked = getelementptr inbounds %_Z13DeadlockState, ptr %call, i32 0, i32 1
+  store i64 0, ptr %blocked, align 8
+  %epoch = getelementptr inbounds %_Z13DeadlockState, ptr %call, i32 0, i32 2
+  store i64 0, ptr %epoch, align 8
+  store ptr %call, ptr @shared_deadlock, align 8
+  ret void
+}
+
+define linkonce_odr void @_Z14deadlock_eventv() {
+entry:
+  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z13DeadlockState, ptr %global.load, i32 0, i32 2
+  %0 = atomicrmw add ptr %addr.gep, i64 1 seq_cst, align 8
+  ret void
+}
 
 define linkonce_odr void @_ZN8TaskPool13drain_defaultEv() {
 entry:
@@ -21180,6 +21221,16 @@ entry:
   call void @_ZN8TaskPool13drain_defaultEv()
   call void @_ZN2Io10drain_poolEv()
   call void @_ZN2Io12close_pollerEv()
+  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %ne = icmp ne ptr %global.load, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z13DeadlockState, ptr %global.load, i32 0, i32 0
+  %2 = atomicrmw add ptr %addr.gep, i64 -1 seq_cst, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
   call void @_ZN5Fiber16drain_stack_poolEv()
   call void @_Z28scaly_thread_release_bucketsv()
   ret ptr null
@@ -22000,77 +22051,133 @@ entry:
   %arr.ptr = getelementptr inbounds [512 x i8], ptr %tagbuf, i64 0, i64 0
   %tagbuf1 = alloca ptr, align 8
   store ptr %arr.ptr, ptr %tagbuf1, align 8
+  %n = alloca i32, align 4
+  store i32 0, ptr %n, align 1
+  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting = extractvalue %_Z9Scheduler %load.struct, 5
+  %gt = icmp sgt i64 %io_waiting, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 4
   %field.val = load i32, ptr %field.inplace, align 4
   %tagbuf2 = load ptr, ptr %tagbuf1, align 8
   %call = call i32 @scaly_eio_wait(i32 %field.val, ptr %tagbuf2, i32 64)
-  %eq = icmp eq i32 %call, -1
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @exit(i64 107)
+  store i32 %call, ptr %n, align 1
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %entry
+if.else:                                          ; preds = %entry
+  call void @_Z21ensure_deadlock_statev()
+  %global.load3 = load ptr, ptr @shared_deadlock, align 8
+  %addr.gep = getelementptr inbounds %_Z13DeadlockState, ptr %global.load3, i32 0, i32 2
+  %addr.gep4 = getelementptr inbounds %_Z13DeadlockState, ptr %global.load3, i32 0, i32 1
+  %addr.gep5 = getelementptr inbounds %_Z13DeadlockState, ptr %global.load3, i32 0, i32 0
+  %atomic.load = load atomic i64, ptr %addr.gep seq_cst, align 8
+  %0 = atomicrmw add ptr %addr.gep4, i64 1 seq_cst, align 8
+  %field.inplace6 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 4
+  %field.val7 = load i32, ptr %field.inplace6, align 4
+  %tagbuf8 = load ptr, ptr %tagbuf1, align 8
+  %call9 = call i32 @scaly_eio_wait_timeout(i32 %field.val7, ptr %tagbuf8, i32 64, i32 100)
+  store i32 %call9, ptr %n, align 1
+  %n10 = load i32, ptr %n, align 4
+  %eq = icmp eq i32 %n10, 0
+  br i1 %eq, label %if.then11, label %if.end12
+
+if.end:                                           ; preds = %if.end12, %if.then
+  %n21 = load i32, ptr %n, align 4
+  %eq22 = icmp eq i32 %n21, -1
+  br i1 %eq22, label %if.then23, label %if.end24
+
+if.then11:                                        ; preds = %if.else
+  %atomic.load13 = load atomic i64, ptr %addr.gep seq_cst, align 8
+  %eq14 = icmp eq i64 %atomic.load13, %atomic.load
+  br i1 %eq14, label %if.then15, label %if.end16
+
+if.end12:                                         ; preds = %if.end16, %if.else
+  %1 = atomicrmw add ptr %addr.gep4, i64 -1 seq_cst, align 8
+  br label %if.end
+
+if.then15:                                        ; preds = %if.then11
+  %atomic.load17 = load atomic i64, ptr %addr.gep4 seq_cst, align 8
+  %atomic.load18 = load atomic i64, ptr %addr.gep5 seq_cst, align 8
+  %ge = icmp uge i64 %atomic.load17, %atomic.load18
+  br i1 %ge, label %if.then19, label %if.end20
+
+if.end16:                                         ; preds = %if.end20, %if.then11
+  br label %if.end12
+
+if.then19:                                        ; preds = %if.then15
+  call void @exit(i64 106)
+  br label %if.end20
+
+if.end20:                                         ; preds = %if.then19, %if.then15
+  br label %if.end16
+
+if.then23:                                        ; preds = %if.end
+  call void @exit(i64 107)
+  br label %if.end24
+
+if.end24:                                         ; preds = %if.then23, %if.end
   store i1 false, ptr %main_woke, align 1
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end8, %if.end
-  %i3 = load i64, ptr %i, align 8
-  %as.zext = zext i32 %call to i64
-  %lt = icmp slt i64 %i3, %as.zext
+while.cond:                                       ; preds = %if.end32, %if.end24
+  %i25 = load i64, ptr %i, align 8
+  %n26 = load i32, ptr %n, align 4
+  %as.zext = zext i32 %n26 to i64
+  %lt = icmp slt i64 %i25, %as.zext
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %tagbuf4 = load ptr, ptr %tagbuf1, align 8
-  %as.ptrtoint = ptrtoint ptr %tagbuf4 to i64
-  %i5 = load i64, ptr %i, align 8
-  %mul = mul i64 %i5, 8
+  %tagbuf27 = load ptr, ptr %tagbuf1, align 8
+  %as.ptrtoint = ptrtoint ptr %tagbuf27 to i64
+  %i28 = load i64, ptr %i, align 8
+  %mul = mul i64 %i28, 8
   %add = add i64 %as.ptrtoint, %mul
   %as.inttoptr = inttoptr i64 %add to ptr
   %deref = load i64, ptr %as.inttoptr, align 8
-  %eq6 = icmp eq i64 %deref, 0
-  br i1 %eq6, label %if.then7, label %if.else
+  %eq29 = icmp eq i64 %deref, 0
+  br i1 %eq29, label %if.then30, label %if.else31
 
 while.exit:                                       ; preds = %while.cond
-  %main_woke20 = load i1, ptr %main_woke, align 1
-  ret i1 %main_woke20
+  %main_woke46 = load i1, ptr %main_woke, align 1
+  ret i1 %main_woke46
 
-if.then7:                                         ; preds = %while.body
+if.then30:                                        ; preds = %while.body
   store i1 true, ptr %main_woke, align 1
-  br label %if.end8
+  br label %if.end32
 
-if.else:                                          ; preds = %while.body
-  %eq9 = icmp eq i64 %deref, 1
-  br i1 %eq9, label %if.then10, label %if.else11
+if.else31:                                        ; preds = %while.body
+  %eq33 = icmp eq i64 %deref, 1
+  br i1 %eq33, label %if.then34, label %if.else35
 
-if.end8:                                          ; preds = %if.end12, %if.then7
-  %i18 = load i64, ptr %i, align 8
-  %add19 = add i64 %i18, 1
-  store i64 %add19, ptr %i, align 1
+if.end32:                                         ; preds = %if.end36, %if.then30
+  %i44 = load i64, ptr %i, align 8
+  %add45 = add i64 %i44, 1
+  store i64 %add45, ptr %i, align 1
   br label %while.cond
 
-if.then10:                                        ; preds = %if.else
-  br label %if.end12
+if.then34:                                        ; preds = %if.else31
+  br label %if.end36
 
-if.else11:                                        ; preds = %if.else
-  %as.inttoptr13 = inttoptr i64 %deref to ptr
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %as.inttoptr13)
-  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
+if.else35:                                        ; preds = %if.else31
+  %as.inttoptr37 = inttoptr i64 %deref to ptr
+  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %as.inttoptr37)
+  %load.struct38 = load %_Z9Scheduler, ptr %global.load, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct38, 3
   %sub = sub i64 %blocked, 1
-  %blocked14 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 3
-  store i64 %sub, ptr %blocked14, align 8
-  %load.struct15 = load %_Z9Scheduler, ptr %global.load, align 8
-  %io_waiting = extractvalue %_Z9Scheduler %load.struct15, 5
-  %sub16 = sub i64 %io_waiting, 1
-  %io_waiting17 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 5
-  store i64 %sub16, ptr %io_waiting17, align 8
-  br label %if.end12
+  %blocked39 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 3
+  store i64 %sub, ptr %blocked39, align 8
+  %load.struct40 = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting41 = extractvalue %_Z9Scheduler %load.struct40, 5
+  %sub42 = sub i64 %io_waiting41, 1
+  %io_waiting43 = getelementptr inbounds %_Z9Scheduler, ptr %global.load, i32 0, i32 5
+  store i64 %sub42, ptr %io_waiting43, align 8
+  br label %if.end36
 
-if.end12:                                         ; preds = %if.else11, %if.then10
-  br label %if.end8
+if.end36:                                         ; preds = %if.else35, %if.then34
+  br label %if.end32
 }
 
 define linkonce_odr i1 @_ZN9Scheduler12step_or_waitEv() {
@@ -22313,6 +22420,36 @@ if.end20:                                         ; preds = %if.then19, %if.end1
   br label %repeat.body
 }
 
+define linkonce_odr void @_ZN2Io12close_pollerEv() {
+entry:
+  %global.load = load i64, ptr @io_poller_fd, align 8
+  %eq = icmp eq i64 %global.load, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %global.load1 = load i64, ptr @io_wake_fd, align 8
+  %ne = icmp ne i64 %global.load1, 0
+  br i1 %ne, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  %sub = sub i64 %global.load, 1
+  %as.trunc = trunc i64 %sub to i32
+  %sub4 = sub i64 %global.load1, 1
+  %as.trunc5 = trunc i64 %sub4 to i32
+  %call = call i32 @scaly_eio_wake_close(i32 %as.trunc, i32 %as.trunc5)
+  store i64 0, ptr @io_wake_fd, align 8
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.end
+  %sub6 = sub i64 %global.load, 1
+  %call7 = call i64 @close(i64 %sub6)
+  store i64 0, ptr @io_poller_fd, align 8
+  ret void
+}
+
 define linkonce_odr i32 @_ZN2Io11ensure_pollEv() {
 entry:
   %global.load = load ptr, ptr @current_scheduler, align 8
@@ -22325,6 +22462,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
+  call void @_ZN2Io12close_pollerEv()
   %call = call i32 @scaly_eio_create()
   store i32 %call, ptr %q, align 1
   %q2 = load i32, ptr %q, align 4
@@ -22912,36 +23050,6 @@ while.exit:                                       ; preds = %while.cond
   ret void
 }
 
-define linkonce_odr void @_ZN2Io12close_pollerEv() {
-entry:
-  %global.load = load i64, ptr @io_poller_fd, align 8
-  %eq = icmp eq i64 %global.load, 0
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret void
-
-if.end:                                           ; preds = %entry
-  %global.load1 = load i64, ptr @io_wake_fd, align 8
-  %ne = icmp ne i64 %global.load1, 0
-  br i1 %ne, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  %sub = sub i64 %global.load, 1
-  %as.trunc = trunc i64 %sub to i32
-  %sub4 = sub i64 %global.load1, 1
-  %as.trunc5 = trunc i64 %sub4 to i32
-  %call = call i32 @scaly_eio_wake_close(i32 %as.trunc, i32 %as.trunc5)
-  store i64 0, ptr @io_wake_fd, align 8
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.end
-  %sub6 = sub i64 %global.load, 1
-  %call7 = call i64 @close(i64 %sub6)
-  store i64 0, ptr @io_poller_fd, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN7Channel7acquireEP7Channel(ptr %0) {
 entry:
   %addr.gep = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 0
@@ -23029,6 +23137,7 @@ entry:
 
 define linkonce_odr void @_ZN7Channel5routeEP9SchedTask(ptr %0) {
 entry:
+  call void @_Z14deadlock_eventv()
   %load.struct = load %_Z9SchedTask, ptr %0, align 8
   %home = extractvalue %_Z9SchedTask %load.struct, 7
   %global.load = load ptr, ptr @current_scheduler, align 8
@@ -23221,6 +23330,7 @@ if.end23:                                         ; preds = %if.else, %if.then22
   %add = add i64 %count30, 1
   %count31 = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 9
   store i64 %add, ptr %count31, align 8
+  call void @_Z14deadlock_eventv()
   %call32 = call ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0)
   %load.struct33 = load %_Z7Channel, ptr %0, align 8
   %recv_sched = extractvalue %_Z7Channel %load.struct33, 7
@@ -23341,6 +23451,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %closed = getelementptr inbounds %_Z7Channel, ptr %0, i32 0, i32 2
   store i1 true, ptr %closed, align 1
+  call void @_Z14deadlock_eventv()
   %load.struct4 = load %_Z7Channel, ptr %0, align 8
   %recv_head = extractvalue %_Z7Channel %load.struct4, 5
   store ptr %recv_head, ptr %chain, align 1
@@ -23557,6 +23668,10 @@ entry:
   %as.inttoptr = inttoptr i64 %add to ptr
   %as.ptrtoint3 = ptrtoint ptr %1 to i64
   store i64 %as.ptrtoint3, ptr %as.inttoptr, align 8
+  call void @_Z21ensure_deadlock_statev()
+  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %addr.gep = getelementptr inbounds %_Z13DeadlockState, ptr %global.load, i32 0, i32 0
+  %2 = atomicrmw add ptr %addr.gep, i64 1 seq_cst, align 8
   %handle = alloca [8 x i8], align 1
   %arr.ptr = getelementptr inbounds [8 x i8], ptr %handle, i64 0, i64 0
   %handle4 = alloca ptr, align 8
