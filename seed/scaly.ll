@@ -214,13 +214,13 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @trace_entries = thread_local global ptr null
 @"9TRACE_MAX" = constant i64 8192
 @fmt_scratch = thread_local global ptr null
-@shared_heap_trace_state = global i64 0
-@shared_heap_trace = global ptr null
+@heap_trace_state = global i64 0
+@heap_trace = global ptr null
 @"11HASH_PRIMES" = constant [30 x i64] [i64 3, i64 5, i64 11, i64 23, i64 53, i64 97, i64 193, i64 389, i64 769, i64 1543, i64 3079, i64 6151, i64 12289, i64 24593, i64 49157, i64 98317, i64 196613, i64 393241, i64 786433, i64 1572869, i64 3145739, i64 6291469, i64 12582917, i64 25165843, i64 50331653, i64 100663319, i64 201326611, i64 402653189, i64 805306457, i64 1610612741]
 @"8SIZE_MAX" = constant i64 -1
 @"11PACKED_SIZE" = constant i64 9
 @"16CHAN_DEADLOCK_MS" = constant i32 100
-@shared_deadlock = global ptr null
+@deadlock_state = global ptr null
 @"15IO_POOL_WORKERS" = constant i64 4
 @"16MAP_ANON_PRIVATE" = constant i32 4130
 @"9PROT_NONE" = constant i32 0
@@ -1789,7 +1789,7 @@ define linkonce_odr void @_Z21scaly_heap_trace_dumpv() {
 entry:
   %any = alloca i1, align 1
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @shared_heap_trace, align 8
+  %global.load = load ptr, ptr @heap_trace, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -1861,7 +1861,7 @@ if.end15:                                         ; preds = %while.exit
 
 define linkonce_odr void @_Z28scaly_rt_register_heap_tracev() {
 entry:
-  %global.load = load i64, ptr @shared_heap_trace_state, align 8
+  %global.load = load i64, ptr @heap_trace_state, align 8
   %ne = icmp ne i64 %global.load, 0
   br i1 %ne, label %if.then, label %if.end
 
@@ -1874,7 +1874,7 @@ if.end:                                           ; preds = %entry
   br i1 %eq, label %if.then1, label %if.end2
 
 if.then1:                                         ; preds = %if.end
-  store i64 1, ptr @shared_heap_trace_state, align 8
+  store i64 1, ptr @heap_trace_state, align 8
   ret void
 
 if.end2:                                          ; preds = %if.end
@@ -1886,8 +1886,8 @@ if.end2:                                          ; preds = %if.end
   %call4 = call ptr @aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
   %entries = getelementptr inbounds %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 2
   store ptr %call4, ptr %entries, align 8
-  store ptr %call3, ptr @shared_heap_trace, align 8
-  store i64 2, ptr @shared_heap_trace_state, align 8
+  store ptr %call3, ptr @heap_trace, align 8
+  store i64 2, ptr @heap_trace_state, align 8
   %call5 = call i64 @atexit(ptr @_Z21scaly_heap_trace_dumpv)
   ret void
 }
@@ -1986,7 +1986,7 @@ if.end8:                                          ; preds = %while.exit
 define linkonce_odr void @_Z22scaly_heap_trace_allocP10const_char(ptr %0) {
 entry:
   call void @_Z28scaly_rt_register_heap_tracev()
-  %global.load = load i64, ptr @shared_heap_trace_state, align 8
+  %global.load = load i64, ptr @heap_trace_state, align 8
   %ne = icmp ne i64 %global.load, 2
   br i1 %ne, label %if.then, label %if.end
 
@@ -1994,7 +1994,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %global.load1 = load ptr, ptr @shared_heap_trace, align 8
+  %global.load1 = load ptr, ptr @heap_trace, align 8
   call void @_Z15heap_trace_lockP15HeapTraceHeader(ptr %global.load1)
   %call = call ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %global.load1, ptr %0)
   %ne2 = icmp ne ptr %call, null
@@ -2016,7 +2016,7 @@ if.end4:                                          ; preds = %if.then3, %if.end
 define linkonce_odr void @_Z24scaly_heap_trace_releaseP10const_char(ptr %0) {
 entry:
   call void @_Z28scaly_rt_register_heap_tracev()
-  %global.load = load i64, ptr @shared_heap_trace_state, align 8
+  %global.load = load i64, ptr @heap_trace_state, align 8
   %ne = icmp ne i64 %global.load, 2
   br i1 %ne, label %if.then, label %if.end
 
@@ -2024,7 +2024,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %global.load1 = load ptr, ptr @shared_heap_trace, align 8
+  %global.load1 = load ptr, ptr @heap_trace, align 8
   call void @_Z15heap_trace_lockP15HeapTraceHeader(ptr %global.load1)
   %call = call ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %global.load1, ptr %0)
   %ne2 = icmp ne ptr %call, null
@@ -21110,7 +21110,7 @@ declare ptr @scaly_call_ptr(ptr, ptr)
 
 define linkonce_odr void @_Z21ensure_deadlock_statev() {
 entry:
-  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %global.load = load ptr, ptr @deadlock_state, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -21125,13 +21125,13 @@ if.end:                                           ; preds = %entry
   store i64 0, ptr %blocked, align 8
   %epoch = getelementptr inbounds %_Z13DeadlockState, ptr %call, i32 0, i32 2
   store i64 0, ptr %epoch, align 8
-  store ptr %call, ptr @shared_deadlock, align 8
+  store ptr %call, ptr @deadlock_state, align 8
   ret void
 }
 
 define linkonce_odr void @_Z14deadlock_eventv() {
 entry:
-  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %global.load = load ptr, ptr @deadlock_state, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -21221,7 +21221,7 @@ entry:
   call void @_ZN8TaskPool13drain_defaultEv()
   call void @_ZN2Io10drain_poolEv()
   call void @_ZN2Io12close_pollerEv()
-  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %global.load = load ptr, ptr @deadlock_state, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -22068,7 +22068,7 @@ if.then:                                          ; preds = %entry
 
 if.else:                                          ; preds = %entry
   call void @_Z21ensure_deadlock_statev()
-  %global.load3 = load ptr, ptr @shared_deadlock, align 8
+  %global.load3 = load ptr, ptr @deadlock_state, align 8
   %addr.gep = getelementptr inbounds %_Z13DeadlockState, ptr %global.load3, i32 0, i32 2
   %addr.gep4 = getelementptr inbounds %_Z13DeadlockState, ptr %global.load3, i32 0, i32 1
   %addr.gep5 = getelementptr inbounds %_Z13DeadlockState, ptr %global.load3, i32 0, i32 0
@@ -23669,7 +23669,7 @@ entry:
   %as.ptrtoint3 = ptrtoint ptr %1 to i64
   store i64 %as.ptrtoint3, ptr %as.inttoptr, align 8
   call void @_Z21ensure_deadlock_statev()
-  %global.load = load ptr, ptr @shared_deadlock, align 8
+  %global.load = load ptr, ptr @deadlock_state, align 8
   %addr.gep = getelementptr inbounds %_Z13DeadlockState, ptr %global.load, i32 0, i32 0
   %2 = atomicrmw add ptr %addr.gep, i64 1 seq_cst, align 8
   %handle = alloca [8 x i8], align 1
