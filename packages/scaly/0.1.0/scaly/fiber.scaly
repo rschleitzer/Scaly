@@ -2341,6 +2341,8 @@ define TaskPool
                                  ; only skew the distribution)
     stolen: u64                  ; items taken from a foreign deque
                                  ; (atomic; observability for tests)
+    submitted: u64               ; items ever submitted (atomic;
+                                 ; observability — 4.1 chunk collapse)
     pipe_read: i32               ; workers block reading here
     pipe_write: i32              ; one byte written per submitted item
     handles: pointer[size_t]     ; worker join handles (creator-written)
@@ -2358,6 +2360,14 @@ define TaskPool
         scaly_atomic_load_u64(sp)
     }
 
+    ; How many items were ever submitted — observability for the 4.1
+    ; chunked emission (a chunked wave submits ~ncpu, not n).
+    function submit_count(pl: pointer[TaskPool]) returns u64
+    {
+        let sp &pl.submitted
+        scaly_atomic_load_u64(sp)
+    }
+
     ; Start a pool of nworkers OS threads (clamped to at least one).
     ; Traps (exit 112) when the OS refuses the pipe; a refused thread
     ; traps in Thread.spawn (exit 109).
@@ -2371,6 +2381,7 @@ define TaskPool
         set pl.nworkers: n
         set pl.next_deque: 0 as i64
         set pl.stolen: 0 as u64
+        set pl.submitted: 0 as u64
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
         if rc <> (0 as i32)
@@ -2412,6 +2423,8 @@ define TaskPool
     ; the pipe byte (a woken worker must find an item).
     procedure submit(pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], g: pointer[TaskGroup])
     {
+        let sc &pl.submitted
+        scaly_atomic_add_u64(sc, 1 as u64)
         let pp &g.pending
         let old scaly_atomic_add_u64(pp, 1 as u64)
         let host Page.get(g as pointer[void])

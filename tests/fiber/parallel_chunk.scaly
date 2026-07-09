@@ -1,0 +1,133 @@
+; Chunked `parallel for` dispatch (stage-4 milestone 4.1): a wave
+; submits k = min(max(n,1), 4*ncpu) sub-range cells instead of one
+; cell per iteration. TaskPool.submit_count makes the collapse
+; observable and DETERMINISTIC: each wave's submit delta must be
+; exactly k. Covered: a 10000-iteration range wave (k = 4*ncpu), an
+; iterator wave over 5000 records, a 3-iteration wave (k = n branch
+; of the min), and an empty wave (the max(n,1) guard submits one
+; zero-iteration chunk). Sums verify chunk-boundary correctness.
+; Expected: parallel-chunk-ok done
+
+define Item(idx: size_t, val: i64)
+
+; The deterministic per-wave submit count.
+function expect_k(n: i64) returns u64
+{
+    var k TaskPool.ncpu() * (4 as i64)
+    if n < (1 as i64)
+        set k: 1 as i64
+    if n >= (1 as i64)
+        if n < k
+            set k: n
+    k as u64
+}
+
+; ---- Wave A: big range, trivial disjoint-slot body.
+var results Vector[int](10000)
+parallel for i in 10000
+{
+    let v i * 2
+    results.put(i, v)
+}
+var sum 0
+var i 0
+while i < 10000
+{
+    let v results.get(i as size_t)
+    if v <> null
+        set sum: sum + (*v)
+    set i: i + 1
+}
+if sum <> 99990000
+{
+    Console.println "waveA-sum-bad"
+    exit 1
+}
+let pool TaskPool.default_pool()
+let subsA TaskPool.submit_count(pool)
+if subsA <> expect_k(10000 as i64)
+{
+    Console.println "waveA-submits-bad"
+    exit 1
+}
+
+; ---- Wave B: iterator over records (drained flat array, chunked).
+var items Vector[Item](5000)
+var j: size_t 0
+while j < (5000 as size_t)
+{
+    items.put(j, Item(j, j as i64))
+    set j: j + 1
+}
+var results2 Vector[i64](5000)
+parallel for item in items
+{
+    let n item.val
+    results2.put(item.idx, n * 3)
+}
+var sum2 0 as i64
+set j: 0 as size_t
+while j < (5000 as size_t)
+{
+    let v results2.get j
+    if v <> null
+        set sum2: sum2 + (*v)
+    set j: j + 1
+}
+if sum2 <> (37492500 as i64)
+{
+    Console.println "waveB-sum-bad"
+    exit 1
+}
+let subsB TaskPool.submit_count(pool)
+if subsB - subsA <> expect_k(5000 as i64)
+{
+    Console.println "waveB-submits-bad"
+    exit 1
+}
+
+; ---- Wave C: n smaller than 4*ncpu — k collapses to n.
+var results3 Vector[int](3)
+parallel for c in 3
+{
+    let v c + 40
+    results3.put(c, v)
+}
+var sum3 0
+set i: 0
+while i < 3
+{
+    let v results3.get(i as size_t)
+    if v <> null
+        set sum3: sum3 + (*v)
+    set i: i + 1
+}
+if sum3 <> 123
+{
+    Console.println "waveC-sum-bad"
+    exit 1
+}
+let subsC TaskPool.submit_count(pool)
+if subsC - subsB <> expect_k(3 as i64)
+{
+    Console.println "waveC-submits-bad"
+    exit 1
+}
+
+; ---- Wave D: empty range — one zero-iteration chunk, no crash.
+let zero_n 0
+var results4 Vector[int](1)
+parallel for z in zero_n
+{
+    let v z + 1
+    results4.put(z, v)
+}
+let subsD TaskPool.submit_count(pool)
+if subsD - subsC <> expect_k(0 as i64)
+{
+    Console.println "waveD-submits-bad"
+    exit 1
+}
+
+Console.print "parallel-chunk-ok "
+Console.println "done"

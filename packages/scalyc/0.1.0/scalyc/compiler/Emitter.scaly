@@ -10026,18 +10026,23 @@ define Emitter
 
     ; ========================================================================
     ; Milestone 3.3: `parallel for` outlining emission.
+    ; Milestone 4.1: chunked sub-range dispatch.
     ;
     ; The body (verified parallelizable by TaskPlanner.verify — an
     ; unverifiable body failed the compile with rc 4 long before emission)
-    ; is outlined into a private `ptr(ptr)` task function; the loop site
-    ; becomes a submit driver. Per iteration one cell struct
-    ; {element, captures...} is bump-allocated on the task group's own
-    ; page (the 3.2 work-item discipline: the submitter writes, workers
-    ; only read, TaskGroup.dispose frees the wave wholesale) and
-    ; dispatched to this thread's ncpu-sized default pool
+    ; is outlined into a private `ptr(ptr)` task function that runs a
+    ; SUB-RANGE [lo,hi) of iterations; the loop site becomes a submit
+    ; driver placing k = min(max(n,1), 4*ncpu) chunk cells
+    ; {lo, hi, captures...} (iterator loops: {buf, lo, hi, captures...}
+    ; over a drained flat element-pointer array) — bump-allocated on the
+    ; task group's own page (the 3.2 work-item discipline: the submitter
+    ; writes, workers only read, TaskGroup.dispose frees the wave
+    ; wholesale) and dispatched to this thread's ncpu-sized default pool
     ; (TaskPool.default_pool); TaskGroup.wait then parks the submitter
     ; until the wave finished — which is exactly what makes the captured
     ; frame reads and the disjoint-slot result writes race-free.
+    ; Disjointness is range-agnostic (proven for [0,n) ⇒ proven for
+    ; every sub-range), so chunking needs no re-proof.
     ;
     ; Captures are the body's free names that resolve in the enclosing
     ; scope. A name bound to an ALLOCA slot travels as the slot CONTENT
@@ -10049,7 +10054,9 @@ define Emitter
     ;
     ; The task function allocates on the WORKER's thread-local allocator:
     ; get_or_create_local_page inside it opens the task's own region,
-    ; released in the epilogue — one region per task, by construction.
+    ; released in the epilogue — one region per CHUNK (entry-hoisted by
+    ; get_or_create_local_page; per-iteration recycling would rework the
+    ; local-page machinery — 4.2 material if churn bodies need it).
     ; ========================================================================
 
     ; Record a body-bound name (scoped: scanners save/restore the
@@ -10436,23 +10443,41 @@ define Emitter
             set ci: ci + 1
         }
 
-        ; ---- The cell struct: field 0 = the element (range index by
-        ; value / iterator element pointer), fields 1..n = captures.
-        var elem_slot_ty ptr_ty
+        ; ---- The cell struct (4.1 chunked): a cell describes a
+        ; SUB-RANGE of iterations, not one iteration. Range loop:
+        ; {lo: i64, hi: i64, captures...}; iterator loop: {buf: ptr,
+        ; lo: i64, hi: i64, captures...} where buf is the flat
+        ; element-pointer array the driver drained onto the group
+        ; page. Chunk math runs uniformly in i64; a narrower range
+        ; index is rebuilt by trunc inside the task function.
+        var index_ty i64_ty
         if for_expr.is_iterator_loop = false
-            set elem_slot_ty: LLVMTypeOf(seq_value)
-        var cell_field_tys Vector[LLVMTypeRef](cap_count + 1)
-        cell_field_tys.put(0, elem_slot_ty)
+            set index_ty: LLVMTypeOf(seq_value)
+        var base_fields: size_t 2
+        if for_expr.is_iterator_loop
+            set base_fields: 3 as size_t
+        var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count)
+        if for_expr.is_iterator_loop
+        {
+            cell_field_tys.put(0, ptr_ty)
+            cell_field_tys.put(1, i64_ty)
+            cell_field_tys.put(2, i64_ty)
+        }
+        if for_expr.is_iterator_loop = false
+        {
+            cell_field_tys.put(0, i64_ty)
+            cell_field_tys.put(1, i64_ty)
+        }
         set ci: 0
         while ci < cap_count
         {
             let st cap_slot_tys.get ci
             if st = null
                 return LLVMValueRef null
-            cell_field_tys.put(ci + 1, (*st))
+            cell_field_tys.put(base_fields + ci, (*st))
             set ci: ci + 1
         }
-        let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (cap_count + 1) as int, 0)
+        let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count) as int, 0)
 
         ; ---- Outline the body into a private task function ptr(ptr).
         ; Private linkage: llvm-link renames on collision, so the
@@ -10494,21 +10519,20 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, pf_entry)
         enter_scope()
 
-        ; Rebind the loop variable and every capture from the cell.
+        ; Rebind the chunk descriptor and every capture from the cell.
         let cell_arg LLVMGetParam(task_fn, 0)
-        let elem_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, 0, "parfor.elem.ptr")
-        let elem_val LLVMBuildLoad2(builder, elem_slot_ty, elem_gep, for_expr.identifier.c_data())
-        ; For an iterator loop the cell holds the element POINTER; a scalar
-        ; element must be loaded through it (the collection outlives the wait,
-        ; so the deref is in-region). Records/range indices bind as-is.
-        var pf_loop_bind elem_val
+        var chunk_buf: LLVMValueRef LLVMValueRef(null)
+        var lo_idx: size_t 0
         if for_expr.is_iterator_loop
-            if for_expr.element_is_scalar
-            {
-                let pf_scalar_ty scalar_element_value_type(for_expr.element_type)
-                set pf_loop_bind: LLVMBuildLoad2(builder, pf_scalar_ty, elem_val, for_expr.identifier.c_data())
-            }
-        define_variable(for_expr.identifier, pf_loop_bind)
+        {
+            let buf_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, 0, "parfor.buf.ptr")
+            set chunk_buf: LLVMBuildLoad2(builder, ptr_ty, buf_gep, "parfor.buf")
+            set lo_idx: 1 as size_t
+        }
+        let lo_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, lo_idx as int, "parfor.lo.ptr")
+        let chunk_lo LLVMBuildLoad2(builder, i64_ty, lo_gep, "parfor.lo")
+        let hi_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (lo_idx + 1) as int, "parfor.hi.ptr")
+        let chunk_hi LLVMBuildLoad2(builder, i64_ty, hi_gep, "parfor.hi")
         set ci: 0
         while ci < cap_count
         {
@@ -10516,7 +10540,7 @@ define Emitter
             let nm (*nm_ptr)
             let st_ptr cap_slot_tys.get ci
             let slot_ty (*st_ptr)
-            let cap_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (ci + 1) as int, "parfor.cap.ptr")
+            let cap_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + ci) as int, "parfor.cap.ptr")
             let cap_val LLVMBuildLoad2(builder, slot_ty, cap_gep, nm.c_data())
             let fs_ptr cap_from_slot.get ci
             var rebuild_slot: size_t 0
@@ -10533,20 +10557,68 @@ define Emitter
             set ci: ci + 1
         }
 
-        ; The body. `continue` of this loop ends the iteration — both
-        ; loop targets are the return block (break/early exits were
-        ; verification blockers, they cannot occur).
+        ; The chunk loop: i in [lo,hi) — the 4.1 rewrite. The loop
+        ; variable rebinds per iteration; `continue` targets the
+        ; increment block (3.3's one-cell-per-iteration made continue
+        ; and return the same block); break/early exits stay
+        ; verification blockers, they cannot occur.
+        let iv_slot LLVMBuildAlloca(builder, i64_ty, "parfor.iv.slot")
+        LLVMBuildStore(builder, chunk_lo, iv_slot)
+        let ck_cond create_block("parfor.chunk.cond")
+        let ck_body create_block("parfor.chunk.body")
+        let ck_inc create_block("parfor.chunk.inc")
         let pf_ret_block create_block("parfor.ret")
-        push_loop(pf_ret_block, pf_ret_block, for_expr.loop_label, LLVMValueRef(null))
+        LLVMBuildBr(builder, ck_cond)
+
+        LLVMPositionBuilderAtEnd(builder, ck_cond)
+        let iv LLVMBuildLoad2(builder, i64_ty, iv_slot, "parfor.iv")
+        let ck_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), iv, chunk_hi, "parfor.chunk.more")
+        LLVMBuildCondBr(builder, ck_more, ck_body, pf_ret_block)
+
+        ; Per-iteration element binding. Iterator: load the element
+        ; pointer from the drained flat array (the collection outlives
+        ; the parked wait, so the deref is in-region), plus the scalar
+        ; load where the element is an arithmetic scalar. Range: the
+        ; index value, rebuilt in its source width.
+        LLVMPositionBuilderAtEnd(builder, ck_body)
+        var pf_loop_bind iv
+        if for_expr.is_iterator_loop
+        {
+            var ev_idx Vector[LLVMValueRef](1)
+            ev_idx.put(0, iv)
+            let elem_addr LLVMBuildGEP2(builder, ptr_ty, chunk_buf, ev_idx.data, 1, "parfor.elem.addr")
+            let elem_ptr LLVMBuildLoad2(builder, ptr_ty, elem_addr, for_expr.identifier.c_data())
+            set pf_loop_bind: elem_ptr
+            if for_expr.element_is_scalar
+            {
+                let pf_scalar_ty scalar_element_value_type(for_expr.element_type)
+                set pf_loop_bind: LLVMBuildLoad2(builder, pf_scalar_ty, elem_ptr, for_expr.identifier.c_data())
+            }
+        }
+        if for_expr.is_iterator_loop = false
+        {
+            let iw LLVMGetIntTypeWidth(index_ty)
+            if iw < 64
+                set pf_loop_bind: LLVMBuildTrunc(builder, iv, index_ty, for_expr.identifier.c_data())
+        }
+        define_variable(for_expr.identifier, pf_loop_bind)
+        push_loop(pf_ret_block, ck_inc, for_expr.loop_label, LLVMValueRef(null))
         emit_action for_expr.body
         let pf_body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
         if pf_body_term.handle = null
-            LLVMBuildBr(builder, pf_ret_block)
+            LLVMBuildBr(builder, ck_inc)
         pop_loop()
         exit_scope()
 
+        LLVMPositionBuilderAtEnd(builder, ck_inc)
+        let iv_cur LLVMBuildLoad2(builder, i64_ty, iv_slot, "parfor.iv.cur")
+        let iv_one LLVMConstInt(i64_ty, 1, 0)
+        let iv_next LLVMBuildAdd(builder, iv_cur, iv_one, "parfor.iv.next")
+        LLVMBuildStore(builder, iv_next, iv_slot)
+        LLVMBuildBr(builder, ck_cond)
+
         ; Epilogue: release the task's local region (one region per
-        ; task — no-op when the body never allocated), return null.
+        ; CHUNK — no-op when the body never allocated), return null.
         LLVMPositionBuilderAtEnd(builder, pf_ret_block)
         emit_release_local_page()
         let pf_null LLVMConstNull(ptr_ty)
@@ -10607,6 +10679,8 @@ define Emitter
         sub_tys.put(3, ptr_ty)
         let sub_ty LLVMFunctionType(void_ty, sub_tys.data, 4, 0)
         let sub_fn get_parfor_runtime_fn("_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup", sub_ty)
+        let np_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
+        let np_fn get_parfor_runtime_fn("_ZN8TaskPool4ncpuEv", np_ty)
 
         let pool LLVMBuildCall2(builder, dp_ty, dp_fn, null as pointer[LLVMValueRef], 0, "parfor.pool")
         let group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
@@ -10617,12 +10691,21 @@ define Emitter
         let cell_size_const LLVMConstInt(i64_ty, cell_size, 0)
         let cell_align_const LLVMConstInt(i64_ty, 8, 0)
 
+        ; Iteration count (i64) and, for iterator loops, the drained
+        ; flat element-pointer array — the chunk submit loop below
+        ; consumes both.
+        var chunk_n: LLVMValueRef LLVMValueRef(null)
+        var chunk_src: LLVMValueRef LLVMValueRef(null)
+
         if for_expr.is_iterator_loop
         {
-            ; Iterator driver: the sequential skeleton, its body
-            ; replaced by cell-fill + submit. next() runs on the
-            ; SUBMITTER; the element pointer (into the collection,
-            ; which outlives the parked wait) rides the cell.
+            ; Iterator driver (4.1): next() cannot be range-split, so
+            ; the SUBMITTER drains the iterator into a flat element-
+            ; pointer array on the group page (doubling growth;
+            ; retired buffers stay on the page until dispose — bounded
+            ; by 2n pointers total), then chunks over [0,n). The
+            ; element pointers reach into the collection, which
+            ; outlives the parked wait.
             var collection_ptr seq_value
             let coll_type LLVMTypeOf(seq_value)
             let coll_kind LLVMGetTypeKind(coll_type)
@@ -10656,12 +10739,36 @@ define Emitter
             if next_fn.handle = null
                 return LLVMValueRef null
 
-            let cond_block create_block("pfor.cond")
-            let body_block create_block("pfor.body")
-            let exit_block create_block("pfor.exit")
-            LLVMBuildBr(builder, cond_block)
+            let dr_cap entry_alloca(i64_ty, "parfor.dr.cap")
+            let dr_n entry_alloca(i64_ty, "parfor.dr.n")
+            let dr_buf entry_alloca(ptr_ty, "parfor.dr.buf")
+            let dr_ci entry_alloca(i64_ty, "parfor.dr.ci")
+            let dr_c0 LLVMConstInt(i64_ty, 0, 0)
+            let dr_c1 LLVMConstInt(i64_ty, 1, 0)
+            let dr_c2 LLVMConstInt(i64_ty, 2, 0)
+            let dr_c8 LLVMConstInt(i64_ty, 8, 0)
+            let dr_c256 LLVMConstInt(i64_ty, 256, 0)
+            LLVMBuildStore(builder, dr_c256, dr_cap)
+            LLVMBuildStore(builder, dr_c0, dr_n)
+            let dr_bytes0 LLVMBuildMul(builder, dr_c256, dr_c8, "parfor.dr.bytes0")
+            var dr_a0 Vector[LLVMValueRef](3)
+            dr_a0.put(0, gpage)
+            dr_a0.put(1, dr_bytes0)
+            dr_a0.put(2, dr_c8)
+            let dr_buf0 LLVMBuildCall2(builder, alloc_ty, alloc_fn, dr_a0.data, 3, "parfor.dr.buf0")
+            LLVMBuildStore(builder, dr_buf0, dr_buf)
 
-            LLVMPositionBuilderAtEnd(builder, cond_block)
+            let dr_cond create_block("pfor.drain.cond")
+            let dr_have create_block("pfor.drain.have")
+            let dr_grow create_block("pfor.drain.grow")
+            let dr_copy_cond create_block("pfor.drain.copy.cond")
+            let dr_copy_body create_block("pfor.drain.copy.body")
+            let dr_copy_done create_block("pfor.drain.copy.done")
+            let dr_put create_block("pfor.drain.put")
+            let dr_done create_block("pfor.drain.done")
+            LLVMBuildBr(builder, dr_cond)
+
+            LLVMPositionBuilderAtEnd(builder, dr_cond)
             var next_args Vector[LLVMValueRef](1)
             var next_tys Vector[LLVMTypeRef](1)
             next_args.put(0, iter_alloca)
@@ -10670,83 +10777,144 @@ define Emitter
             let next_result LLVMBuildCall2(builder, next_fn_ty, next_fn, next_args.data, 1, "parfor.next")
             let next_null LLVMConstNull(ptr_ty)
             let iter_done LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), next_result, next_null, "parfor.done")
-            LLVMBuildCondBr(builder, iter_done, exit_block, body_block)
+            LLVMBuildCondBr(builder, iter_done, dr_done, dr_have)
 
-            LLVMPositionBuilderAtEnd(builder, body_block)
-            var it_alloc_args Vector[LLVMValueRef](3)
-            it_alloc_args.put(0, gpage)
-            it_alloc_args.put(1, cell_size_const)
-            it_alloc_args.put(2, cell_align_const)
-            let it_cell LLVMBuildCall2(builder, alloc_ty, alloc_fn, it_alloc_args.data, 3, "parfor.cell")
-            let it_elem_gep LLVMBuildStructGEP2(builder, cell_ty, it_cell, 0, "parfor.cell.elem")
-            LLVMBuildStore(builder, next_result, it_elem_gep)
-            set ci: 0
-            while ci < cap_count
-            {
-                let cv_ptr cap_values.get ci
-                let cap_gep2 LLVMBuildStructGEP2(builder, cell_ty, it_cell, (ci + 1) as int, "parfor.cell.cap")
-                LLVMBuildStore(builder, (*cv_ptr), cap_gep2)
-                set ci: ci + 1
-            }
-            var it_sub_args Vector[LLVMValueRef](4)
-            it_sub_args.put(0, pool)
-            it_sub_args.put(1, task_fn)
-            it_sub_args.put(2, it_cell)
-            it_sub_args.put(3, group)
-            LLVMBuildCall2(builder, sub_ty, sub_fn, it_sub_args.data, 4, "")
-            LLVMBuildBr(builder, cond_block)
+            LLVMPositionBuilderAtEnd(builder, dr_have)
+            let dh_n LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.dr.nv")
+            let dh_cap LLVMBuildLoad2(builder, i64_ty, dr_cap, "parfor.dr.capv")
+            let dh_full LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), dh_n, dh_cap, "parfor.dr.full")
+            LLVMBuildCondBr(builder, dh_full, dr_grow, dr_put)
 
-            LLVMPositionBuilderAtEnd(builder, exit_block)
+            LLVMPositionBuilderAtEnd(builder, dr_grow)
+            let dg_cap2 LLVMBuildMul(builder, dh_cap, dr_c2, "parfor.dr.cap2")
+            let dg_bytes LLVMBuildMul(builder, dg_cap2, dr_c8, "parfor.dr.gbytes")
+            var dg_args Vector[LLVMValueRef](3)
+            dg_args.put(0, gpage)
+            dg_args.put(1, dg_bytes)
+            dg_args.put(2, dr_c8)
+            let dg_nbuf LLVMBuildCall2(builder, alloc_ty, alloc_fn, dg_args.data, 3, "parfor.dr.nbuf")
+            let dg_obuf LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.dr.obuf")
+            LLVMBuildStore(builder, dr_c0, dr_ci)
+            LLVMBuildBr(builder, dr_copy_cond)
+
+            LLVMPositionBuilderAtEnd(builder, dr_copy_cond)
+            let dc_i LLVMBuildLoad2(builder, i64_ty, dr_ci, "parfor.dr.civ")
+            let dc_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), dc_i, dh_n, "parfor.dr.cmore")
+            LLVMBuildCondBr(builder, dc_more, dr_copy_body, dr_copy_done)
+
+            LLVMPositionBuilderAtEnd(builder, dr_copy_body)
+            var dc_sidx Vector[LLVMValueRef](1)
+            dc_sidx.put(0, dc_i)
+            let dc_src LLVMBuildGEP2(builder, ptr_ty, dg_obuf, dc_sidx.data, 1, "parfor.dr.src")
+            let dc_val LLVMBuildLoad2(builder, ptr_ty, dc_src, "parfor.dr.val")
+            let dc_dst LLVMBuildGEP2(builder, ptr_ty, dg_nbuf, dc_sidx.data, 1, "parfor.dr.dst")
+            LLVMBuildStore(builder, dc_val, dc_dst)
+            let dc_i1 LLVMBuildAdd(builder, dc_i, dr_c1, "parfor.dr.ci1")
+            LLVMBuildStore(builder, dc_i1, dr_ci)
+            LLVMBuildBr(builder, dr_copy_cond)
+
+            LLVMPositionBuilderAtEnd(builder, dr_copy_done)
+            LLVMBuildStore(builder, dg_nbuf, dr_buf)
+            LLVMBuildStore(builder, dg_cap2, dr_cap)
+            LLVMBuildBr(builder, dr_put)
+
+            LLVMPositionBuilderAtEnd(builder, dr_put)
+            let dp_buf LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.dr.bufv")
+            let dp_n LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.dr.n2")
+            var dp_idx Vector[LLVMValueRef](1)
+            dp_idx.put(0, dp_n)
+            let dp_slot LLVMBuildGEP2(builder, ptr_ty, dp_buf, dp_idx.data, 1, "parfor.dr.slot")
+            LLVMBuildStore(builder, next_result, dp_slot)
+            let dp_n1 LLVMBuildAdd(builder, dp_n, dr_c1, "parfor.dr.n1")
+            LLVMBuildStore(builder, dp_n1, dr_n)
+            LLVMBuildBr(builder, dr_cond)
+
+            LLVMPositionBuilderAtEnd(builder, dr_done)
+            set chunk_n: LLVMBuildLoad2(builder, i64_ty, dr_n, "parfor.n")
+            set chunk_src: LLVMBuildLoad2(builder, ptr_ty, dr_buf, "parfor.buf.final")
         }
         if for_expr.is_iterator_loop = false
         {
-            ; Range driver: count 0..end-1, one cell + submit each.
-            let index_type elem_slot_ty
-            let loop_counter entry_alloca(index_type, "parfor.counter")
-            let zero LLVMConstInt(index_type, 0, 0)
-            LLVMBuildStore(builder, zero, loop_counter)
-            let cond_block create_block("pfor.cond")
-            let body_block create_block("pfor.body")
-            let exit_block create_block("pfor.exit")
-            LLVMBuildBr(builder, cond_block)
-
-            LLVMPositionBuilderAtEnd(builder, cond_block)
-            let cur_index LLVMBuildLoad2(builder, index_type, loop_counter, "parfor.i")
-            let range_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), cur_index, seq_value, "parfor.cmp")
-            LLVMBuildCondBr(builder, range_more, body_block, exit_block)
-
-            LLVMPositionBuilderAtEnd(builder, body_block)
-            var rg_alloc_args Vector[LLVMValueRef](3)
-            rg_alloc_args.put(0, gpage)
-            rg_alloc_args.put(1, cell_size_const)
-            rg_alloc_args.put(2, cell_align_const)
-            let rg_cell LLVMBuildCall2(builder, alloc_ty, alloc_fn, rg_alloc_args.data, 3, "parfor.cell")
-            let rg_elem_gep LLVMBuildStructGEP2(builder, cell_ty, rg_cell, 0, "parfor.cell.elem")
-            LLVMBuildStore(builder, cur_index, rg_elem_gep)
-            set ci: 0
-            while ci < cap_count
-            {
-                let cv_ptr cap_values.get ci
-                let cap_gep3 LLVMBuildStructGEP2(builder, cell_ty, rg_cell, (ci + 1) as int, "parfor.cell.cap")
-                LLVMBuildStore(builder, (*cv_ptr), cap_gep3)
-                set ci: ci + 1
-            }
-            var rg_sub_args Vector[LLVMValueRef](4)
-            rg_sub_args.put(0, pool)
-            rg_sub_args.put(1, task_fn)
-            rg_sub_args.put(2, rg_cell)
-            rg_sub_args.put(3, group)
-            LLVMBuildCall2(builder, sub_ty, sub_fn, rg_sub_args.data, 4, "")
-            let one LLVMConstInt(index_type, 1, 0)
-            let next_index LLVMBuildAdd(builder, cur_index, one, "parfor.i.next")
-            LLVMBuildStore(builder, next_index, loop_counter)
-            LLVMBuildBr(builder, cond_block)
-
-            LLVMPositionBuilderAtEnd(builder, exit_block)
+            ; Range driver (4.1): only the count in i64 (a narrower
+            ; index sign-extends; the task function rebuilds the
+            ; source width per iteration).
+            set chunk_n: seq_value
+            let nw LLVMGetIntTypeWidth(index_ty)
+            if nw < 64
+                set chunk_n: LLVMBuildSExt(builder, seq_value, i64_ty, "parfor.n64")
         }
 
+        ; ---- Chunk submit loop: k = min(max(n,1), 4*ncpu) sub-range
+        ; cells (4x oversubmit lets the steal path balance uneven
+        ; bodies; max(n,1) keeps the division alive for empty counts —
+        ; such chunks run zero iterations).
+        let sb_c0 LLVMConstInt(i64_ty, 0, 0)
+        let sb_c1 LLVMConstInt(i64_ty, 1, 0)
+        let sb_c4 LLVMConstInt(i64_ty, 4, 0)
+        let sb_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu")
+        let sb_k0 LLVMBuildMul(builder, sb_ncpu, sb_c4, "parfor.k0")
+        let sb_npos LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), chunk_n, sb_c1, "parfor.npos")
+        let sb_nmax LLVMBuildSelect(builder, sb_npos, chunk_n, sb_c1, "parfor.nmax")
+        let sb_klt LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_nmax, sb_k0, "parfor.klt")
+        let sb_k LLVMBuildSelect(builder, sb_klt, sb_nmax, sb_k0, "parfor.k")
+        let sb_km1 LLVMBuildSub(builder, sb_k, sb_c1, "parfor.km1")
+        let sb_nk LLVMBuildAdd(builder, chunk_n, sb_km1, "parfor.nk")
+        let sb_chunk LLVMBuildSDiv(builder, sb_nk, sb_k, "parfor.chunksz")
+        let sb_slot entry_alloca(i64_ty, "parfor.c.slot")
+        LLVMBuildStore(builder, sb_c0, sb_slot)
+        let sb_cond create_block("pfor.sub.cond")
+        let sb_body create_block("pfor.sub.body")
+        let sb_done create_block("pfor.sub.done")
+        LLVMBuildBr(builder, sb_cond)
+
+        LLVMPositionBuilderAtEnd(builder, sb_cond)
+        let sb_c LLVMBuildLoad2(builder, i64_ty, sb_slot, "parfor.c")
+        let sb_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_c, sb_k, "parfor.sub.more")
+        LLVMBuildCondBr(builder, sb_more, sb_body, sb_done)
+
+        LLVMPositionBuilderAtEnd(builder, sb_body)
+        let sb_lo LLVMBuildMul(builder, sb_c, sb_chunk, "parfor.chunk.lo")
+        let sb_hi0 LLVMBuildAdd(builder, sb_lo, sb_chunk, "parfor.chunk.hi0")
+        let sb_hilt LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), sb_hi0, chunk_n, "parfor.hilt")
+        let sb_hi LLVMBuildSelect(builder, sb_hilt, sb_hi0, chunk_n, "parfor.chunk.hi")
+        var sb_alloc_args Vector[LLVMValueRef](3)
+        sb_alloc_args.put(0, gpage)
+        sb_alloc_args.put(1, cell_size_const)
+        sb_alloc_args.put(2, cell_align_const)
+        let sb_cell LLVMBuildCall2(builder, alloc_ty, alloc_fn, sb_alloc_args.data, 3, "parfor.cell")
+        var sb_fi: size_t 0
+        if for_expr.is_iterator_loop
+        {
+            let sb_buf_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, 0, "parfor.cell.buf")
+            LLVMBuildStore(builder, chunk_src, sb_buf_gep)
+            set sb_fi: 1 as size_t
+        }
+        let sb_lo_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, sb_fi as int, "parfor.cell.lo")
+        LLVMBuildStore(builder, sb_lo, sb_lo_gep)
+        let sb_hi_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (sb_fi + 1) as int, "parfor.cell.hi")
+        LLVMBuildStore(builder, sb_hi, sb_hi_gep)
+        set ci: 0
+        while ci < cap_count
+        {
+            let cv_ptr cap_values.get ci
+            let sb_cap_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + ci) as int, "parfor.cell.cap")
+            LLVMBuildStore(builder, (*cv_ptr), sb_cap_gep)
+            set ci: ci + 1
+        }
+        var sb_sub_args Vector[LLVMValueRef](4)
+        sb_sub_args.put(0, pool)
+        sb_sub_args.put(1, task_fn)
+        sb_sub_args.put(2, sb_cell)
+        sb_sub_args.put(3, group)
+        LLVMBuildCall2(builder, sub_ty, sub_fn, sb_sub_args.data, 4, "")
+        let sb_cn LLVMBuildAdd(builder, sb_c, sb_c1, "parfor.c.next")
+        LLVMBuildStore(builder, sb_cn, sb_slot)
+        LLVMBuildBr(builder, sb_cond)
+
+        LLVMPositionBuilderAtEnd(builder, sb_done)
+
         ; The wave barrier: park until every task finished, then free
-        ; the cells wholesale with the group.
+        ; the cells + the drained buffers wholesale with the group.
         var gw_args Vector[LLVMValueRef](1)
         gw_args.put(0, group)
         LLVMBuildCall2(builder, gv_ty, gw_fn, gw_args.data, 1, "")
