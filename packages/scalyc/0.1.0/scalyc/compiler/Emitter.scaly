@@ -11,6 +11,7 @@
 use scaly.io.Console
 use scalyc.compiler.Modeler
 use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.TaskPlanner.TaskPlanner
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.LLVM.*
@@ -263,6 +264,13 @@ define Emitter
     weight_memo_names: ref[Array[String]]?
     weight_memo_vals: ref[Array[size_t]]?
     weight_stack: ref[Array[String]]?
+    ; Milestone 4.4: plain `for` drives the engine. One TaskPlanner per
+    ; Emitter answers "does this body verify parallelizable?" per loop
+    ; site (its purity memo persists across sites). parfor_file is the
+    ; source file of the function currently being emitted — the
+    ; classifier's foundation-containment rule keys on it.
+    parfor_checker: TaskPlanner
+    parfor_file: String
 )
 {
     init(cfg: EmitterConfig)
@@ -317,6 +325,8 @@ define Emitter
         set weight_memo_names: Array[String]^this()
         set weight_memo_vals: Array[size_t]^this()
         set weight_stack: Array[String]^this()
+        set parfor_checker: TaskPlanner^this()
+        set parfor_file: String()
     }
 
     ; ========================================================================
@@ -3269,6 +3279,10 @@ define Emitter
         ; allocated lazily by get_or_create_local_page and released on exit.
         set function_local_page: LLVMValueRef(null)
 
+        ; 4.4: the promotion classifier keys its foundation-containment
+        ; rule on the owning source file.
+        set parfor_file: func.file
+
         ; Skip extern functions - they have no body
         choose func.impl
             when ext: Extern
@@ -3979,6 +3993,7 @@ define Emitter
                         set_synthetic_debug_scope(main_name, 1)
 
                     ; Emit top-level statements
+                    set parfor_file: source_file
                     for stmt in plan.statements
                         emit_statement stmt
 
@@ -9804,11 +9819,11 @@ define Emitter
     ; Emit a for loop
     function emit_for(this, for_expr: PlannedFor) returns LLVMValueRef
     {
-        ; Milestone 3.3: a `parallel for` (its body verified
-        ; parallelizable by TaskPlanner.verify on every compile)
-        ; dispatches its iterations to the default task pool instead
-        ; of running sequentially.
-        if for_expr.is_parallel
+        ; Milestone 4.4: plain `for` drives the engine. A body the
+        ; TaskPlanner proves parallelizable dispatches through the
+        ; adaptive driver (deferred fork + per-site HotSpot promotion);
+        ; everything else runs sequentially. No syntax involved.
+        if promote_for(for_expr)
             return emit_parallel_for for_expr
 
         ; Check if iterator-based or integer range loop
@@ -9816,6 +9831,18 @@ define Emitter
             return emit_for_iterator for_expr
 
         emit_for_integer_range for_expr
+    }
+
+    ; Milestone 4.4: should this loop site dispatch through the engine?
+    ; Delegates to the TaskPlanner classifier (conservative, transitive
+    ; purity, disjoint writes, no early exit, foundation containment).
+    function promote_for(this, for_expr: PlannedFor) returns bool
+    {
+        if current_plan = null
+            return false
+        let plan_ref current_plan
+        let plan (*plan_ref)
+        parfor_checker.loop_promotable(plan, parfor_file, for_expr)
     }
 
     ; Emit integer range for loop: for i in N (iterates 0 to N-1)

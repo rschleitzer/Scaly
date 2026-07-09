@@ -1,4 +1,4 @@
-; `parallel for` outlining emission (stage-3 milestone 3.3): verified
+; `for` outlining emission (stage-3 milestone 3.3): verified
 ; bodies are outlined into private task functions and dispatched to
 ; this thread's ncpu default pool; the loop site submits one cell per
 ; iteration (element + captures, bump-allocated on the wave's group
@@ -32,7 +32,7 @@ function accumulate(n: int) returns int
 ; the body sticks to constructions, operators, and user functions).
 let bias 7
 var results Vector[int](32)
-parallel for i in 32
+for i in 32
 {
     let s String("task-local")
     if i = 5
@@ -89,7 +89,7 @@ while j < (16 as size_t)
     set j: j + 1
 }
 var results2 Vector[i64](16)
-parallel for item in items
+for item in items
 {
     let n item.val
     results2.put(item.idx, n * n * n)

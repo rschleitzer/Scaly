@@ -1,5 +1,5 @@
 ; HotSpot per-site accumulation (stage-4 milestone 4.3): every
-; `parallel for` site carries thread-local volume/calibration
+; `for` site carries thread-local volume/calibration
 ; accumulators and one shared published per-iteration cost. Wave 1: a
 ; tiny cold site never accumulates enough volume to matter and never
 ; submits. Wave 2: a short-but-hot site (thousands of executions)
@@ -45,13 +45,13 @@ define Item(idx: size_t, val: i64)
 
 procedure wave_tiny(r: Vector[i64])
 {
-    parallel for i in 32
+    for i in 32
         r.put(i, (i * 3) as i64)
 }
 
 procedure wave_hot(r: Vector[i64])
 {
-    parallel for i in 8
+    for i in 8
     {
         let v spin(i as i64)
         r.put(i, v)
@@ -60,7 +60,7 @@ procedure wave_hot(r: Vector[i64])
 
 procedure wave_range(r: Vector[i64], n: int, bias: i64)
 {
-    parallel for i in n
+    for i in n
     {
         let v spin_big(i as i64) + bias
         r.put(i, v)
@@ -69,7 +69,7 @@ procedure wave_range(r: Vector[i64], n: int, bias: i64)
 
 procedure wave_iter(r: Vector[i64], items: Vector[Item], bias: i64)
 {
-    parallel for item in items
+    for item in items
     {
         let v spin_big(item.val) + bias
         r.put(item.idx, v)

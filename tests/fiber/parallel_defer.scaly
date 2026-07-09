@@ -1,4 +1,4 @@
-; Deferred adaptive `parallel for` dispatch (stage-4 milestone 4.2):
+; Deferred adaptive `for` dispatch (stage-4 milestone 4.2):
 ; iterations run inline with backoff-spaced clock checkpoints; only a
 ; loop whose MEASURED remaining work clears the fork gate hands its
 ; remaining range to the pool. TaskPool.submit_count makes both sides
@@ -32,7 +32,7 @@ let pool TaskPool.default_pool()
 
 ; ---- Wave A: short range — total work far below the noise floor.
 var r1 Vector[int](64)
-parallel for i in 64
+for i in 64
 {
     let v i * 3
     r1.put(i, v)
@@ -60,7 +60,7 @@ if TaskPool.submit_count(pool) <> (0 as u64)
 ; ---- Wave B: empty range — exits before the first checkpoint.
 let zero_n 0
 var r2 Vector[int](1)
-parallel for z in zero_n
+for z in zero_n
 {
     let v z + 1
     r2.put(z, v)
@@ -80,7 +80,7 @@ while j < (32 as size_t)
     set j: j + 1
 }
 var r3 Vector[i64](32)
-parallel for item in items
+for item in items
 {
     let n item.val
     r3.put(item.idx, n * 5)
@@ -111,7 +111,7 @@ if TaskPool.submit_count(pool) <> (0 as u64)
 ; few µs-scale iterations).
 let bias 7
 var r4 Vector[i64](256)
-parallel for h in 256
+for h in 256
 {
     if h = 2
     {
@@ -175,7 +175,7 @@ while j < (256 as size_t)
     set j: j + 1
 }
 var r5 Vector[i64](256)
-parallel for item in items2
+for item in items2
 {
     let v spin(item.val) + (bias as i64)
     r5.put(item.idx, v)

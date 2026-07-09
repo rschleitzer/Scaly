@@ -387,12 +387,7 @@ define TaskPlanner
             if verify_mode
                 if fr.is_parallel = false
                     return
-            set cls_locals.length: 0
-            set cls_blocked: false
-            set cls_reason: String^this("")
-            set cls_loop_var: String^this(fr.identifier)
-            set cls_depth: 0
-            this.cls_action(fr.body)
+            this.classify_body(fr)
             set loops_total: loops_total + 1
             if verify_mode
             {
@@ -427,6 +422,55 @@ define TaskPlanner
                 let par_copy String^this("parallel")
                 report_verdicts.add par_copy
             }
+        }
+
+        ; Reset the per-loop scratch and walk one body; cls_blocked /
+        ; cls_reason carry the verdict. Shared by the report/verify
+        ; walks and the Emitter's per-site promotion query.
+        function classify_body(this: TaskPlanner, fr: PlannedFor)
+        {
+            set cls_locals.length: 0
+            set cls_blocked: false
+            set cls_reason: String^this("")
+            set cls_loop_var: String^this(fr.identifier)
+            set cls_depth: 0
+            if file_is_foundation(current_file)
+                this.block("engine foundation module")
+            if cls_blocked = false
+                this.cls_action(fr.body)
+        }
+
+        ; Milestone 4.4 entry point: the Emitter asks per `for` site
+        ; whether the body verifies parallelizable — plain `for` drives
+        ; the engine, no syntax involved. Same classifier, same
+        ; conservatism as the report; the purity memo persists across
+        ; sites on one instance.
+        function loop_promotable(this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) returns bool
+        {
+            set plan_functions: plan.functions
+            set plan_globals: plan.globals
+            set current_file: String^this(file)
+            this.classify_body(fr)
+            if cls_blocked
+                return false
+            true
+        }
+
+        ; Milestone 4.4: the adaptive engine never drives loops inside
+        ; its own foundation. A fork allocates TaskGroup pages and may
+        ; lazily create a worker pool — promoting the allocator's own
+        ; teardown loops (Page.deallocate_extensions) or the fiber/task
+        ; runtime's loops would re-enter that machinery mid-operation
+        ; (page-tree teardown, thread-exit reclaim after the pools are
+        ; drained). Keyed on the owning source file: the stdlib's memory
+        ; and fiber modules stay sequential by rule, not by verdict.
+        function file_is_foundation(file: String) returns bool
+        {
+            if file.contains("scaly/memory/")
+                return true
+            if file.contains("scaly/fiber/")
+                return true
+            false
         }
 
         ; Record the first blocker. Later calls are no-ops.
