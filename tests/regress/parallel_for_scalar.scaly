@@ -1,0 +1,26 @@
+; `parallel for x in vec` over a SCALAR-element Vector: the outlined task
+; function must LOAD the element value from the cell's element pointer (the
+; same scalar-element fix as the sequential path). Each iteration writes a
+; disjoint slot indexed by the element itself.
+
+let idxs Vector[size_t](4)
+idxs.put(0 as size_t, 0 as size_t)
+idxs.put(1 as size_t, 1 as size_t)
+idxs.put(2 as size_t, 2 as size_t)
+idxs.put(3 as size_t, 3 as size_t)
+var results Vector[i64](4)
+parallel for x in idxs
+    results.put(x, (x as i64) * 10)
+var sum 0
+var i 0
+while i < 4
+{
+    let v results.get(i as size_t)
+    if v <> null
+        set sum: sum + ((*v) as int)
+    set i: i + 1
+}
+if sum = 60
+    print "PASS"
+else
+    print "FAIL"

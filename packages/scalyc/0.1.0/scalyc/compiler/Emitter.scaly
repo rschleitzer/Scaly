@@ -2356,6 +2356,25 @@ define Emitter
         false
     }
 
+    ; The LLVM type of the loop-var VALUE for a scalar iterator element.
+    ; `element_type` is `pointer[T]`; return the LLVM type of T so the
+    ; caller can load the scalar through next()'s element pointer.
+    function scalar_element_value_type(this, element_type: PlannedType) returns LLVMTypeRef
+    {
+        if element_type.generics <> null
+        {
+            let gens (*element_type.generics)
+            if gens.length > 0
+            {
+                let t0 gens.get 0
+                if t0 <> null
+                    return map_type (*t0)
+            }
+        }
+        ; Unreachable for a scalar element (planner set the flag off it).
+        LLVMPointerTypeInContext(context, 0)
+    }
+
     ; s89: Equivalent predicate for a callee at a call site. Reads
     ; the planned result_type (the Plan-side return type the call
     ; site expects to receive). Same heuristic as needs_sret_for_return.
@@ -9976,9 +9995,18 @@ define Emitter
         ; s128: fresh scope for the iterator-for body.
         enter_scope()
 
-        ; Bind the loop variable to the next result (unwrapped from Option)
-        ; For pointer-based iteration, next_result is already the element pointer
-        define_variable(for_expr.identifier, next_result)
+        ; Bind the loop variable to the next result (unwrapped from Option).
+        ; next_result is the element pointer. A record's member access derefs
+        ; it; a SCALAR element used as a value must be LOADED here (else the
+        ; loop var is the pointer and value uses read garbage — exit 15 when
+        ; used as an index).
+        var loop_bind next_result
+        if for_expr.element_is_scalar
+        {
+            let scalar_ty scalar_element_value_type(for_expr.element_type)
+            set loop_bind: LLVMBuildLoad2(builder, scalar_ty, next_result, for_expr.identifier.c_data())
+        }
+        define_variable(for_expr.identifier, loop_bind)
 
         ; Execute loop body
         emit_action for_expr.body
@@ -10470,7 +10498,17 @@ define Emitter
         let cell_arg LLVMGetParam(task_fn, 0)
         let elem_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, 0, "parfor.elem.ptr")
         let elem_val LLVMBuildLoad2(builder, elem_slot_ty, elem_gep, for_expr.identifier.c_data())
-        define_variable(for_expr.identifier, elem_val)
+        ; For an iterator loop the cell holds the element POINTER; a scalar
+        ; element must be loaded through it (the collection outlives the wait,
+        ; so the deref is in-region). Records/range indices bind as-is.
+        var pf_loop_bind elem_val
+        if for_expr.is_iterator_loop
+            if for_expr.element_is_scalar
+            {
+                let pf_scalar_ty scalar_element_value_type(for_expr.element_type)
+                set pf_loop_bind: LLVMBuildLoad2(builder, pf_scalar_ty, elem_val, for_expr.identifier.c_data())
+            }
+        define_variable(for_expr.identifier, pf_loop_bind)
         set ci: 0
         while ci < cap_count
         {

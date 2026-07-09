@@ -14991,6 +14991,10 @@ define Planner
             var element_type: PlannedType Planner.make_void_type()
             var get_iter_name: String ""
             var next_name: String ""
+            ; When true, `element_type` is `pointer[T]` with T a scalar
+            ; primitive: the loop var binds to the LOADED value, and
+            ; `loop_var_type` below is the scalar T (not the pointer).
+            var element_is_scalar: bool false
 
             if is_integer
             {
@@ -15017,6 +15021,15 @@ define Planner
                         let nm (*next_match)
                         set next_name: nm.mangled_name
                         set element_type: nm.return_type
+                        ; next() returns `pointer[T]`. If T is a scalar
+                        ; primitive, the loop var must be the loaded value.
+                        let pointee Planner.get_pointer_element_type(element_type)
+                        if pointee <> null
+                        {
+                            let pt (*pointee)
+                            if Planner.is_scalar_value_type_name(pt.name)
+                                set element_is_scalar: true
+                        }
                     }
                 }
                 if get_iter_match = null
@@ -15043,7 +15056,18 @@ define Planner
                 }
             }
 
-            this.define_local(f.identifier, element_type, false, false)
+            ; The loop var's own type: for a scalar iterator element it is the
+            ; pointee T (the loaded value); otherwise the element_type as-is
+            ; (integer range = the int itself; record iterator = pointer[T],
+            ; whose member access derefs).
+            var loop_var_type: PlannedType element_type
+            if element_is_scalar
+            {
+                let pointee2 Planner.get_pointer_element_type(element_type)
+                if pointee2 <> null
+                    set loop_var_type: (*pointee2)
+            }
+            this.define_local(f.identifier, loop_var_type, false, false)
 
             let planned_body this.plan_action(f.action)
             this.pop_scope()
@@ -15061,7 +15085,8 @@ define Planner
                 get_iter_name,
                 next_name,
                 f.loop_label,
-                f.is_parallel
+                f.is_parallel,
+                element_is_scalar
             )
         }
 
@@ -27305,6 +27330,23 @@ define Planner
     ; is_primitive_type_name: matches the set the C++ Planner treats as not
     ; requiring an implicit return-page parameter. Used both for layout
     ; decisions and for the needs_implicit_return_page check.
+    ; True for a value scalar whose iterator `next()` returns a genuine
+    ; ADDRESS into the collection (Vector.get_ptr / &field on a non-pointer
+    ; field) — i.e. the loop var must LOAD the value. Deliberately EXCLUDES
+    ; "pointer"/"ref": for a pointer-typed element, `&field` returns the
+    ; pointer VALUE directly (s191), so a load would double-deref (crashes
+    ; PageList's page-release loop). Also excludes "void".
+    function is_scalar_value_type_name(name: String) returns bool
+    {
+        if name = "void"
+            return false
+        if name = "pointer"
+            return false
+        if name = "ref"
+            return false
+        Planner.is_primitive_type_name(name)
+    }
+
     function is_primitive_type_name(name: String) returns bool
     {
         if name = "void"

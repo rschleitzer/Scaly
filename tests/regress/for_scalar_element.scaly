@@ -1,0 +1,43 @@
+; `for x in vec` over a Vector whose element type is a SCALAR (int, size_t):
+; the loop var must be the LOADED value, not next()'s element pointer.
+; Regression for the miscompile where `x` used as a value (arithmetic) read
+; the pointer, and used as a Vector.put index blew the bounds check (exit 15).
+; Record elements (member access) auto-deref and are unaffected.
+
+function sum_values() returns int
+{
+    let v Vector[int](3)
+    v.put(0 as size_t, 10)
+    v.put(1 as size_t, 20)
+    v.put(2 as size_t, 30)
+    var sum 0
+    for x in v
+        set sum: sum + x
+    sum
+}
+
+function scatter_by_index() returns int
+{
+    let idx Vector[size_t](3)
+    idx.put(0 as size_t, 0 as size_t)
+    idx.put(1 as size_t, 1 as size_t)
+    idx.put(2 as size_t, 2 as size_t)
+    let out Vector[int](3)
+    out.put(0 as size_t, 0)
+    out.put(1 as size_t, 0)
+    out.put(2 as size_t, 0)
+    for x in idx
+        out.put(x, 7)
+    var total 0
+    for y in out
+        set total: total + y
+    total
+}
+
+if sum_values() = 60
+    if scatter_by_index() = 21
+        print "PASS"
+    else
+        print "FAIL"
+else
+    print "FAIL"
