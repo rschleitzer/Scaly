@@ -1,6 +1,0 @@
-; xfail: parallel for body is not parallelizable: writes loop-external sum
-; A cross-iteration accumulator is the classic loop-carried dependence.
-var sum 0
-parallel for i in 10
-    set sum: sum + i
-print "done\n"

@@ -1,5 +1,0 @@
-; xfail: parallel for body is not parallelizable: transitively impure call print
-; `print` is a `function` whose body calls the `puts` extern — the
-; TaskPlanner's transitive purity proof rejects it as a parallel body.
-parallel for i in 10
-    print "x"

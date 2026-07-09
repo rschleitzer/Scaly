@@ -1,0 +1,11 @@
+; Milestone 4.4: `parallel` left the reserved words when the
+; `parallel for` grammar was retired (plain `for` drives the engine
+; now) — it must work as an ordinary binding name again.
+let parallel 42
+var sum 0
+for i in parallel
+    set sum: sum + 1
+if sum = parallel
+    print "PASS\n"
+if sum <> parallel
+    print "FAIL\n"

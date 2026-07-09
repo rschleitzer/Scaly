@@ -1,7 +1,7 @@
-; TaskPlanner.scaly - Stage-3 Plan→Plan pass between Planner and Emitter.
+; TaskPlanner.scaly - Stage-3/4 Plan analysis pass between Planner and Emitter.
 ;
-; Milestone 3.0: EMISSION-NEUTRAL analysis only. The pass walks the finished
-; Plan and classifies every `for` loop body: is it provably parallelizable?
+; The pass walks the finished Plan and classifies every `for` loop body:
+; is it provably parallelizable?
 ; A body qualifies when
 ;   - every call resolves to a pure Scaly function, an intrinsic, an
 ;     operator, or a frame-local construction (Local/Unspecified life);
@@ -18,13 +18,14 @@
 ;     a DIFFERENT cell).
 ; Everything else records the FIRST blocking construct as the reason.
 ;
-; The analysis is deliberately conservative and advisory: it only reads the
-; Plan and appends report lines, so it is byte-identical-neutral on emission.
-; It runs only behind the `--task-plan` CLI flag (the `--use-vis`
-; measurement-report precedent). Milestone 3.1 turns the same classification
-; into a hard planner diagnostic for explicit `parallel for` syntax;
-; milestones 3.2/3.3 add the work-stealing runtime and the outlining
-; emission (closure machinery; one region per task).
+; The analysis is deliberately conservative. Two consumers (4.4 — plain
+; `for` drives the engine, no syntax involved):
+;   - the Emitter asks loop_promotable per `for` site; a passing body
+;     dispatches through the adaptive parallel driver, a blocked one
+;     runs sequentially (never a diagnostic),
+;   - the `--task-plan` CLI flag prints the per-loop verdicts (the
+;     `--use-vis` measurement-report precedent) — the only surface
+;     where parallelization is observable.
 ;
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 
@@ -49,12 +50,6 @@ define TaskPlanner
         report_verdicts: Array[String]
         loops_total: size_t
         loops_parallel: size_t
-
-        ; Milestone 3.1 verification mode: classify ONLY `parallel for`
-        ; loops, and record just the BLOCKED ones (verdict = the bare
-        ; blocker reason). The cli prints each entry as a hard
-        ; `error:` diagnostic and fails the compile.
-        verify_mode: bool
 
         ; The plan's flat function/global vectors, for purity and
         ; mutable-global lookups by mangled name during classification.
@@ -96,7 +91,6 @@ define TaskPlanner
             set report_verdicts: Array[String]^this()
             set loops_total: 0
             set loops_parallel: 0
-            set verify_mode: false
             set plan_functions: null
             set plan_globals: null
             set current_file: String^this("")
@@ -137,16 +131,6 @@ define TaskPlanner
                 for stmt in plan.statements
                     this.find_statement(stmt)
             }
-        }
-
-        ; Milestone 3.1 entry point: hard verification of `parallel for`
-        ; loops. Same walk as analyze, but classify_for skips unmarked
-        ; loops and records only the blocked ones — one report entry per
-        ; failing loop for the cli's error printer.
-        function verify(this: TaskPlanner, plan: Plan, entry_file: String)
-        {
-            set verify_mode: true
-            this.analyze(plan, entry_file)
         }
 
         ; ================================================================
@@ -384,23 +368,8 @@ define TaskPlanner
 
         function classify_for(this: TaskPlanner, fr: PlannedFor)
         {
-            if verify_mode
-                if fr.is_parallel = false
-                    return
             this.classify_body(fr)
             set loops_total: loops_total + 1
-            if verify_mode
-            {
-                if cls_blocked
-                {
-                    let vfile_copy String^this(current_file)
-                    report_files.add vfile_copy
-                    report_offsets.add(fr.loc.start)
-                    let reason_copy String^this(cls_reason)
-                    report_verdicts.add reason_copy
-                }
-                return
-            }
             ; Report strings must live on the TaskPlanner's own page —
             ; a default-local copy dangles by print time (the use-vis
             ; report's `String^this` + bound-local-add idiom).
@@ -425,8 +394,8 @@ define TaskPlanner
         }
 
         ; Reset the per-loop scratch and walk one body; cls_blocked /
-        ; cls_reason carry the verdict. Shared by the report/verify
-        ; walks and the Emitter's per-site promotion query.
+        ; cls_reason carry the verdict. Shared by the report walk and
+        ; the Emitter's per-site promotion query.
         function classify_body(this: TaskPlanner, fr: PlannedFor)
         {
             set cls_locals.length: 0

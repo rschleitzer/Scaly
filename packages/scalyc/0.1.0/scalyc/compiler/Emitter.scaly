@@ -249,7 +249,7 @@ define Emitter
     ; The scope-exit release pass skips pinned slots; pins expire
     ; with their enclosing statement window.
     temp_pinned: ref[Array[LLVMValueRef]]?
-    ; Milestone 3.3: `parallel for` capture-scan scratch. parfor_locals
+    ; Milestone 3.3: parallel-for capture-scan scratch. parfor_locals
     ; holds the names bound inside the scanned body (scoped — callers
     ; save/restore the length around nested scopes); parfor_captures
     ; collects every free name that resolves in the enclosing scope.
@@ -10061,12 +10061,14 @@ define Emitter
     }
 
     ; ========================================================================
-    ; Milestone 3.3: `parallel for` outlining emission.
+    ; Milestone 3.3: parallel-for outlining emission.
     ; Milestone 4.1: chunked sub-range dispatch.
     ; Milestone 4.2: deferred adaptive driver.
+    ; Milestone 4.4: plain `for` drives the engine — promote_for gates
+    ; entry on the TaskPlanner classifier, never on syntax.
     ;
-    ; The body (verified parallelizable by TaskPlanner.verify — an
-    ; unverifiable body failed the compile with rc 4 long before emission)
+    ; The body (proved parallelizable by the classifier — a blocked body
+    ; never reaches this function; it runs sequentially)
     ; is outlined into a private `ptr(ptr)` task function that runs a
     ; SUB-RANGE [lo,hi) of iterations. The loop site (4.2) no longer
     ; submits eagerly: iterations run INLINE with backoff-spaced clock
@@ -10831,7 +10833,7 @@ define Emitter
     {
         ; ---- Collect the captures (plan-side scan, no IR). Copy the
         ; result out of the scratch right away: emitting the body below
-        ; may meet a NESTED parallel for, which rescans.
+        ; may meet a NESTED promoted for, which rescans.
         set parfor_locals.length: 0
         set parfor_captures.length: 0
         parfor_add_local(for_expr.identifier)

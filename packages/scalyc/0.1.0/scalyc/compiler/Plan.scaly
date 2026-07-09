@@ -257,7 +257,6 @@ define PlannedFor
     get_iterator_method: String     ; Mangled name of get_iterator
     next_method: String             ; Mangled name of next
     loop_label: String              ; Loop label for labeled break/continue
-    is_parallel: bool               ; `parallel for` — body must verify parallelizable
     ; Iterator loops bind the loop var to next()'s `pointer[T]`. When the
     ; element T is a scalar primitive, the loop var must be the LOADED value,
     ; not the pointer (a record's member access already derefs the pointer).

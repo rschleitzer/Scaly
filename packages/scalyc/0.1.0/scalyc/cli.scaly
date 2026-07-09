@@ -494,29 +494,16 @@ define cli
             return 4
         }
 
-        ; --task-plan: stage-3 TaskPlanner parallelizability report
-        ; (advisory, milestone 3.0 — mirrors the --use-vis measurement
-        ; precedent). Runs only when requested, so the default pipeline
-        ; emits byte-identically with the pass compiled in.
+        ; --task-plan: TaskPlanner parallelizability report (advisory —
+        ; mirrors the --use-vis measurement precedent). Since 4.4 this
+        ; is the only surface where parallelization is observable: a
+        ; "parallel" verdict means the Emitter dispatches that loop
+        ; through the adaptive engine; a blocked one runs sequentially.
         if opts.task_plan
         {
             var task_planner TaskPlanner.TaskPlanner()
             task_planner.analyze(plan, opts.input_file)
             cli.print_task_plan(&task_planner)
-        }
-
-        ; `parallel for` verification (stage-3 milestone 3.1): a
-        ; parallel-marked loop whose body fails the TaskPlanner analysis
-        ; is a hard error naming the first blocker. Runs on every
-        ; compile — the walk only reads the plan (emission-neutral) and
-        ; only parallel loops are classified. Placed after the advisory
-        ; --task-plan report so that output survives a failing compile.
-        var par_verifier TaskPlanner.TaskPlanner()
-        par_verifier.verify(plan, opts.input_file)
-        if par_verifier.report_files.length > 0
-        {
-            cli.print_parallel_errors(&par_verifier)
-            return 4
         }
 
         if opts.verbose
@@ -994,75 +981,6 @@ define cli
                 msg.append ":"
                 msg.append(cli.format_size(col))
                 msg.append ": "
-                if vp <> null
-                    msg.append((*vp))
-                let msg_str msg.to_string()
-                Console.println(msg_str.to_c_string())
-            }
-            set i: i + 1
-        }
-    }
-
-    ; `parallel for` hard diagnostics (milestone 3.1): one line per
-    ; blocked parallel loop in print_diagnostics' error format. The byte
-    ; offset is relative to the loop's own source file, so re-read the
-    ; file when it changes (entries arrive grouped by file, like
-    ; print_task_plan).
-    function print_parallel_errors(tp: ref[TaskPlanner.TaskPlanner])
-    {
-        var cur_path String("")
-        var cur_src String("")
-        var have_src false
-        var i: size_t 0
-        while i < tp.report_files.length
-        {
-            let fp tp.report_files.get i
-            let op_ tp.report_offsets.get i
-            let vp tp.report_verdicts.get i
-            if fp <> null
-            {
-                var need_read false
-                if have_src = false
-                    set need_read: true
-                if cur_path <> (*fp)
-                    set need_read: true
-                if need_read
-                {
-                    set cur_path: String((*fp))
-                    set cur_src: File.read_to_string((*fp))
-                    set have_src: true
-                }
-                var line: size_t 1
-                var col: size_t 1
-                let src_len cur_src.get_length()
-                var target: size_t 0
-                if op_ <> null
-                    set target: (*op_)
-                if target > src_len
-                    set target: src_len
-                var off: size_t 0
-                while off < target
-                {
-                    ; Numeric LF compare (see print_diagnostics).
-                    let c cur_src.get off
-                    if c = (10 as char)
-                    {
-                        set line: line + 1
-                        set col: 1
-                    }
-                    else
-                    {
-                        set col: col + 1
-                    }
-                    set off: off + 1
-                }
-                var msg StringBuilder()
-                msg.append((*fp))
-                msg.append ":"
-                msg.append(cli.format_size(line))
-                msg.append ":"
-                msg.append(cli.format_size(col))
-                msg.append ": error: parallel for body is not parallelizable: "
                 if vp <> null
                     msg.append((*vp))
                 let msg_str msg.to_string()

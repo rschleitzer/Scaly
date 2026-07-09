@@ -161,9 +161,7 @@ define Choose
 
 ; Loops
 ; `loop_label` is the optional loop name targeted by labeled break/continue
-; (empty String = unlabeled). `parallel` marks a `parallel for` — the body
-; must pass the TaskPlanner parallelizability analysis (hard diagnostic
-; otherwise).
+; (empty String = unlabeled).
 define For
 (
     span: Span
@@ -171,7 +169,6 @@ define For
     expression: Vector[Operand]
     action: Action
     loop_label: String
-    is_parallel: bool
 )
 
 define While
