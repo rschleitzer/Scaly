@@ -65,6 +65,23 @@ procedure wave_control(r: Vector[i64], n: int)
     }
 }
 
+; Written-params discipline: Vector.get only READS its receiver
+; (mask 0), so a loop reading a shared input vector and writing
+; disjoint slots is the canonical data-parallel pattern — it MUST
+; still promote and fork.
+procedure wave_read(src: Vector[i64], r: Vector[i64], n: int)
+{
+    for i in n
+    {
+        var base 0 as i64
+        let p src.get i
+        if p <> null
+            set base: (*p)
+        let v spin_big(base)
+        r.put(i, v)
+    }
+}
+
 function lsum(l: List[i64]) returns i64
 {
     var s 0 as i64
@@ -150,6 +167,30 @@ if vsum(rd, 64 as size_t) <> want_sum
 if TaskPool.submit_count(pool) = (0 as u64)
 {
     Console.println "waveD-no-fork"
+    exit 1
+}
+
+; ---- Wave E: reads a loop-EXTERNAL input vector through get,
+; writes disjoint slots — must fork (get's written mask is 0).
+let subs_d TaskPool.submit_count(pool)
+var src Vector[i64](64)
+var si: size_t 0
+while si < (64 as size_t)
+{
+    src.put(si, (si * 5) as i64)
+    set si: si + 1
+}
+var re Vector[i64](64)
+wave_read(src, re, 64)
+; sum over i of (5i + 799980000) = 64*799980000 + 5*2016
+if vsum(re, 64 as size_t) <> (51198730080 as i64)
+{
+    Console.println "waveE-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) = subs_d
+{
+    Console.println "waveE-no-fork"
     exit 1
 }
 

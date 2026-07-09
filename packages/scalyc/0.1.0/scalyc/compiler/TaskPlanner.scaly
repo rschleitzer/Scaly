@@ -89,6 +89,28 @@ define TaskPlanner
         pure_stack: Array[String]
         ; Violation flag of the purity walk currently in flight.
         pw_impure: bool
+
+        ; Written-params analysis: mangled name -> bitmask over the
+        ; callee's input positions (bit i set = the callee may WRITE
+        ; through what parameter i reaches, transitively). Bit 63 doubles
+        ; as the everything-bit via WM_ALL. This is what lets a loop
+        ; body READ loop-external containers (`a.get j` — mask 0) while
+        ; a mutating method (`outer.add v` — List.add writes this, bit 0)
+        ; still demands a per-iteration receiver. The `function` keyword
+        ; plays no part — masks are computed from bodies.
+        wm_memo_names: Array[String]
+        wm_memo_vals: Array[size_t]
+        wm_stack: Array[String]
+        ; Walk-in-flight state: wr_mask accumulates the written mask;
+        ; wr_names/wr_masks is a STACKED name table (params seeded with
+        ; their own bit, body names with the reach-mask of what their
+        ; initializer/scrutinee can alias); wr_base marks the current
+        ; callee's window — recursion into a sub-callee's walk saves and
+        ; restores mask/base/length around itself.
+        wr_mask: size_t
+        wr_names: Array[String]
+        wr_masks: Array[size_t]
+        wr_base: size_t
     )
     {
         init()
@@ -111,6 +133,13 @@ define TaskPlanner
             set pure_memo_flags: Array[size_t]^this()
             set pure_stack: Array[String]^this()
             set pw_impure: false
+            set wm_memo_names: Array[String]^this()
+            set wm_memo_vals: Array[size_t]^this()
+            set wm_stack: Array[String]^this()
+            set wr_mask: 0
+            set wr_names: Array[String]^this()
+            set wr_masks: Array[size_t]^this()
+            set wr_base: 0
         }
 
         ; ================================================================
@@ -1038,7 +1067,15 @@ define TaskPlanner
                     0
                 when u: Unspecified
                     0
+                when c: Call
+                    ; Argument scratch — lives for the duration of the
+                    ; call, strictly inside one iteration's frame (the
+                    ; planner leaves this on the arg tuple of a
+                    ; bare-variable argument, `spin_big(base)`).
+                    0
                 else
+                    ; Reference (^page/^this) and Thrown escape the
+                    ; iteration — blocked.
                     this.block("non-local allocation")
         }
 
@@ -1640,13 +1677,549 @@ define TaskPlanner
             false
         }
 
+        ; ================================================================
+        ; Written-params analysis (wm_/wr_): which of a callee's input
+        ; positions can it WRITE through, transitively? The result is a
+        ; bitmask over input indices (call args align 1:1 — methods
+        ; declare `this` as input[0] and it rides args[0]; page params
+        ; are peeled by the Modeler and appear in neither). Mask 0 means
+        ; the callee only READS its inputs — a loop body may then pass
+        ; loop-external values freely (`a.get j` on a shared input
+        ; vector); a set bit demands a per-iteration argument at that
+        ; position (`outer.add v` — List.add writes this, bit 0 —
+        ; blocks). WM_ALL (all ones) is the conservative unknown.
+        ; Constructions are treated as read-only on their arguments
+        ; (they write the FRESH object; matches cls_call's construction
+        ; policy). Runs only on effectively_pure callees, so globals,
+        ; I/O, lambdas and indirect calls are already policed.
+        ; ================================================================
+
+        function wm_all() returns size_t
+        {
+            (0 as size_t) - (1 as size_t)
+        }
+
+        function memo_written(this: TaskPlanner, mangled: String, mask: size_t)
+        {
+            let m_copy String^this(mangled)
+            wm_memo_names.add m_copy
+            wm_memo_vals.add mask
+        }
+
+        function written_mask(this: TaskPlanner, mangled: String) returns size_t
+        {
+            var i: size_t 0
+            while i < wm_memo_names.length
+            {
+                let p wm_memo_names.get i
+                if p <> null
+                {
+                    if (*p) = mangled
+                    {
+                        let v wm_memo_vals.get i
+                        if v <> null
+                            return (*v)
+                        return wm_all()
+                    }
+                }
+                set i: i + 1
+            }
+            ; Recursion among walked functions: optimistic 0 — a concrete
+            ; write elsewhere in the cycle still surfaces in the caller's
+            ; own walk (the pure_stack discipline).
+            var j: size_t 0
+            while j < wm_stack.length
+            {
+                let sp wm_stack.get j
+                if sp <> null
+                    if (*sp) = mangled
+                        return 0
+                set j: j + 1
+            }
+            if plan_functions = null
+                return wm_all()
+            var saw_extern false
+            var extern_mask: size_t 0
+            for func in plan_functions
+            {
+                if func.mangled_name = mangled
+                {
+                    choose func.impl
+                        when action: Action
+                        {
+                            ; The 62-input cap keeps every shift < 63.
+                            var pcount: size_t 0
+                            if func.input <> null
+                            {
+                                let input_ref func.input.unwrap()
+                                let input (*input_ref)
+                                set pcount: input.length
+                            }
+                            if pcount > (62 as size_t)
+                            {
+                                this.memo_written(mangled, wm_all())
+                                return wm_all()
+                            }
+                            let sm_copy String^this(mangled)
+                            wm_stack.add sm_copy
+                            let saved_mask wr_mask
+                            let saved_base wr_base
+                            let saved_len wr_names.length
+                            set wr_mask: 0
+                            set wr_base: wr_names.length
+                            ; Seed the params, each with its own bit.
+                            if func.input <> null
+                            {
+                                let input_ref func.input.unwrap()
+                                let input (*input_ref)
+                                var pi: size_t 0
+                                while pi < pcount
+                                {
+                                    let item_p input.get pi
+                                    if item_p <> null
+                                    {
+                                        let item (*item_p)
+                                        if item.name <> null
+                                            this.wr_add_name((*item.name), (1 as size_t) << pi)
+                                    }
+                                    set pi: pi + 1
+                                }
+                            }
+                            this.wr_action(action)
+                            let result wr_mask
+                            set wr_mask: saved_mask
+                            set wr_base: saved_base
+                            set wr_names.length: saved_len
+                            set wr_masks.length: saved_len
+                            set wm_stack.length: wm_stack.length - (1 as size_t)
+                            this.memo_written(mangled, result)
+                            return result
+                        }
+                        when e: Extern
+                        {
+                            set saw_extern: true
+                            let em this.extern_written_mask(func.name)
+                            set extern_mask: (extern_mask | em)
+                        }
+                        else
+                        {
+                            ; Intrinsic/Instruction impls: primitive value
+                            ; ops, no pointer writes.
+                            this.memo_written(mangled, 0)
+                            return 0
+                        }
+                }
+            }
+            if saw_extern
+            {
+                this.memo_written(mangled, extern_mask)
+                return extern_mask
+            }
+            this.memo_written(mangled, wm_all())
+            wm_all()
+        }
+
+        ; Hard-coded masks for the benign-extern whitelist (the writers
+        ; write through arg 0; realloc/free consume arg 0). Anything not
+        ; explicitly listed is WM_ALL — adding a new benign extern FORCES
+        ; a mask decision here.
+        function extern_written_mask(this: TaskPlanner, name: String) returns size_t
+        {
+            if name.starts_with("scaly_atomic_")
+                return 0
+            if name = "memcpy"
+                return 1 as size_t
+            if name = "memmove"
+                return 1 as size_t
+            if name = "memset"
+                return 1 as size_t
+            if name = "free"
+                return 1 as size_t
+            if name = "realloc"
+                return 1 as size_t
+            if name = "malloc"
+                return 0
+            if name = "calloc"
+                return 0
+            if name = "aligned_alloc"
+                return 0
+            if name = "memcmp"
+                return 0
+            if name = "strlen"
+                return 0
+            if name = "strcmp"
+                return 0
+            if name = "strncmp"
+                return 0
+            if name = "strdup"
+                return 0
+            if name = "exit"
+                return 0
+            if name = "scaly_eputs"
+                return 0
+            if name = "scaly_eputi"
+                return 0
+            if name = "scaly_eputnl"
+                return 0
+            wm_all()
+        }
+
+        ; ---- the per-callee body walk ----
+
+        function wr_add_name(this: TaskPlanner, name: String, mask: size_t)
+        {
+            let n_copy String^this(name)
+            wr_names.add n_copy
+            wr_masks.add mask
+        }
+
+        ; Latest entry wins (backward scan): a re-taint appends a wider
+        ; mask that shadows the original. Unknown names are conservative
+        ; (a global write is policed by the purity walk; anything else
+        ; is a shape this walk does not model).
+        function wr_lookup(this: TaskPlanner, name: String) returns size_t
+        {
+            var i wr_names.length
+            while i > wr_base
+            {
+                set i: i - 1
+                let p wr_names.get i
+                if p <> null
+                {
+                    if (*p) = name
+                    {
+                        let m wr_masks.get i
+                        if m <> null
+                            return (*m)
+                        return wm_all()
+                    }
+                }
+            }
+            wm_all()
+        }
+
+        ; Reach-mask of the value an operand produces: which params can
+        ; it alias? Scalars reach nothing; a call result reaches at most
+        ; what its arguments reach; unknown shapes reach everything.
+        function wr_mask_of_ops(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) returns size_t
+        {
+            if ops = null
+                return 0
+            var acc: size_t 0
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    set acc: (acc | this.wr_mask_of_op(op_ptr.unwrap()))
+                set i: i + 1
+            }
+            acc
+        }
+
+        function wr_mask_of_op(this: TaskPlanner, op: PlannedOperand) returns size_t
+        {
+            if this.value_can_alias(op.result_type) = false
+                return 0
+            choose op.expr
+                when v: Variable
+                    return this.wr_lookup(v.name)
+                when c: Constant
+                    return 0
+                when t: Type
+                    return 0
+                when g: GlobalRef
+                    return 0
+                when call: Call
+                    return this.wr_mask_of_ops(call.args)
+                when tp: Tuple
+                {
+                    var acc: size_t 0
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                set acc: (acc | this.wr_mask_of_ops(c_ptr.value))
+                            set i: i + 1
+                        }
+                    }
+                    return acc
+                }
+                else
+                    0
+            wm_all()
+        }
+
+        function wr_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.wr_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        function wr_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        {
+            if stmt <> null
+            {
+                let s stmt
+                this.wr_statement((*s))
+            }
+        }
+
+        function wr_action(this: TaskPlanner, act: PlannedAction)
+        {
+            this.wr_operands(act.source)
+            if act.target <> null
+            {
+                let t (*act.target)
+                if t.length <> (1 as size_t)
+                {
+                    set wr_mask: wm_all()
+                    return
+                }
+                let tp_ t.get 0
+                if tp_ = null
+                    return
+                let top tp_.unwrap()
+                choose top.expr
+                    when v: Variable
+                    {
+                        ; The write lands wherever the root reaches; and
+                        ; storing an aliasing value INTO a name widens
+                        ; what later writes through it can reach.
+                        set wr_mask: (wr_mask | this.wr_lookup(v.name))
+                        let smask this.wr_mask_of_ops(act.source)
+                        if smask <> 0
+                        {
+                            let widened (this.wr_lookup(v.name) | smask)
+                            this.wr_add_name(v.name, widened)
+                        }
+                    }
+                    when g: GlobalRef
+                        0
+                    else
+                        set wr_mask: wm_all()
+            }
+        }
+
+        function wr_statement(this: TaskPlanner, stmt: PlannedStatement)
+        {
+            choose stmt
+                when action: Action
+                    this.wr_action(action)
+                when binding: Binding
+                {
+                    this.wr_operands(binding.operation)
+                    if binding.binding_item.name <> null
+                    {
+                        let bmask this.wr_mask_of_ops(binding.operation)
+                        this.wr_add_name((*binding.binding_item.name), bmask)
+                    }
+                }
+                when ret: Return
+                    this.wr_operands(ret.result)
+                when throw_stmt: Throw
+                    this.wr_operands(throw_stmt.result)
+                when brk: Break
+                    this.wr_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        function wr_operand(this: TaskPlanner, op: PlannedOperand)
+        {
+            choose op.expr
+                when call: Call
+                    this.wr_call(call)
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.wr_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.wr_operands(iff.condition)
+                    if iff.prop <> null
+                    {
+                        let pmask this.wr_mask_of_ops(iff.condition)
+                        this.wr_add_name(iff.prop.name, pmask)
+                    }
+                    this.wr_statement_ref(iff.consequent)
+                    this.wr_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.wr_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.wr_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.wr_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.wr_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.wr_operands(ch.condition)
+                    let chmask this.wr_mask_of_ops(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.wr_add_name(w.name, chmask)
+                                this.wr_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.wr_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.wr_operands(fr.expr)
+                    let fmask this.wr_mask_of_ops(fr.expr)
+                    this.wr_add_name(fr.identifier, fmask)
+                    this.wr_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.wr_operands(wh.cond.operation)
+                    if wh.cond.binding_item.name <> null
+                    {
+                        let wmask this.wr_mask_of_ops(wh.cond.operation)
+                        this.wr_add_name((*wh.cond.binding_item.name), wmask)
+                    }
+                    this.wr_action(wh.body)
+                }
+                when rp: Repeat
+                    this.wr_action(rp.body)
+                when tr: Try
+                {
+                    this.wr_operands(tr.cond.operation)
+                    if tr.cond.binding_item.name <> null
+                    {
+                        let tmask this.wr_mask_of_ops(tr.cond.operation)
+                        this.wr_add_name((*tr.cond.binding_item.name), tmask)
+                    }
+                }
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.wr_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when lm: Lambda
+                    set wr_mask: wm_all()
+                when cl: Closure
+                    set wr_mask: wm_all()
+                when fref: FunctionRef
+                    set wr_mask: wm_all()
+                else
+                    0
+        }
+
+        function wr_call(this: TaskPlanner, call: PlannedCall)
+        {
+            this.wr_operands(call.args)
+            if call.is_indirect
+            {
+                set wr_mask: wm_all()
+                return
+            }
+            if call.is_intrinsic
+                return
+            if call.is_operator
+                return
+            if this.is_construction_name(call.name)
+                return
+            let sub this.written_mask(call.mangled_name)
+            if sub = 0
+                return
+            if call.args = null
+                return
+            var i: size_t 0
+            while i < call.args.length
+            {
+                var written false
+                if sub = wm_all()
+                    set written: true
+                if i > (62 as size_t)
+                    set written: true
+                if written = false
+                    if ((sub >> i) & (1 as size_t)) <> 0
+                        set written: true
+                if written
+                {
+                    let ap call.args.get i
+                    if ap <> null
+                        set wr_mask: (wr_mask | this.wr_mask_of_op(ap.unwrap()))
+                }
+                set i: i + 1
+            }
+        }
+
         ; A direct callee must be transitively effect-free
-        ; (effectively_pure — the function keyword alone is a claim). A
-        ; declared-pure callee is then fine outright (inputs immutable).
-        ; An effect-free PROCEDURE mutates only through its arguments, so
-        ; it is fine when every named argument root is bound inside the
-        ; loop body (per-iteration state) — that admits `local_sb.append
-        ; local_x` while blocking `outer_list.add x` (order-dependent).
+        ; (effectively_pure — the function keyword alone is a claim).
+        ; Its written-params mask then says which argument positions it
+        ; can write through: those must be per-iteration state; purely
+        ; read positions may take loop-external values freely. That
+        ; admits `a.get j` on a shared input vector and
+        ; `local_sb.append external_str` while blocking `outer_list.add
+        ; x` (List.add writes this — order-dependent).
         function callee_verdict(this: TaskPlanner, call: PlannedCall)
         {
             if cls_blocked
@@ -1675,12 +2248,15 @@ define TaskPlanner
                             ; The `function` keyword is a purity CONTRACT the
                             ; compiler does not enforce — the stdlib itself
                             ; declares argument-mutating methods as functions
-                            ; (List.add writes this.head). An effectively-pure
-                            ; callee can still write through whatever its
-                            ; arguments reach, so every non-scalar argument
-                            ; root must be per-iteration state (scalars pass
-                            ; by copy and cannot be written through).
-                            if this.args_are_body_local(call) = false
+                            ; (List.add writes this.head). The written-params
+                            ; mask says which argument positions the callee
+                            ; can actually write through: only those demand
+                            ; per-iteration state; read-only positions take
+                            ; loop-external values freely (`a.get j`).
+                            let wm this.written_mask(call.mangled_name)
+                            if wm = 0
+                                return
+                            if this.masked_args_local(call, wm) = false
                                 this.block_named("mutating call on loop-external state: ", call.name)
                             return
                         }
@@ -1701,35 +2277,47 @@ define TaskPlanner
                     this.block_named("extern call ", call.name)
                     return
                 }
-                ; Atomics are race-free by definition — the sanctioned
-                ; cross-thread mechanism stays admitted on any target.
-                if call.name.starts_with("scaly_atomic_")
-                    return
                 ; The benign whitelist includes WRITERS (memcpy/memmove/
-                ; memset, free): same argument discipline as body callees.
-                if this.args_are_body_local(call) = false
+                ; memset, free): their hard-coded masks apply the same
+                ; argument discipline as body callees. Atomics mask to 0
+                ; (race-free by definition — the sanctioned cross-thread
+                ; mechanism stays admitted on any target).
+                let em this.extern_written_mask(call.name)
+                if em = 0
+                    return
+                if this.masked_args_local(call, em) = false
                     this.block_named("extern write on loop-external state: ", call.name)
                 return
             }
             this.block_named("unresolved callee ", call.name)
         }
 
-        ; Every argument whose root is a NAMED binding must be body-local;
-        ; constants, call results, and constructions are per-evaluation
-        ; temporaries (a mutation of one is invisible to later
-        ; iterations). `&x` / deref operator chains recurse to the named
-        ; root inside.
-        function args_are_body_local(this: TaskPlanner, call: PlannedCall) returns bool
+        ; Every argument position the mask marks written must be
+        ; per-iteration state; the rest are free (read-only positions
+        ; take loop-external values). `&x` / deref operator chains
+        ; recurse to the named root inside.
+        function masked_args_local(this: TaskPlanner, call: PlannedCall, mask: size_t) returns bool
         {
             if call.args = null
                 return true
             var i: size_t 0
             while i < call.args.length
             {
-                let ap call.args.get i
-                if ap <> null
-                    if this.arg_root_local(ap.unwrap()) = false
-                        return false
+                var written false
+                if mask = wm_all()
+                    set written: true
+                if i > (62 as size_t)
+                    set written: true
+                if written = false
+                    if ((mask >> i) & (1 as size_t)) <> 0
+                        set written: true
+                if written
+                {
+                    let ap call.args.get i
+                    if ap <> null
+                        if this.arg_root_local(ap.unwrap()) = false
+                            return false
+                }
                 set i: i + 1
             }
             true
