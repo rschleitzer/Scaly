@@ -196,7 +196,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z11ChannelNode = type { ptr, ptr }
 %_Z9TaskGroup = type { i64, i32, i32 }
 %_Z9TaskDeque = type { i64, ptr, ptr }
-%_Z8TaskPool = type { ptr, i64, i64, i64, i32, i32, ptr }
+%_Z8TaskPool = type { ptr, i64, i64, i64, i64, i32, i32, ptr }
 %_Z8TaskItem = type { ptr, ptr, ptr, ptr }
 
 @"9PAGE_SIZE" = constant i64 4096
@@ -23867,6 +23867,13 @@ entry:
   ret i64 %atomic.load
 }
 
+define linkonce_odr i64 @_ZN8TaskPool12submit_countEP8TaskPool(ptr %0) {
+entry:
+  %addr.gep = getelementptr inbounds %_Z8TaskPool, ptr %0, i32 0, i32 4
+  %atomic.load = load atomic i64, ptr %addr.gep seq_cst, align 8
+  ret i64 %atomic.load
+}
+
 define linkonce_odr ptr @_ZN8TaskPool6createE3i64(i64 %0) {
 entry:
   %i = alloca i64, align 8
@@ -23892,6 +23899,8 @@ if.end:                                           ; preds = %if.then, %entry
   store i64 0, ptr %next_deque, align 8
   %stolen = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 3
   store i64 0, ptr %stolen, align 8
+  %submitted = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 4
+  store i64 0, ptr %submitted, align 8
   %arr.ptr = getelementptr inbounds [8 x i8], ptr %fds, i64 0, i64 0
   store ptr %arr.ptr, ptr %fds4, align 8
   %fds5 = load ptr, ptr %fds4, align 8
@@ -23906,14 +23915,14 @@ if.then7:                                         ; preds = %if.end
 if.end8:                                          ; preds = %if.then7, %if.end
   %fds9 = load ptr, ptr %fds4, align 8
   %deref = load i32, ptr %fds9, align 4
-  %pipe_read = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 4
+  %pipe_read = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 5
   store i32 %deref, ptr %pipe_read, align 4
   %fds10 = load ptr, ptr %fds4, align 8
   %as.ptrtoint = ptrtoint ptr %fds10 to i64
   %add = add i64 %as.ptrtoint, 4
   %as.inttoptr = inttoptr i64 %add to ptr
   %deref11 = load i32, ptr %as.inttoptr, align 4
-  %pipe_write = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 5
+  %pipe_write = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 6
   store i32 %deref11, ptr %pipe_write, align 4
   %n12 = load i64, ptr %n, align 8
   %mul = mul i64 %n12, ptrtoint (ptr getelementptr (%_Z9TaskDeque, ptr null, i32 1) to i64)
@@ -23923,7 +23932,7 @@ if.end8:                                          ; preds = %if.then7, %if.end
   %n14 = load i64, ptr %n, align 8
   %mul15 = mul i64 %n14, 8
   %call16 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul15, i64 8)
-  %handles = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 6
+  %handles = getelementptr inbounds %_Z8TaskPool, ptr %call2, i32 0, i32 7
   store ptr %call16, ptr %handles, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
@@ -23976,7 +23985,7 @@ while.body28:                                     ; preds = %while.cond27
   store i64 %i39, ptr %as.inttoptr42, align 8
   %call43 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z11task_workerPv, ptr %as.inttoptr37)
   %load.struct = load %_Z8TaskPool, ptr %call2, align 8
-  %handles44 = extractvalue %_Z8TaskPool %load.struct, 6
+  %handles44 = extractvalue %_Z8TaskPool %load.struct, 7
   %as.ptrtoint45 = ptrtoint ptr %handles44 to i64
   %i46 = load i64, ptr %i, align 8
   %mul47 = mul i64 %i46, 8
@@ -23994,28 +24003,30 @@ while.exit29:                                     ; preds = %while.cond27
 
 define linkonce_odr void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %one16 = alloca ptr, align 8
+  %one17 = alloca ptr, align 8
   %one = alloca [1 x i8], align 1
-  %addr.gep = getelementptr inbounds %_Z9TaskGroup, ptr %3, i32 0, i32 0
+  %addr.gep = getelementptr inbounds %_Z8TaskPool, ptr %0, i32 0, i32 4
   %4 = atomicrmw add ptr %addr.gep, i64 1 seq_cst, align 8
+  %addr.gep1 = getelementptr inbounds %_Z9TaskGroup, ptr %3, i32 0, i32 0
+  %5 = atomicrmw add ptr %addr.gep1, i64 1 seq_cst, align 8
   %call = call ptr @_ZN4Page3getEPv(ptr %3)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8TaskItem, ptr null, i32 1) to i64), i64 8)
-  %next = getelementptr inbounds %_Z8TaskItem, ptr %call1, i32 0, i32 0
+  %call2 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8TaskItem, ptr null, i32 1) to i64), i64 8)
+  %next = getelementptr inbounds %_Z8TaskItem, ptr %call2, i32 0, i32 0
   store ptr null, ptr %next, align 8
-  %fn = getelementptr inbounds %_Z8TaskItem, ptr %call1, i32 0, i32 1
+  %fn = getelementptr inbounds %_Z8TaskItem, ptr %call2, i32 0, i32 1
   store ptr %1, ptr %fn, align 8
-  %arg = getelementptr inbounds %_Z8TaskItem, ptr %call1, i32 0, i32 2
+  %arg = getelementptr inbounds %_Z8TaskItem, ptr %call2, i32 0, i32 2
   store ptr %2, ptr %arg, align 8
-  %group = getelementptr inbounds %_Z8TaskItem, ptr %call1, i32 0, i32 3
+  %group = getelementptr inbounds %_Z8TaskItem, ptr %call2, i32 0, i32 3
   store ptr %3, ptr %group, align 8
   %load.struct = load %_Z8TaskPool, ptr %0, align 8
   %next_deque = extractvalue %_Z8TaskPool %load.struct, 2
   %idx = alloca i64, align 8
   store i64 %next_deque, ptr %idx, align 1
-  %idx2 = load i64, ptr %idx, align 8
-  %load.struct3 = load %_Z8TaskPool, ptr %0, align 8
-  %nworkers = extractvalue %_Z8TaskPool %load.struct3, 1
-  %ge = icmp sge i64 %idx2, %nworkers
+  %idx3 = load i64, ptr %idx, align 8
+  %load.struct4 = load %_Z8TaskPool, ptr %0, align 8
+  %nworkers = extractvalue %_Z8TaskPool %load.struct4, 1
+  %ge = icmp sge i64 %idx3, %nworkers
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -24023,44 +24034,44 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %idx4 = load i64, ptr %idx, align 8
-  %add = add i64 %idx4, 1
-  %next_deque5 = getelementptr inbounds %_Z8TaskPool, ptr %0, i32 0, i32 2
-  store i64 %add, ptr %next_deque5, align 8
-  %idx6 = load i64, ptr %idx, align 8
-  %call7 = call ptr @_ZN8TaskPool8deque_atEP8TaskPool3i64(ptr %0, i64 %idx6)
-  call void @_ZN9TaskDeque7acquireEP9TaskDeque(ptr %call7)
-  %load.struct8 = load %_Z9TaskDeque, ptr %call7, align 8
-  %tail = extractvalue %_Z9TaskDeque %load.struct8, 2
+  %idx5 = load i64, ptr %idx, align 8
+  %add = add i64 %idx5, 1
+  %next_deque6 = getelementptr inbounds %_Z8TaskPool, ptr %0, i32 0, i32 2
+  store i64 %add, ptr %next_deque6, align 8
+  %idx7 = load i64, ptr %idx, align 8
+  %call8 = call ptr @_ZN8TaskPool8deque_atEP8TaskPool3i64(ptr %0, i64 %idx7)
+  call void @_ZN9TaskDeque7acquireEP9TaskDeque(ptr %call8)
+  %load.struct9 = load %_Z9TaskDeque, ptr %call8, align 8
+  %tail = extractvalue %_Z9TaskDeque %load.struct9, 2
   %eq = icmp eq ptr %tail, null
-  br i1 %eq, label %if.then9, label %if.else
+  br i1 %eq, label %if.then10, label %if.else
 
-if.then9:                                         ; preds = %if.end
-  %head = getelementptr inbounds %_Z9TaskDeque, ptr %call7, i32 0, i32 1
-  store ptr %call1, ptr %head, align 8
-  %tail11 = getelementptr inbounds %_Z9TaskDeque, ptr %call7, i32 0, i32 2
-  store ptr %call1, ptr %tail11, align 8
-  br label %if.end10
+if.then10:                                        ; preds = %if.end
+  %head = getelementptr inbounds %_Z9TaskDeque, ptr %call8, i32 0, i32 1
+  store ptr %call2, ptr %head, align 8
+  %tail12 = getelementptr inbounds %_Z9TaskDeque, ptr %call8, i32 0, i32 2
+  store ptr %call2, ptr %tail12, align 8
+  br label %if.end11
 
 if.else:                                          ; preds = %if.end
-  %load.struct12 = load %_Z9TaskDeque, ptr %call7, align 8
-  %tail13 = extractvalue %_Z9TaskDeque %load.struct12, 2
-  %next14 = getelementptr inbounds %_Z8TaskItem, ptr %tail13, i32 0, i32 0
-  store ptr %call1, ptr %next14, align 8
-  %tail15 = getelementptr inbounds %_Z9TaskDeque, ptr %call7, i32 0, i32 2
-  store ptr %call1, ptr %tail15, align 8
-  br label %if.end10
+  %load.struct13 = load %_Z9TaskDeque, ptr %call8, align 8
+  %tail14 = extractvalue %_Z9TaskDeque %load.struct13, 2
+  %next15 = getelementptr inbounds %_Z8TaskItem, ptr %tail14, i32 0, i32 0
+  store ptr %call2, ptr %next15, align 8
+  %tail16 = getelementptr inbounds %_Z9TaskDeque, ptr %call8, i32 0, i32 2
+  store ptr %call2, ptr %tail16, align 8
+  br label %if.end11
 
-if.end10:                                         ; preds = %if.else, %if.then9
-  call void @_ZN9TaskDeque7releaseEP9TaskDeque(ptr %call7)
+if.end11:                                         ; preds = %if.else, %if.then10
+  call void @_ZN9TaskDeque7releaseEP9TaskDeque(ptr %call8)
   %arr.ptr = getelementptr inbounds [1 x i8], ptr %one, i64 0, i64 0
-  store ptr %arr.ptr, ptr %one16, align 8
-  %one17 = load ptr, ptr %one16, align 8
-  store i8 1, ptr %one17, align 1
-  %field.inplace = getelementptr inbounds %_Z8TaskPool, ptr %0, i32 0, i32 5
+  store ptr %arr.ptr, ptr %one17, align 8
+  %one18 = load ptr, ptr %one17, align 8
+  store i8 1, ptr %one18, align 1
+  %field.inplace = getelementptr inbounds %_Z8TaskPool, ptr %0, i32 0, i32 6
   %field.val = load i32, ptr %field.inplace, align 4
-  %one18 = load ptr, ptr %one16, align 8
-  %call19 = call i64 @scaly_eio_write(i32 %field.val, ptr %one18, i64 1)
+  %one19 = load ptr, ptr %one17, align 8
+  %call20 = call i64 @scaly_eio_write(i32 %field.val, ptr %one19, i64 1)
   ret void
 }
 
@@ -24169,7 +24180,7 @@ if.end28:                                         ; preds = %if.then27, %if.then
 define linkonce_odr void @_ZN8TaskPool8shutdownEP8TaskPool(ptr %0) {
 entry:
   %load.struct = load %_Z8TaskPool, ptr %0, align 8
-  %pipe_write = extractvalue %_Z8TaskPool %load.struct, 5
+  %pipe_write = extractvalue %_Z8TaskPool %load.struct, 6
   %as.zext = zext i32 %pipe_write to i64
   %call = call i64 @close(i64 %as.zext)
   %i = alloca i64, align 8
@@ -24185,7 +24196,7 @@ while.cond:                                       ; preds = %while.body, %entry
 
 while.body:                                       ; preds = %while.cond
   %load.struct3 = load %_Z8TaskPool, ptr %0, align 8
-  %handles = extractvalue %_Z8TaskPool %load.struct3, 6
+  %handles = extractvalue %_Z8TaskPool %load.struct3, 7
   %as.ptrtoint = ptrtoint ptr %handles to i64
   %i4 = load i64, ptr %i, align 8
   %mul = mul i64 %i4, 8
@@ -24200,7 +24211,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %load.struct7 = load %_Z8TaskPool, ptr %0, align 8
-  %pipe_read = extractvalue %_Z8TaskPool %load.struct7, 4
+  %pipe_read = extractvalue %_Z8TaskPool %load.struct7, 5
   %as.zext8 = zext i32 %pipe_read to i64
   %call9 = call i64 @close(i64 %as.zext8)
   %call10 = call ptr @_ZN4Page3getEPv(ptr %0)
@@ -24253,7 +24264,7 @@ entry:
 repeat.body:                                      ; preds = %if.end, %entry
   %arr.ptr = getelementptr inbounds [1 x i8], ptr %byte, i64 0, i64 0
   store ptr %arr.ptr, ptr %byte3, align 8
-  %field.inplace = getelementptr inbounds %_Z8TaskPool, ptr %as.inttoptr, i32 0, i32 4
+  %field.inplace = getelementptr inbounds %_Z8TaskPool, ptr %as.inttoptr, i32 0, i32 5
   %field.val = load i32, ptr %field.inplace, align 4
   %byte4 = load ptr, ptr %byte3, align 8
   %call = call i64 @scaly_eio_read(i32 %field.val, ptr %byte4, i64 1)
