@@ -237,6 +237,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @io_offloads = thread_local global i64 0
 @io_poller_fd = thread_local global i64 0
 @io_wake_fd = thread_local global i64 0
+@task_default_pool = thread_local global ptr null
 @guard_installed = thread_local global i1 false
 @guard_page_size = thread_local global i64 0
 @"8SEEK_SET" = constant i64 0
@@ -21079,6 +21080,8 @@ declare i32 @scaly_eio_wake(i32, i32)
 
 declare i32 @scaly_eio_wake_close(i32, i32)
 
+declare i32 @scaly_eio_ncpu()
+
 declare i64 @close(i64)
 
 declare i64 @scaly_atomic_load_u64(ptr)
@@ -21100,6 +21103,22 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 declare i32 @pthread_join(i64, ptr)
 
 declare ptr @scaly_call_ptr(ptr, ptr)
+
+define linkonce_odr void @_ZN8TaskPool13drain_defaultEv() {
+entry:
+  %global.load = load ptr, ptr @task_default_pool, align 8
+  %ne = icmp ne ptr %global.load, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %global.load1 = load ptr, ptr @task_default_pool, align 8
+  store ptr null, ptr @task_default_pool, align 8
+  call void @_ZN8TaskPool8shutdownEP8TaskPool(ptr %global.load1)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  ret void
+}
 
 define linkonce_odr void @_ZN5Fiber16drain_stack_poolEv() {
 entry:
@@ -21159,6 +21178,7 @@ entry:
   %as.inttoptr2 = inttoptr i64 %deref to ptr
   %as.inttoptr3 = inttoptr i64 %deref1 to ptr
   %1 = call ptr %as.inttoptr2(ptr %as.inttoptr3)
+  call void @_ZN8TaskPool13drain_defaultEv()
   call void @_ZN2Io10drain_poolEv()
   call void @_ZN2Io12close_pollerEv()
   call void @_ZN5Fiber16drain_stack_poolEv()
@@ -24140,6 +24160,30 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call10)
   call void @_ZN4Page19release_page_tracedEP4PageP10const_char(ptr %call10, ptr @.str.46)
   ret void
+}
+
+define linkonce_odr i64 @_ZN8TaskPool4ncpuEv() {
+entry:
+  %call = call i32 @scaly_eio_ncpu()
+  %as.zext = zext i32 %call to i64
+  ret i64 %as.zext
+}
+
+define linkonce_odr ptr @_ZN8TaskPool12default_poolEv() {
+entry:
+  %global.load = load ptr, ptr @task_default_pool, align 8
+  %ne = icmp ne ptr %global.load, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %global.load1 = load ptr, ptr @task_default_pool, align 8
+  ret ptr %global.load1
+
+if.end:                                           ; preds = %entry
+  %call = call i64 @_ZN8TaskPool4ncpuEv()
+  %call2 = call ptr @_ZN8TaskPool6createE3i64(i64 %call)
+  store ptr %call2, ptr @task_default_pool, align 8
+  ret ptr %call2
 }
 
 define linkonce_odr void @_ZN8TaskPoolC1Ev(ptr %0) {
