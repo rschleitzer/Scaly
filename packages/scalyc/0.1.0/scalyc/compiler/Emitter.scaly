@@ -254,7 +254,7 @@ define Emitter
     ; save/restore the length around nested scopes); parfor_captures
     ; collects every free name that resolves in the enclosing scope.
     ; Scratch for ONE scan at a time: emit_parallel_for copies the
-    ; result out before it emits the body (a nested parallel for
+    ; result out before it emits the body (a nested promoted for
     ; would rescan into the same arrays).
     parfor_locals: ref[Array[String]]?
     parfor_captures: ref[Array[String]]?

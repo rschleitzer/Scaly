@@ -244,7 +244,7 @@
 ;                                           ; in place otherwise
 ;
 ; Work-stealing task pool (stage-3 milestone 3.2): the task runtime the
-; TaskPlanner's `parallel for` emission (milestone 3.3) will dispatch
+; promoted-for emission (milestone 3.3/4.4) dispatches
 ; to, usable directly today. A pool is N OS threads (Thread.spawn),
 ; each owning a spinlocked work deque; TaskPool.submit places a task on
 ; a deque round-robin and a worker whose own deque runs dry STEALS from
@@ -565,7 +565,7 @@ mutable io_poller_fd: int 0
 mutable io_wake_fd: int 0
 
 ; This thread's default task pool (milestone 3.3, pointer[TaskPool];
-; null until the first TaskPool.default_pool call — the `parallel for`
+; null until the first TaskPool.default_pool call — the promoted-for
 ; dispatch target). Thread-local like the I/O pool: the pool pointer
 ; rides a TLS cell, no process-global mutable state needed. A spawned
 ; thread's pool is shut down by the exit trampoline (drain_default);
@@ -2524,7 +2524,7 @@ define TaskPool
         scaly_eio_ncpu() as i64
 
     ; This thread's default pool, created on first demand with ncpu
-    ; workers — the dispatch target of the `parallel for` emission.
+    ; workers — the dispatch target of the promoted-for emission.
     ; Reached through the TLS cell task_default_pool (never handed to
     ; another thread's TLS — workers reach the pool via their spawn
     ; cells like any pool).
