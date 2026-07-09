@@ -664,6 +664,22 @@ define TaskPlanner
         ; (disjoint-slot write). Conservative: unknown shapes read nothing,
         ; so an index that hides the loop variable behind them stays a
         ; blocker (never a false "parallel").
+        function operands_read_name(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) returns bool
+        {
+            if ops = null
+                return false
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    if this.operand_reads_name(op_ptr.unwrap(), name)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
         function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) returns bool
         {
             choose op.expr
@@ -694,6 +710,24 @@ define TaskPlanner
                         let r as_expr.value
                         if this.operand_reads_name((*r), name)
                             return true
+                    }
+                }
+                when tp: Tuple
+                {
+                    ; A parenthesized expression plans as a one-component
+                    ; Tuple — `(i * n + j) as size_t` must still count as
+                    ; reading the loop variable.
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                if this.operands_read_name(c_ptr.value, name)
+                                    return true
+                            set i: i + 1
+                        }
                     }
                 }
                 else

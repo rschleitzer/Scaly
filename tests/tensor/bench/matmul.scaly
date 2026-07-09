@@ -1,0 +1,208 @@
+; Stage-5 milestone 5.0: pure-Scaly matmul throughput measurement.
+;
+; The question this answers (ROADMAP stage 5: "Measure, don't assume"):
+; how far does the stage-4 adaptive-parallel path carry a naive
+; row-major f64 matmul at demo-relevant GEMM sizes — and do we need a
+; vendor kernel (Accelerate/MKL) for the Thomas-Mann demo or not?
+;
+; Two variants of the same arithmetic:
+;   - matmul: the i-loop body reads a/b through Vector.get (written
+;     mask 0) and writes disjoint c slots (index derived from i) —
+;     classifies parallel, the adaptive driver forks when profitable.
+;   - matmul_seq: identical, plus one loop-invariant put into an
+;     external sink per row — deliberately blocked (the classifier's
+;     "put with loop-invariant index into an external vector"), so it
+;     runs sequentially. The put costs nanoseconds against a
+;     milliseconds row; it is the sequential baseline.
+;
+; Each parallel size runs twice: run 1 exercises the cold deferred
+; driver (inline warmup, mid-loop fork), run 2 the promoted head-fork.
+
+function scaly_eio_now_ns() returns i64 extern
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+procedure fill(v: Vector[double], n: size_t, x: double)
+{
+    var i: size_t 0
+    while i < n
+    {
+        v.put(i, x)
+        set i: i + 1
+    }
+}
+
+; C[i,j] = sum_k A[i,k] * B[k,j]; row-major.
+procedure matmul(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int)
+{
+    for i in m
+    {
+        var j 0
+        while j < n
+        {
+            var acc: double 0.0
+            var x 0
+            while x < kk
+            {
+                var av: double 0.0
+                let ap a.get((i * kk + x) as size_t)
+                if ap <> null
+                    set av: (*ap)
+                var bv: double 0.0
+                let bp b.get((x * n + j) as size_t)
+                if bp <> null
+                    set bv: (*bp)
+                set acc: acc + av * bv
+                set x: x + 1
+            }
+            c.put((i * n + j) as size_t, acc)
+            set j: j + 1
+        }
+    }
+}
+
+; Same arithmetic, deliberately blocked (sequential baseline).
+procedure matmul_seq(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int, sink: Vector[i64])
+{
+    for i in m
+    {
+        sink.put(0 as size_t, i as i64)
+        var j 0
+        while j < n
+        {
+            var acc: double 0.0
+            var x 0
+            while x < kk
+            {
+                var av: double 0.0
+                let ap a.get((i * kk + x) as size_t)
+                if ap <> null
+                    set av: (*ap)
+                var bv: double 0.0
+                let bp b.get((x * n + j) as size_t)
+                if bp <> null
+                    set bv: (*bp)
+                set acc: acc + av * bv
+                set x: x + 1
+            }
+            c.put((i * n + j) as size_t, acc)
+            set j: j + 1
+        }
+    }
+}
+
+function check(c: Vector[double], m: int, kk: int, n: int) returns bool
+{
+    ; A = 1.0, B = 2.0 -> C = 2*K everywhere (exact in f64).
+    let want (2 * kk) as double
+    let first c.get(0 as size_t)
+    if first = null
+        return false
+    if (*first) <> want
+        return false
+    let last c.get(((m * n) - 1) as size_t)
+    if last = null
+        return false
+    if (*last) <> want
+        return false
+    true
+}
+
+procedure report(tag: pointer[const_char], m: int, kk: int, n: int, ns: i64)
+{
+    var sb StringBuilder()
+    sb.append "mm "
+    let ms num_to_string(m as i64)
+    sb.append ms
+    sb.append "x"
+    let ks num_to_string(kk as i64)
+    sb.append ks
+    sb.append "x"
+    let nss num_to_string(n as i64)
+    sb.append nss
+    sb.append " "
+    var lbl String(tag)
+    sb.append lbl
+    sb.append " "
+    let dur num_to_string(ns)
+    sb.append dur
+    sb.append " ns  "
+    let flops (2 as i64) * (m as i64) * (kk as i64) * (n as i64)
+    var mflops 0 as i64
+    if ns > 0
+        set mflops: (flops * 1000) / ns
+    let mfs num_to_string(mflops)
+    sb.append mfs
+    sb.append " mflop/s"
+    let line sb.to_string()
+    Console.println(line.to_c_string())
+}
+
+procedure run_size(m: int, kk: int, n: int)
+{
+    var a Vector[double]((m * kk) as size_t)
+    var b Vector[double]((kk * n) as size_t)
+    var c Vector[double]((m * n) as size_t)
+    fill(a, (m * kk) as size_t, 1.0)
+    fill(b, (kk * n) as size_t, 2.0)
+    var sink Vector[i64](1)
+
+    let t0 scaly_eio_now_ns()
+    matmul_seq(a, b, c, m, kk, n, sink)
+    let t1 scaly_eio_now_ns()
+    if check(c, m, kk, n) = false
+    {
+        Console.println "seq-check-FAIL"
+        exit 1
+    }
+    report("seq   ", m, kk, n, t1 - t0)
+
+    let t2 scaly_eio_now_ns()
+    matmul(a, b, c, m, kk, n)
+    let t3 scaly_eio_now_ns()
+    if check(c, m, kk, n) = false
+    {
+        Console.println "par1-check-FAIL"
+        exit 1
+    }
+    report("par(1)", m, kk, n, t3 - t2)
+
+    let t4 scaly_eio_now_ns()
+    matmul(a, b, c, m, kk, n)
+    let t5 scaly_eio_now_ns()
+    if check(c, m, kk, n) = false
+    {
+        Console.println "par2-check-FAIL"
+        exit 1
+    }
+    report("par(2)", m, kk, n, t5 - t4)
+}
+
+; Transformer-demo shapes: FFN forward (tokens x d x 4d), attention-ish
+; square, and a big square for parallel scaling.
+run_size(2048, 192, 768)
+run_size(512, 512, 512)
+run_size(1024, 1024, 1024)
+Console.println "matmul-bench done"
