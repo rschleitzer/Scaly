@@ -1,0 +1,77 @@
+; Bounded-channel backpressure: a capacity-2 channel can never hold more
+; than 2 undelivered messages, so a producer that runs ahead BLOCKS
+; until the consumer drains a slot. Both ends are fibers on ONE
+; scheduler, so a full send parks the producer and the consumer runs.
+; The producer checks after every send that at most `capacity` messages
+; are still unreceived (sent - received <= 2) — if backpressure did NOT
+; engage the producer would queue all 6 before the consumer ran once and
+; the count would reach 6, tripping "over". The sum proves every payload
+; arrived (1+2+3+4+5+6 = 21).
+; Expected: bp2 sum21 done
+
+define Msg
+(
+    value: int
+)
+
+mutable chan: pointer[void] null
+mutable received: int 0
+mutable total: int 0
+mutable over: bool false
+
+procedure producer()
+{
+    let c chan as pointer[Channel]
+    var sent 0
+    while sent < 6
+    {
+        let mp Page.allocate_page()
+        let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+        set m.value: sent + 1
+        Channel.send(c, m as pointer[void])
+        set sent: sent + 1
+        if sent - received > 2
+            set over: true
+    }
+    Channel.close_sender(c)
+}
+
+procedure consumer()
+{
+    let c chan as pointer[Channel]
+    var running true
+    while running
+    {
+        let raw Channel.receive(c)
+        if raw = null
+        {
+            set running: false
+        }
+        else
+        {
+            let m raw as pointer[Msg]
+            set total: total + m.value
+            set received: received + 1
+            let mp Page.get(raw)
+            mp.deallocate_extensions()
+            Page.release_page(mp)
+        }
+    }
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let ch Channel.create_bounded(2 as i64)
+set chan: ch as pointer[void]
+let tp Scheduler.spawn(&producer)
+let tc Scheduler.spawn(&consumer)
+Scheduler.run()
+let np Scheduler.join(tp)
+let nc Scheduler.join(tc)
+if not over
+    Console.print "bp2 "
+if total = 21
+    Console.print "sum21 "
+Channel.dispose(ch)
+Console.println "done"
+Page.release_page(page)

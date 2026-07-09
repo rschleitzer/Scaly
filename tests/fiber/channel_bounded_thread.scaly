@@ -1,0 +1,64 @@
+; Cross-thread bounded channel: a scheduler-less worker thread sends 8
+; messages through a capacity-1 channel while the main thread receives.
+; When the queue is full the worker has no scheduler to park in, so its
+; send falls back to a sleep-poll and re-checks; each main-thread
+; receive frees the one slot and pokes the worker to continue. The run
+; terminating with the right sum (1+..+8 = 36) proves the backpressure
+; path drains cross-thread without a lost wakeup or deadlock.
+; Expected: sum36 done
+
+define Msg
+(
+    value: int
+)
+
+mutable chan: pointer[void] null
+
+procedure sender(arg: pointer[void]) returns pointer[void]
+{
+    let c arg as pointer[Channel]
+    var i 1
+    while i <= 8
+    {
+        let mp Page.allocate_page()
+        let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+        set m.value: i
+        Channel.send(c, m as pointer[void])
+        set i: i + 1
+    }
+    Channel.close_sender(c)
+    null
+}
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let ch Channel.create_bounded(1 as i64)
+set chan: ch as pointer[void]
+; Hand the worker a send handle; main keeps none.
+Channel.add_sender(ch)
+Channel.close_sender(ch)
+let th Thread.spawn(&sender, ch as pointer[void])
+var sum 0
+var running true
+while running
+{
+    let raw Channel.receive(ch)
+    if raw = null
+    {
+        set running: false
+    }
+    else
+    {
+        let m raw as pointer[Msg]
+        set sum: sum + m.value
+        let mp Page.get(raw)
+        mp.deallocate_extensions()
+        Page.release_page(mp)
+    }
+}
+Thread.join(th)
+if sum = 36
+    Console.print "sum36 "
+Channel.dispose(ch)
+Console.println "done"
+Page.release_page(page)

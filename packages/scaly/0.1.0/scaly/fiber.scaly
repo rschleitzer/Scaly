@@ -193,10 +193,12 @@
 ; Cross-thread channels (milestone 2.4): the ASYNC ownership channel
 ; connecting fibers/threads across OS threads — shipped beside the
 ; rendezvous type as Mailbox, THE Channel since the unification (see
-; the Channel concept header for the full contract). Sends never block,
-; only receives wait; a sender-handle count closes the channel when the
-; last sender retires, waking parked receivers with null — deadlock
-; prevention by acyclic channel topology instead of detection. Infra:
+; the Channel concept header for the full contract). Unbounded sends
+; never block; a bounded channel (create_bounded) applies backpressure
+; — a full send waits for a receiver to free a slot. A sender-handle
+; count closes the channel when the last sender retires, waking parked
+; receivers with null — deadlock avoidance by acyclic channel topology
+; instead of detection. Infra:
 ; SchedTask.home (the spawning scheduler), a per-scheduler MPSC inject
 ; queue (CAS Treiber stack, drained at every step) and a wake handle in
 ; the eio shim (EVFILT_USER/eventfd) that remote senders poke. exit 106
@@ -1628,30 +1630,36 @@ define ChannelNode
 ; unification, which retired the single-thread rendezvous Channel of
 ; milestone 1.4 in its favor). null is RESERVED as the closed signal,
 ; so a message must be non-null — end-of-stream is close_sender, not a
-; sentinel message. Deadlock PREVENTION instead of detection: sends
-; NEVER block (v1 unbounded — the message is an owned region, enqueue
-; and move on), only receives wait; keep the channel topology acyclic
-; along the spawn tree (discipline for now — a structural topology
-; check stays deferred work, like bounded-capacity backpressure) and
-; no wait cycle can form. Sender lifetime is explicit: create hands
-; the creator ONE send handle, add_sender registers another BEFORE it
-; is handed over, close_sender retires one — when the last retires the
+; sentinel message. Capacity is a choice: an UNBOUNDED channel
+; (create) never blocks a send — the message is an owned region,
+; enqueue and move on; a BOUNDED channel (create_bounded(capacity))
+; applies BACKPRESSURE — a send whose queue is full blocks until a
+; receiver frees a slot. Deadlock avoidance stays topology-based: keep
+; the channel graph acyclic along the spawn tree (discipline for now —
+; a structural topology check is still deferred) and no wait cycle can
+; form; a single-thread cycle is still caught by exit 106, a cross-
+; thread one is not. Sender lifetime is explicit: create hands the
+; creator ONE send handle, add_sender registers another BEFORE it is
+; handed over, close_sender retires one — when the last retires the
 ; channel is CLOSED and every parked receiver wakes with null (after
 ; the queue drains: close is a termination signal, not a discard).
 ; Ownership moves with the send: message = object graph rooted on its
 ; own heap page, the receiver frees it.
 ;
-; Threading contract (v1): senders may live on ANY thread and need no
-; scheduler (sends never park). All receivers of one channel live on
-; ONE thread, which needs a scheduler; receive parks the running task
-; (or drives the dispatcher from the main context) and a remote sender
-; wakes the receiver through its home scheduler's inject queue +
-; wake handle. exit 106 keeps its meaning unchanged for programs
-; without channel parks.
+; Threading contract (v1): a sender on an UNBOUNDED channel may live on
+; ANY thread and needs no scheduler (its sends never park); a sender on
+; a BOUNDED channel that actually blocks needs a scheduler context to
+; park in (a scheduler-less bounded sender falls back to sleep-polling).
+; All receivers of one channel live on ONE thread, which needs a
+; scheduler; receive parks the running task (or drives the dispatcher
+; from the main context) and a remote sender wakes the receiver through
+; its home scheduler's inject queue + wake handle. exit 106 keeps its
+; meaning unchanged for programs without channel parks.
 ;
-;   let m Channel.create()            ; on its own heap page; 1 send handle
+;   let m Channel.create()            ; unbounded; on its own heap page; 1 handle
+;   let m Channel.create_bounded(64)  ; bounded; a full send blocks
 ;   Channel.add_sender(m)             ; before handing m to another sender
-;   Channel.send(m, msg)              ; never blocks; msg non-null, page-rooted
+;   Channel.send(m, msg)              ; msg non-null, page-rooted; may block if bounded
 ;   Channel.close_sender(m)           ; last close → receivers wake with null
 ;   let msg Channel.receive(m)        ; null = closed and drained
 ;   Channel.dispose(m)                ; receiver, after null: free the record
@@ -1667,6 +1675,17 @@ define Channel
     ; recv_sched: the receiving thread's scheduler — where a
     ; queued-node send pokes the wake handle.
     recv_sched: pointer[void]
+    ; Bounded-capacity backpressure. capacity = 0 means UNBOUNDED (a
+    ; send never blocks — the original v1 behavior); capacity > 0 caps
+    ; the queue at that many undelivered messages. count is the current
+    ; queue depth. send_head/send_tail is the FIFO of senders parked
+    ; because the queue was full — a receiver wakes one per freed slot,
+    ; the woken sender re-checks and enqueues (immutable capacity is
+    ; read without the lock; count and the FIFO are lock-guarded).
+    capacity: i64
+    count: i64
+    send_head: pointer[SchedTask]    ; parked senders (full queue), FIFO
+    send_tail: pointer[SchedTask]
 )
 {
     ; The channel spinlock — same CAS pattern as root_pages bucket_lock:
@@ -1687,10 +1706,19 @@ define Channel
         scaly_atomic_store_u64(lp, 0 as u64)
     }
 
-    ; Create a channel on its OWN heap page (like a message: the record
-    ; is shared cross-thread and must not sit in any fiber's or
-    ; scheduler's region). The creator holds the first send handle.
+    ; Create an UNBOUNDED channel on its OWN heap page (like a message:
+    ; the record is shared cross-thread and must not sit in any fiber's
+    ; or scheduler's region). Sends never block. The creator holds the
+    ; first send handle.
     procedure create() returns pointer[Channel]
+    {
+        Channel.create_bounded(0 as i64)
+    }
+
+    ; Create a channel with a bounded queue: at most `capacity`
+    ; undelivered messages, after which a send BLOCKS until a receiver
+    ; frees a slot (backpressure). capacity 0 is unbounded (== create).
+    procedure create_bounded(capacity: i64) returns pointer[Channel]
     {
         let p Page.allocate_page_traced("Channel.record_page")
         let m p.allocate(sizeof Channel, alignof Channel) as pointer[Channel]
@@ -1702,6 +1730,10 @@ define Channel
         set m.recv_head: null
         set m.recv_tail: null
         set m.recv_sched: null
+        set m.capacity: capacity
+        set m.count: 0 as i64
+        set m.send_head: null
+        set m.send_tail: null
         m
     }
 
@@ -1754,51 +1786,129 @@ define Channel
         t
     }
 
-    ; Send msg through the channel. NEVER BLOCKS: the node is queued and
-    ; the sender moves on. OWNERSHIP OF THE MESSAGE REGION MOVES TO THE
-    ; RECEIVER — the sender must not touch msg afterwards. msg must be
-    ; non-null (null is the closed signal) and rooted on its own heap
-    ; page (Page.allocate_page — the node rides on it). Sending on a
+    ; Pop the oldest sender parked on a full queue (null when none).
+    procedure pop_sender(m: pointer[Channel]) returns pointer[SchedTask]
+    {
+        let t m.send_head
+        if t <> null
+        {
+            set m.send_head: t.next
+            if m.send_head = null
+                set m.send_tail: null
+            set t.next: null
+        }
+        t
+    }
+
+    ; Send msg through the channel. OWNERSHIP OF THE MESSAGE REGION MOVES
+    ; TO THE RECEIVER — the sender must not touch msg afterwards. msg
+    ; must be non-null (null is the closed signal) and rooted on its own
+    ; heap page (Page.allocate_page — the node rides on it). Sending on a
     ; closed channel is a handle-discipline bug and traps (exit 110).
-    ; Callable from any thread; no scheduler needed on the sender side.
+    ;
+    ; On an UNBOUNDED channel (capacity 0) the node is queued and the
+    ; sender moves on — never blocks, no scheduler needed. On a BOUNDED
+    ; channel a send whose queue is already full BLOCKS until a receiver
+    ; frees a slot: a task parks on the sender FIFO (woken by the next
+    ; receive) and re-checks; the main context / a scheduler-less sender
+    ; drives any ready local work and otherwise sleep-polls. Single-
+    ; thread send cycles stay caught by exit 106 (the parked sender
+    ; counts as blocked); cross-thread cycles remain the acyclic-topology
+    ; discipline's responsibility, exactly as for receives.
     procedure send(m: pointer[Channel], msg: pointer[void])
     {
         let host Page.get(msg)
         let n host.allocate(sizeof ChannelNode, alignof ChannelNode) as pointer[ChannelNode]
         set n.next: null
         set n.msg: msg
-        Channel.acquire(m)
-        if m.closed
+        let me current_task as pointer[SchedTask]
+        ; A bounded task-sender may park and be woken cross-thread — arm
+        ; the wake handle once, before any lock (ensure_wake syscalls and
+        ; needs the scheduler). Unbounded and scheduler-less senders skip
+        ; it: they never park on the FIFO.
+        if me <> null
+            if m.capacity > (0 as i64)
+                Io.ensure_wake()
+        repeat
         {
-            Channel.release(m)
-            exit 110
-        }
-        if m.tail = null
-        {
-            set m.head: n
-            set m.tail: n
-        }
-        else
-        {
-            let tl m.tail
-            set tl.next: n
-            set m.tail: n
-        }
-        let r Channel.pop_receiver(m)
-        let rs m.recv_sched
-        Channel.release(m)
-        if r <> null
-        {
-            Channel.route(r)
-            return
-        }
-        ; No parked receiver — poke a possible main-context waiter on
-        ; the receiving thread (spurious pokes are harmless: waiters
-        ; re-check the queue on every wake).
-        if rs <> null
-        {
-            if rs <> current_scheduler
-                Scheduler.wake_remote(rs as pointer[Scheduler])
+            Channel.acquire(m)
+            if m.closed
+            {
+                Channel.release(m)
+                exit 110
+            }
+            var room true
+            if m.capacity > (0 as i64)
+                if m.count >= m.capacity
+                    set room: false
+            if room
+            {
+                if m.tail = null
+                {
+                    set m.head: n
+                    set m.tail: n
+                }
+                else
+                {
+                    let tl m.tail
+                    set tl.next: n
+                    set m.tail: n
+                }
+                set m.count: m.count + (1 as i64)
+                let r Channel.pop_receiver(m)
+                let rs m.recv_sched
+                Channel.release(m)
+                if r <> null
+                {
+                    Channel.route(r)
+                    return
+                }
+                ; No parked receiver — poke a possible main-context
+                ; waiter on the receiving thread (spurious pokes are
+                ; harmless: waiters re-check the queue on every wake).
+                if rs <> null
+                {
+                    if rs <> current_scheduler
+                        Scheduler.wake_remote(rs as pointer[Scheduler])
+                }
+                return
+            }
+            ; Full: back-pressure until a receiver frees a slot.
+            if me = null
+            {
+                ; Main context or no scheduler: make local progress if we
+                ; can, else sleep-poll a millisecond and re-check. Never
+                ; block on the wake handle here — the freeing receiver may
+                ; be on another thread and pokes nothing on the send side.
+                Channel.release(m)
+                var ran false
+                if current_scheduler <> null
+                    set ran: Scheduler.step()
+                if not ran
+                    poll(null as pointer[void], 0 as i32, 1 as i32)
+            }
+            else
+            {
+                ; Task: park on the sender FIFO and yield. A receive that
+                ; frees a slot pops and routes us; we re-check on wake.
+                set me.next: null
+                if m.send_tail = null
+                {
+                    set m.send_head: me
+                    set m.send_tail: me
+                }
+                else
+                {
+                    let tl m.send_tail
+                    set tl.next: me
+                    set m.send_tail: me
+                }
+                Channel.release(m)
+                let s current_scheduler as pointer[Scheduler]
+                set s.blocked: s.blocked + 1
+                set s.chan_parked: s.chan_parked + 1
+                Fiber.yield()
+            }
         }
     }
 
@@ -1820,6 +1930,13 @@ define Channel
         var chain m.recv_head
         set m.recv_head: null
         set m.recv_tail: null
+        ; Parked senders cannot coexist with a close under correct handle
+        ; discipline (a parked sender still holds its send handle, so
+        ; senders > 0). Detach any anyway — a woken sender re-checks,
+        ; sees closed, and traps exit 110 instead of hanging on misuse.
+        var schain m.send_head
+        set m.send_head: null
+        set m.send_tail: null
         let rs m.recv_sched
         Channel.release(m)
         while chain <> null
@@ -1828,6 +1945,13 @@ define Channel
             set chain.next: null
             Channel.route(chain)
             set chain: nx
+        }
+        while schain <> null
+        {
+            let nx schain.next
+            set schain.next: null
+            Channel.route(schain)
+            set schain: nx
         }
         if rs <> null
         {
@@ -1859,7 +1983,13 @@ define Channel
                 set m.head: n.next
                 if m.head = null
                     set m.tail: null
+                set m.count: m.count - (1 as i64)
+                ; A freed slot lets one parked sender proceed (bounded
+                ; channels only — the FIFO is empty otherwise).
+                let snd Channel.pop_sender(m)
                 Channel.release(m)
+                if snd <> null
+                    Channel.route(snd)
                 return n.msg
             }
             if m.closed
