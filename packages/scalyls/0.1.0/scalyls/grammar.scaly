@@ -104,6 +104,8 @@ define grammar
             return true
         if word = "parallel"
             return true
+        if word = "shared"
+            return true
         false
     }
 }

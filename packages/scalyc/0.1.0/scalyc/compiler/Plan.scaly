@@ -611,6 +611,7 @@ define PlannedGlobal
     global_type: PlannedType
     value: ref[Vector[PlannedOperand]]?
     is_mutable: bool
+    is_shared: bool
 )
 
 define PlannedStructure

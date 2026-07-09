@@ -3913,14 +3913,17 @@ define Emitter
                     ; the allocator state (stack_top/heap_head) is a
                     ; per-thread stack discipline, and any process-shared
                     ; mutable would be a data race under threads.
-                    ; Exemption: a `shared_` name prefix keeps the global
+                    ; Exemption: a `shared` declaration keeps the global
                     ; PROCESS-global — a deliberate cross-thread cell (the
                     ; heap-trace table root). The declarer owns the race
                     ; discipline: initialize while the process is still
                     ; single-threaded (anything before the first
                     ; Thread.spawn returns) or mutate via scaly_atomic_*.
-                    if global.mangled_name.starts_with("shared_") = false
-                        LLVMSetThreadLocal(gv, 1)
+                    ; The legacy `shared_` name-prefix exemption remains
+                    ; until the tree is migrated to the keyword (4.3).
+                    if global.is_shared = false
+                        if global.mangled_name.starts_with("shared_") = false
+                            LLVMSetThreadLocal(gv, 1)
                 }
                 if global.is_mutable = false
                     LLVMSetGlobalConstant(gv, 1)

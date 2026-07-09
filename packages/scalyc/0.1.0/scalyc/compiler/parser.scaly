@@ -91,6 +91,7 @@ define Parser
         keywords_builder.add("while")
         keywords_builder.add("package")
         keywords_builder.add("parallel")
+        keywords_builder.add("shared")
         Vector[String](keywords_builder)
     }
 
@@ -352,6 +353,16 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Mutable(node)
+        choose parse_shared()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return DeclarationSyntax.Shared(node)
         throw ParserError.Different(DifferentSyntax())
     }
 
@@ -3831,6 +3842,32 @@ define Parser
         let end lexer.position
 
         MutableSyntax(start, end, binding)
+    }
+
+    function parse_shared(this: Parser) returns SharedSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("shared")
+            throw ParserError.Different(DifferentSyntax())
+
+        let binding_start lexer.position
+        var binding: BindingSyntax
+        choose parse_binding()
+            when err: Error
+            {
+                choose err
+                    when d: Different
+                        throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, "expected Binding"))
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set binding: success
+
+        let end lexer.position
+
+        SharedSyntax(start, end, binding)
     }
 
     function parse_binding(this: Parser) returns BindingSyntax throws ParserError

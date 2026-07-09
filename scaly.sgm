@@ -22,6 +22,7 @@
     <content link = Macro
     <content link = Module
     <content link = Mutable
+    <content link = Shared
 
 <syntax id = Private
     <content link = private
@@ -441,6 +442,10 @@
     <content link = mutable
     <content link = Binding                                 property = binding
 
+<syntax id = Shared
+    <content link = shared
+    <content link = Binding                                 property = binding
+
 <syntax id = Binding
     <content identifier                                     property = name
     <content link = BindingAnnotation              optional property = annotation
@@ -660,6 +665,7 @@
 <keyword id = while
 <keyword id = package
 <keyword id = parallel
+<keyword id = shared
 
 <punctuation id = dot               value = "."
 <punctuation id = comma             value = ","

@@ -1,0 +1,26 @@
+; `shared` keyword (stage-4 milestone 4.3): a module-level `shared` global
+; is PROCESS-global — exempt from the blanket thread_local of `mutable`
+; globals — so a spawned thread's write is visible to main after the join.
+; The `mutable` control cell proves the contrast: the worker's write to it
+; lands in the worker's own thread-local copy and main still sees the
+; initial value. Single writer before a join ⇒ no atomics needed (the
+; declarer owns the race discipline).
+; Expected: shared 42 tls kept 7 done
+
+shared cell: u64 0
+mutable tls_cell: u64 7
+
+procedure worker(arg: pointer[void]) returns pointer[void]
+{
+    set cell: 42 as u64
+    set tls_cell: 99 as u64
+    null
+}
+
+let t Thread.spawn(&worker, null)
+Thread.join(t)
+if cell = (42 as u64)
+    Console.print "shared 42 "
+if tls_cell = (7 as u64)
+    Console.print "tls kept 7 "
+Console.println "done"

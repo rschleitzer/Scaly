@@ -25066,7 +25066,8 @@ define Planner
                 mangled,
                 global_type,
                 &value_holder,
-                g.is_mutable
+                g.is_mutable,
+                g.is_shared
             )
             this.record_global(result)
             result

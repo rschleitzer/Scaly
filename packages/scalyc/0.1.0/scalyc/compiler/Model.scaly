@@ -363,13 +363,17 @@ define Namespace
     symbols: HashMap[String, Nameable]
 )
 
-; Global constant (is_mutable=false) or module-level mutable global (true)
+; Global constant (is_mutable=false) or module-level mutable global (true).
+; is_shared marks a `shared` declaration: a deliberately PROCESS-global
+; mutable cell (exempt from the blanket thread_local); the declarer owns
+; the race discipline.
 define Global
 (
     span: Span
     type: Type
     value: Vector[Operand]
     is_mutable: bool
+    is_shared: bool
 )
 
 ; Delegate — a named function (closure) type. `define Cb delegate(int) returns int`

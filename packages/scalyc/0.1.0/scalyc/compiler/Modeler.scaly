@@ -2276,7 +2276,7 @@ function handle_declaration(path: String, syntax: DeclarationSyntax, symbols_bui
             if mg_type_ref <> null
             {
                 let mg_value handle_operands(mut.binding.operation)
-                let mg_global Global(Span(mut.start, mut.end), *mg_type_ref, mg_value, true)
+                let mg_global Global(Span(mut.start, mut.end), *mg_type_ref, mg_value, true, false)
                 let mg_concept Concept(
                     Span(mut.start, mut.end),
                     String(mut.binding.name),
@@ -2286,6 +2286,32 @@ function handle_declaration(path: String, syntax: DeclarationSyntax, symbols_bui
                 )
                 (*symbols_builder).add(mg_concept.name, Nameable.Concept mg_concept)
                 return Member.Concept mg_concept
+            }
+            Member.Package(Vector[Module](0))
+        }
+        when sh: SharedSyntax
+        {
+            ; Module-level shared global: `shared NAME: T init`. Same shape
+            ; as `mutable`, but the Global is marked is_shared — the Emitter
+            ; leaves it PROCESS-global instead of thread_local. A deliberate
+            ; cross-thread cell; the declarer owns the race discipline
+            ; (initialize while single-threaded or mutate via scaly_atomic_*).
+            var sg_type_ref: ref[Type]? null
+            if sh.binding.annotation <> null
+                set sg_type_ref: handle_binding_annotation(*sh.binding.annotation)
+            if sg_type_ref <> null
+            {
+                let sg_value handle_operands(sh.binding.operation)
+                let sg_global Global(Span(sh.start, sh.end), *sg_type_ref, sg_value, true, true)
+                let sg_concept Concept(
+                    Span(sh.start, sh.end),
+                    String(sh.binding.name),
+                    Vector[GenericParameter](0),
+                    Vector[Attribute](0),
+                    Definition.Global sg_global
+                )
+                (*symbols_builder).add(sg_concept.name, Nameable.Concept sg_concept)
+                return Member.Concept sg_concept
             }
             Member.Package(Vector[Module](0))
         }
@@ -2482,7 +2508,7 @@ function handle_definition(path: String, syntax: DefinitionSyntax, is_private: b
                 ; Global constant
                 let operation handle_operands(constant_syntax.operation)
                 let const_type handle_type(constant_syntax.type)
-                Definition.Global(Global(loc, *const_type, operation, false))
+                Definition.Global(Global(loc, *const_type, operation, false, false))
             }
         }
         when intrinsic_syntax: IntrinsicSyntax

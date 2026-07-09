@@ -290,6 +290,13 @@ define BindingSyntax
     operation: ref[Vector[OperandSyntax]]?
 )
 
+define SharedSyntax
+(
+    start: size_t
+    end: size_t
+    binding: BindingSyntax
+)
+
 define MutableSyntax
 (
     start: size_t
@@ -880,6 +887,7 @@ define DeclarationSyntax union (
     Macro: MacroSyntax
     Module: ModuleSyntax
     Mutable: MutableSyntax
+    Shared: SharedSyntax
 )
 
 define FileSyntax
