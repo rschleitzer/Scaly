@@ -102,7 +102,22 @@ echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 # single archive object). Built with the compiler we just produced — C++-free.
 # fcontext.o adds the fiber context-switch primitives (vendored assembly,
 # packages/scaly/0.1.0/scaly/fiber/) — clang assembles the host's ABI file.
-"$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
+# -O2 (5.3): the archive's opt level is what AOT programs feel for every
+# non-generic stdlib body (the tensor tape kernels above all) — the
+# program's own -O flag never touches code that lives in libscaly.a.
+# The in-process `-c -O2` cannot do this: a library module has no
+# External main anchor, every body is linkonce_odr (= discardable), so
+# default<O2>'s GlobalDCE deletes the whole module. Emit IR instead,
+# promote definitions to weak_odr (kept, same ODR-merge at link), then
+# opt -O2 + llc. Falls back to the plain -O0 object when opt is absent.
+if [ "${SCALYC_NO_OPT:-0}" != "1" ] && [ -n "$OPT" ]; then
+    "$OUT" -S --no-prelude --no-tests -o "$WORK/libscaly.ll" packages/scaly/0.1.0/scaly.scaly
+    sed 's/^define linkonce_odr /define weak_odr /' "$WORK/libscaly.ll" > "$WORK/libscaly_weak.ll"
+    "$OPT" -O2 "$WORK/libscaly_weak.ll" -o "$WORK/libscaly_opt.bc"
+    "$LLC" -relocation-model=pic -O2 -filetype=obj "$WORK/libscaly_opt.bc" -o /tmp/libscaly.o
+else
+    "$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
+fi
 cp "$WORK/fcontext.o" /tmp/fcontext.o
 cp "$WORK/eio.o" /tmp/eio.o
 rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o
