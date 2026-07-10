@@ -1,0 +1,160 @@
+; 5.1 op kernel: f32 matmul, 4x4 register-tiled, call-free inner loop
+; (pointer-subscript reads, disjoint c.put writes). Parallel over row
+; tiles — the put indices spell out `it * 4` so the classifier sees the
+; loop variable. Requires m % 4 = 0 and n % 4 = 0 (demo shapes are).
+; Checked against an exact small product (integer values are exact in
+; f32) and a constant-fill product.
+; Expected: PASS
+
+procedure mm_f32(a: Vector[float], b: Vector[float], c: Vector[float], m: int, kk: int, n: int)
+{
+    let ap a.data
+    let bp b.data
+    let mt m / 4
+    for it in mt
+    {
+        var j 0
+        while j < n
+        {
+            var acc00: float 0.0
+            var acc01: float 0.0
+            var acc02: float 0.0
+            var acc03: float 0.0
+            var acc10: float 0.0
+            var acc11: float 0.0
+            var acc12: float 0.0
+            var acc13: float 0.0
+            var acc20: float 0.0
+            var acc21: float 0.0
+            var acc22: float 0.0
+            var acc23: float 0.0
+            var acc30: float 0.0
+            var acc31: float 0.0
+            var acc32: float 0.0
+            var acc33: float 0.0
+            var x 0
+            while x < kk
+            {
+                let a0 ap[(it * 4 + 0) * kk + x]
+                let a1 ap[(it * 4 + 1) * kk + x]
+                let a2 ap[(it * 4 + 2) * kk + x]
+                let a3 ap[(it * 4 + 3) * kk + x]
+                let b0 bp[x * n + j]
+                let b1 bp[x * n + j + 1]
+                let b2 bp[x * n + j + 2]
+                let b3 bp[x * n + j + 3]
+                set acc00: acc00 + a0 * b0
+                set acc01: acc01 + a0 * b1
+                set acc02: acc02 + a0 * b2
+                set acc03: acc03 + a0 * b3
+                set acc10: acc10 + a1 * b0
+                set acc11: acc11 + a1 * b1
+                set acc12: acc12 + a1 * b2
+                set acc13: acc13 + a1 * b3
+                set acc20: acc20 + a2 * b0
+                set acc21: acc21 + a2 * b1
+                set acc22: acc22 + a2 * b2
+                set acc23: acc23 + a2 * b3
+                set acc30: acc30 + a3 * b0
+                set acc31: acc31 + a3 * b1
+                set acc32: acc32 + a3 * b2
+                set acc33: acc33 + a3 * b3
+                set x: x + 1
+            }
+            c.put(((it * 4 + 0) * n + j) as size_t, acc00)
+            c.put(((it * 4 + 0) * n + j + 1) as size_t, acc01)
+            c.put(((it * 4 + 0) * n + j + 2) as size_t, acc02)
+            c.put(((it * 4 + 0) * n + j + 3) as size_t, acc03)
+            c.put(((it * 4 + 1) * n + j) as size_t, acc10)
+            c.put(((it * 4 + 1) * n + j + 1) as size_t, acc11)
+            c.put(((it * 4 + 1) * n + j + 2) as size_t, acc12)
+            c.put(((it * 4 + 1) * n + j + 3) as size_t, acc13)
+            c.put(((it * 4 + 2) * n + j) as size_t, acc20)
+            c.put(((it * 4 + 2) * n + j + 1) as size_t, acc21)
+            c.put(((it * 4 + 2) * n + j + 2) as size_t, acc22)
+            c.put(((it * 4 + 2) * n + j + 3) as size_t, acc23)
+            c.put(((it * 4 + 3) * n + j) as size_t, acc30)
+            c.put(((it * 4 + 3) * n + j + 1) as size_t, acc31)
+            c.put(((it * 4 + 3) * n + j + 2) as size_t, acc32)
+            c.put(((it * 4 + 3) * n + j + 3) as size_t, acc33)
+            set j: j + 4
+        }
+    }
+}
+
+var ok true
+
+; Exact 4x3 * 3x4 product with small integers.
+var a Vector[float](12)
+var b Vector[float](12)
+var c Vector[float](16)
+var i 0
+while i < 12
+{
+    a.put(i as size_t, ((i + 1) as float))
+    b.put(i as size_t, ((i + 1) as float))
+    set i: i + 1
+}
+mm_f32(a, b, c, 4, 3, 4)
+
+; Row 0 of C: [38, 44, 50, 56]; row 3: [173, 206, 239, 272].
+var expected Vector[float](16)
+expected.put(0, 38.0)
+expected.put(1, 44.0)
+expected.put(2, 50.0)
+expected.put(3, 56.0)
+expected.put(4, 83.0)
+expected.put(5, 98.0)
+expected.put(6, 113.0)
+expected.put(7, 128.0)
+expected.put(8, 128.0)
+expected.put(9, 152.0)
+expected.put(10, 176.0)
+expected.put(11, 200.0)
+expected.put(12, 173.0)
+expected.put(13, 206.0)
+expected.put(14, 239.0)
+expected.put(15, 272.0)
+let cp c.data
+let ep expected.data
+var k 0
+while k < 16
+{
+    if cp[k] <> ep[k]
+        set ok: false
+    set k: k + 1
+}
+
+; Constant fill at a parallel-relevant size: A=1, B=2 -> C=2*kk exactly.
+let m2 64
+let k2 32
+let n2 64
+var a2 Vector[float]((m2 * k2) as size_t)
+var b2 Vector[float]((k2 * n2) as size_t)
+var c2 Vector[float]((m2 * n2) as size_t)
+var f 0
+while f < m2 * k2
+{
+    a2.put(f as size_t, 1.0)
+    set f: f + 1
+}
+var g 0
+while g < k2 * n2
+{
+    b2.put(g as size_t, 2.0)
+    set g: g + 1
+}
+mm_f32(a2, b2, c2, m2, k2, n2)
+let want (2 * k2) as float
+let c2p c2.data
+if c2p[0] <> want
+    set ok: false
+if c2p[m2 * n2 - 1] <> want
+    set ok: false
+if c2p[m2 * n2 / 2] <> want
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

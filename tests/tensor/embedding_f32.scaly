@@ -1,0 +1,70 @@
+; 5.1 op kernel: embedding lookup — gather rows of an f32 table by
+; token id. Parallel over tokens: table reads through a pointer
+; subscript (read-only external alias), disjoint out.put writes indexed
+; by the loop variable. Ids arrive as a Vector[i64].
+; Expected: PASS
+
+procedure embedding_f32(table: Vector[float], ids: Vector[i64], out: Vector[float], tokens: int, dim: int)
+{
+    let tp table.data
+    let ip ids.data
+    for t in tokens
+    {
+        let id ip[t]
+        var j 0
+        while j < dim
+        {
+            out.put((t * dim + j) as size_t, tp[(id as int) * dim + j])
+            set j: j + 1
+        }
+    }
+}
+
+var ok true
+
+; Table: 5 rows x 4 dims, value = row * 10 + col (exact in f32).
+var table Vector[float](20)
+var r 0
+while r < 5
+{
+    var cvar 0
+    while cvar < 4
+    {
+        table.put((r * 4 + cvar) as size_t, ((r * 10 + cvar) as float))
+        set cvar: cvar + 1
+    }
+    set r: r + 1
+}
+
+var ids Vector[i64](4)
+ids.put(0, 3 as i64)
+ids.put(1, 0 as i64)
+ids.put(2, 4 as i64)
+ids.put(3, 1 as i64)
+
+var out Vector[float](16)
+embedding_f32(table, ids, out, 4, 4)
+
+let p out.data
+; Token 0 -> row 3: [30,31,32,33]; token 2 -> row 4: [40,41,42,43].
+if p[0] <> 30.0
+    set ok: false
+if p[3] <> 33.0
+    set ok: false
+if p[4] <> 0.0
+    set ok: false
+if p[7] <> 3.0
+    set ok: false
+if p[8] <> 40.0
+    set ok: false
+if p[11] <> 43.0
+    set ok: false
+if p[12] <> 10.0
+    set ok: false
+if p[15] <> 13.0
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

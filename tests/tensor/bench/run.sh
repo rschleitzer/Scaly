@@ -14,3 +14,9 @@ BIN=/tmp/tensor_matmul_bench
 rm -f "$BIN"
 "$STAGE" -o "$BIN" tests/tensor/bench/matmul.scaly
 "$BIN"
+
+# 5.1 op kernels at -O2 (the level the demo uses).
+OPS=/tmp/tensor_ops_bench
+rm -f "$OPS"
+"$STAGE" -O2 -o "$OPS" tests/tensor/bench/ops.scaly
+"$OPS"

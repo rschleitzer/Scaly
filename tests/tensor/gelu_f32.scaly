@@ -1,0 +1,79 @@
+; 5.1 op kernel: elementwise f32 GELU (tanh approximation:
+; 0.5*x*(1 + tanh(sqrt(2/pi)*(x + 0.044715*x^3)))). Structured as rows
+; so each parallel iteration carries enough work; tanhf is a
+; whitelisted benign extern. Reference values from the tanh
+; approximation (gelu(1) ~ 0.84119, gelu(-1) ~ -0.15881).
+; Expected: PASS
+
+function tanhf(x: float) returns float extern
+
+function gelu_scalar(v: float) returns float
+{
+    let inner 0.7978845608 * (v + 0.044715 * v * v * v)
+    let t tanhf(inner)
+    0.5 * v * (1.0 + t)
+}
+
+procedure gelu_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
+{
+    let xp x.data
+    for r in rows
+    {
+        var j 0
+        while j < n
+        {
+            let g gelu_scalar(xp[r * n + j])
+            out.put((r * n + j) as size_t, g)
+            set j: j + 1
+        }
+    }
+}
+
+var ok true
+
+var x Vector[float](6)
+x.put(0, 0.0)
+x.put(1, 1.0)
+x.put(2, 0.0 - 1.0)
+x.put(3, 2.0)
+x.put(4, 0.0 - 2.0)
+x.put(5, 3.0)
+var out Vector[float](6)
+gelu_f32(x, out, 2, 3)
+
+let p out.data
+; gelu(0) = 0 exactly.
+if (p[0] > 0.000001)
+    set ok: false
+if (p[0] < 0.0 - 0.000001)
+    set ok: false
+; gelu(1) ~ 0.841192
+if (p[1] > 0.8405) = false
+    set ok: false
+if (p[1] < 0.8419) = false
+    set ok: false
+; gelu(-1) ~ -0.158808
+if (p[2] > 0.0 - 0.1595) = false
+    set ok: false
+if (p[2] < 0.0 - 0.1581) = false
+    set ok: false
+; gelu(2) ~ 1.954598
+if (p[3] > 1.9535) = false
+    set ok: false
+if (p[3] < 1.9557) = false
+    set ok: false
+; gelu(-2) ~ -0.045402
+if (p[4] > 0.0 - 0.0465) = false
+    set ok: false
+if (p[4] < 0.0 - 0.0443) = false
+    set ok: false
+; gelu(3) ~ 2.996363
+if (p[5] > 2.9948) = false
+    set ok: false
+if (p[5] < 2.9979) = false
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

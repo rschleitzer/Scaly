@@ -1,0 +1,118 @@
+; 5.1 op kernel: row-wise f32 layer normalization with scale (gamma)
+; and shift (beta), biased variance, eps inside the sqrt. Parallel over
+; rows; call-free reads, disjoint out.put writes. sqrtf is a
+; whitelisted benign extern.
+; Expected: PASS
+
+function sqrtf(x: float) returns float extern
+
+procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[float], out: Vector[float], rows: int, n: int, eps: float)
+{
+    let xp x.data
+    let gp gamma.data
+    let bp beta.data
+    for r in rows
+    {
+        var sum: float 0.0
+        var j 0
+        while j < n
+        {
+            set sum: sum + xp[r * n + j]
+            set j: j + 1
+        }
+        let mean sum / (n as float)
+        var vsum: float 0.0
+        var j2 0
+        while j2 < n
+        {
+            let d xp[r * n + j2] - mean
+            set vsum: vsum + d * d
+            set j2: j2 + 1
+        }
+        let denom sqrtf(vsum / (n as float) + eps)
+        let inv 1.0 / denom
+        var j3 0
+        while j3 < n
+        {
+            let z (xp[r * n + j3] - mean) * inv
+            out.put((r * n + j3) as size_t, z * gp[j3] + bp[j3])
+            set j3: j3 + 1
+        }
+    }
+}
+
+var ok true
+
+; Row [1,2,3,4], gamma=1, beta=0: mean 2.5, var 1.25 ->
+; [-1.34163, -0.44721, 0.44721, 1.34163] (eps=1e-5 shifts ~1e-5).
+var x Vector[float](8)
+x.put(0, 1.0)
+x.put(1, 2.0)
+x.put(2, 3.0)
+x.put(3, 4.0)
+; Row 2: constant row -> all zeros after normalization (var 0, eps guards).
+x.put(4, 7.0)
+x.put(5, 7.0)
+x.put(6, 7.0)
+x.put(7, 7.0)
+var gamma Vector[float](4)
+var beta Vector[float](4)
+var i 0
+while i < 4
+{
+    gamma.put(i as size_t, 1.0)
+    beta.put(i as size_t, 0.0)
+    set i: i + 1
+}
+var out Vector[float](8)
+layernorm_f32(x, gamma, beta, out, 2, 4, 0.00001)
+
+let p out.data
+if (p[0] > 0.0 - 1.3427) = false
+    set ok: false
+if (p[0] < 0.0 - 1.3406) = false
+    set ok: false
+if (p[1] > 0.0 - 0.4478) = false
+    set ok: false
+if (p[1] < 0.0 - 0.4466) = false
+    set ok: false
+if (p[2] > 0.4466) = false
+    set ok: false
+if (p[2] < 0.4478) = false
+    set ok: false
+if (p[3] > 1.3406) = false
+    set ok: false
+if (p[3] < 1.3427) = false
+    set ok: false
+
+; Constant row: |value| must be tiny.
+if (p[4] > 0.001)
+    set ok: false
+if (p[4] < 0.0 - 0.001)
+    set ok: false
+
+; gamma=2, beta=1 rescales: p3 * 2 + 1.
+var gamma2 Vector[float](4)
+var beta2 Vector[float](4)
+var i2 0
+while i2 < 4
+{
+    gamma2.put(i2 as size_t, 2.0)
+    beta2.put(i2 as size_t, 1.0)
+    set i2: i2 + 1
+}
+var out2 Vector[float](8)
+layernorm_f32(x, gamma2, beta2, out2, 2, 4, 0.00001)
+let p2 out2.data
+let want p[3] * 2.0 + 1.0
+let got p2[3]
+let diff got - want
+if (diff > 0.001)
+    set ok: false
+if (diff < 0.0 - 0.001)
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

@@ -1,0 +1,367 @@
+; Stage-5 milestone 5.1: f32 op-kernel throughput at demo-relevant
+; shapes, compiled at -O2 (see bench/run.sh). Kernels are the same
+; code as the tests/tensor/ correctness suite; each op runs twice
+; (cold deferred driver, then promoted head-fork).
+
+function scaly_eio_now_ns() returns i64 extern
+function expf(x: float) returns float extern
+function sqrtf(x: float) returns float extern
+function tanhf(x: float) returns float extern
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+procedure report(tag: pointer[const_char], work: i64, unit: pointer[const_char], ns: i64)
+{
+    var sb StringBuilder()
+    var lbl String(tag)
+    sb.append lbl
+    sb.append " "
+    let dur num_to_string(ns)
+    sb.append dur
+    sb.append " ns  "
+    var rate 0 as i64
+    if ns > 0
+        set rate: (work * 1000) / ns
+    let rs num_to_string(rate)
+    sb.append rs
+    var us String(unit)
+    sb.append us
+    let line sb.to_string()
+    Console.println(line.to_c_string())
+}
+
+procedure fill_f32(v: Vector[float], n: size_t, x: float)
+{
+    var i: size_t 0
+    while i < n
+    {
+        v.put(i, x)
+        set i: i + 1
+    }
+}
+
+; ---- matmul: 4x4 register-tiled, parallel over row tiles ----
+procedure mm_f32(a: Vector[float], b: Vector[float], c: Vector[float], m: int, kk: int, n: int)
+{
+    let ap a.data
+    let bp b.data
+    let mt m / 4
+    for it in mt
+    {
+        var j 0
+        while j < n
+        {
+            var acc00: float 0.0
+            var acc01: float 0.0
+            var acc02: float 0.0
+            var acc03: float 0.0
+            var acc10: float 0.0
+            var acc11: float 0.0
+            var acc12: float 0.0
+            var acc13: float 0.0
+            var acc20: float 0.0
+            var acc21: float 0.0
+            var acc22: float 0.0
+            var acc23: float 0.0
+            var acc30: float 0.0
+            var acc31: float 0.0
+            var acc32: float 0.0
+            var acc33: float 0.0
+            var x 0
+            while x < kk
+            {
+                let a0 ap[(it * 4 + 0) * kk + x]
+                let a1 ap[(it * 4 + 1) * kk + x]
+                let a2 ap[(it * 4 + 2) * kk + x]
+                let a3 ap[(it * 4 + 3) * kk + x]
+                let b0 bp[x * n + j]
+                let b1 bp[x * n + j + 1]
+                let b2 bp[x * n + j + 2]
+                let b3 bp[x * n + j + 3]
+                set acc00: acc00 + a0 * b0
+                set acc01: acc01 + a0 * b1
+                set acc02: acc02 + a0 * b2
+                set acc03: acc03 + a0 * b3
+                set acc10: acc10 + a1 * b0
+                set acc11: acc11 + a1 * b1
+                set acc12: acc12 + a1 * b2
+                set acc13: acc13 + a1 * b3
+                set acc20: acc20 + a2 * b0
+                set acc21: acc21 + a2 * b1
+                set acc22: acc22 + a2 * b2
+                set acc23: acc23 + a2 * b3
+                set acc30: acc30 + a3 * b0
+                set acc31: acc31 + a3 * b1
+                set acc32: acc32 + a3 * b2
+                set acc33: acc33 + a3 * b3
+                set x: x + 1
+            }
+            c.put(((it * 4 + 0) * n + j) as size_t, acc00)
+            c.put(((it * 4 + 0) * n + j + 1) as size_t, acc01)
+            c.put(((it * 4 + 0) * n + j + 2) as size_t, acc02)
+            c.put(((it * 4 + 0) * n + j + 3) as size_t, acc03)
+            c.put(((it * 4 + 1) * n + j) as size_t, acc10)
+            c.put(((it * 4 + 1) * n + j + 1) as size_t, acc11)
+            c.put(((it * 4 + 1) * n + j + 2) as size_t, acc12)
+            c.put(((it * 4 + 1) * n + j + 3) as size_t, acc13)
+            c.put(((it * 4 + 2) * n + j) as size_t, acc20)
+            c.put(((it * 4 + 2) * n + j + 1) as size_t, acc21)
+            c.put(((it * 4 + 2) * n + j + 2) as size_t, acc22)
+            c.put(((it * 4 + 2) * n + j + 3) as size_t, acc23)
+            c.put(((it * 4 + 3) * n + j) as size_t, acc30)
+            c.put(((it * 4 + 3) * n + j + 1) as size_t, acc31)
+            c.put(((it * 4 + 3) * n + j + 2) as size_t, acc32)
+            c.put(((it * 4 + 3) * n + j + 3) as size_t, acc33)
+            set j: j + 4
+        }
+    }
+}
+
+; ---- softmax: row-wise, max-subtracted ----
+procedure softmax_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
+{
+    let xp x.data
+    let op out.data
+    for r in rows
+    {
+        var mx xp[r * n]
+        var j 1
+        while j < n
+        {
+            let v xp[r * n + j]
+            if v > mx
+                set mx: v
+            set j: j + 1
+        }
+        var sum: float 0.0
+        var j2 0
+        while j2 < n
+        {
+            let e expf(xp[r * n + j2] - mx)
+            out.put((r * n + j2) as size_t, e)
+            set sum: sum + e
+            set j2: j2 + 1
+        }
+        let inv 1.0 / sum
+        var j3 0
+        while j3 < n
+        {
+            out.put((r * n + j3) as size_t, op[r * n + j3] * inv)
+            set j3: j3 + 1
+        }
+    }
+}
+
+; ---- layernorm: row-wise, gamma/beta ----
+procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[float], out: Vector[float], rows: int, n: int, eps: float)
+{
+    let xp x.data
+    let gp gamma.data
+    let bp beta.data
+    for r in rows
+    {
+        var sum: float 0.0
+        var j 0
+        while j < n
+        {
+            set sum: sum + xp[r * n + j]
+            set j: j + 1
+        }
+        let mean sum / (n as float)
+        var vsum: float 0.0
+        var j2 0
+        while j2 < n
+        {
+            let d xp[r * n + j2] - mean
+            set vsum: vsum + d * d
+            set j2: j2 + 1
+        }
+        let denom sqrtf(vsum / (n as float) + eps)
+        let inv 1.0 / denom
+        var j3 0
+        while j3 < n
+        {
+            let z (xp[r * n + j3] - mean) * inv
+            out.put((r * n + j3) as size_t, z * gp[j3] + bp[j3])
+            set j3: j3 + 1
+        }
+    }
+}
+
+; ---- GELU: elementwise (tanh approximation), row-structured ----
+function gelu_scalar(v: float) returns float
+{
+    let inner 0.7978845608 * (v + 0.044715 * v * v * v)
+    let t tanhf(inner)
+    0.5 * v * (1.0 + t)
+}
+
+procedure gelu_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
+{
+    let xp x.data
+    for r in rows
+    {
+        var j 0
+        while j < n
+        {
+            let g gelu_scalar(xp[r * n + j])
+            out.put((r * n + j) as size_t, g)
+            set j: j + 1
+        }
+    }
+}
+
+; ---- embedding lookup: gather table rows by token id ----
+procedure embedding_f32(table: Vector[float], ids: Vector[i64], out: Vector[float], tokens: int, dim: int)
+{
+    let tp table.data
+    let ip ids.data
+    for t in tokens
+    {
+        let id ip[t]
+        var j 0
+        while j < dim
+        {
+            out.put((t * dim + j) as size_t, tp[(id as int) * dim + j])
+            set j: j + 1
+        }
+    }
+}
+
+; ==== benchmark driver ====
+
+procedure bench_matmul(m: int, kk: int, n: int)
+{
+    var a Vector[float]((m * kk) as size_t)
+    var b Vector[float]((kk * n) as size_t)
+    var c Vector[float]((m * n) as size_t)
+    fill_f32(a, (m * kk) as size_t, 1.0)
+    fill_f32(b, (kk * n) as size_t, 2.0)
+    let flops (2 as i64) * (m as i64) * (kk as i64) * (n as i64)
+
+    let t0 scaly_eio_now_ns()
+    mm_f32(a, b, c, m, kk, n)
+    let t1 scaly_eio_now_ns()
+    let want (2 * kk) as float
+    let cp c.data
+    if cp[0] <> want
+    {
+        Console.println "mm-check-FAIL"
+        exit 1
+    }
+    if cp[m * n - 1] <> want
+    {
+        Console.println "mm-check-FAIL"
+        exit 1
+    }
+    report("mm_f32(1)   ", flops, " mflop/s", t1 - t0)
+
+    let t2 scaly_eio_now_ns()
+    mm_f32(a, b, c, m, kk, n)
+    let t3 scaly_eio_now_ns()
+    report("mm_f32(2)   ", flops, " mflop/s", t3 - t2)
+}
+
+procedure bench_rowops(rows: int, n: int)
+{
+    let total (rows * n) as size_t
+    var x Vector[float](total)
+    fill_f32(x, total, 0.5)
+    var out Vector[float](total)
+    var gamma Vector[float](n as size_t)
+    var beta Vector[float](n as size_t)
+    fill_f32(gamma, n as size_t, 1.0)
+    fill_f32(beta, n as size_t, 0.0)
+    let elems (rows as i64) * (n as i64)
+
+    let t0 scaly_eio_now_ns()
+    softmax_f32(x, out, rows, n)
+    let t1 scaly_eio_now_ns()
+    report("softmax(1)  ", elems, " melem/s", t1 - t0)
+    let t2 scaly_eio_now_ns()
+    softmax_f32(x, out, rows, n)
+    let t3 scaly_eio_now_ns()
+    report("softmax(2)  ", elems, " melem/s", t3 - t2)
+
+    let t4 scaly_eio_now_ns()
+    layernorm_f32(x, gamma, beta, out, rows, n, 0.00001)
+    let t5 scaly_eio_now_ns()
+    report("layernorm(1)", elems, " melem/s", t5 - t4)
+    let t6 scaly_eio_now_ns()
+    layernorm_f32(x, gamma, beta, out, rows, n, 0.00001)
+    let t7 scaly_eio_now_ns()
+    report("layernorm(2)", elems, " melem/s", t7 - t6)
+}
+
+procedure bench_gelu(rows: int, n: int)
+{
+    let total (rows * n) as size_t
+    var x Vector[float](total)
+    fill_f32(x, total, 0.5)
+    var out Vector[float](total)
+    let elems (rows as i64) * (n as i64)
+
+    let t0 scaly_eio_now_ns()
+    gelu_f32(x, out, rows, n)
+    let t1 scaly_eio_now_ns()
+    report("gelu(1)     ", elems, " melem/s", t1 - t0)
+    let t2 scaly_eio_now_ns()
+    gelu_f32(x, out, rows, n)
+    let t3 scaly_eio_now_ns()
+    report("gelu(2)     ", elems, " melem/s", t3 - t2)
+}
+
+procedure bench_embedding(tokens: int, dim: int, vocab: int)
+{
+    var table Vector[float]((vocab * dim) as size_t)
+    fill_f32(table, (vocab * dim) as size_t, 0.25)
+    var ids Vector[i64](tokens as size_t)
+    var t 0
+    while t < tokens
+    {
+        ids.put(t as size_t, (t % vocab) as i64)
+        set t: t + 1
+    }
+    var out Vector[float]((tokens * dim) as size_t)
+    ; bytes moved: read + write of tokens*dim f32
+    let mb ((tokens as i64) * (dim as i64) * 8)
+
+    let t0 scaly_eio_now_ns()
+    embedding_f32(table, ids, out, tokens, dim)
+    let t1 scaly_eio_now_ns()
+    report("embed(1)    ", mb, " mb/s", t1 - t0)
+    let t2 scaly_eio_now_ns()
+    embedding_f32(table, ids, out, tokens, dim)
+    let t3 scaly_eio_now_ns()
+    report("embed(2)    ", mb, " mb/s", t3 - t2)
+}
+
+; Demo shapes: FFN GEMM, attention-square GEMM, transformer row ops.
+bench_matmul(2048, 192, 768)
+bench_matmul(512, 512, 512)
+bench_rowops(2048, 768)
+bench_gelu(2048, 3072)
+bench_embedding(2048, 768, 256)
+Console.println "ops-bench done"
