@@ -1,0 +1,616 @@
+; Stage-6 milestone 6.1: GPU op parity. A mini transformer graph
+; (embedding with DUPLICATE token ids, add_bcast, layernorm, matmul,
+; windowed attention, add, gelu, crossentropy) runs once on the CPU
+; tape (the reference), then the tape's buffers are redirected into
+; shared MTLBuffers (unified memory: the CPU keeps reading through the
+; same pointers) and the whole step — forward, gradient zeroing, seed,
+; backward — is encoded as ONE command buffer per variant:
+;   1. MPS GEMMs + MSL long-tail kernels (the hybrid 6.0 decided on)
+;   2. MSL matmul kernels only (the single-encoder variant)
+; plus a separate two-tape Adam parity check. GPU reductions are NOT
+; bit-identical to the CPU (order) — every gate is a tolerance, and op
+; output buffers start ZEROED so a silently no-op kernel cannot
+; inherit the CPU result (the 6.0 lesson).
+;
+; Run via tests/tensor/bench/run_gpu_ops.sh (darwin-only; SKIPs off
+; macOS / without a Metal device).
+
+function exit(code: int) extern
+function powf(x: float, y: float) returns float extern
+
+function scaly_mgpu_available() returns i32 extern
+function scaly_mgpu_init() returns i32 extern
+function scaly_mgpu_ops_init() returns i32 extern
+function scaly_mgpu_slots_init(n: i32) returns i32 extern
+function scaly_mgpu_slot_alloc(slot: i32, bytes: size_t) returns i32 extern
+function scaly_mgpu_slot_contents(slot: i32) returns pointer[void] extern
+procedure scaly_mgpu_slot_write(slot: i32, src: pointer[void], bytes: size_t) extern
+function scaly_mgpu_begin() returns i32 extern
+function scaly_mgpu_commit_wait() returns i32 extern
+procedure scaly_mgpu_enc_gemm(a: i32, b: i32, c: i32, arows: i32, acols: i32, brows: i32, bcols: i32, ta: i32, tb: i32, alpha: float, beta: float) extern
+procedure scaly_mgpu_enc_mm_nn(a: i32, b: i32, c: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_mm_nt_acc(dc: i32, b: i32, da: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_mm_tn_acc(a: i32, dc: i32, db: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_fill(buf: i32, count: i32, v: float) extern
+procedure scaly_mgpu_enc_acc(dst: i32, src: i32, count: i32) extern
+procedure scaly_mgpu_enc_add(x: i32, y: i32, out: i32, count: i32) extern
+procedure scaly_mgpu_enc_gelu_fwd(x: i32, out: i32, count: i32) extern
+procedure scaly_mgpu_enc_gelu_bwd(x: i32, dout: i32, dx: i32, count: i32) extern
+procedure scaly_mgpu_enc_add_bcast_fwd(x: i32, y: i32, out: i32, r: i32, n: i32, yr: i32) extern
+procedure scaly_mgpu_enc_add_bcast_bwd_dy(dout: i32, dy: i32, r: i32, n: i32, yr: i32) extern
+procedure scaly_mgpu_enc_ln_fwd(x: i32, gamma: i32, beta: i32, out: i32, stats: i32, r: i32, n: i32, eps: float) extern
+procedure scaly_mgpu_enc_ln_bwd_dx(x: i32, gamma: i32, dout: i32, dx: i32, stats: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_ln_bwd_dgb(x: i32, dout: i32, dgamma: i32, dbeta: i32, stats: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_embed_fwd(tbl: i32, tok: i32, out: i32, tokens: i32, dim: i32) extern
+procedure scaly_mgpu_enc_embed_bwd(dout: i32, tok: i32, dtable: i32, tokens: i32, dim: i32) extern
+procedure scaly_mgpu_enc_ce_fwd(x: i32, tok: i32, rowloss: i32, out: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_ce_bwd(x: i32, tok: i32, dout: i32, dx: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_attn_fwd(q: i32, k: i32, v: i32, out: i32, aux: i32, t: i32, d: i32, hs: i32, win: i32) extern
+procedure scaly_mgpu_enc_attn_bwd(q: i32, k: i32, v: i32, dout: i32, aux: i32, dq: i32, dk: i32, dv: i32, t: i32, d: i32, hs: i32, win: i32) extern
+procedure scaly_mgpu_enc_adam(p: i32, g: i32, mv: i32, total: i32, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float) extern
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function lcg(s: int) returns int
+    pmod(s * 1103515245 + 12345, 2147483648)
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+; positive-range fixed-point, 6 decimals (for max-abs-diff)
+function fixed6(f: float) returns String
+{
+    var ok false
+    if f >= 0.0
+        if f < 1000.0
+            set ok: true
+    if ok = false
+        return "nan"
+    let m ((f * 1000000.0) + 0.5) as int
+    let ip m / 1000000
+    let fr m - ip * 1000000
+    var sb StringBuilder()
+    let istr num_to_string(ip as i64)
+    sb.append istr
+    sb.append "."
+    var scale 100000
+    while scale > 0
+    {
+        let d fr / scale % 10
+        let dstr num_to_string(d as i64)
+        sb.append dstr
+        set scale: scale / 10
+    }
+    sb.to_string()
+}
+
+procedure fill(tape: Tape, id: int, count: int, s0: int) returns int
+{
+    var s s0
+    var i 0
+    while i < count
+    {
+        set s: lcg(s)
+        let r pmod(s, 2001) - 1000
+        let rv (r as float) * 0.0001
+        tape.set_value(id, i, rv)
+        set i: i + 1
+    }
+    s
+}
+
+procedure fill_const(tape: Tape, id: int, count: int, v: float)
+{
+    var i 0
+    while i < count
+    {
+        tape.set_value(id, i, v)
+        set i: i + 1
+    }
+}
+
+function maxdiff_ptr(a: pointer[float], b: pointer[float], count: int) returns float
+{
+    var md: float 0.0
+    var i 0
+    while i < count
+    {
+        var d a[i] - b[i]
+        if d < 0.0
+            set d: 0.0 - d
+        if d > md
+            set md: d
+        set i: i + 1
+    }
+    md
+}
+
+; Move a node's buffers into shared MTLBuffer slots (id*4 + 0 value,
+; 1 grad, 2 aux, 3 tok). Leaf values and token ids are copied across;
+; op values and ALL grads start zeroed so the GPU has to produce them.
+procedure redirect_node(tape: Tape, id: int)
+{
+    let buf tape.nodes.get_buffer()
+    let node buf + id
+    let count node.rows * node.cols
+    let is_leaf node.op = 0
+    if count > 0
+    {
+        let bytes (count * 4) as size_t
+        scaly_mgpu_slot_alloc((id * 4) as i32, bytes)
+        if is_leaf
+            scaly_mgpu_slot_write((id * 4) as i32, node.value.data as pointer[void], bytes)
+        let p scaly_mgpu_slot_contents((id * 4) as i32) as pointer[float]
+        set node.value: Vector[float](p, count as size_t)
+        scaly_mgpu_slot_alloc((id * 4 + 1) as i32, bytes)
+        let g scaly_mgpu_slot_contents((id * 4 + 1) as i32) as pointer[float]
+        set node.grad: Vector[float](g, count as size_t)
+    }
+    let auxlen node.aux.length as int
+    if auxlen > 0
+    {
+        let abytes (auxlen * 4) as size_t
+        scaly_mgpu_slot_alloc((id * 4 + 2) as i32, abytes)
+        let ap scaly_mgpu_slot_contents((id * 4 + 2) as i32) as pointer[float]
+        set node.aux: Vector[float](ap, auxlen as size_t)
+    }
+    let toklen node.tok.length as int
+    if toklen > 0
+    {
+        let tbytes (toklen * 8) as size_t
+        scaly_mgpu_slot_alloc((id * 4 + 3) as i32, tbytes)
+        scaly_mgpu_slot_write((id * 4 + 3) as i32, node.tok.data as pointer[void], tbytes)
+        let tp scaly_mgpu_slot_contents((id * 4 + 3) as i32) as pointer[i64]
+        set node.tok: Vector[i64](tp, toklen as size_t)
+    }
+}
+
+; Encode one node's forward op (kind codes mirror the tape's TAPE_*
+; constants — the values are the tape ABI). xslot maps a node id to
+; its extra scratch slot (layernorm stats / crossent row losses).
+procedure enc_fwd_node(tape: Tape, id: int, xslot: Vector[int], use_msl: int)
+{
+    let buf tape.nodes.get_buffer()
+    let node buf + id
+    let kind node.op
+    if kind = 0
+        return
+    let ia node.a
+    let ib node.b
+    let ic node.c
+    let r node.rows
+    let n node.cols
+    let sv id * 4
+    let xs xslot.data
+    if kind = 1
+    {
+        let na buf + ia
+        let nb buf + ib
+        let m na.rows
+        let kk na.cols
+        let nn nb.cols
+        if use_msl = 1
+            scaly_mgpu_enc_mm_nn((ia * 4) as i32, (ib * 4) as i32, sv as i32, m as i32, kk as i32, nn as i32)
+        else
+            scaly_mgpu_enc_gemm((ia * 4) as i32, (ib * 4) as i32, sv as i32, m as i32, kk as i32, kk as i32, nn as i32, 0 as i32, 0 as i32, 1.0, 0.0)
+    }
+    if kind = 2
+        scaly_mgpu_enc_gelu_fwd((ia * 4) as i32, sv as i32, (r * n) as i32)
+    if kind = 4
+        scaly_mgpu_enc_ln_fwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sv as i32, xs[id] as i32, r as i32, n as i32, node.eps)
+    if kind = 5
+        scaly_mgpu_enc_embed_fwd((ia * 4) as i32, (id * 4 + 3) as i32, sv as i32, r as i32, n as i32)
+    if kind = 7
+    {
+        let na buf + ia
+        let rr na.rows
+        let nn na.cols
+        scaly_mgpu_enc_ce_fwd((ia * 4) as i32, (id * 4 + 3) as i32, xs[id] as i32, sv as i32, rr as i32, nn as i32)
+    }
+    if kind = 8
+        scaly_mgpu_enc_attn_fwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sv as i32, (id * 4 + 2) as i32, r as i32, n as i32, node.heads as i32, node.win as i32)
+    if kind = 9
+        scaly_mgpu_enc_add((ia * 4) as i32, (ib * 4) as i32, sv as i32, (r * n) as i32)
+    if kind = 10
+    {
+        let nb buf + ib
+        let yr nb.rows
+        scaly_mgpu_enc_add_bcast_fwd((ia * 4) as i32, (ib * 4) as i32, sv as i32, r as i32, n as i32, yr as i32)
+    }
+}
+
+procedure enc_bwd_node(tape: Tape, id: int, xslot: Vector[int], use_msl: int)
+{
+    let buf tape.nodes.get_buffer()
+    let node buf + id
+    let kind node.op
+    if kind = 0
+        return
+    let ia node.a
+    let ib node.b
+    let ic node.c
+    let r node.rows
+    let n node.cols
+    let sg id * 4 + 1
+    let xs xslot.data
+    if kind = 1
+    {
+        let na buf + ia
+        let nb buf + ib
+        let m na.rows
+        let kk na.cols
+        let nn nb.cols
+        if use_msl = 1
+        {
+            scaly_mgpu_enc_mm_nt_acc(sg as i32, (ib * 4) as i32, (ia * 4 + 1) as i32, m as i32, kk as i32, nn as i32)
+            scaly_mgpu_enc_mm_tn_acc((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, m as i32, kk as i32, nn as i32)
+        }
+        else
+        {
+            scaly_mgpu_enc_gemm(sg as i32, (ib * 4) as i32, (ia * 4 + 1) as i32, m as i32, nn as i32, kk as i32, nn as i32, 0 as i32, 1 as i32, 1.0, 1.0)
+            scaly_mgpu_enc_gemm((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, m as i32, kk as i32, m as i32, nn as i32, 1 as i32, 0 as i32, 1.0, 1.0)
+        }
+    }
+    if kind = 2
+        scaly_mgpu_enc_gelu_bwd((ia * 4) as i32, sg as i32, (ia * 4 + 1) as i32, (r * n) as i32)
+    if kind = 4
+    {
+        scaly_mgpu_enc_ln_bwd_dx((ia * 4) as i32, (ib * 4) as i32, sg as i32, (ia * 4 + 1) as i32, xs[id] as i32, r as i32, n as i32)
+        scaly_mgpu_enc_ln_bwd_dgb((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, (ic * 4 + 1) as i32, xs[id] as i32, r as i32, n as i32)
+    }
+    if kind = 5
+        scaly_mgpu_enc_embed_bwd(sg as i32, (id * 4 + 3) as i32, (ia * 4 + 1) as i32, r as i32, n as i32)
+    if kind = 7
+    {
+        let na buf + ia
+        let rr na.rows
+        let nn na.cols
+        scaly_mgpu_enc_ce_bwd((ia * 4) as i32, (id * 4 + 3) as i32, sg as i32, (ia * 4 + 1) as i32, rr as i32, nn as i32)
+    }
+    if kind = 8
+        scaly_mgpu_enc_attn_bwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sg as i32, (id * 4 + 2) as i32, (ia * 4 + 1) as i32, (ib * 4 + 1) as i32, (ic * 4 + 1) as i32, r as i32, n as i32, node.heads as i32, node.win as i32)
+    if kind = 9
+    {
+        scaly_mgpu_enc_acc((ia * 4 + 1) as i32, sg as i32, (r * n) as i32)
+        scaly_mgpu_enc_acc((ib * 4 + 1) as i32, sg as i32, (r * n) as i32)
+    }
+    if kind = 10
+    {
+        let nb buf + ib
+        let yr nb.rows
+        scaly_mgpu_enc_acc((ia * 4 + 1) as i32, sg as i32, (r * n) as i32)
+        scaly_mgpu_enc_add_bcast_bwd_dy(sg as i32, (ib * 4 + 1) as i32, r as i32, n as i32, yr as i32)
+    }
+}
+
+; Encode a whole training-step pass over the tape: forward in id
+; order, zero every grad, seed the loss grad, backward in reverse.
+procedure enc_step(tape: Tape, loss_id: int, xslot: Vector[int], use_msl: int)
+{
+    let nnodes tape.nodes.get_length() as int
+    var i 0
+    while i < nnodes
+    {
+        enc_fwd_node(tape, i, xslot, use_msl)
+        set i: i + 1
+    }
+    let buf tape.nodes.get_buffer()
+    var z 0
+    while z < nnodes
+    {
+        let node buf + z
+        let count node.rows * node.cols
+        if count > 0
+            scaly_mgpu_enc_fill((z * 4 + 1) as i32, count as i32, 0.0)
+        set z: z + 1
+    }
+    let lnode buf + loss_id
+    let lcount lnode.rows * lnode.cols
+    scaly_mgpu_enc_fill((loss_id * 4 + 1) as i32, lcount as i32, 1.0)
+    var j loss_id
+    while j >= 0
+    {
+        enc_bwd_node(tape, j, xslot, use_msl)
+        set j: j - 1
+    }
+}
+
+; --- device check ---
+if scaly_mgpu_available() = 0
+{
+    Console.println("SKIP: no Metal device")
+    exit(0)
+}
+if scaly_mgpu_init() <> 0
+{
+    Console.println("FAIL: mgpu init")
+    exit(1)
+}
+if scaly_mgpu_ops_init() <> 0
+{
+    Console.println("FAIL: mgpu ops init")
+    exit(1)
+}
+
+; --- the mini transformer graph (every trainer op) ---
+let V 12
+let D 8
+let T 8
+let B 2
+let TT B * T
+let F 16
+let HEADS 2
+var tape Tape()
+let table tape.leaf(V, D)
+let posemb tape.leaf(T, D)
+let g1 tape.leaf(1, D)
+let b1 tape.leaf(1, D)
+let wq tape.leaf(D, D)
+let wk tape.leaf(D, D)
+let wv tape.leaf(D, D)
+let wo tape.leaf(D, D)
+let g2 tape.leaf(1, D)
+let b2 tape.leaf(1, D)
+let wf tape.leaf(D, F)
+let wp tape.leaf(F, D)
+let gf tape.leaf(1, D)
+let bf tape.leaf(1, D)
+let whead tape.leaf(D, V)
+
+var s 42
+set s: fill(tape, table, V * D, s)
+set s: fill(tape, posemb, T * D, s)
+set s: fill(tape, wq, D * D, s)
+set s: fill(tape, wk, D * D, s)
+set s: fill(tape, wv, D * D, s)
+set s: fill(tape, wo, D * D, s)
+set s: fill(tape, wf, D * F, s)
+set s: fill(tape, wp, F * D, s)
+set s: fill(tape, whead, D * V, s)
+fill_const(tape, g1, D, 1.0)
+fill_const(tape, g2, D, 1.0)
+fill_const(tape, gf, D, 1.0)
+
+; token ids with guaranteed DUPLICATES (scatter-add collision check)
+var ids Vector[i64](TT as size_t)
+var tt 0
+while tt < TT
+{
+    ids.put(tt as size_t, pmod(tt * 7, V) as i64)
+    set tt: tt + 1
+}
+let emb tape.embedding(table, ids, TT)
+let x0 tape.add_bcast(emb, posemb)
+let n1 tape.layernorm(x0, g1, b1, 0.00001)
+let q tape.matmul(n1, wq)
+let k tape.matmul(n1, wk)
+let v tape.matmul(n1, wv)
+let at tape.attention_windowed(q, k, v, HEADS, T)
+let o tape.matmul(at, wo)
+let x1 tape.add(x0, o)
+let n2 tape.layernorm(x1, g2, b2, 0.00001)
+let h tape.matmul(n2, wf)
+let e tape.gelu(h)
+let m tape.matmul(e, wp)
+let x2 tape.add(x1, m)
+let nf tape.layernorm(x2, gf, bf, 0.00001)
+let logits tape.matmul(nf, whead)
+var tgs Vector[i64](TT as size_t)
+var t2 0
+while t2 < TT
+{
+    tgs.put(t2 as size_t, pmod(t2 * 5 + 3, V) as i64)
+    set t2: t2 + 1
+}
+let loss tape.crossentropy(logits, tgs)
+
+; --- CPU reference ---
+tape.recompute()
+tape.zero_grads()
+tape.backward loss
+
+let nnodes tape.nodes.get_length() as int
+let buf tape.nodes.get_buffer()
+var offv Vector[int](nnodes as size_t)
+var total 0
+var ci 0
+while ci < nnodes
+{
+    let node buf + ci
+    offv.put(ci as size_t, total)
+    set total: total + node.rows * node.cols
+    set ci: ci + 1
+}
+var sval Vector[float](total as size_t)
+var sgrad Vector[float](total as size_t)
+let svp sval.data
+let sgp sgrad.data
+let ofp offv.data
+var ci2 0
+while ci2 < nnodes
+{
+    let node buf + ci2
+    let count node.rows * node.cols
+    let vp node.value.data
+    let gp node.grad.data
+    var j 0
+    while j < count
+    {
+        set svp[ofp[ci2] + j]: vp[j]
+        set sgp[ofp[ci2] + j]: gp[j]
+        set j: j + 1
+    }
+    set ci2: ci2 + 1
+}
+
+; --- redirect to GPU slots + scratch (ln stats, ce row losses) ---
+scaly_mgpu_slots_init((nnodes * 4 + 8) as i32)
+var xslot Vector[int](nnodes as size_t)
+var nextslot nnodes * 4
+var ri 0
+while ri < nnodes
+{
+    redirect_node(tape, ri)
+    let node buf + ri
+    var xtra 0 - 1
+    if node.op = 4
+    {
+        scaly_mgpu_slot_alloc(nextslot as i32, (node.rows * 2 * 4) as size_t)
+        set xtra: nextslot
+        set nextslot: nextslot + 1
+    }
+    if node.op = 7
+    {
+        let na buf + node.a
+        scaly_mgpu_slot_alloc(nextslot as i32, (na.rows * 4) as size_t)
+        set xtra: nextslot
+        set nextslot: nextslot + 1
+    }
+    xslot.put(ri as size_t, xtra)
+    set ri: ri + 1
+}
+
+; --- variant 1: hybrid (MPS GEMM + MSL long tail), one command buffer ---
+var failed 0
+var variant 0
+while variant < 2
+{
+    scaly_mgpu_begin()
+    enc_step(tape, loss, xslot, variant)
+    let rc scaly_mgpu_commit_wait()
+    if rc <> 0
+    {
+        Console.println("FAIL: command buffer did not complete")
+        exit(1)
+    }
+    var maxv: float 0.0
+    var maxg: float 0.0
+    var mi 0
+    while mi < nnodes
+    {
+        let node buf + mi
+        let count node.rows * node.cols
+        let vd maxdiff_ptr(node.value.data, svp + ofp[mi], count)
+        let gd maxdiff_ptr(node.grad.data, sgp + ofp[mi], count)
+        if vd > maxv
+            set maxv: vd
+        if gd > maxg
+            set maxg: gd
+        if vd > 0.001
+            set failed: 1
+        if gd > 0.001
+            set failed: 1
+        set mi: mi + 1
+    }
+    ; non-triviality: the GPU wrote real values (op outputs started
+    ; zeroed; a no-op walk would leave the loss at 0, far from the CPU)
+    let lnode buf + loss
+    let lp lnode.value.data
+    let gpu_loss lp[0]
+    let cpu_loss svp[ofp[loss]]
+    if gpu_loss < 0.1
+        set failed: 1
+    var sb StringBuilder()
+    if variant = 0
+        sb.append "hybrid (MPS gemm + MSL ops):  "
+    else
+        sb.append "MSL-only (single encoder):    "
+    sb.append "max value diff "
+    let vs fixed6(maxv)
+    sb.append vs
+    sb.append "  max grad diff "
+    let gs fixed6(maxg)
+    sb.append gs
+    sb.append "  loss cpu "
+    let cls fixed6(cpu_loss)
+    sb.append cls
+    sb.append " gpu "
+    let gls fixed6(gpu_loss)
+    sb.append gls
+    let line sb.to_string()
+    Console.println(line.to_c_string())
+    set variant: variant + 1
+}
+
+; --- Adam parity: CPU adam_step on tape A, GPU kernel on identically
+; built+filled tape B (grads copied from the CPU backward) ---
+var tape_a Tape()
+let xa tape_a.leaf(4, 8)
+let ga tape_a.gelu(xa)
+var sa 77
+set sa: fill(tape_a, xa, 32, sa)
+tape_a.recompute()
+tape_a.zero_grads()
+tape_a.backward ga
+tape_a.adam_step(xa, 0.001, 0.9, 0.999, 0.00000001, 1)
+tape_a.adam_step(xa, 0.001, 0.9, 0.999, 0.00000001, 2)
+
+var tape_b Tape()
+let xb tape_b.leaf(4, 8)
+let gb tape_b.gelu(xb)
+var sb2 77
+set sb2: fill(tape_b, xb, 32, sb2)
+tape_b.recompute()
+tape_b.zero_grads()
+tape_b.backward gb
+scaly_mgpu_slots_init(8 as i32)
+let bbytes (32 * 4) as size_t
+let bufb tape_b.nodes.get_buffer()
+let nodeb bufb + xb
+scaly_mgpu_slot_alloc(0 as i32, bbytes)
+scaly_mgpu_slot_write(0 as i32, nodeb.value.data as pointer[void], bbytes)
+scaly_mgpu_slot_alloc(1 as i32, bbytes)
+scaly_mgpu_slot_write(1 as i32, nodeb.grad.data as pointer[void], bbytes)
+scaly_mgpu_slot_alloc(2 as i32, (64 * 4) as size_t)
+scaly_mgpu_begin()
+let bc11 1.0 - powf(0.9, 1.0)
+let bc21 1.0 - powf(0.999, 1.0)
+scaly_mgpu_enc_adam(0 as i32, 1 as i32, 2 as i32, 32 as i32, 0.001, 0.9, 0.999, 0.00000001, bc11, bc21)
+let bc12 1.0 - powf(0.9, 2.0)
+let bc22 1.0 - powf(0.999, 2.0)
+scaly_mgpu_enc_adam(0 as i32, 1 as i32, 2 as i32, 32 as i32, 0.001, 0.9, 0.999, 0.00000001, bc12, bc22)
+scaly_mgpu_commit_wait()
+let gpu_x scaly_mgpu_slot_contents(0 as i32) as pointer[float]
+let bufa tape_a.nodes.get_buffer()
+let nodea bufa + xa
+let adiff maxdiff_ptr(gpu_x, nodea.value.data, 32)
+var asb StringBuilder()
+asb.append "adam (2 steps):               max value diff "
+let astr fixed6(adiff)
+asb.append astr
+let aline asb.to_string()
+Console.println(aline.to_c_string())
+if adiff > 0.0001
+    set failed: 1
+
+if failed = 1
+{
+    Console.println("FAIL")
+    exit(1)
+}
+Console.println("PASS")
