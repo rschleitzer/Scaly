@@ -55277,7 +55277,6 @@ while.exit:                                       ; preds = %while.cond
 if.then9:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp11, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %deref.tmp11, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols11decl_symbolEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr %2, ptr %deref.tmp11)
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result12)
   %gt = icmp ugt i64 %call13, 0
@@ -55706,7 +55705,6 @@ while.exit:                                       ; preds = %while.cond
 if.then12:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp14, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %deref.tmp14, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols13member_symbolEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp14)
   %call15 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call15, 0
@@ -55813,7 +55811,6 @@ while.exit:                                       ; preds = %while.cond
 if.then8:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp10, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %deref.tmp10, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols11decl_symbolEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp10)
   %call11 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call11, 0
@@ -56010,7 +56007,6 @@ while.exit44:                                     ; preds = %while.cond42
 if.then51:                                        ; preds = %while.body43
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp53, ptr align 1 %call49, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp53, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp53, ptr align 1 %deref.tmp53, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols13member_symbolEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp53)
   %call54 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call54, 0
@@ -58817,7 +58813,6 @@ while.exit:                                       ; preds = %while.cond
 if.then9:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp11, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %deref.tmp11, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols9fold_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr %2, ptr %deref.tmp11)
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result12)
   %gt = icmp ugt i64 %call13, 0
@@ -59143,7 +59138,6 @@ while.exit:                                       ; preds = %while.cond
 if.then11:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp13, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %deref.tmp13, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols11fold_memberEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp13)
   %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call14, 0
@@ -59246,7 +59240,6 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp9, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %deref.tmp9, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols9fold_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp9)
   %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call10, 0
@@ -59362,7 +59355,6 @@ while.exit:                                       ; preds = %while.cond
 if.then14:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp16, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %deref.tmp16, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols11fold_memberEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp16)
   %call17 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call17, 0
@@ -59822,7 +59814,6 @@ while.exit:                                       ; preds = %while.cond
 if.then9:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp11, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %deref.tmp11, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols15completion_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr %2, ptr %deref.tmp11)
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result12)
   %gt = icmp ugt i64 %call13, 0
@@ -60336,7 +60327,6 @@ while.exit:                                       ; preds = %while.cond
 if.then8:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp10, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %deref.tmp10, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7st_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result11, ptr %local_page, ptr %2, ptr %deref.tmp10)
   store i64 0, ptr %ci, align 1
   %call12 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result11)
@@ -63158,7 +63148,6 @@ entry:
 if.then:                                          ; preds = %entry
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z18ParameterSetSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z18ParameterSetSyntax, ptr %deref.tmp, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %deref.tmp, i64 ptrtoint (ptr getelementptr (%_Z18ParameterSetSyntax, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z18ParameterSetSyntax, ptr %deref.tmp, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
@@ -63908,7 +63897,6 @@ while.exit:                                       ; preds = %while.cond
 if.then6:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp8, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z10PartSyntax, ptr %deref.tmp8, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp8, ptr align 1 %deref.tmp8, i64 ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols12field_recordEPN4scaly6memory4PageE6String10PartSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp8)
   store i64 0, ptr %ci, align 1
   %call9 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -64013,7 +64001,6 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp9, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %deref.tmp9, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7st_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp9)
   store i64 0, ptr %ci, align 1
   %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -65255,7 +65242,6 @@ while.exit:                                       ; preds = %while.cond
 if.then11:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp13, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %deref.tmp13, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols9st_memberEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp13)
   store i64 0, ptr %ci, align 1
   %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -66095,7 +66081,6 @@ while.exit:                                       ; preds = %while.cond
 if.then11:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp13, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %deref.tmp13, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols17completion_memberEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp13)
   %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call14, 0
@@ -66198,7 +66183,6 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp9, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %deref.tmp9, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols15completion_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp9)
   %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call10, 0
@@ -66385,7 +66369,6 @@ while.exit40:                                     ; preds = %while.cond38
 if.then47:                                        ; preds = %while.body39
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp49, ptr align 1 %call45, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp49, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp49, ptr align 1 %deref.tmp49, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols17completion_memberEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp49)
   %call50 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call50, 0
@@ -67200,7 +67183,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8mem_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %2, ptr %deref.tmp12, ptr %3)
   %set.load = load { ptr }, ptr %sret.result13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -68355,7 +68337,6 @@ while.exit:                                       ; preds = %while.cond
 if.then8:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp10, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %deref.tmp10, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7ws_declEPN4scaly6memory4PageE6String6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result11, ptr %local_page, ptr %2, ptr %3, ptr %deref.tmp10)
   store i64 0, ptr %ci, align 1
   %call12 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result11)
@@ -68990,7 +68971,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7mt_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String6String(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %2, ptr %deref.tmp12, ptr %3, ptr %4)
   %set.load = load { ptr }, ptr %sret.result13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -69161,7 +69141,6 @@ if.end7:                                          ; preds = %if.end12, %while.bo
 if.then11:                                        ; preds = %if.then6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call9, i64 ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z10PartSyntax, ptr %deref.tmp13, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %deref.tmp13, i64 ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7mt_partEPN4scaly6memory4PageE6String10PartSyntax6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp13, ptr %4)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -69235,7 +69214,6 @@ if.end41:                                         ; preds = %if.end46, %while.bo
 if.then45:                                        ; preds = %if.then40
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp47, ptr align 1 %call43, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val48 = load %_Z12MemberSyntax, ptr %deref.tmp47, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp47, ptr align 1 %deref.tmp47, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols16mt_member_returnEPN4scaly6memory4PageE6String12MemberSyntax6String(ptr noalias sret({ ptr }) %sret.result49, ptr %1, ptr %2, ptr %deref.tmp47, ptr %4)
   %set.load50 = load { ptr }, ptr %sret.result49, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result49, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -69300,7 +69278,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7mt_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp12, ptr %4, ptr %5)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -69975,7 +69952,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8frt_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %2, ptr %deref.tmp12, ptr %3)
   %set.load = load { ptr }, ptr %sret.result13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -70058,7 +70034,6 @@ if.end5:                                          ; preds = %if.end10, %while.bo
 if.then9:                                         ; preds = %if.then4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %call7, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp11, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %deref.tmp11, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8frt_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp11, ptr %4)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -70575,7 +70550,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8mem_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp12, ptr %4)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -70670,7 +70644,6 @@ if.end7:                                          ; preds = %if.end12, %while.bo
 if.then11:                                        ; preds = %if.then6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call9, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp13, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %deref.tmp13, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols10hover_declEPN4scaly6memory4PageE6String17DeclarationSyntaxm(ptr noalias sret({ ptr }) %sret.result14, ptr %1, ptr %2, ptr %deref.tmp13, i64 %call)
   %set.load = load { ptr }, ptr %sret.result14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -71340,7 +71313,6 @@ if.end10:                                         ; preds = %if.end15, %while.bo
 if.then14:                                        ; preds = %if.then9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %call12, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp16, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %deref.tmp16, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols12hover_memberEPN4scaly6memory4PageE6String12MemberSyntaxm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp16, i64 %4)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -71405,7 +71377,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols10hover_declEPN4scaly6memory4PageE6String17DeclarationSyntaxm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp12, i64 %4)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -71885,7 +71856,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8def_declEPN4scaly6memory4PageE6String6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %2, ptr %3, ptr %deref.tmp12, ptr %4)
   %set.load = load { ptr }, ptr %sret.result13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -72386,7 +72356,6 @@ if.end10:                                         ; preds = %if.end15, %while.bo
 if.then14:                                        ; preds = %if.then9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %call12, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp16, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %deref.tmp16, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols10def_memberEPN4scaly6memory4PageE6String6String12MemberSyntax6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %deref.tmp16, ptr %5)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -72451,7 +72420,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8def_declEPN4scaly6memory4PageE6String6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %deref.tmp12, ptr %5)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -76760,7 +76728,6 @@ while.exit:                                       ; preds = %while.cond
 if.then11:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp13, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %deref.tmp13, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols9ws_memberEPN4scaly6memory4PageE6String6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %3, ptr %deref.tmp13)
   store i64 0, ptr %ci, align 1
   %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -76842,7 +76809,6 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp9, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %deref.tmp9, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7ws_declEPN4scaly6memory4PageE6String6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %3, ptr %deref.tmp9)
   store i64 0, ptr %ci, align 1
   %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -77012,7 +76978,6 @@ while.exit43:                                     ; preds = %while.cond41
 if.then50:                                        ; preds = %while.body42
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp52, ptr align 1 %call48, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp52, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp52, ptr align 1 %deref.tmp52, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols9ws_memberEPN4scaly6memory4PageE6String6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %3, ptr %deref.tmp52)
   store i64 0, ptr %ci, align 1
   %call53 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -77211,7 +77176,6 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z10PartSyntax, ptr %deref.tmp9, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %deref.tmp9, i64 ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8cmt_partEPN4scaly6memory4PageE10PartSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %deref.tmp9)
   store i64 0, ptr %ci, align 1
   %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -77281,7 +77245,6 @@ while.exit35:                                     ; preds = %while.cond33
 if.then42:                                        ; preds = %while.body34
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp44, ptr align 1 %call40, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val45 = load %_Z12MemberSyntax, ptr %deref.tmp44, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp44, ptr align 1 %deref.tmp44, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols10cmt_memberEPN4scaly6memory4PageE12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %deref.tmp44)
   store i64 0, ptr %ci, align 1
   %call46 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -77591,7 +77554,6 @@ if.then:                                          ; preds = %entry
   %parameters2 = extractvalue %_Z13RoutineSyntax %load.struct1, 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %parameters2, i64 ptrtoint (ptr getelementptr (%_Z18ParameterSetSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z18ParameterSetSyntax, ptr %deref.tmp, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %deref.tmp, i64 ptrtoint (ptr getelementptr (%_Z18ParameterSetSyntax, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z18ParameterSetSyntax, ptr %deref.tmp, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
@@ -81869,7 +81831,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8sig_declEPN4scaly6memory4PageE6String17DeclarationSyntax6Stringm(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %2, ptr %deref.tmp12, ptr %3, i64 %4)
   %set.load = load { ptr }, ptr %sret.result13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -82524,7 +82485,6 @@ while.exit:                                       ; preds = %while.cond
 if.then11:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp13, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %deref.tmp13, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols9bm_memberEPN4scaly6memory4PageE6String12MemberSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp13)
   store i64 0, ptr %ci, align 1
   %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -82606,7 +82566,6 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp9, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp9, ptr align 1 %deref.tmp9, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7bm_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %deref.tmp9)
   store i64 0, ptr %ci, align 1
   %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -82774,7 +82733,6 @@ while.exit:                                       ; preds = %while.cond
 if.then8:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp10, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp10, ptr align 1 %deref.tmp10, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols7bm_declEPN4scaly6memory4PageE6String17DeclarationSyntax(ptr noalias sret({ ptr }) %sret.result11, ptr %local_page, ptr %2, ptr %deref.tmp10)
   store i64 0, ptr %ci, align 1
   %call12 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result11)
@@ -85228,7 +85186,6 @@ if.end10:                                         ; preds = %if.end15, %while.bo
 if.then14:                                        ; preds = %if.then9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %call12, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp16, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp16, ptr align 1 %deref.tmp16, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols10sig_memberEPN4scaly6memory4PageE6String12MemberSyntax6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp16, ptr %4, i64 %5)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -85293,7 +85250,6 @@ if.end6:                                          ; preds = %if.end11, %while.bo
 if.then10:                                        ; preds = %if.then5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z17DeclarationSyntax, ptr %deref.tmp12, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %deref.tmp12, i64 ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols8sig_declEPN4scaly6memory4PageE6String17DeclarationSyntax6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %deref.tmp12, ptr %4, i64 %5)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -85503,7 +85459,6 @@ if.then:                                          ; preds = %while.exit
   %parameters9 = extractvalue %_Z13RoutineSyntax %load.struct8, 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %parameters9, i64 ptrtoint (ptr getelementptr (%_Z18ParameterSetSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z18ParameterSetSyntax, ptr %deref.tmp, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %deref.tmp, i64 ptrtoint (ptr getelementptr (%_Z18ParameterSetSyntax, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z18ParameterSetSyntax, ptr %deref.tmp, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
