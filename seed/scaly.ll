@@ -216,7 +216,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z4ListI3i64E = type { ptr }
 %_Z4NodeI3i64E = type { i64, ptr }
 %_Z12ListIteratorI3i64E = type { ptr }
-%_Z8TapeNode = type { i64, i64, i64, i64, i64, i64, float, %_Z6VectorIfE, %_Z6VectorIfE, %_Z6VectorIfE, %_Z6VectorI3i64E }
+%_Z8TapeNode = type { i64, i64, i64, i64, i64, i64, i64, float, %_Z6VectorIfE, %_Z6VectorIfE, %_Z6VectorIfE, %_Z6VectorI3i64E }
 %_Z6VectorI8TapeNodeE = type { i64, ptr }
 %_Z14VectorIteratorI8TapeNodeE = type { ptr, i64 }
 %_Z5SliceI8TapeNodeE = type { ptr, i64 }
@@ -284,6 +284,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @"14TAPE_EMBEDDING" = constant i64 5
 @"9TAPE_WSUM" = constant i64 6
 @"13TAPE_CROSSENT" = constant i64 7
+@"14TAPE_ATTENTION" = constant i64 8
 @.str = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
 @.str.2 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
 @.str.3 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
@@ -366,6 +367,10 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @parfor.site.calns.80 = private thread_local global i64 0
 @parfor.site.caliters.81 = private thread_local global i64 0
 @parfor.site.p1k.82 = private global i64 0
+@parfor.site.vol.84 = private thread_local global i64 0
+@parfor.site.calns.85 = private thread_local global i64 0
+@parfor.site.caliters.86 = private thread_local global i64 0
+@parfor.site.p1k.87 = private global i64 0
 
 declare ptr @memcpy(...)
 
@@ -27219,14 +27224,16 @@ entry:
   store i64 %5, ptr %rows, align 8
   %cols = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 5
   store i64 %6, ptr %cols, align 8
-  %eps = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 6
+  %heads = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 6
+  store i64 1, ptr %heads, align 8
+  %eps = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 7
   store float 0.000000e+00, ptr %eps, align 4
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z6VectorIfE, ptr %struct.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 8
   %tuple.field1 = getelementptr inbounds %_Z6VectorIfE, ptr %struct.region, i32 0, i32 1
   store ptr null, ptr %tuple.field1, align 8
-  %value = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 7
+  %value = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 8
   %field.load = load %_Z6VectorIfE, ptr %struct.region, align 8
   store %_Z6VectorIfE %field.load, ptr %value, align 8
   %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
@@ -27234,7 +27241,7 @@ entry:
   store i64 0, ptr %tuple.field3, align 8
   %tuple.field4 = getelementptr inbounds %_Z6VectorIfE, ptr %struct.region2, i32 0, i32 1
   store ptr null, ptr %tuple.field4, align 8
-  %grad = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 8
+  %grad = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 9
   %field.load5 = load %_Z6VectorIfE, ptr %struct.region2, align 8
   store %_Z6VectorIfE %field.load5, ptr %grad, align 8
   %struct.region6 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
@@ -27242,7 +27249,7 @@ entry:
   store i64 0, ptr %tuple.field7, align 8
   %tuple.field8 = getelementptr inbounds %_Z6VectorIfE, ptr %struct.region6, i32 0, i32 1
   store ptr null, ptr %tuple.field8, align 8
-  %aux = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 9
+  %aux = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 10
   %field.load9 = load %_Z6VectorIfE, ptr %struct.region6, align 8
   store %_Z6VectorIfE %field.load9, ptr %aux, align 8
   %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI3i64E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI3i64E }, ptr null, i64 0, i32 1) to i64))
@@ -27250,7 +27257,7 @@ entry:
   store i64 0, ptr %tuple.field11, align 8
   %tuple.field12 = getelementptr inbounds %_Z6VectorI3i64E, ptr %struct.region10, i32 0, i32 1
   store ptr null, ptr %tuple.field12, align 8
-  %tok = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 10
+  %tok = getelementptr inbounds %_Z8TapeNode, ptr %0, i32 0, i32 11
   %field.load13 = load %_Z6VectorI3i64E, ptr %struct.region10, align 8
   store %_Z6VectorI3i64E %field.load13, ptr %tok, align 8
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
@@ -28397,11 +28404,11 @@ entry:
   %mul2 = mul i64 %5, %6
   call void @_ZN6VectorIfEC1Em(ptr %struct.region1, i64 %mul2)
   %ptr.load = load ptr, ptr %node, align 8
-  %value = getelementptr inbounds %_Z8TapeNode, ptr %ptr.load, i32 0, i32 7
+  %value = getelementptr inbounds %_Z8TapeNode, ptr %ptr.load, i32 0, i32 8
   %field.load = load %_Z6VectorIfE, ptr %struct.region, align 8
   store %_Z6VectorIfE %field.load, ptr %value, align 8
   %ptr.load3 = load ptr, ptr %node, align 8
-  %grad = getelementptr inbounds %_Z8TapeNode, ptr %ptr.load3, i32 0, i32 8
+  %grad = getelementptr inbounds %_Z8TapeNode, ptr %ptr.load3, i32 0, i32 9
   %field.load4 = load %_Z6VectorIfE, ptr %struct.region1, align 8
   store %_Z6VectorIfE %field.load4, ptr %grad, align 8
   %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
@@ -28424,7 +28431,7 @@ entry:
   %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
   %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct, 7
+  %value = extractvalue %_Z8TapeNode %load.struct, 8
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   store %_Z6VectorIfE %value, ptr %arg.tmp, align 1
   call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %2, float %3)
@@ -28437,7 +28444,7 @@ entry:
   %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
   %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %tok = extractvalue %_Z8TapeNode %load.struct, 10
+  %tok = extractvalue %_Z8TapeNode %load.struct, 11
   %arg.tmp = alloca %_Z6VectorI3i64E, align 8
   store %_Z6VectorI3i64E %tok, ptr %arg.tmp, align 1
   call void @_ZN6VectorI3i64E3putEm3i64(ptr %arg.tmp, i64 %2, i64 %3)
@@ -28450,7 +28457,7 @@ entry:
   %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
   %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct, 7
+  %value = extractvalue %_Z8TapeNode %load.struct, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %ptr.add1 = getelementptr inbounds float, ptr %data, i64 %2
   %deref = load float, ptr %ptr.add1, align 4
@@ -28463,7 +28470,7 @@ entry:
   %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
   %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct, 9
   %data = extractvalue %_Z6VectorIfE %grad, 1
   %ptr.add1 = getelementptr inbounds float, ptr %data, i64 %2
   %deref = load float, ptr %ptr.add1, align 4
@@ -28553,6 +28560,14 @@ if.then17:                                        ; preds = %if.end15
   br label %if.end18
 
 if.end18:                                         ; preds = %if.then17, %if.end15
+  %eq19 = icmp eq i64 %op, 8
+  br i1 %eq19, label %if.then20, label %if.end21
+
+if.then20:                                        ; preds = %if.end18
+  call void @_ZN4Tape13fwd_attentionEi(ptr %0, i64 %1)
+  br label %if.end21
+
+if.end21:                                         ; preds = %if.then20, %if.end18
   ret void
 }
 
@@ -28612,7 +28627,7 @@ entry:
   %field.inplace3 = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
   %call4 = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace3)
   %ptr.add5 = getelementptr inbounds %_Z8TapeNode, ptr %call4, i64 %call2
-  %eps = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add5, i32 0, i32 6
+  %eps = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add5, i32 0, i32 7
   store float %4, ptr %eps, align 4
   call void @_ZN4Tape8run_nodeEi(ptr %0, i64 %call2)
   ret i64 %call2
@@ -28632,7 +28647,7 @@ entry:
   %field.inplace3 = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
   %call4 = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace3)
   %ptr.add5 = getelementptr inbounds %_Z8TapeNode, ptr %call4, i64 %call1
-  %tok = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add5, i32 0, i32 10
+  %tok = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add5, i32 0, i32 11
   %field.load = load %_Z6VectorI3i64E, ptr %struct.region, align 8
   store %_Z6VectorI3i64E %field.load, ptr %tok, align 8
   call void @_ZN4Tape8run_nodeEi(ptr %0, i64 %call1)
@@ -28648,7 +28663,7 @@ entry:
   %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
   %call2 = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call2, i64 %call
-  %aux = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add, i32 0, i32 9
+  %aux = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add, i32 0, i32 10
   %field.load = load %_Z6VectorIfE, ptr %struct.region, align 8
   store %_Z6VectorIfE %field.load, ptr %aux, align 8
   call void @_ZN4Tape8run_nodeEi(ptr %0, i64 %call)
@@ -28664,11 +28679,157 @@ entry:
   %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
   %call2 = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call2, i64 %call
-  %tok = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add, i32 0, i32 10
+  %tok = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add, i32 0, i32 11
   %field.load = load %_Z6VectorI3i64E, ptr %struct.region, align 8
   store %_Z6VectorI3i64E %field.load, ptr %tok, align 8
   call void @_ZN4Tape8run_nodeEi(ptr %0, i64 %call)
   ret i64 %call
+}
+
+define linkonce_odr i64 @_ZN4Tape9attentionEiiii(ptr %0, i64 %1, i64 %2, i64 %3, i64 %4) {
+entry:
+  %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
+  %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
+  %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
+  %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %rows = extractvalue %_Z8TapeNode %load.struct, 4
+  %load.struct1 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %cols = extractvalue %_Z8TapeNode %load.struct1, 5
+  %call2 = call i64 @_ZN4Tape8add_nodeEiiiiii(ptr %0, i64 8, i64 %1, i64 %2, i64 %3, i64 %rows, i64 %cols)
+  %call3 = call ptr @_ZN4Page3getEPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
+  %mul = mul i64 2, %4
+  %mul4 = mul i64 %mul, %rows
+  %mul5 = mul i64 %mul4, %rows
+  call void @_ZN6VectorIfEC1Em(ptr %struct.region, i64 %mul5)
+  %field.inplace6 = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
+  %call7 = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace6)
+  %ptr.add8 = getelementptr inbounds %_Z8TapeNode, ptr %call7, i64 %call2
+  %aux = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add8, i32 0, i32 10
+  %field.load = load %_Z6VectorIfE, ptr %struct.region, align 8
+  store %_Z6VectorIfE %field.load, ptr %aux, align 8
+  %heads = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add8, i32 0, i32 6
+  store i64 %4, ptr %heads, align 8
+  call void @_ZN4Tape8run_nodeEi(ptr %0, i64 %call2)
+  ret i64 %call2
+}
+
+define linkonce_odr i64 @_ZN4Tape6sampleEiiff(ptr %0, i64 %1, i64 %2, float %3, float %4) {
+entry:
+  %j326 = alloca i64, align 8
+  %acc = alloca float, align 4
+  %j2 = alloca i64, align 8
+  %sum = alloca float, align 4
+  %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
+  %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
+  %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
+  %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %value = extractvalue %_Z8TapeNode %load.struct, 8
+  %data = extractvalue %_Z6VectorIfE %value, 1
+  %load.struct1 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %cols = extractvalue %_Z8TapeNode %load.struct1, 5
+  %mul = mul i64 %2, %cols
+  %fdiv = fdiv float 1.000000e+00, %3
+  %ptr.add2 = getelementptr inbounds float, ptr %data, i64 %mul
+  %deref = load float, ptr %ptr.add2, align 4
+  %mx = alloca float, align 4
+  store float %deref, ptr %mx, align 1
+  %j = alloca i64, align 8
+  store i64 1, ptr %j, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %j3 = load i64, ptr %j, align 8
+  %lt = icmp slt i64 %j3, %cols
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %j4 = load i64, ptr %j, align 8
+  %add = add i64 %mul, %j4
+  %ptr.add5 = getelementptr inbounds float, ptr %data, i64 %add
+  %deref6 = load float, ptr %ptr.add5, align 4
+  %mx7 = load float, ptr %mx, align 4
+  %gt = fcmp ogt float %deref6, %mx7
+  br i1 %gt, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  store float 0.000000e+00, ptr %sum, align 1
+  store i64 0, ptr %j2, align 1
+  br label %while.cond10
+
+if.then:                                          ; preds = %while.body
+  store float %deref6, ptr %mx, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.body
+  %j8 = load i64, ptr %j, align 8
+  %add9 = add i64 %j8, 1
+  store i64 %add9, ptr %j, align 1
+  br label %while.cond
+
+while.cond10:                                     ; preds = %while.body11, %while.exit
+  %j213 = load i64, ptr %j2, align 8
+  %lt14 = icmp slt i64 %j213, %cols
+  br i1 %lt14, label %while.body11, label %while.exit12
+
+while.body11:                                     ; preds = %while.cond10
+  %sum15 = load float, ptr %sum, align 4
+  %j216 = load i64, ptr %j2, align 8
+  %add17 = add i64 %mul, %j216
+  %ptr.add18 = getelementptr inbounds float, ptr %data, i64 %add17
+  %deref19 = load float, ptr %ptr.add18, align 4
+  %mx20 = load float, ptr %mx, align 4
+  %fsub = fsub float %deref19, %mx20
+  %fmul = fmul float %fsub, %fdiv
+  %call21 = call float @expf(float %fmul)
+  %fadd = fadd float %sum15, %call21
+  store float %fadd, ptr %sum, align 1
+  %j222 = load i64, ptr %j2, align 8
+  %add23 = add i64 %j222, 1
+  store i64 %add23, ptr %j2, align 1
+  br label %while.cond10
+
+while.exit12:                                     ; preds = %while.cond10
+  %sum24 = load float, ptr %sum, align 4
+  %fmul25 = fmul float %4, %sum24
+  store float 0.000000e+00, ptr %acc, align 1
+  store i64 0, ptr %j326, align 1
+  br label %while.cond27
+
+while.cond27:                                     ; preds = %if.end45, %while.exit12
+  %j330 = load i64, ptr %j326, align 8
+  %lt31 = icmp slt i64 %j330, %cols
+  br i1 %lt31, label %while.body28, label %while.exit29
+
+while.body28:                                     ; preds = %while.cond27
+  %acc32 = load float, ptr %acc, align 4
+  %j333 = load i64, ptr %j326, align 8
+  %add34 = add i64 %mul, %j333
+  %ptr.add35 = getelementptr inbounds float, ptr %data, i64 %add34
+  %deref36 = load float, ptr %ptr.add35, align 4
+  %mx37 = load float, ptr %mx, align 4
+  %fsub38 = fsub float %deref36, %mx37
+  %fmul39 = fmul float %fsub38, %fdiv
+  %call40 = call float @expf(float %fmul39)
+  %fadd41 = fadd float %acc32, %call40
+  store float %fadd41, ptr %acc, align 1
+  %acc42 = load float, ptr %acc, align 4
+  %gt43 = fcmp ogt float %acc42, %fmul25
+  br i1 %gt43, label %if.then44, label %if.end45
+
+while.exit29:                                     ; preds = %while.cond27
+  %sub = sub i64 %cols, 1
+  ret i64 %sub
+
+if.then44:                                        ; preds = %while.body28
+  %j346 = load i64, ptr %j326, align 8
+  ret i64 %j346
+
+if.end45:                                         ; preds = %while.body28
+  %j347 = load i64, ptr %j326, align 8
+  %add48 = add i64 %j347, 1
+  store i64 %add48, ptr %j326, align 1
+  br label %while.cond27
 }
 
 define linkonce_odr void @_ZN4Tape8sgd_stepEif(ptr %0, i64 %1, float %2) {
@@ -28677,10 +28838,10 @@ entry:
   %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
   %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct, 7
+  %value = extractvalue %_Z8TapeNode %load.struct, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct1 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct1, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct1, 9
   %data2 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct3, 4
@@ -28730,7 +28891,7 @@ entry:
   %cols = extractvalue %_Z8TapeNode %load.struct2, 5
   %mul = mul i64 %rows, %cols
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %aux = extractvalue %_Z8TapeNode %load.struct3, 9
+  %aux = extractvalue %_Z8TapeNode %load.struct3, 10
   %length = extractvalue %_Z6VectorIfE %aux, 0
   %mul4 = mul i64 %mul, 2
   %lt = icmp slt i64 %length, %mul4
@@ -28740,20 +28901,20 @@ if.then:                                          ; preds = %entry
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
   %mul5 = mul i64 %mul, 2
   call void @_ZN6VectorIfEC1Em(ptr %struct.region, i64 %mul5)
-  %aux6 = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add, i32 0, i32 9
+  %aux6 = getelementptr inbounds %_Z8TapeNode, ptr %ptr.add, i32 0, i32 10
   %field.load = load %_Z6VectorIfE, ptr %struct.region, align 8
   store %_Z6VectorIfE %field.load, ptr %aux6, align 8
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct7 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct7, 7
+  %value = extractvalue %_Z8TapeNode %load.struct7, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct8, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct8, 9
   %data9 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct10 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %aux11 = extractvalue %_Z8TapeNode %load.struct10, 9
+  %aux11 = extractvalue %_Z8TapeNode %load.struct10, 10
   %data12 = extractvalue %_Z6VectorIfE %aux11, 1
   %as.sitofp = sitofp i64 %6 to float
   %call13 = call float @powf(float %3, float %as.sitofp)
@@ -28864,7 +29025,7 @@ while.body:                                       ; preds = %while.cond
   %i4 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call3, i64 %i4
   %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct, 9
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct5, 4
   %load.struct6 = load %_Z8TapeNode, ptr %ptr.add, align 8
@@ -28960,6 +29121,14 @@ if.then17:                                        ; preds = %if.end15
   br label %if.end18
 
 if.end18:                                         ; preds = %if.then17, %if.end15
+  %eq19 = icmp eq i64 %op, 8
+  br i1 %eq19, label %if.then20, label %if.end21
+
+if.then20:                                        ; preds = %if.end18
+  call void @_ZN4Tape13bwd_attentionEi(ptr %0, i64 %1)
+  br label %if.end21
+
+if.end21:                                         ; preds = %if.then20, %if.end18
   ret void
 }
 
@@ -28971,7 +29140,7 @@ entry:
   %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
   %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct, 9
   %load.struct1 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct1, 4
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add, align 8
@@ -29039,13 +29208,13 @@ entry:
   %load.struct6 = load %_Z8TapeNode, ptr %ptr.add3, align 8
   %cols7 = extractvalue %_Z8TapeNode %load.struct6, 5
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct8, 7
+  %value = extractvalue %_Z8TapeNode %load.struct8, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct9 = load %_Z8TapeNode, ptr %ptr.add3, align 8
-  %value10 = extractvalue %_Z8TapeNode %load.struct9, 7
+  %value10 = extractvalue %_Z8TapeNode %load.struct9, 8
   %data11 = extractvalue %_Z6VectorIfE %value10, 1
   %load.struct12 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value13 = extractvalue %_Z8TapeNode %load.struct12, 7
+  %value13 = extractvalue %_Z8TapeNode %load.struct12, 8
   %parfor.i = alloca i64, align 8
   %parfor.nextcheck = alloca i64, align 8
   %parfor.t0 = alloca i64, align 8
@@ -29334,10 +29503,10 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value4 = extractvalue %_Z8TapeNode %load.struct3, 7
+  %value4 = extractvalue %_Z8TapeNode %load.struct3, 8
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct5, 4
   %load.struct6 = load %_Z8TapeNode, ptr %ptr.add, align 8
@@ -29613,12 +29782,12 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value4 = extractvalue %_Z8TapeNode %load.struct3, 7
+  %value4 = extractvalue %_Z8TapeNode %load.struct3, 8
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value6 = extractvalue %_Z8TapeNode %load.struct5, 7
+  %value6 = extractvalue %_Z8TapeNode %load.struct5, 8
   %data7 = extractvalue %_Z6VectorIfE %value6, 1
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct8, 4
@@ -29961,22 +30130,22 @@ entry:
   %c = extractvalue %_Z8TapeNode %load.struct4, 3
   %ptr.add5 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %c
   %load.struct6 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct6, 7
+  %value = extractvalue %_Z8TapeNode %load.struct6, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct7 = load %_Z8TapeNode, ptr %ptr.add3, align 8
-  %value8 = extractvalue %_Z8TapeNode %load.struct7, 7
+  %value8 = extractvalue %_Z8TapeNode %load.struct7, 8
   %data9 = extractvalue %_Z6VectorIfE %value8, 1
   %load.struct10 = load %_Z8TapeNode, ptr %ptr.add5, align 8
-  %value11 = extractvalue %_Z8TapeNode %load.struct10, 7
+  %value11 = extractvalue %_Z8TapeNode %load.struct10, 8
   %data12 = extractvalue %_Z6VectorIfE %value11, 1
   %load.struct13 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value14 = extractvalue %_Z8TapeNode %load.struct13, 7
+  %value14 = extractvalue %_Z8TapeNode %load.struct13, 8
   %load.struct15 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct15, 4
   %load.struct16 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %cols = extractvalue %_Z8TapeNode %load.struct16, 5
   %load.struct17 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %eps = extractvalue %_Z8TapeNode %load.struct17, 6
+  %eps = extractvalue %_Z8TapeNode %load.struct17, 7
   %parfor.i = alloca i64, align 8
   %parfor.nextcheck = alloca i64, align 8
   %parfor.t0 = alloca i64, align 8
@@ -30309,13 +30478,13 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %tok = extractvalue %_Z8TapeNode %load.struct3, 10
+  %tok = extractvalue %_Z8TapeNode %load.struct3, 11
   %data4 = extractvalue %_Z6VectorI3i64E %tok, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value6 = extractvalue %_Z8TapeNode %load.struct5, 7
+  %value6 = extractvalue %_Z8TapeNode %load.struct5, 8
   %load.struct7 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct7, 4
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add, align 8
@@ -30579,13 +30748,13 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %aux = extractvalue %_Z8TapeNode %load.struct3, 9
+  %aux = extractvalue %_Z8TapeNode %load.struct3, 10
   %data4 = extractvalue %_Z6VectorIfE %aux, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value6 = extractvalue %_Z8TapeNode %load.struct5, 7
+  %value6 = extractvalue %_Z8TapeNode %load.struct5, 8
   %load.struct7 = load %_Z8TapeNode, ptr %ptr.add1, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct7, 4
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add1, align 8
@@ -30639,13 +30808,13 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %tok = extractvalue %_Z8TapeNode %load.struct3, 10
+  %tok = extractvalue %_Z8TapeNode %load.struct3, 11
   %data4 = extractvalue %_Z6VectorI3i64E %tok, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value6 = extractvalue %_Z8TapeNode %load.struct5, 7
+  %value6 = extractvalue %_Z8TapeNode %load.struct5, 8
   %load.struct7 = load %_Z8TapeNode, ptr %ptr.add1, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct7, 4
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add1, align 8
@@ -30755,6 +30924,531 @@ while.exit27:                                     ; preds = %while.cond25
   br label %while.cond
 }
 
+define linkonce_odr void @_ZN4Tape13fwd_attentionEi(ptr %0, i64 %1) {
+entry:
+  %parfor.c.slot = alloca i64, align 8
+  %arg.tmp153 = alloca %_Z6VectorIfE, align 8
+  %j4 = alloca i64, align 8
+  %acc2 = alloca float, align 4
+  %c2 = alloca i64, align 8
+  %arg.tmp110 = alloca %_Z6VectorIfE, align 8
+  %j3 = alloca i64, align 8
+  %arg.tmp82 = alloca %_Z6VectorIfE, align 8
+  %arg.tmp = alloca %_Z6VectorIfE, align 8
+  %c29 = alloca i64, align 8
+  %acc = alloca float, align 4
+  %j = alloca i64, align 8
+  %mx = alloca float, align 4
+  %h = alloca i64, align 8
+  %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
+  %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
+  %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
+  %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %a = extractvalue %_Z8TapeNode %load.struct, 1
+  %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
+  %load.struct2 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %b = extractvalue %_Z8TapeNode %load.struct2, 2
+  %ptr.add3 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %b
+  %load.struct4 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %c = extractvalue %_Z8TapeNode %load.struct4, 3
+  %ptr.add5 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %c
+  %load.struct6 = load %_Z8TapeNode, ptr %ptr.add1, align 8
+  %value = extractvalue %_Z8TapeNode %load.struct6, 8
+  %data = extractvalue %_Z6VectorIfE %value, 1
+  %load.struct7 = load %_Z8TapeNode, ptr %ptr.add3, align 8
+  %value8 = extractvalue %_Z8TapeNode %load.struct7, 8
+  %data9 = extractvalue %_Z6VectorIfE %value8, 1
+  %load.struct10 = load %_Z8TapeNode, ptr %ptr.add5, align 8
+  %value11 = extractvalue %_Z8TapeNode %load.struct10, 8
+  %data12 = extractvalue %_Z6VectorIfE %value11, 1
+  %load.struct13 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %aux = extractvalue %_Z8TapeNode %load.struct13, 10
+  %load.struct14 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %aux15 = extractvalue %_Z8TapeNode %load.struct14, 10
+  %data16 = extractvalue %_Z6VectorIfE %aux15, 1
+  %load.struct17 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %value18 = extractvalue %_Z8TapeNode %load.struct17, 8
+  %load.struct19 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %rows = extractvalue %_Z8TapeNode %load.struct19, 4
+  %load.struct20 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %cols = extractvalue %_Z8TapeNode %load.struct20, 5
+  %load.struct21 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %heads = extractvalue %_Z8TapeNode %load.struct21, 6
+  %sdiv = sdiv i64 %cols, %heads
+  %as.sitofp = sitofp i64 %sdiv to float
+  %call22 = call float @sqrtf(float %as.sitofp)
+  %fdiv = fdiv float 1.000000e+00, %call22
+  %parfor.i = alloca i64, align 8
+  %parfor.nextcheck = alloca i64, align 8
+  %parfor.t0 = alloca i64, align 8
+  %parfor.i0 = alloca i64, align 8
+  %parfor.fork.lo = alloca i64, align 8
+  %parfor.fork.n = alloca i64, align 8
+  %parfor.fork.p1k = alloca i64, align 8
+  %parfor.fork.buf = alloca ptr, align 8
+  %parfor.fork.grp = alloca ptr, align 8
+  %parfor.fork.gpage = alloca ptr, align 8
+  %parfor.entryp = alloca i64, align 8
+  %parfor.tentry = alloca i64, align 8
+  %parfor.fp1k = alloca i64, align 8
+  store i64 0, ptr %parfor.i, align 8
+  store i64 1, ptr %parfor.nextcheck, align 8
+  store i64 0, ptr %parfor.t0, align 8
+  store i64 0, ptr %parfor.i0, align 8
+  store i64 0, ptr %parfor.tentry, align 8
+  store ptr null, ptr %parfor.fork.buf, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.87, align 8
+  store i64 %parfor.sitep, ptr %parfor.entryp, align 8
+  %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
+  br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
+
+pfor.dispatch:                                    ; preds = %pfor.fork, %pfor.gate.headfork
+  %parfor.d.lo0 = load i64, ptr %parfor.fork.lo, align 8
+  %parfor.d.n = load i64, ptr %parfor.fork.n, align 8
+  %parfor.d.p1k0 = load i64, ptr %parfor.fork.p1k, align 8
+  %parfor.d.grp = load ptr, ptr %parfor.fork.grp, align 8
+  %parfor.d.gpage = load ptr, ptr %parfor.fork.gpage, align 8
+  %parfor.d.buf = load ptr, ptr %parfor.fork.buf, align 8
+  %parfor.d.p1kpos = icmp sgt i64 %parfor.d.p1k0, 0
+  %parfor.d.p1k = select i1 %parfor.d.p1kpos, i64 %parfor.d.p1k0, i64 1
+  %parfor.d.minc = sdiv i64 16777216, %parfor.d.p1k
+  %parfor.d.rem = sub i64 %parfor.d.n, %parfor.d.lo0
+  %parfor.ncpu = call i64 @_ZN8TaskPool4ncpuEv()
+  %parfor.d.denom = mul i64 %parfor.ncpu, 4
+  %parfor.d.bal = sdiv i64 %parfor.d.rem, %parfor.d.denom
+  %parfor.d.gt = icmp sgt i64 %parfor.d.minc, %parfor.d.bal
+  %parfor.d.chunk0 = select i1 %parfor.d.gt, i64 %parfor.d.minc, i64 %parfor.d.bal
+  %parfor.d.cpos = icmp sgt i64 %parfor.d.chunk0, 0
+  %parfor.d.chunk = select i1 %parfor.d.cpos, i64 %parfor.d.chunk0, i64 1
+  %parfor.pool = call ptr @_ZN8TaskPool12default_poolEv()
+  store i64 %parfor.d.lo0, ptr %parfor.c.slot, align 8
+  br label %pfor.sub.cond
+
+pfor.done:                                        ; preds = %pfor.sub.done, %pfor.exit.pub, %pfor.exit.meas, %pfor.exit.add, %pfor.exit.n, %pfor.exit.acct
+  ret void
+
+pfor.exit.acct:                                   ; preds = %pfor.inl.cond
+  %parfor.x.ep = load i64, ptr %parfor.entryp, align 8
+  %parfor.x.isprom = icmp sgt i64 %parfor.x.ep, 0
+  br i1 %parfor.x.isprom, label %pfor.done, label %pfor.exit.n
+
+pfor.exit.n:                                      ; preds = %pfor.exit.acct
+  %parfor.x.iters = load i64, ptr %parfor.i, align 8
+  %parfor.x.ran = icmp sgt i64 %parfor.x.iters, 0
+  br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
+
+pfor.exit.add:                                    ; preds = %pfor.exit.n
+  %parfor.x.add = mul i64 %parfor.x.iters, 1048576
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.84, align 8
+  %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
+  %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
+  %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.84, align 8
+  %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
+  %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
+  br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
+
+pfor.exit.meas:                                   ; preds = %pfor.exit.add
+  %parfor.x.te = call i64 @scaly_eio_now_ns()
+  %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
+  %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
+  %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.85, align 8
+  %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.85, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.86, align 8
+  %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.86, align 8
+  %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
+  %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
+  %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
+  br i1 %parfor.x.ready, label %pfor.exit.pub, label %pfor.done
+
+pfor.exit.pub:                                    ; preds = %pfor.exit.meas
+  %parfor.x.e10 = shl i64 %parfor.x.cn1, 10
+  %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
+  %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
+  %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.87, align 8
+  br label %pfor.done
+
+pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
+  %parfor.i.cur = load i64, ptr %parfor.i, align 8
+  %parfor.inl.more = icmp slt i64 %parfor.i.cur, %rows
+  br i1 %parfor.inl.more, label %pfor.inl.chk, label %pfor.exit.acct
+
+pfor.inl.chk:                                     ; preds = %pfor.inl.cond
+  %parfor.nc = load i64, ptr %parfor.nextcheck, align 8
+  %parfor.chk.hit = icmp eq i64 %parfor.i.cur, %parfor.nc
+  br i1 %parfor.chk.hit, label %pfor.check, label %pfor.inl.body
+
+pfor.inl.body:                                    ; preds = %pfor.check.later, %pfor.check.first, %pfor.inl.chk
+  %parfor.i.body = load i64, ptr %parfor.i, align 8
+  store i64 0, ptr %h, align 1
+  br label %while.cond
+
+pfor.inl.inc:                                     ; preds = %while.exit
+  %parfor.i.inc = load i64, ptr %parfor.i, align 8
+  %parfor.i.next = add i64 %parfor.i.inc, 1
+  store i64 %parfor.i.next, ptr %parfor.i, align 8
+  br label %pfor.inl.cond
+
+pfor.check:                                       ; preds = %pfor.inl.chk
+  %parfor.t = call i64 @scaly_eio_now_ns()
+  %parfor.t0v = load i64, ptr %parfor.t0, align 8
+  %parfor.chk.isfirst = icmp eq i64 %parfor.t0v, 0
+  br i1 %parfor.chk.isfirst, label %pfor.check.first, label %pfor.check.meas
+
+pfor.check.first:                                 ; preds = %pfor.check
+  store i64 %parfor.t, ptr %parfor.t0, align 8
+  store i64 %parfor.i.cur, ptr %parfor.i0, align 8
+  %parfor.nc.dbl = mul i64 %parfor.i.cur, 2
+  store i64 %parfor.nc.dbl, ptr %parfor.nextcheck, align 8
+  br label %pfor.inl.body
+
+pfor.check.meas:                                  ; preds = %pfor.check
+  %parfor.elapsed = sub i64 %parfor.t, %parfor.t0v
+  %parfor.calib = icmp sge i64 %parfor.elapsed, 4096
+  br i1 %parfor.calib, label %pfor.check.decide, label %pfor.check.later
+
+pfor.check.later:                                 ; preds = %pfor.check.decide, %pfor.check.meas
+  %parfor.nc.dbl2 = mul i64 %parfor.i.cur, 2
+  store i64 %parfor.nc.dbl2, ptr %parfor.nextcheck, align 8
+  br label %pfor.inl.body
+
+pfor.check.decide:                                ; preds = %pfor.check.meas
+  %parfor.i0v = load i64, ptr %parfor.i0, align 8
+  %parfor.iters = sub i64 %parfor.i.cur, %parfor.i0v
+  %parfor.e10 = shl i64 %parfor.elapsed, 10
+  %parfor.p1k = sdiv i64 %parfor.e10, %parfor.iters
+  %parfor.rem = sub i64 %rows, %parfor.i.cur
+  %parfor.proj0 = mul i64 %parfor.rem, %parfor.p1k
+  %parfor.proj = ashr i64 %parfor.proj0, 10
+  %parfor.dofork = icmp sge i64 %parfor.proj, 131072
+  br i1 %parfor.dofork, label %pfor.fork, label %pfor.check.later
+
+pfor.fork:                                        ; preds = %pfor.check.decide
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.87, align 8
+  %parfor.group165 = call ptr @_ZN9TaskGroup6createEv()
+  %parfor.gpage166 = call ptr @_Z3getPv(ptr %parfor.group165)
+  store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
+  store i64 %rows, ptr %parfor.fork.n, align 8
+  store i64 %parfor.p1k, ptr %parfor.fork.p1k, align 8
+  store ptr %parfor.group165, ptr %parfor.fork.grp, align 8
+  store ptr %parfor.gpage166, ptr %parfor.fork.gpage, align 8
+  br label %pfor.dispatch
+
+pfor.gate.prom:                                   ; preds = %entry
+  %parfor.gate.c0 = sdiv i64 134217728, %parfor.sitep
+  %parfor.gate.cpos = icmp sgt i64 %parfor.gate.c0, 0
+  %parfor.gate.c = select i1 %parfor.gate.cpos, i64 %parfor.gate.c0, i64 1
+  %parfor.gate.fits = icmp sge i64 %rows, %parfor.gate.c
+  br i1 %parfor.gate.fits, label %pfor.gate.headfork, label %pfor.gate.seq
+
+pfor.gate.headfork:                               ; preds = %pfor.gate.prom
+  %parfor.group = call ptr @_ZN9TaskGroup6createEv()
+  %parfor.gpage = call ptr @_Z3getPv(ptr %parfor.group)
+  store i64 0, ptr %parfor.fork.lo, align 8
+  store i64 %rows, ptr %parfor.fork.n, align 8
+  store i64 %parfor.sitep, ptr %parfor.fork.p1k, align 8
+  store ptr %parfor.group, ptr %parfor.fork.grp, align 8
+  store ptr %parfor.gpage, ptr %parfor.fork.gpage, align 8
+  br label %pfor.dispatch
+
+pfor.gate.seq:                                    ; preds = %pfor.gate.prom
+  store i64 %rows, ptr %parfor.nextcheck, align 8
+  br label %pfor.inl.cond
+
+pfor.gate.cold:                                   ; preds = %entry
+  %parfor.volv = load i64, ptr @parfor.site.vol.84, align 8
+  %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
+  br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
+
+pfor.gate.hot:                                    ; preds = %pfor.gate.cold
+  %parfor.tentry23 = call i64 @scaly_eio_now_ns()
+  store i64 %parfor.tentry23, ptr %parfor.tentry, align 8
+  br label %pfor.inl.cond
+
+while.cond:                                       ; preds = %while.exit122, %pfor.inl.body
+  %h24 = load i64, ptr %h, align 8
+  %lt = icmp slt i64 %h24, %heads
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  store float 0.000000e+00, ptr %mx, align 1
+  store i64 0, ptr %j, align 1
+  br label %while.cond25
+
+while.exit:                                       ; preds = %while.cond
+  br label %pfor.inl.inc
+
+while.cond25:                                     ; preds = %if.end64, %while.body
+  %j28 = load i64, ptr %j, align 8
+  %le = icmp sle i64 %j28, %parfor.i.body
+  br i1 %le, label %while.body26, label %while.exit27
+
+while.body26:                                     ; preds = %while.cond25
+  store float 0.000000e+00, ptr %acc, align 1
+  store i64 0, ptr %c29, align 1
+  br label %while.cond30
+
+while.exit27:                                     ; preds = %while.cond25
+  store float 0.000000e+00, ptr %acc, align 1
+  store i64 0, ptr %c29, align 1
+  br label %while.cond67
+
+while.cond30:                                     ; preds = %while.body31, %while.body26
+  %c33 = load i64, ptr %c29, align 8
+  %lt34 = icmp slt i64 %c33, %sdiv
+  br i1 %lt34, label %while.body31, label %while.exit32
+
+while.body31:                                     ; preds = %while.cond30
+  %acc35 = load float, ptr %acc, align 4
+  %mul = mul i64 %parfor.i.body, %cols
+  %h36 = load i64, ptr %h, align 8
+  %mul37 = mul i64 %h36, %sdiv
+  %add = add i64 %mul, %mul37
+  %c38 = load i64, ptr %c29, align 8
+  %add39 = add i64 %add, %c38
+  %ptr.add40 = getelementptr inbounds float, ptr %data, i64 %add39
+  %deref = load float, ptr %ptr.add40, align 4
+  %j41 = load i64, ptr %j, align 8
+  %mul42 = mul i64 %j41, %cols
+  %h43 = load i64, ptr %h, align 8
+  %mul44 = mul i64 %h43, %sdiv
+  %add45 = add i64 %mul42, %mul44
+  %c46 = load i64, ptr %c29, align 8
+  %add47 = add i64 %add45, %c46
+  %ptr.add48 = getelementptr inbounds float, ptr %data9, i64 %add47
+  %deref49 = load float, ptr %ptr.add48, align 4
+  %fmul = fmul float %deref, %deref49
+  %fadd = fadd float %acc35, %fmul
+  store float %fadd, ptr %acc, align 1
+  %c50 = load i64, ptr %c29, align 8
+  %add51 = add i64 %c50, 1
+  store i64 %add51, ptr %c29, align 1
+  br label %while.cond30
+
+while.exit32:                                     ; preds = %while.cond30
+  %acc52 = load float, ptr %acc, align 4
+  %fmul53 = fmul float %acc52, %fdiv
+  store %_Z6VectorIfE %aux, ptr %arg.tmp, align 1
+  %h54 = load i64, ptr %h, align 8
+  %mul55 = mul i64 %h54, %rows
+  %mul56 = mul i64 %mul55, %rows
+  %mul57 = mul i64 %parfor.i.body, %rows
+  %add58 = add i64 %mul56, %mul57
+  %j59 = load i64, ptr %j, align 8
+  %add60 = add i64 %add58, %j59
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %add60, float %fmul53)
+  %j61 = load i64, ptr %j, align 8
+  %eq = icmp eq i64 %j61, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %while.exit32
+  store float %fmul53, ptr %mx, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.exit32
+  %mx62 = load float, ptr %mx, align 4
+  %gt = fcmp ogt float %fmul53, %mx62
+  br i1 %gt, label %if.then63, label %if.end64
+
+if.then63:                                        ; preds = %if.end
+  store float %fmul53, ptr %mx, align 1
+  br label %if.end64
+
+if.end64:                                         ; preds = %if.then63, %if.end
+  %j65 = load i64, ptr %j, align 8
+  %add66 = add i64 %j65, 1
+  store i64 %add66, ptr %j, align 1
+  br label %while.cond25
+
+while.cond67:                                     ; preds = %while.body68, %while.exit27
+  %j2 = load i64, ptr %c29, align 8
+  %le70 = icmp sle i64 %j2, %parfor.i.body
+  br i1 %le70, label %while.body68, label %while.exit69
+
+while.body68:                                     ; preds = %while.cond67
+  %h71 = load i64, ptr %h, align 8
+  %mul72 = mul i64 %h71, %rows
+  %mul73 = mul i64 %mul72, %rows
+  %mul74 = mul i64 %parfor.i.body, %rows
+  %add75 = add i64 %mul73, %mul74
+  %j276 = load i64, ptr %c29, align 8
+  %add77 = add i64 %add75, %j276
+  %ptr.add78 = getelementptr inbounds float, ptr %data16, i64 %add77
+  %deref79 = load float, ptr %ptr.add78, align 4
+  %mx80 = load float, ptr %mx, align 4
+  %fsub = fsub float %deref79, %mx80
+  %call81 = call float @expf(float %fsub)
+  store %_Z6VectorIfE %aux, ptr %arg.tmp82, align 1
+  %h83 = load i64, ptr %h, align 8
+  %mul84 = mul i64 %h83, %rows
+  %mul85 = mul i64 %mul84, %rows
+  %mul86 = mul i64 %parfor.i.body, %rows
+  %add87 = add i64 %mul85, %mul86
+  %j288 = load i64, ptr %c29, align 8
+  %add89 = add i64 %add87, %j288
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp82, i64 %add89, float %call81)
+  %sum = load float, ptr %acc, align 4
+  %fadd90 = fadd float %sum, %call81
+  store float %fadd90, ptr %acc, align 1
+  %j291 = load i64, ptr %c29, align 8
+  %add92 = add i64 %j291, 1
+  store i64 %add92, ptr %c29, align 1
+  br label %while.cond67
+
+while.exit69:                                     ; preds = %while.cond67
+  %sum93 = load float, ptr %acc, align 4
+  %fdiv94 = fdiv float 1.000000e+00, %sum93
+  store i64 0, ptr %j3, align 1
+  br label %while.cond95
+
+while.cond95:                                     ; preds = %while.body96, %while.exit69
+  %j398 = load i64, ptr %j3, align 8
+  %le99 = icmp sle i64 %j398, %parfor.i.body
+  br i1 %le99, label %while.body96, label %while.exit97
+
+while.body96:                                     ; preds = %while.cond95
+  %h100 = load i64, ptr %h, align 8
+  %mul101 = mul i64 %h100, %rows
+  %mul102 = mul i64 %mul101, %rows
+  %mul103 = mul i64 %parfor.i.body, %rows
+  %add104 = add i64 %mul102, %mul103
+  %j3105 = load i64, ptr %j3, align 8
+  %add106 = add i64 %add104, %j3105
+  %ptr.add107 = getelementptr inbounds float, ptr %data16, i64 %add106
+  %deref108 = load float, ptr %ptr.add107, align 4
+  %fmul109 = fmul float %deref108, %fdiv94
+  store %_Z6VectorIfE %aux, ptr %arg.tmp110, align 1
+  %h111 = load i64, ptr %h, align 8
+  %mul112 = mul i64 %h111, %rows
+  %mul113 = mul i64 %mul112, %rows
+  %mul114 = mul i64 %parfor.i.body, %rows
+  %add115 = add i64 %mul113, %mul114
+  %j3116 = load i64, ptr %j3, align 8
+  %add117 = add i64 %add115, %j3116
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp110, i64 %add117, float %fmul109)
+  %j3118 = load i64, ptr %j3, align 8
+  %add119 = add i64 %j3118, 1
+  store i64 %add119, ptr %j3, align 1
+  br label %while.cond95
+
+while.exit97:                                     ; preds = %while.cond95
+  store i64 0, ptr %c2, align 1
+  br label %while.cond120
+
+while.cond120:                                    ; preds = %while.exit127, %while.exit97
+  %c2123 = load i64, ptr %c2, align 8
+  %lt124 = icmp slt i64 %c2123, %sdiv
+  br i1 %lt124, label %while.body121, label %while.exit122
+
+while.body121:                                    ; preds = %while.cond120
+  store float 0.000000e+00, ptr %acc2, align 1
+  store i64 0, ptr %j4, align 1
+  br label %while.cond125
+
+while.exit122:                                    ; preds = %while.cond120
+  %h163 = load i64, ptr %h, align 8
+  %add164 = add i64 %h163, 1
+  store i64 %add164, ptr %h, align 1
+  br label %while.cond
+
+while.cond125:                                    ; preds = %while.body126, %while.body121
+  %j4128 = load i64, ptr %j4, align 8
+  %le129 = icmp sle i64 %j4128, %parfor.i.body
+  br i1 %le129, label %while.body126, label %while.exit127
+
+while.body126:                                    ; preds = %while.cond125
+  %acc2130 = load float, ptr %acc2, align 4
+  %h131 = load i64, ptr %h, align 8
+  %mul132 = mul i64 %h131, %rows
+  %mul133 = mul i64 %mul132, %rows
+  %mul134 = mul i64 %parfor.i.body, %rows
+  %add135 = add i64 %mul133, %mul134
+  %j4136 = load i64, ptr %j4, align 8
+  %add137 = add i64 %add135, %j4136
+  %ptr.add138 = getelementptr inbounds float, ptr %data16, i64 %add137
+  %deref139 = load float, ptr %ptr.add138, align 4
+  %j4140 = load i64, ptr %j4, align 8
+  %mul141 = mul i64 %j4140, %cols
+  %h142 = load i64, ptr %h, align 8
+  %mul143 = mul i64 %h142, %sdiv
+  %add144 = add i64 %mul141, %mul143
+  %c2145 = load i64, ptr %c2, align 8
+  %add146 = add i64 %add144, %c2145
+  %ptr.add147 = getelementptr inbounds float, ptr %data12, i64 %add146
+  %deref148 = load float, ptr %ptr.add147, align 4
+  %fmul149 = fmul float %deref139, %deref148
+  %fadd150 = fadd float %acc2130, %fmul149
+  store float %fadd150, ptr %acc2, align 1
+  %j4151 = load i64, ptr %j4, align 8
+  %add152 = add i64 %j4151, 1
+  store i64 %add152, ptr %j4, align 1
+  br label %while.cond125
+
+while.exit127:                                    ; preds = %while.cond125
+  store %_Z6VectorIfE %value18, ptr %arg.tmp153, align 1
+  %mul154 = mul i64 %parfor.i.body, %cols
+  %h155 = load i64, ptr %h, align 8
+  %mul156 = mul i64 %h155, %sdiv
+  %add157 = add i64 %mul154, %mul156
+  %c2158 = load i64, ptr %c2, align 8
+  %add159 = add i64 %add157, %c2158
+  %acc2160 = load float, ptr %acc2, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp153, i64 %add159, float %acc2160)
+  %c2161 = load i64, ptr %c2, align 8
+  %add162 = add i64 %c2161, 1
+  store i64 %add162, ptr %c2, align 1
+  br label %while.cond120
+
+pfor.sub.cond:                                    ; preds = %pfor.sub.body, %pfor.dispatch
+  %parfor.c.lo = load i64, ptr %parfor.c.slot, align 8
+  %parfor.sub.more = icmp slt i64 %parfor.c.lo, %parfor.d.n
+  br i1 %parfor.sub.more, label %pfor.sub.body, label %pfor.sub.done
+
+pfor.sub.body:                                    ; preds = %pfor.sub.cond
+  %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
+  %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
+  %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 120, i64 8)
+  %parfor.cell.lo = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 0
+  store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
+  %parfor.cell.hi = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 1
+  store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
+  %parfor.cell.cap = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 2
+  store i64 %heads, ptr %parfor.cell.cap, align 8
+  %parfor.cell.cap167 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 3
+  store i64 %sdiv, ptr %parfor.cell.cap167, align 8
+  %parfor.cell.cap168 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 4
+  store ptr %data, ptr %parfor.cell.cap168, align 8
+  %parfor.cell.cap169 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 5
+  store i64 %cols, ptr %parfor.cell.cap169, align 8
+  %parfor.cell.cap170 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 6
+  store ptr %data9, ptr %parfor.cell.cap170, align 8
+  %parfor.cell.cap171 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 7
+  store float %fdiv, ptr %parfor.cell.cap171, align 4
+  %parfor.cell.cap172 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 8
+  store %_Z6VectorIfE %aux, ptr %parfor.cell.cap172, align 8
+  %parfor.cell.cap173 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 9
+  store i64 %rows, ptr %parfor.cell.cap173, align 8
+  %parfor.cell.cap174 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 10
+  store ptr %data16, ptr %parfor.cell.cap174, align 8
+  %parfor.cell.cap175 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 11
+  store ptr %data12, ptr %parfor.cell.cap175, align 8
+  %parfor.cell.cap176 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 12
+  store %_Z6VectorIfE %value18, ptr %parfor.cell.cap176, align 8
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.83, ptr %parfor.cell, ptr %parfor.d.grp)
+  store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
+  br label %pfor.sub.cond
+
+pfor.sub.done:                                    ; preds = %pfor.sub.cond
+  call void @_ZN9TaskGroup4waitEP9TaskGroup(ptr %parfor.d.grp)
+  call void @_ZN9TaskGroup7disposeEP9TaskGroup(ptr %parfor.d.grp)
+  br label %pfor.done
+}
+
 define linkonce_odr void @_ZN4Tape10bwd_matmulEi(ptr %0, i64 %1) {
 entry:
   %counter51 = alloca i64, align 8
@@ -30777,19 +31471,19 @@ entry:
   %load.struct6 = load %_Z8TapeNode, ptr %ptr.add3, align 8
   %cols7 = extractvalue %_Z8TapeNode %load.struct6, 5
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct8, 7
+  %value = extractvalue %_Z8TapeNode %load.struct8, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct9 = load %_Z8TapeNode, ptr %ptr.add3, align 8
-  %value10 = extractvalue %_Z8TapeNode %load.struct9, 7
+  %value10 = extractvalue %_Z8TapeNode %load.struct9, 8
   %data11 = extractvalue %_Z6VectorIfE %value10, 1
   %load.struct12 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct12, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct12, 9
   %data13 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct14 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %grad15 = extractvalue %_Z8TapeNode %load.struct14, 8
+  %grad15 = extractvalue %_Z8TapeNode %load.struct14, 9
   %data16 = extractvalue %_Z6VectorIfE %grad15, 1
   %load.struct17 = load %_Z8TapeNode, ptr %ptr.add3, align 8
-  %grad18 = extractvalue %_Z8TapeNode %load.struct17, 8
+  %grad18 = extractvalue %_Z8TapeNode %load.struct17, 9
   %data19 = extractvalue %_Z6VectorIfE %grad18, 1
   %counter = alloca i64, align 8
   store i64 0, ptr %counter, align 8
@@ -30959,13 +31653,13 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct3, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct3, 9
   %data4 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 8
+  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 9
   %data7 = extractvalue %_Z6VectorIfE %grad6, 1
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct8, 4
@@ -31061,13 +31755,13 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct3, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct3, 9
   %data4 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 8
+  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 9
   %data7 = extractvalue %_Z6VectorIfE %grad6, 1
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct8, 4
@@ -31188,29 +31882,29 @@ entry:
   %c = extractvalue %_Z8TapeNode %load.struct4, 3
   %ptr.add5 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %c
   %load.struct6 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct6, 7
+  %value = extractvalue %_Z8TapeNode %load.struct6, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct7 = load %_Z8TapeNode, ptr %ptr.add3, align 8
-  %value8 = extractvalue %_Z8TapeNode %load.struct7, 7
+  %value8 = extractvalue %_Z8TapeNode %load.struct7, 8
   %data9 = extractvalue %_Z6VectorIfE %value8, 1
   %load.struct10 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct10, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct10, 9
   %data11 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct12 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %grad13 = extractvalue %_Z8TapeNode %load.struct12, 8
+  %grad13 = extractvalue %_Z8TapeNode %load.struct12, 9
   %data14 = extractvalue %_Z6VectorIfE %grad13, 1
   %load.struct15 = load %_Z8TapeNode, ptr %ptr.add3, align 8
-  %grad16 = extractvalue %_Z8TapeNode %load.struct15, 8
+  %grad16 = extractvalue %_Z8TapeNode %load.struct15, 9
   %data17 = extractvalue %_Z6VectorIfE %grad16, 1
   %load.struct18 = load %_Z8TapeNode, ptr %ptr.add5, align 8
-  %grad19 = extractvalue %_Z8TapeNode %load.struct18, 8
+  %grad19 = extractvalue %_Z8TapeNode %load.struct18, 9
   %data20 = extractvalue %_Z6VectorIfE %grad19, 1
   %load.struct21 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct21, 4
   %load.struct22 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %cols = extractvalue %_Z8TapeNode %load.struct22, 5
   %load.struct23 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %eps = extractvalue %_Z8TapeNode %load.struct23, 6
+  %eps = extractvalue %_Z8TapeNode %load.struct23, 7
   %counter = alloca i64, align 8
   store i64 0, ptr %counter, align 8
   br label %for.cond
@@ -31424,13 +32118,13 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %tok = extractvalue %_Z8TapeNode %load.struct2, 10
+  %tok = extractvalue %_Z8TapeNode %load.struct2, 11
   %data = extractvalue %_Z6VectorI3i64E %tok, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct3, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct3, 9
   %data4 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 8
+  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 9
   %data7 = extractvalue %_Z6VectorIfE %grad6, 1
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct8, 4
@@ -31496,13 +32190,13 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %aux = extractvalue %_Z8TapeNode %load.struct2, 9
+  %aux = extractvalue %_Z8TapeNode %load.struct2, 10
   %data = extractvalue %_Z6VectorIfE %aux, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct3, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct3, 9
   %data4 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 8
+  %grad6 = extractvalue %_Z8TapeNode %load.struct5, 9
   %data7 = extractvalue %_Z6VectorIfE %grad6, 1
   %load.struct8 = load %_Z8TapeNode, ptr %ptr.add1, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct8, 4
@@ -31556,16 +32250,16 @@ entry:
   %a = extractvalue %_Z8TapeNode %load.struct, 1
   %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
   %load.struct2 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %value = extractvalue %_Z8TapeNode %load.struct2, 7
+  %value = extractvalue %_Z8TapeNode %load.struct2, 8
   %data = extractvalue %_Z6VectorIfE %value, 1
   %load.struct3 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %tok = extractvalue %_Z8TapeNode %load.struct3, 10
+  %tok = extractvalue %_Z8TapeNode %load.struct3, 11
   %data4 = extractvalue %_Z6VectorI3i64E %tok, 1
   %load.struct5 = load %_Z8TapeNode, ptr %ptr.add, align 8
-  %grad = extractvalue %_Z8TapeNode %load.struct5, 8
+  %grad = extractvalue %_Z8TapeNode %load.struct5, 9
   %data6 = extractvalue %_Z6VectorIfE %grad, 1
   %load.struct7 = load %_Z8TapeNode, ptr %ptr.add1, align 8
-  %grad8 = extractvalue %_Z8TapeNode %load.struct7, 8
+  %grad8 = extractvalue %_Z8TapeNode %load.struct7, 9
   %data9 = extractvalue %_Z6VectorIfE %grad8, 1
   %load.struct10 = load %_Z8TapeNode, ptr %ptr.add1, align 8
   %rows = extractvalue %_Z8TapeNode %load.struct10, 4
@@ -31709,6 +32403,481 @@ if.end58:                                         ; preds = %if.then57, %while.b
   %add74 = add i64 %j373, 1
   store i64 %add74, ptr %j3, align 1
   br label %while.cond43
+}
+
+define linkonce_odr void @_ZN4Tape13bwd_attentionEi(ptr %0, i64 %1) {
+entry:
+  %counter193 = alloca i64, align 8
+  %counter124 = alloca i64, align 8
+  %c37 = alloca i64, align 8
+  %dp = alloca float, align 4
+  %j = alloca i64, align 8
+  %ci = alloca float, align 4
+  %h = alloca i64, align 8
+  %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
+  %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
+  %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
+  %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %a = extractvalue %_Z8TapeNode %load.struct, 1
+  %ptr.add1 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %a
+  %load.struct2 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %b = extractvalue %_Z8TapeNode %load.struct2, 2
+  %ptr.add3 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %b
+  %load.struct4 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %c = extractvalue %_Z8TapeNode %load.struct4, 3
+  %ptr.add5 = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %c
+  %load.struct6 = load %_Z8TapeNode, ptr %ptr.add1, align 8
+  %value = extractvalue %_Z8TapeNode %load.struct6, 8
+  %data = extractvalue %_Z6VectorIfE %value, 1
+  %load.struct7 = load %_Z8TapeNode, ptr %ptr.add3, align 8
+  %value8 = extractvalue %_Z8TapeNode %load.struct7, 8
+  %data9 = extractvalue %_Z6VectorIfE %value8, 1
+  %load.struct10 = load %_Z8TapeNode, ptr %ptr.add5, align 8
+  %value11 = extractvalue %_Z8TapeNode %load.struct10, 8
+  %data12 = extractvalue %_Z6VectorIfE %value11, 1
+  %load.struct13 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %aux = extractvalue %_Z8TapeNode %load.struct13, 10
+  %data14 = extractvalue %_Z6VectorIfE %aux, 1
+  %load.struct15 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %grad = extractvalue %_Z8TapeNode %load.struct15, 9
+  %data16 = extractvalue %_Z6VectorIfE %grad, 1
+  %load.struct17 = load %_Z8TapeNode, ptr %ptr.add1, align 8
+  %grad18 = extractvalue %_Z8TapeNode %load.struct17, 9
+  %data19 = extractvalue %_Z6VectorIfE %grad18, 1
+  %load.struct20 = load %_Z8TapeNode, ptr %ptr.add3, align 8
+  %grad21 = extractvalue %_Z8TapeNode %load.struct20, 9
+  %data22 = extractvalue %_Z6VectorIfE %grad21, 1
+  %load.struct23 = load %_Z8TapeNode, ptr %ptr.add5, align 8
+  %grad24 = extractvalue %_Z8TapeNode %load.struct23, 9
+  %data25 = extractvalue %_Z6VectorIfE %grad24, 1
+  %load.struct26 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %rows = extractvalue %_Z8TapeNode %load.struct26, 4
+  %load.struct27 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %cols = extractvalue %_Z8TapeNode %load.struct27, 5
+  %load.struct28 = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %heads = extractvalue %_Z8TapeNode %load.struct28, 6
+  %sdiv = sdiv i64 %cols, %heads
+  %as.sitofp = sitofp i64 %sdiv to float
+  %call29 = call float @sqrtf(float %as.sitofp)
+  %fdiv = fdiv float 1.000000e+00, %call29
+  %mul = mul i64 %heads, %rows
+  %mul30 = mul i64 %mul, %rows
+  %counter = alloca i64, align 8
+  store i64 0, ptr %counter, align 8
+  br label %for.cond
+
+for.cond:                                         ; preds = %for.incr, %entry
+  %i = load i64, ptr %counter, align 8
+  %for.cmp = icmp slt i64 %i, %rows
+  br i1 %for.cmp, label %for.body, label %for.exit
+
+for.body:                                         ; preds = %for.cond
+  %i31 = load i64, ptr %counter, align 8
+  store i64 0, ptr %h, align 1
+  br label %while.cond
+
+for.incr:                                         ; preds = %while.exit
+  %i.load = load i64, ptr %counter, align 8
+  %i.next = add i64 %i.load, 1
+  store i64 %i.next, ptr %counter, align 8
+  br label %for.cond
+
+for.exit:                                         ; preds = %for.cond
+  store i64 0, ptr %counter124, align 8
+  br label %for.cond125
+
+while.cond:                                       ; preds = %while.exit88, %for.body
+  %h32 = load i64, ptr %h, align 8
+  %lt = icmp slt i64 %h32, %heads
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  store float 0.000000e+00, ptr %ci, align 1
+  store i64 0, ptr %j, align 1
+  br label %while.cond33
+
+while.exit:                                       ; preds = %while.cond
+  br label %for.incr
+
+while.cond33:                                     ; preds = %while.exit40, %while.body
+  %j36 = load i64, ptr %j, align 8
+  %le = icmp sle i64 %j36, %i31
+  br i1 %le, label %while.body34, label %while.exit35
+
+while.body34:                                     ; preds = %while.cond33
+  store float 0.000000e+00, ptr %dp, align 1
+  store i64 0, ptr %c37, align 1
+  br label %while.cond38
+
+while.exit35:                                     ; preds = %while.cond33
+  store i64 0, ptr %c37, align 1
+  br label %while.cond86
+
+while.cond38:                                     ; preds = %while.body39, %while.body34
+  %c41 = load i64, ptr %c37, align 8
+  %lt42 = icmp slt i64 %c41, %sdiv
+  br i1 %lt42, label %while.body39, label %while.exit40
+
+while.body39:                                     ; preds = %while.cond38
+  %dp43 = load float, ptr %dp, align 4
+  %mul44 = mul i64 %i31, %cols
+  %h45 = load i64, ptr %h, align 8
+  %mul46 = mul i64 %h45, %sdiv
+  %add = add i64 %mul44, %mul46
+  %c47 = load i64, ptr %c37, align 8
+  %add48 = add i64 %add, %c47
+  %ptr.add49 = getelementptr inbounds float, ptr %data16, i64 %add48
+  %deref = load float, ptr %ptr.add49, align 4
+  %j50 = load i64, ptr %j, align 8
+  %mul51 = mul i64 %j50, %cols
+  %h52 = load i64, ptr %h, align 8
+  %mul53 = mul i64 %h52, %sdiv
+  %add54 = add i64 %mul51, %mul53
+  %c55 = load i64, ptr %c37, align 8
+  %add56 = add i64 %add54, %c55
+  %ptr.add57 = getelementptr inbounds float, ptr %data12, i64 %add56
+  %deref58 = load float, ptr %ptr.add57, align 4
+  %fmul = fmul float %deref, %deref58
+  %fadd = fadd float %dp43, %fmul
+  store float %fadd, ptr %dp, align 1
+  %c59 = load i64, ptr %c37, align 8
+  %add60 = add i64 %c59, 1
+  store i64 %add60, ptr %c37, align 1
+  br label %while.cond38
+
+while.exit40:                                     ; preds = %while.cond38
+  %dp61 = load float, ptr %dp, align 4
+  %h62 = load i64, ptr %h, align 8
+  %mul63 = mul i64 %h62, %rows
+  %mul64 = mul i64 %mul63, %rows
+  %add65 = add i64 %mul30, %mul64
+  %mul66 = mul i64 %i31, %rows
+  %add67 = add i64 %add65, %mul66
+  %j68 = load i64, ptr %j, align 8
+  %add69 = add i64 %add67, %j68
+  %ptr.add70 = getelementptr inbounds float, ptr %data14, i64 %add69
+  store float %dp61, ptr %ptr.add70, align 4
+  %ci71 = load float, ptr %ci, align 4
+  %dp72 = load float, ptr %dp, align 4
+  %h73 = load i64, ptr %h, align 8
+  %mul74 = mul i64 %h73, %rows
+  %mul75 = mul i64 %mul74, %rows
+  %mul76 = mul i64 %i31, %rows
+  %add77 = add i64 %mul75, %mul76
+  %j78 = load i64, ptr %j, align 8
+  %add79 = add i64 %add77, %j78
+  %ptr.add80 = getelementptr inbounds float, ptr %data14, i64 %add79
+  %deref81 = load float, ptr %ptr.add80, align 4
+  %fmul82 = fmul float %dp72, %deref81
+  %fadd83 = fadd float %ci71, %fmul82
+  store float %fadd83, ptr %ci, align 1
+  %j84 = load i64, ptr %j, align 8
+  %add85 = add i64 %j84, 1
+  store i64 %add85, ptr %j, align 1
+  br label %while.cond33
+
+while.cond86:                                     ; preds = %while.body87, %while.exit35
+  %j2 = load i64, ptr %c37, align 8
+  %le89 = icmp sle i64 %j2, %i31
+  br i1 %le89, label %while.body87, label %while.exit88
+
+while.body87:                                     ; preds = %while.cond86
+  %h90 = load i64, ptr %h, align 8
+  %mul91 = mul i64 %h90, %rows
+  %mul92 = mul i64 %mul91, %rows
+  %mul93 = mul i64 %i31, %rows
+  %add94 = add i64 %mul92, %mul93
+  %j295 = load i64, ptr %c37, align 8
+  %add96 = add i64 %add94, %j295
+  %ptr.add97 = getelementptr inbounds float, ptr %data14, i64 %add96
+  %deref98 = load float, ptr %ptr.add97, align 4
+  %h99 = load i64, ptr %h, align 8
+  %mul100 = mul i64 %h99, %rows
+  %mul101 = mul i64 %mul100, %rows
+  %add102 = add i64 %mul30, %mul101
+  %mul103 = mul i64 %i31, %rows
+  %add104 = add i64 %add102, %mul103
+  %j2105 = load i64, ptr %c37, align 8
+  %add106 = add i64 %add104, %j2105
+  %ptr.add107 = getelementptr inbounds float, ptr %data14, i64 %add106
+  %deref108 = load float, ptr %ptr.add107, align 4
+  %ci109 = load float, ptr %ci, align 4
+  %fsub = fsub float %deref108, %ci109
+  %fmul110 = fmul float %deref98, %fsub
+  %h111 = load i64, ptr %h, align 8
+  %mul112 = mul i64 %h111, %rows
+  %mul113 = mul i64 %mul112, %rows
+  %add114 = add i64 %mul30, %mul113
+  %mul115 = mul i64 %i31, %rows
+  %add116 = add i64 %add114, %mul115
+  %j2117 = load i64, ptr %c37, align 8
+  %add118 = add i64 %add116, %j2117
+  %ptr.add119 = getelementptr inbounds float, ptr %data14, i64 %add118
+  store float %fmul110, ptr %ptr.add119, align 4
+  %j2120 = load i64, ptr %c37, align 8
+  %add121 = add i64 %j2120, 1
+  store i64 %add121, ptr %c37, align 1
+  br label %while.cond86
+
+while.exit88:                                     ; preds = %while.cond86
+  %h122 = load i64, ptr %h, align 8
+  %add123 = add i64 %h122, 1
+  store i64 %add123, ptr %h, align 1
+  br label %while.cond
+
+for.cond125:                                      ; preds = %for.incr127, %for.exit
+  %i129 = load i64, ptr %counter124, align 8
+  %for.cmp130 = icmp slt i64 %i129, %rows
+  br i1 %for.cmp130, label %for.body126, label %for.exit128
+
+for.body126:                                      ; preds = %for.cond125
+  %i2 = load i64, ptr %counter124, align 8
+  store i64 0, ptr %h, align 1
+  br label %while.cond131
+
+for.incr127:                                      ; preds = %while.exit133
+  %i.load191 = load i64, ptr %counter124, align 8
+  %i.next192 = add i64 %i.load191, 1
+  store i64 %i.next192, ptr %counter124, align 8
+  br label %for.cond125
+
+for.exit128:                                      ; preds = %for.cond125
+  store i64 0, ptr %counter193, align 8
+  br label %for.cond194
+
+while.cond131:                                    ; preds = %while.exit138, %for.body126
+  %h134 = load i64, ptr %h, align 8
+  %lt135 = icmp slt i64 %h134, %heads
+  br i1 %lt135, label %while.body132, label %while.exit133
+
+while.body132:                                    ; preds = %while.cond131
+  store i64 0, ptr %j, align 1
+  br label %while.cond136
+
+while.exit133:                                    ; preds = %while.cond131
+  br label %for.incr127
+
+while.cond136:                                    ; preds = %while.exit143, %while.body132
+  %c139 = load i64, ptr %j, align 8
+  %lt140 = icmp slt i64 %c139, %sdiv
+  br i1 %lt140, label %while.body137, label %while.exit138
+
+while.body137:                                    ; preds = %while.cond136
+  store float 0.000000e+00, ptr %ci, align 1
+  store i64 0, ptr %c37, align 1
+  br label %while.cond141
+
+while.exit138:                                    ; preds = %while.cond136
+  %h189 = load i64, ptr %h, align 8
+  %add190 = add i64 %h189, 1
+  store i64 %add190, ptr %h, align 1
+  br label %while.cond131
+
+while.cond141:                                    ; preds = %while.body142, %while.body137
+  %j144 = load i64, ptr %c37, align 8
+  %le145 = icmp sle i64 %j144, %i2
+  br i1 %le145, label %while.body142, label %while.exit143
+
+while.body142:                                    ; preds = %while.cond141
+  %acc = load float, ptr %ci, align 4
+  %h146 = load i64, ptr %h, align 8
+  %mul147 = mul i64 %h146, %rows
+  %mul148 = mul i64 %mul147, %rows
+  %add149 = add i64 %mul30, %mul148
+  %mul150 = mul i64 %i2, %rows
+  %add151 = add i64 %add149, %mul150
+  %j152 = load i64, ptr %c37, align 8
+  %add153 = add i64 %add151, %j152
+  %ptr.add154 = getelementptr inbounds float, ptr %data14, i64 %add153
+  %deref155 = load float, ptr %ptr.add154, align 4
+  %j156 = load i64, ptr %c37, align 8
+  %mul157 = mul i64 %j156, %cols
+  %h158 = load i64, ptr %h, align 8
+  %mul159 = mul i64 %h158, %sdiv
+  %add160 = add i64 %mul157, %mul159
+  %c161 = load i64, ptr %j, align 8
+  %add162 = add i64 %add160, %c161
+  %ptr.add163 = getelementptr inbounds float, ptr %data9, i64 %add162
+  %deref164 = load float, ptr %ptr.add163, align 4
+  %fmul165 = fmul float %deref155, %deref164
+  %fadd166 = fadd float %acc, %fmul165
+  store float %fadd166, ptr %ci, align 1
+  %j167 = load i64, ptr %c37, align 8
+  %add168 = add i64 %j167, 1
+  store i64 %add168, ptr %c37, align 1
+  br label %while.cond141
+
+while.exit143:                                    ; preds = %while.cond141
+  %mul169 = mul i64 %i2, %cols
+  %h170 = load i64, ptr %h, align 8
+  %mul171 = mul i64 %h170, %sdiv
+  %add172 = add i64 %mul169, %mul171
+  %c173 = load i64, ptr %j, align 8
+  %add174 = add i64 %add172, %c173
+  %ptr.add175 = getelementptr inbounds float, ptr %data19, i64 %add174
+  %deref176 = load float, ptr %ptr.add175, align 4
+  %acc177 = load float, ptr %ci, align 4
+  %fmul178 = fmul float %fdiv, %acc177
+  %fadd179 = fadd float %deref176, %fmul178
+  %mul180 = mul i64 %i2, %cols
+  %h181 = load i64, ptr %h, align 8
+  %mul182 = mul i64 %h181, %sdiv
+  %add183 = add i64 %mul180, %mul182
+  %c184 = load i64, ptr %j, align 8
+  %add185 = add i64 %add183, %c184
+  %ptr.add186 = getelementptr inbounds float, ptr %data19, i64 %add185
+  store float %fadd179, ptr %ptr.add186, align 4
+  %c187 = load i64, ptr %j, align 8
+  %add188 = add i64 %c187, 1
+  store i64 %add188, ptr %j, align 1
+  br label %while.cond136
+
+for.cond194:                                      ; preds = %for.incr196, %for.exit128
+  %i198 = load i64, ptr %counter193, align 8
+  %for.cmp199 = icmp slt i64 %i198, %rows
+  br i1 %for.cmp199, label %for.body195, label %for.exit197
+
+for.body195:                                      ; preds = %for.cond194
+  %j5 = load i64, ptr %counter193, align 8
+  store i64 0, ptr %h, align 1
+  br label %while.cond200
+
+for.incr196:                                      ; preds = %while.exit202
+  %i.load297 = load i64, ptr %counter193, align 8
+  %i.next298 = add i64 %i.load297, 1
+  store i64 %i.next298, ptr %counter193, align 8
+  br label %for.cond194
+
+for.exit197:                                      ; preds = %for.cond194
+  ret void
+
+while.cond200:                                    ; preds = %while.exit207, %for.body195
+  %h203 = load i64, ptr %h, align 8
+  %lt204 = icmp slt i64 %h203, %heads
+  br i1 %lt204, label %while.body201, label %while.exit202
+
+while.body201:                                    ; preds = %while.cond200
+  store i64 0, ptr %j, align 1
+  br label %while.cond205
+
+while.exit202:                                    ; preds = %while.cond200
+  br label %for.incr196
+
+while.cond205:                                    ; preds = %while.exit212, %while.body201
+  %c208 = load i64, ptr %j, align 8
+  %lt209 = icmp slt i64 %c208, %sdiv
+  br i1 %lt209, label %while.body206, label %while.exit207
+
+while.body206:                                    ; preds = %while.cond205
+  store float 0.000000e+00, ptr %ci, align 1
+  store float 0.000000e+00, ptr %dp, align 1
+  store i64 %j5, ptr %c37, align 1
+  br label %while.cond210
+
+while.exit207:                                    ; preds = %while.cond205
+  %h295 = load i64, ptr %h, align 8
+  %add296 = add i64 %h295, 1
+  store i64 %add296, ptr %h, align 1
+  br label %while.cond200
+
+while.cond210:                                    ; preds = %while.body211, %while.body206
+  %i213 = load i64, ptr %c37, align 8
+  %lt214 = icmp slt i64 %i213, %rows
+  br i1 %lt214, label %while.body211, label %while.exit212
+
+while.body211:                                    ; preds = %while.cond210
+  %acck = load float, ptr %ci, align 4
+  %h215 = load i64, ptr %h, align 8
+  %mul216 = mul i64 %h215, %rows
+  %mul217 = mul i64 %mul216, %rows
+  %add218 = add i64 %mul30, %mul217
+  %i219 = load i64, ptr %c37, align 8
+  %mul220 = mul i64 %i219, %rows
+  %add221 = add i64 %add218, %mul220
+  %add222 = add i64 %add221, %j5
+  %ptr.add223 = getelementptr inbounds float, ptr %data14, i64 %add222
+  %deref224 = load float, ptr %ptr.add223, align 4
+  %i225 = load i64, ptr %c37, align 8
+  %mul226 = mul i64 %i225, %cols
+  %h227 = load i64, ptr %h, align 8
+  %mul228 = mul i64 %h227, %sdiv
+  %add229 = add i64 %mul226, %mul228
+  %c230 = load i64, ptr %j, align 8
+  %add231 = add i64 %add229, %c230
+  %ptr.add232 = getelementptr inbounds float, ptr %data, i64 %add231
+  %deref233 = load float, ptr %ptr.add232, align 4
+  %fmul234 = fmul float %deref224, %deref233
+  %fadd235 = fadd float %acck, %fmul234
+  store float %fadd235, ptr %ci, align 1
+  %accv = load float, ptr %dp, align 4
+  %h236 = load i64, ptr %h, align 8
+  %mul237 = mul i64 %h236, %rows
+  %mul238 = mul i64 %mul237, %rows
+  %i239 = load i64, ptr %c37, align 8
+  %mul240 = mul i64 %i239, %rows
+  %add241 = add i64 %mul238, %mul240
+  %add242 = add i64 %add241, %j5
+  %ptr.add243 = getelementptr inbounds float, ptr %data14, i64 %add242
+  %deref244 = load float, ptr %ptr.add243, align 4
+  %i245 = load i64, ptr %c37, align 8
+  %mul246 = mul i64 %i245, %cols
+  %h247 = load i64, ptr %h, align 8
+  %mul248 = mul i64 %h247, %sdiv
+  %add249 = add i64 %mul246, %mul248
+  %c250 = load i64, ptr %j, align 8
+  %add251 = add i64 %add249, %c250
+  %ptr.add252 = getelementptr inbounds float, ptr %data16, i64 %add251
+  %deref253 = load float, ptr %ptr.add252, align 4
+  %fmul254 = fmul float %deref244, %deref253
+  %fadd255 = fadd float %accv, %fmul254
+  store float %fadd255, ptr %dp, align 1
+  %i256 = load i64, ptr %c37, align 8
+  %add257 = add i64 %i256, 1
+  store i64 %add257, ptr %c37, align 1
+  br label %while.cond210
+
+while.exit212:                                    ; preds = %while.cond210
+  %mul258 = mul i64 %j5, %cols
+  %h259 = load i64, ptr %h, align 8
+  %mul260 = mul i64 %h259, %sdiv
+  %add261 = add i64 %mul258, %mul260
+  %c262 = load i64, ptr %j, align 8
+  %add263 = add i64 %add261, %c262
+  %ptr.add264 = getelementptr inbounds float, ptr %data22, i64 %add263
+  %deref265 = load float, ptr %ptr.add264, align 4
+  %acck266 = load float, ptr %ci, align 4
+  %fmul267 = fmul float %fdiv, %acck266
+  %fadd268 = fadd float %deref265, %fmul267
+  %mul269 = mul i64 %j5, %cols
+  %h270 = load i64, ptr %h, align 8
+  %mul271 = mul i64 %h270, %sdiv
+  %add272 = add i64 %mul269, %mul271
+  %c273 = load i64, ptr %j, align 8
+  %add274 = add i64 %add272, %c273
+  %ptr.add275 = getelementptr inbounds float, ptr %data22, i64 %add274
+  store float %fadd268, ptr %ptr.add275, align 4
+  %mul276 = mul i64 %j5, %cols
+  %h277 = load i64, ptr %h, align 8
+  %mul278 = mul i64 %h277, %sdiv
+  %add279 = add i64 %mul276, %mul278
+  %c280 = load i64, ptr %j, align 8
+  %add281 = add i64 %add279, %c280
+  %ptr.add282 = getelementptr inbounds float, ptr %data25, i64 %add281
+  %deref283 = load float, ptr %ptr.add282, align 4
+  %accv284 = load float, ptr %dp, align 4
+  %fadd285 = fadd float %deref283, %accv284
+  %mul286 = mul i64 %j5, %cols
+  %h287 = load i64, ptr %h, align 8
+  %mul288 = mul i64 %h287, %sdiv
+  %add289 = add i64 %mul286, %mul288
+  %c290 = load i64, ptr %j, align 8
+  %add291 = add i64 %add289, %c290
+  %ptr.add292 = getelementptr inbounds float, ptr %data25, i64 %add291
+  store float %fadd285, ptr %ptr.add292, align 4
+  %c293 = load i64, ptr %j, align 8
+  %add294 = add i64 %c293, 1
+  store i64 %add294, ptr %j, align 1
+  br label %while.cond205
 }
 
 define linkonce_odr void @_ZN4TapeC1Ev(ptr %0) {
@@ -32240,6 +33409,304 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   br label %parfor.chunk.inc
+}
+
+define private ptr @parfor.83(ptr %0) {
+entry:
+  %arg.tmp136 = alloca %_Z6VectorIfE, align 8
+  %j4 = alloca i64, align 8
+  %acc2 = alloca float, align 4
+  %c2 = alloca i64, align 8
+  %arg.tmp93 = alloca %_Z6VectorIfE, align 8
+  %j3 = alloca i64, align 8
+  %arg.tmp66 = alloca %_Z6VectorIfE, align 8
+  %arg.tmp = alloca %_Z6VectorIfE, align 8
+  %c = alloca i64, align 8
+  %acc = alloca float, align 4
+  %j = alloca i64, align 8
+  %mx = alloca float, align 4
+  %h = alloca i64, align 8
+  %parfor.lo.ptr = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 0
+  %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
+  %parfor.hi.ptr = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 1
+  %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
+  %parfor.cap.ptr = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 2
+  %hs = load i64, ptr %parfor.cap.ptr, align 8
+  %parfor.cap.ptr1 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 3
+  %dh = load i64, ptr %parfor.cap.ptr1, align 8
+  %parfor.cap.ptr2 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 4
+  %qp = load ptr, ptr %parfor.cap.ptr2, align 8
+  %parfor.cap.ptr3 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 5
+  %d = load i64, ptr %parfor.cap.ptr3, align 8
+  %parfor.cap.ptr4 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 6
+  %kp = load ptr, ptr %parfor.cap.ptr4, align 8
+  %parfor.cap.ptr5 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 7
+  %scale = load float, ptr %parfor.cap.ptr5, align 4
+  %parfor.cap.ptr6 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 8
+  %px = load %_Z6VectorIfE, ptr %parfor.cap.ptr6, align 8
+  %parfor.cap.ptr7 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 9
+  %t = load i64, ptr %parfor.cap.ptr7, align 8
+  %parfor.cap.ptr8 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 10
+  %pp = load ptr, ptr %parfor.cap.ptr8, align 8
+  %parfor.cap.ptr9 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 11
+  %vp = load ptr, ptr %parfor.cap.ptr9, align 8
+  %parfor.cap.ptr10 = getelementptr inbounds { i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 12
+  %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr10, align 8
+  %parfor.iv.slot = alloca i64, align 8
+  store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
+  br label %parfor.chunk.cond
+
+parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
+  %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
+  %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
+  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+
+parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+  store i64 0, ptr %h, align 1
+  br label %while.cond
+
+parfor.chunk.inc:                                 ; preds = %while.exit
+  %parfor.iv.cur = load i64, ptr %parfor.iv.slot, align 8
+  %parfor.iv.next = add i64 %parfor.iv.cur, 1
+  store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
+  br label %parfor.chunk.cond
+
+parfor.ret:                                       ; preds = %parfor.chunk.cond
+  ret ptr null
+
+while.cond:                                       ; preds = %while.exit105, %parfor.chunk.body
+  %h11 = load i64, ptr %h, align 8
+  %lt = icmp slt i64 %h11, %hs
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  store float 0.000000e+00, ptr %mx, align 1
+  store i64 0, ptr %j, align 1
+  br label %while.cond12
+
+while.exit:                                       ; preds = %while.cond
+  br label %parfor.chunk.inc
+
+while.cond12:                                     ; preds = %if.end49, %while.body
+  %j15 = load i64, ptr %j, align 8
+  %le = icmp sle i64 %j15, %parfor.iv
+  br i1 %le, label %while.body13, label %while.exit14
+
+while.body13:                                     ; preds = %while.cond12
+  store float 0.000000e+00, ptr %acc, align 1
+  store i64 0, ptr %c, align 1
+  br label %while.cond16
+
+while.exit14:                                     ; preds = %while.cond12
+  store float 0.000000e+00, ptr %acc, align 1
+  store i64 0, ptr %c, align 1
+  br label %while.cond52
+
+while.cond16:                                     ; preds = %while.body17, %while.body13
+  %c19 = load i64, ptr %c, align 8
+  %lt20 = icmp slt i64 %c19, %dh
+  br i1 %lt20, label %while.body17, label %while.exit18
+
+while.body17:                                     ; preds = %while.cond16
+  %acc21 = load float, ptr %acc, align 4
+  %mul = mul i64 %parfor.iv, %d
+  %h22 = load i64, ptr %h, align 8
+  %mul23 = mul i64 %h22, %dh
+  %add = add i64 %mul, %mul23
+  %c24 = load i64, ptr %c, align 8
+  %add25 = add i64 %add, %c24
+  %ptr.add = getelementptr inbounds float, ptr %qp, i64 %add25
+  %deref = load float, ptr %ptr.add, align 4
+  %j26 = load i64, ptr %j, align 8
+  %mul27 = mul i64 %j26, %d
+  %h28 = load i64, ptr %h, align 8
+  %mul29 = mul i64 %h28, %dh
+  %add30 = add i64 %mul27, %mul29
+  %c31 = load i64, ptr %c, align 8
+  %add32 = add i64 %add30, %c31
+  %ptr.add33 = getelementptr inbounds float, ptr %kp, i64 %add32
+  %deref34 = load float, ptr %ptr.add33, align 4
+  %fmul = fmul float %deref, %deref34
+  %fadd = fadd float %acc21, %fmul
+  store float %fadd, ptr %acc, align 1
+  %c35 = load i64, ptr %c, align 8
+  %add36 = add i64 %c35, 1
+  store i64 %add36, ptr %c, align 1
+  br label %while.cond16
+
+while.exit18:                                     ; preds = %while.cond16
+  %acc37 = load float, ptr %acc, align 4
+  %fmul38 = fmul float %acc37, %scale
+  store %_Z6VectorIfE %px, ptr %arg.tmp, align 1
+  %h39 = load i64, ptr %h, align 8
+  %mul40 = mul i64 %h39, %t
+  %mul41 = mul i64 %mul40, %t
+  %mul42 = mul i64 %parfor.iv, %t
+  %add43 = add i64 %mul41, %mul42
+  %j44 = load i64, ptr %j, align 8
+  %add45 = add i64 %add43, %j44
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %add45, float %fmul38)
+  %j46 = load i64, ptr %j, align 8
+  %eq = icmp eq i64 %j46, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %while.exit18
+  store float %fmul38, ptr %mx, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.exit18
+  %mx47 = load float, ptr %mx, align 4
+  %gt = fcmp ogt float %fmul38, %mx47
+  br i1 %gt, label %if.then48, label %if.end49
+
+if.then48:                                        ; preds = %if.end
+  store float %fmul38, ptr %mx, align 1
+  br label %if.end49
+
+if.end49:                                         ; preds = %if.then48, %if.end
+  %j50 = load i64, ptr %j, align 8
+  %add51 = add i64 %j50, 1
+  store i64 %add51, ptr %j, align 1
+  br label %while.cond12
+
+while.cond52:                                     ; preds = %while.body53, %while.exit14
+  %j2 = load i64, ptr %c, align 8
+  %le55 = icmp sle i64 %j2, %parfor.iv
+  br i1 %le55, label %while.body53, label %while.exit54
+
+while.body53:                                     ; preds = %while.cond52
+  %h56 = load i64, ptr %h, align 8
+  %mul57 = mul i64 %h56, %t
+  %mul58 = mul i64 %mul57, %t
+  %mul59 = mul i64 %parfor.iv, %t
+  %add60 = add i64 %mul58, %mul59
+  %j261 = load i64, ptr %c, align 8
+  %add62 = add i64 %add60, %j261
+  %ptr.add63 = getelementptr inbounds float, ptr %pp, i64 %add62
+  %deref64 = load float, ptr %ptr.add63, align 4
+  %mx65 = load float, ptr %mx, align 4
+  %fsub = fsub float %deref64, %mx65
+  %call = call float @expf(float %fsub)
+  store %_Z6VectorIfE %px, ptr %arg.tmp66, align 1
+  %h67 = load i64, ptr %h, align 8
+  %mul68 = mul i64 %h67, %t
+  %mul69 = mul i64 %mul68, %t
+  %mul70 = mul i64 %parfor.iv, %t
+  %add71 = add i64 %mul69, %mul70
+  %j272 = load i64, ptr %c, align 8
+  %add73 = add i64 %add71, %j272
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp66, i64 %add73, float %call)
+  %sum = load float, ptr %acc, align 4
+  %fadd74 = fadd float %sum, %call
+  store float %fadd74, ptr %acc, align 1
+  %j275 = load i64, ptr %c, align 8
+  %add76 = add i64 %j275, 1
+  store i64 %add76, ptr %c, align 1
+  br label %while.cond52
+
+while.exit54:                                     ; preds = %while.cond52
+  %sum77 = load float, ptr %acc, align 4
+  %fdiv = fdiv float 1.000000e+00, %sum77
+  store i64 0, ptr %j3, align 1
+  br label %while.cond78
+
+while.cond78:                                     ; preds = %while.body79, %while.exit54
+  %j381 = load i64, ptr %j3, align 8
+  %le82 = icmp sle i64 %j381, %parfor.iv
+  br i1 %le82, label %while.body79, label %while.exit80
+
+while.body79:                                     ; preds = %while.cond78
+  %h83 = load i64, ptr %h, align 8
+  %mul84 = mul i64 %h83, %t
+  %mul85 = mul i64 %mul84, %t
+  %mul86 = mul i64 %parfor.iv, %t
+  %add87 = add i64 %mul85, %mul86
+  %j388 = load i64, ptr %j3, align 8
+  %add89 = add i64 %add87, %j388
+  %ptr.add90 = getelementptr inbounds float, ptr %pp, i64 %add89
+  %deref91 = load float, ptr %ptr.add90, align 4
+  %fmul92 = fmul float %deref91, %fdiv
+  store %_Z6VectorIfE %px, ptr %arg.tmp93, align 1
+  %h94 = load i64, ptr %h, align 8
+  %mul95 = mul i64 %h94, %t
+  %mul96 = mul i64 %mul95, %t
+  %mul97 = mul i64 %parfor.iv, %t
+  %add98 = add i64 %mul96, %mul97
+  %j399 = load i64, ptr %j3, align 8
+  %add100 = add i64 %add98, %j399
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp93, i64 %add100, float %fmul92)
+  %j3101 = load i64, ptr %j3, align 8
+  %add102 = add i64 %j3101, 1
+  store i64 %add102, ptr %j3, align 1
+  br label %while.cond78
+
+while.exit80:                                     ; preds = %while.cond78
+  store i64 0, ptr %c2, align 1
+  br label %while.cond103
+
+while.cond103:                                    ; preds = %while.exit110, %while.exit80
+  %c2106 = load i64, ptr %c2, align 8
+  %lt107 = icmp slt i64 %c2106, %dh
+  br i1 %lt107, label %while.body104, label %while.exit105
+
+while.body104:                                    ; preds = %while.cond103
+  store float 0.000000e+00, ptr %acc2, align 1
+  store i64 0, ptr %j4, align 1
+  br label %while.cond108
+
+while.exit105:                                    ; preds = %while.cond103
+  %h146 = load i64, ptr %h, align 8
+  %add147 = add i64 %h146, 1
+  store i64 %add147, ptr %h, align 1
+  br label %while.cond
+
+while.cond108:                                    ; preds = %while.body109, %while.body104
+  %j4111 = load i64, ptr %j4, align 8
+  %le112 = icmp sle i64 %j4111, %parfor.iv
+  br i1 %le112, label %while.body109, label %while.exit110
+
+while.body109:                                    ; preds = %while.cond108
+  %acc2113 = load float, ptr %acc2, align 4
+  %h114 = load i64, ptr %h, align 8
+  %mul115 = mul i64 %h114, %t
+  %mul116 = mul i64 %mul115, %t
+  %mul117 = mul i64 %parfor.iv, %t
+  %add118 = add i64 %mul116, %mul117
+  %j4119 = load i64, ptr %j4, align 8
+  %add120 = add i64 %add118, %j4119
+  %ptr.add121 = getelementptr inbounds float, ptr %pp, i64 %add120
+  %deref122 = load float, ptr %ptr.add121, align 4
+  %j4123 = load i64, ptr %j4, align 8
+  %mul124 = mul i64 %j4123, %d
+  %h125 = load i64, ptr %h, align 8
+  %mul126 = mul i64 %h125, %dh
+  %add127 = add i64 %mul124, %mul126
+  %c2128 = load i64, ptr %c2, align 8
+  %add129 = add i64 %add127, %c2128
+  %ptr.add130 = getelementptr inbounds float, ptr %vp, i64 %add129
+  %deref131 = load float, ptr %ptr.add130, align 4
+  %fmul132 = fmul float %deref122, %deref131
+  %fadd133 = fadd float %acc2113, %fmul132
+  store float %fadd133, ptr %acc2, align 1
+  %j4134 = load i64, ptr %j4, align 8
+  %add135 = add i64 %j4134, 1
+  store i64 %add135, ptr %j4, align 1
+  br label %while.cond108
+
+while.exit110:                                    ; preds = %while.cond108
+  store %_Z6VectorIfE %out, ptr %arg.tmp136, align 1
+  %mul137 = mul i64 %parfor.iv, %d
+  %h138 = load i64, ptr %h, align 8
+  %mul139 = mul i64 %h138, %dh
+  %add140 = add i64 %mul137, %mul139
+  %c2141 = load i64, ptr %c2, align 8
+  %add142 = add i64 %add140, %c2141
+  %acc2143 = load float, ptr %acc2, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp136, i64 %add142, float %acc2143)
+  %c2144 = load i64, ptr %c2, align 8
+  %add145 = add i64 %c2144, 1
+  store i64 %add145, ptr %c2, align 1
+  br label %while.cond103
 }
 
 attributes #0 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
