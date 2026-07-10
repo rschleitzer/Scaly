@@ -76,6 +76,26 @@ define ReceivedRegion
         set *s: mapped
     }
 
+    ; Map one pointer VALUE instead of a slot — the 7.2 compiler-generated
+    ; walkers load and store their slots themselves (a union payload sits at
+    ; byte offset 1, so the slot may be unaligned; fix()'s size_t deref
+    ; assumes natural alignment). Null stays null; a nonnull value outside
+    ; the region means the region was NOT closed — fail loud.
+    function fix_value(this: ReceivedRegion, old: size_t) returns size_t
+    {
+        if old = (0 as size_t)
+            return 0 as size_t
+
+        let mapped map(old)
+        if mapped = (0 as size_t)
+        {
+            scaly_eputs "ReceivedRegion.fix_value: pointer outside the received region"
+            scaly_eputnl()
+            exit 17
+        }
+        mapped
+    }
+
     ; Free the received region through the normal lifecycle.
     procedure release(this: ReceivedRegion)
     {
