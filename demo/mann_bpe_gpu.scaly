@@ -1,20 +1,23 @@
-; Stage-6 milestone 6.1: the BPE Thomas-Mann trainer on the GPU. Same
-; model and data as demo/mann_bpe.scaly (identical lcg init stream, so
-; the loss curves are directly comparable), but the tape's buffers are
-; redirected into storage-mode-shared MTLBuffers (region = device
+; Stage-6: the BPE Thomas-Mann trainer on the GPU, through the
+; scalygpu package (milestone 6.2 - the 6.1 hand-rolled driver now
+; lives there as the GpuTape concept). Same model and data as
+; demo/mann_bpe.scaly (identical lcg init stream, so the loss curves
+; are directly comparable). GpuTape.attach redirects the tape's
+; buffers into storage-mode-shared MTLBuffers (region = device
 ; buffer: unified memory, the CPU keeps reading/writing through the
-; same pointers — set_token, value_at and sample cost zero copies) and
-; each training step — forward, gradient zeroing, seed, backward, Adam
-; — is encoded as ONE command buffer with a single commit + wait.
-; The tape IS the graph: the encoder walk goes over the nodes in id
-; order (reverse for backward).
+; same pointers - set_token, value_at and sample cost zero copies);
+; g.step encodes each training step - forward, gradient zeroing,
+; seed, backward, Adam - as ONE command buffer with a single
+; commit + wait. Placement is visible in the types: this program
+; holds a GpuTape and declares the scalygpu package; the CPU path is
+; the bare Tape in demo/mann_bpe.scaly.
 ;
 ; Env switches:
 ;   MGPU_SYNC=1     per-op-sync mode: only the matmuls run on the GPU,
 ;                   one command buffer + wait EACH, everything else CPU
-;                   — the step-1 honesty measurement for launch-cost.
-;   MGPU_MSL=1      whole-step, but matmuls through our own MSL 4x4
-;                   kernels instead of MPS (single-encoder variant).
+;                   - the step-1 honesty measurement for launch-cost.
+;   MGPU_MSL=1      whole-step, but matmuls through the package's MSL
+;                   4x4 kernels instead of MPS (single-encoder variant).
 ;   MGPU_BIG=1      the bigger model (D=512, T=256, F=2048, 4 layers).
 ;   MGPU_STEPS=n    step cap (smoke tests).
 ;   MGPU_BUDGET=s   training budget in seconds (default 180).
@@ -28,47 +31,13 @@
 ; Run via demo/run_bpe_gpu.sh (pins the cwd; SKIPs off macOS) or
 ; demo/showcase_gpu.sh (train once, then prompt-driven generation).
 
+package scalygpu 0.1.0
+
+use scalygpu.gputape.GpuTape
+
 function scaly_eio_now_ns() returns i64 extern
 function exit(code: int) extern
-function powf(x: float, y: float) returns float extern
 function getenv(name: pointer[const_char]) returns pointer[const_char] extern
-function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
-function fclose(stream: pointer[void]) returns int extern
-function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
-function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
-
-function scaly_mgpu_available() returns i32 extern
-function scaly_mgpu_init() returns i32 extern
-function scaly_mgpu_ops_init() returns i32 extern
-function scaly_mgpu_slots_init(n: i32) returns i32 extern
-function scaly_mgpu_slot_alloc(slot: i32, bytes: size_t) returns i32 extern
-function scaly_mgpu_slot_contents(slot: i32) returns pointer[void] extern
-procedure scaly_mgpu_slot_write(slot: i32, src: pointer[void], bytes: size_t) extern
-function scaly_mgpu_begin() returns i32 extern
-function scaly_mgpu_commit_wait() returns i32 extern
-procedure scaly_mgpu_ms_reset() extern
-function scaly_mgpu_ms_sum() returns double extern
-procedure scaly_mgpu_enc_gemm(a: i32, b: i32, c: i32, arows: i32, acols: i32, brows: i32, bcols: i32, ta: i32, tb: i32, alpha: float, beta: float) extern
-procedure scaly_mgpu_enc_mm_nn(a: i32, b: i32, c: i32, m: i32, k: i32, n: i32) extern
-procedure scaly_mgpu_enc_mm_nt_acc(dc: i32, b: i32, da: i32, m: i32, k: i32, n: i32) extern
-procedure scaly_mgpu_enc_mm_tn_acc(a: i32, dc: i32, db: i32, m: i32, k: i32, n: i32) extern
-procedure scaly_mgpu_enc_fill(buf: i32, count: i32, v: float) extern
-procedure scaly_mgpu_enc_acc(dst: i32, src: i32, count: i32) extern
-procedure scaly_mgpu_enc_add(x: i32, y: i32, out: i32, count: i32) extern
-procedure scaly_mgpu_enc_gelu_fwd(x: i32, out: i32, count: i32) extern
-procedure scaly_mgpu_enc_gelu_bwd(x: i32, dout: i32, dx: i32, count: i32) extern
-procedure scaly_mgpu_enc_add_bcast_fwd(x: i32, y: i32, out: i32, r: i32, n: i32, yr: i32) extern
-procedure scaly_mgpu_enc_add_bcast_bwd_dy(dout: i32, dy: i32, r: i32, n: i32, yr: i32) extern
-procedure scaly_mgpu_enc_ln_fwd(x: i32, gamma: i32, beta: i32, out: i32, stats: i32, r: i32, n: i32, eps: float) extern
-procedure scaly_mgpu_enc_ln_bwd_dx(x: i32, gamma: i32, dout: i32, dx: i32, stats: i32, r: i32, n: i32) extern
-procedure scaly_mgpu_enc_ln_bwd_dgb(x: i32, dout: i32, dgamma: i32, dbeta: i32, stats: i32, r: i32, n: i32) extern
-procedure scaly_mgpu_enc_embed_fwd(tbl: i32, tok: i32, out: i32, tokens: i32, dim: i32) extern
-procedure scaly_mgpu_enc_embed_bwd(dout: i32, tok: i32, dtable: i32, tokens: i32, dim: i32) extern
-procedure scaly_mgpu_enc_ce_fwd(x: i32, tok: i32, rowloss: i32, out: i32, r: i32, n: i32) extern
-procedure scaly_mgpu_enc_ce_bwd(x: i32, tok: i32, dout: i32, dx: i32, r: i32, n: i32) extern
-procedure scaly_mgpu_enc_attn_fwd(q: i32, k: i32, v: i32, out: i32, aux: i32, t: i32, d: i32, hs: i32, win: i32) extern
-procedure scaly_mgpu_enc_attn_bwd(q: i32, k: i32, v: i32, dout: i32, aux: i32, dq: i32, dk: i32, dv: i32, t: i32, d: i32, hs: i32, win: i32) extern
-procedure scaly_mgpu_enc_adam(p: i32, g: i32, mv: i32, total: i32, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float) extern
 
 function pmod(v: int, m: int) returns int
 {
@@ -200,220 +169,13 @@ procedure fill_const(tape: Tape, id: int, count: int, v: float)
     }
 }
 
-; Move a node's buffers into shared MTLBuffer slots (id*4 + 0 value,
-; 1 grad, 2 aux, 3 tok). Values and token ids are copied across (the
-; leaves are already filled); grads start zeroed.
-procedure redirect_node(tape: Tape, id: int)
-{
-    let buf tape.nodes.get_buffer()
-    let node buf + id
-    let count node.rows * node.cols
-    if count > 0
-    {
-        let bytes (count * 4) as size_t
-        scaly_mgpu_slot_alloc((id * 4) as i32, bytes)
-        scaly_mgpu_slot_write((id * 4) as i32, node.value.data as pointer[void], bytes)
-        let p scaly_mgpu_slot_contents((id * 4) as i32) as pointer[float]
-        set node.value: Vector[float](p, count as size_t)
-        scaly_mgpu_slot_alloc((id * 4 + 1) as i32, bytes)
-        let g scaly_mgpu_slot_contents((id * 4 + 1) as i32) as pointer[float]
-        set node.grad: Vector[float](g, count as size_t)
-    }
-    let auxlen node.aux.length as int
-    if auxlen > 0
-    {
-        let abytes (auxlen * 4) as size_t
-        scaly_mgpu_slot_alloc((id * 4 + 2) as i32, abytes)
-        let ap scaly_mgpu_slot_contents((id * 4 + 2) as i32) as pointer[float]
-        set node.aux: Vector[float](ap, auxlen as size_t)
-    }
-    let toklen node.tok.length as int
-    if toklen > 0
-    {
-        let tbytes (toklen * 8) as size_t
-        scaly_mgpu_slot_alloc((id * 4 + 3) as i32, tbytes)
-        scaly_mgpu_slot_write((id * 4 + 3) as i32, node.tok.data as pointer[void], tbytes)
-        let tp scaly_mgpu_slot_contents((id * 4 + 3) as i32) as pointer[i64]
-        set node.tok: Vector[i64](tp, toklen as size_t)
-    }
-}
-
-; Encode one node's forward op (kind codes are the tape's ABI). xslot
-; maps a node id to its scratch slot (layernorm stats / ce row losses).
-procedure enc_fwd_node(tape: Tape, id: int, xslot: Vector[int], use_msl: int)
-{
-    let buf tape.nodes.get_buffer()
-    let node buf + id
-    let kind node.op
-    if kind = 0
-        return
-    let ia node.a
-    let ib node.b
-    let ic node.c
-    let r node.rows
-    let n node.cols
-    let sv id * 4
-    let xs xslot.data
-    if kind = 1
-    {
-        let na buf + ia
-        let nb buf + ib
-        let m na.rows
-        let kk na.cols
-        let nn nb.cols
-        if use_msl = 1
-            scaly_mgpu_enc_mm_nn((ia * 4) as i32, (ib * 4) as i32, sv as i32, m as i32, kk as i32, nn as i32)
-        else
-            scaly_mgpu_enc_gemm((ia * 4) as i32, (ib * 4) as i32, sv as i32, m as i32, kk as i32, kk as i32, nn as i32, 0 as i32, 0 as i32, 1.0, 0.0)
-    }
-    if kind = 2
-        scaly_mgpu_enc_gelu_fwd((ia * 4) as i32, sv as i32, (r * n) as i32)
-    if kind = 4
-        scaly_mgpu_enc_ln_fwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sv as i32, xs[id] as i32, r as i32, n as i32, node.eps)
-    if kind = 5
-        scaly_mgpu_enc_embed_fwd((ia * 4) as i32, (id * 4 + 3) as i32, sv as i32, r as i32, n as i32)
-    if kind = 7
-    {
-        let na buf + ia
-        let rr na.rows
-        let nn na.cols
-        scaly_mgpu_enc_ce_fwd((ia * 4) as i32, (id * 4 + 3) as i32, xs[id] as i32, sv as i32, rr as i32, nn as i32)
-    }
-    if kind = 8
-        scaly_mgpu_enc_attn_fwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sv as i32, (id * 4 + 2) as i32, r as i32, n as i32, node.heads as i32, node.win as i32)
-    if kind = 9
-        scaly_mgpu_enc_add((ia * 4) as i32, (ib * 4) as i32, sv as i32, (r * n) as i32)
-    if kind = 10
-    {
-        let nb buf + ib
-        let yr nb.rows
-        scaly_mgpu_enc_add_bcast_fwd((ia * 4) as i32, (ib * 4) as i32, sv as i32, r as i32, n as i32, yr as i32)
-    }
-}
-
-procedure enc_bwd_node(tape: Tape, id: int, xslot: Vector[int], use_msl: int)
-{
-    let buf tape.nodes.get_buffer()
-    let node buf + id
-    let kind node.op
-    if kind = 0
-        return
-    let ia node.a
-    let ib node.b
-    let ic node.c
-    let r node.rows
-    let n node.cols
-    let sg id * 4 + 1
-    let xs xslot.data
-    if kind = 1
-    {
-        let na buf + ia
-        let nb buf + ib
-        let m na.rows
-        let kk na.cols
-        let nn nb.cols
-        if use_msl = 1
-        {
-            scaly_mgpu_enc_mm_nt_acc(sg as i32, (ib * 4) as i32, (ia * 4 + 1) as i32, m as i32, kk as i32, nn as i32)
-            scaly_mgpu_enc_mm_tn_acc((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, m as i32, kk as i32, nn as i32)
-        }
-        else
-        {
-            scaly_mgpu_enc_gemm(sg as i32, (ib * 4) as i32, (ia * 4 + 1) as i32, m as i32, nn as i32, kk as i32, nn as i32, 0 as i32, 1 as i32, 1.0, 1.0)
-            scaly_mgpu_enc_gemm((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, m as i32, kk as i32, m as i32, nn as i32, 1 as i32, 0 as i32, 1.0, 1.0)
-        }
-    }
-    if kind = 2
-        scaly_mgpu_enc_gelu_bwd((ia * 4) as i32, sg as i32, (ia * 4 + 1) as i32, (r * n) as i32)
-    if kind = 4
-    {
-        scaly_mgpu_enc_ln_bwd_dx((ia * 4) as i32, (ib * 4) as i32, sg as i32, (ia * 4 + 1) as i32, xs[id] as i32, r as i32, n as i32)
-        scaly_mgpu_enc_ln_bwd_dgb((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, (ic * 4 + 1) as i32, xs[id] as i32, r as i32, n as i32)
-    }
-    if kind = 5
-        scaly_mgpu_enc_embed_bwd(sg as i32, (id * 4 + 3) as i32, (ia * 4 + 1) as i32, r as i32, n as i32)
-    if kind = 7
-    {
-        let na buf + ia
-        let rr na.rows
-        let nn na.cols
-        scaly_mgpu_enc_ce_bwd((ia * 4) as i32, (id * 4 + 3) as i32, sg as i32, (ia * 4 + 1) as i32, rr as i32, nn as i32)
-    }
-    if kind = 8
-        scaly_mgpu_enc_attn_bwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sg as i32, (id * 4 + 2) as i32, (ia * 4 + 1) as i32, (ib * 4 + 1) as i32, (ic * 4 + 1) as i32, r as i32, n as i32, node.heads as i32, node.win as i32)
-    if kind = 9
-    {
-        scaly_mgpu_enc_acc((ia * 4 + 1) as i32, sg as i32, (r * n) as i32)
-        scaly_mgpu_enc_acc((ib * 4 + 1) as i32, sg as i32, (r * n) as i32)
-    }
-    if kind = 10
-    {
-        let nb buf + ib
-        let yr nb.rows
-        scaly_mgpu_enc_acc((ia * 4 + 1) as i32, sg as i32, (r * n) as i32)
-        scaly_mgpu_enc_add_bcast_bwd_dy(sg as i32, (ib * 4 + 1) as i32, r as i32, n as i32, yr as i32)
-    }
-}
-
-; Encode forward + grad-zero + seed + backward over the whole tape.
-procedure enc_step(tape: Tape, loss_id: int, xslot: Vector[int], use_msl: int)
-{
-    let nnodes tape.nodes.get_length() as int
-    var i 0
-    while i < nnodes
-    {
-        enc_fwd_node(tape, i, xslot, use_msl)
-        set i: i + 1
-    }
-    let buf tape.nodes.get_buffer()
-    var z 0
-    while z < nnodes
-    {
-        let node buf + z
-        let count node.rows * node.cols
-        if count > 0
-            scaly_mgpu_enc_fill((z * 4 + 1) as i32, count as i32, 0.0)
-        set z: z + 1
-    }
-    let lnode buf + loss_id
-    let lcount lnode.rows * lnode.cols
-    scaly_mgpu_enc_fill((loss_id * 4 + 1) as i32, lcount as i32, 1.0)
-    var j loss_id
-    while j >= 0
-    {
-        enc_bwd_node(tape, j, xslot, use_msl)
-        set j: j - 1
-    }
-}
-
-; Forward only (autoregressive generation).
-procedure enc_fwd_all(tape: Tape, xslot: Vector[int], use_msl: int)
-{
-    let nnodes tape.nodes.get_length() as int
-    var i 0
-    while i < nnodes
-    {
-        enc_fwd_node(tape, i, xslot, use_msl)
-        set i: i + 1
-    }
-}
-
-; --- device check (a Mac without Metal SKIPs; the runner script
-; already SKIPs off macOS before we even compile) ---
-if scaly_mgpu_available() = 0
+; --- device check (attach without a device is a LOUD error by
+; design; the runner script already SKIPs off macOS before we even
+; compile - this is the portable in-program SKIP) ---
+if GpuTape.available() = 0
 {
     Console.println("SKIP: no Metal device")
     exit(0)
-}
-if scaly_mgpu_init() <> 0
-{
-    Console.println("error: mgpu init failed")
-    exit(1)
-}
-if scaly_mgpu_ops_init() <> 0
-{
-    Console.println("error: mgpu ops init failed")
-    exit(1)
 }
 
 ; --- load the vocab: one token per line, hex of its UTF-8 bytes ---
@@ -651,90 +413,30 @@ set pp[pi0]: gf
 set pp[pi0 + 1]: bf
 set pp[pi0 + 2]: whead
 
-; --- redirect the whole tape into shared MTLBuffers + scratch slots
-; (ln stats, ce row losses) + per-parameter Adam moment slots ---
+; --- device residency, one call: redirect the whole tape into shared
+; MTLBuffers + scratch slots + per-parameter Adam moment slots ---
+let g GpuTape.attach(tape, pids, loss, use_msl)
 let nnodes tape.nodes.get_length() as int
 let buf tape.nodes.get_buffer()
-scaly_mgpu_slots_init((nnodes * 4 + nnodes + NPARAM) as i32)
-var xslot Vector[int](nnodes as size_t)
-var nextslot nnodes * 4
-var ri 0
-while ri < nnodes
-{
-    redirect_node(tape, ri)
-    let node buf + ri
-    var xtra 0 - 1
-    if node.op = 4
-    {
-        scaly_mgpu_slot_alloc(nextslot as i32, (node.rows * 2 * 4) as size_t)
-        set xtra: nextslot
-        set nextslot: nextslot + 1
-    }
-    if node.op = 7
-    {
-        let na buf + node.a
-        scaly_mgpu_slot_alloc(nextslot as i32, (na.rows * 4) as size_t)
-        set xtra: nextslot
-        set nextslot: nextslot + 1
-    }
-    xslot.put(ri as size_t, xtra)
-    set ri: ri + 1
-}
-var mvslot Vector[int](NPARAM as size_t)
-let mvp mvslot.data
-var ai 0
-while ai < NPARAM
-{
-    let node buf + pp[ai]
-    let total node.rows * node.cols
-    scaly_mgpu_slot_alloc(nextslot as i32, (total * 2 * 4) as size_t)
-    set mvp[ai]: nextslot
-    set nextslot: nextslot + 1
-    set ai: ai + 1
-}
 
 ; --- checkpoint: load weights + skip training when the file exists
-; (writes go through the redirected pointers straight into the
-; MTLBuffers). Header guards against a config mismatch. Weights only
-; — Adam moments are not saved, a resumed training would re-warm them.
+; (config-header-validated; a mismatch is fatal inside load) ---
+var cfg Vector[i32](7)
+cfg.put(0, 20260710 as i32)
+cfg.put(1, NLAYER as i32)
+cfg.put(2, D as i32)
+cfg.put(3, T as i32)
+cfg.put(4, F as i32)
+cfg.put(5, V as i32)
+cfg.put(6, HEADS as i32)
 let ck getenv("MGPU_CKPT")
 var loaded 0
 if ck <> null
+    set loaded: g.load(ck, cfg)
+if loaded = 1
 {
-    let f fopen(ck, "rb")
-    if f <> null
-    {
-        var chdr Vector[i32](8)
-        let chp chdr.data
-        let got fread(chp as pointer[void], 4, 7, f)
-        var okc 0
-        if got = 7
-            if chp[0] as int = 20260710
-                if chp[1] as int = NLAYER
-                    if chp[2] as int = D
-                        if chp[3] as int = T
-                            if chp[4] as int = F
-                                if chp[5] as int = V
-                                    if chp[6] as int = HEADS
-                                        set okc: 1
-        if okc = 0
-        {
-            Console.println("error: checkpoint config mismatch - delete it or match MGPU_BIG")
-            exit(1)
-        }
-        var ldi 0
-        while ldi < NPARAM
-        {
-            let node buf + pp[ldi]
-            let total node.rows * node.cols
-            fread(node.value.data as pointer[void], 4, total as size_t, f)
-            set ldi: ldi + 1
-        }
-        fclose(f)
-        set loaded: 1
-        set STEPS: 0
-        Console.println("loaded checkpoint - skipping training")
-    }
+    set STEPS: 0
+    Console.println("loaded checkpoint - skipping training")
 }
 
 var hdr StringBuilder()
@@ -775,7 +477,7 @@ let hline hdr.to_string()
 Console.println(hline.to_c_string())
 
 ; --- train: Adam over random corpus windows, ~3 min budget ---
-scaly_mgpu_ms_reset()
+GpuTape.ms_reset()
 let train_t0 scaly_eio_now_ns()
 var win_t0 train_t0
 var win_sum: float 0.0
@@ -811,9 +513,9 @@ while step <= STEPS
             let node buf + f
             if node.op = 1
             {
-                scaly_mgpu_begin()
-                enc_fwd_node(tape, f, xslot, use_msl)
-                scaly_mgpu_commit_wait()
+                g.begin()
+                g.encode_fwd(f)
+                g.commit_wait()
             }
             else
                 tape.run_node f
@@ -830,9 +532,9 @@ while step <= STEPS
             let node buf + bw
             if node.op = 1
             {
-                scaly_mgpu_begin()
-                enc_bwd_node(tape, bw, xslot, use_msl)
-                scaly_mgpu_commit_wait()
+                g.begin()
+                g.encode_bwd(bw)
+                g.commit_wait()
             }
             else
                 tape.bwd_node bw
@@ -848,25 +550,9 @@ while step <= STEPS
     else
     {
         ; whole-step: forward + zero + seed + backward + Adam encoded
-        ; into ONE command buffer, one commit, one wait.
-        scaly_mgpu_begin()
-        enc_step(tape, loss, xslot, use_msl)
-        let bc1 1.0 - powf(0.9, step as float)
-        let bc2 1.0 - powf(0.999, step as float)
-        var pi 0
-        while pi < NPARAM
-        {
-            let node buf + pp[pi]
-            let total node.rows * node.cols
-            scaly_mgpu_enc_adam((pp[pi] * 4) as i32, (pp[pi] * 4 + 1) as i32, mvp[pi] as i32, total as i32, lr, 0.9, 0.999, 0.00000001, bc1, bc2)
-            set pi: pi + 1
-        }
-        let rc scaly_mgpu_commit_wait()
-        if rc <> 0
-        {
-            Console.println("error: command buffer failed")
-            exit(1)
-        }
+        ; into ONE command buffer, one commit, one wait (fatal inside
+        ; step if the command buffer fails).
+        g.step(lr, 0.9, 0.999, 0.00000001, step)
         set win_sum: win_sum + tape.value_at(loss, 0)
     }
     set done_steps: step
@@ -910,7 +596,7 @@ tr.append " steps in "
 let trs secs_to_string(train_t1 - train_t0)
 tr.append trs
 tr.append " s (gpu busy "
-let gms scaly_mgpu_ms_sum()
+let gms GpuTape.ms_sum()
 let gsecs secs_to_string(((gms * 1000000.0) as i64))
 tr.append gsecs
 tr.append " s)"
@@ -923,36 +609,16 @@ if loaded = 0
 {
     if ck <> null
     {
-        let fw fopen(ck, "wb")
-        if fw <> null
-        {
-            var whdr Vector[i32](8)
-            whdr.put(0, 20260710 as i32)
-            whdr.put(1, NLAYER as i32)
-            whdr.put(2, D as i32)
-            whdr.put(3, T as i32)
-            whdr.put(4, F as i32)
-            whdr.put(5, V as i32)
-            whdr.put(6, HEADS as i32)
-            fwrite(whdr.data as pointer[void], 4, 7, fw)
-            var svi 0
-            while svi < NPARAM
-            {
-                let node buf + pp[svi]
-                let total node.rows * node.cols
-                fwrite(node.value.data as pointer[void], 4, total as size_t, fw)
-                set svi: svi + 1
-            }
-            fclose(fw)
+        let saved g.save(ck, cfg)
+        if saved = 1
             Console.println("saved checkpoint")
-        }
     }
 }
 
 ; --- inference: extend a prompt autoregressively (forward passes on
 ; the GPU, sampling on the CPU through unified memory). MGPU_PROMPT
 ; is tokenized greedy longest-match against the vocab's recorded byte
-; sequences (bytes >= 128 need the sign mask — const_char is signed);
+; sequences (bytes >= 128 need the sign mask - const_char is signed);
 ; without it the prompt is a corpus window like the CPU demo. ---
 let ge getenv("MGPU_GEN")
 let GEN parse_int(ge, 120)
@@ -1044,9 +710,7 @@ while hlen < P + GEN
         tape.set_token(emb, t2, hp[start + t2])
         set t2: t2 + 1
     }
-    scaly_mgpu_begin()
-    enc_fwd_all(tape, xslot, use_msl)
-    scaly_mgpu_commit_wait()
+    g.fwd()
     set s: lcg(s)
     let u (pmod(s, 10000) as float) * 0.0001
     var pick tape.sample(logits, vis - 1, temp, u)
