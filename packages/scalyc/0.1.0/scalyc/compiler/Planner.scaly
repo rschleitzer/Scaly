@@ -5047,6 +5047,30 @@ define Planner
                                         out.add(this.retype_float_operand(a, pt))
                                         set folded: true
                                     }
+                            ; Non-literal float arg of the OTHER width (an
+                            ; f64-typed expression into a float param, or
+                            ; vice versa): wrap in PlannedAs(param) so
+                            ; emit_as fptruncs/fpexts. Without this the
+                            ; caller passes double bits the callee reads as
+                            ; float — silent garbage on arm64.
+                            if folded = false
+                                if Planner.type_is_float_like(pt)
+                                    if Planner.type_is_float_like(a.result_type)
+                                    {
+                                        let norm_pw Planner.normalize_type_name(pt.name)
+                                        let norm_aw Planner.normalize_type_name(a.result_type.name)
+                                        if norm_pw <> norm_aw
+                                        {
+                                            let fcast PlannedAs(a.loc, pt, &^this a)
+                                            out.add(PlannedOperand(
+                                                a.loc,
+                                                PlannedExpression.As fcast,
+                                                null,
+                                                pt
+                                            ))
+                                            set folded: true
+                                        }
+                                    }
                         }
                     }
                     if folded = false
@@ -10665,6 +10689,27 @@ define Planner
                                 if op_name = "<<"
                                     set combined_type: result.result_type
                                 if op_name = ">>"
+                                    set combined_type: result.result_type
+                            }
+                        }
+
+                        ; 5.1: the same passthrough for the float family.
+                        ; Without it float arithmetic resolves to a fresh
+                        ; type var (empty name) which leaks into upstream
+                        ; arg_types and fails every call match — expf(x - mx)
+                        ; reported "function not found: expf" for ANY float-
+                        ; typed binary expression in argument position.
+                        if Planner.type_is_float_like(result.result_type)
+                        {
+                            if Planner.type_is_float_like(rhs.result_type)
+                            {
+                                if op_name = "+"
+                                    set combined_type: result.result_type
+                                if op_name = "-"
+                                    set combined_type: result.result_type
+                                if op_name = "*"
+                                    set combined_type: result.result_type
+                                if op_name = "/"
                                     set combined_type: result.result_type
                             }
                         }
@@ -27265,6 +27310,20 @@ define Planner
         if Planner.is_integer_type(norm_p)
         {
             if Planner.is_integer_type(norm_a)
+                return true
+        }
+
+        ; Rule 2c (5.1): float family ↔ float family. The call-construction
+        ; site adapts the width — literals retype, everything else gets a
+        ; PlannedAs(param) wrap (fptrunc/fpext) in fold_string_args_to_char.
+        if norm_p = "f32"
+        {
+            if norm_a = "f64"
+                return true
+        }
+        if norm_p = "f64"
+        {
+            if norm_a = "f32"
                 return true
         }
 

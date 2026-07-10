@@ -49,6 +49,23 @@ if (t > 3.4) = false
 if (t < 3.6) = false
     set ok: false
 
+; Float BINARY EXPRESSION as call argument (5.1 follow-up): float
+; arithmetic used to resolve to a fresh type var, so any expression-
+; valued float argument failed the call match ("function not found").
+let u fhalf(a - 3.0)
+if (u > 0.7) = false
+    set ok: false
+if (u < 0.8) = false
+    set ok: false
+
+; f64 expression into a float param: width-adapted via PlannedAs.
+let w64 1.5 + 1.5
+let v fhalf(w64)
+if (v > 1.4) = false
+    set ok: false
+if (v < 1.6) = false
+    set ok: false
+
 ; Float literal in return position.
 let c fconst()
 if (c > 1.2) = false
