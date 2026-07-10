@@ -16702,6 +16702,16 @@ define Planner
 
         function plan_binding(this: Planner, b: Binding) returns PlannedBinding
         {
+            ; A local binding named `rp` shadows the implicit caller-page
+            ; slot the emitter resolves by that exact name — every
+            ; page-peeled call in scope would then receive the binding's
+            ; VALUE as its allocation page (silent, layout-dependent
+            ; memory corruption at runtime). Reject it hard.
+            if b.item.name <> null
+            {
+                if (*b.item.name) = "rp"
+                    this.add_diagnostic(b.span, String^this("reserved binding name: rp (implicit page parameter)"))
+            }
             ; GAP B: a delegate-typed binding initialized by a lambda literal —
             ; `let g: Callback \x: x + 1` — becomes a function-pointer VALUE (the
             ; address of the lambda monomorphized against the delegate's declared
@@ -19001,9 +19011,9 @@ define Planner
                         if fp <> null
                             if (*fp) = field
                             {
-                                let rp current_fn_fpt_regions.get i
-                                if rp <> null
-                                    return (*rp)
+                                let rref current_fn_fpt_regions.get i
+                                if rref <> null
+                                    return (*rref)
                             }
                     }
                 set i: i + 1
@@ -19916,9 +19926,9 @@ define Planner
                     let idx this.move_alias_index(v.name)
                     if idx >= 0
                     {
-                        let rp move_alias_roots.get(idx as size_t)
-                        if rp <> null
-                            move_moved_names.add(String^this((*rp)))
+                        let rref move_alias_roots.get(idx as size_t)
+                        if rref <> null
+                            move_moved_names.add(String^this((*rref)))
                         return
                     }
                     move_moved_names.add(String^this(v.name))
@@ -19955,11 +19965,11 @@ define Planner
                     let idx this.move_alias_index(v.name)
                     if idx >= 0
                     {
-                        let rp move_alias_roots.get(idx as size_t)
-                        if rp <> null
+                        let rref move_alias_roots.get(idx as size_t)
+                        if rref <> null
                         {
                             move_alias_names.add(String^this(bind_name))
-                            move_alias_roots.add(String^this((*rp)))
+                            move_alias_roots.add(String^this((*rref)))
                         }
                         return
                     }
@@ -20020,9 +20030,9 @@ define Planner
                     let idx this.move_alias_index(v.name)
                     if idx >= 0
                     {
-                        let rp move_alias_roots.get(idx as size_t)
-                        if rp <> null
-                            if this.array_contains_name(move_moved_names, (*rp))
+                        let rref move_alias_roots.get(idx as size_t)
+                        if rref <> null
+                            if this.array_contains_name(move_moved_names, (*rref))
                                 set is_moved: true
                     }
                     else

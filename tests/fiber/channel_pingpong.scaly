@@ -43,8 +43,8 @@ procedure worker(arg: pointer[void]) returns pointer[void]
             let mp Page.get(raw)
             mp.deallocate_extensions()
             Page.release_page(mp)
-            let rp Page.allocate_page()
-            let r rp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+            let reply_page Page.allocate_page()
+            let r reply_page.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
             set r.value: v + 1
             Channel.send(rs, r as pointer[void])
         }
