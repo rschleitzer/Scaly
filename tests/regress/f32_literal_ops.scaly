@@ -1,0 +1,75 @@
+; f32 literal coercion (5.1 gate, 2026-07-10): `var x: float 1.5` emitted
+; `store double` into a float slot and mixed-type fcmp — invalid IR that llc
+; swallowed silently (bit garbage at runtime). The planner now retypes bare
+; f64 literals to the target float width (annotated bindings, set targets,
+; returns, call args, binary operands) and the emitter fpexts any remaining
+; mixed float/double pair.
+; Expected: PASS
+
+function fhalf(x: float) returns float x * 0.5
+function fsum(a: float, b: float) returns float a + b
+function fconst() returns float 1.25
+
+var ok true
+
+; Annotated binding: slot, store and loads must all be float.
+var a: float 1.5
+var b: float 2.5
+
+; Arithmetic on float vars.
+let s a + b
+if (s > 3.9) = false
+    set ok: false
+if (s < 4.1) = false
+    set ok: false
+
+; Comparison of a float var against a literal.
+if (a < 1.4)
+    set ok: false
+if (a > 1.6)
+    set ok: false
+
+; set into a float slot.
+set a: 4.5
+if (a > 4.4) = false
+    set ok: false
+if (a < 4.6) = false
+    set ok: false
+
+; Float literal as call argument, float return value.
+let h fhalf(3.0)
+if (h > 1.4) = false
+    set ok: false
+if (h < 1.6) = false
+    set ok: false
+
+let t fsum(1.25, 2.25)
+if (t > 3.4) = false
+    set ok: false
+if (t < 3.6) = false
+    set ok: false
+
+; Float literal in return position.
+let c fconst()
+if (c > 1.2) = false
+    set ok: false
+if (c < 1.3) = false
+    set ok: false
+
+; Mixed float/double comparison stays valid IR (emitter fpext net).
+let d 3.75
+if (d > a)
+    set ok: false
+
+; double still works alongside.
+var w: double 1.5
+set w: w + 2.5
+if (w > 3.9) = false
+    set ok: false
+if (w < 4.1) = false
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

@@ -3756,7 +3756,15 @@ define Emitter
             }
             when fp: FloatingPoint
             {
-                let llvm_type LLVMDoubleTypeInContext(context)
+                ; Honor a planner-retyped float/f32 result_type (annotated
+                ; binding, float param, float comparison operand); default
+                ; stays double. LLVMConstReal rounds the double payload to
+                ; the target width.
+                var llvm_type LLVMDoubleTypeInContext(context)
+                if result_type.name = "float"
+                    set llvm_type: LLVMFloatTypeInContext(context)
+                if result_type.name = "f32"
+                    set llvm_type: LLVMFloatTypeInContext(context)
                 return LLVMConstReal(llvm_type, fp.value)
             }
             when s: String
@@ -7375,6 +7383,18 @@ define Emitter
                 }
             }
         }
+
+        ; Float width promotion: a float (f32) operand beside a double —
+        ; a planner-missed f64 literal or a genuine mixed-width FP pair —
+        ; must not reach fadd/fcmp as-is (mixed-operand FP instructions
+        ; are invalid IR that llc swallows silently). FPExt the narrower
+        ; side to the wider, mirroring the integer zext above.
+        if l_kind = LLVMTypeKind.Float()
+            if r_kind = LLVMTypeKind.Double()
+                set l: LLVMBuildFPExt(builder, l, LLVMTypeOf r, "fpext")
+        if l_kind = LLVMTypeKind.Double()
+            if r_kind = LLVMTypeKind.Float()
+                set r: LLVMBuildFPExt(builder, r, LLVMTypeOf l, "fpext")
 
         ; Addition
         if op_name = "+"
@@ -13753,6 +13773,29 @@ define Emitter
 
             }
         }
+
+        ; A float-annotated binding whose initializer evaluated at the other
+        ; FP width (`var x: float <f64 expr>`): convert the VALUE to the
+        ; annotated width up front so alloca/store and every later load
+        ; agree on the slot type. Literal inits are already retyped by the
+        ; planner; this catches computed initializers.
+        if value.handle <> null
+            if binding.binding_item.item_type <> null
+            {
+                let fit_ref binding.binding_item.item_type
+                let fit_mapped map_type((*fit_ref))
+                if fit_mapped.handle <> null
+                {
+                    let fit_kind LLVMGetTypeKind(fit_mapped)
+                    let val_kind LLVMGetTypeKind(LLVMTypeOf value)
+                    if fit_kind = LLVMTypeKind.Float()
+                        if val_kind = LLVMTypeKind.Double()
+                            set value: LLVMBuildFPTrunc(builder, value, fit_mapped, "bind.fptrunc")
+                    if fit_kind = LLVMTypeKind.Double()
+                        if val_kind = LLVMTypeKind.Float()
+                            set value: LLVMBuildFPExt(builder, value, fit_mapped, "bind.fpext")
+                }
+            }
 
         ; Create alloca for the binding
         if binding.binding_item.name <> null

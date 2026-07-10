@@ -1963,6 +1963,68 @@ define Planner
             false
         }
 
+        ; type_is_float_like: a floating-point target (float / f32 / double /
+        ; f64) into which a bare float literal — a chainless FloatingPoint
+        ; constant, default-typed f64 — may retype. The literal's double
+        ; payload is kept; LLVMConstReal rounds it to the target width at
+        ; emission.
+        function type_is_float_like(t: PlannedType) returns bool
+        {
+            if t.name = "float"
+                return true
+            if t.name = "f32"
+                return true
+            if t.name = "double"
+                return true
+            if t.name = "f64"
+                return true
+            false
+        }
+
+        ; operand_is_float_constant: a chainless FloatingPoint-constant
+        ; operand (the shape retype_float_operand converts).
+        function operand_is_float_constant(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when f: FloatingPointConstant
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; retype_float_operand: restamp a bare float-literal operand's
+        ; result_type to the target float width. Without this a literal in a
+        ; float-typed position stays f64 and the Emitter stores DOUBLE bits
+        ; into a float slot / builds a mixed float-double fcmp — invalid IR
+        ; that llc swallows silently (bit garbage at runtime). Only call on
+        ; operands operand_is_float_constant accepted.
+        function retype_float_operand(this: Planner, op: PlannedOperand, float_type: PlannedType) returns PlannedOperand
+        {
+            PlannedOperand(op.loc, op.expr, null, float_type)
+        }
+
+        ; arg_is_foldable_float: is the argument at position `j` a bare float
+        ; literal that may retype to a float/f32 parameter? The counterpart to
+        ; arg_is_foldable_char_string for the float-width case.
+        function arg_is_foldable_float(this: Planner, arg_ops: Vector[PlannedOperand], j: size_t) returns bool
+        {
+            if j >= arg_ops.length
+                return false
+            let op_ptr arg_ops.get j
+            if op_ptr = null
+                return false
+            this.operand_is_float_constant((*op_ptr))
+        }
+
         ; arg_is_foldable_char_string: is the argument at position `j` (in the
         ; parallel arg-operand list gathered at the call site) a chainless
         ; String constant that may fold to a char/u8 parameter? A short/empty
@@ -4139,6 +4201,16 @@ define Planner
                                     set ok: true
                                     set any_fold: true
                                 }
+                    ; Float-literal fallback: a bare f64 literal matches a
+                    ; float/f32 parameter; the operand is retyped at the
+                    ; call-construction site (fold_string_args_to_char).
+                    if ok = false
+                        if Planner.type_is_float_like(planned_p)
+                            if this.arg_is_foldable_float(arg_ops, j)
+                            {
+                                set ok: true
+                                set any_fold: true
+                            }
                     if ok = false
                         return false
                 }
@@ -4293,6 +4365,14 @@ define Planner
                                 if Planner.type_is_char_like(planned_p)
                                     if this.arg_is_foldable_char_string(arg_ops, j)
                                         set ok: true
+                    ; Float-literal fallback (see candidate_matches_char_fold):
+                    ; a bare f64 literal matches a float/f32 parameter; the
+                    ; operand retypes at the call-construction site.
+                    if ok = false
+                        if char_fold
+                            if Planner.type_is_float_like(planned_p)
+                                if this.arg_is_foldable_float(arg_ops, j)
+                                    set ok: true
                     if ok = false
                         return null
                     ; Ensure a by-value cross-package param type's layout so the
@@ -4956,6 +5036,17 @@ define Planner
                                     out.add(this.fold_string_operand_to_char(a, pt))
                                     set folded: true
                                 }
+                            ; Float literal into a float-family parameter:
+                            ; retype the default-f64 literal to the matched
+                            ; parameter's width so the call site emits the
+                            ; constant at the width the callee reads.
+                            if folded = false
+                                if Planner.type_is_float_like(pt)
+                                    if this.operand_is_float_constant(a)
+                                    {
+                                        out.add(this.retype_float_operand(a, pt))
+                                        set folded: true
+                                    }
                         }
                     }
                     if folded = false
@@ -10166,6 +10257,21 @@ define Planner
                         if this.operand_is_string_constant(result)
                             set result: this.fold_string_operand_to_char(result, rhs.result_type)
 
+                    ; Float literal beside a float-typed operand: retype the
+                    ; default-f64 literal to the other side's width so the
+                    ; Emitter never sees a mixed float/double pair (invalid
+                    ; fcmp/fadd IR that llc swallows silently). Only fires
+                    ; when the non-literal side is float-like; two literals
+                    ; keep f64.
+                    if Planner.type_is_float_like(result.result_type)
+                        if this.operand_is_float_constant(rhs)
+                            if this.operand_is_float_constant(result) = false
+                                set rhs: this.retype_float_operand(rhs, result.result_type)
+                    if Planner.type_is_float_like(rhs.result_type)
+                        if this.operand_is_float_constant(result)
+                            if this.operand_is_float_constant(rhs) = false
+                                set result: this.retype_float_operand(result, rhs.result_type)
+
                     ; Unknown identifier on either side of a binary
                     ; operator: a bare, chain-free, single-segment Type
                     ; operand that names NOTHING reachable would flow into
@@ -10952,6 +11058,14 @@ define Planner
                                 if Planner.type_is_char_like(planned_p)
                                     if this.arg_is_foldable_char_string(arg_ops, j)
                                         set ok: true
+                    ; Float-literal fallback (see candidate_matches_char_fold):
+                    ; a bare f64 literal matches a float/f32 parameter; the
+                    ; operand retypes at the call-construction site.
+                    if ok = false
+                        if char_fold
+                            if Planner.type_is_float_like(planned_p)
+                                if this.arg_is_foldable_float(arg_ops, j)
+                                    set ok: true
                     if ok = false
                         return false
                 }
@@ -16992,6 +17106,15 @@ define Planner
                 if this.operand_is_string_constant(collapsed)
                     set collapsed: this.fold_string_operand_to_char(collapsed, binding_type)
 
+            ; Float literal in a float-annotated binding (`var x: float 1.5`):
+            ; retype the default-f64 literal to the annotated width so the
+            ; alloca, the store and every later load agree on the slot type.
+            ; Without this the slot is alloca'd double (from the literal)
+            ; while reads load float — bit garbage.
+            if Planner.type_is_float_like(binding_type)
+                if this.operand_is_float_constant(collapsed)
+                    set collapsed: this.retype_float_operand(collapsed, binding_type)
+
             ; Emit an equality constraint between the declared binding
             ; type and the collapsed initializer's result type. Solvable
             ; cases either confirm the annotation or fix the fresh var.
@@ -17167,7 +17290,21 @@ define Planner
                         if trt_is_charlike
                             if this.operand_is_string_constant(planned_source_collapsed)
                                 set planned_source_collapsed: this.fold_string_operand_to_char(planned_source_collapsed, trt)
+                        ; Float literal as the implicit return of a float-
+                        ; returning function: retype to the declared width
+                        ; (mirrors the plan_return# float retype).
+                        if Planner.type_is_float_like(trt)
+                            if this.operand_is_float_constant(planned_source_collapsed)
+                                set planned_source_collapsed: this.retype_float_operand(planned_source_collapsed, trt)
                     }
+
+            ; Float literal assigned into a float-typed target (`set x: 2.5`
+            ; with x float): retype the default-f64 literal to the target's
+            ; width so the store writes float bits into the float slot.
+            if a.target.length > 0
+                if Planner.type_is_float_like(planned_target_collapsed.result_type)
+                    if this.operand_is_float_constant(planned_source_collapsed)
+                        set planned_source_collapsed: this.retype_float_operand(planned_source_collapsed, planned_target_collapsed.result_type)
 
             ; For -g line info: take the location from the FIRST flat source
             ; operand, which carries the authoritative source span. The
@@ -21050,6 +21187,12 @@ define Planner
                 if rt_is_charlike
                     if this.operand_is_string_constant(planned_collapsed)
                         set planned_collapsed: this.fold_string_operand_to_char(planned_collapsed, rrt)
+                ; Float literal in return position of a float-returning
+                ; function: retype to the declared width (see the plan_
+                ; binding# float retype for the failure mode).
+                if Planner.type_is_float_like(rrt)
+                    if this.operand_is_float_constant(planned_collapsed)
+                        set planned_collapsed: this.retype_float_operand(planned_collapsed, rrt)
             }
 
             ; A returned value/ref whose lifetime is the Local ($) page would
