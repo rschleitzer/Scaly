@@ -843,6 +843,31 @@ void scaly_mgpu_slot_write(int slot, const void *src, size_t bytes)
     memcpy(scaly_mgpu_contents(mgpu_slots[slot]), src, bytes);
 }
 
+// Grow the registry by n zeroed slots WITHOUT touching the existing
+// ones (a second, forward-only graph attaching alongside the primary
+// GpuTape aliases into this block). Returns the base index of the new
+// block, -1 on allocation failure. slots_init still resets everything
+// including reserved blocks.
+int scaly_mgpu_slots_reserve(int n)
+{
+    void **grown = realloc(mgpu_slots, (size_t)(mgpu_nslots + n) * sizeof(void *));
+    if (grown == NULL)
+        return -1;
+    memset(grown + mgpu_nslots, 0, (size_t)n * sizeof(void *));
+    mgpu_slots = grown;
+    int base = mgpu_nslots;
+    mgpu_nslots += n;
+    return base;
+}
+
+// dst aliases src's MTLBuffer. Retained: both slots own a reference,
+// so slots_init's release loop stays balanced.
+void scaly_mgpu_slot_alias(int dst, int src)
+{
+    id<MTLBuffer> b = SB(src);
+    mgpu_slots[dst] = (__bridge_retained void *)b;
+}
+
 // GEMM via MPS: C = alpha * op(A) * op(B) + beta * C. Stored shapes:
 // op(A) is ra x ca after the optional transpose, likewise op(B); the
 // caller passes the STORED row/col counts. MPS opens its own encoder,

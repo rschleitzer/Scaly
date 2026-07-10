@@ -27,6 +27,9 @@
 ;   MGPU_PROMPT=txt generate from this prompt (greedy longest-match
 ;                   BPE tokenization against the vocab).
 ;   MGPU_GEN=n      tokens to generate (default 120).
+;   MGPU_GEN1=1     generate through the FULL training graph instead
+;                   of the single-window (B=1) second graph whose
+;                   weight slots alias the live training weights.
 ;   MGPU_TEMP=pct   sampling temperature in percent (default 80).
 ; Run via demo/run_bpe_gpu.sh (pins the cwd; SKIPs off macOS) or
 ; demo/showcase_gpu.sh (train once, then prompt-driven generation).
@@ -414,10 +417,38 @@ set pp[pi0 + 1]: bf
 set pp[pi0 + 2]: whead
 
 ; --- device residency, one call: redirect the whole tape into shared
-; MTLBuffers + scratch slots + per-parameter Adam moment slots ---
-let g GpuTape.attach(tape, pids, loss, use_msl)
+; MTLBuffers + scratch slots + per-parameter Adam moment slots.
+; Measured around it: what an allocator hook (device-resident from
+; birth, the 6.3 question) would save on unified memory - the one-time
+; attach and the host buffers the redirect orphans in the tape region
+; (value/grad/aux/tok stay aligned_alloc'd until process end). ---
 let nnodes tape.nodes.get_length() as int
 let buf tape.nodes.get_buffer()
+var orphaned 0 as i64
+var mi 0
+while mi < nnodes
+{
+    let node buf + mi
+    let count node.rows * node.cols
+    if count > 0
+        set orphaned: orphaned + ((count * 8) as i64)
+    set orphaned: orphaned + ((node.aux.length * 4) as i64)
+    set orphaned: orphaned + ((node.tok.length * 8) as i64)
+    set mi: mi + 1
+}
+let att_t0 scaly_eio_now_ns()
+let g GpuTape.attach(tape, pids, loss, use_msl)
+let att_t1 scaly_eio_now_ns()
+var att StringBuilder()
+att.append "attach "
+let att_ms num_to_string((att_t1 - att_t0) / 1000000)
+att.append att_ms
+att.append " ms, orphaned host buffers "
+let okb num_to_string(orphaned / 1024)
+att.append okb
+att.append " KB"
+let attline att.to_string()
+Console.println(attline.to_c_string())
 
 ; --- checkpoint: load weights + skip training when the file exists
 ; (config-header-validated; a mismatch is fatal inside load) ---
@@ -615,6 +646,72 @@ if loaded = 0
     }
 }
 
+; --- 6.3 bonus: a SECOND, single-window graph (B=1) for generation.
+; Its leaves are created in exactly the pids order, so leaf id = param
+; index; GpuTape.attach_gen aliases their value slots onto the training
+; tape's live weight MTLBuffers - zero copies, always-fresh weights,
+; and each generated token costs 1/B of the full graph's FLOPs.
+; MGPU_GEN1=1 keeps the old full-graph generation path (the identity
+; gate: same seed, same text).
+var gen1 0
+if getenv("MGPU_GEN1") <> null
+    set gen1: 1
+var tape2 Tape()
+let t2_table tape2.leaf(V, D)
+let t2_pos tape2.leaf(T, D)
+var l2 0
+while l2 < NLAYER
+{
+    tape2.leaf(1, D)
+    tape2.leaf(1, D)
+    tape2.leaf(D, D)
+    tape2.leaf(D, D)
+    tape2.leaf(D, D)
+    tape2.leaf(D, D)
+    tape2.leaf(1, D)
+    tape2.leaf(1, D)
+    tape2.leaf(D, F)
+    tape2.leaf(F, D)
+    set l2: l2 + 1
+}
+let g2base 2 + NLAYER * 10
+tape2.leaf(1, D)
+tape2.leaf(1, D)
+tape2.leaf(D, V)
+var ids2 Vector[i64](T as size_t)
+let emb2 tape2.embedding(t2_table, ids2, T)
+let x02 tape2.add_bcast(emb2, t2_pos)
+var xc2 x02
+var bl2 0
+while bl2 < NLAYER
+{
+    let lb 2 + bl2 * 10
+    let na2 tape2.layernorm(xc2, lb, lb + 1, 0.00001)
+    let q2 tape2.matmul(na2, lb + 2)
+    let k2 tape2.matmul(na2, lb + 3)
+    let v2 tape2.matmul(na2, lb + 4)
+    let at2 tape2.attention_windowed(q2, k2, v2, HEADS, T)
+    let o2 tape2.matmul(at2, lb + 5)
+    let xr2 tape2.add(xc2, o2)
+    let nb2 tape2.layernorm(xr2, lb + 6, lb + 7, 0.00001)
+    let h2 tape2.matmul(nb2, lb + 8)
+    let e2 tape2.gelu(h2)
+    let mm2 tape2.matmul(e2, lb + 9)
+    set xc2: tape2.add(xr2, mm2)
+    set bl2: bl2 + 1
+}
+let nf2 tape2.layernorm(xc2, g2base, g2base + 1, 0.00001)
+let logits2 tape2.matmul(nf2, g2base + 2)
+var pids2 Vector[int](NPARAM as size_t)
+let pp2 pids2.data
+var p2 0
+while p2 < NPARAM
+{
+    set pp2[p2]: p2
+    set p2: p2 + 1
+}
+let g2 GpuTape.attach_gen(tape2, pids2, g, pids, use_msl)
+
 ; --- inference: extend a prompt autoregressively (forward passes on
 ; the GPU, sampling on the CPU through unified memory). MGPU_PROMPT
 ; is tokenized greedy longest-match against the vocab's recorded byte
@@ -707,13 +804,23 @@ while hlen < P + GEN
     var t2 0
     while t2 < vis
     {
-        tape.set_token(emb, t2, hp[start + t2])
+        if gen1 = 1
+            tape.set_token(emb, t2, hp[start + t2])
+        else
+            tape2.set_token(emb2, t2, hp[start + t2])
         set t2: t2 + 1
     }
-    g.fwd()
+    if gen1 = 1
+        g.fwd()
+    else
+        g2.fwd()
     set s: lcg(s)
     let u (pmod(s, 10000) as float) * 0.0001
-    var pick tape.sample(logits, vis - 1, temp, u)
+    var pick 0
+    if gen1 = 1
+        set pick: tape.sample(logits, vis - 1, temp, u)
+    else
+        set pick: tape2.sample(logits2, vis - 1, temp, u)
     if pick < 0
         set pick: 0
     if pick >= V
@@ -753,6 +860,9 @@ gl.append gts
 gl.append " s (temperature "
 let tps num_to_string(temp_pct as i64)
 gl.append tps
-gl.append "%, prompt in brackets)"
+if gen1 = 1
+    gl.append "%, full graph, prompt in brackets)"
+else
+    gl.append "%, single-window graph, prompt in brackets)"
 let gline gl.to_string()
 Console.println(gline.to_c_string())
