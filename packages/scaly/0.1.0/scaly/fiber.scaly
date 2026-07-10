@@ -2222,6 +2222,8 @@ define Thread
 define TaskGroup
 (
     pending: u64                 ; in-flight tasks (atomic)
+    active: u64                  ; finishers inside finish_one (atomic;
+                                 ; the dispose barrier — see below)
     pipe_read: i32               ; wait blocks reading here
     pipe_write: i32              ; last completion writes one byte
 )
@@ -2233,6 +2235,7 @@ define TaskGroup
         let p Page.allocate_page_traced("TaskGroup.record_page")
         let g p.allocate(sizeof TaskGroup, alignof TaskGroup) as pointer[TaskGroup]
         set g.pending: 0 as u64
+        set g.active: 0 as u64
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
         if rc <> (0 as i32)
@@ -2244,9 +2247,17 @@ define TaskGroup
 
     ; One task finished: drop the pending count; the drop to zero wakes
     ; the waiter. Runs on worker threads — the counter is the only
-    ; shared word, the pipe write is atomic for one byte.
+    ; shared word, the pipe write is atomic for one byte. The active
+    ; enter/leave brackets the decrement AND the wake write: a finisher
+    ; descheduled between them must hold dispose open, or wait (which
+    ; checks the counter BEFORE reading) returns on the bare zero, the
+    ; pipe closes, and the late byte lands in a dead — or, after fd
+    ; reuse, a foreign — descriptor (SIGPIPE killed tiny-wave promoted
+    ; loops, 2026-07-10).
     procedure finish_one(g: pointer[TaskGroup])
     {
+        let ap &g.active
+        let prev scaly_atomic_add_u64(ap, 1 as u64)
         let pp &g.pending
         let old scaly_atomic_add_u64(pp, (0 - 1) as u64)
         if old = (1 as u64)
@@ -2255,6 +2266,7 @@ define TaskGroup
             set *(one as pointer[u8]): 1 as u8
             scaly_eio_write(g.pipe_write, one as pointer[void], 1 as size_t)
         }
+        let fini scaly_atomic_add_u64(ap, (0 - 1) as u64)
     }
 
     ; Block until every submitted task of the wave finished. Call from
@@ -2275,9 +2287,20 @@ define TaskGroup
 
     ; Free the group: close the pipe, release the record page (every
     ; work item of every wave goes with it). Only after wait returned —
-    ; nothing may touch the record or its items anymore.
+    ; nothing may touch the record or its items anymore. wait can
+    ; return on the counter while the last finisher still owes its wake
+    ; byte (it checks pending BEFORE reading), so spin the finish_one
+    ; bracket empty before closing: pending is zero and no submits
+    ; follow, hence no NEW finisher can enter — the spin is bounded by
+    ; one descheduled write.
     procedure dispose(g: pointer[TaskGroup])
     {
+        let ap &g.active
+        repeat
+        {
+            if scaly_atomic_load_u64(ap) = (0 as u64)
+                break
+        }
         close(g.pipe_write as int)
         close(g.pipe_read as int)
         let gp Page.get(g as pointer[void])

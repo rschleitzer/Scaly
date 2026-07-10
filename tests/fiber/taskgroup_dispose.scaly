@@ -1,0 +1,43 @@
+; TaskGroup dispose vs the last finisher's wake byte (2026-07-10): a
+; finisher can be descheduled between its pending decrement and its
+; pipe write; wait returns on the bare counter, and dispose used to
+; close the pipes under that pending write — the late byte then hit a
+; dead (SIGPIPE, exit 141) or, after fd reuse, a foreign descriptor.
+; finish_one now brackets the decrement AND the write with the group's
+; active counter, which dispose spins empty before closing. This
+; stress runs tens of thousands of single-task waves, each a fresh
+; race window: the pre-fix runtime died within a few thousand under
+; the tiny-wave load of the promoted tensor backward loops.
+; Expected: dispose-race-ok
+
+use scaly.memory.Page
+
+; Count the run in a caller-owned cell. One task per wave and the
+; caller waits between waves, so the unsynchronized increment is
+; ordered by the group's own atomics.
+procedure tick_task(arg: pointer[void]) returns pointer[void]
+{
+    let cp arg as pointer[i64]
+    set *cp: *cp + (1 as i64)
+    null
+}
+
+let waves 60000
+let pool TaskPool.create(TaskPool.ncpu())
+var cell u8[8]
+let cp cell as pointer[i64]
+set *cp: 0 as i64
+var w 0
+while w < waves
+{
+    let g TaskGroup.create()
+    TaskPool.submit(pool, &tick_task, cell as pointer[void], g)
+    TaskGroup.wait(g)
+    TaskGroup.dispose(g)
+    set w: w + 1
+}
+TaskPool.shutdown(pool)
+if *cp = (waves as i64)
+    print("dispose-race-ok")
+else
+    print("dispose-race-bad")
