@@ -1,0 +1,277 @@
+; Stage-7 milestone 7.0 wire spike — RECEIVER.
+; Accepts the region frame, lands each page in a fresh page-aligned
+; buffer at a DIFFERENT address, rebuilds the old->new map, swizzles
+; the page headers (next_object/current_page/next_page/exclusive
+; PageNode chains) and the typed object graph (Root -> SNode chain ->
+; String.data) by hand, then verifies the FNV checksum byte-for-byte.
+; Then drains the throughput phase and echoes the latency phase.
+
+function scaly_eio_now_ns() returns i64 extern
+
+define SNode (content: String, next: pointer[SNode])
+define Root (head: pointer[SNode], count: size_t)
+
+mutable po: pointer[size_t] null
+mutable pn: pointer[size_t] null
+mutable pl: pointer[size_t] null
+mutable pg_cnt: size_t 0
+mutable chk: u64 0
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+procedure report(tag: pointer[const_char], value: i64, unit: pointer[const_char])
+{
+    var sb StringBuilder()
+    var lbl String(tag)
+    sb.append lbl
+    let vs num_to_string(value)
+    sb.append vs
+    var us String(unit)
+    sb.append us
+    let line sb.to_string()
+    Console.println(line.to_c_string())
+}
+
+procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
+{
+    var done 0 as size_t
+    while done < count
+    {
+        let r Io.read(fd, ((buf as size_t) + done) as pointer[void], count - done)
+        if r <= (0 as i64)
+            return false
+        set done: done + (r as size_t)
+    }
+    true
+}
+
+procedure chk_byte(b: u8)
+    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+
+; Map an OLD address into the received copies; 0 = unmapped.
+; Range-based on purpose: an interior pointer into an oversized page
+; can sit more than 4K past its base, so 4K masking cannot find the
+; owner — the map must know each page's LENGTH (the 7.1 gap again).
+function map_addr(a: size_t) returns size_t
+{
+    if a = (0 as size_t)
+        return 0 as size_t
+    let o po
+    let nw pn
+    let ln pl
+    var i 0 as size_t
+    while i < pg_cnt
+    {
+        if a >= o[i]
+        {
+            if a < o[i] + ln[i]
+                return nw[i] + (a - o[i])
+        }
+        set i: i + (1 as size_t)
+    }
+    0 as size_t
+}
+
+; Swizzle one pointer slot in place; a nonnull unmapped value is a
+; hard fail — the region was NOT closed.
+procedure fix_ptr(addr: size_t)
+{
+    let slot addr as pointer[size_t]
+    let old *slot
+    if old = (0 as size_t)
+        return
+    let mapped map_addr(old)
+    if mapped = (0 as size_t)
+    {
+        Console.println "R: MAPFAIL"
+        exit 5
+    }
+    set *slot: mapped
+}
+
+; ==== accept ====
+
+let lfd Io.listen(47613 as i32)
+if lfd < (0 as i32)
+    exit 3
+Console.println "R: ready"
+let fd Io.accept(lfd)
+if fd < (0 as i32)
+    exit 3
+
+; ==== read the frame ====
+
+let hdr aligned_alloc(8 as i64, 64 as i64) as pointer[u64]
+if read_exact(fd, hdr as pointer[void], 40 as size_t) = false
+    exit 4
+if hdr[0] <> (0x53434c59 as u64)
+{
+    Console.println "R: bad magic"
+    exit 4
+}
+let page_count hdr[1] as size_t
+let root_old hdr[2] as size_t
+let want_chk hdr[3]
+let want_items hdr[4] as size_t
+
+set po: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+set pn: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+set pl: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+
+var pi 0 as size_t
+while pi < page_count
+{
+    if read_exact(fd, hdr as pointer[void], 16 as size_t) = false
+        exit 4
+    let obase hdr[0] as size_t
+    let len hdr[1] as size_t
+    let buf aligned_alloc(4096 as i64, len as i64)
+    if read_exact(fd, buf, len) = false
+        exit 4
+    let o po
+    let nw pn
+    let ln pl
+    set o[pi]: obase
+    set nw[pi]: buf as size_t
+    set ln[pi]: len
+    set pi: pi + (1 as size_t)
+}
+set pg_cnt: page_count
+report("R: pages ", page_count as i64, "")
+
+; ==== swizzle the page headers ====
+; Page layout: next_object@0 current_page@8 next_page@16
+; exclusive_pages.head@24; PageNode: page@0 next@8. Oversized pages
+; (OLD next_object = null) get NO header fixup: only next_object was
+; ever initialized, the rest is aligned_alloc garbage by design.
+
+var fi 0 as size_t
+while fi < pg_cnt
+{
+    let nw pn
+    let o po
+    let base nw[fi]
+    let obase o[fi]
+    let no_slot base as pointer[size_t]
+    let no_old *no_slot
+    if no_old <> (0 as size_t)
+    {
+        set *no_slot: base + (no_old - obase)
+        fix_ptr(base + (8 as size_t))
+        fix_ptr(base + (16 as size_t))
+        fix_ptr(base + (24 as size_t))
+        var nd *((base + (24 as size_t)) as pointer[size_t])
+        while nd <> (0 as size_t)
+        {
+            fix_ptr(nd)
+            fix_ptr(nd + (8 as size_t))
+            set nd: *((nd + (8 as size_t)) as pointer[size_t])
+        }
+    }
+    set fi: fi + (1 as size_t)
+}
+
+; ==== swizzle the typed graph: Root {head@0} -> SNode {data@0 next@8} ====
+
+let root_new map_addr(root_old)
+if root_new = (0 as size_t)
+{
+    Console.println "R: root unmapped"
+    exit 5
+}
+fix_ptr(root_new)
+var sn *(root_new as pointer[size_t])
+while sn <> (0 as size_t)
+{
+    fix_ptr(sn)
+    fix_ptr(sn + (8 as size_t))
+    set sn: *((sn + (8 as size_t)) as pointer[size_t])
+}
+
+; ==== verify through the normal String API ====
+
+set chk: 0xcbf29ce484222325 as u64
+var items 0 as size_t
+let rp root_new as pointer[Root]
+var n rp.head
+while n <> null
+{
+    let s n.content
+    let sl s.get_length()
+    var j 0 as size_t
+    while j < sl
+    {
+        let b s.get(j)
+        chk_byte b
+        set j: j + (1 as size_t)
+    }
+    chk_byte((sl % (256 as size_t)) as u8)
+    set items: items + (1 as size_t)
+    set n: n.next
+}
+
+var verdict u8[8]
+set verdict[0]: 70 as u8
+var pass true
+if chk <> want_chk
+    set pass: false
+if items <> want_items
+    set pass: false
+if rp.count <> want_items
+    set pass: false
+if pass
+{
+    set verdict[0]: 80 as u8
+    Console.println "R: verify PASS"
+}
+if pass = false
+    Console.println "R: verify FAIL"
+Io.write_all(fd, verdict as pointer[void], 1 as size_t)
+
+; ==== drain the throughput phase, ack with 'T' ====
+
+let scratch aligned_alloc(4096 as i64, 1048576 as i64)
+var ti 0 as i64
+while ti < (256 as i64)
+{
+    if read_exact(fd, scratch, 1048576 as size_t) = false
+        exit 4
+    set ti: ti + (1 as i64)
+}
+set verdict[0]: 84 as u8
+Io.write_all(fd, verdict as pointer[void], 1 as size_t)
+
+; ==== echo the latency phase ====
+
+var li 0 as i64
+while li < (2000 as i64)
+{
+    if read_exact(fd, verdict as pointer[void], 1 as size_t) = false
+        exit 4
+    Io.write_all(fd, verdict as pointer[void], 1 as size_t)
+    set li: li + (1 as i64)
+}
+
+Console.println "R: done"
