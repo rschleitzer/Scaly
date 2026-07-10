@@ -1,0 +1,332 @@
+; 5.4 demo: 2-layer pre-LN char transformer over real Thomas Mann text
+; (tests/tensor/mann.txt), trained AND sampled on one tape. Per layer:
+; x += Wo * attention(Wq/Wk/Wv * layernorm(x), 2 heads), then
+; x += W2 * gelu(W1 * layernorm(x)); embeddings + learned positions in,
+; final layernorm + head matmul out, fused softmax-crossentropy
+; objective (targets = next char). One 64-token window per Adam step,
+; set_token mutates the window in place — a step allocates nothing.
+; Inference reuses the SAME tape: a 16-char corpus prompt is extended
+; autoregressively (recompute + temperature-CDF tape.sample of the
+; last visible row — the causal mask makes short prompts sound).
+; Gates are NaN-robust POSITIVE ranges (a diverged run yields NaN
+; averages and every NaN comparison is false).
+; Expected: PASS
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function lcg(s: int) returns int
+    pmod(s * 1103515245 + 12345, 2147483648)
+
+procedure fill(tape: Tape, id: int, count: int, s0: int) returns int
+{
+    var s s0
+    var i 0
+    while i < count
+    {
+        set s: lcg(s)
+        let r pmod(s, 2001) - 1000
+        let rv (r as float) * 0.0001
+        tape.set_value(id, i, rv)
+        set i: i + 1
+    }
+    s
+}
+
+procedure fill_const(tape: Tape, id: int, count: int, v: float)
+{
+    var i 0
+    while i < count
+    {
+        tape.set_value(id, i, v)
+        set i: i + 1
+    }
+}
+
+; --- load the corpus ---
+let path String("tests/tensor/mann.txt")
+let text File.read_to_string(path)
+let tlen text.get_length() as int
+
+; --- char tokenizer: UTF-8 decode, first-seen vocab ids ---
+var map Vector[int](16384)
+let mp map.data
+let tsz text.get_length()
+var toks Vector[i64](tsz)
+let tp toks.data
+var ntok 0
+var vocab 0
+var pos 0
+while pos < tlen
+{
+    let b0 text.get(pos as size_t) as int
+    var cp b0
+    var adv 1
+    if b0 >= 192
+    {
+        if b0 < 224
+        {
+            let b1 text.get((pos + 1) as size_t) as int
+            set cp: (b0 - 192) * 64 + (b1 - 128)
+            set adv: 2
+        }
+    }
+    if b0 >= 224
+    {
+        if b0 < 240
+        {
+            let b1 text.get((pos + 1) as size_t) as int
+            let b2 text.get((pos + 2) as size_t) as int
+            set cp: ((b0 - 224) * 64 + (b1 - 128)) * 64 + (b2 - 128)
+            set adv: 3
+        }
+    }
+    if b0 >= 240
+    {
+        set cp: 0
+        set adv: 4
+    }
+    if cp >= 16384
+        set cp: 0
+    if mp[cp] = 0
+    {
+        set vocab: vocab + 1
+        set mp[cp]: vocab
+    }
+    let tid mp[cp] - 1
+    set tp[ntok]: tid as i64
+    set ntok: ntok + 1
+    set pos: pos + adv
+}
+
+; --- model ---
+let V vocab
+let D 32
+let T 64
+let F 64
+var tape Tape()
+let table tape.leaf(V, D)
+let posemb tape.leaf(T, D)
+; layer 1
+let g1a tape.leaf(1, D)
+let b1a tape.leaf(1, D)
+let wq1 tape.leaf(D, D)
+let wk1 tape.leaf(D, D)
+let wv1 tape.leaf(D, D)
+let wo1 tape.leaf(D, D)
+let g1b tape.leaf(1, D)
+let b1b tape.leaf(1, D)
+let wf1 tape.leaf(D, F)
+let wp1 tape.leaf(F, D)
+; layer 2
+let g2a tape.leaf(1, D)
+let b2a tape.leaf(1, D)
+let wq2 tape.leaf(D, D)
+let wk2 tape.leaf(D, D)
+let wv2 tape.leaf(D, D)
+let wo2 tape.leaf(D, D)
+let g2b tape.leaf(1, D)
+let b2b tape.leaf(1, D)
+let wf2 tape.leaf(D, F)
+let wp2 tape.leaf(F, D)
+; head
+let gf tape.leaf(1, D)
+let bf tape.leaf(1, D)
+let whead tape.leaf(D, V)
+
+var s 42
+set s: fill(tape, table, V * D, s)
+set s: fill(tape, posemb, T * D, s)
+set s: fill(tape, wq1, D * D, s)
+set s: fill(tape, wk1, D * D, s)
+set s: fill(tape, wv1, D * D, s)
+set s: fill(tape, wo1, D * D, s)
+set s: fill(tape, wf1, D * F, s)
+set s: fill(tape, wp1, F * D, s)
+set s: fill(tape, wq2, D * D, s)
+set s: fill(tape, wk2, D * D, s)
+set s: fill(tape, wv2, D * D, s)
+set s: fill(tape, wo2, D * D, s)
+set s: fill(tape, wf2, D * F, s)
+set s: fill(tape, wp2, F * D, s)
+set s: fill(tape, whead, D * V, s)
+fill_const(tape, g1a, D, 1.0)
+fill_const(tape, g1b, D, 1.0)
+fill_const(tape, g2a, D, 1.0)
+fill_const(tape, g2b, D, 1.0)
+fill_const(tape, gf, D, 1.0)
+
+; --- graph: one window of T tokens ---
+let bsz T as size_t
+var ids Vector[i64](bsz)
+let emb tape.embedding(table, ids, T)
+let x0 tape.add(emb, posemb)
+; layer 1
+let n1a tape.layernorm(x0, g1a, b1a, 0.00001)
+let q1 tape.matmul(n1a, wq1)
+let k1 tape.matmul(n1a, wk1)
+let v1 tape.matmul(n1a, wv1)
+let at1 tape.attention(q1, k1, v1, 2)
+let o1 tape.matmul(at1, wo1)
+let x1 tape.add(x0, o1)
+let n1b tape.layernorm(x1, g1b, b1b, 0.00001)
+let h1 tape.matmul(n1b, wf1)
+let e1 tape.gelu(h1)
+let m1 tape.matmul(e1, wp1)
+let x2 tape.add(x1, m1)
+; layer 2
+let n2a tape.layernorm(x2, g2a, b2a, 0.00001)
+let q2 tape.matmul(n2a, wq2)
+let k2 tape.matmul(n2a, wk2)
+let v2 tape.matmul(n2a, wv2)
+let at2 tape.attention(q2, k2, v2, 2)
+let o2 tape.matmul(at2, wo2)
+let x3 tape.add(x2, o2)
+let n2b tape.layernorm(x3, g2b, b2b, 0.00001)
+let h2 tape.matmul(n2b, wf2)
+let e2 tape.gelu(h2)
+let m2 tape.matmul(e2, wp2)
+let x4 tape.add(x3, m2)
+; head
+let nf tape.layernorm(x4, gf, bf, 0.00001)
+let logits tape.matmul(nf, whead)
+var tgs Vector[i64](bsz)
+let loss tape.crossentropy(logits, tgs)
+
+; --- all trainable leaves ---
+var pids Vector[int](25)
+pids.put(0, table)
+pids.put(1, posemb)
+pids.put(2, g1a)
+pids.put(3, b1a)
+pids.put(4, wq1)
+pids.put(5, wk1)
+pids.put(6, wv1)
+pids.put(7, wo1)
+pids.put(8, g1b)
+pids.put(9, b1b)
+pids.put(10, wf1)
+pids.put(11, wp1)
+pids.put(12, g2a)
+pids.put(13, b2a)
+pids.put(14, wq2)
+pids.put(15, wk2)
+pids.put(16, wv2)
+pids.put(17, wo2)
+pids.put(18, g2b)
+pids.put(19, b2b)
+pids.put(20, wf2)
+pids.put(21, wp2)
+pids.put(22, gf)
+pids.put(23, bf)
+pids.put(24, whead)
+let pp pids.data
+
+; --- train: Adam over sliding random windows ---
+var first_sum: float 0.0
+var last_sum: float 0.0
+var step 1
+while step <= 800
+{
+    set s: lcg(s)
+    let p pmod(s, ntok - T - 1)
+    var t 0
+    while t < T
+    {
+        tape.set_token(emb, t, tp[p + t])
+        tape.set_token(loss, t, tp[p + t + 1])
+        set t: t + 1
+    }
+    tape.recompute()
+    let lv tape.value_at(loss, 0)
+    if step <= 10
+        set first_sum: first_sum + lv
+    if step > 700
+        set last_sum: last_sum + lv
+    tape.zero_grads()
+    tape.backward loss
+    var pi 0
+    while pi < 25
+    {
+        tape.adam_step(pp[pi], 0.003, 0.9, 0.999, 0.00000001, step)
+        set pi: pi + 1
+    }
+    set step: step + 1
+}
+let first_avg first_sum / 10.0
+let last_avg last_sum / 100.0
+
+; --- inference: extend a 16-char corpus prompt to the full window ---
+var np 16
+var b 0
+while b < np
+{
+    tape.set_token(emb, b, tp[b])
+    set b: b + 1
+}
+var flags Vector[int](256)
+let fp flags.data
+var ndistinct 0
+var picks_ok true
+while np < T
+{
+    tape.recompute()
+    set s: lcg(s)
+    let u (pmod(s, 10000) as float) * 0.0001
+    let pick tape.sample(logits, np - 1, 0.8, u)
+    if pick < 0
+        set picks_ok: false
+    if pick >= V
+        set picks_ok: false
+    if pick >= 0
+    {
+        if pick < 256
+        {
+            if fp[pick] = 0
+            {
+                set fp[pick]: 1
+                set ndistinct: ndistinct + 1
+            }
+        }
+    }
+    tape.set_token(emb, np, pick as i64)
+    set np: np + 1
+}
+
+; --- gates: all POSITIVE ranges ---
+var corpus_ok false
+if ntok >= 100000
+    if vocab >= 60
+        if vocab <= 200
+            set corpus_ok: true
+; the untrained model must start near the uniform baseline ln(V)
+var start_ok false
+if first_avg > 3.9
+    if first_avg < 6.0
+        set start_ok: true
+; 800 Adam steps must land well below the baseline
+var train_ok false
+if last_avg > 0.5
+    if last_avg < 3.4
+        set train_ok: true
+; sampling must produce valid, non-collapsed tokens
+var gen_ok false
+if picks_ok
+    if ndistinct >= 3
+        set gen_ok: true
+var ok true
+if corpus_ok = false
+    set ok: false
+if start_ok = false
+    set ok: false
+if train_ok = false
+    set ok: false
+if gen_ok = false
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL")
