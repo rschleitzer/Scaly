@@ -292,6 +292,35 @@ var ok true
     }
 }
 
+; --- crossentropy (fused softmax + mean NLL; 5.3) ---
+{
+    var tape Tape()
+    let x tape.leaf(3, 4)
+    var i 0
+    while i < 12
+    {
+        let v tval(i)
+        tape.set_value(x, i, v)
+        set i: i + 1
+    }
+    var tg Vector[i64](3)
+    tg.put(0, 2 as i64)
+    tg.put(1, 0 as i64)
+    tg.put(2, 3 as i64)
+    let s tape.crossentropy(x, tg)
+    tape.backward s
+    var good check_leaf(tape, s, x, 12, 0.02, 0.005, 0.02)
+    ; the loss itself must be a positive NLL
+    let lv tape.value_at(s, 0)
+    if lv <= 0.0
+        set good: false
+    if good = false
+    {
+        print("FAIL crossentropy")
+        set ok: false
+    }
+}
+
 if ok
     print("PASS")
 else

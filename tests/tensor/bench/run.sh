@@ -20,3 +20,10 @@ OPS=/tmp/tensor_ops_bench
 rm -f "$OPS"
 "$STAGE" -O2 -o "$OPS" tests/tensor/bench/ops.scaly
 "$OPS"
+
+# 5.3 training-step throughput (steps/s; tape kernels run at the
+# archive's opt level).
+TRAIN=/tmp/tensor_train_bench
+rm -f "$TRAIN"
+"$STAGE" -O2 -o "$TRAIN" tests/tensor/bench/train.scaly
+"$TRAIN"
