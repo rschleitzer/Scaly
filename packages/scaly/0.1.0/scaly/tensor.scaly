@@ -5,8 +5,9 @@
 ; one tape serves a whole training run, a step allocates nothing),
 ; SGD/Adam leaf updates (Adam moments live in the node's aux buffer on
 ; the tape's page), and (5.4) fused causal multi-head self-attention
-; (softmax(QK^T/sqrt(dh)) masked to j <= i, per head) with a sampling
-; helper for inference (temperature softmax + CDF walk over one row).
+; (softmax(QK^T/sqrt(dh)) masked to j <= i, per head), elementwise add
+; (residual connections, positional embeddings) and a sampling helper
+; for inference (temperature softmax + CDF walk over one row).
 ;
 ; One region per tape: a Tape is page-hosted, and every node record,
 ; value buffer, gradient buffer and saved auxiliary lives on the tape's
@@ -50,6 +51,7 @@ define TAPE_EMBEDDING int 5
 define TAPE_WSUM int 6
 define TAPE_CROSSENT int 7
 define TAPE_ATTENTION int 8
+define TAPE_ADD int 9
 
 define TapeNode
 (
@@ -239,6 +241,19 @@ define Tape
         id
     }
 
+    ; Elementwise sum of two same-shape nodes — residual connections
+    ; and positional embeddings. x and y may be the same node.
+    procedure add(this: Tape, x: int, y: int) returns int
+    {
+        let buf nodes.get_buffer()
+        let nx buf + x
+        let r nx.rows
+        let n nx.cols
+        let id this.add_node(TAPE_ADD, x, y, 0 - 1, r, n)
+        this.run_node id
+        id
+    }
+
     ; Fused causal multi-head self-attention: q/k/v are T x D nodes
     ; (D = hs * dh, D divisible by hs); per head, out row i is
     ; softmax(q_i . k_j / sqrt(dh) for j <= i)-weighted sum of v rows.
@@ -424,6 +439,8 @@ define Tape
             this.fwd_crossent id
         if kind = TAPE_ATTENTION
             this.fwd_attention id
+        if kind = TAPE_ADD
+            this.fwd_add id
     }
 
     procedure bwd_node(this: Tape, id: int)
@@ -446,6 +463,8 @@ define Tape
             this.bwd_crossent id
         if kind = TAPE_ATTENTION
             this.bwd_attention id
+        if kind = TAPE_ADD
+            this.bwd_add id
     }
 
     procedure fwd_matmul(this: Tape, id: int)
@@ -933,6 +952,47 @@ define Tape
                 set gxp[i * n + j3]: gxp[i * n + j3] + scale * p
                 set j3: j3 + 1
             }
+        }
+    }
+
+    procedure fwd_add(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let nb buf + node.b
+        let xp na.value.data
+        let yp nb.value.data
+        let out node.value
+        let r node.rows
+        let n node.cols
+        for i in r
+        {
+            var j 0
+            while j < n
+            {
+                out.put((i * n + j) as size_t, xp[i * n + j] + yp[i * n + j])
+                set j: j + 1
+            }
+        }
+    }
+
+    procedure bwd_add(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let nb buf + node.b
+        let gp node.grad.data
+        let gxp na.grad.data
+        let gyp nb.grad.data
+        let total node.rows * node.cols
+        var i 0
+        while i < total
+        {
+            set gxp[i]: gxp[i] + gp[i]
+            set gyp[i]: gyp[i] + gp[i]
+            set i: i + 1
         }
     }
 

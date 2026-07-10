@@ -321,6 +321,73 @@ var ok true
     }
 }
 
+; --- add (elementwise residual op; 5.4): gradient of wsum(x + y) must
+; be exactly the weight vector on BOTH inputs, and adding a node to
+; itself must double it ---
+{
+    var tape Tape()
+    let x tape.leaf(2, 3)
+    let y tape.leaf(2, 3)
+    var i 0
+    while i < 6
+    {
+        let vx tval(i)
+        tape.set_value(x, i, vx)
+        let vy tval(i + 3)
+        tape.set_value(y, i, vy)
+        set i: i + 1
+    }
+    let z tape.add(x, y)
+    var w Vector[float](6)
+    var j 0
+    while j < 6
+    {
+        let v wval(j)
+        w.put(j as size_t, v)
+        set j: j + 1
+    }
+    let s tape.wsum(z, w)
+    tape.backward s
+    var good true
+    var k 0
+    while k < 6
+    {
+        let we wval(k)
+        let gx tape.grad_at(x, k)
+        if close_enough(gx, we, 0.000001, 0.000001) = false
+            set good: false
+        let gy tape.grad_at(y, k)
+        if close_enough(gy, we, 0.000001, 0.000001) = false
+            set good: false
+        ; the sum itself must be exact
+        let zv tape.value_at(z, k)
+        let xv tape.value_at(x, k)
+        let yv tape.value_at(y, k)
+        if close_enough(zv, xv + yv, 0.000001, 0.000001) = false
+            set good: false
+        set k: k + 1
+    }
+    ; self-add: both adjoint paths land on the same leaf
+    let z2 tape.add(x, x)
+    let s2 tape.wsum(z2, w)
+    tape.zero_grads()
+    tape.backward s2
+    var k2 0
+    while k2 < 6
+    {
+        let we2 wval(k2) * 2.0
+        let gx2 tape.grad_at(x, k2)
+        if close_enough(gx2, we2, 0.000001, 0.000001) = false
+            set good: false
+        set k2: k2 + 1
+    }
+    if good = false
+    {
+        print("FAIL add")
+        set ok: false
+    }
+}
+
 if ok
     print("PASS")
 else
