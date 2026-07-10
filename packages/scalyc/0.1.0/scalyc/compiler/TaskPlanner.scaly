@@ -1184,6 +1184,33 @@ define TaskPlanner
                 return true
             if name = "scaly_eputnl"
                 return true
+            ; libm scalar math (5.1 op kernels: softmax/GELU/layernorm).
+            ; Pure value→value; errno is thread-local, so concurrent calls
+            ; cannot race.
+            if name = "expf"
+                return true
+            if name = "exp"
+                return true
+            if name = "tanhf"
+                return true
+            if name = "tanh"
+                return true
+            if name = "sqrtf"
+                return true
+            if name = "sqrt"
+                return true
+            if name = "logf"
+                return true
+            if name = "log"
+                return true
+            if name = "powf"
+                return true
+            if name = "pow"
+                return true
+            if name = "fabsf"
+                return true
+            if name = "fabs"
+                return true
             false
         }
 
@@ -1894,6 +1921,31 @@ define TaskPlanner
             if name = "scaly_eputi"
                 return 0
             if name = "scaly_eputnl"
+                return 0
+            ; libm scalar math: reads its value arguments, writes nothing.
+            if name = "expf"
+                return 0
+            if name = "exp"
+                return 0
+            if name = "tanhf"
+                return 0
+            if name = "tanh"
+                return 0
+            if name = "sqrtf"
+                return 0
+            if name = "sqrt"
+                return 0
+            if name = "logf"
+                return 0
+            if name = "log"
+                return 0
+            if name = "powf"
+                return 0
+            if name = "pow"
+                return 0
+            if name = "fabsf"
+                return 0
+            if name = "fabs"
                 return 0
             wm_all()
         }
