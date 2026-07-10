@@ -1,0 +1,66 @@
+; Pointer subscript (5.1, 2026-07-10): `p[i]` on a pointer[T] receiver
+; desugars in the planner's subscript fuse to the raw read `*(p + i)` —
+; the call-free hot-loop access path. Previously the pair [p, [i]] found
+; no `[]` member operator, stayed unfused and hard-errored ("unexpected
+; operand"). Reads, writes (`set p[i]: v`), expression indices and
+; member-chain receivers (`v.data[i]`) all fuse.
+; Expected: PASS
+
+var ok true
+
+var v Vector[double](4)
+v.put(0 as size_t, 1.5)
+v.put(1 as size_t, 2.5)
+v.put(2 as size_t, 3.5)
+v.put(3 as size_t, 4.5)
+let p v.data
+
+; Read in binding position.
+let a p[1]
+if (a > 2.4) = false
+    set ok: false
+if (a < 2.6) = false
+    set ok: false
+
+; Read on a member-chain receiver.
+let b v.data[3]
+if (b > 4.4) = false
+    set ok: false
+if (b < 4.6) = false
+    set ok: false
+
+; Expression index inside a loop accumulation.
+var acc: double 0.0
+var i 0
+while i < 4
+{
+    set acc: acc + p[i]
+    set i: i + 1
+}
+if (acc > 11.9) = false
+    set ok: false
+if (acc < 12.1) = false
+    set ok: false
+
+; Write through the sugar, then read back with an expression index.
+set p[2]: 9.5
+let c p[i - 2]
+if (c > 9.4) = false
+    set ok: false
+if (c < 9.6) = false
+    set ok: false
+
+; Int elements: subscript read feeds integer arithmetic.
+var w Vector[i64](3)
+w.put(0 as size_t, 10 as i64)
+w.put(1 as size_t, 20 as i64)
+w.put(2 as size_t, 30 as i64)
+let q w.data
+let s q[0] + q[1] + q[2]
+if s <> 60
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

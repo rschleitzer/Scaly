@@ -6332,7 +6332,63 @@ define Planner
                                                             if idx_is_value
                                                             {
                                                                 let recv_op (*recv_ptr)
-                                                                let sm_ref this.find_member_operator(recv_op.result_type, String("[]"), sx_op.loc)
+                                                                ; Pointer subscript (5.1): `p[i]` on a
+                                                                ; pointer[T] receiver desugars to the raw
+                                                                ; read `*(p + i)` — the same GEP+load the
+                                                                ; explicit form emits. This is the call-
+                                                                ; free hot-loop access path: no bounds
+                                                                ; check, no call. As a `set` target the
+                                                                ; desugared deref-Call is the shape
+                                                                ; plan_action already handles, so
+                                                                ; `set p[i]: v` writes through too.
+                                                                var ptr_fused: bool false
+                                                                if recv_op.result_type.name = "pointer"
+                                                                {
+                                                                    let pel_ref Planner.get_pointer_element_type(recv_op.result_type)
+                                                                    if pel_ref <> null
+                                                                    {
+                                                                        let pel (*pel_ref)
+                                                                        if pel.name <> "void"
+                                                                        {
+                                                                            let pidx_op this.collapse_operand_sequence(row)
+                                                                            let plus_ty PlannedType(sx_op.loc, String("+"), String(""), null, Lifetime.Unspecified(Unspecified()), null, String(""), null)
+                                                                            var padd_arr Array[PlannedOperand]()
+                                                                            padd_arr.add recv_op
+                                                                            padd_arr.add(PlannedOperand(sx_op.loc, PlannedExpression.Type plus_ty, null, plus_ty))
+                                                                            padd_arr.add pidx_op
+                                                                            var padd_vec Vector[PlannedOperand](padd_arr)
+                                                                            let psum_op this.collapse_operand_sequence(padd_vec)
+                                                                            let pderef_mangled this.mangle_unary_operator(String("*"), psum_op.result_type)
+                                                                            var pderef_args Vector[PlannedOperand](1)
+                                                                            pderef_args.put(0, psum_op)
+                                                                            let pderef_call PlannedCall(
+                                                                                s_op.loc,
+                                                                                String("*"),
+                                                                                pderef_mangled,
+                                                                                true,
+                                                                                true,
+                                                                                false,
+                                                                                false,
+                                                                                &pderef_args,
+                                                                                pel,
+                                                                                Lifetime.Unspecified(Unspecified()),
+                                                                                null,
+                                                                                false
+                                                                            )
+                                                                            sub_arr.add(PlannedOperand(
+                                                                                s_op.loc,
+                                                                                PlannedExpression.Call pderef_call,
+                                                                                null,
+                                                                                pel
+                                                                            ))
+                                                                            set fused: true
+                                                                            set ptr_fused: true
+                                                                        }
+                                                                    }
+                                                                }
+                                                                var sm_ref: ref[MethodMatch]? null
+                                                                if ptr_fused = false
+                                                                    set sm_ref: this.find_member_operator(recv_op.result_type, String("[]"), sx_op.loc)
                                                                 if sm_ref <> null
                                                                 {
                                                                     let m (*sm_ref)
