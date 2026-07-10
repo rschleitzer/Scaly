@@ -7,6 +7,7 @@ define scaly
     module containers
     module fiber
     module io
+    module tensor
 
     ; Test entry point that calls all module tests
     function test() returns int

@@ -1,0 +1,698 @@
+; Tensor tape (self-scaling stage 5.2): reverse-mode autodiff over the
+; 5.1 op set — matmul, GELU, softmax, layernorm, embedding lookup — plus
+; a weighted-sum reduction to a scalar objective.
+;
+; One region per tape: a Tape is page-hosted, and every node record,
+; value buffer, gradient buffer and saved auxiliary lives on the tape's
+; page (the allocating tape methods derive it via Page.get(this) and
+; construct with ^own_page). Dropping the tape's page frees a whole
+; training step's activations and gradients wholesale — no per-buffer
+; bookkeeping.
+;
+; Usage:
+;   var tape Tape()
+;   let x tape.leaf(2, 3)            ; fill via tape.set_value(x, i, v)
+;   let w tape.leaf(3, 2)
+;   let y tape.matmul(x, w)          ; forward runs at creation
+;   let s tape.wsum(y, weights)      ; scalar objective
+;   tape.backward s                  ; adjoints accumulate into node grads
+;   let g tape.grad_at(x, 0)
+;
+; Node ids are ints in creation order; inputs always precede consumers,
+; so backward is a reverse id walk. Gradient buffers are allocated
+; zeroed at node creation and ACCUMULATE (+=) — call zero_grads before
+; reusing a tape for another backward pass. recompute() re-runs every
+; op in id order against the current leaf values (numeric gradcheck
+; perturbs a leaf and recomputes).
+
+use scaly.memory.Page
+use scaly.containers.Vector
+use scaly.containers.Array
+
+function expf(x: float) returns float extern
+function tanhf(x: float) returns float extern
+function sqrtf(x: float) returns float extern
+
+define TAPE_LEAF int 0
+define TAPE_MATMUL int 1
+define TAPE_GELU int 2
+define TAPE_SOFTMAX int 3
+define TAPE_LAYERNORM int 4
+define TAPE_EMBEDDING int 5
+define TAPE_WSUM int 6
+
+define TapeNode
+(
+    op: int
+    a: int
+    b: int
+    c: int
+    rows: int
+    cols: int
+    eps: float
+    value: Vector[float]
+    grad: Vector[float]
+    aux: Vector[float]
+    tok: Vector[i64]
+)
+{
+    init (kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int)
+    {
+        set op: kind
+        set a: in_a
+        set b: in_b
+        set c: in_c
+        set rows: r
+        set cols: n
+        set eps: 0.0
+        set value: Vector[float]()
+        set grad: Vector[float]()
+        set aux: Vector[float]()
+        set tok: Vector[i64]()
+    }
+}
+
+define Tape
+(
+    nodes: Array[TapeNode]
+)
+{
+    init ()
+    {
+        set nodes: Array[TapeNode]()
+    }
+
+    procedure add_node(this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) returns int
+    {
+        let own_page Page.get(this as pointer[void])
+        var node TapeNode(kind, in_a, in_b, in_c, r, n)
+        let v Vector[float]^own_page((r * n) as size_t)
+        let g Vector[float]^own_page((r * n) as size_t)
+        set node.value: v
+        set node.grad: g
+        let id nodes.get_length() as int
+        nodes.add node
+        id
+    }
+
+    procedure leaf(this: Tape, r: int, n: int) returns int
+        this.add_node(TAPE_LEAF, 0 - 1, 0 - 1, 0 - 1, r, n)
+
+    procedure set_value(this: Tape, id: int, i: int, v: float)
+    {
+        let node nodes.get_buffer() + id
+        let vv node.value
+        vv.put(i as size_t, v)
+    }
+
+    function value_at(this: Tape, id: int, i: int) returns float
+    {
+        let node nodes.get_buffer() + id
+        let p node.value.data
+        p[i]
+    }
+
+    function grad_at(this: Tape, id: int, i: int) returns float
+    {
+        let node nodes.get_buffer() + id
+        let p node.grad.data
+        p[i]
+    }
+
+    function node_rows(this: Tape, id: int) returns int
+    {
+        let node nodes.get_buffer() + id
+        node.rows
+    }
+
+    function node_cols(this: Tape, id: int) returns int
+    {
+        let node nodes.get_buffer() + id
+        node.cols
+    }
+
+    procedure matmul(this: Tape, x: int, y: int) returns int
+    {
+        let buf nodes.get_buffer()
+        let nx buf + x
+        let ny buf + y
+        let m nx.rows
+        let n ny.cols
+        let id this.add_node(TAPE_MATMUL, x, y, 0 - 1, m, n)
+        this.run_node id
+        id
+    }
+
+    procedure gelu(this: Tape, x: int) returns int
+    {
+        let buf nodes.get_buffer()
+        let nx buf + x
+        let r nx.rows
+        let n nx.cols
+        let id this.add_node(TAPE_GELU, x, 0 - 1, 0 - 1, r, n)
+        this.run_node id
+        id
+    }
+
+    procedure softmax(this: Tape, x: int) returns int
+    {
+        let buf nodes.get_buffer()
+        let nx buf + x
+        let r nx.rows
+        let n nx.cols
+        let id this.add_node(TAPE_SOFTMAX, x, 0 - 1, 0 - 1, r, n)
+        this.run_node id
+        id
+    }
+
+    procedure layernorm(this: Tape, x: int, gamma: int, beta: int, e: float) returns int
+    {
+        let buf nodes.get_buffer()
+        let nx buf + x
+        let r nx.rows
+        let n nx.cols
+        let id this.add_node(TAPE_LAYERNORM, x, gamma, beta, r, n)
+        let node nodes.get_buffer() + id
+        set node.eps: e
+        this.run_node id
+        id
+    }
+
+    procedure embedding(this: Tape, table: int, ids: Vector[i64], tokens: int) returns int
+    {
+        let buf nodes.get_buffer()
+        let nt buf + table
+        let dim nt.cols
+        let id this.add_node(TAPE_EMBEDDING, table, 0 - 1, 0 - 1, tokens, dim)
+        let own_page Page.get(this as pointer[void])
+        let tk Vector[i64]^own_page(ids)
+        let node nodes.get_buffer() + id
+        set node.tok: tk
+        this.run_node id
+        id
+    }
+
+    procedure wsum(this: Tape, x: int, w: Vector[float]) returns int
+    {
+        let id this.add_node(TAPE_WSUM, x, 0 - 1, 0 - 1, 1, 1)
+        let own_page Page.get(this as pointer[void])
+        let ws Vector[float]^own_page(w)
+        let node nodes.get_buffer() + id
+        set node.aux: ws
+        this.run_node id
+        id
+    }
+
+    ; Re-run every op in id order against the current leaf values.
+    procedure recompute(this: Tape)
+    {
+        let count nodes.get_length() as int
+        var i 0
+        while i < count
+        {
+            this.run_node i
+            set i: i + 1
+        }
+    }
+
+    procedure zero_grads(this: Tape)
+    {
+        let count nodes.get_length() as int
+        var i 0
+        while i < count
+        {
+            let node nodes.get_buffer() + i
+            let g node.grad
+            let total node.rows * node.cols
+            var j 0
+            while j < total
+            {
+                g.put(j as size_t, 0.0)
+                set j: j + 1
+            }
+            set i: i + 1
+        }
+    }
+
+    ; Seed d(out)/d(out) = 1 and accumulate adjoints into every
+    ; ancestor's grad buffer (reverse id walk — inputs precede
+    ; consumers by construction).
+    procedure backward(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let out buf + id
+        let g out.grad
+        let total out.rows * out.cols
+        var s 0
+        while s < total
+        {
+            g.put(s as size_t, 1.0)
+            set s: s + 1
+        }
+        var i id
+        while i >= 0
+        {
+            this.bwd_node i
+            set i: i - 1
+        }
+    }
+
+    procedure run_node(this: Tape, id: int)
+    {
+        let node nodes.get_buffer() + id
+        let kind node.op
+        if kind = TAPE_MATMUL
+            this.fwd_matmul id
+        if kind = TAPE_GELU
+            this.fwd_gelu id
+        if kind = TAPE_SOFTMAX
+            this.fwd_softmax id
+        if kind = TAPE_LAYERNORM
+            this.fwd_layernorm id
+        if kind = TAPE_EMBEDDING
+            this.fwd_embedding id
+        if kind = TAPE_WSUM
+            this.fwd_wsum id
+    }
+
+    procedure bwd_node(this: Tape, id: int)
+    {
+        let node nodes.get_buffer() + id
+        let kind node.op
+        if kind = TAPE_MATMUL
+            this.bwd_matmul id
+        if kind = TAPE_GELU
+            this.bwd_gelu id
+        if kind = TAPE_SOFTMAX
+            this.bwd_softmax id
+        if kind = TAPE_LAYERNORM
+            this.bwd_layernorm id
+        if kind = TAPE_EMBEDDING
+            this.bwd_embedding id
+        if kind = TAPE_WSUM
+            this.bwd_wsum id
+    }
+
+    procedure fwd_matmul(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let nb buf + node.b
+        let m na.rows
+        let kk na.cols
+        let n nb.cols
+        let ap na.value.data
+        let bp nb.value.data
+        let out node.value
+        for i in m
+        {
+            var j 0
+            while j < n
+            {
+                var acc: float 0.0
+                var x 0
+                while x < kk
+                {
+                    set acc: acc + ap[i * kk + x] * bp[x * n + j]
+                    set x: x + 1
+                }
+                out.put((i * n + j) as size_t, acc)
+                set j: j + 1
+            }
+        }
+    }
+
+    procedure bwd_matmul(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let nb buf + node.b
+        let m na.rows
+        let kk na.cols
+        let n nb.cols
+        let ap na.value.data
+        let bp nb.value.data
+        let gp node.grad.data
+        let gap na.grad.data
+        let gbp nb.grad.data
+        ; dA[i,x] += sum_j dC[i,j] * B[x,j]
+        for i in m
+        {
+            var x 0
+            while x < kk
+            {
+                var acc: float 0.0
+                var j 0
+                while j < n
+                {
+                    set acc: acc + gp[i * n + j] * bp[x * n + j]
+                    set j: j + 1
+                }
+                set gap[i * kk + x]: gap[i * kk + x] + acc
+                set x: x + 1
+            }
+        }
+        ; dB[x,j] += sum_i A[i,x] * dC[i,j]
+        for x2 in kk
+        {
+            var j 0
+            while j < n
+            {
+                var acc: float 0.0
+                var i2 0
+                while i2 < m
+                {
+                    set acc: acc + ap[i2 * kk + x2] * gp[i2 * n + j]
+                    set i2: i2 + 1
+                }
+                set gbp[x2 * n + j]: gbp[x2 * n + j] + acc
+                set j: j + 1
+            }
+        }
+    }
+
+    procedure fwd_gelu(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let xp na.value.data
+        let out node.value
+        let r node.rows
+        let n node.cols
+        for i in r
+        {
+            var j 0
+            while j < n
+            {
+                let v xp[i * n + j]
+                let inner 0.7978845608 * (v + 0.044715 * v * v * v)
+                let t tanhf(inner)
+                let g 0.5 * v * (1.0 + t)
+                out.put((i * n + j) as size_t, g)
+                set j: j + 1
+            }
+        }
+    }
+
+    procedure bwd_gelu(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let xp na.value.data
+        let gp node.grad.data
+        let gxp na.grad.data
+        let r node.rows
+        let n node.cols
+        for i in r
+        {
+            var j 0
+            while j < n
+            {
+                let v xp[i * n + j]
+                let inner 0.7978845608 * (v + 0.044715 * v * v * v)
+                let t tanhf(inner)
+                ; d inner/dv, then product rule on 0.5*v*(1+t)
+                let dinner 0.7978845608 * (1.0 + 0.134145 * v * v)
+                let dg 0.5 * (1.0 + t) + 0.5 * v * (1.0 - t * t) * dinner
+                set gxp[i * n + j]: gxp[i * n + j] + gp[i * n + j] * dg
+                set j: j + 1
+            }
+        }
+    }
+
+    procedure fwd_softmax(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let xp na.value.data
+        let out node.value
+        let op node.value.data
+        let r node.rows
+        let n node.cols
+        for i in r
+        {
+            var mx xp[i * n]
+            var j 1
+            while j < n
+            {
+                let v xp[i * n + j]
+                if v > mx
+                    set mx: v
+                set j: j + 1
+            }
+            var sum: float 0.0
+            var j2 0
+            while j2 < n
+            {
+                let e expf(xp[i * n + j2] - mx)
+                out.put((i * n + j2) as size_t, e)
+                set sum: sum + e
+                set j2: j2 + 1
+            }
+            let inv 1.0 / sum
+            var j3 0
+            while j3 < n
+            {
+                let scaled op[i * n + j3] * inv
+                out.put((i * n + j3) as size_t, scaled)
+                set j3: j3 + 1
+            }
+        }
+    }
+
+    procedure bwd_softmax(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let yp node.value.data
+        let gp node.grad.data
+        let gxp na.grad.data
+        let r node.rows
+        let n node.cols
+        ; dx_j = y_j * (dy_j - sum_k dy_k * y_k), per row
+        for i in r
+        {
+            var dot: float 0.0
+            var j 0
+            while j < n
+            {
+                set dot: dot + gp[i * n + j] * yp[i * n + j]
+                set j: j + 1
+            }
+            var j2 0
+            while j2 < n
+            {
+                let d yp[i * n + j2] * (gp[i * n + j2] - dot)
+                set gxp[i * n + j2]: gxp[i * n + j2] + d
+                set j2: j2 + 1
+            }
+        }
+    }
+
+    procedure fwd_layernorm(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let ng buf + node.b
+        let nbeta buf + node.c
+        let xp na.value.data
+        let gp ng.value.data
+        let bp nbeta.value.data
+        let out node.value
+        let r node.rows
+        let n node.cols
+        let e node.eps
+        for i in r
+        {
+            var sum: float 0.0
+            var j 0
+            while j < n
+            {
+                set sum: sum + xp[i * n + j]
+                set j: j + 1
+            }
+            let mean sum / (n as float)
+            var vsum: float 0.0
+            var j2 0
+            while j2 < n
+            {
+                let d xp[i * n + j2] - mean
+                set vsum: vsum + d * d
+                set j2: j2 + 1
+            }
+            let denom sqrtf(vsum / (n as float) + e)
+            let inv 1.0 / denom
+            var j3 0
+            while j3 < n
+            {
+                let z (xp[i * n + j3] - mean) * inv
+                let scaled z * gp[j3] + bp[j3]
+                out.put((i * n + j3) as size_t, scaled)
+                set j3: j3 + 1
+            }
+        }
+    }
+
+    procedure bwd_layernorm(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let ng buf + node.b
+        let nbeta buf + node.c
+        let xp na.value.data
+        let gammap ng.value.data
+        let gp node.grad.data
+        let gxp na.grad.data
+        let ggammap ng.grad.data
+        let gbetap nbeta.grad.data
+        let r node.rows
+        let n node.cols
+        let e node.eps
+        ; Recompute mean/inv per row (cheaper than saving them; forward
+        ; uses biased variance with eps inside the sqrt — match it).
+        for i in r
+        {
+            var sum: float 0.0
+            var j 0
+            while j < n
+            {
+                set sum: sum + xp[i * n + j]
+                set j: j + 1
+            }
+            let mean sum / (n as float)
+            var vsum: float 0.0
+            var j2 0
+            while j2 < n
+            {
+                let d xp[i * n + j2] - mean
+                set vsum: vsum + d * d
+                set j2: j2 + 1
+            }
+            let denom sqrtf(vsum / (n as float) + e)
+            let inv 1.0 / denom
+            ; dyhat_j = dy_j * gamma_j; m1 = mean(dyhat);
+            ; m2 = mean(dyhat * xhat); dx_j = inv * (dyhat_j - m1 - xhat_j * m2)
+            var m1: float 0.0
+            var m2: float 0.0
+            var j3 0
+            while j3 < n
+            {
+                let xhat (xp[i * n + j3] - mean) * inv
+                let dyhat gp[i * n + j3] * gammap[j3]
+                set m1: m1 + dyhat
+                set m2: m2 + dyhat * xhat
+                set j3: j3 + 1
+            }
+            set m1: m1 / (n as float)
+            set m2: m2 / (n as float)
+            var j4 0
+            while j4 < n
+            {
+                let xhat (xp[i * n + j4] - mean) * inv
+                let dyhat gp[i * n + j4] * gammap[j4]
+                let dx inv * (dyhat - m1 - xhat * m2)
+                set gxp[i * n + j4]: gxp[i * n + j4] + dx
+                ; dgamma_j += dy_j * xhat_j; dbeta_j += dy_j — shared
+                ; across rows, so this loop stays sequential.
+                set ggammap[j4]: ggammap[j4] + gp[i * n + j4] * xhat
+                set gbetap[j4]: gbetap[j4] + gp[i * n + j4]
+                set j4: j4 + 1
+            }
+        }
+    }
+
+    procedure fwd_embedding(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let tp na.value.data
+        let ip node.tok.data
+        let out node.value
+        let tokens node.rows
+        let dim node.cols
+        for t in tokens
+        {
+            let tokid ip[t]
+            var j 0
+            while j < dim
+            {
+                let v tp[(tokid as int) * dim + j]
+                out.put((t * dim + j) as size_t, v)
+                set j: j + 1
+            }
+        }
+    }
+
+    procedure bwd_embedding(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let ip node.tok.data
+        let gp node.grad.data
+        let gtp na.grad.data
+        let tokens node.rows
+        let dim node.cols
+        ; Scatter-add: duplicate token ids collide on the same table
+        ; row, so this walk stays sequential.
+        var t 0
+        while t < tokens
+        {
+            let tokid ip[t]
+            var j 0
+            while j < dim
+            {
+                let row (tokid as int) * dim + j
+                set gtp[row]: gtp[row] + gp[t * dim + j]
+                set j: j + 1
+            }
+            set t: t + 1
+        }
+    }
+
+    procedure fwd_wsum(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let xp na.value.data
+        let wp node.aux.data
+        let out node.value
+        let total na.rows * na.cols
+        var sum: float 0.0
+        var i 0
+        while i < total
+        {
+            set sum: sum + wp[i] * xp[i]
+            set i: i + 1
+        }
+        out.put(0, sum)
+    }
+
+    procedure bwd_wsum(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let wp node.aux.data
+        let gp node.grad.data
+        let gxp na.grad.data
+        let total na.rows * na.cols
+        let g0 gp[0]
+        var i 0
+        while i < total
+        {
+            set gxp[i]: gxp[i] + wp[i] * g0
+            set i: i + 1
+        }
+    }
+}

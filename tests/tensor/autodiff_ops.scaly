@@ -1,0 +1,298 @@
+; 5.2 autodiff: per-op gradcheck. Every 5.1 op (matmul, GELU, softmax,
+; layernorm, embedding) plus the wsum reduction gets its analytic tape
+; gradient compared against a central-difference numeric gradient on
+; every input element. A fresh tape per op; scalar objective = wsum
+; with non-uniform weights (uniform weights would zero the softmax
+; gradient and prove nothing). check_leaf also requires a non-trivial
+; max |grad| so an all-zeros gradient buffer cannot pass vacuously.
+; Expected: PASS
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function tval(i: int) returns float
+{
+    let r pmod(i * 7 + 3, 11)
+    ((r - 5) as float) * 0.25
+}
+
+function wval(i: int) returns float
+{
+    let r pmod(i * 5 + 2, 7)
+    ((r - 3) as float) * 0.3 + 0.1
+}
+
+function close_enough(a: float, b: float, atol: float, rtol: float) returns bool
+{
+    var d a - b
+    if d < 0.0
+        set d: 0.0 - d
+    var m a
+    if m < 0.0
+        set m: 0.0 - m
+    var mb b
+    if mb < 0.0
+        set mb: 0.0 - mb
+    if mb > m
+        set m: mb
+    if d <= atol + rtol * m
+        return true
+    false
+}
+
+procedure num_grad(tape: Tape, out: int, id: int, i: int, h: float) returns float
+{
+    let orig tape.value_at(id, i)
+    tape.set_value(id, i, orig + h)
+    tape.recompute()
+    let fp tape.value_at(out, 0)
+    tape.set_value(id, i, orig - h)
+    tape.recompute()
+    let fm tape.value_at(out, 0)
+    tape.set_value(id, i, orig)
+    tape.recompute()
+    (fp - fm) / (2.0 * h)
+}
+
+procedure check_leaf(tape: Tape, out: int, id: int, count: int, h: float, atol: float, rtol: float) returns bool
+{
+    var good true
+    var maxabs: float 0.0
+    var i 0
+    while i < count
+    {
+        let ga tape.grad_at(id, i)
+        let gn num_grad(tape, out, id, i, h)
+        if close_enough(ga, gn, atol, rtol) = false
+            set good: false
+        var mag ga
+        if mag < 0.0
+            set mag: 0.0 - mag
+        if mag > maxabs
+            set maxabs: mag
+        set i: i + 1
+    }
+    if maxabs < 0.0005
+        set good: false
+    good
+}
+
+var ok true
+
+; --- wsum: gradient must be exactly the weight vector ---
+{
+    var tape Tape()
+    let x tape.leaf(2, 3)
+    var i 0
+    while i < 6
+    {
+        let v tval(i)
+        tape.set_value(x, i, v)
+        set i: i + 1
+    }
+    var w Vector[float](6)
+    var j 0
+    while j < 6
+    {
+        let v wval(j)
+        w.put(j as size_t, v)
+        set j: j + 1
+    }
+    let s tape.wsum(x, w)
+    tape.backward s
+    var good true
+    var k 0
+    while k < 6
+    {
+        let ga tape.grad_at(x, k)
+        let we wval(k)
+        if close_enough(ga, we, 0.000001, 0.000001) = false
+            set good: false
+        set k: k + 1
+    }
+    if good = false
+    {
+        print("FAIL wsum")
+        set ok: false
+    }
+}
+
+; --- matmul ---
+{
+    var tape Tape()
+    let x tape.leaf(2, 3)
+    let y tape.leaf(3, 2)
+    var i 0
+    while i < 6
+    {
+        let vx tval(i)
+        tape.set_value(x, i, vx)
+        let vy tval(i + 4)
+        tape.set_value(y, i, vy)
+        set i: i + 1
+    }
+    let z tape.matmul(x, y)
+    var w Vector[float](4)
+    var j 0
+    while j < 4
+    {
+        let v wval(j)
+        w.put(j as size_t, v)
+        set j: j + 1
+    }
+    let s tape.wsum(z, w)
+    tape.backward s
+    var good check_leaf(tape, s, x, 6, 0.02, 0.005, 0.02)
+    if check_leaf(tape, s, y, 6, 0.02, 0.005, 0.02) = false
+        set good: false
+    if good = false
+    {
+        print("FAIL matmul")
+        set ok: false
+    }
+}
+
+; --- GELU ---
+{
+    var tape Tape()
+    let x tape.leaf(2, 3)
+    var i 0
+    while i < 6
+    {
+        let v tval(i)
+        tape.set_value(x, i, v)
+        set i: i + 1
+    }
+    let g tape.gelu(x)
+    var w Vector[float](6)
+    var j 0
+    while j < 6
+    {
+        let v wval(j)
+        w.put(j as size_t, v)
+        set j: j + 1
+    }
+    let s tape.wsum(g, w)
+    tape.backward s
+    if check_leaf(tape, s, x, 6, 0.02, 0.005, 0.02) = false
+    {
+        print("FAIL gelu")
+        set ok: false
+    }
+}
+
+; --- softmax ---
+{
+    var tape Tape()
+    let x tape.leaf(2, 3)
+    var i 0
+    while i < 6
+    {
+        let v tval(i)
+        tape.set_value(x, i, v)
+        set i: i + 1
+    }
+    let sm tape.softmax(x)
+    var w Vector[float](6)
+    var j 0
+    while j < 6
+    {
+        let v wval(j)
+        w.put(j as size_t, v)
+        set j: j + 1
+    }
+    let s tape.wsum(sm, w)
+    tape.backward s
+    if check_leaf(tape, s, x, 6, 0.02, 0.005, 0.02) = false
+    {
+        print("FAIL softmax")
+        set ok: false
+    }
+}
+
+; --- layernorm ---
+{
+    var tape Tape()
+    let x tape.leaf(2, 4)
+    var i 0
+    while i < 8
+    {
+        let v tval(i)
+        tape.set_value(x, i, v)
+        set i: i + 1
+    }
+    let gamma tape.leaf(1, 4)
+    let beta tape.leaf(1, 4)
+    var j 0
+    while j < 4
+    {
+        let vg 1.0 + tval(j) * 0.3
+        tape.set_value(gamma, j, vg)
+        let vb tval(j + 3) * 0.5
+        tape.set_value(beta, j, vb)
+        set j: j + 1
+    }
+    let ln tape.layernorm(x, gamma, beta, 0.00001)
+    var w Vector[float](8)
+    var k 0
+    while k < 8
+    {
+        let v wval(k)
+        w.put(k as size_t, v)
+        set k: k + 1
+    }
+    let s tape.wsum(ln, w)
+    tape.backward s
+    var good check_leaf(tape, s, x, 8, 0.02, 0.008, 0.03)
+    if check_leaf(tape, s, gamma, 4, 0.02, 0.008, 0.03) = false
+        set good: false
+    if check_leaf(tape, s, beta, 4, 0.02, 0.008, 0.03) = false
+        set good: false
+    if good = false
+    {
+        print("FAIL layernorm")
+        set ok: false
+    }
+}
+
+; --- embedding (duplicate token id exercises scatter-add) ---
+{
+    var tape Tape()
+    let table tape.leaf(4, 3)
+    var i 0
+    while i < 12
+    {
+        let v tval(i)
+        tape.set_value(table, i, v)
+        set i: i + 1
+    }
+    var ids Vector[i64](4)
+    ids.put(0, 2 as i64)
+    ids.put(1, 0 as i64)
+    ids.put(2, 3 as i64)
+    ids.put(3, 2 as i64)
+    let emb tape.embedding(table, ids, 4)
+    var w Vector[float](12)
+    var j 0
+    while j < 12
+    {
+        let v wval(j)
+        w.put(j as size_t, v)
+        set j: j + 1
+    }
+    let s tape.wsum(emb, w)
+    tape.backward s
+    if check_leaf(tape, s, table, 12, 0.02, 0.005, 0.02) = false
+    {
+        print("FAIL embedding")
+        set ok: false
+    }
+}
+
+if ok
+    print("PASS")
+else
+    print("FAIL")
