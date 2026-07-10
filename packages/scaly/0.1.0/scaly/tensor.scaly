@@ -1,6 +1,9 @@
-; Tensor tape (self-scaling stage 5.2): reverse-mode autodiff over the
-; 5.1 op set — matmul, GELU, softmax, layernorm, embedding lookup — plus
-; a weighted-sum reduction to a scalar objective.
+; Tensor tape (self-scaling stage 5.2/5.3): reverse-mode autodiff over
+; the 5.1 op set — matmul, GELU, softmax, layernorm, embedding lookup —
+; plus a weighted-sum reduction and (5.3) a fused softmax-crossentropy
+; objective, in-place token mutation (set_token: one tape serves a whole
+; training run, a step allocates nothing) and SGD/Adam leaf updates
+; (Adam moments live in the node's aux buffer on the tape's page).
 ;
 ; One region per tape: a Tape is page-hosted, and every node record,
 ; value buffer, gradient buffer and saved auxiliary lives on the tape's
@@ -32,6 +35,8 @@ use scaly.containers.Array
 function expf(x: float) returns float extern
 function tanhf(x: float) returns float extern
 function sqrtf(x: float) returns float extern
+function logf(x: float) returns float extern
+function powf(x: float, y: float) returns float extern
 
 define TAPE_LEAF int 0
 define TAPE_MATMUL int 1
@@ -40,6 +45,7 @@ define TAPE_SOFTMAX int 3
 define TAPE_LAYERNORM int 4
 define TAPE_EMBEDDING int 5
 define TAPE_WSUM int 6
+define TAPE_CROSSENT int 7
 
 define TapeNode
 (
@@ -103,6 +109,16 @@ define Tape
         let node nodes.get_buffer() + id
         let vv node.value
         vv.put(i as size_t, v)
+    }
+
+    ; Overwrite a saved token id in place (embedding ids or crossent
+    ; targets) — a training loop mutates the batch data of an existing
+    ; tape instead of building a new one, so a step allocates nothing.
+    procedure set_token(this: Tape, id: int, i: int, v: i64)
+    {
+        let node nodes.get_buffer() + id
+        let tk node.tok
+        tk.put(i as size_t, v)
     }
 
     function value_at(this: Tape, id: int, i: int) returns float
@@ -203,6 +219,70 @@ define Tape
         id
     }
 
+    ; Fused softmax + negative log-likelihood, averaged over rows:
+    ; value = mean_i(logsumexp(x_i) - x_i[target_i]). targets holds one
+    ; token id per row of the logits node.
+    procedure crossentropy(this: Tape, logits: int, targets: Vector[i64]) returns int
+    {
+        let id this.add_node(TAPE_CROSSENT, logits, 0 - 1, 0 - 1, 1, 1)
+        let own_page Page.get(this as pointer[void])
+        let tk Vector[i64]^own_page(targets)
+        let node nodes.get_buffer() + id
+        set node.tok: tk
+        this.run_node id
+        id
+    }
+
+    ; SGD update on a leaf: value -= lr * grad.
+    procedure sgd_step(this: Tape, id: int, lr: float)
+    {
+        let node nodes.get_buffer() + id
+        let vp node.value.data
+        let gp node.grad.data
+        let total node.rows * node.cols
+        var i 0
+        while i < total
+        {
+            set vp[i]: vp[i] - lr * gp[i]
+            set i: i + 1
+        }
+    }
+
+    ; Adam update on a leaf. Moment state lives in the node's aux
+    ; buffer (m at [0,total), v at [total,2*total)), lazily allocated
+    ; zeroed on the tape's page at the first step. t is the 1-based
+    ; step count for bias correction.
+    procedure adam_step(this: Tape, id: int, lr: float, b1: float, b2: float, e: float, t: int)
+    {
+        let own_page Page.get(this as pointer[void])
+        let node nodes.get_buffer() + id
+        let total node.rows * node.cols
+        let auxlen node.aux.length as int
+        if auxlen < total * 2
+        {
+            let mv Vector[float]^own_page((total * 2) as size_t)
+            set node.aux: mv
+        }
+        let vp node.value.data
+        let gp node.grad.data
+        let mp node.aux.data
+        let bc1 1.0 - powf(b1, t as float)
+        let bc2 1.0 - powf(b2, t as float)
+        var i 0
+        while i < total
+        {
+            let g gp[i]
+            let m b1 * mp[i] + (1.0 - b1) * g
+            let v b2 * mp[total + i] + (1.0 - b2) * g * g
+            set mp[i]: m
+            set mp[total + i]: v
+            let mhat m / bc1
+            let vhat v / bc2
+            set vp[i]: vp[i] - lr * mhat / (sqrtf(vhat) + e)
+            set i: i + 1
+        }
+    }
+
     ; Re-run every op in id order against the current leaf values.
     procedure recompute(this: Tape)
     {
@@ -273,6 +353,8 @@ define Tape
             this.fwd_embedding id
         if kind = TAPE_WSUM
             this.fwd_wsum id
+        if kind = TAPE_CROSSENT
+            this.fwd_crossent id
     }
 
     procedure bwd_node(this: Tape, id: int)
@@ -291,6 +373,8 @@ define Tape
             this.bwd_embedding id
         if kind = TAPE_WSUM
             this.bwd_wsum id
+        if kind = TAPE_CROSSENT
+            this.bwd_crossent id
     }
 
     procedure fwd_matmul(this: Tape, id: int)
@@ -693,6 +777,91 @@ define Tape
         {
             set gxp[i]: gxp[i] + wp[i] * g0
             set i: i + 1
+        }
+    }
+
+    procedure fwd_crossent(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let xp na.value.data
+        let tp node.tok.data
+        let out node.value
+        let r na.rows
+        let n na.cols
+        ; Scalar reduction across rows — sequential by construction.
+        var loss: float 0.0
+        var i 0
+        while i < r
+        {
+            var mx xp[i * n]
+            var j 1
+            while j < n
+            {
+                let v xp[i * n + j]
+                if v > mx
+                    set mx: v
+                set j: j + 1
+            }
+            var sum: float 0.0
+            var j2 0
+            while j2 < n
+            {
+                set sum: sum + expf(xp[i * n + j2] - mx)
+                set j2: j2 + 1
+            }
+            let lse mx + logf(sum)
+            let t tp[i] as int
+            set loss: loss + lse - xp[i * n + t]
+            set i: i + 1
+        }
+        out.put(0, loss / (r as float))
+    }
+
+    procedure bwd_crossent(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let na buf + node.a
+        let xp na.value.data
+        let tp node.tok.data
+        let gp node.grad.data
+        let gxp na.grad.data
+        let r na.rows
+        let n na.cols
+        let scale gp[0] / (r as float)
+        ; dx[i,j] += scale * (softmax(x_i)_j - onehot(target_i)_j);
+        ; recompute the row softmax like bwd_layernorm recomputes stats.
+        for i in r
+        {
+            var mx xp[i * n]
+            var j 1
+            while j < n
+            {
+                let v xp[i * n + j]
+                if v > mx
+                    set mx: v
+                set j: j + 1
+            }
+            var sum: float 0.0
+            var j2 0
+            while j2 < n
+            {
+                set sum: sum + expf(xp[i * n + j2] - mx)
+                set j2: j2 + 1
+            }
+            let inv 1.0 / sum
+            let t tp[i] as int
+            var j3 0
+            while j3 < n
+            {
+                var p expf(xp[i * n + j3] - mx) * inv
+                if j3 = t
+                    set p: p - 1.0
+                set gxp[i * n + j3]: gxp[i * n + j3] + scale * p
+                set j3: j3 + 1
+            }
         }
     }
 }
