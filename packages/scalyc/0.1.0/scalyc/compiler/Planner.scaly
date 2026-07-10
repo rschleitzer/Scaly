@@ -19870,6 +19870,12 @@ define Planner
 
         ; Tombstone every moved fact and alias mapping for name — the name
         ; just received a fresh value (a new binding or a bare re-set).
+        ; Every String stored into the move arrays is pinned to the
+        ; Planner's page (^this): the arrays outlive this call's frame,
+        ; so a plain String(...) temporary would leave its content on
+        ; the dead frame page and the stored handle would dangle (a
+        ; later reader decodes a garbage varint length and the copy's
+        ; allocation goes wild).
         function move_unmark(this: Planner, name: String)
         {
             var i: size_t 0
@@ -19878,7 +19884,7 @@ define Planner
                 let p move_moved_names.get i
                 if p <> null
                     if (*p) = name
-                        move_moved_names.put(i, String(""))
+                        move_moved_names.put(i, String^this(""))
                 set i: i + 1
             }
             var j: size_t 0
@@ -19887,7 +19893,7 @@ define Planner
                 let a move_alias_names.get j
                 if a <> null
                     if (*a) = name
-                        move_alias_names.put(j, String(""))
+                        move_alias_names.put(j, String^this(""))
                 set j: j + 1
             }
         }
@@ -19912,10 +19918,10 @@ define Planner
                     {
                         let rp move_alias_roots.get(idx as size_t)
                         if rp <> null
-                            move_moved_names.add(String((*rp)))
+                            move_moved_names.add(String^this((*rp)))
                         return
                     }
-                    move_moved_names.add(String(v.name))
+                    move_moved_names.add(String^this(v.name))
                 }
                 when a: As
                 {
@@ -19952,13 +19958,13 @@ define Planner
                         let rp move_alias_roots.get(idx as size_t)
                         if rp <> null
                         {
-                            move_alias_names.add(String(bind_name))
-                            move_alias_roots.add(String((*rp)))
+                            move_alias_names.add(String^this(bind_name))
+                            move_alias_roots.add(String^this((*rp)))
                         }
                         return
                     }
-                    move_alias_names.add(String(bind_name))
-                    move_alias_roots.add(String(v.name))
+                    move_alias_names.add(String^this(bind_name))
+                    move_alias_roots.add(String^this(v.name))
                 }
                 when a: As
                 {
