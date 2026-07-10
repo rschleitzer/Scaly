@@ -27,3 +27,4 @@ retired/*/obj/
 retired/*/target/
 scalyc_native
 dist/
+demo/build/

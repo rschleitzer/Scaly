@@ -1,0 +1,649 @@
+; BPE tokenizer for the Mann corpus (stage-6 bridge): trains a
+; byte-pair-encoding vocabulary on demo/build/mann_full.txt and writes
+; the two artifacts the transformer trainer consumes:
+;   demo/build/bpe_vocab.txt   one token per line, HEX of its bytes
+;                              (id = line index; tokens start from
+;                              UTF-8 CHARS, so every token is valid
+;                              UTF-8 and detokenization is a replay)
+;   demo/build/bpe_tokens.txt  the whole corpus as decimal token ids,
+;                              space-separated
+; Scheme: SentencePiece-style pre-tokenization — a segment is an
+; optional leading space plus a run of one character class (letters
+; incl. all multibyte, digits, punctuation), so the space rides inside
+; the token (" Wort") and no separate space tokens eat the context
+; window; newline runs become dedicated "\n"/"\n\n" tokens. BPE merges
+; are trained word-level (unique segment types with counts) in batched
+; greedy rounds: count all adjacent symbol pairs, merge the top K per
+; round until the vocab target is reached or pairs get rare. The final
+; symbol sequence per TYPE is the encoding — emitting the corpus is a
+; replay of the segment stream, no separate merge-rank encoder.
+
+function scaly_eio_now_ns() returns i64 extern
+function exit(code: int) extern
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+function secs_to_string(ns: i64) returns String
+{
+    let cs ns / 10000000
+    let ip cs / 100
+    let fr cs - ip * 100
+    var sb StringBuilder()
+    let istr num_to_string(ip)
+    sb.append istr
+    sb.append "."
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr)
+    sb.append fstr
+    sb.to_string()
+}
+
+; letter class: ASCII letters plus every byte >= 128 (multibyte chars)
+function is_letter(b: int) returns bool
+{
+    if b >= 65
+        if b <= 90
+            return true
+    if b >= 97
+        if b <= 122
+            return true
+    if b >= 128
+        return true
+    false
+}
+
+function is_digit(b: int) returns bool
+{
+    if b >= 48
+        if b <= 57
+            return true
+    false
+}
+
+; 0 = letters, 1 = digits, 2 = punctuation
+function byte_class(b: int) returns int
+{
+    if is_letter(b)
+        return 0
+    if is_digit(b)
+        return 1
+    2
+}
+
+let t_all0 scaly_eio_now_ns()
+let path String("demo/build/mann_full.txt")
+let text File.read_to_string(path)
+let tlen text.get_length() as int
+if tlen < 100000
+{
+    print("error: demo/build/mann_full.txt missing - run demo/fetch_corpus.sh first\n")
+    exit(1)
+}
+let tb text.get_buffer() as pointer[u8]
+
+; --- tables ---
+let VTARGET 2048
+let MINC 24
+let KTOP 64
+let SYMCAP 4096
+let TYPECAP 500000
+let TMASK 1048575          ; type probe table: 2^20 slots
+let PMASK 2097151          ; pair count table: 2^21 slots
+let SEGCAP 1400000
+
+; symbol registry: id -> bytes (offset/len into s_buf)
+var s_boff Vector[int](SYMCAP)
+var s_blen Vector[int](SYMCAP)
+var s_buf Vector[int](262144)
+let sbo s_boff.data
+let sbl s_blen.data
+let sbf s_buf.data
+var nsym 0
+var s_used 0
+; codepoint -> symbol id + 1 (base chars)
+var cpmap Vector[int](16384)
+let cpm cpmap.data
+
+; segment types: byte span into the corpus + count + symbol seq
+var t_start Vector[int](TYPECAP)
+var t_len Vector[int](TYPECAP)
+var t_count Vector[int](TYPECAP)
+var t_soff Vector[int](TYPECAP)
+var t_slen Vector[int](TYPECAP)
+let tst t_start.data
+let tln t_len.data
+let tct t_count.data
+let tso t_soff.data
+let tsl t_slen.data
+var ntype 0
+var tprobe Vector[int](1048576)
+let tpb tprobe.data
+
+; segment stream: kind 0 = word type id, 1 = "\n", 2 = "\n\n"
+var seg_kind Vector[int](SEGCAP)
+var seg_tid Vector[int](SEGCAP)
+let sgk seg_kind.data
+let sgt seg_tid.data
+var nseg 0
+
+; --- pass 1: segment, register types, record the stream ---
+var pos 0
+var pending_space false
+while pos < tlen
+{
+    let b tb[pos] as int
+    if b = 10
+    {
+        var nl 0
+        while pos < tlen
+        {
+            if tb[pos] as int <> 10
+                break
+            set nl: nl + 1
+            set pos: pos + 1
+        }
+        var kind 1
+        if nl >= 2
+            set kind: 2
+        set sgk[nseg]: kind
+        set sgt[nseg]: 0
+        set nseg: nseg + 1
+        set pending_space: false
+    }
+    else
+    {
+        if b = 32
+        {
+            set pending_space: true
+            set pos: pos + 1
+        }
+        else
+        {
+            let cls byte_class(b)
+            var start pos
+            while pos < tlen
+            {
+                let b2 tb[pos] as int
+                if b2 = 32
+                    break
+                if b2 = 10
+                    break
+                if byte_class(b2) <> cls
+                    break
+                set pos: pos + 1
+            }
+            if pending_space
+                set start: start - 1     ; include the leading space byte
+            set pending_space: false
+            let wlen pos - start
+            ; probe the type table
+            var h 2166136261
+            var hi start
+            while hi < start + wlen
+            {
+                let bi tb[hi] as int
+                set h: (h xor bi) * 16777619
+                set hi: hi + 1
+            }
+            var idx h & TMASK
+            var tid 0 - 1
+            repeat
+            {
+                let stored tpb[idx]
+                if stored = 0
+                    break
+                let cand stored - 1
+                if tln[cand] = wlen
+                {
+                    var same true
+                    var ci 0
+                    while ci < wlen
+                    {
+                        if tb[tst[cand] + ci] <> tb[start + ci]
+                        {
+                            set same: false
+                            break
+                        }
+                        set ci: ci + 1
+                    }
+                    if same
+                    {
+                        set tid: cand
+                        break
+                    }
+                }
+                set idx: (idx + 1) & TMASK
+            }
+            if tid < 0
+            {
+                if ntype >= TYPECAP
+                {
+                    print("error: type table full\n")
+                    exit(1)
+                }
+                set tid: ntype
+                set ntype: ntype + 1
+                set tst[tid]: start
+                set tln[tid]: wlen
+                set tct[tid]: 0
+                set tpb[idx]: tid + 1
+            }
+            set tct[tid]: tct[tid] + 1
+            if nseg >= SEGCAP
+            {
+                print("error: segment stream full\n")
+                exit(1)
+            }
+            set sgk[nseg]: 0
+            set sgt[nseg]: tid
+            set nseg: nseg + 1
+        }
+    }
+}
+
+; --- base symbols: register "\n" and "\n\n", then every char of every
+; type; build the per-type symbol sequences ---
+set sbo[0]: 0
+set sbl[0]: 1
+set sbf[0]: 10
+set sbo[1]: 1
+set sbl[1]: 2
+set sbf[1]: 10
+set sbf[2]: 10
+set nsym: 2
+set s_used: 3
+let nl1_id 0
+let nl2_id 1
+
+var sym_buf Vector[int](5200000)
+let syb sym_buf.data
+var sym_used 0
+var ti 0
+while ti < ntype
+{
+    set tso[ti]: sym_used
+    var bi tst[ti]
+    let bend tst[ti] + tln[ti]
+    var slen 0
+    while bi < bend
+    {
+        let b0 tb[bi] as int
+        var cp b0
+        var adv 1
+        if b0 >= 192
+        {
+            if b0 < 224
+            {
+                set cp: (b0 - 192) * 64 + (tb[bi + 1] as int - 128)
+                set adv: 2
+            }
+        }
+        if b0 >= 224
+        {
+            if b0 < 240
+            {
+                set cp: ((b0 - 224) * 64 + (tb[bi + 1] as int - 128)) * 64 + (tb[bi + 2] as int - 128)
+                set adv: 3
+            }
+        }
+        if b0 >= 240
+        {
+            set cp: 0
+            set adv: 4
+        }
+        if cp >= 16384
+            set cp: 0
+        if cpm[cp] = 0
+        {
+            let sid nsym
+            set nsym: nsym + 1
+            set sbo[sid]: s_used
+            set sbl[sid]: adv
+            var k 0
+            while k < adv
+            {
+                set sbf[s_used + k]: tb[bi + k] as int
+                set k: k + 1
+            }
+            set s_used: s_used + adv
+            set cpm[cp]: sid + 1
+        }
+        set syb[sym_used]: cpm[cp] - 1
+        set sym_used: sym_used + 1
+        set slen: slen + 1
+        set bi: bi + adv
+    }
+    set tsl[ti]: slen
+    set ti: ti + 1
+}
+let nbase nsym
+
+; --- training: batched greedy merge rounds ---
+var pkey Vector[int](2097152)
+var pcnt Vector[int](2097152)
+var pused Vector[int](524288)
+let pkb pkey.data
+let pcb pcnt.data
+let pub pused.data
+var bkey Vector[int](64)
+var bcnt Vector[int](64)
+let bkb bkey.data
+let bcb bcnt.data
+var mkey Vector[int](256)
+var mval Vector[int](256)
+let mkb mkey.data
+let mvb mval.data
+
+let t_train0 scaly_eio_now_ns()
+var rounds 0
+var training true
+while training
+{
+    ; count all adjacent pairs, weighted by type count
+    var nused 0
+    var ci 0
+    while ci < ntype
+    {
+        let c tct[ci]
+        let off tso[ci]
+        let sl tsl[ci]
+        var i2 0
+        while i2 < sl - 1
+        {
+            let key syb[off + i2] * 65536 + syb[off + i2 + 1]
+            var idx (key * 2654435761) & PMASK
+            repeat
+            {
+                if pkb[idx] = key + 1
+                {
+                    set pcb[idx]: pcb[idx] + c
+                    break
+                }
+                if pkb[idx] = 0
+                {
+                    set pkb[idx]: key + 1
+                    set pcb[idx]: c
+                    set pub[nused]: idx
+                    set nused: nused + 1
+                    break
+                }
+                set idx: (idx + 1) & PMASK
+            }
+            set i2: i2 + 1
+        }
+        set ci: ci + 1
+    }
+    ; pick the top K pairs above the floor
+    var nbest 0
+    var ui 0
+    while ui < nused
+    {
+        let idx pub[ui]
+        let c pcb[idx]
+        if c >= MINC
+        {
+            if nbest < KTOP
+            {
+                set bkb[nbest]: pkb[idx] - 1
+                set bcb[nbest]: c
+                set nbest: nbest + 1
+            }
+            else
+            {
+                var mini 0
+                var bi2 1
+                while bi2 < KTOP
+                {
+                    if bcb[bi2] < bcb[mini]
+                        set mini: bi2
+                    set bi2: bi2 + 1
+                }
+                if c > bcb[mini]
+                {
+                    set bkb[mini]: pkb[idx] - 1
+                    set bcb[mini]: c
+                }
+            }
+        }
+        set ui: ui + 1
+    }
+    ; clear the touched pair slots for the next round
+    var ci2 0
+    while ci2 < nused
+    {
+        set pkb[pub[ci2]]: 0
+        set pcb[pub[ci2]]: 0
+        set ci2: ci2 + 1
+    }
+    if nbest = 0
+        set training: false
+    if training
+    {
+        ; register the merged symbols; the round's merge map
+        var mi 0
+        while mi < 256
+        {
+            set mkb[mi]: 0
+            set mi: mi + 1
+        }
+        var nreg 0
+        var bi3 0
+        while bi3 < nbest
+        {
+            if nsym < VTARGET
+            {
+                let key bkb[bi3]
+                let a key / 65536
+                let b key - a * 65536
+                let sid nsym
+                set nsym: nsym + 1
+                set sbo[sid]: s_used
+                set sbl[sid]: sbl[a] + sbl[b]
+                var k2 0
+                while k2 < sbl[a]
+                {
+                    set sbf[s_used + k2]: sbf[sbo[a] + k2]
+                    set k2: k2 + 1
+                }
+                var k3 0
+                while k3 < sbl[b]
+                {
+                    set sbf[s_used + sbl[a] + k3]: sbf[sbo[b] + k3]
+                    set k3: k3 + 1
+                }
+                set s_used: s_used + sbl[sid]
+                var midx (key * 2654435761) & 255
+                repeat
+                {
+                    if mkb[midx] = 0
+                    {
+                        set mkb[midx]: key + 1
+                        set mvb[midx]: sid
+                        break
+                    }
+                    set midx: (midx + 1) & 255
+                }
+                set nreg: nreg + 1
+            }
+            set bi3: bi3 + 1
+        }
+        ; apply the round's merges to every type sequence
+        var ci3 0
+        while ci3 < ntype
+        {
+            let off tso[ci3]
+            let sl tsl[ci3]
+            var r 0
+            var w 0
+            while r < sl
+            {
+                var merged false
+                if r < sl - 1
+                {
+                    let key syb[off + r] * 65536 + syb[off + r + 1]
+                    var midx2 (key * 2654435761) & 255
+                    repeat
+                    {
+                        if mkb[midx2] = key + 1
+                        {
+                            set syb[off + w]: mvb[midx2]
+                            set r: r + 2
+                            set merged: true
+                            break
+                        }
+                        if mkb[midx2] = 0
+                            break
+                        set midx2: (midx2 + 1) & 255
+                    }
+                }
+                if merged = false
+                {
+                    set syb[off + w]: syb[off + r]
+                    set r: r + 1
+                }
+                set w: w + 1
+            }
+            set tsl[ci3]: w
+            set ci3: ci3 + 1
+        }
+        set rounds: rounds + 1
+        if nsym >= VTARGET
+            set training: false
+    }
+}
+let t_train1 scaly_eio_now_ns()
+
+; --- emit: vocab as hex lines, corpus as decimal ids ---
+var vsb StringBuilder()
+var vi 0
+while vi < nsym
+{
+    var k4 0
+    while k4 < sbl[vi]
+    {
+        let b sbf[sbo[vi] + k4]
+        let hi2 b / 16
+        let lo b - hi2 * 16
+        var hc hi2 + 48
+        if hi2 > 9
+            set hc: hi2 + 87
+        var lc lo + 48
+        if lo > 9
+            set lc: lo + 87
+        vsb.append(hc as char)
+        vsb.append(lc as char)
+        set k4: k4 + 1
+    }
+    vsb.append("
+")
+    set vi: vi + 1
+}
+let vstr vsb.to_string()
+let vpath String("demo/build/bpe_vocab.txt")
+File.write_from_string(vpath, vstr)
+
+var tsb StringBuilder()
+var ntok 0
+var si 0
+while si < nseg
+{
+    if sgk[si] = 0
+    {
+        let tid2 sgt[si]
+        let off tso[tid2]
+        var k5 0
+        while k5 < tsl[tid2]
+        {
+            let ids num_to_string(syb[off + k5] as i64)
+            tsb.append ids
+            tsb.append " "
+            set ntok: ntok + 1
+            set k5: k5 + 1
+        }
+    }
+    else
+    {
+        var nid nl1_id
+        if sgk[si] = 2
+            set nid: nl2_id
+        let ids2 num_to_string(nid as i64)
+        tsb.append ids2
+        tsb.append " "
+        set ntok: ntok + 1
+    }
+    set si: si + 1
+}
+let tstr tsb.to_string()
+let tpath String("demo/build/bpe_tokens.txt")
+File.write_from_string(tpath, tstr)
+let t_all1 scaly_eio_now_ns()
+
+; --- stats ---
+var out StringBuilder()
+out.append "bpe: "
+let cs num_to_string(tlen as i64)
+out.append cs
+out.append " chars, "
+let tys num_to_string(ntype as i64)
+out.append tys
+out.append " types, "
+let bs num_to_string(nbase as i64)
+out.append bs
+out.append " base chars, vocab "
+let vs num_to_string(nsym as i64)
+out.append vs
+out.append " ("
+let rs num_to_string(rounds as i64)
+out.append rs
+out.append " rounds), "
+let ts num_to_string(ntok as i64)
+out.append ts
+out.append " tokens ("
+let ratio (tlen * 100) / ntok
+let ri ratio / 100
+let rf ratio - ri * 100
+let ris num_to_string(ri as i64)
+out.append ris
+out.append "."
+if rf < 10
+    out.append "0"
+let rfs num_to_string(rf as i64)
+out.append rfs
+out.append " chars/token), train "
+let trs secs_to_string(t_train1 - t_train0)
+out.append trs
+out.append " s, total "
+let tos secs_to_string(t_all1 - t_all0)
+out.append tos
+out.append " s"
+let line out.to_string()
+Console.println(line.to_c_string())
