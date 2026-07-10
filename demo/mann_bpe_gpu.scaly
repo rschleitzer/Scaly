@@ -1,0 +1,925 @@
+; Stage-6 milestone 6.1: the BPE Thomas-Mann trainer on the GPU. Same
+; model and data as demo/mann_bpe.scaly (identical lcg init stream, so
+; the loss curves are directly comparable), but the tape's buffers are
+; redirected into storage-mode-shared MTLBuffers (region = device
+; buffer: unified memory, the CPU keeps reading/writing through the
+; same pointers — set_token, value_at and sample cost zero copies) and
+; each training step — forward, gradient zeroing, seed, backward, Adam
+; — is encoded as ONE command buffer with a single commit + wait.
+; The tape IS the graph: the encoder walk goes over the nodes in id
+; order (reverse for backward).
+;
+; Env switches:
+;   MGPU_SYNC=1  per-op-sync mode: only the matmuls run on the GPU,
+;                one command buffer + wait EACH, everything else CPU —
+;                the step-1 honesty measurement for launch-cost.
+;   MGPU_MSL=1   whole-step, but matmuls through our own MSL 4x4
+;                kernels instead of MPS (single-encoder variant).
+;   MGPU_BIG=1   the bigger model (D=512, T=256, F=2048, 4 layers).
+; Run via demo/run_bpe_gpu.sh (pins the cwd; SKIPs off macOS).
+
+function scaly_eio_now_ns() returns i64 extern
+function exit(code: int) extern
+function powf(x: float, y: float) returns float extern
+function getenv(name: pointer[const_char]) returns pointer[const_char] extern
+
+function scaly_mgpu_available() returns i32 extern
+function scaly_mgpu_init() returns i32 extern
+function scaly_mgpu_ops_init() returns i32 extern
+function scaly_mgpu_slots_init(n: i32) returns i32 extern
+function scaly_mgpu_slot_alloc(slot: i32, bytes: size_t) returns i32 extern
+function scaly_mgpu_slot_contents(slot: i32) returns pointer[void] extern
+procedure scaly_mgpu_slot_write(slot: i32, src: pointer[void], bytes: size_t) extern
+function scaly_mgpu_begin() returns i32 extern
+function scaly_mgpu_commit_wait() returns i32 extern
+procedure scaly_mgpu_ms_reset() extern
+function scaly_mgpu_ms_sum() returns double extern
+procedure scaly_mgpu_enc_gemm(a: i32, b: i32, c: i32, arows: i32, acols: i32, brows: i32, bcols: i32, ta: i32, tb: i32, alpha: float, beta: float) extern
+procedure scaly_mgpu_enc_mm_nn(a: i32, b: i32, c: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_mm_nt_acc(dc: i32, b: i32, da: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_mm_tn_acc(a: i32, dc: i32, db: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_fill(buf: i32, count: i32, v: float) extern
+procedure scaly_mgpu_enc_acc(dst: i32, src: i32, count: i32) extern
+procedure scaly_mgpu_enc_add(x: i32, y: i32, out: i32, count: i32) extern
+procedure scaly_mgpu_enc_gelu_fwd(x: i32, out: i32, count: i32) extern
+procedure scaly_mgpu_enc_gelu_bwd(x: i32, dout: i32, dx: i32, count: i32) extern
+procedure scaly_mgpu_enc_add_bcast_fwd(x: i32, y: i32, out: i32, r: i32, n: i32, yr: i32) extern
+procedure scaly_mgpu_enc_add_bcast_bwd_dy(dout: i32, dy: i32, r: i32, n: i32, yr: i32) extern
+procedure scaly_mgpu_enc_ln_fwd(x: i32, gamma: i32, beta: i32, out: i32, stats: i32, r: i32, n: i32, eps: float) extern
+procedure scaly_mgpu_enc_ln_bwd_dx(x: i32, gamma: i32, dout: i32, dx: i32, stats: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_ln_bwd_dgb(x: i32, dout: i32, dgamma: i32, dbeta: i32, stats: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_embed_fwd(tbl: i32, tok: i32, out: i32, tokens: i32, dim: i32) extern
+procedure scaly_mgpu_enc_embed_bwd(dout: i32, tok: i32, dtable: i32, tokens: i32, dim: i32) extern
+procedure scaly_mgpu_enc_ce_fwd(x: i32, tok: i32, rowloss: i32, out: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_ce_bwd(x: i32, tok: i32, dout: i32, dx: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_attn_fwd(q: i32, k: i32, v: i32, out: i32, aux: i32, t: i32, d: i32, hs: i32, win: i32) extern
+procedure scaly_mgpu_enc_attn_bwd(q: i32, k: i32, v: i32, dout: i32, aux: i32, dq: i32, dk: i32, dv: i32, t: i32, d: i32, hs: i32, win: i32) extern
+procedure scaly_mgpu_enc_adam(p: i32, g: i32, mv: i32, total: i32, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float) extern
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function lcg(s: int) returns int
+    pmod(s * 1103515245 + 12345, 2147483648)
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+function fixed3(f: float) returns String
+{
+    var ok false
+    if f >= 0.0
+        if f < 100000.0
+            set ok: true
+    if ok = false
+        return "nan"
+    let m ((f * 1000.0) + 0.5) as int
+    let ip m / 1000
+    let fr m - ip * 1000
+    var sb StringBuilder()
+    let istr num_to_string(ip as i64)
+    sb.append istr
+    sb.append "."
+    if fr < 100
+        sb.append "0"
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr as i64)
+    sb.append fstr
+    sb.to_string()
+}
+
+function secs_to_string(ns: i64) returns String
+{
+    let cs ns / 10000000
+    let ip cs / 100
+    let fr cs - ip * 100
+    var sb StringBuilder()
+    let istr num_to_string(ip)
+    sb.append istr
+    sb.append "."
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr)
+    sb.append fstr
+    sb.to_string()
+}
+
+function hexval(b: int) returns int
+{
+    if b >= 48
+        if b <= 57
+            return b - 48
+    if b >= 97
+        if b <= 102
+            return b - 87
+    0
+}
+
+procedure fill(tape: Tape, id: int, count: int, s0: int) returns int
+{
+    var s s0
+    var i 0
+    while i < count
+    {
+        set s: lcg(s)
+        let r pmod(s, 2001) - 1000
+        let rv (r as float) * 0.0001
+        tape.set_value(id, i, rv)
+        set i: i + 1
+    }
+    s
+}
+
+procedure fill_const(tape: Tape, id: int, count: int, v: float)
+{
+    var i 0
+    while i < count
+    {
+        tape.set_value(id, i, v)
+        set i: i + 1
+    }
+}
+
+; Move a node's buffers into shared MTLBuffer slots (id*4 + 0 value,
+; 1 grad, 2 aux, 3 tok). Values and token ids are copied across (the
+; leaves are already filled); grads start zeroed.
+procedure redirect_node(tape: Tape, id: int)
+{
+    let buf tape.nodes.get_buffer()
+    let node buf + id
+    let count node.rows * node.cols
+    if count > 0
+    {
+        let bytes (count * 4) as size_t
+        scaly_mgpu_slot_alloc((id * 4) as i32, bytes)
+        scaly_mgpu_slot_write((id * 4) as i32, node.value.data as pointer[void], bytes)
+        let p scaly_mgpu_slot_contents((id * 4) as i32) as pointer[float]
+        set node.value: Vector[float](p, count as size_t)
+        scaly_mgpu_slot_alloc((id * 4 + 1) as i32, bytes)
+        let g scaly_mgpu_slot_contents((id * 4 + 1) as i32) as pointer[float]
+        set node.grad: Vector[float](g, count as size_t)
+    }
+    let auxlen node.aux.length as int
+    if auxlen > 0
+    {
+        let abytes (auxlen * 4) as size_t
+        scaly_mgpu_slot_alloc((id * 4 + 2) as i32, abytes)
+        let ap scaly_mgpu_slot_contents((id * 4 + 2) as i32) as pointer[float]
+        set node.aux: Vector[float](ap, auxlen as size_t)
+    }
+    let toklen node.tok.length as int
+    if toklen > 0
+    {
+        let tbytes (toklen * 8) as size_t
+        scaly_mgpu_slot_alloc((id * 4 + 3) as i32, tbytes)
+        scaly_mgpu_slot_write((id * 4 + 3) as i32, node.tok.data as pointer[void], tbytes)
+        let tp scaly_mgpu_slot_contents((id * 4 + 3) as i32) as pointer[i64]
+        set node.tok: Vector[i64](tp, toklen as size_t)
+    }
+}
+
+; Encode one node's forward op (kind codes are the tape's ABI). xslot
+; maps a node id to its scratch slot (layernorm stats / ce row losses).
+procedure enc_fwd_node(tape: Tape, id: int, xslot: Vector[int], use_msl: int)
+{
+    let buf tape.nodes.get_buffer()
+    let node buf + id
+    let kind node.op
+    if kind = 0
+        return
+    let ia node.a
+    let ib node.b
+    let ic node.c
+    let r node.rows
+    let n node.cols
+    let sv id * 4
+    let xs xslot.data
+    if kind = 1
+    {
+        let na buf + ia
+        let nb buf + ib
+        let m na.rows
+        let kk na.cols
+        let nn nb.cols
+        if use_msl = 1
+            scaly_mgpu_enc_mm_nn((ia * 4) as i32, (ib * 4) as i32, sv as i32, m as i32, kk as i32, nn as i32)
+        else
+            scaly_mgpu_enc_gemm((ia * 4) as i32, (ib * 4) as i32, sv as i32, m as i32, kk as i32, kk as i32, nn as i32, 0 as i32, 0 as i32, 1.0, 0.0)
+    }
+    if kind = 2
+        scaly_mgpu_enc_gelu_fwd((ia * 4) as i32, sv as i32, (r * n) as i32)
+    if kind = 4
+        scaly_mgpu_enc_ln_fwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sv as i32, xs[id] as i32, r as i32, n as i32, node.eps)
+    if kind = 5
+        scaly_mgpu_enc_embed_fwd((ia * 4) as i32, (id * 4 + 3) as i32, sv as i32, r as i32, n as i32)
+    if kind = 7
+    {
+        let na buf + ia
+        let rr na.rows
+        let nn na.cols
+        scaly_mgpu_enc_ce_fwd((ia * 4) as i32, (id * 4 + 3) as i32, xs[id] as i32, sv as i32, rr as i32, nn as i32)
+    }
+    if kind = 8
+        scaly_mgpu_enc_attn_fwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sv as i32, (id * 4 + 2) as i32, r as i32, n as i32, node.heads as i32, node.win as i32)
+    if kind = 9
+        scaly_mgpu_enc_add((ia * 4) as i32, (ib * 4) as i32, sv as i32, (r * n) as i32)
+    if kind = 10
+    {
+        let nb buf + ib
+        let yr nb.rows
+        scaly_mgpu_enc_add_bcast_fwd((ia * 4) as i32, (ib * 4) as i32, sv as i32, r as i32, n as i32, yr as i32)
+    }
+}
+
+procedure enc_bwd_node(tape: Tape, id: int, xslot: Vector[int], use_msl: int)
+{
+    let buf tape.nodes.get_buffer()
+    let node buf + id
+    let kind node.op
+    if kind = 0
+        return
+    let ia node.a
+    let ib node.b
+    let ic node.c
+    let r node.rows
+    let n node.cols
+    let sg id * 4 + 1
+    let xs xslot.data
+    if kind = 1
+    {
+        let na buf + ia
+        let nb buf + ib
+        let m na.rows
+        let kk na.cols
+        let nn nb.cols
+        if use_msl = 1
+        {
+            scaly_mgpu_enc_mm_nt_acc(sg as i32, (ib * 4) as i32, (ia * 4 + 1) as i32, m as i32, kk as i32, nn as i32)
+            scaly_mgpu_enc_mm_tn_acc((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, m as i32, kk as i32, nn as i32)
+        }
+        else
+        {
+            scaly_mgpu_enc_gemm(sg as i32, (ib * 4) as i32, (ia * 4 + 1) as i32, m as i32, nn as i32, kk as i32, nn as i32, 0 as i32, 1 as i32, 1.0, 1.0)
+            scaly_mgpu_enc_gemm((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, m as i32, kk as i32, m as i32, nn as i32, 1 as i32, 0 as i32, 1.0, 1.0)
+        }
+    }
+    if kind = 2
+        scaly_mgpu_enc_gelu_bwd((ia * 4) as i32, sg as i32, (ia * 4 + 1) as i32, (r * n) as i32)
+    if kind = 4
+    {
+        scaly_mgpu_enc_ln_bwd_dx((ia * 4) as i32, (ib * 4) as i32, sg as i32, (ia * 4 + 1) as i32, xs[id] as i32, r as i32, n as i32)
+        scaly_mgpu_enc_ln_bwd_dgb((ia * 4) as i32, sg as i32, (ib * 4 + 1) as i32, (ic * 4 + 1) as i32, xs[id] as i32, r as i32, n as i32)
+    }
+    if kind = 5
+        scaly_mgpu_enc_embed_bwd(sg as i32, (id * 4 + 3) as i32, (ia * 4 + 1) as i32, r as i32, n as i32)
+    if kind = 7
+    {
+        let na buf + ia
+        let rr na.rows
+        let nn na.cols
+        scaly_mgpu_enc_ce_bwd((ia * 4) as i32, (id * 4 + 3) as i32, sg as i32, (ia * 4 + 1) as i32, rr as i32, nn as i32)
+    }
+    if kind = 8
+        scaly_mgpu_enc_attn_bwd((ia * 4) as i32, (ib * 4) as i32, (ic * 4) as i32, sg as i32, (id * 4 + 2) as i32, (ia * 4 + 1) as i32, (ib * 4 + 1) as i32, (ic * 4 + 1) as i32, r as i32, n as i32, node.heads as i32, node.win as i32)
+    if kind = 9
+    {
+        scaly_mgpu_enc_acc((ia * 4 + 1) as i32, sg as i32, (r * n) as i32)
+        scaly_mgpu_enc_acc((ib * 4 + 1) as i32, sg as i32, (r * n) as i32)
+    }
+    if kind = 10
+    {
+        let nb buf + ib
+        let yr nb.rows
+        scaly_mgpu_enc_acc((ia * 4 + 1) as i32, sg as i32, (r * n) as i32)
+        scaly_mgpu_enc_add_bcast_bwd_dy(sg as i32, (ib * 4 + 1) as i32, r as i32, n as i32, yr as i32)
+    }
+}
+
+; Encode forward + grad-zero + seed + backward over the whole tape.
+procedure enc_step(tape: Tape, loss_id: int, xslot: Vector[int], use_msl: int)
+{
+    let nnodes tape.nodes.get_length() as int
+    var i 0
+    while i < nnodes
+    {
+        enc_fwd_node(tape, i, xslot, use_msl)
+        set i: i + 1
+    }
+    let buf tape.nodes.get_buffer()
+    var z 0
+    while z < nnodes
+    {
+        let node buf + z
+        let count node.rows * node.cols
+        if count > 0
+            scaly_mgpu_enc_fill((z * 4 + 1) as i32, count as i32, 0.0)
+        set z: z + 1
+    }
+    let lnode buf + loss_id
+    let lcount lnode.rows * lnode.cols
+    scaly_mgpu_enc_fill((loss_id * 4 + 1) as i32, lcount as i32, 1.0)
+    var j loss_id
+    while j >= 0
+    {
+        enc_bwd_node(tape, j, xslot, use_msl)
+        set j: j - 1
+    }
+}
+
+; Forward only (autoregressive generation).
+procedure enc_fwd_all(tape: Tape, xslot: Vector[int], use_msl: int)
+{
+    let nnodes tape.nodes.get_length() as int
+    var i 0
+    while i < nnodes
+    {
+        enc_fwd_node(tape, i, xslot, use_msl)
+        set i: i + 1
+    }
+}
+
+; --- device check (a Mac without Metal SKIPs; the runner script
+; already SKIPs off macOS before we even compile) ---
+if scaly_mgpu_available() = 0
+{
+    Console.println("SKIP: no Metal device")
+    exit(0)
+}
+if scaly_mgpu_init() <> 0
+{
+    Console.println("error: mgpu init failed")
+    exit(1)
+}
+if scaly_mgpu_ops_init() <> 0
+{
+    Console.println("error: mgpu ops init failed")
+    exit(1)
+}
+
+; --- load the vocab: one token per line, hex of its UTF-8 bytes ---
+let vpath String("demo/build/bpe_vocab.txt")
+let vtext File.read_to_string(vpath)
+let vlen vtext.get_length() as int
+if vlen < 100
+{
+    Console.println("error: demo/build/bpe_vocab.txt missing - run demo/run_bpe.sh first")
+    exit(1)
+}
+let vtb vtext.get_buffer() as pointer[u8]
+var vbufoff Vector[int](4096)
+var vbuflen Vector[int](4096)
+var vbuf Vector[int](65536)
+let vb vbufoff.data
+let vl vbuflen.data
+let vf vbuf.data
+var V 0
+var vused 0
+var vp 0
+while vp < vlen
+{
+    set vb[V]: vused
+    var n 0
+    while vp < vlen
+    {
+        if vtb[vp] as int = 10
+            break
+        let hi hexval(vtb[vp] as int)
+        let lo hexval(vtb[vp + 1] as int)
+        set vf[vused]: hi * 16 + lo
+        set vused: vused + 1
+        set n: n + 1
+        set vp: vp + 2
+    }
+    set vl[V]: n
+    set V: V + 1
+    set vp: vp + 1        ; skip the newline
+}
+
+; --- load the token stream: decimal ids, space-separated ---
+let tpath String("demo/build/bpe_tokens.txt")
+let ttext File.read_to_string(tpath)
+let ttlen ttext.get_length() as int
+let ttb ttext.get_buffer() as pointer[u8]
+var toks Vector[i64](2000000)
+let tp toks.data
+var ntok 0
+var ti2 0
+while ti2 < ttlen
+{
+    let b ttb[ti2] as int
+    if b >= 48
+    {
+        if b <= 57
+        {
+            var v 0
+            while ti2 < ttlen
+            {
+                let b2 ttb[ti2] as int
+                if b2 < 48
+                    break
+                if b2 > 57
+                    break
+                set v: v * 10 + (b2 - 48)
+                set ti2: ti2 + 1
+            }
+            set tp[ntok]: v as i64
+            set ntok: ntok + 1
+        }
+        else
+            set ti2: ti2 + 1
+    }
+    else
+        set ti2: ti2 + 1
+}
+if ntok < 1000
+{
+    Console.println("error: token stream too small")
+    exit(1)
+}
+
+; --- model config (default = the CPU demo's exactly; MGPU_BIG=1 is
+; the scale-up the GPU headroom pays for) ---
+var NLAYER 2
+var D 256
+var T 128
+var F 512
+var HEADS 8
+var B 8
+var mode_sync 0
+var use_msl 0
+if getenv("MGPU_SYNC") <> null
+    set mode_sync: 1
+if getenv("MGPU_MSL") <> null
+    set use_msl: 1
+if getenv("MGPU_BIG") <> null
+{
+    set NLAYER: 4
+    set D: 512
+    set T: 256
+    set F: 2048
+    set B: 4
+}
+let TT B * T
+var STEPS 200000
+let se getenv("MGPU_STEPS")      ; smoke-test cap
+if se <> null
+{
+    var sv2 0
+    var sx 0
+    var sc se[sx] as int
+    while sc >= 48
+    {
+        if sc > 57
+            break
+        set sv2: sv2 * 10 + (sc - 48)
+        set sx: sx + 1
+        set sc: se[sx] as int
+    }
+    if sv2 > 0
+        set STEPS: sv2
+}
+let PROG 20
+let BUDGET_NS 180000000000       ; ~3 min training cap
+
+var tape Tape()
+let table tape.leaf(V, D)
+let posemb tape.leaf(T, D)
+var lga Vector[int](NLAYER as size_t)
+var lba Vector[int](NLAYER as size_t)
+var lwq Vector[int](NLAYER as size_t)
+var lwk Vector[int](NLAYER as size_t)
+var lwv Vector[int](NLAYER as size_t)
+var lwo Vector[int](NLAYER as size_t)
+var lgb Vector[int](NLAYER as size_t)
+var lbb Vector[int](NLAYER as size_t)
+var lwf Vector[int](NLAYER as size_t)
+var lwp Vector[int](NLAYER as size_t)
+var li 0
+while li < NLAYER
+{
+    let sl li as size_t
+    lga.put(sl, tape.leaf(1, D))
+    lba.put(sl, tape.leaf(1, D))
+    lwq.put(sl, tape.leaf(D, D))
+    lwk.put(sl, tape.leaf(D, D))
+    lwv.put(sl, tape.leaf(D, D))
+    lwo.put(sl, tape.leaf(D, D))
+    lgb.put(sl, tape.leaf(1, D))
+    lbb.put(sl, tape.leaf(1, D))
+    lwf.put(sl, tape.leaf(D, F))
+    lwp.put(sl, tape.leaf(F, D))
+    set li: li + 1
+}
+let gf tape.leaf(1, D)
+let bf tape.leaf(1, D)
+let whead tape.leaf(D, V)
+
+; fill in the CPU demo's exact lcg order: table, posemb, per layer
+; (wq, wk, wv, wo, wf, wp), whead; gammas const 1 afterwards.
+let lgap lga.data
+let lbap lba.data
+let lwqp lwq.data
+let lwkp lwk.data
+let lwvp lwv.data
+let lwop lwo.data
+let lgbp lgb.data
+let lbbp lbb.data
+let lwfp lwf.data
+let lwpp lwp.data
+var s 42
+set s: fill(tape, table, V * D, s)
+set s: fill(tape, posemb, T * D, s)
+var fi 0
+while fi < NLAYER
+{
+    set s: fill(tape, lwqp[fi], D * D, s)
+    set s: fill(tape, lwkp[fi], D * D, s)
+    set s: fill(tape, lwvp[fi], D * D, s)
+    set s: fill(tape, lwop[fi], D * D, s)
+    set s: fill(tape, lwfp[fi], D * F, s)
+    set s: fill(tape, lwpp[fi], F * D, s)
+    set fi: fi + 1
+}
+set s: fill(tape, whead, D * V, s)
+var gi 0
+while gi < NLAYER
+{
+    fill_const(tape, lgap[gi], D, 1.0)
+    fill_const(tape, lgbp[gi], D, 1.0)
+    set gi: gi + 1
+}
+fill_const(tape, gf, D, 1.0)
+
+; --- graph: B windows of T tokens, layers in a loop ---
+let bsz TT as size_t
+var ids Vector[i64](bsz)
+let emb tape.embedding(table, ids, TT)
+let x0 tape.add_bcast(emb, posemb)
+var x_cur x0
+var bi 0
+while bi < NLAYER
+{
+    let na tape.layernorm(x_cur, lgap[bi], lbap[bi], 0.00001)
+    let q tape.matmul(na, lwqp[bi])
+    let k tape.matmul(na, lwkp[bi])
+    let v tape.matmul(na, lwvp[bi])
+    let at tape.attention_windowed(q, k, v, HEADS, T)
+    let o tape.matmul(at, lwop[bi])
+    let x_res tape.add(x_cur, o)
+    let nb tape.layernorm(x_res, lgbp[bi], lbbp[bi], 0.00001)
+    let h tape.matmul(nb, lwfp[bi])
+    let e tape.gelu(h)
+    let mm tape.matmul(e, lwpp[bi])
+    set x_cur: tape.add(x_res, mm)
+    set bi: bi + 1
+}
+let nf tape.layernorm(x_cur, gf, bf, 0.00001)
+let logits tape.matmul(nf, whead)
+var tgs Vector[i64](bsz)
+let loss tape.crossentropy(logits, tgs)
+
+; --- trainable leaves (Adam order matches the CPU demo) ---
+let NPARAM 2 + NLAYER * 10 + 3
+var pids Vector[int](NPARAM as size_t)
+let pp pids.data
+set pp[0]: table
+set pp[1]: posemb
+var pi0 2
+var pl 0
+while pl < NLAYER
+{
+    set pp[pi0]: lgap[pl]
+    set pp[pi0 + 1]: lbap[pl]
+    set pp[pi0 + 2]: lwqp[pl]
+    set pp[pi0 + 3]: lwkp[pl]
+    set pp[pi0 + 4]: lwvp[pl]
+    set pp[pi0 + 5]: lwop[pl]
+    set pp[pi0 + 6]: lgbp[pl]
+    set pp[pi0 + 7]: lbbp[pl]
+    set pp[pi0 + 8]: lwfp[pl]
+    set pp[pi0 + 9]: lwpp[pl]
+    set pi0: pi0 + 10
+    set pl: pl + 1
+}
+set pp[pi0]: gf
+set pp[pi0 + 1]: bf
+set pp[pi0 + 2]: whead
+
+; --- redirect the whole tape into shared MTLBuffers + scratch slots
+; (ln stats, ce row losses) + per-parameter Adam moment slots ---
+let nnodes tape.nodes.get_length() as int
+let buf tape.nodes.get_buffer()
+scaly_mgpu_slots_init((nnodes * 4 + nnodes + NPARAM) as i32)
+var xslot Vector[int](nnodes as size_t)
+var nextslot nnodes * 4
+var ri 0
+while ri < nnodes
+{
+    redirect_node(tape, ri)
+    let node buf + ri
+    var xtra 0 - 1
+    if node.op = 4
+    {
+        scaly_mgpu_slot_alloc(nextslot as i32, (node.rows * 2 * 4) as size_t)
+        set xtra: nextslot
+        set nextslot: nextslot + 1
+    }
+    if node.op = 7
+    {
+        let na buf + node.a
+        scaly_mgpu_slot_alloc(nextslot as i32, (na.rows * 4) as size_t)
+        set xtra: nextslot
+        set nextslot: nextslot + 1
+    }
+    xslot.put(ri as size_t, xtra)
+    set ri: ri + 1
+}
+var mvslot Vector[int](NPARAM as size_t)
+let mvp mvslot.data
+var ai 0
+while ai < NPARAM
+{
+    let node buf + pp[ai]
+    let total node.rows * node.cols
+    scaly_mgpu_slot_alloc(nextslot as i32, (total * 2 * 4) as size_t)
+    set mvp[ai]: nextslot
+    set nextslot: nextslot + 1
+    set ai: ai + 1
+}
+
+var hdr StringBuilder()
+hdr.append "scaly mann-bpe GPU demo: V="
+let vs num_to_string(V as i64)
+hdr.append vs
+hdr.append " tokens, "
+let nts num_to_string(ntok as i64)
+hdr.append nts
+hdr.append " corpus tokens, "
+let lys num_to_string(NLAYER as i64)
+hdr.append lys
+hdr.append "-layer T="
+let ts num_to_string(T as i64)
+hdr.append ts
+hdr.append " D="
+let ds num_to_string(D as i64)
+hdr.append ds
+hdr.append " F="
+let fs num_to_string(F as i64)
+hdr.append fs
+hdr.append " heads="
+let hs num_to_string(HEADS as i64)
+hdr.append hs
+hdr.append " B="
+let bs num_to_string(B as i64)
+hdr.append bs
+if mode_sync = 1
+    hdr.append "  [per-op-sync matmuls]"
+else
+{
+    if use_msl = 1
+        hdr.append "  [whole-step, MSL matmuls]"
+    else
+        hdr.append "  [whole-step, MPS matmuls]"
+}
+let hline hdr.to_string()
+Console.println(hline.to_c_string())
+
+; --- train: Adam over random corpus windows, ~3 min budget ---
+scaly_mgpu_ms_reset()
+let train_t0 scaly_eio_now_ns()
+var win_t0 train_t0
+var win_sum: float 0.0
+var done_steps 0
+var step 1
+while step <= STEPS
+{
+    var bb 0
+    while bb < B
+    {
+        set s: lcg(s)
+        let p pmod(s, ntok - T - 1)
+        var t 0
+        while t < T
+        {
+            tape.set_token(emb, bb * T + t, tp[p + t])
+            tape.set_token(loss, bb * T + t, tp[p + t + 1])
+            set t: t + 1
+        }
+        set bb: bb + 1
+    }
+    var lr: float 0.0005
+    if step * 4 > STEPS * 3
+        set lr: 0.0002
+    if mode_sync = 1
+    {
+        ; step 1 measurement: matmuls on the GPU, ONE command buffer +
+        ; wait EACH; every other op stays on the CPU (unified memory
+        ; makes the mixing legal). Adam runs the CPU tape op.
+        var f 0
+        while f < nnodes
+        {
+            let node buf + f
+            if node.op = 1
+            {
+                scaly_mgpu_begin()
+                enc_fwd_node(tape, f, xslot, use_msl)
+                scaly_mgpu_commit_wait()
+            }
+            else
+                tape.run_node f
+            set f: f + 1
+        }
+        set win_sum: win_sum + tape.value_at(loss, 0)
+        tape.zero_grads()
+        let lnode buf + loss
+        let lgp lnode.grad.data
+        set lgp[0]: 1.0
+        var bw loss
+        while bw >= 0
+        {
+            let node buf + bw
+            if node.op = 1
+            {
+                scaly_mgpu_begin()
+                enc_bwd_node(tape, bw, xslot, use_msl)
+                scaly_mgpu_commit_wait()
+            }
+            else
+                tape.bwd_node bw
+            set bw: bw - 1
+        }
+        var pi 0
+        while pi < NPARAM
+        {
+            tape.adam_step(pp[pi], lr, 0.9, 0.999, 0.00000001, step)
+            set pi: pi + 1
+        }
+    }
+    else
+    {
+        ; whole-step: forward + zero + seed + backward + Adam encoded
+        ; into ONE command buffer, one commit, one wait.
+        scaly_mgpu_begin()
+        enc_step(tape, loss, xslot, use_msl)
+        let bc1 1.0 - powf(0.9, step as float)
+        let bc2 1.0 - powf(0.999, step as float)
+        var pi 0
+        while pi < NPARAM
+        {
+            let node buf + pp[pi]
+            let total node.rows * node.cols
+            scaly_mgpu_enc_adam((pp[pi] * 4) as i32, (pp[pi] * 4 + 1) as i32, mvp[pi] as i32, total as i32, lr, 0.9, 0.999, 0.00000001, bc1, bc2)
+            set pi: pi + 1
+        }
+        let rc scaly_mgpu_commit_wait()
+        if rc <> 0
+        {
+            Console.println("error: command buffer failed")
+            exit(1)
+        }
+        set win_sum: win_sum + tape.value_at(loss, 0)
+    }
+    set done_steps: step
+    if pmod(step, PROG) = 0
+    {
+        let now scaly_eio_now_ns()
+        let ns now - win_t0
+        var sps 0 as i64
+        if ns > 0
+            set sps: ((PROG as i64) * 1000000000) / ns
+        var sb StringBuilder()
+        sb.append "step "
+        let ss num_to_string(step as i64)
+        sb.append ss
+        sb.append "  loss "
+        let avg win_sum / (PROG as float)
+        let ls fixed3(avg)
+        sb.append ls
+        sb.append "  "
+        let sp num_to_string(sps)
+        sb.append sp
+        sb.append " steps/s  "
+        let el secs_to_string(now - train_t0)
+        sb.append el
+        sb.append " s"
+        let line sb.to_string()
+        Console.println(line.to_c_string())
+        set win_sum: 0.0
+        set win_t0: now
+        if now - train_t0 > BUDGET_NS
+            set step: STEPS
+    }
+    set step: step + 1
+}
+let train_t1 scaly_eio_now_ns()
+var tr StringBuilder()
+tr.append "training done: "
+let dss num_to_string(done_steps as i64)
+tr.append dss
+tr.append " steps in "
+let trs secs_to_string(train_t1 - train_t0)
+tr.append trs
+tr.append " s (gpu busy "
+let gms scaly_mgpu_ms_sum()
+let gsecs secs_to_string(((gms * 1000000.0) as i64))
+tr.append gsecs
+tr.append " s)"
+let trline tr.to_string()
+Console.println(trline.to_c_string())
+
+; --- inference: extend a corpus prompt autoregressively (forward
+; passes on the GPU, sampling on the CPU through unified memory) ---
+let P 24
+let GEN 120
+var hist Vector[i64]((P + GEN) as size_t)
+let hp hist.data
+var hi 0
+while hi < P
+{
+    set hp[hi]: tp[100 + hi]
+    set hi: hi + 1
+}
+let gen_t0 scaly_eio_now_ns()
+var hlen P
+while hlen < P + GEN
+{
+    var vis hlen
+    if vis > T
+        set vis: T
+    let start hlen - vis
+    var t2 0
+    while t2 < vis
+    {
+        tape.set_token(emb, t2, hp[start + t2])
+        set t2: t2 + 1
+    }
+    scaly_mgpu_begin()
+    enc_fwd_all(tape, xslot, use_msl)
+    scaly_mgpu_commit_wait()
+    set s: lcg(s)
+    let u (pmod(s, 10000) as float) * 0.0001
+    var pick tape.sample(logits, vis - 1, 0.8, u)
+    if pick < 0
+        set pick: 0
+    if pick >= V
+        set pick: 0
+    set hp[hlen]: pick as i64
+    set hlen: hlen + 1
+}
+let gen_t1 scaly_eio_now_ns()
+
+; --- detokenize: replay each token's recorded UTF-8 bytes ---
+var out StringBuilder()
+out.append "["
+var oi 0
+while oi < P + GEN
+{
+    if oi = P
+        out.append "]"
+    let id hp[oi] as int
+    var kk 0
+    while kk < vl[id]
+    {
+        out.append(vf[vb[id] + kk] as char)
+        set kk: kk + 1
+    }
+    set oi: oi + 1
+}
+let text_out out.to_string()
+Console.println("------------------------------------------------------------")
+Console.println(text_out.to_c_string())
+Console.println("------------------------------------------------------------")
+var gl StringBuilder()
+let gs num_to_string(GEN as i64)
+gl.append gs
+gl.append " tokens generated in "
+let gts secs_to_string(gen_t1 - gen_t0)
+gl.append gts
+gl.append " s (temperature 0.8, prompt in brackets)"
+let gline gl.to_string()
+Console.println(gline.to_c_string())
