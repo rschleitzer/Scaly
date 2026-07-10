@@ -33,9 +33,21 @@ if [ ! -f /tmp/libscaly.a ] || find packages/scaly -name '*.scaly' -newer /tmp/l
   ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o
 fi
 
+# scalygpu package object (same recipe: non-generic package bodies come
+# from a library object, and NEVER `-c -O2` a library).
+if [ ! -f /tmp/libscalygpu.o ] || find packages/scalygpu -name '*.scaly' -newer /tmp/libscalygpu.o | grep -q . \
+   || [ /tmp/libscaly.a -nt /tmp/libscalygpu.o ]; then
+  echo "building -O2 scalygpu package object..."
+  source tools/llvm-env.sh
+  "$SCALYC" -S --no-tests -o /tmp/libscalygpu.ll packages/scalygpu/0.1.0/scalygpu.scaly
+  sed 's/^define linkonce_odr /define weak_odr /' /tmp/libscalygpu.ll > /tmp/libscalygpu_weak.ll
+  opt -O2 /tmp/libscalygpu_weak.ll -o /tmp/libscalygpu_opt.bc
+  llc -relocation-model=pic -O2 -filetype=obj /tmp/libscalygpu_opt.bc -o /tmp/libscalygpu.o
+fi
+
 tools/mgpu.sh /tmp/mgpu.o
 "$SCALYC" -O2 -c -o /tmp/gpu_ops.o tests/tensor/bench/gpu_ops.scaly
-${CLANG:-clang} /tmp/gpu_ops.o /tmp/mgpu.o /tmp/libscaly.a \
+${CLANG:-clang} /tmp/gpu_ops.o /tmp/libscalygpu.o /tmp/mgpu.o /tmp/libscaly.a \
   -framework Metal -framework MetalPerformanceShaders -framework Foundation \
   -o /tmp/gpu_ops
 /tmp/gpu_ops
