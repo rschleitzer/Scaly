@@ -234,20 +234,40 @@ define Page
     function allocate_oversized(this: Page, size: size_t) returns pointer[void]
     {
         ; We allocate oversized objects directly.
-        let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - (1 as size_t)) & (~(PAGE_SIZE - (1 as size_t))))
+        let rounded (size + PAGE_SIZE - (1 as size_t)) & (~(PAGE_SIZE - (1 as size_t)))
+        let address aligned_alloc(PAGE_SIZE, rounded)
         if address = null
             exit 1
 
         var page address as pointer[Page]
 
-        ; Oversized pages have no next_object
+        ; Oversized pages have no next_object — the null tags them for
+        ; release_page. The other header fields are dead for the
+        ; allocator; current_page records the aligned_alloc block length
+        ; (region serialization needs it, stage 7 — current_page is the
+        ; safe slot: next_page chains and exclusive_pages lists are
+        ; walked, current_page is only read when allocating FROM a page,
+        ; which never happens on an oversized one), the rest is nulled
+        ; so the header is deterministic.
         set page.next_object: null
+        set page.current_page: rounded as pointer[Page]
+        set page.next_page: null
+        set page.exclusive_pages.head: null
 
         ; An oversized page is always exclusive
         exclusive_pages.add page
 
         ; The page offset by the null pointer for next_object
         return (page + 1) as pointer[void]
+    }
+
+    ; The aligned_alloc block length recorded by allocate_oversized (gross
+    ; size rounded up to a PAGE_SIZE multiple). Meaningful only for
+    ; oversized pages (next_object == null).
+    function oversized_size(p: pointer[Page]) returns size_t
+    {
+        let s p.current_page
+        s as size_t
     }
 
     function get(address: pointer[void]) returns pointer[Page]

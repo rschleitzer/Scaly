@@ -1016,12 +1016,31 @@ if.end:                                           ; preds = %if.then, %entry
   %ptr.load = load ptr, ptr %page, align 8
   %next_object = getelementptr inbounds %_Z4Page, ptr %ptr.load, i32 0, i32 0
   store ptr null, ptr %next_object, align 8
+  %as.inttoptr = inttoptr i64 %and to ptr
+  %ptr.load1 = load ptr, ptr %page, align 8
+  %current_page = getelementptr inbounds %_Z4Page, ptr %ptr.load1, i32 0, i32 1
+  store ptr %as.inttoptr, ptr %current_page, align 8
+  %ptr.load2 = load ptr, ptr %page, align 8
+  %next_page = getelementptr inbounds %_Z4Page, ptr %ptr.load2, i32 0, i32 2
+  store ptr null, ptr %next_page, align 8
+  %ptr.load3 = load ptr, ptr %page, align 8
+  %exclusive_pages = getelementptr inbounds %_Z4Page, ptr %ptr.load3, i32 0, i32 3
+  %head = getelementptr inbounds %_Z8PageList, ptr %exclusive_pages, i32 0, i32 0
+  store ptr null, ptr %head, align 8
   %field.inplace = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 3
-  %page1 = load ptr, ptr %page, align 8
-  call void @_ZN8PageList3addEP4Page(ptr %field.inplace, ptr %page1)
-  %page2 = load ptr, ptr %page, align 8
-  %ptr.add = getelementptr inbounds %_Z4Page, ptr %page2, i64 1
+  %page4 = load ptr, ptr %page, align 8
+  call void @_ZN8PageList3addEP4Page(ptr %field.inplace, ptr %page4)
+  %page5 = load ptr, ptr %page, align 8
+  %ptr.add = getelementptr inbounds %_Z4Page, ptr %page5, i64 1
   ret ptr %ptr.add
+}
+
+define linkonce_odr i64 @_ZN4Page14oversized_sizeEP4Page(ptr %0) {
+entry:
+  %load.struct = load %_Z4Page, ptr %0, align 8
+  %current_page = extractvalue %_Z4Page %load.struct, 1
+  %as.ptrtoint = ptrtoint ptr %current_page to i64
+  ret i64 %as.ptrtoint
 }
 
 define linkonce_odr i64 @_ZN4Page12get_capacityEm(ptr %0, i64 %1) {

@@ -1,0 +1,85 @@
+; Stage-7.1 opener: allocate_oversized used to round up and FORGET the
+; block length (release_page never needs it, region serialization does
+; — the 7.0 wire spike hardcoded 102400). Now the oversized header
+; records the aligned_alloc block length in the dead current_page slot
+; (read via Page.oversized_size) and nulls the remaining dead fields so
+; the header is deterministic. The oversized page is reached TYPED via
+; the exclusive_pages chain (the fac043a3 fix).
+
+let mp Page.allocate_page()
+
+; 5000 net bytes: gross = 5032 > PAGE_SIZE -> allocate_oversized,
+; block rounds to 8192 (2 pages).
+let buf mp.allocate(5000 as size_t, 8 as size_t)
+let head mp.exclusive_pages.head
+if head = null
+{
+    Console.println "FAIL exclusive head null"
+    exit 1
+}
+let op head.page
+if op.next_object <> null
+{
+    Console.println "FAIL oversized tag"
+    exit 1
+}
+; The returned buffer sits just past the Page header (sizeof Page = 32).
+if ((buf as size_t) - (op as size_t)) <> (32 as size_t)
+{
+    Console.println "FAIL buffer offset"
+    exit 1
+}
+if Page.oversized_size(op) <> (8192 as size_t)
+{
+    Console.println "FAIL oversized_size 8192"
+    exit 1
+}
+if op.next_page <> null
+{
+    Console.println "FAIL next_page nulled"
+    exit 1
+}
+if op.exclusive_pages.head <> null
+{
+    Console.println "FAIL exclusive head nulled"
+    exit 1
+}
+
+; The 7.0 spike shape: 100000 net -> gross 100032 -> block 102400
+; (25 pages) — the constant the spike had to hardcode.
+let buf2 mp.allocate(100000 as size_t, 8 as size_t)
+let head2 mp.exclusive_pages.head
+if head2 = null
+{
+    Console.println "FAIL second head null"
+    exit 1
+}
+let op2 head2.page
+if op2.next_object <> null
+{
+    Console.println "FAIL second oversized tag"
+    exit 1
+}
+if Page.oversized_size(op2) <> (102400 as size_t)
+{
+    Console.println "FAIL oversized_size 102400"
+    exit 1
+}
+
+; The recorded length survives actual use of the buffer.
+let bytes buf2 as pointer[u8]
+var i 0 as size_t
+while i < (100000 as size_t)
+{
+    set bytes[i]: (i % (251 as size_t)) as u8
+    set i: i + (256 as size_t)
+}
+if Page.oversized_size(op2) <> (102400 as size_t)
+{
+    Console.println "FAIL oversized_size after writes"
+    exit 1
+}
+
+mp.deallocate_extensions()
+Page.release_page(mp)
+Console.println "PASS"
