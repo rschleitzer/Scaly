@@ -1,9 +1,12 @@
-; Tensor tape (self-scaling stage 5.2/5.3): reverse-mode autodiff over
-; the 5.1 op set — matmul, GELU, softmax, layernorm, embedding lookup —
-; plus a weighted-sum reduction and (5.3) a fused softmax-crossentropy
-; objective, in-place token mutation (set_token: one tape serves a whole
-; training run, a step allocates nothing) and SGD/Adam leaf updates
-; (Adam moments live in the node's aux buffer on the tape's page).
+; Tensor tape (self-scaling stage 5.2/5.3/5.4): reverse-mode autodiff
+; over the 5.1 op set — matmul, GELU, softmax, layernorm, embedding
+; lookup — plus a weighted-sum reduction, (5.3) a fused
+; softmax-crossentropy objective, in-place token mutation (set_token:
+; one tape serves a whole training run, a step allocates nothing),
+; SGD/Adam leaf updates (Adam moments live in the node's aux buffer on
+; the tape's page), and (5.4) fused causal multi-head self-attention
+; (softmax(QK^T/sqrt(dh)) masked to j <= i, per head) with a sampling
+; helper for inference (temperature softmax + CDF walk over one row).
 ;
 ; One region per tape: a Tape is page-hosted, and every node record,
 ; value buffer, gradient buffer and saved auxiliary lives on the tape's
@@ -46,6 +49,7 @@ define TAPE_LAYERNORM int 4
 define TAPE_EMBEDDING int 5
 define TAPE_WSUM int 6
 define TAPE_CROSSENT int 7
+define TAPE_ATTENTION int 8
 
 define TapeNode
 (
@@ -55,6 +59,7 @@ define TapeNode
     c: int
     rows: int
     cols: int
+    heads: int
     eps: float
     value: Vector[float]
     grad: Vector[float]
@@ -70,6 +75,7 @@ define TapeNode
         set c: in_c
         set rows: r
         set cols: n
+        set heads: 1
         set eps: 0.0
         set value: Vector[float]()
         set grad: Vector[float]()
@@ -233,6 +239,67 @@ define Tape
         id
     }
 
+    ; Fused causal multi-head self-attention: q/k/v are T x D nodes
+    ; (D = hs * dh, D divisible by hs); per head, out row i is
+    ; softmax(q_i . k_j / sqrt(dh) for j <= i)-weighted sum of v rows.
+    ; The node's aux buffer holds the per-head T x T probabilities in
+    ; [0, hs*T*T) (forward writes them, backward reads them) and a ds
+    ; scratch half in [hs*T*T, 2*hs*T*T) written by backward pass 1.
+    procedure attention(this: Tape, q: int, k: int, v: int, hs: int) returns int
+    {
+        let buf nodes.get_buffer()
+        let nq buf + q
+        let t nq.rows
+        let d nq.cols
+        let id this.add_node(TAPE_ATTENTION, q, k, v, t, d)
+        let own_page Page.get(this as pointer[void])
+        let scratch Vector[float]^own_page((2 * hs * t * t) as size_t)
+        let node nodes.get_buffer() + id
+        set node.aux: scratch
+        set node.heads: hs
+        this.run_node id
+        id
+    }
+
+    ; Sample a token from one row of a node's values (logits): softmax
+    ; at temperature temp (must be > 0), then walk the CDF with the
+    ; caller-supplied uniform draw u in [0, 1). The caller owns the RNG.
+    function sample(this: Tape, id: int, row: int, temp: float, u: float) returns int
+    {
+        let node nodes.get_buffer() + id
+        let xp node.value.data
+        let n node.cols
+        let off row * n
+        let itemp 1.0 / temp
+        var mx xp[off]
+        var j 1
+        while j < n
+        {
+            let v xp[off + j]
+            if v > mx
+                set mx: v
+            set j: j + 1
+        }
+        var sum: float 0.0
+        var j2 0
+        while j2 < n
+        {
+            set sum: sum + expf((xp[off + j2] - mx) * itemp)
+            set j2: j2 + 1
+        }
+        let target u * sum
+        var acc: float 0.0
+        var j3 0
+        while j3 < n
+        {
+            set acc: acc + expf((xp[off + j3] - mx) * itemp)
+            if acc > target
+                return j3
+            set j3: j3 + 1
+        }
+        n - 1
+    }
+
     ; SGD update on a leaf: value -= lr * grad.
     procedure sgd_step(this: Tape, id: int, lr: float)
     {
@@ -355,6 +422,8 @@ define Tape
             this.fwd_wsum id
         if kind = TAPE_CROSSENT
             this.fwd_crossent id
+        if kind = TAPE_ATTENTION
+            this.fwd_attention id
     }
 
     procedure bwd_node(this: Tape, id: int)
@@ -375,6 +444,8 @@ define Tape
             this.bwd_wsum id
         if kind = TAPE_CROSSENT
             this.bwd_crossent id
+        if kind = TAPE_ATTENTION
+            this.bwd_attention id
     }
 
     procedure fwd_matmul(this: Tape, id: int)
@@ -861,6 +932,192 @@ define Tape
                     set p: p - 1.0
                 set gxp[i * n + j3]: gxp[i * n + j3] + scale * p
                 set j3: j3 + 1
+            }
+        }
+    }
+
+    procedure fwd_attention(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let nq buf + node.a
+        let nk buf + node.b
+        let nv buf + node.c
+        let qp nq.value.data
+        let kp nk.value.data
+        let vp nv.value.data
+        let px node.aux
+        let pp node.aux.data
+        let out node.value
+        let t node.rows
+        let d node.cols
+        let hs node.heads
+        let dh d / hs
+        let scale 1.0 / sqrtf(dh as float)
+        ; Rows are independent: iteration i touches only p row i and
+        ; out row i of every head.
+        for i in t
+        {
+            var h 0
+            while h < hs
+            {
+                ; scaled scores for the causal window j <= i, row max
+                var mx: float 0.0
+                var j 0
+                while j <= i
+                {
+                    var acc: float 0.0
+                    var c 0
+                    while c < dh
+                    {
+                        set acc: acc + qp[i * d + h * dh + c] * kp[j * d + h * dh + c]
+                        set c: c + 1
+                    }
+                    let sc acc * scale
+                    px.put((h * t * t + i * t + j) as size_t, sc)
+                    if j = 0
+                        set mx: sc
+                    if sc > mx
+                        set mx: sc
+                    set j: j + 1
+                }
+                ; softmax over the window, in place
+                var sum: float 0.0
+                var j2 0
+                while j2 <= i
+                {
+                    let e expf(pp[h * t * t + i * t + j2] - mx)
+                    px.put((h * t * t + i * t + j2) as size_t, e)
+                    set sum: sum + e
+                    set j2: j2 + 1
+                }
+                let inv 1.0 / sum
+                var j3 0
+                while j3 <= i
+                {
+                    let scaled pp[h * t * t + i * t + j3] * inv
+                    px.put((h * t * t + i * t + j3) as size_t, scaled)
+                    set j3: j3 + 1
+                }
+                ; out_i = sum_j p_ij * v_j over the head slice
+                var c2 0
+                while c2 < dh
+                {
+                    var acc2: float 0.0
+                    var j4 0
+                    while j4 <= i
+                    {
+                        set acc2: acc2 + pp[h * t * t + i * t + j4] * vp[j4 * d + h * dh + c2]
+                        set j4: j4 + 1
+                    }
+                    out.put((i * d + h * dh + c2) as size_t, acc2)
+                    set c2: c2 + 1
+                }
+                set h: h + 1
+            }
+        }
+    }
+
+    procedure bwd_attention(this: Tape, id: int)
+    {
+        let buf nodes.get_buffer()
+        let node buf + id
+        let nq buf + node.a
+        let nk buf + node.b
+        let nv buf + node.c
+        let qp nq.value.data
+        let kp nk.value.data
+        let vp nv.value.data
+        let pp node.aux.data
+        let gp node.grad.data
+        let gqp nq.grad.data
+        let gkp nk.grad.data
+        let gvp nv.grad.data
+        let t node.rows
+        let d node.cols
+        let hs node.heads
+        let dh d / hs
+        let scale 1.0 / sqrtf(dh as float)
+        let dsoff hs * t * t
+        ; pass 1: per row i, dp_ij = dOut_i . v_j, then the row softmax
+        ; backward ds_ij = p_ij * (dp_ij - sum_k dp_ik p_ik), saved in
+        ; the aux scratch half (rows disjoint).
+        for i in t
+        {
+            var h 0
+            while h < hs
+            {
+                var ci: float 0.0
+                var j 0
+                while j <= i
+                {
+                    var dp: float 0.0
+                    var c 0
+                    while c < dh
+                    {
+                        set dp: dp + gp[i * d + h * dh + c] * vp[j * d + h * dh + c]
+                        set c: c + 1
+                    }
+                    set pp[dsoff + h * t * t + i * t + j]: dp
+                    set ci: ci + dp * pp[h * t * t + i * t + j]
+                    set j: j + 1
+                }
+                var j2 0
+                while j2 <= i
+                {
+                    let ds pp[h * t * t + i * t + j2] * (pp[dsoff + h * t * t + i * t + j2] - ci)
+                    set pp[dsoff + h * t * t + i * t + j2]: ds
+                    set j2: j2 + 1
+                }
+                set h: h + 1
+            }
+        }
+        ; pass 2: dQ_i += scale * sum_{j<=i} ds_ij k_j (rows disjoint)
+        for i2 in t
+        {
+            var h 0
+            while h < hs
+            {
+                var c 0
+                while c < dh
+                {
+                    var acc: float 0.0
+                    var j 0
+                    while j <= i2
+                    {
+                        set acc: acc + pp[dsoff + h * t * t + i2 * t + j] * kp[j * d + h * dh + c]
+                        set j: j + 1
+                    }
+                    set gqp[i2 * d + h * dh + c]: gqp[i2 * d + h * dh + c] + scale * acc
+                    set c: c + 1
+                }
+                set h: h + 1
+            }
+        }
+        ; pass 3: dK_j += scale * sum_{i>=j} ds_ij q_i and
+        ;         dV_j += sum_{i>=j} p_ij dOut_i (key rows disjoint)
+        for j5 in t
+        {
+            var h 0
+            while h < hs
+            {
+                var c 0
+                while c < dh
+                {
+                    var acck: float 0.0
+                    var accv: float 0.0
+                    var i j5
+                    while i < t
+                    {
+                        set acck: acck + pp[dsoff + h * t * t + i * t + j5] * qp[i * d + h * dh + c]
+                        set accv: accv + pp[h * t * t + i * t + j5] * gp[i * d + h * dh + c]
+                        set i: i + 1
+                    }
+                    set gkp[j5 * d + h * dh + c]: gkp[j5 * d + h * dh + c] + scale * acck
+                    set gvp[j5 * d + h * dh + c]: gvp[j5 * d + h * dh + c] + accv
+                    set c: c + 1
+                }
+                set h: h + 1
             }
         }
     }

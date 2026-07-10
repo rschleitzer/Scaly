@@ -1,0 +1,51 @@
+; 5.4 inference sampling: tape.sample runs a temperature softmax over
+; one row of a node's values and walks the CDF with a caller-supplied
+; uniform draw. Deterministic u values pin every pick: a strongly
+; peaked row returns its argmax for any u; a uniform row maps u
+; quarters to successive tokens; high temperature flattens the peaked
+; row back to near-uniform; u ~ 1 lands on the last token.
+; Expected: PASS
+
+var ok true
+
+var tape Tape()
+let x tape.leaf(2, 4)
+; row 0: strongly peaked at index 2; row 1: uniform
+tape.set_value(x, 2, 10.0)
+tape.set_value(x, 4, 1.0)
+tape.set_value(x, 5, 1.0)
+tape.set_value(x, 6, 1.0)
+tape.set_value(x, 7, 1.0)
+
+; peaked row: argmax for any u at temp 1
+if tape.sample(x, 0, 1.0, 0.01) <> 2
+    set ok: false
+if tape.sample(x, 0, 1.0, 0.5) <> 2
+    set ok: false
+if tape.sample(x, 0, 1.0, 0.99) <> 2
+    set ok: false
+; low temperature sharpens further — still the argmax
+if tape.sample(x, 0, 0.1, 0.5) <> 2
+    set ok: false
+; uniform row: CDF quarters map to successive tokens
+if tape.sample(x, 1, 1.0, 0.1) <> 0
+    set ok: false
+if tape.sample(x, 1, 1.0, 0.3) <> 1
+    set ok: false
+if tape.sample(x, 1, 1.0, 0.6) <> 2
+    set ok: false
+if tape.sample(x, 1, 1.0, 0.9) <> 3
+    set ok: false
+; high temperature flattens the peaked row to near-uniform
+if tape.sample(x, 0, 1000.0, 0.1) <> 0
+    set ok: false
+if tape.sample(x, 0, 1000.0, 0.95) <> 3
+    set ok: false
+; u close to 1 lands on the last token
+if tape.sample(x, 1, 1.0, 0.9999) <> 3
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

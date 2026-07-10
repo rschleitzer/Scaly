@@ -1,0 +1,188 @@
+; 5.4 autodiff: fused causal multi-head self-attention gradcheck.
+; q/k/v leaves feed tape.attention; the analytic gradients of a wsum
+; objective (non-uniform weights) are checked against central
+; differences on every input element, for a single-head 3x3 case and a
+; two-head 4x4 case. Causality is asserted directly: output row 0 must
+; equal the v row 0 slice of every head (softmax over a single visible
+; key is exactly 1), so attending to any future key fails the test.
+; Expected: PASS
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function tval(i: int) returns float
+{
+    let r pmod(i * 7 + 3, 11)
+    ((r - 5) as float) * 0.25
+}
+
+function wval(i: int) returns float
+{
+    let r pmod(i * 5 + 2, 7)
+    ((r - 3) as float) * 0.3 + 0.1
+}
+
+function close_enough(a: float, b: float, atol: float, rtol: float) returns bool
+{
+    var d a - b
+    if d < 0.0
+        set d: 0.0 - d
+    var m a
+    if m < 0.0
+        set m: 0.0 - m
+    var mb b
+    if mb < 0.0
+        set mb: 0.0 - mb
+    if mb > m
+        set m: mb
+    if d <= atol + rtol * m
+        return true
+    false
+}
+
+procedure num_grad(tape: Tape, out: int, id: int, i: int, h: float) returns float
+{
+    let orig tape.value_at(id, i)
+    tape.set_value(id, i, orig + h)
+    tape.recompute()
+    let fp tape.value_at(out, 0)
+    tape.set_value(id, i, orig - h)
+    tape.recompute()
+    let fm tape.value_at(out, 0)
+    tape.set_value(id, i, orig)
+    tape.recompute()
+    (fp - fm) / (2.0 * h)
+}
+
+procedure check_leaf(tape: Tape, out: int, id: int, count: int, h: float, atol: float, rtol: float) returns bool
+{
+    var good true
+    var maxabs: float 0.0
+    var i 0
+    while i < count
+    {
+        let ga tape.grad_at(id, i)
+        let gn num_grad(tape, out, id, i, h)
+        if close_enough(ga, gn, atol, rtol) = false
+            set good: false
+        var mag ga
+        if mag < 0.0
+            set mag: 0.0 - mag
+        if mag > maxabs
+            set maxabs: mag
+        set i: i + 1
+    }
+    if maxabs < 0.0005
+        set good: false
+    good
+}
+
+var ok true
+
+; --- single head, 3 tokens, dim 3 ---
+{
+    var tape Tape()
+    let q tape.leaf(3, 3)
+    let k tape.leaf(3, 3)
+    let v tape.leaf(3, 3)
+    var i 0
+    while i < 9
+    {
+        let vq tval(i)
+        tape.set_value(q, i, vq)
+        let vk tval(i + 2)
+        tape.set_value(k, i, vk)
+        let vv tval(i + 5)
+        tape.set_value(v, i, vv)
+        set i: i + 1
+    }
+    let att tape.attention(q, k, v, 1)
+    var w Vector[float](9)
+    var j 0
+    while j < 9
+    {
+        let wv wval(j)
+        w.put(j as size_t, wv)
+        set j: j + 1
+    }
+    let s tape.wsum(att, w)
+    tape.backward s
+    var good check_leaf(tape, s, q, 9, 0.02, 0.005, 0.02)
+    if check_leaf(tape, s, k, 9, 0.02, 0.005, 0.02) = false
+        set good: false
+    if check_leaf(tape, s, v, 9, 0.02, 0.005, 0.02) = false
+        set good: false
+    ; causality: row 0 sees only key 0, so out row 0 = v row 0
+    var c 0
+    while c < 3
+    {
+        let ov tape.value_at(att, c)
+        let vv2 tape.value_at(v, c)
+        if close_enough(ov, vv2, 0.00001, 0.00001) = false
+            set good: false
+        set c: c + 1
+    }
+    if good = false
+    {
+        print("FAIL attention1")
+        set ok: false
+    }
+}
+
+; --- two heads, 4 tokens, dim 4 (dh = 2) ---
+{
+    var tape Tape()
+    let q tape.leaf(4, 4)
+    let k tape.leaf(4, 4)
+    let v tape.leaf(4, 4)
+    var i 0
+    while i < 16
+    {
+        let vq tval(i + 1)
+        tape.set_value(q, i, vq)
+        let vk tval(i + 4)
+        tape.set_value(k, i, vk)
+        let vv tval(i + 8)
+        tape.set_value(v, i, vv)
+        set i: i + 1
+    }
+    let att tape.attention(q, k, v, 2)
+    var w Vector[float](16)
+    var j 0
+    while j < 16
+    {
+        let wv wval(j + 1)
+        w.put(j as size_t, wv)
+        set j: j + 1
+    }
+    let s tape.wsum(att, w)
+    tape.backward s
+    var good check_leaf(tape, s, q, 16, 0.02, 0.005, 0.02)
+    if check_leaf(tape, s, k, 16, 0.02, 0.005, 0.02) = false
+        set good: false
+    if check_leaf(tape, s, v, 16, 0.02, 0.005, 0.02) = false
+        set good: false
+    ; causality across both head slices
+    var c 0
+    while c < 4
+    {
+        let ov tape.value_at(att, c)
+        let vv2 tape.value_at(v, c)
+        if close_enough(ov, vv2, 0.00001, 0.00001) = false
+            set good: false
+        set c: c + 1
+    }
+    if good = false
+    {
+        print("FAIL attention2")
+        set ok: false
+    }
+}
+
+if ok
+    print("PASS")
+else
+    print("FAIL")
