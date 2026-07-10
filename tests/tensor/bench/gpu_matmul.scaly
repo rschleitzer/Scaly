@@ -1,0 +1,458 @@
+; Stage-6 milestone 6.0: the Metal GPU matmul spike (measure, don't
+; guess — the 5.0 pattern). One kernel (f32 matmul, the FLOP lion's
+; share of the BPE trainer) through the whole GPU plumbing chain:
+; host->device, multiply, device->host. Two GPU paths per shape:
+;   - MPS (MPSMatrixMultiplication): Apple's tuned SGEMM = the FLOP
+;     ceiling and the vendor-binding candidate.
+;   - MSL 4x4-tile compute shader: the same register tile as the CPU
+;     mm_tiled kernel = what a stage-6 kernel EXTRACTION would emit.
+; Each path is measured per-dispatch (one command buffer per matmul,
+; the naive lowering) and batched (all reps encoded into ONE command
+; buffer — the whole-step-encoding architecture), plus once including
+; explicit host<->device transfer per op. Buffers are unified-memory
+; shared storage; transfer bandwidth is measured separately.
+; GPU results are NOT bit-identical to the CPU (different reduction
+; order) — correctness is atol/rtol elementwise against the CPU kernel.
+;
+; Run via tests/tensor/bench/run_gpu.sh (darwin-only; compiles the
+; mgpu.m shim and links the Metal frameworks). Prints SKIP and exits 0
+; when no Metal device exists.
+
+function scaly_eio_now_ns() returns i64 extern
+function exit(code: int) extern
+
+function scaly_mgpu_available() returns i32 extern
+function scaly_mgpu_init() returns i32 extern
+function scaly_mgpu_alloc(bytes: size_t) returns pointer[void] extern
+procedure scaly_mgpu_release(buf: pointer[void]) extern
+procedure scaly_mgpu_write(buf: pointer[void], src: pointer[void], bytes: size_t) extern
+procedure scaly_mgpu_read(buf: pointer[void], dst: pointer[void], bytes: size_t) extern
+procedure scaly_mgpu_mps_sgemm(a: pointer[void], b: pointer[void], c: pointer[void], m: i32, k: i32, n: i32, reps: i32) returns i32 extern
+procedure scaly_mgpu_msl_matmul(a: pointer[void], b: pointer[void], c: pointer[void], m: i32, k: i32, n: i32, reps: i32) returns i32 extern
+function scaly_mgpu_last_gpu_ms() returns double extern
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function lcg(s: int) returns int
+    pmod(s * 1103515245 + 12345, 2147483648)
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+; positive-range fixed-point, 1 decimal (NaN-robust: out-of-range -> "nan")
+function fixed1(f: float) returns String
+{
+    var ok false
+    if f >= 0.0
+        if f < 1000000.0
+            set ok: true
+    if ok = false
+        return "nan"
+    let m ((f * 10.0) + 0.5) as int
+    let ip m / 10
+    let fr m - ip * 10
+    var sb StringBuilder()
+    let istr num_to_string(ip as i64)
+    sb.append istr
+    sb.append "."
+    let fstr num_to_string(fr as i64)
+    sb.append fstr
+    sb.to_string()
+}
+
+; positive-range fixed-point, 6 decimals (for max-abs-diff)
+function fixed6(f: float) returns String
+{
+    var ok false
+    if f >= 0.0
+        if f < 1000.0
+            set ok: true
+    if ok = false
+        return "nan"
+    let m ((f * 1000000.0) + 0.5) as int
+    let ip m / 1000000
+    let fr m - ip * 1000000
+    var sb StringBuilder()
+    let istr num_to_string(ip as i64)
+    sb.append istr
+    sb.append "."
+    var scale 100000
+    while scale > 0
+    {
+        let d fr / scale % 10
+        let dstr num_to_string(d as i64)
+        sb.append dstr
+        set scale: scale / 10
+    }
+    sb.to_string()
+}
+
+procedure fill_random(v: Vector[float], count: int, s0: int) returns int
+{
+    var s s0
+    var i 0
+    while i < count
+    {
+        set s: lcg(s)
+        let r pmod(s, 2001) - 1000
+        let rv (r as float) * 0.0001
+        v.put(i as size_t, rv)
+        set i: i + 1
+    }
+    s
+}
+
+; C = A * B, the CPU baseline: verbatim copy of the tape's 4x4
+; register-tiled kernel (scaly/tensor.scaly mm_tiled), compiled -O2
+; with this program and self-scaled by the stage-4 engine.
+procedure mm_cpu(a: Vector[float], b: Vector[float], c: Vector[float], m: int, kk: int, n: int)
+{
+    let ap a.data
+    let bp b.data
+    let mt m / 4
+    for it in mt
+    {
+        var j 0
+        while j < n
+        {
+            var a00: float 0.0
+            var a01: float 0.0
+            var a02: float 0.0
+            var a03: float 0.0
+            var a10: float 0.0
+            var a11: float 0.0
+            var a12: float 0.0
+            var a13: float 0.0
+            var a20: float 0.0
+            var a21: float 0.0
+            var a22: float 0.0
+            var a23: float 0.0
+            var a30: float 0.0
+            var a31: float 0.0
+            var a32: float 0.0
+            var a33: float 0.0
+            var x 0
+            while x < kk
+            {
+                let r0 ap[(it * 4 + 0) * kk + x]
+                let r1 ap[(it * 4 + 1) * kk + x]
+                let r2 ap[(it * 4 + 2) * kk + x]
+                let r3 ap[(it * 4 + 3) * kk + x]
+                let c0 bp[x * n + j]
+                let c1 bp[x * n + j + 1]
+                let c2 bp[x * n + j + 2]
+                let c3 bp[x * n + j + 3]
+                set a00: a00 + r0 * c0
+                set a01: a01 + r0 * c1
+                set a02: a02 + r0 * c2
+                set a03: a03 + r0 * c3
+                set a10: a10 + r1 * c0
+                set a11: a11 + r1 * c1
+                set a12: a12 + r1 * c2
+                set a13: a13 + r1 * c3
+                set a20: a20 + r2 * c0
+                set a21: a21 + r2 * c1
+                set a22: a22 + r2 * c2
+                set a23: a23 + r2 * c3
+                set a30: a30 + r3 * c0
+                set a31: a31 + r3 * c1
+                set a32: a32 + r3 * c2
+                set a33: a33 + r3 * c3
+                set x: x + 1
+            }
+            c.put(((it * 4 + 0) * n + j) as size_t, a00)
+            c.put(((it * 4 + 0) * n + j + 1) as size_t, a01)
+            c.put(((it * 4 + 0) * n + j + 2) as size_t, a02)
+            c.put(((it * 4 + 0) * n + j + 3) as size_t, a03)
+            c.put(((it * 4 + 1) * n + j) as size_t, a10)
+            c.put(((it * 4 + 1) * n + j + 1) as size_t, a11)
+            c.put(((it * 4 + 1) * n + j + 2) as size_t, a12)
+            c.put(((it * 4 + 1) * n + j + 3) as size_t, a13)
+            c.put(((it * 4 + 2) * n + j) as size_t, a20)
+            c.put(((it * 4 + 2) * n + j + 1) as size_t, a21)
+            c.put(((it * 4 + 2) * n + j + 2) as size_t, a22)
+            c.put(((it * 4 + 2) * n + j + 3) as size_t, a23)
+            c.put(((it * 4 + 3) * n + j) as size_t, a30)
+            c.put(((it * 4 + 3) * n + j + 1) as size_t, a31)
+            c.put(((it * 4 + 3) * n + j + 2) as size_t, a32)
+            c.put(((it * 4 + 3) * n + j + 3) as size_t, a33)
+            set j: j + 4
+        }
+    }
+}
+
+; max elementwise |got - want| over count floats
+procedure max_abs_diff(got: Vector[float], want: Vector[float], count: int) returns float
+{
+    let gp got.data
+    let wp want.data
+    var md: float 0.0
+    var i 0
+    while i < count
+    {
+        var d gp[i] - wp[i]
+        if d < 0.0
+            set d: 0.0 - d
+        if d > md
+            set md: d
+        set i: i + 1
+    }
+    md
+}
+
+procedure report(txt: String, flops: i64, reps: int, ns: i64)
+{
+    var sb StringBuilder()
+    sb.append "  "
+    sb.append txt
+    var gfs: float 0.0
+    if ns > 0
+    {
+        let total (flops * (reps as i64)) as float
+        set gfs: total / (ns as float)
+    }
+    let gstr fixed1(gfs)
+    sb.append gstr
+    sb.append " GFLOP/s"
+    let line sb.to_string()
+    Console.println(line.to_c_string())
+}
+
+procedure report_gpu_only(txt: String, flops: i64, reps: int)
+{
+    let gms scaly_mgpu_last_gpu_ms()
+    var gfs: float 0.0
+    if gms > 0.0
+    {
+        let total (flops * (reps as i64)) as float
+        let ns (gms as float) * 1000000.0
+        set gfs: total / ns
+    }
+    var sb StringBuilder()
+    sb.append "  "
+    sb.append txt
+    let gstr fixed1(gfs)
+    sb.append gstr
+    sb.append " GFLOP/s"
+    let line sb.to_string()
+    Console.println(line.to_c_string())
+}
+
+procedure bench_shape(m: int, kk: int, n: int, seed: int)
+{
+    let flops (2 as i64) * (m as i64) * (kk as i64) * (n as i64)
+    var sb StringBuilder()
+    sb.append "shape "
+    let ms num_to_string(m as i64)
+    sb.append ms
+    sb.append "x"
+    let ks num_to_string(kk as i64)
+    sb.append ks
+    sb.append "x"
+    let nstr num_to_string(n as i64)
+    sb.append nstr
+    sb.append "  ("
+    let mf fixed1((flops as float) / 1000000.0)
+    sb.append mf
+    sb.append " MFLOP)"
+    let hdr sb.to_string()
+    Console.println(hdr.to_c_string())
+
+    var a Vector[float]((m * kk) as size_t)
+    var b Vector[float]((kk * n) as size_t)
+    var c Vector[float]((m * n) as size_t)
+    var g Vector[float]((m * n) as size_t)
+    var s seed
+    set s: fill_random(a, m * kk, s)
+    set s: fill_random(b, kk * n, s)
+
+    ; --- CPU baseline: warm 3x (deferred driver + HotSpot promotion),
+    ; then a timed loop ---
+    mm_cpu(a, b, c, m, kk, n)
+    mm_cpu(a, b, c, m, kk, n)
+    mm_cpu(a, b, c, m, kk, n)
+    var rc ((4000000000 / flops) as int) + 1
+    if rc < 4
+        set rc: 4
+    let ct0 scaly_eio_now_ns()
+    var i 0
+    while i < rc
+    {
+        mm_cpu(a, b, c, m, kk, n)
+        set i: i + 1
+    }
+    let ct1 scaly_eio_now_ns()
+    report(String("cpu tiled                "), flops, rc, ct1 - ct0)
+
+    ; --- GPU buffers (unified memory, shared storage) ---
+    let abytes ((m * kk * 4) as size_t)
+    let bbytes ((kk * n * 4) as size_t)
+    let cbytes ((m * n * 4) as size_t)
+    let ga scaly_mgpu_alloc(abytes)
+    let gb scaly_mgpu_alloc(bbytes)
+    let gc scaly_mgpu_alloc(cbytes)
+    let ap a.data as pointer[void]
+    let bp b.data as pointer[void]
+    let gp g.data as pointer[void]
+
+    ; transfer bandwidth: host->device write of A+B, device->host read of C
+    var rt 10
+    let wt0 scaly_eio_now_ns()
+    set i: 0
+    while i < rt
+    {
+        scaly_mgpu_write(ga, ap, abytes)
+        scaly_mgpu_write(gb, bp, bbytes)
+        set i: i + 1
+    }
+    let wt1 scaly_eio_now_ns()
+    let wbytes ((abytes + bbytes) as i64) * (rt as i64)
+    var wgbs: float 0.0
+    if wt1 > wt0
+        set wgbs: (wbytes as float) / ((wt1 - wt0) as float)
+    var wsb StringBuilder()
+    wsb.append "  h2d memcpy             "
+    let wstr fixed1(wgbs)
+    wsb.append wstr
+    wsb.append " GB/s"
+    let wline wsb.to_string()
+    Console.println(wline.to_c_string())
+
+    var rg ((16000000000 / flops) as int) + 1
+    if rg < 8
+        set rg: 8
+
+    ; --- MPS: warm, per-dispatch, batched, incl-transfer ---
+    scaly_mgpu_mps_sgemm(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
+    let mt0 scaly_eio_now_ns()
+    set i: 0
+    while i < rg
+    {
+        scaly_mgpu_mps_sgemm(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
+        set i: i + 1
+    }
+    let mt1 scaly_eio_now_ns()
+    report(String("mps per-dispatch         "), flops, rg, mt1 - mt0)
+    let mb0 scaly_eio_now_ns()
+    scaly_mgpu_mps_sgemm(ga, gb, gc, m as i32, kk as i32, n as i32, rg as i32)
+    let mb1 scaly_eio_now_ns()
+    report(String("mps batched              "), flops, rg, mb1 - mb0)
+    report_gpu_only(String("mps gpu-only             "), flops, rg)
+    let mx0 scaly_eio_now_ns()
+    set i: 0
+    while i < rg
+    {
+        scaly_mgpu_write(ga, ap, abytes)
+        scaly_mgpu_write(gb, bp, bbytes)
+        scaly_mgpu_mps_sgemm(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
+        scaly_mgpu_read(gc, gp, cbytes)
+        set i: i + 1
+    }
+    let mx1 scaly_eio_now_ns()
+    report(String("mps per-op + transfer    "), flops, rg, mx1 - mx0)
+    scaly_mgpu_read(gc, gp, cbytes)
+    let mdiff max_abs_diff(g, c, m * n)
+
+    ; --- MSL 4x4-tile shader: correctness first on a ZEROED C (a
+    ; silently no-op shader must not inherit the MPS result), then
+    ; per-dispatch and batched timing ---
+    var z Vector[float]((m * n) as size_t)
+    let zp z.data as pointer[void]
+    scaly_mgpu_write(gc, zp, cbytes)
+    scaly_mgpu_msl_matmul(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
+    scaly_mgpu_read(gc, gp, cbytes)
+    let sdiff max_abs_diff(g, c, m * n)
+    let st0 scaly_eio_now_ns()
+    set i: 0
+    while i < rg
+    {
+        scaly_mgpu_msl_matmul(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
+        set i: i + 1
+    }
+    let st1 scaly_eio_now_ns()
+    report(String("msl 4x4 per-dispatch     "), flops, rg, st1 - st0)
+    let sb0 scaly_eio_now_ns()
+    scaly_mgpu_msl_matmul(ga, gb, gc, m as i32, kk as i32, n as i32, rg as i32)
+    let sb1 scaly_eio_now_ns()
+    report(String("msl 4x4 batched          "), flops, rg, sb1 - sb0)
+    report_gpu_only(String("msl 4x4 gpu-only         "), flops, rg)
+
+    ; --- correctness (reduction order differs -> tolerance, not
+    ; bit-identity) ---
+    var vsb StringBuilder()
+    vsb.append "  maxdiff mps "
+    let mdstr fixed6(mdiff)
+    vsb.append mdstr
+    vsb.append "  msl "
+    let sdstr fixed6(sdiff)
+    vsb.append sdstr
+    var tol: float 0.002
+    var verdict String(" PASS")
+    if mdiff > tol
+        set verdict: String(" FAIL")
+    if sdiff > tol
+        set verdict: String(" FAIL")
+    vsb.append verdict
+    let vline vsb.to_string()
+    Console.println(vline.to_c_string())
+    if mdiff > tol
+        exit(1)
+    if sdiff > tol
+        exit(1)
+
+    scaly_mgpu_release(ga)
+    scaly_mgpu_release(gb)
+    scaly_mgpu_release(gc)
+}
+
+; --- top level ---
+if scaly_mgpu_available() = 0
+{
+    print("SKIP: no Metal device\n")
+    exit(0)
+}
+if scaly_mgpu_init() <> 0
+{
+    print("error: Metal init failed\n")
+    exit(1)
+}
+let hdr0 String("gpu matmul spike (6.0) - f32, demo shapes")
+Console.println(hdr0.to_c_string())
+
+; the BPE trainer's shapes (B*T = 1024 rows, D=256, F=512, V=2048)
+bench_shape(1024, 256, 256, 42)     ; QKV / attention-out projection
+bench_shape(1024, 256, 512, 43)     ; FFN in
+bench_shape(1024, 512, 256, 44)     ; FFN out
+bench_shape(1024, 256, 2048, 45)    ; head (the FLOP lion's share)
+; the bigger model stage 6 wants to make practical (D=512, T=256)
+bench_shape(2048, 512, 512, 46)
+bench_shape(2048, 512, 2048, 47)
+; cross-reference with the 5.1 kernel numbers
+bench_shape(512, 512, 512, 48)
+let ftr String("done")
+Console.println(ftr.to_c_string())
