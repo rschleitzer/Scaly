@@ -1,0 +1,503 @@
+; Stage-5 demo (ROADMAP 5.4): live training + inference of a 2-layer
+; pre-LN char transformer on Thomas Mann's "Der Tod in Venedig"
+; (tests/tensor/mann.txt), pure Scaly, zero Python. Trains with
+; progress lines (step, windowed loss, steps/s), then extends a
+; corpus prompt autoregressively on the SAME tape (sliding window,
+; temperature 0.8) and prints the generated German text.
+; Run via demo/run.sh (pins the cwd — the corpus loads cwd-relative).
+
+function scaly_eio_now_ns() returns i64 extern
+function exit(code: int) extern
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function lcg(s: int) returns int
+    pmod(s * 1103515245 + 12345, 2147483648)
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+; Fixed-point float with 3 decimals. NaN-robust as a POSITIVE range:
+; a diverged loss (NaN) fails every comparison and prints "nan".
+function fixed3(f: float) returns String
+{
+    var ok false
+    if f >= 0.0
+        if f < 100000.0
+            set ok: true
+    if ok = false
+        return "nan"
+    let m ((f * 1000.0) + 0.5) as int
+    let ip m / 1000
+    let fr m - ip * 1000
+    var sb StringBuilder()
+    let istr num_to_string(ip as i64)
+    sb.append istr
+    sb.append "."
+    if fr < 100
+        sb.append "0"
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr as i64)
+    sb.append fstr
+    sb.to_string()
+}
+
+; Nanosecond interval as seconds with 2 decimals.
+function secs_to_string(ns: i64) returns String
+{
+    let cs ns / 10000000
+    let ip cs / 100
+    let fr cs - ip * 100
+    var sb StringBuilder()
+    let istr num_to_string(ip)
+    sb.append istr
+    sb.append "."
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr)
+    sb.append fstr
+    sb.to_string()
+}
+
+procedure fill(tape: Tape, id: int, count: int, s0: int) returns int
+{
+    var s s0
+    var i 0
+    while i < count
+    {
+        set s: lcg(s)
+        let r pmod(s, 2001) - 1000
+        let rv (r as float) * 0.0001
+        tape.set_value(id, i, rv)
+        set i: i + 1
+    }
+    s
+}
+
+procedure fill_const(tape: Tape, id: int, count: int, v: float)
+{
+    var i 0
+    while i < count
+    {
+        tape.set_value(id, i, v)
+        set i: i + 1
+    }
+}
+
+; --- load the corpus (cwd-relative; demo/run.sh pins the cwd) ---
+let path String("tests/tensor/mann.txt")
+let text File.read_to_string(path)
+let tlen text.get_length() as int
+if tlen < 10000
+{
+    print("error: tests/tensor/mann.txt not found or empty - run via demo/run.sh\n")
+    exit(1)
+}
+
+; --- char tokenizer: UTF-8 decode, first-seen vocab ids; the raw
+; corpus bytes of each first-seen char are recorded per id, so
+; detokenizing replays known-valid UTF-8 ---
+var map Vector[int](16384)
+let mp map.data
+let tsz text.get_length()
+var toks Vector[i64](tsz)
+let tp toks.data
+var revlen Vector[int](256)
+let rl revlen.data
+var revbytes Vector[int](1024)
+let rb revbytes.data
+var ntok 0
+var vocab 0
+var pos 0
+; token index of the prompt "Gustav ..." (first occurrence)
+var ptok 0
+var have_prompt false
+while pos < tlen
+{
+    let b0 text.get(pos as size_t) as int
+    if have_prompt = false
+    {
+        if b0 = 71
+            if pos + 5 < tlen
+                if text.get((pos + 1) as size_t) as int = 117
+                    if text.get((pos + 2) as size_t) as int = 115
+                        if text.get((pos + 3) as size_t) as int = 116
+                            if text.get((pos + 4) as size_t) as int = 97
+                                if text.get((pos + 5) as size_t) as int = 118
+                                {
+                                    set ptok: ntok
+                                    set have_prompt: true
+                                }
+    }
+    var cp b0
+    var adv 1
+    if b0 >= 192
+    {
+        if b0 < 224
+        {
+            let b1 text.get((pos + 1) as size_t) as int
+            set cp: (b0 - 192) * 64 + (b1 - 128)
+            set adv: 2
+        }
+    }
+    if b0 >= 224
+    {
+        if b0 < 240
+        {
+            let b1 text.get((pos + 1) as size_t) as int
+            let b2 text.get((pos + 2) as size_t) as int
+            set cp: ((b0 - 224) * 64 + (b1 - 128)) * 64 + (b2 - 128)
+            set adv: 3
+        }
+    }
+    if b0 >= 240
+    {
+        set cp: 0
+        set adv: 4
+    }
+    if cp >= 16384
+        set cp: 0
+    if mp[cp] = 0
+    {
+        set vocab: vocab + 1
+        set mp[cp]: vocab
+        let nid vocab - 1
+        if nid < 256
+        {
+            set rl[nid]: adv
+            var k 0
+            while k < adv
+            {
+                set rb[nid * 4 + k]: text.get((pos + k) as size_t) as int
+                set k: k + 1
+            }
+        }
+    }
+    let tid mp[cp] - 1
+    set tp[ntok]: tid as i64
+    set ntok: ntok + 1
+    set pos: pos + adv
+}
+if ntok < 1000
+{
+    print("error: corpus too small\n")
+    exit(1)
+}
+
+; --- model ---
+let V vocab
+let D 64
+let T 64
+let F 128
+let HEADS 4
+let STEPS 10000
+let PROG 500
+var tape Tape()
+let table tape.leaf(V, D)
+let posemb tape.leaf(T, D)
+; layer 1
+let g1a tape.leaf(1, D)
+let b1a tape.leaf(1, D)
+let wq1 tape.leaf(D, D)
+let wk1 tape.leaf(D, D)
+let wv1 tape.leaf(D, D)
+let wo1 tape.leaf(D, D)
+let g1b tape.leaf(1, D)
+let b1b tape.leaf(1, D)
+let wf1 tape.leaf(D, F)
+let wp1 tape.leaf(F, D)
+; layer 2
+let g2a tape.leaf(1, D)
+let b2a tape.leaf(1, D)
+let wq2 tape.leaf(D, D)
+let wk2 tape.leaf(D, D)
+let wv2 tape.leaf(D, D)
+let wo2 tape.leaf(D, D)
+let g2b tape.leaf(1, D)
+let b2b tape.leaf(1, D)
+let wf2 tape.leaf(D, F)
+let wp2 tape.leaf(F, D)
+; head
+let gf tape.leaf(1, D)
+let bf tape.leaf(1, D)
+let whead tape.leaf(D, V)
+
+var s 42
+set s: fill(tape, table, V * D, s)
+set s: fill(tape, posemb, T * D, s)
+set s: fill(tape, wq1, D * D, s)
+set s: fill(tape, wk1, D * D, s)
+set s: fill(tape, wv1, D * D, s)
+set s: fill(tape, wo1, D * D, s)
+set s: fill(tape, wf1, D * F, s)
+set s: fill(tape, wp1, F * D, s)
+set s: fill(tape, wq2, D * D, s)
+set s: fill(tape, wk2, D * D, s)
+set s: fill(tape, wv2, D * D, s)
+set s: fill(tape, wo2, D * D, s)
+set s: fill(tape, wf2, D * F, s)
+set s: fill(tape, wp2, F * D, s)
+set s: fill(tape, whead, D * V, s)
+fill_const(tape, g1a, D, 1.0)
+fill_const(tape, g1b, D, 1.0)
+fill_const(tape, g2a, D, 1.0)
+fill_const(tape, g2b, D, 1.0)
+fill_const(tape, gf, D, 1.0)
+
+; --- graph: one window of T tokens, mutated in place per step ---
+let bsz T as size_t
+var ids Vector[i64](bsz)
+let emb tape.embedding(table, ids, T)
+let x0 tape.add(emb, posemb)
+; layer 1
+let n1a tape.layernorm(x0, g1a, b1a, 0.00001)
+let q1 tape.matmul(n1a, wq1)
+let k1 tape.matmul(n1a, wk1)
+let v1 tape.matmul(n1a, wv1)
+let at1 tape.attention(q1, k1, v1, HEADS)
+let o1 tape.matmul(at1, wo1)
+let x1 tape.add(x0, o1)
+let n1b tape.layernorm(x1, g1b, b1b, 0.00001)
+let h1 tape.matmul(n1b, wf1)
+let e1 tape.gelu(h1)
+let m1 tape.matmul(e1, wp1)
+let x2 tape.add(x1, m1)
+; layer 2
+let n2a tape.layernorm(x2, g2a, b2a, 0.00001)
+let q2 tape.matmul(n2a, wq2)
+let k2 tape.matmul(n2a, wk2)
+let v2 tape.matmul(n2a, wv2)
+let at2 tape.attention(q2, k2, v2, HEADS)
+let o2 tape.matmul(at2, wo2)
+let x3 tape.add(x2, o2)
+let n2b tape.layernorm(x3, g2b, b2b, 0.00001)
+let h2 tape.matmul(n2b, wf2)
+let e2 tape.gelu(h2)
+let m2 tape.matmul(e2, wp2)
+let x4 tape.add(x3, m2)
+; head
+let nf tape.layernorm(x4, gf, bf, 0.00001)
+let logits tape.matmul(nf, whead)
+var tgs Vector[i64](bsz)
+let loss tape.crossentropy(logits, tgs)
+
+; --- all trainable leaves ---
+let NPARAM 25
+var pids Vector[int](25)
+pids.put(0, table)
+pids.put(1, posemb)
+pids.put(2, g1a)
+pids.put(3, b1a)
+pids.put(4, wq1)
+pids.put(5, wk1)
+pids.put(6, wv1)
+pids.put(7, wo1)
+pids.put(8, g1b)
+pids.put(9, b1b)
+pids.put(10, wf1)
+pids.put(11, wp1)
+pids.put(12, g2a)
+pids.put(13, b2a)
+pids.put(14, wq2)
+pids.put(15, wk2)
+pids.put(16, wv2)
+pids.put(17, wo2)
+pids.put(18, g2b)
+pids.put(19, b2b)
+pids.put(20, wf2)
+pids.put(21, wp2)
+pids.put(22, gf)
+pids.put(23, bf)
+pids.put(24, whead)
+let pp pids.data
+
+var hdr StringBuilder()
+hdr.append "scaly mann demo: "
+let vs num_to_string(V as i64)
+hdr.append vs
+hdr.append " chars vocab, "
+let nts num_to_string(ntok as i64)
+hdr.append nts
+hdr.append " tokens, 2-layer transformer T="
+let ts num_to_string(T as i64)
+hdr.append ts
+hdr.append " D="
+let ds num_to_string(D as i64)
+hdr.append ds
+hdr.append " F="
+let fs num_to_string(F as i64)
+hdr.append fs
+let hline hdr.to_string()
+Console.println(hline.to_c_string())
+
+; --- train: Adam over random corpus windows ---
+let train_t0 scaly_eio_now_ns()
+var win_t0 train_t0
+var win_sum: float 0.0
+var step 1
+while step <= STEPS
+{
+    set s: lcg(s)
+    let p pmod(s, ntok - T - 1)
+    var t 0
+    while t < T
+    {
+        tape.set_token(emb, t, tp[p + t])
+        tape.set_token(loss, t, tp[p + t + 1])
+        set t: t + 1
+    }
+    tape.recompute()
+    set win_sum: win_sum + tape.value_at(loss, 0)
+    tape.zero_grads()
+    tape.backward loss
+    ; step-decay: full rate for 3/4 of the run, then anneal
+    var lr: float 0.003
+    if step * 4 > STEPS * 3
+        set lr: 0.001
+    var pi 0
+    while pi < NPARAM
+    {
+        tape.adam_step(pp[pi], lr, 0.9, 0.999, 0.00000001, step)
+        set pi: pi + 1
+    }
+    if pmod(step, PROG) = 0
+    {
+        let now scaly_eio_now_ns()
+        let ns now - win_t0
+        var sps 0 as i64
+        if ns > 0
+            set sps: ((PROG as i64) * 1000000000) / ns
+        var sb StringBuilder()
+        sb.append "step "
+        let ss num_to_string(step as i64)
+        sb.append ss
+        sb.append "/"
+        let sts num_to_string(STEPS as i64)
+        sb.append sts
+        sb.append "  loss "
+        let avg win_sum / (PROG as float)
+        let ls fixed3(avg)
+        sb.append ls
+        sb.append "  "
+        let sp num_to_string(sps)
+        sb.append sp
+        sb.append " steps/s"
+        let line sb.to_string()
+        Console.println(line.to_c_string())
+        set win_sum: 0.0
+        set win_t0: now
+        ; keep the sub-minute promise on slower machines: past 50 s
+        ; of training, this window is the last
+        if now - train_t0 > 50000000000
+            set step: STEPS
+    }
+    set step: step + 1
+}
+let train_t1 scaly_eio_now_ns()
+var tr StringBuilder()
+tr.append "training done in "
+let trs secs_to_string(train_t1 - train_t0)
+tr.append trs
+tr.append " s"
+let trline tr.to_string()
+Console.println(trline.to_c_string())
+
+; --- inference: extend a corpus prompt autoregressively on the same
+; tape; a sliding window keeps the last T tokens visible ---
+let P 40
+let GEN 600
+var hist Vector[i64]((P + GEN) as size_t)
+let hp hist.data
+var hi 0
+while hi < P
+{
+    set hp[hi]: tp[ptok + hi]
+    set hi: hi + 1
+}
+let gen_t0 scaly_eio_now_ns()
+var hlen P
+while hlen < P + GEN
+{
+    var vis hlen
+    if vis > T
+        set vis: T
+    let start hlen - vis
+    var t2 0
+    while t2 < vis
+    {
+        tape.set_token(emb, t2, hp[start + t2])
+        set t2: t2 + 1
+    }
+    tape.recompute()
+    set s: lcg(s)
+    let u (pmod(s, 10000) as float) * 0.0001
+    var pick tape.sample(logits, vis - 1, 0.8, u)
+    if pick < 0
+        set pick: 0
+    if pick >= V
+        set pick: 0
+    set hp[hlen]: pick as i64
+    set hlen: hlen + 1
+}
+let gen_t1 scaly_eio_now_ns()
+
+; --- detokenize: replay the recorded corpus bytes per token id ---
+var out StringBuilder()
+out.append "["
+var oi 0
+while oi < P + GEN
+{
+    if oi = P
+        out.append "]"
+    let id hp[oi] as int
+    if id < 256
+    {
+        let n rl[id]
+        var k2 0
+        while k2 < n
+        {
+            out.append(rb[id * 4 + k2] as char)
+            set k2: k2 + 1
+        }
+    }
+    set oi: oi + 1
+}
+let text_out out.to_string()
+Console.println("------------------------------------------------------------")
+Console.println(text_out.to_c_string())
+Console.println("------------------------------------------------------------")
+var gl StringBuilder()
+let gs num_to_string(GEN as i64)
+gl.append gs
+gl.append " chars generated in "
+let gts secs_to_string(gen_t1 - gen_t0)
+gl.append gts
+gl.append " s (temperature 0.8, prompt in brackets)"
+let gline gl.to_string()
+Console.println(gline.to_c_string())
