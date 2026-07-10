@@ -511,7 +511,11 @@ define Tape
         let gp node.grad.data
         let gap na.grad.data
         let gbp nb.grad.data
-        ; dA[i,x] += sum_j dC[i,j] * B[x,j]
+        let ga na.grad
+        let gb nb.grad
+        ; dA[i,x] += sum_j dC[i,j] * B[x,j] — accumulate via put so the
+        ; row-disjoint loop classifies parallel (raw pointer writes
+        ; block as "indirect write")
         for i in m
         {
             var x 0
@@ -524,7 +528,7 @@ define Tape
                     set acc: acc + gp[i * n + j] * bp[x * n + j]
                     set j: j + 1
                 }
-                set gap[i * kk + x]: gap[i * kk + x] + acc
+                ga.put((i * kk + x) as size_t, gap[i * kk + x] + acc)
                 set x: x + 1
             }
         }
@@ -541,7 +545,7 @@ define Tape
                     set acc: acc + ap[i2 * kk + x2] * gp[i2 * n + j]
                     set i2: i2 + 1
                 }
-                set gbp[x2 * n + j]: gbp[x2 * n + j] + acc
+                gb.put((x2 * n + j) as size_t, gbp[x2 * n + j] + acc)
                 set j: j + 1
             }
         }
@@ -579,6 +583,7 @@ define Tape
         let xp na.value.data
         let gp node.grad.data
         let gxp na.grad.data
+        let ga na.grad
         let r node.rows
         let n node.cols
         for i in r
@@ -592,7 +597,7 @@ define Tape
                 ; d inner/dv, then product rule on 0.5*v*(1+t)
                 let dinner 0.7978845608 * (1.0 + 0.134145 * v * v)
                 let dg 0.5 * (1.0 + t) + 0.5 * v * (1.0 - t * t) * dinner
-                set gxp[i * n + j]: gxp[i * n + j] + gp[i * n + j] * dg
+                ga.put((i * n + j) as size_t, gxp[i * n + j] + gp[i * n + j] * dg)
                 set j: j + 1
             }
         }
@@ -647,6 +652,7 @@ define Tape
         let yp node.value.data
         let gp node.grad.data
         let gxp na.grad.data
+        let ga na.grad
         let r node.rows
         let n node.cols
         ; dx_j = y_j * (dy_j - sum_k dy_k * y_k), per row
@@ -663,7 +669,7 @@ define Tape
             while j2 < n
             {
                 let d yp[i * n + j2] * (gp[i * n + j2] - dot)
-                set gxp[i * n + j2]: gxp[i * n + j2] + d
+                ga.put((i * n + j2) as size_t, gxp[i * n + j2] + d)
                 set j2: j2 + 1
             }
         }
@@ -918,6 +924,7 @@ define Tape
         let tp node.tok.data
         let gp node.grad.data
         let gxp na.grad.data
+        let ga na.grad
         let r na.rows
         let n na.cols
         let scale gp[0] / (r as float)
@@ -949,7 +956,7 @@ define Tape
                 var p expf(xp[i * n + j3] - mx) * inv
                 if j3 = t
                     set p: p - 1.0
-                set gxp[i * n + j3]: gxp[i * n + j3] + scale * p
+                ga.put((i * n + j3) as size_t, gxp[i * n + j3] + scale * p)
                 set j3: j3 + 1
             }
         }
