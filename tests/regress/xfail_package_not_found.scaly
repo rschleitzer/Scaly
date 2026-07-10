@@ -1,0 +1,7 @@
+; A declared package whose root cannot be found must fail the compile
+; loudly (rc 2, like the missing-prelude case) instead of silently
+; modeling an empty stub whose every use then surfaces as a misleading
+; "unknown identifier" / "function not found" downstream.
+; xfail: package not found: nonexistent
+package nonexistent 9.9.9
+exit 0

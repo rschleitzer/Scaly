@@ -2582,6 +2582,25 @@ procedure handle_package_decl(pkg_syntax: PackageSyntax, packages: ref[Array[Mod
     let pkg_path sb.to_string()
 
     let loaded build_referenced_module(pkg_path, pkg_name, false)
+    ; A declared package whose root loaded to a fully empty stub was not
+    ; found (a PARSE failure inside an existing root reports its own
+    ; file:line:col error and lands here too — the extra line is harmless).
+    if loaded.members.length = 0
+        if loaded.modules.length = 0
+        {
+            var perr StringBuilder()
+            perr.append "error: package not found: "
+            perr.append pkg_name
+            perr.append " "
+            perr.append version_str
+            perr.append ": "
+            perr.append pkg_path
+            perr.append("/" as char)
+            perr.append pkg_name
+            perr.append ".scaly - run from a directory containing packages/, or set SCALY_HOME"
+            let perr_str perr.to_string()
+            report_load_error(perr_str)
+        }
     packages.add loaded
 }
 
@@ -2658,6 +2677,18 @@ function report_module_error(file_path: String, source: String, offset: size_t, 
     msg.append message
     let msg_str msg.to_string()
     Console.println(msg_str.to_c_string())
+    set modeler_error_count: modeler_error_count + 1
+}
+
+; A required module file (the prelude, or a declared package's root) could not
+; be loaded. Print the message and fail the compile via had_errors() — the
+; silent path compiled WITHOUT the standard library and every later use
+; surfaced as a misleading "function not found: print" / "unknown identifier".
+; Resolution has exactly one base (SCALY_HOME when set, else the current
+; directory), so nothing downstream could still find the file.
+procedure report_load_error(message: String)
+{
+    Console.println(message.to_c_string())
     set modeler_error_count: modeler_error_count + 1
 }
 
@@ -2861,6 +2892,15 @@ function build_program(file_name: String, program_name: String, syntax: ProgramS
                 initial_module.members,
                 initial_module.symbols
             )
+        }
+        else
+        {
+            var perr StringBuilder()
+            perr.append "error: prelude not found: "
+            perr.append prelude_path
+            perr.append "/prelude.scaly - run from a directory containing packages/scaly, set SCALY_HOME (tools/install.sh does), or pass --no-prelude to compile without the standard library"
+            let perr_str perr.to_string()
+            report_load_error(perr_str)
         }
     }
 
