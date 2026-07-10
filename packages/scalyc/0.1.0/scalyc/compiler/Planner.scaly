@@ -382,11 +382,6 @@ define Planner
         ; Mirrors stage-0's OperatorMatch.IsIntrinsic (Planner.cpp:3118/4470).
         resolved_op_is_intrinsic: bool
 
-        ; Package search paths (e.g. "packages", user -I paths). Probed
-        ; by load_package_on_demand when a package isn't already in
-        ; loaded_packages.
-        search_paths: Array[String]
-
         ; Loaded-package cache — name → root Module. Populated lazily
         ; once a package is found and parsed.
         loaded_packages: Array[KeyValuePair[String, Module]]
@@ -717,7 +712,6 @@ define Planner
             set model_operators: Array[KeyValuePair[String, Operator]]^this()
             set model_operator_index: FunctionIndex.create(65536 as size_t, 262144 as size_t)
             set resolved_op_is_intrinsic: false
-            set search_paths: Array[String]^this()
             set loaded_packages: Array[KeyValuePair[String, Module]]^this()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^this()
             set errors: Array[String]^this()
@@ -1299,7 +1293,7 @@ define Planner
         }
 
         ; ================================================================
-        ; Package search paths + on-demand module loading.
+        ; On-demand module loading.
         ;
         ; The Scaly Planner cannot yet drive the Scaly Parser +
         ; Modeler from its own body (would require threading a
@@ -1311,15 +1305,9 @@ define Planner
         ; register_loaded_package / register_loaded_module. The
         ; load_* helpers are pure cache lookups.
         ;
-        ; build_package_search_paths# / build_package_file_path#
-        ; stay for callers that need to locate candidate files
-        ; before parsing them.
+        ; build_package_file_path# stays for callers that need to
+        ; locate a candidate file before parsing it.
         ; ================================================================
-
-        function add_package_search_path(this: Planner, path: String)
-        {
-            search_paths.add path
-        }
 
         ; add_sibling_program: register another Program (typically
         ; built from a peer source file) whose top-level concepts,
@@ -2411,29 +2399,6 @@ define Planner
             null
         }
 
-        ; Build the list of directories to probe for a named package.
-        ; Mirrors Planner.cpp's loadPackageOnDemand search list: cwd's
-        ; packages/, then any user-provided -I paths. Walking the
-        ; source file's parent chain is omitted here — the call sites
-        ; that need it can push additional entries via
-        ; add_package_search_path.
-        function build_package_search_paths(this: Planner) returns Vector[String]
-        {
-            var paths Array[String]()
-            paths.add("packages")
-
-            var i: size_t 0
-            while i < search_paths.length
-            {
-                let p_ptr search_paths.get i
-                if p_ptr <> null
-                    paths.add((*p_ptr))
-                set i: i + 1
-            }
-
-            Vector[String](paths)
-        }
-
         ; Compose "base/<name>/<version>/<name>.scaly" using Path.join#.
         function build_package_file_path(
             this: Planner,
@@ -2479,10 +2444,9 @@ define Planner
         ; load_package_on_demand: cache-only lookup of a package by
         ; name. Returns the pre-registered root Module if one is
         ; cached, otherwise null. Pre-registration happens via
-        ; register_loaded_package. The filesystem probing helpers
-        ; (build_package_search_paths#, build_package_file_path#)
-        ; are retained for callers that want to discover candidate
-        ; files before parsing them externally.
+        ; register_loaded_package. The filesystem probing helper
+        ; build_package_file_path# is retained for callers that want
+        ; to discover a candidate file before parsing it externally.
         function load_package_on_demand(
             this: Planner,
             name: String

@@ -221,27 +221,24 @@ CLASS="filename"
 CLASS="programlisting"
 >package scaly 0.1.0</PRE
 ><P
->declares a dependency on that package. Packages are searched in
-      <TT
-CLASS="filename"
->./packages/</TT
-> first, then
-      <TT
-CLASS="filename"
->/usr/share/scaly/packages/</TT
->, then any paths given
-      with <CODE
-CLASS="option"
->-I</CODE
->. When <CODE
-CLASS="envar"
->SCALY_HOME</CODE
-> is set, the
-      standard packages are resolved under
+>declares a dependency on that package. Packages are resolved under
       <TT
 CLASS="filename"
 >$SCALY_HOME/packages/</TT
->.</P
+> when <CODE
+CLASS="envar"
+>SCALY_HOME</CODE
+> is set (the installed
+      <CODE
+CLASS="command"
+>scalyc</CODE
+> wrapper sets it), otherwise under
+      <TT
+CLASS="filename"
+>./packages/</TT
+> relative to the current directory.
+      A declared package that cannot be found fails the compile with a
+      pointed error.</P
 ><P
 >Multiple versions of the same package can coexist in one program:
       the version is baked into the mangled symbol names, so they never

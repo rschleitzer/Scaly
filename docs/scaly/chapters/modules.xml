@@ -61,12 +61,13 @@ if b.area() = 12
       path is the single source of truth; there is no separate version
       manifest. The statement</para>
     <programlisting>package scaly 0.1.0</programlisting>
-    <para>declares a dependency on that package. Packages are searched in
-      <filename>./packages/</filename> first, then
-      <filename>/usr/share/scaly/packages/</filename>, then any paths given
-      with <option>-I</option>. When <envar>SCALY_HOME</envar> is set, the
-      standard packages are resolved under
-      <filename>$SCALY_HOME/packages/</filename>.</para>
+    <para>declares a dependency on that package. Packages are resolved under
+      <filename>$SCALY_HOME/packages/</filename> when
+      <envar>SCALY_HOME</envar> is set (the installed
+      <command>scalyc</command> wrapper sets it), otherwise under
+      <filename>./packages/</filename> relative to the current directory.
+      A declared package that cannot be found fails the compile with a
+      pointed error.</para>
     <para>Multiple versions of the same package can coexist in one program:
       the version is baked into the mangled symbol names, so they never
       collide. Dependencies are not transitively visible — a package sees only
