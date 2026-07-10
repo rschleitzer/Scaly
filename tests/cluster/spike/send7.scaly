@@ -79,11 +79,14 @@ procedure add_entry(base: size_t, len: size_t)
 }
 
 ; RAW-OFFSET region walk. Typed Page field access (p.next_page etc.)
-; from a USER program silently drops the dependent statements — a
-; live silent-drop compiler bug found by this spike (works inside the
-; stdlib package; pointer[String] fields work cross-package too, so
-; it is Page-specific). Page layout: next_object@0 current_page@8
-; next_page@16 exclusive_pages.head@24; PageNode: page@0 next@8.
+; from a USER program silently dropped the dependent statements when
+; this spike was written — the finding-4 compiler bug, FIXED same day
+; (synthesize_literal_struct memory-family shapes + the struct-only
+; top-of-chain load gate; tests/regress/page_field_user.scaly). The
+; walk stays raw-offset as a wire-format reference: the receiver must
+; fix up page headers in raw buffers anyway. Page layout: next_object@0
+; current_page@8 next_page@16 exclusive_pages.head@24; PageNode:
+; page@0 next@8.
 procedure walk_exclusives(p: size_t)
 {
     var nd *((p + (24 as size_t)) as pointer[size_t])

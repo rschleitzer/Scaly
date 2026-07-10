@@ -2302,6 +2302,82 @@ define Emitter
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
         }
+        ; Non-generic scaly.memory structs. These are on the
+        ; is_runtime_opaque_struct list (registering their REAL layouts
+        ; would flip ABI decisions — the s176 lesson), so a field access
+        ; from OUTSIDE their package previously found no layout at all:
+        ; emit_member_access_chain bailed to null and every dependent
+        ; statement dropped SILENTLY (found by the stage-7.0 spike, which
+        ; walks Page chains from a user program). The literal shapes
+        ; below give the fallback path correct GEP/extract offsets, the
+        ; same pattern as the container entries above; layouts match
+        ; packages/scaly/0.1.0/scaly/memory/.
+        if name = "Page"
+        {
+            ; Page: { next_object: ptr, current_page: ptr, next_page: ptr,
+            ;         exclusive_pages: PageList { head: ptr } }
+            var pl_fields Vector[LLVMTypeRef](1)
+            pl_fields.put(0, ptr_ty)
+            let pl_ty LLVMStructTypeInContext(context, pl_fields.data, 1, 0)
+            var fields Vector[LLVMTypeRef](4)
+            fields.put(0, ptr_ty)
+            fields.put(1, ptr_ty)
+            fields.put(2, ptr_ty)
+            fields.put(3, pl_ty)
+            return LLVMStructTypeInContext(context, fields.data, 4, 0)
+        }
+        if name = "PageList"
+        {
+            ; PageList: { head: pointer[PageNode] }
+            var fields Vector[LLVMTypeRef](1)
+            fields.put(0, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 1, 0)
+        }
+        if name = "PageNode"
+        {
+            ; PageNode: { page: pointer[Page], next: pointer[PageNode] }
+            var fields Vector[LLVMTypeRef](2)
+            fields.put(0, ptr_ty)
+            fields.put(1, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 2, 0)
+        }
+        if name = "PageListIterator"
+        {
+            ; PageListIterator: { current: pointer[PageNode] }
+            var fields Vector[LLVMTypeRef](1)
+            fields.put(0, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 1, 0)
+        }
+        if name = "StackBucketHeader"
+        {
+            ; StackBucketHeader: { prev: ptr, next: ptr }
+            var fields Vector[LLVMTypeRef](2)
+            fields.put(0, ptr_ty)
+            fields.put(1, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 2, 0)
+        }
+        if name = "HeapBucketHeader"
+        {
+            ; HeapBucketHeader: { prev: ptr, next: ptr, bitmap: u64,
+            ;                     lock: u64, dead: u64 }
+            var fields Vector[LLVMTypeRef](5)
+            fields.put(0, ptr_ty)
+            fields.put(1, ptr_ty)
+            fields.put(2, i64_ty)
+            fields.put(3, i64_ty)
+            fields.put(4, i64_ty)
+            return LLVMStructTypeInContext(context, fields.data, 5, 0)
+        }
+        if name = "TraceEntry"
+        {
+            ; TraceEntry: { name: pointer[const_char], push_count: i64,
+            ;               pop_count: i64 }
+            var fields Vector[LLVMTypeRef](3)
+            fields.put(0, ptr_ty)
+            fields.put(1, i64_ty)
+            fields.put(2, i64_ty)
+            return LLVMStructTypeInContext(context, fields.data, 3, 0)
+        }
         LLVMTypeRef null
     }
 
@@ -4656,15 +4732,30 @@ define Emitter
                 ; libLLVM's DataLayout::getTypeSizeInBits with no stderr.
                 ; Mirror the s121 fallback below: try
                 ; synthesize_literal_struct for known shapes, else bail.
+                ;
+                ; Stage-7.0-spike fix: the load gate must demand a STRUCT,
+                ; not merely a sized type — map_type's opaque-ptr fallback
+                ; is `ptr`, which IS sized, so the old gate emitted a stray
+                ; `load ptr` here (reading FIELD 0 as if it were the struct
+                ; base) and every later hop dereferenced the wrong address.
+                ; Non-struct → try the literal-shape fallback; still no
+                ; struct → leave current_value untouched (the hop loop's
+                ; deref path reports or bails from the ORIGINAL base).
+                var top_is_struct: bool false
                 if struct_type.handle <> null
                 {
-                    if LLVMTypeIsSized(struct_type) = 0
-                        set struct_type: synthesize_literal_struct(parent_type.name)
+                    if LLVMGetTypeKind(struct_type) = LLVMTypeKind.Struct()
+                        set top_is_struct: true
                 }
+                if top_is_struct = false
+                    set struct_type: synthesize_literal_struct(parent_type.name)
                 if struct_type.handle <> null
                 {
-                    if LLVMTypeIsSized(struct_type) <> 0
-                        set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "load.struct")
+                    if LLVMGetTypeKind(struct_type) = LLVMTypeKind.Struct()
+                    {
+                        if LLVMTypeIsSized(struct_type) <> 0
+                            set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "load.struct")
+                    }
                 }
             }
         }
@@ -4797,10 +4888,41 @@ define Emitter
                         var deref_struct_ty map_type deref_parent
                         if LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
                             set deref_struct_ty: synthesize_literal_struct(deref_parent.name)
+                        var deref_ok: bool true
                         if deref_struct_ty.handle = null
+                            set deref_ok: false
+                        if deref_ok
+                        {
+                            if LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
+                                set deref_ok: false
+                        }
+                        if deref_ok = false
+                        {
+                            ; A FIELD hop the planner resolved (named parent,
+                            ; real result type) whose parent layout the
+                            ; emitter cannot obtain used to bail to null here
+                            ; — dropping every dependent statement SILENTLY
+                            ; (the stage-7.0 spike class: pointer[Page] field
+                            ; reads in user programs). Fail loud like the
+                            ; member-not-found trap. Method hops and
+                            ; unresolved-base recoveries (empty parent name)
+                            ; keep the lenient bail.
+                            if access.is_method = false
+                                if access.is_union_value = false
+                                    if access.result_type.name <> "void"
+                                        if deref_parent.name.get_length() > 0
+                                        {
+                                            scaly_eputs "Emitter: no layout for field access: "
+                                            let lless_parent deref_parent.name.to_c_string()
+                                            scaly_eputs lless_parent
+                                            scaly_eputs "."
+                                            let lless_name access.name.to_c_string()
+                                            scaly_eputs lless_name
+                                            scaly_eputs "\n"
+                                            exit 16
+                                        }
                             return LLVMValueRef null
-                        if LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
-                            return LLVMValueRef null
+                        }
                         set current_value: LLVMBuildLoad2(builder, deref_struct_ty, current_value, "deref")
                         set cur_kind: LLVMGetTypeKind(LLVMTypeOf current_value)
                     }

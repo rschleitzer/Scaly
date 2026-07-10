@@ -1,0 +1,96 @@
+; Stage-7.0-spike regression: FIELD reads through pointer[Page] /
+; pointer[PageNode] from a USER program used to silently drop every
+; dependent statement (opaque-listed stdlib structs have no registered
+; layout outside their package; the emitter's top-of-chain gate then
+; emitted a stray `load ptr` — field 0 as struct base — and the deref
+; hop bailed to null). Fixed by literal shapes in
+; synthesize_literal_struct + the struct-not-just-sized load gate.
+; Asserts real VALUES, not just non-dropping: fresh-page next_object
+; sits exactly sizeof Page past the base, bumps by an allocation, and
+; the exclusive-pages chain is reachable typed (multi-hop
+; mp.exclusive_pages.head / node.page round-trip).
+
+let mp Page.allocate_page()
+
+; Fresh page: next_object = base + sizeof Page (32).
+let no0 mp.next_object
+if ((no0 as size_t) - (mp as size_t)) <> (32 as size_t)
+{
+    Console.println "FAIL next_object fresh"
+    exit 1
+}
+
+; One 16-byte allocation bumps it to 48.
+let x mp.allocate(16 as size_t, 8 as size_t)
+let no1 mp.next_object
+if ((no1 as size_t) - (mp as size_t)) <> (48 as size_t)
+{
+    Console.println "FAIL next_object bump"
+    exit 1
+}
+
+; Fresh page has no chain yet.
+if mp.next_page <> null
+{
+    Console.println "FAIL next_page fresh"
+    exit 1
+}
+
+; An exclusive page lands in the PageList: typed multi-hop reads
+; through Page -> PageList -> PageNode -> Page round-trip the pointer.
+let ep mp.allocate_exclusive_page()
+let head mp.exclusive_pages.head
+if head = null
+{
+    Console.println "FAIL exclusive head null"
+    exit 1
+}
+if head.page <> ep
+{
+    Console.println "FAIL head.page roundtrip"
+    exit 1
+}
+if head.next <> null
+{
+    Console.println "FAIL head.next"
+    exit 1
+}
+
+; Fill the page: the chain appears and next_page/current_page agree.
+var i 0 as size_t
+while i < (300 as size_t)
+{
+    let y mp.allocate(16 as size_t, 8 as size_t)
+    set i: i + (1 as size_t)
+}
+let np mp.next_page
+let cp mp.current_page
+if np = null
+{
+    Console.println "FAIL next_page after spill"
+    exit 1
+}
+if np <> cp
+{
+    Console.println "FAIL next_page/current_page"
+    exit 1
+}
+
+; Field STORES through the pointer work too (set + read-back).
+let saved mp.current_page
+set mp.current_page: null
+if mp.current_page <> null
+{
+    Console.println "FAIL store null"
+    exit 1
+}
+set mp.current_page: saved
+if mp.current_page <> saved
+{
+    Console.println "FAIL store restore"
+    exit 1
+}
+
+mp.deallocate_extensions()
+Page.release_page(mp)
+Console.println "PASS"
