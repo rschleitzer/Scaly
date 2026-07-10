@@ -1,0 +1,9 @@
+; A binding name smuggled in via a string identifier must not start with
+; `_` — a local '_rp' would shadow the internal caller-page slot exactly
+; the way a plain `rp` binding did before the slot was renamed. Normal
+; identifiers cannot start with `_` (lexer); this closes the freeform-
+; identifier hole.
+; xfail: binding names must not start with _
+var v Vector[int](4)
+let '_rp' v.data
+print("unreachable")

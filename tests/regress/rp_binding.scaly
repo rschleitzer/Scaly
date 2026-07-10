@@ -1,0 +1,22 @@
+; Regression: `rp` is a legal binding name again. The implicit caller-page
+; slot is internally named `_rp` (a leading `_` cannot start a lexed
+; identifier, so user code can never collide with it) — a local `rp` no
+; longer hijacks the page argument of page-peeled calls in scope. This
+; exact shape (bind rp to an arbitrary pointer, then print through
+; to_c_string) was the 2026-07-10 heap-corruption repro that motivated
+; the old hard "reserved binding name" reject. Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Vector
+
+var v Vector[int](4)
+v.put(0, 42)
+let rp v.data
+let msg String("PASS")
+if *rp = 42
+    print(msg)
+else
+    print("FAIL")

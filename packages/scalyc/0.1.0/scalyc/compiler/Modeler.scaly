@@ -1524,7 +1524,9 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
             ;   1. function(page, params...) — first param has name
             ;      but no type → it's the explicit page parameter; peel off.
             ;   2. function(param: Type, ...) — first param has a type →
-            ;      use implicit "rp" as page name; leave input alone.
+            ;      use implicit "_rp" as page name; leave input alone.
+            ;      (Leading `_` is not lexable as an identifier start, so
+            ;      the internal slot name can never collide with user code.)
             var page_param: ref[String]? null
             var final_input: Vector[Item] input
             var is_call_life: bool false
@@ -1574,7 +1576,7 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                 if first_has_name_no_type = false
                 {
                     var holder Vector[String](1)
-                    holder.put(0, "rp")
+                    holder.put(0, "_rp")
                     set page_param: holder.get(0)
                 }
             }

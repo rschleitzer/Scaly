@@ -7997,7 +7997,7 @@ define Planner
                                             if mm.requires_page_param
                                             {
                                                 var pp_h_a Vector[String](1)
-                                                pp_h_a.put(0, "rp")
+                                                pp_h_a.put(0, "_rp")
                                                 set pp_ref_a: pp_h_a.get(0)
                                             }
                                             this.record_function(PlannedFunction(
@@ -8196,7 +8196,7 @@ define Planner
                                                     if mm3.requires_page_param
                                                     {
                                                         var pp_h_b Vector[String](1)
-                                                        pp_h_b.put(0, "rp")
+                                                        pp_h_b.put(0, "_rp")
                                                         set pp_ref_b: pp_h_b.get(0)
                                                     }
                                                     this.record_function(PlannedFunction(
@@ -8685,7 +8685,7 @@ define Planner
                                                 if ns_has_page
                                                 {
                                                     var pp_h Vector[String](1)
-                                                    pp_h.put(0, "rp")
+                                                    pp_h.put(0, "_rp")
                                                     set pp_ref: pp_h.get(0)
                                                 }
                                                 this.record_function(PlannedFunction(
@@ -8862,7 +8862,7 @@ define Planner
                                                 if s_pp
                                                 {
                                                     var spph Vector[String](1)
-                                                    spph.put(0, "rp")
+                                                    spph.put(0, "_rp")
                                                     set spp_ref: spph.get(0)
                                                 }
                                                 let sextern PlannedImplementation.Extern(
@@ -9312,7 +9312,7 @@ define Planner
                                     ; positive (result_owns_page_guts(void)=true via
                                     ; its fall-through). Leaving call_life
                                     ; Unspecified routes the page arg to
-                                    ; lookup_variable("rp") in emit_call. NEUTRAL on
+                                    ; lookup_variable("_rp") in emit_call. NEUTRAL on
                                     ; the sigiled source: there these are `#`-calls
                                     ; (Call life, not Unspecified), so the flip
                                     ; never fired for them anyway.
@@ -9403,7 +9403,7 @@ define Planner
                                             let tfm_r result.member_access
                                             let tfm (*tfm_r)
                                             if tfm.length > 1
-                                                if this.lookup_local_binding("rp") <> null
+                                                if this.lookup_local_binding("_rp") <> null
                                                 {
                                                     var tf_fields_only true
                                                     var tfi: size_t 0
@@ -9453,7 +9453,7 @@ define Planner
                             {
                                 if this.persist_receiver_is_frame_local(is_method_dispatch, receiver_op) = false
                                 {
-                                    if this.lookup_local_binding("rp") <> null
+                                    if this.lookup_local_binding("_rp") <> null
                                     {
                                         if call_args_holder.length > 0
                                         {
@@ -11917,7 +11917,7 @@ define Planner
                 if op_has_page
                 {
                     var pp_holder Vector[String](1)
-                    pp_holder.put(0, String("rp"))
+                    pp_holder.put(0, String("_rp"))
                     set page_param_ref: pp_holder.get(0)
                 }
                 var rt_ref: ref[PlannedType]? null
@@ -16702,15 +16702,18 @@ define Planner
 
         function plan_binding(this: Planner, b: Binding) returns PlannedBinding
         {
-            ; A local binding named `rp` shadows the implicit caller-page
-            ; slot the emitter resolves by that exact name — every
-            ; page-peeled call in scope would then receive the binding's
-            ; VALUE as its allocation page (silent, layout-dependent
-            ; memory corruption at runtime). Reject it hard.
+            ; Names starting with `_` are reserved for compiler internals —
+            ; the emitter resolves the implicit caller-page slot as `_rp`.
+            ; The lexer already refuses a leading `_` in normal identifiers,
+            ; but a string identifier ('_rp') could smuggle one in and shadow
+            ; the page slot of every page-peeled call in scope (silent,
+            ; layout-dependent memory corruption). Reject it hard.
             if b.item.name <> null
             {
-                if (*b.item.name) = "rp"
-                    this.add_diagnostic(b.span, String^this("reserved binding name: rp (implicit page parameter)"))
+                let bn_res (*b.item.name)
+                if bn_res.get_length() > 0
+                    if bn_res.get(0) = 95
+                        this.add_diagnostic(b.span, String^this("binding names must not start with _ (reserved for compiler internals)"))
             }
             ; GAP B: a delegate-typed binding initialized by a lambda literal —
             ; `let g: Callback \x: x + 1` — becomes a function-pointer VALUE (the
@@ -17005,7 +17008,7 @@ define Planner
             ; SOUND: it is precisely the page an address-taken-into-an-escaping-
             ; structure reference requires; for the `Vector[X]^rp(arr)` sites it
             ; is emission-IDENTICAL to the sigil (Call and Reference("rp") both
-            ; route emit_call's page_arg through lookup_variable("rp")). Gated:
+            ; route emit_call's page_arg through lookup_variable("_rp")). Gated:
             ;   - name in address_taken_locals (a `&NAME` was seen),
             ;   - the function HAS a caller page (rp in scope) — a primitive-
             ;     returning helper (test()) has none, so it keeps the local page,
@@ -17034,7 +17037,7 @@ define Planner
                 if at_hit
                     if collapsed.result_type.name = "Vector"
                     {
-                        if this.lookup_local_binding("rp") <> null
+                        if this.lookup_local_binding("_rp") <> null
                         {
                             let at_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
                             let at_promoted this.restamp_operand_life(collapsed, at_life)
@@ -21469,7 +21472,7 @@ define Planner
         ; NEUTRAL on sigiled source.
         function promote_discarded_pagecall(this: Planner, stmt: PlannedStatement) returns ref[PlannedStatement]?
         {
-            if this.lookup_local_binding("rp") = null
+            if this.lookup_local_binding("_rp") = null
                 return null
             choose stmt
                 when a: PlannedAction
@@ -23592,7 +23595,7 @@ define Planner
             ; silently elided (bare `ret void`). Mirrors stage-0's page-param
             ; binding in planFunction (Planner.cpp implicit `rp`).
             ; The page param's name: explicit when `#` set page_parameter, else
-            ; the implicit "rp" when the page is INFERRED (de-sigiled decl with
+            ; the implicit "_rp" when the page is INFERRED (de-sigiled decl with
             ; function_needs_caller_page true — mirrors the s131 page_param_ref
             ; inference below). Registering it as a pointer[Page] local lets a
             ; de-sigiled body pass `rp` as an explicit value arg
@@ -23611,7 +23614,7 @@ define Planner
                 if Planner.function_needs_caller_page(this, f)
                 {
                     var rp_holder Vector[String](1)
-                    rp_holder.put(0, "rp")
+                    rp_holder.put(0, "_rp")
                     set pp_name_ref: rp_holder.get(0)
                 }
             if pp_name_ref <> null
@@ -23629,6 +23632,13 @@ define Planner
                 )
                 let pp_ptr_ty Planner.make_pointer_type(pp_page_ty)
                 this.define_parameter(pp_name, pp_ptr_ty)
+                ; An explicit peel-param named `rp` IS the caller-page slot
+                ; (pre-rename behavior): alias the internal `_rp` name to it
+                ; so the implicit-page machinery (promotions gated on
+                ; lookup_local_binding("_rp"), emit_call's
+                ; lookup_variable("_rp") fallback) keeps routing through it.
+                if pp_name = "rp"
+                    this.define_parameter("_rp", pp_ptr_ty)
             }
 
             var return_type: ref[PlannedType]? null
@@ -23839,7 +23849,7 @@ define Planner
                 if Planner.function_needs_caller_page(this, f)
                 {
                     var pp_holder Vector[String](1)
-                    pp_holder.put(0, "rp")
+                    pp_holder.put(0, "_rp")
                     set page_param_ref: pp_holder.get(0)
                 }
             }
@@ -24189,6 +24199,10 @@ define Planner
                 )
                 let page_ptr_ty Planner.make_pointer_type(page_struct_ty)
                 this.define_parameter((*ini.page_parameter), page_ptr_ty)
+                ; `rp`-named peel param = the caller-page slot; alias `_rp`
+                ; (see the plan_function site for the rationale).
+                if (*ini.page_parameter) = "rp"
+                    this.define_parameter("_rp", page_ptr_ty)
             }
 
             var i: size_t 0
@@ -24563,7 +24577,7 @@ define Planner
                     null
                 )
                 let pp_ptr_ty Planner.make_pointer_type(pp_page_ty)
-                this.define_parameter("rp", pp_ptr_ty)
+                this.define_parameter("_rp", pp_ptr_ty)
             }
 
             var return_type: ref[PlannedType]? null
@@ -25873,7 +25887,7 @@ define Planner
                                 if Planner.needs_implicit_return_page(synth_fn)
                                 {
                                     var pp_holder Vector[String](1)
-                                    pp_holder.put(0, "rp")
+                                    pp_holder.put(0, "_rp")
                                     set op_page_param: pp_holder.get(0)
                                 }
                                 var op_can_throw: bool false
@@ -29574,7 +29588,7 @@ define Planner
     ; NEUTRAL on the sigiled source: the only two functions it flags are already
     ; `#` (page_parameter set), so the page decision is unchanged everywhere it
     ; fires. function_needs_caller_page unifies it with needs_implicit_return_page
-    ; at every page-decision site (mangled `…PageE` suffix, page_param_ref="rp",
+    ; at every page-decision site (mangled `…PageE` suffix, page_param_ref="_rp",
     ; requires_page_param on calls).
     function is_ref_or_pointer_type(t: scalyc.compiler.Model.Type) returns bool
     {

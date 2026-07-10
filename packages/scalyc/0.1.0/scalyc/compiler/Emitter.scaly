@@ -1703,7 +1703,7 @@ define Emitter
         var page_arg: LLVMValueRef resolve_reference_page(bx.target_page)
         if page_arg.handle = null
         {
-            let rp_val lookup_variable("rp")
+            let rp_val lookup_variable("_rp")
             if rp_val.handle <> null
                 set page_arg: rp_val
             if page_arg.handle = null
@@ -3389,6 +3389,11 @@ define Emitter
                     let page_name (*func.page_parameter.unwrap())
                     let page_value LLVMGetParam(llvm_func, sret_offset as int)
                     define_variable(page_name, page_value)
+                    ; An explicit peel-param named `rp` IS the caller-page
+                    ; slot: alias the internal `_rp` name to the same value
+                    ; so lookup_variable("_rp") fallbacks keep finding it.
+                    if page_name = "rp"
+                        define_variable("_rp", page_value)
                 }
 
                 ; Bind user parameters as local variables, offset by
@@ -3573,7 +3578,7 @@ define Emitter
                                     if LLVMGetTypeKind(LLVMTypeOf ret_val) = LLVMTypeKind.Struct()
                                     {
                                         let result_ty LLVMTypeOf(ret_val)
-                                        let rp_val lookup_variable("rp")
+                                        let rp_val lookup_variable("_rp")
                                         if rp_val.handle <> null
                                         {
                                             var alloc_func lookup_function_cache("_ZN4Page8allocateEmm")
@@ -5091,7 +5096,7 @@ define Emitter
                 0
         if on_caller
         {
-            let rp_val lookup_variable("rp")
+            let rp_val lookup_variable("_rp")
             if rp_val.handle <> null
                 return rp_val
         }
@@ -5569,7 +5574,7 @@ define Emitter
                         set page_arg: resolve_reference_page(ref_name)
                     if has_ref_name = false
                     {
-                        let rp_val lookup_variable("rp")
+                        let rp_val lookup_variable("_rp")
                         if rp_val.handle <> null
                             set page_arg: rp_val
                         ; s196: non-# caller — reuse this function's single local
@@ -6321,7 +6326,7 @@ define Emitter
             ; else this function's single local root page (released on exit).
             if page_arg.handle = null
             {
-                let rp_val lookup_variable("rp")
+                let rp_val lookup_variable("_rp")
                 if rp_val.handle <> null
                     set page_arg: rp_val
                 if page_arg.handle = null
@@ -8023,7 +8028,7 @@ define Emitter
         var tuple_ptr: LLVMValueRef LLVMValueRef(null)
         if tuple.is_region_alloc
         {
-            var page_var_name: String "rp"
+            var page_var_name: String "_rp"
             choose tuple.life
                 when l: Local
                     set page_var_name: "local_page"
@@ -10030,7 +10035,7 @@ define Emitter
         let coll_ptr_ty LLVMPointerTypeInContext(context, 0)
         let iter_sret_ty LLVMPointerTypeInContext(context, 0)
 
-        let rp_val lookup_variable("rp")
+        let rp_val lookup_variable("_rp")
         var page_arg: LLVMValueRef rp_val
         ; s196: non-# caller — reuse this function's single local root page
         ; (released on exit) for the iterator instead of leaking a fresh one
@@ -11524,7 +11529,7 @@ define Emitter
                 return LLVMValueRef null
             let iter_type map_type for_expr.iterator_type
             let iter_alloca entry_alloca(iter_type, "parfor.iter")
-            let rp_val lookup_variable("rp")
+            let rp_val lookup_variable("_rp")
             var page_arg: LLVMValueRef rp_val
             if page_arg.handle = null
                 set page_arg: get_or_create_local_page()
@@ -13265,7 +13270,7 @@ define Emitter
                                             var copy_page current_region.local_page
                                             if copy_page.handle = null
                                             {
-                                                let rp_val lookup_variable("rp")
+                                                let rp_val lookup_variable("_rp")
                                                 if rp_val.handle <> null
                                                     set copy_page: rp_val
                                             }

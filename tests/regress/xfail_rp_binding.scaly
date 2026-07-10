@@ -1,9 +1,0 @@
-; A local binding named `rp` must be rejected: the emitter resolves the
-; implicit caller-page parameter by looking up that exact name, so a
-; user binding named rp silently hijacks the page argument of every
-; page-peeled call in scope (to_c_string & co. then allocate through an
-; arbitrary pointer value — layout-dependent memory corruption).
-; xfail: reserved binding name: rp
-var v Vector[int](4)
-let rp v.data
-print("unreachable")
