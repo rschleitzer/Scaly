@@ -52,12 +52,17 @@ if [ ! -s demo/build/bpe_tokens.txt ] || [ demo/bpe.scaly -nt demo/build/bpe_tok
   "$BPE"
 fi
 
-# train + generate on the GPU
-tools/mgpu.sh /tmp/mgpu.o
+# train + generate on the GPU (binary cached against its sources so a
+# checkpoint-driven showcase rerun starts instantly)
 BIN=/tmp/scaly_mann_bpe_gpu
-rm -f "$BIN"
-"$SCALYC" -O2 -c -o /tmp/mann_bpe_gpu.o demo/mann_bpe_gpu.scaly
-${CLANG:-clang} /tmp/mann_bpe_gpu.o /tmp/mgpu.o /tmp/libscaly.a \
-  -framework Metal -framework MetalPerformanceShaders -framework Foundation \
-  -o "$BIN"
+if [ ! -x "$BIN" ] \
+   || [ demo/mann_bpe_gpu.scaly -nt "$BIN" ] \
+   || [ packages/scaly/0.1.0/scaly/tensor/mgpu.m -nt "$BIN" ] \
+   || [ /tmp/libscaly.a -nt "$BIN" ]; then
+  tools/mgpu.sh /tmp/mgpu.o
+  "$SCALYC" -O2 -c -o /tmp/mann_bpe_gpu.o demo/mann_bpe_gpu.scaly
+  ${CLANG:-clang} /tmp/mann_bpe_gpu.o /tmp/mgpu.o /tmp/libscaly.a \
+    -framework Metal -framework MetalPerformanceShaders -framework Foundation \
+    -o "$BIN"
+fi
 exec "$BIN"

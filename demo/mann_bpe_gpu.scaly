@@ -10,18 +10,32 @@
 ; order (reverse for backward).
 ;
 ; Env switches:
-;   MGPU_SYNC=1  per-op-sync mode: only the matmuls run on the GPU,
-;                one command buffer + wait EACH, everything else CPU —
-;                the step-1 honesty measurement for launch-cost.
-;   MGPU_MSL=1   whole-step, but matmuls through our own MSL 4x4
-;                kernels instead of MPS (single-encoder variant).
-;   MGPU_BIG=1   the bigger model (D=512, T=256, F=2048, 4 layers).
-; Run via demo/run_bpe_gpu.sh (pins the cwd; SKIPs off macOS).
+;   MGPU_SYNC=1     per-op-sync mode: only the matmuls run on the GPU,
+;                   one command buffer + wait EACH, everything else CPU
+;                   — the step-1 honesty measurement for launch-cost.
+;   MGPU_MSL=1      whole-step, but matmuls through our own MSL 4x4
+;                   kernels instead of MPS (single-encoder variant).
+;   MGPU_BIG=1      the bigger model (D=512, T=256, F=2048, 4 layers).
+;   MGPU_STEPS=n    step cap (smoke tests).
+;   MGPU_BUDGET=s   training budget in seconds (default 180).
+;   MGPU_CKPT=path  weights checkpoint: load + skip training when the
+;                   file exists (config-validated header), save after
+;                   training otherwise. Weights only, no Adam moments.
+;   MGPU_PROMPT=txt generate from this prompt (greedy longest-match
+;                   BPE tokenization against the vocab).
+;   MGPU_GEN=n      tokens to generate (default 120).
+;   MGPU_TEMP=pct   sampling temperature in percent (default 80).
+; Run via demo/run_bpe_gpu.sh (pins the cwd; SKIPs off macOS) or
+; demo/showcase_gpu.sh (train once, then prompt-driven generation).
 
 function scaly_eio_now_ns() returns i64 extern
 function exit(code: int) extern
 function powf(x: float, y: float) returns float extern
 function getenv(name: pointer[const_char]) returns pointer[const_char] extern
+function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
+function fclose(stream: pointer[void]) returns int extern
+function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
+function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
 
 function scaly_mgpu_available() returns i32 extern
 function scaly_mgpu_init() returns i32 extern
@@ -64,6 +78,27 @@ function pmod(v: int, m: int) returns int
 
 function lcg(s: int) returns int
     pmod(s * 1103515245 + 12345, 2147483648)
+
+; leading decimal digits of an env value; dflt when unset/non-numeric
+function parse_int(e: pointer[const_char], dflt: int) returns int
+{
+    if e = null
+        return dflt
+    var v 0
+    var i 0
+    var c e[i] as int
+    while c >= 48
+    {
+        if c > 57
+            break
+        set v: v * 10 + (c - 48)
+        set i: i + 1
+        set c: e[i] as int
+    }
+    if v = 0
+        return dflt
+    v
+}
 
 function num_to_string(n: i64) returns String
 {
@@ -485,26 +520,12 @@ if getenv("MGPU_BIG") <> null
     set B: 4
 }
 let TT B * T
-var STEPS 200000
 let se getenv("MGPU_STEPS")      ; smoke-test cap
-if se <> null
-{
-    var sv2 0
-    var sx 0
-    var sc se[sx] as int
-    while sc >= 48
-    {
-        if sc > 57
-            break
-        set sv2: sv2 * 10 + (sc - 48)
-        set sx: sx + 1
-        set sc: se[sx] as int
-    }
-    if sv2 > 0
-        set STEPS: sv2
-}
+var STEPS parse_int(se, 200000)
 let PROG 20
-let BUDGET_NS 180000000000       ; ~3 min training cap
+let be getenv("MGPU_BUDGET")     ; training budget, seconds
+let budget_s parse_int(be, 180)
+let BUDGET_NS (budget_s as i64) * 1000000000
 
 var tape Tape()
 let table tape.leaf(V, D)
@@ -670,6 +691,50 @@ while ai < NPARAM
     set mvp[ai]: nextslot
     set nextslot: nextslot + 1
     set ai: ai + 1
+}
+
+; --- checkpoint: load weights + skip training when the file exists
+; (writes go through the redirected pointers straight into the
+; MTLBuffers). Header guards against a config mismatch. Weights only
+; — Adam moments are not saved, a resumed training would re-warm them.
+let ck getenv("MGPU_CKPT")
+var loaded 0
+if ck <> null
+{
+    let f fopen(ck, "rb")
+    if f <> null
+    {
+        var chdr Vector[i32](8)
+        let chp chdr.data
+        let got fread(chp as pointer[void], 4, 7, f)
+        var okc 0
+        if got = 7
+            if chp[0] as int = 20260710
+                if chp[1] as int = NLAYER
+                    if chp[2] as int = D
+                        if chp[3] as int = T
+                            if chp[4] as int = F
+                                if chp[5] as int = V
+                                    if chp[6] as int = HEADS
+                                        set okc: 1
+        if okc = 0
+        {
+            Console.println("error: checkpoint config mismatch - delete it or match MGPU_BIG")
+            exit(1)
+        }
+        var ldi 0
+        while ldi < NPARAM
+        {
+            let node buf + pp[ldi]
+            let total node.rows * node.cols
+            fread(node.value.data as pointer[void], 4, total as size_t, f)
+            set ldi: ldi + 1
+        }
+        fclose(f)
+        set loaded: 1
+        set STEPS: 0
+        Console.println("loaded checkpoint - skipping training")
+    }
 }
 
 var hdr StringBuilder()
@@ -850,18 +915,119 @@ let gsecs secs_to_string(((gms * 1000000.0) as i64))
 tr.append gsecs
 tr.append " s)"
 let trline tr.to_string()
-Console.println(trline.to_c_string())
+if loaded = 0
+    Console.println(trline.to_c_string())
 
-; --- inference: extend a corpus prompt autoregressively (forward
-; passes on the GPU, sampling on the CPU through unified memory) ---
-let P 24
-let GEN 120
+; save the trained weights (config header + raw f32 per parameter)
+if loaded = 0
+{
+    if ck <> null
+    {
+        let fw fopen(ck, "wb")
+        if fw <> null
+        {
+            var whdr Vector[i32](8)
+            whdr.put(0, 20260710 as i32)
+            whdr.put(1, NLAYER as i32)
+            whdr.put(2, D as i32)
+            whdr.put(3, T as i32)
+            whdr.put(4, F as i32)
+            whdr.put(5, V as i32)
+            whdr.put(6, HEADS as i32)
+            fwrite(whdr.data as pointer[void], 4, 7, fw)
+            var svi 0
+            while svi < NPARAM
+            {
+                let node buf + pp[svi]
+                let total node.rows * node.cols
+                fwrite(node.value.data as pointer[void], 4, total as size_t, fw)
+                set svi: svi + 1
+            }
+            fclose(fw)
+            Console.println("saved checkpoint")
+        }
+    }
+}
+
+; --- inference: extend a prompt autoregressively (forward passes on
+; the GPU, sampling on the CPU through unified memory). MGPU_PROMPT
+; is tokenized greedy longest-match against the vocab's recorded byte
+; sequences (bytes >= 128 need the sign mask — const_char is signed);
+; without it the prompt is a corpus window like the CPU demo. ---
+let ge getenv("MGPU_GEN")
+let GEN parse_int(ge, 120)
+let tpe getenv("MGPU_TEMP")
+let temp_pct parse_int(tpe, 80)
+let temp (temp_pct as float) * 0.01
+var ptoks Vector[i64](256)
+let ptp ptoks.data
+var np 0
+let pe getenv("MGPU_PROMPT")
+if pe <> null
+{
+    var plen 0
+    while (pe[plen] as int) <> 0
+        set plen: plen + 1
+    var pos 0
+    while pos < plen
+    {
+        if np >= 255
+            break
+        var best 0 - 1
+        var bestlen 0
+        var id 0
+        while id < V
+        {
+            let l vl[id]
+            if l > bestlen
+            {
+                if pos + l <= plen
+                {
+                    var ok 1
+                    var kb 0
+                    while kb < l
+                    {
+                        var pb pe[pos + kb] as int
+                        if pb < 0
+                            set pb: pb + 256
+                        if pb <> vf[vb[id] + kb]
+                        {
+                            set ok: 0
+                            break
+                        }
+                        set kb: kb + 1
+                    }
+                    if ok = 1
+                    {
+                        set best: id
+                        set bestlen: l
+                    }
+                }
+            }
+            set id: id + 1
+        }
+        if bestlen = 0
+            set pos: pos + 1
+        else
+        {
+            set ptp[np]: best as i64
+            set np: np + 1
+            set pos: pos + bestlen
+        }
+    }
+}
+var P 24
+if np > 0
+    set P: np
 var hist Vector[i64]((P + GEN) as size_t)
 let hp hist.data
 var hi 0
 while hi < P
 {
-    set hp[hi]: tp[100 + hi]
+    if np > 0
+        set hp[hi]: ptp[hi]
+    else
+        set hp[hi]: tp[100 + hi]
     set hi: hi + 1
 }
 let gen_t0 scaly_eio_now_ns()
@@ -883,7 +1049,7 @@ while hlen < P + GEN
     scaly_mgpu_commit_wait()
     set s: lcg(s)
     let u (pmod(s, 10000) as float) * 0.0001
-    var pick tape.sample(logits, vis - 1, 0.8, u)
+    var pick tape.sample(logits, vis - 1, temp, u)
     if pick < 0
         set pick: 0
     if pick >= V
@@ -920,6 +1086,9 @@ gl.append gs
 gl.append " tokens generated in "
 let gts secs_to_string(gen_t1 - gen_t0)
 gl.append gts
-gl.append " s (temperature 0.8, prompt in brackets)"
+gl.append " s (temperature "
+let tps num_to_string(temp_pct as i64)
+gl.append tps
+gl.append "%, prompt in brackets)"
 let gline gl.to_string()
 Console.println(gline.to_c_string())
