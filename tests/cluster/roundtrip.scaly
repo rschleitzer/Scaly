@@ -1,9 +1,10 @@
-; Stage-7 milestone 7.1 — IN-PROCESS region round-trip through the stdlib
+; Stage-7 milestones 7.1/7.2 — IN-PROCESS region round-trip through the stdlib
 ; serializer. Builds a rich message graph (List[String], HashMap[String, i64],
 ; oversized Vector[u8]) in its own region, serializes it into a frame,
 ; FREES the original region, deserializes into real bucket/oversized pages,
-; swizzles the typed graph with HAND-WRITTEN per-type walkers (the
-; interface 7.2 will generate), byte-verifies an FNV checksum through the
+; swizzles the typed graph with the COMPILER-GENERATED walkers
+; (rr.fix_graph, milestone 7.2 — zero hand-written walkers, the 7.2
+; exit criterion), byte-verifies an FNV checksum through the
 ; normal container APIs, and releases the received region through the
 ; ordinary page lifecycle. Two rounds prove the pages actually recycle.
 ; Expected: R1 PASS
@@ -46,77 +47,6 @@ procedure fill_name(buf: pointer[u8], i: size_t) returns size_t
         set j: j + (1 as size_t)
     }
     len
-}
-
-; ==== hand-written per-type walkers (what 7.2 will generate) ====
-; A walker fixes every pointer SLOT of its type via rr.fix, then descends
-; through the freshly patched pointers. Scalars are untouched.
-
-; String = { data: pointer[u8] } — one slot at offset 0.
-procedure walk_string(s: pointer[String], rr: pointer[ReceivedRegion])
-    rr.fix(s as pointer[void])
-
-; Node[String] = { element: String @0, next: pointer[Node[String]] @8 }
-; List[String] = { head: pointer[Node[String]] @0 }
-procedure walk_list_string(l: pointer[List[String]], rr: pointer[ReceivedRegion])
-{
-    rr.fix(l as pointer[void])
-    var nd l.head
-    while nd <> null
-    {
-        walk_string(nd as pointer[String], rr)
-        let next_slot ((nd as size_t) + (8 as size_t)) as pointer[void]
-        rr.fix(next_slot)
-        set nd: nd.next
-    }
-}
-
-; Vector[T] = { length: size_t @0, data: pointer[T] @8 }
-procedure walk_vector_u8(v: pointer[Vector[u8]], rr: pointer[ReceivedRegion])
-{
-    let dslot ((v as size_t) + (8 as size_t)) as pointer[void]
-    rr.fix(dslot)
-}
-
-; HashMap[String, i64] = { slots: pointer[Vector[Vector[KVP]]] @0 };
-; KeyValuePair[String, i64] = { key: String @0, value: i64 @8 }.
-procedure walk_hashmap_string_i64(hm: pointer[HashMap[String, i64]], rr: pointer[ReceivedRegion])
-{
-    rr.fix(hm as pointer[void])
-    let slots hm.slots
-    if slots = null
-        return
-    let dslot ((slots as size_t) + (8 as size_t)) as pointer[void]
-    rr.fix(dslot)
-    let olen slots.length
-    var i 0 as size_t
-    while i < olen
-    {
-        let inner slots.get_ptr i
-        let idslot ((inner as size_t) + (8 as size_t)) as pointer[void]
-        rr.fix(idslot)
-        let ilen inner.length
-        var j 0 as size_t
-        while j < ilen
-        {
-            let kvp inner.get_ptr j
-            rr.fix(kvp as pointer[void])
-            set j: j + (1 as size_t)
-        }
-        set i: i + (1 as size_t)
-    }
-}
-
-; Msg = { names ptr @0, index HashMap @8, blob Vector[u8] @16, chk u64 @32 }
-procedure walk_msg(m: pointer[Msg], rr: pointer[ReceivedRegion])
-{
-    rr.fix(m as pointer[void])
-    let nl m.names
-    walk_list_string(nl, rr)
-    let hm_slot ((m as size_t) + (8 as size_t)) as pointer[HashMap[String, i64]]
-    walk_hashmap_string_i64(hm_slot, rr)
-    let bv_slot ((m as size_t) + (16 as size_t)) as pointer[Vector[u8]]
-    walk_vector_u8(bv_slot, rr)
 }
 
 ; ==== two full rounds ====
@@ -199,7 +129,7 @@ while round < 2
         exit 4
     let rroot rr.root
     let msg2 rroot as pointer[Msg]
-    walk_msg(msg2, rr)
+    rr.fix_graph(msg2)
 
     chk_reset()
     let nl2 msg2.names

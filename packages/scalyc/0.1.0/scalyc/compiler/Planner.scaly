@@ -1249,6 +1249,71 @@ define Planner
             false
         }
 
+        ; Stage 7.2: instantiation-cache lookups returning the entry itself.
+        ; Mangled-first two-pass (the Emitter's map_type order): generic
+        ; instantiations share the bare name, the mangled name is the
+        ; specialised key; the bare-name pass serves non-generic concepts
+        ; whose PlannedType arrived without a mangled name.
+        function lookup_instantiated_structure(this: Planner, mangled: String, name: String) returns ref[PlannedStructure]?
+        {
+            if mangled.get_length() > 0
+            {
+                var i: size_t 0
+                while i < instantiated_structures.length
+                {
+                    let s_ptr instantiated_structures.get i
+                    if s_ptr <> null
+                    {
+                        if s_ptr.mangled_name = mangled
+                            return s_ptr
+                    }
+                    set i: i + 1
+                }
+            }
+            var k: size_t 0
+            while k < instantiated_structures.length
+            {
+                let s_ptr instantiated_structures.get k
+                if s_ptr <> null
+                {
+                    if s_ptr.name = name
+                        return s_ptr
+                }
+                set k: k + 1
+            }
+            null
+        }
+
+        function lookup_instantiated_union(this: Planner, mangled: String, name: String) returns ref[scalyc.compiler.Plan.PlannedUnion]?
+        {
+            if mangled.get_length() > 0
+            {
+                var i: size_t 0
+                while i < instantiated_unions.length
+                {
+                    let u_ptr instantiated_unions.get i
+                    if u_ptr <> null
+                    {
+                        if u_ptr.mangled_name = mangled
+                            return u_ptr
+                    }
+                    set i: i + 1
+                }
+            }
+            var k: size_t 0
+            while k < instantiated_unions.length
+            {
+                let u_ptr instantiated_unions.get k
+                if u_ptr <> null
+                {
+                    if u_ptr.name = name
+                        return u_ptr
+                }
+                set k: k + 1
+            }
+            null
+        }
+
         function record_function(this: Planner, f: PlannedFunction)
         {
             let entry_idx instantiated_functions.length
@@ -11145,6 +11210,319 @@ define Planner
         ; at a PlannedFunction — we leave it null for now; wiring it up
         ; requires caching planned methods per struct, which we don't
         ; do yet.
+        ; ================================================================
+        ; Stage 7.2: compiler-generated region swizzle walkers.
+        ;
+        ; `rr.fix_graph(root)` — rr a pointer[ReceivedRegion], root a TYPED
+        ; pointer into the received region — resolves to the generated
+        ; symbol `_scaly_walk_<T>`, monomorphized per root type like the
+        ; equals desugar. The planner validates the message type's
+        ; transitive closure here (delegates and OS-resource types cannot
+        ; cross the wire — hard diagnostics) and force-instantiates every
+        ; reachable generic so the Emitter finds each layout; the Emitter
+        ; generates the walker bodies on first call. A program that never
+        ; calls fix_graph emits byte-identical IR.
+        ; ================================================================
+
+        ; Pointees the walker fixes but never descends into: page headers
+        ; are swizzled by Region.deserialize itself; raw byte/void buffers
+        ; carry no pointers (a function pointer smuggled through
+        ; pointer[void] dies loudly in fix_value at runtime).
+        function is_walker_header_name(this: Planner, name: String) returns bool
+        {
+            if name = "Page"
+                return true
+            if name = "PageList"
+                return true
+            if name = "PageNode"
+                return true
+            if name = "PageListIterator"
+                return true
+            if name = "HeapBucketHeader"
+                return true
+            if name = "StackBucketHeader"
+                return true
+            false
+        }
+
+        ; check_message_pointee: what a fixed pointer slot's TARGET needs.
+        ; Scalars/void/const_char buffers and page headers are fix-only;
+        ; aggregates recurse.
+        function check_message_pointee(this: Planner, inner: PlannedType, loc: Span, seen: Array[String]) returns bool
+        {
+            if inner.name = "void"
+                return true
+            if inner.name = "const_char"
+                return true
+            if Planner.is_scalar_value_type_name(inner.name)
+                return true
+            if this.is_walker_header_name(inner.name)
+                return true
+            this.check_message_type(inner, loc, seen)
+        }
+
+        ; check_message_type: is `t` sound to swizzle with a generated
+        ; walker? Appends a hard diagnostic and returns false when not.
+        ; Also the instantiation-forcing pass: every reachable generic is
+        ; instantiated so plan.structures/unions carry its layout for the
+        ; Emitter's generator.
+        function check_message_type(this: Planner, t: PlannedType, loc: Span, seen: Array[String]) returns bool
+        {
+            if t.variable <> null
+            {
+                this.add_diagnostic(loc, String("fix_graph: unresolved type in the message graph"))
+                return false
+            }
+            if t.array_size.get_length() > 0
+            {
+                this.add_diagnostic(loc, String("fix_graph: fixed-size array fields are not supported in message types"))
+                return false
+            }
+
+            ; Pointer-like slot: fixed, then the pointee is checked.
+            var is_ptr_like: bool false
+            if t.name = "pointer"
+                set is_ptr_like: true
+            if t.name = "ref"
+                set is_ptr_like: true
+            if is_ptr_like
+            {
+                if t.generics = null
+                    return true
+                let gens (*t.generics)
+                if gens.length = 0
+                    return true
+                let inner_ptr gens.get 0
+                if inner_ptr = null
+                    return true
+                return this.check_message_pointee((*inner_ptr), loc, seen)
+            }
+
+            ; NPO Option is a bare nullable pointer slot.
+            if t.name = "Option"
+            {
+                if t.generics <> null
+                {
+                    let ogens (*t.generics)
+                    if ogens.length > 0
+                    {
+                        let og_ptr ogens.get 0
+                        if og_ptr <> null
+                        {
+                            let og (*og_ptr)
+                            var og_ptr_like: bool false
+                            if og.name = "pointer"
+                                set og_ptr_like: true
+                            if og.name = "ref"
+                                set og_ptr_like: true
+                            if og_ptr_like
+                                return this.check_message_type(og, loc, seen)
+                        }
+                    }
+                }
+            }
+
+            if Planner.is_primitive_type_name(t.name)
+                return true
+            if t.name = "String"
+                return true
+            if this.is_walker_header_name(t.name)
+                return true
+
+            if this.is_delegate_type(t.name)
+            {
+                var dsb StringBuilder()
+                dsb.append "fix_graph: message type contains delegate '"
+                dsb.append t.name
+                dsb.append "' - delegates cannot cross the wire"
+                let dmsg dsb.to_string()
+                this.add_diagnostic(loc, String^this(dmsg))
+                return false
+            }
+
+            ; OS-resource / builder stdlib types have no wire meaning.
+            if Planner.is_runtime_opaque_struct(t.name)
+            {
+                var osb StringBuilder()
+                osb.append "fix_graph: type '"
+                osb.append t.name
+                osb.append "' is not supported in message types"
+                let omsg osb.to_string()
+                this.add_diagnostic(loc, String^this(omsg))
+                return false
+            }
+
+            ; Aggregate: cycle-break via seen, force the instantiation,
+            ; then recurse structurally.
+            var key t.mangled_name
+            if key.get_length() = 0
+                set key: t.name
+            var si: size_t 0
+            while si < seen.length
+            {
+                let sp seen.get si
+                if sp <> null
+                {
+                    if (*sp) = key
+                        return true
+                }
+                set si: si + 1
+            }
+            seen.add(String(key))
+
+            if t.generics <> null
+            {
+                let igens (*t.generics)
+                if igens.length > 0
+                {
+                    let inst this.instantiate_generic(t.name, igens, loc)
+                    0
+                }
+            }
+            this.ensure_layout_by_name(t.name)
+
+            let s_ref this.lookup_instantiated_structure(t.mangled_name, t.name)
+            if s_ref <> null
+            {
+                var ok: bool true
+                if s_ref.properties <> null
+                {
+                    let props (*s_ref.properties)
+                    var pi: size_t 0
+                    while pi < props.length
+                    {
+                        let p_ptr props.get pi
+                        if p_ptr <> null
+                        {
+                            if this.check_message_type(p_ptr.prop_type, loc, seen) = false
+                                set ok: false
+                        }
+                        set pi: pi + 1
+                    }
+                }
+                return ok
+            }
+
+            let u_ref this.lookup_instantiated_union(t.mangled_name, t.name)
+            if u_ref <> null
+            {
+                var uok: bool true
+                if u_ref.variants <> null
+                {
+                    let vars (*u_ref.variants)
+                    var vi: size_t 0
+                    while vi < vars.length
+                    {
+                        let v_ptr vars.get vi
+                        if v_ptr <> null
+                        {
+                            if v_ptr.var_type <> null
+                            {
+                                if this.check_message_type((*v_ptr.var_type), loc, seen) = false
+                                    set uok: false
+                            }
+                        }
+                        set vi: vi + 1
+                    }
+                }
+                return uok
+            }
+
+            var nsb StringBuilder()
+            nsb.append "fix_graph: cannot resolve the layout of type '"
+            nsb.append t.name
+            nsb.append "' in the message graph"
+            let nmsg nsb.to_string()
+            this.add_diagnostic(loc, String^this(nmsg))
+            false
+        }
+
+        ; resolve_fix_graph: synthesize the MethodMatch for the generated
+        ; walker. Once the call SHAPE is right this always returns a match
+        ; — closure violations are hard diagnostics that fail the compile
+        ; at the end, so planning continues without a cascading
+        ; "function not found".
+        function resolve_fix_graph(
+            this: Planner,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
+        ) returns ref[MethodMatch]?
+        {
+            var loc Span(0, 0)
+            if arg_ops.length > 0
+            {
+                let a0 arg_ops.get 0
+                if a0 <> null
+                    set loc: a0.loc
+            }
+            if arg_types.length <> 1
+            {
+                this.add_diagnostic(loc, String("fix_graph takes exactly one typed root pointer"))
+                return null
+            }
+            let t0_ptr arg_types.get 0
+            if t0_ptr = null
+                return null
+            let root_t (*t0_ptr)
+            if root_t.name <> "pointer"
+            {
+                this.add_diagnostic(loc, String("fix_graph: the root must be a typed pointer (pointer[T])"))
+                return null
+            }
+            var pointee: PlannedType Planner.make_void_type()
+            var have_pointee: bool false
+            if root_t.generics <> null
+            {
+                let rgens (*root_t.generics)
+                if rgens.length > 0
+                {
+                    let rg_ptr rgens.get 0
+                    if rg_ptr <> null
+                    {
+                        set pointee: (*rg_ptr)
+                        set have_pointee: true
+                    }
+                }
+            }
+            if have_pointee = false
+            {
+                this.add_diagnostic(loc, String("fix_graph: the root must be a typed pointer (pointer[T])"))
+                return null
+            }
+            if Planner.is_primitive_type_name(pointee.name)
+            {
+                this.add_diagnostic(loc, String("fix_graph: the root must point at a struct or union"))
+                return null
+            }
+
+            var seen Array[String]()
+            let closure_ok this.check_message_type(pointee, loc, seen)
+
+            var wsb StringBuilder()
+            wsb.append "_scaly_walk_"
+            var wkey pointee.mangled_name
+            if wkey.get_length() = 0
+                set wkey: pointee.name
+            wsb.append wkey
+            let mangled wsb.to_string()
+
+            var params_arr Array[PlannedType]()
+            params_arr.add root_t
+            var params_holder Vector[PlannedType](params_arr)
+            MethodMatch^this(
+                null,
+                mangled,
+                Planner.make_void_type(),
+                &params_holder,
+                false,
+                false,
+                null,
+                false,
+                true,
+                false
+            )
+        }
+
         function lookup_method(
             this: Planner,
             struct_type: PlannedType,
@@ -11247,6 +11625,14 @@ define Planner
                     }
                 }
             }
+            ; Stage 7.2: ReceivedRegion.fix_graph is not a declared method —
+            ; it monomorphizes into the generated per-type walker.
+            if lookup_st.name = "ReceivedRegion"
+            {
+                if method_name = "fix_graph"
+                    return this.resolve_fix_graph(arg_types, arg_ops)
+            }
+
             let candidates this.lookup_methods(lookup_st.name, method_name)
             if candidates.length = 0
                 return null
@@ -12373,6 +12759,25 @@ define Planner
                             m, idx as size_t, false, false, lookup_type, prop_type
                         ))
                         set current: prop_type
+                    }
+
+                    ; Stage 7.2: fix_graph is not a declared method — mark
+                    ; the hop is_method so the s83 call dispatch resolves it
+                    ; through lookup_method's fix_graph interception.
+                    if matched = false
+                    {
+                        if lookup_type.name = "ReceivedRegion"
+                        {
+                            if m = "fix_graph"
+                            {
+                                set matched: true
+                                let fg_void Planner.make_void_type()
+                                result.add(PlannedMemberAccess(
+                                    m, 0, true, false, lookup_type, fg_void
+                                ))
+                                set current: fg_void
+                            }
+                        }
                     }
 
                     ; Method lookup as fallback.

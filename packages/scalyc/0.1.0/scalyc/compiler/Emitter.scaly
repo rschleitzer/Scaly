@@ -271,6 +271,11 @@ define Emitter
     ; classifier's foundation-containment rule keys on it.
     parfor_checker: TaskPlanner
     parfor_file: String
+    ; Stage 7.2: symbols of region swizzle walkers already generated in
+    ; this module. The registry (not a body-count query) also breaks
+    ; type-level recursion: a walker's shell registers BEFORE its body
+    ; is built, so a self-referential type finds its own symbol.
+    region_walkers: ref[Array[String]]?
 )
 {
     init(cfg: EmitterConfig)
@@ -321,6 +326,7 @@ define Emitter
         set temp_stmt_log_start: 0
         set temp_pinned: Array[LLVMValueRef]^this()
         set parfor_locals: Array[String]^this()
+        set region_walkers: Array[String]^this()
         set parfor_captures: Array[String]^this()
         set weight_memo_names: Array[String]^this()
         set weight_memo_vals: Array[size_t]^this()
@@ -6134,6 +6140,730 @@ define Emitter
         return LLVMBuildCall2(builder, fn_ty, fnv, arg_vals.data, 1 as u32, "")
     }
 
+    ; ========================================================================
+    ; Stage 7.2: compiler-generated region swizzle walkers.
+    ;
+    ; The planner resolves `rr.fix_graph(root)` to `_scaly_walk_<T>` and
+    ; validates the message type's closure (delegates rejected there); the
+    ; walker bodies are generated HERE, on first call, one linkonce_odr
+    ; `void _scaly_walk_X(ptr rr, ptr obj)` per reachable type. A walker
+    ; fixes every pointer slot of its type through
+    ; ReceivedRegion.fix_value (VALUE semantics — union payloads sit at
+    ; byte offset 1, so every slot load/store is align 1) and descends
+    ; through the freshly patched pointers. Layout truth is the same LLVM
+    ; struct map_type gives member accesses; the planner's simplified
+    ; byte offsets are never used. Programs that never call fix_graph
+    ; emit byte-identical IR (the registry stays empty).
+    ; ========================================================================
+
+    function region_walker_symbol(this, t: PlannedType) returns String
+    {
+        var sb StringBuilder()
+        sb.append "_scaly_walk_"
+        if t.mangled_name.get_length() > 0
+            sb.append t.mangled_name
+        else
+            sb.append t.name
+        sb.to_string()
+    }
+
+    ; Page headers are swizzled by Region.deserialize itself — the typed
+    ; walk fixes pointers TO them but never descends INTO them.
+    function region_walker_header_name(this, name: String) returns bool
+    {
+        if name = "Page"
+            return true
+        if name = "PageList"
+            return true
+        if name = "PageNode"
+            return true
+        if name = "PageListIterator"
+            return true
+        if name = "HeapBucketHeader"
+            return true
+        if name = "StackBucketHeader"
+            return true
+        false
+    }
+
+    ; A slot the walker fixes in place: pointer, ref, or an NPO Option
+    ; (a bare nullable pointer at the LLVM level).
+    function region_is_ptr_slot(this, ft: PlannedType) returns bool
+    {
+        if ft.name = "pointer"
+            return true
+        if ft.name = "ref"
+            return true
+        if is_npo_option(ft)
+            return true
+        false
+    }
+
+    ; The type a fixed slot of type ft points AT ("void" = opaque target,
+    ; fix-only): pointer[X]/ref[X] → X, Option[pointer[X]]/Option[ref[X]] → X.
+    function region_slot_pointee(this, ft: PlannedType) returns PlannedType
+    {
+        var inner ft
+        if ft.name = "Option"
+        {
+            if ft.generics = null
+                return Planner.make_void_type()
+            let ogens (*ft.generics)
+            if ogens.length = 0
+                return Planner.make_void_type()
+            let ogp ogens.get 0
+            if ogp = null
+                return Planner.make_void_type()
+            set inner: (*ogp)
+        }
+        if inner.generics = null
+            return Planner.make_void_type()
+        let gens (*inner.generics)
+        if gens.length = 0
+            return Planner.make_void_type()
+        let gp gens.get 0
+        if gp = null
+            return Planner.make_void_type()
+        (*gp)
+    }
+
+    function find_planned_structure(this, mangled: String, name: String) returns ref[PlannedStructure]?
+    {
+        if current_plan = null
+            return null
+        let plan_ref current_plan
+        let plan (*plan_ref)
+        if plan.structures = null
+            return null
+        let structs (*plan.structures)
+        if mangled.get_length() > 0
+        {
+            var i: size_t 0
+            while i < structs.length
+            {
+                let s_ptr structs.get i
+                if s_ptr <> null
+                {
+                    if s_ptr.mangled_name = mangled
+                        return s_ptr
+                }
+                set i: i + 1
+            }
+        }
+        var k: size_t 0
+        while k < structs.length
+        {
+            let s_ptr structs.get k
+            if s_ptr <> null
+            {
+                if s_ptr.name = name
+                    return s_ptr
+            }
+            set k: k + 1
+        }
+        null
+    }
+
+    function find_planned_union(this, mangled: String, name: String) returns ref[PlannedUnion]?
+    {
+        if current_plan = null
+            return null
+        let plan_ref current_plan
+        let plan (*plan_ref)
+        if plan.unions = null
+            return null
+        let unions (*plan.unions)
+        if mangled.get_length() > 0
+        {
+            var i: size_t 0
+            while i < unions.length
+            {
+                let u_ptr unions.get i
+                if u_ptr <> null
+                {
+                    if u_ptr.mangled_name = mangled
+                        return u_ptr
+                }
+                set i: i + 1
+            }
+        }
+        var k: size_t 0
+        while k < unions.length
+        {
+            let u_ptr unions.get k
+            if u_ptr <> null
+            {
+                if u_ptr.name = name
+                    return u_ptr
+            }
+            set k: k + 1
+        }
+        null
+    }
+
+    ; Does `t` transitively contain slots to fix? Terminates without a
+    ; seen-set: recursion only follows BY-VALUE embedding (pointer-like
+    ; types answer true immediately), and value-embedding cannot cycle.
+    function region_type_needs_walk(this, t: PlannedType) returns bool
+    {
+        if region_is_ptr_slot(t)
+            return true
+        if t.name = "String"
+            return true
+        if Planner.is_primitive_type_name(t.name)
+            return false
+        if t.name = "const_char"
+            return false
+        if region_walker_header_name(t.name)
+            return false
+        let s_ref find_planned_structure(t.mangled_name, t.name)
+        if s_ref <> null
+        {
+            if s_ref.properties <> null
+            {
+                let props (*s_ref.properties)
+                var pi: size_t 0
+                while pi < props.length
+                {
+                    let p_ptr props.get pi
+                    if p_ptr <> null
+                    {
+                        if region_type_needs_walk(p_ptr.prop_type)
+                            return true
+                    }
+                    set pi: pi + 1
+                }
+            }
+            return false
+        }
+        let u_ref find_planned_union(t.mangled_name, t.name)
+        if u_ref <> null
+        {
+            if u_ref.variants <> null
+            {
+                let vars (*u_ref.variants)
+                var vi: size_t 0
+                while vi < vars.length
+                {
+                    let v_ptr vars.get vi
+                    if v_ptr <> null
+                    {
+                        if v_ptr.var_type <> null
+                        {
+                            if region_type_needs_walk((*v_ptr.var_type))
+                                return true
+                        }
+                    }
+                    set vi: vi + 1
+                }
+            }
+            return false
+        }
+        false
+    }
+
+    ; Should a fixed slot's target be walked? Mirrors the planner's
+    ; check_message_pointee: scalars, raw buffers, and page headers are
+    ; fix-only.
+    function region_walker_descends(this, target: PlannedType) returns bool
+    {
+        if target.name = "void"
+            return false
+        if target.name = "const_char"
+            return false
+        if Planner.is_scalar_value_type_name(target.name)
+            return false
+        if region_walker_header_name(target.name)
+            return false
+        region_type_needs_walk(target)
+    }
+
+    ; Anything to do for a value of type ft lying at some address?
+    function region_field_acts(this, ft: PlannedType) returns bool
+    {
+        if region_is_ptr_slot(ft)
+            return true
+        if ft.name = "String"
+            return true
+        region_type_needs_walk(ft)
+    }
+
+    ; The stdlib slot mapper: `_ZN14ReceivedRegion9fix_valueEm` —
+    ; i64 fix_value(ptr this, i64 old). Declared on demand; the body
+    ; lives in scaly.memory.Region (libscaly.a / in-process for --run).
+    function region_fix_value_fn(this) returns LLVMValueRef
+    {
+        var sym "_ZN14ReceivedRegion9fix_valueEm"
+        var fn LLVMGetNamedFunction(llvm_module, sym.c_data())
+        if fn.handle <> null
+            return fn
+        LLVMAddFunction(llvm_module, sym.c_data(), region_fix_value_type())
+    }
+
+    function region_fix_value_type(this) returns LLVMTypeRef
+    {
+        let i64_ty LLVMInt64TypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var ptys Vector[LLVMTypeRef](2)
+        ptys.put(0, ptr_ty)
+        ptys.put(1, i64_ty)
+        LLVMFunctionType(i64_ty, ptys.data, 2, 0)
+    }
+
+    function region_walker_fn_type(this) returns LLVMTypeRef
+    {
+        let void_ty LLVMVoidTypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var ptys Vector[LLVMTypeRef](2)
+        ptys.put(0, ptr_ty)
+        ptys.put(1, ptr_ty)
+        LLVMFunctionType(void_ty, ptys.data, 2, 0)
+    }
+
+    ; Fix one slot in place: load old (align 1), map through fix_value,
+    ; store back (align 1). Returns the NEW value as i64.
+    function emit_region_fix_slot(this, rr: LLVMValueRef, slot: LLVMValueRef) returns LLVMValueRef
+    {
+        let i64_ty LLVMInt64TypeInContext(context)
+        let old LLVMBuildLoad2(builder, i64_ty, slot, "walk.old")
+        LLVMSetAlignment(old, 1 as u32)
+        let fv region_fix_value_fn()
+        var fargs Vector[LLVMValueRef](2)
+        fargs.put(0, rr)
+        fargs.put(1, old)
+        let nv LLVMBuildCall2(builder, region_fix_value_type(), fv, fargs.data, 2, "walk.new")
+        let st LLVMBuildStore(builder, nv, slot)
+        LLVMSetAlignment(st, 1 as u32)
+        nv
+    }
+
+    procedure emit_region_walker_call(this, rr: LLVMValueRef, objp: LLVMValueRef, t: PlannedType)
+    {
+        let wfn ensure_region_walker t
+        var wargs Vector[LLVMValueRef](2)
+        wargs.put(0, rr)
+        wargs.put(1, objp)
+        let cv LLVMBuildCall2(builder, region_walker_fn_type(), wfn, wargs.data, 2, "")
+    }
+
+    ; Handle one value of planned type ft lying at `addr`: fix pointer
+    ; slots (and descend through them), fix a String's data slot, walk an
+    ; embedded aggregate in place. Scalars are untouched.
+    procedure emit_region_value_at(this, fn: LLVMValueRef, rr: LLVMValueRef, addr: LLVMValueRef, ft: PlannedType)
+    {
+        if region_is_ptr_slot(ft)
+        {
+            let nv emit_region_fix_slot(rr, addr)
+            let target region_slot_pointee(ft)
+            if region_walker_descends(target)
+            {
+                let i64_ty LLVMInt64TypeInContext(context)
+                let zero LLVMConstInt(i64_ty, 0, 0)
+                let isnn LLVMBuildICmp(builder, LLVMIntPredicate.NE(), nv, zero, "walk.nn")
+                let desc_bb LLVMAppendBasicBlockInContext(context, fn, "walk.desc")
+                let cont_bb LLVMAppendBasicBlockInContext(context, fn, "walk.cont")
+                LLVMBuildCondBr(builder, isnn, desc_bb, cont_bb)
+                LLVMPositionBuilderAtEnd(builder, desc_bb)
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                let tp LLVMBuildIntToPtr(builder, nv, ptr_ty, "walk.p")
+                emit_region_walker_call(rr, tp, target)
+                LLVMBuildBr(builder, cont_bb)
+                LLVMPositionBuilderAtEnd(builder, cont_bb)
+            }
+            return
+        }
+        if ft.name = "String"
+        {
+            let sv emit_region_fix_slot(rr, addr)
+            return
+        }
+        if region_type_needs_walk(ft)
+            emit_region_walker_call(rr, addr, ft)
+    }
+
+    ; Elements data[0..count): one value_at per element. `data_i64` is the
+    ; freshly mapped data pointer as i64 (0 = empty), `count` an i64.
+    procedure emit_region_elem_loop(this, fn: LLVMValueRef, rr: LLVMValueRef, data_i64: LLVMValueRef, count: LLVMValueRef, elem: PlannedType)
+    {
+        let i64_ty LLVMInt64TypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        let zero LLVMConstInt(i64_ty, 0, 0)
+        let one LLVMConstInt(i64_ty, 1, 0)
+
+        let isnn LLVMBuildICmp(builder, LLVMIntPredicate.NE(), data_i64, zero, "walk.dnn")
+        let pre_bb LLVMAppendBasicBlockInContext(context, fn, "walk.loop.pre")
+        let head_bb LLVMAppendBasicBlockInContext(context, fn, "walk.loop.head")
+        let body_bb LLVMAppendBasicBlockInContext(context, fn, "walk.loop.body")
+        let exit_bb LLVMAppendBasicBlockInContext(context, fn, "walk.loop.exit")
+        LLVMBuildCondBr(builder, isnn, pre_bb, exit_bb)
+
+        LLVMPositionBuilderAtEnd(builder, pre_bb)
+        let datap LLVMBuildIntToPtr(builder, data_i64, ptr_ty, "walk.data")
+        let iv LLVMBuildAlloca(builder, i64_ty, "walk.i")
+        let st0 LLVMBuildStore(builder, zero, iv)
+        LLVMBuildBr(builder, head_bb)
+
+        LLVMPositionBuilderAtEnd(builder, head_bb)
+        let ivv LLVMBuildLoad2(builder, i64_ty, iv, "walk.iv")
+        let cmp LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), ivv, count, "walk.cmp")
+        LLVMBuildCondBr(builder, cmp, body_bb, exit_bb)
+
+        LLVMPositionBuilderAtEnd(builder, body_bb)
+        let ety map_type elem
+        var eidx Vector[LLVMValueRef](1)
+        eidx.put(0, ivv)
+        let eaddr LLVMBuildInBoundsGEP2(builder, ety, datap, eidx.data, 1, "walk.e")
+        emit_region_value_at(fn, rr, eaddr, elem)
+        let ivn LLVMBuildAdd(builder, ivv, one, "walk.inc")
+        let stn LLVMBuildStore(builder, ivn, iv)
+        LLVMBuildBr(builder, head_bb)
+
+        LLVMPositionBuilderAtEnd(builder, exit_bb)
+    }
+
+    ; Vector[T] = { length @0, data @1 }: fix data, then walk the elements
+    ; when T carries pointers. All loads align 1 — an embedded Vector in a
+    ; union payload sits at byte offset 1.
+    procedure emit_region_vector_body(this, fn: LLVMValueRef, rr: LLVMValueRef, obj: LLVMValueRef, t: PlannedType)
+    {
+        let i64_ty LLVMInt64TypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var vfields Vector[LLVMTypeRef](2)
+        vfields.put(0, i64_ty)
+        vfields.put(1, ptr_ty)
+        let vty LLVMStructTypeInContext(context, vfields.data, 2, 0)
+
+        let data_slot LLVMBuildStructGEP2(builder, vty, obj, 1, "walk.vdata")
+        let dv emit_region_fix_slot(rr, data_slot)
+
+        if t.generics = null
+            return
+        let gens (*t.generics)
+        if gens.length = 0
+            return
+        let ep gens.get 0
+        if ep = null
+            return
+        let elem (*ep)
+        if region_field_acts(elem) = false
+            return
+
+        let len_ptr LLVMBuildStructGEP2(builder, vty, obj, 0, "walk.vlen.ptr")
+        let len LLVMBuildLoad2(builder, i64_ty, len_ptr, "walk.vlen")
+        LLVMSetAlignment(len, 1 as u32)
+        emit_region_elem_loop(fn, rr, dv, len, elem)
+    }
+
+    ; Array[T] = { length @0, vector: pointer[Vector[T]] @1 }: fix the
+    ; vector pointer, fix the backing vector's data slot, walk the VALID
+    ; prefix (array.length — the backing capacity tail is zeroed).
+    procedure emit_region_array_body(this, fn: LLVMValueRef, rr: LLVMValueRef, obj: LLVMValueRef, t: PlannedType)
+    {
+        let i64_ty LLVMInt64TypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var afields Vector[LLVMTypeRef](2)
+        afields.put(0, i64_ty)
+        afields.put(1, ptr_ty)
+        let aty LLVMStructTypeInContext(context, afields.data, 2, 0)
+
+        let vec_slot LLVMBuildStructGEP2(builder, aty, obj, 1, "walk.avec")
+        let vv emit_region_fix_slot(rr, vec_slot)
+
+        let zero LLVMConstInt(i64_ty, 0, 0)
+        let isnn LLVMBuildICmp(builder, LLVMIntPredicate.NE(), vv, zero, "walk.ann")
+        let in_bb LLVMAppendBasicBlockInContext(context, fn, "walk.avec.in")
+        let out_bb LLVMAppendBasicBlockInContext(context, fn, "walk.avec.out")
+        LLVMBuildCondBr(builder, isnn, in_bb, out_bb)
+
+        LLVMPositionBuilderAtEnd(builder, in_bb)
+        let vecp LLVMBuildIntToPtr(builder, vv, ptr_ty, "walk.avecp")
+        let data_slot LLVMBuildStructGEP2(builder, aty, vecp, 1, "walk.adata")
+        let dv emit_region_fix_slot(rr, data_slot)
+
+        var elem_acts: bool false
+        var elem: PlannedType Planner.make_void_type()
+        if t.generics <> null
+        {
+            let gens (*t.generics)
+            if gens.length > 0
+            {
+                let ep gens.get 0
+                if ep <> null
+                {
+                    set elem: (*ep)
+                    set elem_acts: region_field_acts((*ep))
+                }
+            }
+        }
+        if elem_acts
+        {
+            let len_ptr LLVMBuildStructGEP2(builder, aty, obj, 0, "walk.alen.ptr")
+            let len LLVMBuildLoad2(builder, i64_ty, len_ptr, "walk.alen")
+            LLVMSetAlignment(len, 1 as u32)
+            emit_region_elem_loop(fn, rr, dv, len, elem)
+        }
+        LLVMBuildBr(builder, out_bb)
+        LLVMPositionBuilderAtEnd(builder, out_bb)
+    }
+
+    ; Node[T] = { element @0, next @1 }: walk the CHAIN iteratively — a
+    ; per-node recursive walker would recurse list-length deep.
+    procedure emit_region_node_body(this, fn: LLVMValueRef, rr: LLVMValueRef, obj: LLVMValueRef, t: PlannedType)
+    {
+        let i64_ty LLVMInt64TypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        let nty map_type t
+        if LLVMGetTypeKind(nty) <> LLVMTypeKind.Struct()
+        {
+            scaly_eputs "emit_region_node_body: no layout for Node"
+            scaly_eputs "\n"
+            exit 18
+        }
+
+        var elem_acts: bool false
+        var elem: PlannedType Planner.make_void_type()
+        if t.generics <> null
+        {
+            let gens (*t.generics)
+            if gens.length > 0
+            {
+                let ep gens.get 0
+                if ep <> null
+                {
+                    set elem: (*ep)
+                    set elem_acts: region_field_acts((*ep))
+                }
+            }
+        }
+
+        let cur LLVMBuildAlloca(builder, ptr_ty, "walk.nd")
+        let st0 LLVMBuildStore(builder, obj, cur)
+        let loop_bb LLVMAppendBasicBlockInContext(context, fn, "walk.chain")
+        let exit_bb LLVMAppendBasicBlockInContext(context, fn, "walk.chain.exit")
+        LLVMBuildBr(builder, loop_bb)
+
+        LLVMPositionBuilderAtEnd(builder, loop_bb)
+        let curv LLVMBuildLoad2(builder, ptr_ty, cur, "walk.ndv")
+        if elem_acts
+        {
+            let eaddr LLVMBuildStructGEP2(builder, nty, curv, 0, "walk.nelem")
+            emit_region_value_at(fn, rr, eaddr, elem)
+        }
+        let next_slot LLVMBuildStructGEP2(builder, nty, curv, 1, "walk.nnext")
+        let nv emit_region_fix_slot(rr, next_slot)
+        let zero LLVMConstInt(i64_ty, 0, 0)
+        let cont LLVMBuildICmp(builder, LLVMIntPredicate.NE(), nv, zero, "walk.ncont")
+        let np LLVMBuildIntToPtr(builder, nv, ptr_ty, "walk.np")
+        let stn LLVMBuildStore(builder, np, cur)
+        LLVMBuildCondBr(builder, cont, loop_bb, exit_bb)
+
+        LLVMPositionBuilderAtEnd(builder, exit_bb)
+    }
+
+    ; Tagged union { tag @0 (i8; i32 past 256 variants), payload @tag_size }:
+    ; switch on the tag, handle the live variant's payload in place. An
+    ; unknown tag falls through silently, matching choose semantics.
+    procedure emit_region_union_body(this, fn: LLVMValueRef, rr: LLVMValueRef, obj: LLVMValueRef, u: PlannedUnion)
+    {
+        if u.variants = null
+            return
+        let vars (*u.variants)
+        let i8_ty LLVMInt8TypeInContext(context)
+        let i64_ty LLVMInt64TypeInContext(context)
+        var tag_ty i8_ty
+        var tag_size: size_t 1
+        if vars.length > 256
+        {
+            set tag_ty: LLVMInt32TypeInContext(context)
+            set tag_size: 4
+        }
+        let tag LLVMBuildLoad2(builder, tag_ty, obj, "walk.tag")
+        LLVMSetAlignment(tag, 1 as u32)
+        var pidx Vector[LLVMValueRef](1)
+        pidx.put(0, LLVMConstInt(i64_ty, tag_size, 0))
+        let payload LLVMBuildInBoundsGEP2(builder, i8_ty, obj, pidx.data, 1, "walk.pay")
+
+        var act_count: size_t 0
+        var vi: size_t 0
+        while vi < vars.length
+        {
+            let v_ptr vars.get vi
+            if v_ptr <> null
+            {
+                if v_ptr.var_type <> null
+                {
+                    if region_field_acts((*v_ptr.var_type))
+                        set act_count: act_count + 1
+                }
+            }
+            set vi: vi + 1
+        }
+
+        let merge_bb LLVMAppendBasicBlockInContext(context, fn, "walk.usw.end")
+        let sw LLVMBuildSwitch(builder, tag, merge_bb, act_count as int)
+        set vi: 0
+        while vi < vars.length
+        {
+            let v_ptr vars.get vi
+            if v_ptr <> null
+            {
+                if v_ptr.var_type <> null
+                {
+                    let vt (*v_ptr.var_type)
+                    if region_field_acts(vt)
+                    {
+                        let case_bb LLVMAppendBasicBlockInContext(context, fn, "walk.ucase")
+                        LLVMAddCase(sw, LLVMConstInt(tag_ty, v_ptr.tag as size_t, 0), case_bb)
+                        LLVMPositionBuilderAtEnd(builder, case_bb)
+                        emit_region_value_at(fn, rr, payload, vt)
+                        LLVMBuildBr(builder, merge_bb)
+                    }
+                }
+            }
+            set vi: vi + 1
+        }
+        LLVMPositionBuilderAtEnd(builder, merge_bb)
+    }
+
+    procedure emit_region_walk_body(this, fn: LLVMValueRef, rr: LLVMValueRef, obj: LLVMValueRef, t: PlannedType)
+    {
+        ; A pointer-like ROOT (walker of a pointer type): obj IS the slot.
+        if region_is_ptr_slot(t)
+        {
+            emit_region_value_at(fn, rr, obj, t)
+            return
+        }
+        if t.name = "String"
+        {
+            let sv emit_region_fix_slot(rr, obj)
+            return
+        }
+        if t.name = "Vector"
+        {
+            emit_region_vector_body(fn, rr, obj, t)
+            return
+        }
+        if t.name = "Array"
+        {
+            emit_region_array_body(fn, rr, obj, t)
+            return
+        }
+        if t.name = "Node"
+        {
+            emit_region_node_body(fn, rr, obj, t)
+            return
+        }
+
+        let s_ref find_planned_structure(t.mangled_name, t.name)
+        if s_ref <> null
+        {
+            let sty map_type t
+            if LLVMGetTypeKind(sty) <> LLVMTypeKind.Struct()
+            {
+                scaly_eputs "emit_region_walk_body: no struct layout for message type: "
+                let lless_name t.name.to_c_string()
+                scaly_eputs lless_name
+                scaly_eputs "\n"
+                exit 18
+            }
+            if s_ref.properties <> null
+            {
+                let props (*s_ref.properties)
+                var pi: size_t 0
+                while pi < props.length
+                {
+                    let p_ptr props.get pi
+                    if p_ptr <> null
+                    {
+                        let ft p_ptr.prop_type
+                        if region_field_acts(ft)
+                        {
+                            let faddr LLVMBuildStructGEP2(builder, sty, obj, pi as int, "walk.f")
+                            emit_region_value_at(fn, rr, faddr, ft)
+                        }
+                    }
+                    set pi: pi + 1
+                }
+            }
+            return
+        }
+
+        let u_ref find_planned_union(t.mangled_name, t.name)
+        if u_ref <> null
+        {
+            emit_region_union_body(fn, rr, obj, (*u_ref))
+            return
+        }
+
+        ; The planner validated the closure — reaching here is a compiler
+        ; bug; fail LOUD (the silent-drop lesson).
+        scaly_eputs "emit_region_walk_body: no layout for message type: "
+        let lless_name2 t.name.to_c_string()
+        scaly_eputs lless_name2
+        scaly_eputs "\n"
+        exit 18
+    }
+
+    function ensure_region_walker(this, t: PlannedType) returns LLVMValueRef
+    {
+        let sym region_walker_symbol t
+        var wi: size_t 0
+        while wi < region_walkers.length
+        {
+            let wp region_walkers.get wi
+            if wp <> null
+            {
+                if (*wp) = sym
+                    return LLVMGetNamedFunction(llvm_module, sym.c_data())
+            }
+            set wi: wi + 1
+        }
+        region_walkers.add(String^this(sym))
+
+        var fn LLVMGetNamedFunction(llvm_module, sym.c_data())
+        if fn.handle = null
+            set fn: LLVMAddFunction(llvm_module, sym.c_data(), region_walker_fn_type())
+        LLVMSetLinkage(fn, LLVMLinkage.LinkOnceODR())
+
+        let saved_block LLVMGetInsertBlock(builder)
+        let entry LLVMAppendBasicBlockInContext(context, fn, "entry")
+        LLVMPositionBuilderAtEnd(builder, entry)
+        let rr LLVMGetParam(fn, 0)
+        let obj LLVMGetParam(fn, 1)
+        emit_region_walk_body(fn, rr, obj, t)
+        LLVMBuildRetVoid builder
+        if saved_block.handle <> null
+            LLVMPositionBuilderAtEnd(builder, saved_block)
+        fn
+    }
+
+    ; Entry from emit_call: derive the root type from the call's last
+    ; argument (pointer[T] — the planner validated the shape) and make
+    ; sure the walker set exists before the call is emitted.
+    procedure ensure_region_walker_for_call(this, call: PlannedCall)
+    {
+        if call.args = null
+            return
+        let cargs (*call.args)
+        if cargs.length = 0
+            return
+        let last_ptr cargs.get(cargs.length - 1)
+        if last_ptr = null
+            return
+        let rt (*last_ptr).result_type
+        if rt.name <> "pointer"
+            return
+        if rt.generics = null
+            return
+        let gens (*rt.generics)
+        if gens.length = 0
+            return
+        let gp gens.get 0
+        if gp = null
+            return
+        let wfn ensure_region_walker((*gp))
+    }
+
     function emit_call(this, call: PlannedCall) returns LLVMValueRef
     {
         ; Indirect call through a function pointer value (Phase-1 JIT). args[0]
@@ -6212,6 +6942,12 @@ define Emitter
         let indirect_val emit_ptr_call call
         if indirect_val.handle <> null
             return indirect_val
+
+        ; Stage 7.2: rr.fix_graph(root) resolved to `_scaly_walk_<T>` —
+        ; define the walker bodies on first call; the call itself then
+        ; goes through the normal path below.
+        if call.mangled_name.starts_with("_scaly_walk_")
+            ensure_region_walker_for_call call
 
         ; s80: Itanium C1 constructor calls — mangled name contains "C1E"
         ; between the class encoding and parameter encoding. Allocate the

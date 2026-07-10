@@ -1,0 +1,17 @@
+; 7.2 compiler-generated walkers: a message type carrying a delegate
+; (function-pointer) field must be REJECTED at compile time — code
+; addresses have no meaning on another node.
+; xfail: delegates cannot cross the wire
+
+define IntFn delegate(x: int) returns int
+
+define Msg
+(
+    name: String
+    cb: IntFn
+)
+
+var rrp: pointer[ReceivedRegion] null
+var mp2: pointer[Msg] null
+rrp.fix_graph(mp2)
+print("must not compile")
