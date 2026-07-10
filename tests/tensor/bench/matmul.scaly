@@ -113,6 +113,57 @@ procedure matmul_seq(a: Vector[double], b: Vector[double], c: Vector[double], m:
     }
 }
 
+; Call-free inner loop (5.1): reads go through pointer subscripts on
+; Vector.data (planner-desugared to GEP+load — no bounds check, no
+; call); the disjoint c.put write stays, it is what the classifier's
+; locality proof keys on. ap/bp are loop-external read-only aliases —
+; admitted by the per-param write-mask analysis.
+procedure matmul_ptr(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int)
+{
+    let ap a.data
+    let bp b.data
+    for i in m
+    {
+        var j 0
+        while j < n
+        {
+            var acc: double 0.0
+            var x 0
+            while x < kk
+            {
+                set acc: acc + ap[i * kk + x] * bp[x * n + j]
+                set x: x + 1
+            }
+            c.put((i * n + j) as size_t, acc)
+            set j: j + 1
+        }
+    }
+}
+
+; Same arithmetic, deliberately blocked (call-free sequential baseline).
+procedure matmul_ptr_seq(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int, sink: Vector[i64])
+{
+    let ap a.data
+    let bp b.data
+    for i in m
+    {
+        sink.put(0 as size_t, i as i64)
+        var j 0
+        while j < n
+        {
+            var acc: double 0.0
+            var x 0
+            while x < kk
+            {
+                set acc: acc + ap[i * kk + x] * bp[x * n + j]
+                set x: x + 1
+            }
+            c.put((i * n + j) as size_t, acc)
+            set j: j + 1
+        }
+    }
+}
+
 function check(c: Vector[double], m: int, kk: int, n: int) returns bool
 {
     ; A = 1.0, B = 2.0 -> C = 2*K everywhere (exact in f64).
@@ -198,6 +249,38 @@ procedure run_size(m: int, kk: int, n: int)
         exit 1
     }
     report("par(2)", m, kk, n, t5 - t4)
+
+    ; Call-free (pointer-subscript) variants: sequential baseline, then
+    ; cold + promoted parallel runs.
+    let t6 scaly_eio_now_ns()
+    matmul_ptr_seq(a, b, c, m, kk, n, sink)
+    let t7 scaly_eio_now_ns()
+    if check(c, m, kk, n) = false
+    {
+        Console.println "ptrseq-check-FAIL"
+        exit 1
+    }
+    report("ptr-seq   ", m, kk, n, t7 - t6)
+
+    let t8 scaly_eio_now_ns()
+    matmul_ptr(a, b, c, m, kk, n)
+    let t9 scaly_eio_now_ns()
+    if check(c, m, kk, n) = false
+    {
+        Console.println "ptrpar1-check-FAIL"
+        exit 1
+    }
+    report("ptr-par(1)", m, kk, n, t9 - t8)
+
+    let t10 scaly_eio_now_ns()
+    matmul_ptr(a, b, c, m, kk, n)
+    let t11 scaly_eio_now_ns()
+    if check(c, m, kk, n) = false
+    {
+        Console.println "ptrpar2-check-FAIL"
+        exit 1
+    }
+    report("ptr-par(2)", m, kk, n, t11 - t10)
 }
 
 ; Transformer-demo shapes: FFN forward (tokens x d x 4d), attention-ish
