@@ -1630,6 +1630,13 @@ define Emitter
             LLVMSetAlignment(st2, 1 as u32)
             return st2
         }
+        ; Self-copy: the pooled temp acquired for the destination can be
+        ; the very slot the source was loaded from (acquire_temp reuse).
+        ; memcpy's operands are declared noalias, so memcpy(x, x) is UB
+        ; that -O2 exploits (deleted the receiver's field store in the
+        ; subscript_binary regress). A self-copy is a no-op — skip it.
+        if src_ptr.handle = d.handle
+            return sv
         let size_const LLVMSizeOf(t)
         ; The bypassed load is left in place even when now unused —
         ; erasing it frees the instruction while emitter-held handles
@@ -4508,12 +4515,40 @@ define Emitter
         if lookup_err <> 0
             return false
 
+        ; -O<n> (5.1): codegen at the requested level and run the new-PM
+        ; default<On> pipeline in-process before emission. The default
+        ; stays None — without the flag the output is byte-identical.
+        var tm_level 0
+        if config.opt_level > 0
+            set tm_level: config.opt_level
+        if tm_level > 3
+            set tm_level: 3
         let tm LLVMCreateTargetMachine(target, triple,
             "generic" as pointer[const_char],
             "" as pointer[const_char],
-            0, 2, 0)
+            tm_level, 2, 0)
         if tm.handle = null
             return false
+
+        if config.opt_level > 0
+        {
+            ; The module carries the TM's datalayout (apply_target_layout)
+            ; — required: DL-dependent sizeof-GEPs miscompile under opt
+            ; without it.
+            let pb_opts LLVMCreatePassBuilderOptions()
+            var pipeline ("default<O1>" as pointer[const_char])
+            if config.opt_level = 2
+                set pipeline: ("default<O2>" as pointer[const_char])
+            if config.opt_level >= 3
+                set pipeline: ("default<O3>" as pointer[const_char])
+            let opt_err LLVMRunPasses(llvm_module, pipeline, tm, pb_opts)
+            LLVMDisposePassBuilderOptions pb_opts
+            if opt_err.handle <> null
+            {
+                LLVMDisposeTargetMachine tm
+                return false
+            }
+        }
 
         ; s175: to_c_string#, not c_data() — c_data() points into the
         ; varint-prefixed buffer with NO null terminator (s28 rule).
@@ -7213,6 +7248,17 @@ define Emitter
         ; loaded String value and the ctor needs a ptr to it.
         if op_name = "*"
         {
+            ; A parenthesized pointer binding (`let s (v[1]); (*s)`)
+            ; arrives as a one-field { ptr } tuple VALUE — extract the
+            ; pointer before loading through it. A load whose pointer
+            ; operand is a struct value is invalid IR that llc tolerates
+            ; at O0 and opt miscompiles at -O2 (subscript_binary).
+            var opv op
+            let opv_ty LLVMTypeOf(opv)
+            if LLVMGetTypeKind(opv_ty) = LLVMTypeKind.Struct()
+                if LLVMCountStructElementTypes(opv_ty) = 1
+                    if LLVMGetTypeKind(LLVMStructGetTypeAtIndex(opv_ty, 0)) = LLVMTypeKind.Pointer()
+                        set opv: LLVMBuildExtractValue(builder, opv, 0, "deref.unwrap")
             if LLVMGetTypeKind(ty) = LLVMTypeKind.Struct()
             {
                 ; s178: memcpy instead of load+store — a big-aggregate
@@ -7223,15 +7269,15 @@ define Emitter
                 {
                     let tmp acquire_temp(ty, "deref.tmp")
                     let size_const LLVMSizeOf(ty)
-                    LLVMBuildMemCpy(builder, tmp, 1, op, 1, size_const)
+                    LLVMBuildMemCpy(builder, tmp, 1, opv, 1, size_const)
                     return tmp
                 }
-                let loaded LLVMBuildLoad2(builder, ty, op, "deref")
+                let loaded LLVMBuildLoad2(builder, ty, opv, "deref")
                 let tmp2 acquire_temp(ty, "deref.tmp")
                 LLVMBuildStore(builder, loaded, tmp2)
                 return tmp2
             }
-            return LLVMBuildLoad2(builder, ty, op, "deref")
+            return LLVMBuildLoad2(builder, ty, opv, "deref")
         }
 
         ; Address-of: when the operand is already a pointer, return it

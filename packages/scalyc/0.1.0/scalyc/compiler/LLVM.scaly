@@ -574,6 +574,14 @@ function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[const_ch
 ; Dispose target machine
 procedure LLVMDisposeTargetMachine(machine: LLVMTargetMachineRef) extern
 
+; New-PM pass builder (llvm-c/Transforms/PassBuilder.h): run a textual
+; pass pipeline (e.g. "default<O2>") over a module against a TargetMachine.
+; Used by the -O flag for AOT object emission.
+define LLVMPassBuilderOptionsRef(handle: pointer[void])
+function LLVMCreatePassBuilderOptions() returns LLVMPassBuilderOptionsRef extern
+function LLVMRunPasses(mod: LLVMModuleRef, passes: pointer[const_char], tm: LLVMTargetMachineRef, options: LLVMPassBuilderOptionsRef) returns LLVMErrorRef extern
+procedure LLVMDisposePassBuilderOptions(options: LLVMPassBuilderOptionsRef) extern
+
 ; The DataLayout a target machine compiles for (caller owns the result)
 function LLVMCreateTargetDataLayout(machine: LLVMTargetMachineRef) returns LLVMTargetDataRef extern
 

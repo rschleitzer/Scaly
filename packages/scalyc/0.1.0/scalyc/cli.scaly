@@ -73,6 +73,7 @@ define Options
     libraries: Array[String]        ; -l<name> entries (no leading -l)
     extra_objects: Array[String]    ; positional .a / .o paths
     target_triple: String           ; --target <triple>: cross-emit object (empty = host)
+    opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
 )
 {
     init()
@@ -101,6 +102,7 @@ define Options
         set libraries: Array[String]()
         set extra_objects: Array[String]()
         set target_triple: String()
+        set opt_level: 0
     }
 
     function has_error(this) returns bool
@@ -187,6 +189,22 @@ define cli
                 else if arg = "--task-plan"
                 {
                     set opts.task_plan: true
+                }
+                else if arg = "-O0"
+                {
+                    set opts.opt_level: 0
+                }
+                else if arg = "-O1"
+                {
+                    set opts.opt_level: 1
+                }
+                else if arg = "-O2"
+                {
+                    set opts.opt_level: 2
+                }
+                else if arg = "-O3"
+                {
+                    set opts.opt_level: 3
                 }
                 else if arg = "--jit"
                 {
@@ -573,6 +591,7 @@ define cli
         set config.emit_debug_info: opts.debug
         set config.skip_tests: opts.no_tests
         set config.target_triple: opts.target_triple
+        set config.opt_level: opts.opt_level
 
         var emitter Emitter.Emitter(config)
         if opts.debug
