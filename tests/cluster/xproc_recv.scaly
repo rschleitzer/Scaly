@@ -1,0 +1,198 @@
+; Stage-7 milestone 7.1 — CROSS-PROCESS round-trip, RECEIVER. Accepts the
+; frame, deserializes it through the stdlib Region serializer into REAL
+; bucket/oversized pages, swizzles the typed graph with the hand-written
+; walkers, byte-verifies the FNV checksum through the normal container
+; APIs, releases the received region through the ordinary page lifecycle,
+; and reports the verdict.
+
+define NAME_COUNT size_t 120
+define BLOB_LEN size_t 70000
+define PORT i32 47617
+
+define Msg
+(
+    names: pointer[List[String]]
+    index: HashMap[String, i64]
+    blob: Vector[u8]
+    chk: u64
+)
+
+mutable chk: u64 0
+
+procedure chk_reset()
+    set chk: 0xcbf29ce484222325 as u64
+
+procedure chk_byte(b: u8)
+    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+
+procedure chk_word(v: u64)
+{
+    set chk: (chk xor v) * (0x100000001b3 as u64)
+}
+
+procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
+{
+    var done 0 as size_t
+    while done < count
+    {
+        let r Io.read(fd, ((buf as size_t) + done) as pointer[void], count - done)
+        if r <= (0 as i64)
+            return false
+        set done: done + (r as size_t)
+    }
+    true
+}
+
+; ==== hand-written per-type walkers (see roundtrip.scaly) ====
+
+procedure walk_string(s: pointer[String], rr: pointer[ReceivedRegion])
+    rr.fix(s as pointer[void])
+
+procedure walk_list_string(l: pointer[List[String]], rr: pointer[ReceivedRegion])
+{
+    rr.fix(l as pointer[void])
+    var nd l.head
+    while nd <> null
+    {
+        walk_string(nd as pointer[String], rr)
+        let next_slot ((nd as size_t) + (8 as size_t)) as pointer[void]
+        rr.fix(next_slot)
+        set nd: nd.next
+    }
+}
+
+procedure walk_vector_u8(v: pointer[Vector[u8]], rr: pointer[ReceivedRegion])
+{
+    let dslot ((v as size_t) + (8 as size_t)) as pointer[void]
+    rr.fix(dslot)
+}
+
+procedure walk_hashmap_string_i64(hm: pointer[HashMap[String, i64]], rr: pointer[ReceivedRegion])
+{
+    rr.fix(hm as pointer[void])
+    let slots hm.slots
+    if slots = null
+        return
+    let dslot ((slots as size_t) + (8 as size_t)) as pointer[void]
+    rr.fix(dslot)
+    let olen slots.length
+    var i 0 as size_t
+    while i < olen
+    {
+        let inner slots.get_ptr i
+        let idslot ((inner as size_t) + (8 as size_t)) as pointer[void]
+        rr.fix(idslot)
+        let ilen inner.length
+        var j 0 as size_t
+        while j < ilen
+        {
+            let kvp inner.get_ptr j
+            rr.fix(kvp as pointer[void])
+            set j: j + (1 as size_t)
+        }
+        set i: i + (1 as size_t)
+    }
+}
+
+procedure walk_msg(m: pointer[Msg], rr: pointer[ReceivedRegion])
+{
+    rr.fix(m as pointer[void])
+    let nl m.names
+    walk_list_string(nl, rr)
+    let hm_slot ((m as size_t) + (8 as size_t)) as pointer[HashMap[String, i64]]
+    walk_hashmap_string_i64(hm_slot, rr)
+    let bv_slot ((m as size_t) + (16 as size_t)) as pointer[Vector[u8]]
+    walk_vector_u8(bv_slot, rr)
+}
+
+; ==== accept ====
+
+let lfd Io.listen(PORT)
+if lfd < (0 as i32)
+    exit 3
+Console.println "R: ready"
+let fd Io.accept(lfd)
+if fd < (0 as i32)
+    exit 3
+
+; ==== read the frame: 32-byte header first, then the rest ====
+
+let host Page.allocate_page()
+let hdr aligned_alloc(8 as i64, 32 as i64) as pointer[u8]
+if read_exact(fd, hdr as pointer[void], 32 as size_t) = false
+    exit 4
+let flen Region.frame_length(hdr)
+if flen < (32 as size_t)
+    exit 4
+let frame host.allocate(flen, 8 as size_t) as pointer[u8]
+memcpy(frame as pointer[void], hdr as pointer[void], 32 as size_t)
+let rest ((frame as size_t) + (32 as size_t)) as pointer[void]
+if read_exact(fd, rest, flen - (32 as size_t)) = false
+    exit 4
+free(hdr as pointer[void])
+
+; ==== materialize, walk, verify ====
+
+let rr Region.deserialize(frame, host)
+if rr = null
+    exit 5
+let rroot rr.root
+let msg2 rroot as pointer[Msg]
+walk_msg(msg2, rr)
+
+chk_reset()
+let nl2 msg2.names
+var it2 nl2.get_iterator()
+var count 0 as size_t
+var hm2 msg2.index
+while let item2 it2.next()
+{
+    let s *item2
+    let sl s.get_length()
+    var j 0 as size_t
+    while j < sl
+    {
+        let b s.get(j)
+        chk_byte b
+        set j: j + (1 as size_t)
+    }
+    let vref hm2.get(s)
+    if vref = null
+        exit 6
+    let v *vref
+    chk_word(v as u64)
+    set count: count + (1 as size_t)
+}
+var bv2 msg2.blob
+if bv2.length <> BLOB_LEN
+    exit 7
+var bi 0 as size_t
+while bi < BLOB_LEN
+{
+    let bref bv2.get(bi)
+    if bref = null
+        exit 7
+    let b *bref
+    chk_byte b
+    set bi: bi + (1 as size_t)
+}
+
+var verdict u8[8]
+set verdict[0]: 70 as u8
+var pass true
+if count <> NAME_COUNT
+    set pass: false
+if chk <> msg2.chk
+    set pass: false
+if pass
+{
+    set verdict[0]: 80 as u8
+    Console.println "R: verify PASS"
+}
+if pass = false
+    Console.println "R: verify FAIL"
+
+; ---- the received region dies like any other ----
+rr.release()
+
+Io.write_all(fd, verdict as pointer[void], 1 as size_t)

@@ -1,0 +1,162 @@
+; Stage-7 milestone 7.1 — CROSS-PROCESS round-trip, SENDER. Builds the
+; same rich message graph as roundtrip.scaly, serializes it through the
+; stdlib Region serializer, ships the frame over TCP loopback, frees the
+; region BEFORE the verdict arrives (the receiver operates on its own
+; copy by construction), then reports the receiver's verdict.
+
+function scaly_eio_now_ns() returns i64 extern
+
+define NAME_COUNT size_t 120
+define BLOB_LEN size_t 70000
+define PORT i32 47617
+
+define Msg
+(
+    names: pointer[List[String]]
+    index: HashMap[String, i64]
+    blob: Vector[u8]
+    chk: u64
+)
+
+mutable chk: u64 0
+
+procedure chk_reset()
+    set chk: 0xcbf29ce484222325 as u64
+
+procedure chk_byte(b: u8)
+    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+
+procedure chk_word(v: u64)
+{
+    set chk: (chk xor v) * (0x100000001b3 as u64)
+}
+
+procedure fill_name(buf: pointer[u8], i: size_t) returns size_t
+{
+    let len (8 as size_t) + (i % (40 as size_t))
+    set buf[0]: ((97 as size_t) + (i % (26 as size_t))) as u8
+    set buf[1]: ((97 as size_t) + ((i / (26 as size_t)) % (26 as size_t))) as u8
+    var j 2 as size_t
+    while j < len
+    {
+        set buf[j]: ((97 as size_t) + ((i * (3 as size_t) + j) % (26 as size_t))) as u8
+        set j: j + (1 as size_t)
+    }
+    len
+}
+
+procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
+{
+    var done 0 as size_t
+    while done < count
+    {
+        let r Io.read(fd, ((buf as size_t) + done) as pointer[void], count - done)
+        if r <= (0 as i64)
+            return false
+        set done: done + (r as size_t)
+    }
+    true
+}
+
+; ---- build the message region ----
+
+let mp Page.allocate_page()
+let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+
+let names mp.allocate(sizeof List[String], alignof List[String]) as pointer[List[String]]
+set names.head: null
+var builder HashMapBuilder[String, i64]()
+var i 0 as size_t
+while i < NAME_COUNT
+{
+    var nbuf u8[64]
+    let len fill_name(nbuf as pointer[u8], i)
+    let s String^mp(nbuf as pointer[const_char], len)
+    names.add s
+    builder.add(s, i as i64)
+    set i: i + (1 as size_t)
+}
+set msg.names: names
+let hm HashMap[String, i64]^mp(builder)
+set msg.index: hm
+
+let bv Vector[u8]^mp(BLOB_LEN)
+var bi 0 as size_t
+while bi < BLOB_LEN
+{
+    let bval ((bi * (31 as size_t) + (7 as size_t)) % (251 as size_t)) as u8
+    bv.put(bi, bval)
+    set bi: bi + (1 as size_t)
+}
+set msg.blob: bv
+
+chk_reset()
+var it names.get_iterator()
+while let item it.next()
+{
+    let s *item
+    let sl s.get_length()
+    var j 0 as size_t
+    while j < sl
+    {
+        let b s.get(j)
+        chk_byte b
+        set j: j + (1 as size_t)
+    }
+    let vref hm.get(s)
+    if vref = null
+        exit 3
+    let v *vref
+    chk_word(v as u64)
+}
+set bi: 0 as size_t
+while bi < BLOB_LEN
+{
+    let bref bv.get(bi)
+    if bref = null
+        exit 3
+    let b *bref
+    chk_byte b
+    set bi: bi + (1 as size_t)
+}
+set msg.chk: chk
+
+; ---- serialize ----
+
+let host Page.allocate_page()
+let frame Region.serialize(mp, msg as pointer[void], host)
+let flen Region.frame_length(frame)
+
+; ---- connect (retry while the receiver comes up) ----
+
+var fd Io.connect(PORT)
+var tries 0
+while fd < (0 as i32)
+{
+    set tries: tries + 1
+    if tries > 100
+        exit 4
+    let t scaly_eio_now_ns()
+    var burn 0 as i64
+    while scaly_eio_now_ns() - t < (100000000 as i64)
+        set burn: burn + (1 as i64)
+    set fd: Io.connect(PORT)
+}
+
+; ---- ship the frame, then free the region before the verdict ----
+
+Io.write_all(fd, frame as pointer[void], flen)
+mp.deallocate_extensions()
+Page.release_page(mp)
+Console.println "S: region freed"
+
+var ack u8[8]
+if read_exact(fd, ack as pointer[void], 1 as size_t) = false
+    exit 5
+if ack[0] = (80 as u8)
+    Console.println "S: PASS"
+if ack[0] <> (80 as u8)
+{
+    Console.println "S: FAIL"
+    exit 5
+}

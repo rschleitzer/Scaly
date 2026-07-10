@@ -3,8 +3,12 @@
 ; string), enumerates its pages exactly like deallocate_extensions,
 ; ships them VERBATIM over TCP loopback to a second OS process, tears
 ; the region down locally, then benchmarks throughput and round-trips.
-; The oversized page length is HARDCODED (102400): allocate_oversized
-; never records the gross size — THE 7.1 gap this spike documents.
+; The oversized page length is read from the header slot where
+; allocate_oversized records it since the 7.1 opener (current_page@8 —
+; Page.oversized_size); this spike originally HARDCODED 102400 because
+; the length was not recorded anywhere, the finding that gated 7.1.
+; The stdlib serializer this spike prefigured is scaly/memory/Region.scaly
+; (milestone 7.1); the spike stays as the raw wire-format reference.
 
 function scaly_eio_now_ns() returns i64 extern
 
@@ -95,7 +99,10 @@ procedure walk_exclusives(p: size_t)
         let excl *(nd as pointer[size_t])
         let no *(excl as pointer[size_t])
         if no = (0 as size_t)
-            add_entry(excl, 102400 as size_t)
+        {
+            let olen *((excl + (8 as size_t)) as pointer[size_t])
+            add_entry(excl, olen)
+        }
         if no <> (0 as size_t)
             walk_region(excl)
         set nd: *((nd + (8 as size_t)) as pointer[size_t])

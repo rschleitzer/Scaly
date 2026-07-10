@@ -1,0 +1,256 @@
+; Stage-7 milestone 7.1 — IN-PROCESS region round-trip through the stdlib
+; serializer. Builds a rich message graph (List[String], HashMap[String, i64],
+; oversized Vector[u8]) in its own region, serializes it into a frame,
+; FREES the original region, deserializes into real bucket/oversized pages,
+; swizzles the typed graph with HAND-WRITTEN per-type walkers (the
+; interface 7.2 will generate), byte-verifies an FNV checksum through the
+; normal container APIs, and releases the received region through the
+; ordinary page lifecycle. Two rounds prove the pages actually recycle.
+; Expected: R1 PASS
+; Expected: R2 PASS
+
+define NAME_COUNT size_t 120
+define BLOB_LEN size_t 70000
+
+define Msg
+(
+    names: pointer[List[String]]
+    index: HashMap[String, i64]
+    blob: Vector[u8]
+    chk: u64
+)
+
+mutable chk: u64 0
+
+procedure chk_reset()
+    set chk: 0xcbf29ce484222325 as u64
+
+procedure chk_byte(b: u8)
+    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+
+procedure chk_word(v: u64)
+{
+    set chk: (chk xor v) * (0x100000001b3 as u64)
+}
+
+; Distinct deterministic name content: the first two chars encode i.
+procedure fill_name(buf: pointer[u8], i: size_t) returns size_t
+{
+    let len (8 as size_t) + (i % (40 as size_t))
+    set buf[0]: ((97 as size_t) + (i % (26 as size_t))) as u8
+    set buf[1]: ((97 as size_t) + ((i / (26 as size_t)) % (26 as size_t))) as u8
+    var j 2 as size_t
+    while j < len
+    {
+        set buf[j]: ((97 as size_t) + ((i * (3 as size_t) + j) % (26 as size_t))) as u8
+        set j: j + (1 as size_t)
+    }
+    len
+}
+
+; ==== hand-written per-type walkers (what 7.2 will generate) ====
+; A walker fixes every pointer SLOT of its type via rr.fix, then descends
+; through the freshly patched pointers. Scalars are untouched.
+
+; String = { data: pointer[u8] } — one slot at offset 0.
+procedure walk_string(s: pointer[String], rr: pointer[ReceivedRegion])
+    rr.fix(s as pointer[void])
+
+; Node[String] = { element: String @0, next: pointer[Node[String]] @8 }
+; List[String] = { head: pointer[Node[String]] @0 }
+procedure walk_list_string(l: pointer[List[String]], rr: pointer[ReceivedRegion])
+{
+    rr.fix(l as pointer[void])
+    var nd l.head
+    while nd <> null
+    {
+        walk_string(nd as pointer[String], rr)
+        let next_slot ((nd as size_t) + (8 as size_t)) as pointer[void]
+        rr.fix(next_slot)
+        set nd: nd.next
+    }
+}
+
+; Vector[T] = { length: size_t @0, data: pointer[T] @8 }
+procedure walk_vector_u8(v: pointer[Vector[u8]], rr: pointer[ReceivedRegion])
+{
+    let dslot ((v as size_t) + (8 as size_t)) as pointer[void]
+    rr.fix(dslot)
+}
+
+; HashMap[String, i64] = { slots: pointer[Vector[Vector[KVP]]] @0 };
+; KeyValuePair[String, i64] = { key: String @0, value: i64 @8 }.
+procedure walk_hashmap_string_i64(hm: pointer[HashMap[String, i64]], rr: pointer[ReceivedRegion])
+{
+    rr.fix(hm as pointer[void])
+    let slots hm.slots
+    if slots = null
+        return
+    let dslot ((slots as size_t) + (8 as size_t)) as pointer[void]
+    rr.fix(dslot)
+    let olen slots.length
+    var i 0 as size_t
+    while i < olen
+    {
+        let inner slots.get_ptr i
+        let idslot ((inner as size_t) + (8 as size_t)) as pointer[void]
+        rr.fix(idslot)
+        let ilen inner.length
+        var j 0 as size_t
+        while j < ilen
+        {
+            let kvp inner.get_ptr j
+            rr.fix(kvp as pointer[void])
+            set j: j + (1 as size_t)
+        }
+        set i: i + (1 as size_t)
+    }
+}
+
+; Msg = { names ptr @0, index HashMap @8, blob Vector[u8] @16, chk u64 @32 }
+procedure walk_msg(m: pointer[Msg], rr: pointer[ReceivedRegion])
+{
+    rr.fix(m as pointer[void])
+    let nl m.names
+    walk_list_string(nl, rr)
+    let hm_slot ((m as size_t) + (8 as size_t)) as pointer[HashMap[String, i64]]
+    walk_hashmap_string_i64(hm_slot, rr)
+    let bv_slot ((m as size_t) + (16 as size_t)) as pointer[Vector[u8]]
+    walk_vector_u8(bv_slot, rr)
+}
+
+; ==== two full rounds ====
+
+var round 0
+while round < 2
+{
+    ; ---- build the message region ----
+    let mp Page.allocate_page()
+    let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+
+    let names mp.allocate(sizeof List[String], alignof List[String]) as pointer[List[String]]
+    set names.head: null
+    var builder HashMapBuilder[String, i64]()
+    var i 0 as size_t
+    while i < NAME_COUNT
+    {
+        var nbuf u8[64]
+        let len fill_name(nbuf as pointer[u8], i)
+        let s String^mp(nbuf as pointer[const_char], len)
+        names.add s
+        builder.add(s, i as i64)
+        set i: i + (1 as size_t)
+    }
+    set msg.names: names
+    let hm HashMap[String, i64]^mp(builder)
+    set msg.index: hm
+
+    let bv Vector[u8]^mp(BLOB_LEN)
+    var bi 0 as size_t
+    while bi < BLOB_LEN
+    {
+        let bval ((bi * (31 as size_t) + (7 as size_t)) % (251 as size_t)) as u8
+        bv.put(bi, bval)
+        set bi: bi + (1 as size_t)
+    }
+    set msg.blob: bv
+
+    ; ---- checksum by the traversal the receiver will repeat ----
+    chk_reset()
+    var it names.get_iterator()
+    while let item it.next()
+    {
+        let s *item
+        let sl s.get_length()
+        var j 0 as size_t
+        while j < sl
+        {
+            let b s.get(j)
+            chk_byte b
+            set j: j + (1 as size_t)
+        }
+        let vref hm.get(s)
+        if vref = null
+            exit 3
+        let v *vref
+        chk_word(v as u64)
+    }
+    set bi: 0 as size_t
+    while bi < BLOB_LEN
+    {
+        let bref bv.get(bi)
+        if bref = null
+            exit 3
+        let b *bref
+        chk_byte b
+        set bi: bi + (1 as size_t)
+    }
+    set msg.chk: chk
+
+    ; ---- serialize, then free the ORIGINAL region ----
+    let host Page.allocate_page()
+    let frame Region.serialize(mp, msg as pointer[void], host)
+    mp.deallocate_extensions()
+    Page.release_page(mp)
+
+    ; ---- deserialize into real pages, walk, verify ----
+    let rr Region.deserialize(frame, host)
+    if rr = null
+        exit 4
+    let rroot rr.root
+    let msg2 rroot as pointer[Msg]
+    walk_msg(msg2, rr)
+
+    chk_reset()
+    let nl2 msg2.names
+    var it2 nl2.get_iterator()
+    var count 0 as size_t
+    var hm2 msg2.index
+    while let item2 it2.next()
+    {
+        let s *item2
+        let sl s.get_length()
+        var j 0 as size_t
+        while j < sl
+        {
+            let b s.get(j)
+            chk_byte b
+            set j: j + (1 as size_t)
+        }
+        let vref hm2.get(s)
+        if vref = null
+            exit 5
+        let v *vref
+        chk_word(v as u64)
+        set count: count + (1 as size_t)
+    }
+    var bv2 msg2.blob
+    if bv2.length <> BLOB_LEN
+        exit 6
+    set bi: 0 as size_t
+    while bi < BLOB_LEN
+    {
+        let bref bv2.get(bi)
+        if bref = null
+            exit 6
+        let b *bref
+        chk_byte b
+        set bi: bi + (1 as size_t)
+    }
+
+    if count <> NAME_COUNT
+        exit 7
+    if chk <> msg2.chk
+        exit 8
+
+    ; ---- the received region dies like any other ----
+    rr.release()
+    host.deallocate_extensions()
+    Page.release_page(host)
+
+    if round = 0
+        Console.println "R1 PASS"
+    if round = 1
+        Console.println "R2 PASS"
+    set round: round + 1
+}

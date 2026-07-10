@@ -6,6 +6,7 @@ define memory
     module PageListIterator
     module Page
     module root_pages
+    module Region
 
     function test_page_allocate() returns int
     {

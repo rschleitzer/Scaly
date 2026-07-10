@@ -1,0 +1,340 @@
+; Region serialization (stage 7, milestone 7.1). A message region's pages
+; travel VERBATIM as a length-prefixed frame (native LP64-LE memory image —
+; the stage-7 wire format, no translation layer); the receiver materializes
+; them into REAL pages — bucket pages via Page.allocate_page, oversized
+; blocks via aligned_alloc, exactly the two shapes release_page frees — so
+; a received region dies like any other. Pointer fixup is split: page
+; HEADERS are swizzled here (structure known to the allocator), the typed
+; object graph is the per-message-type walker's job (hand-written in 7.1,
+; compiler-generated in 7.2) via the ReceivedRegion map/fix interface.
+;
+; Frame layout (all slots u64):
+;   [0] magic  [1] total frame bytes  [2] page count  [3] root object (old)
+;   then page table: count x (old base, byte length)  — entry 0 is the
+;   region's ROOT page —  then the pages' bytes, verbatim, in table order.
+;
+; The region must be CLOSED: every pointer reachable from the root object
+; stays inside the region (enforcement is 7.2/7.3 checker work; until then
+; fix() fails loud, exit 17). Sender-side teardown stays the caller's:
+; serialize only reads. The region's root must be a heap page
+; (Page.allocate_page), not a stack root page.
+
+define REGION_WIRE_MAGIC u64 0x3153434c59
+
+define ReceivedRegion
+(
+    region: pointer[Page]
+    root: pointer[void]
+    page_count: size_t
+    old_bases: pointer[size_t]
+    new_bases: pointer[size_t]
+    lengths: pointer[size_t]
+)
+{
+    ; Map an address from the sender's region into the received copies;
+    ; 0 = outside the region. RANGE-based on purpose: an interior pointer
+    ; into an oversized buffer sits arbitrarily far past its page base,
+    ; so 4K masking cannot find the owner.
+    function map(this: ReceivedRegion, address: size_t) returns size_t
+    {
+        if address = (0 as size_t)
+            return 0 as size_t
+
+        let ob old_bases
+        let nb new_bases
+        let ln lengths
+        var i 0 as size_t
+        while i < page_count
+        {
+            let base ob[i]
+            if address >= base
+            {
+                if address < base + ln[i]
+                    return nb[i] + (address - base)
+            }
+            set i: i + (1 as size_t)
+        }
+        0 as size_t
+    }
+
+    ; Swizzle one pointer slot in place. Null stays null; a nonnull value
+    ; outside the region means the region was NOT closed — fail loud.
+    procedure fix(this: ReceivedRegion, slot: pointer[void])
+    {
+        let s slot as pointer[size_t]
+        let old *s
+        if old = (0 as size_t)
+            return
+
+        let mapped map(old)
+        if mapped = (0 as size_t)
+        {
+            scaly_eputs "ReceivedRegion.fix: pointer outside the received region"
+            scaly_eputnl()
+            exit 17
+        }
+        set *s: mapped
+    }
+
+    ; Free the received region through the normal lifecycle.
+    procedure release(this: ReceivedRegion)
+    {
+        let r region
+        r.deallocate_extensions()
+        Page.release_page(r)
+    }
+}
+
+define Region
+{
+    ; --- enumeration: the deallocate_extensions walk, read-only ---
+
+    function count_exclusives(p: pointer[Page]) returns size_t
+    {
+        var n 0 as size_t
+        var nd p.exclusive_pages.head
+        while nd <> null
+        {
+            let excl nd.page
+            if excl.next_object = null
+                set n: n + (1 as size_t)
+            else
+                set n: n + count_pages(excl)
+
+            set nd: nd.next
+        }
+        n
+    }
+
+    function count_pages(region: pointer[Page]) returns size_t
+    {
+        var n (1 as size_t) + count_exclusives(region)
+        var q region.next_page
+        while q <> null
+        {
+            set n: n + (1 as size_t) + count_exclusives(q)
+            set q: q.next_page
+        }
+        n
+    }
+
+    ; Fill the interleaved (base, length) table; index counts SLOTS
+    ; (two per page); returns the index after the last slot written.
+    function fill_exclusives(p: pointer[Page], table: pointer[size_t], index: size_t) returns size_t
+    {
+        var w index
+        var nd p.exclusive_pages.head
+        while nd <> null
+        {
+            let excl nd.page
+            if excl.next_object = null
+            {
+                set table[w]: excl as size_t
+                set w: w + (1 as size_t)
+                let len Page.oversized_size(excl)
+                set table[w]: len
+                set w: w + (1 as size_t)
+            }
+            else
+                set w: fill_pages(excl, table, w)
+
+            set nd: nd.next
+        }
+        w
+    }
+
+    function fill_pages(region: pointer[Page], table: pointer[size_t], index: size_t) returns size_t
+    {
+        var w index
+        set table[w]: region as size_t
+        set w: w + (1 as size_t)
+        set table[w]: PAGE_SIZE
+        set w: w + (1 as size_t)
+        set w: fill_exclusives(region, table, w)
+        var q region.next_page
+        while q <> null
+        {
+            set table[w]: q as size_t
+            set w: w + (1 as size_t)
+            set table[w]: PAGE_SIZE
+            set w: w + (1 as size_t)
+            set w: fill_exclusives(q, table, w)
+            set q: q.next_page
+        }
+        w
+    }
+
+    ; --- sender: build the frame on the host page ---
+
+    function serialize(region: pointer[Page], root: pointer[void], host: pointer[Page]) returns pointer[u8]
+    {
+        let n count_pages(region)
+        let table host.allocate(n * (16 as size_t), 8 as size_t) as pointer[size_t]
+        let end fill_pages(region, table, 0 as size_t)
+        if end <> n * (2 as size_t)
+        {
+            scaly_eputs "Region.serialize: page walk disagreement"
+            scaly_eputnl()
+            exit 17
+        }
+
+        var total (32 as size_t) + n * (16 as size_t)
+        var w 1 as size_t
+        while w < n * (2 as size_t)
+        {
+            set total: total + table[w]
+            set w: w + (2 as size_t)
+        }
+
+        let frame host.allocate(total, 8 as size_t) as pointer[u8]
+        let h frame as pointer[u64]
+        set h[0]: REGION_WIRE_MAGIC
+        set h[1]: total as u64
+        set h[2]: n as u64
+        set h[3]: (root as size_t) as u64
+        memcpy(((frame as size_t) + (32 as size_t)) as pointer[void], table as pointer[void], n * (16 as size_t))
+
+        var off (32 as size_t) + n * (16 as size_t)
+        var r 0 as size_t
+        while r < n * (2 as size_t)
+        {
+            let base table[r]
+            set r: r + (1 as size_t)
+            let len table[r]
+            set r: r + (1 as size_t)
+            memcpy(((frame as size_t) + off) as pointer[void], base as pointer[void], len)
+            set off: off + len
+        }
+        frame
+    }
+
+    ; Total frame length in bytes, read back from a frame (or from just
+    ; its 32-byte header) — for socket readers that need the rest count.
+    function frame_length(frame: pointer[u8]) returns size_t
+    {
+        let h frame as pointer[u64]
+        let total h[1]
+        total as size_t
+    }
+
+    ; --- receiver: materialize + header swizzle + map ---
+
+    ; Returns null on framing violations (bad magic, empty table, a length
+    ; that is not a nonzero PAGE_SIZE multiple) — the v1 trust boundary.
+    ; Structural pointer violations inside accepted pages fail loud in
+    ; fix() instead: by then the frame claims to be a closed region.
+    function deserialize(frame: pointer[u8], host: pointer[Page]) returns pointer[ReceivedRegion]
+    {
+        let h frame as pointer[u64]
+        let magic h[0]
+        if magic <> REGION_WIRE_MAGIC
+            return null
+
+        let n h[2] as size_t
+        if n = (0 as size_t)
+            return null
+
+        let root_old h[3] as size_t
+        let table ((frame as size_t) + (32 as size_t)) as pointer[size_t]
+        let ob host.allocate(n * (8 as size_t), 8 as size_t) as pointer[size_t]
+        let nb host.allocate(n * (8 as size_t), 8 as size_t) as pointer[size_t]
+        let ln host.allocate(n * (8 as size_t), 8 as size_t) as pointer[size_t]
+
+        ; Validate the table before touching the allocator.
+        var v 1 as size_t
+        while v < n * (2 as size_t)
+        {
+            let len table[v]
+            if len = (0 as size_t)
+                return null
+
+            if (len % PAGE_SIZE) <> (0 as size_t)
+                return null
+
+            set v: v + (2 as size_t)
+        }
+
+        ; Land every page in its real home: bucket pages for PAGE_SIZE
+        ; entries, aligned_alloc blocks for oversized ones — the two
+        ; shapes release_page knows how to free.
+        var off (32 as size_t) + n * (16 as size_t)
+        var i 0 as size_t
+        var r 0 as size_t
+        while i < n
+        {
+            let base table[r]
+            set r: r + (1 as size_t)
+            let len table[r]
+            set r: r + (1 as size_t)
+            var np: pointer[Page] null
+            if len = PAGE_SIZE
+                set np: Page.allocate_page()
+            else
+            {
+                let a aligned_alloc(PAGE_SIZE as i64, len as i64)
+                if a = null
+                    exit 1
+
+                set np: a as pointer[Page]
+            }
+            memcpy(np as pointer[void], ((frame as size_t) + off) as pointer[void], len)
+            set ob[i]: base
+            set nb[i]: np as size_t
+            set ln[i]: len
+            set off: off + len
+            set i: i + (1 as size_t)
+        }
+
+        let rr host.allocate(sizeof ReceivedRegion, alignof ReceivedRegion) as pointer[ReceivedRegion]
+        let root_page nb[0]
+        set rr.region: root_page as pointer[Page]
+        set rr.root: null
+        set rr.page_count: n
+        set rr.old_bases: ob
+        set rr.new_bases: nb
+        set rr.lengths: ln
+
+        ; Swizzle the page headers. Oversized pages are skipped whole:
+        ; next_object is null, current_page RECORDS THE BLOCK LENGTH (a
+        ; size, not a pointer — mapping it would be a false MAPFAIL), the
+        ; rest is nulled by allocate_oversized. next_object gets a
+        ; same-page REBASE, not map(): a full page's next_object points
+        ; one past the page end, which the range check rightly excludes.
+        set i: 0 as size_t
+        while i < n
+        {
+            let np nb[i] as pointer[Page]
+            let no np.next_object as size_t
+            if no <> (0 as size_t)
+            {
+                let obase ob[i]
+                set np.next_object: (nb[i] + (no - obase)) as pointer[void]
+                let cp_slot ((np as size_t) + (8 as size_t)) as pointer[void]
+                rr.fix(cp_slot)
+                let npg_slot ((np as size_t) + (16 as size_t)) as pointer[void]
+                rr.fix(npg_slot)
+                let ex_slot ((np as size_t) + (24 as size_t)) as pointer[void]
+                rr.fix(ex_slot)
+                var nd np.exclusive_pages.head
+                while nd <> null
+                {
+                    rr.fix(nd as pointer[void])
+                    let next_slot ((nd as size_t) + (8 as size_t)) as pointer[void]
+                    rr.fix(next_slot)
+                    set nd: nd.next
+                }
+            }
+            set i: i + (1 as size_t)
+        }
+
+        let root_new rr.map(root_old)
+        if root_new = (0 as size_t)
+        {
+            scaly_eputs "Region.deserialize: root outside the received region"
+            scaly_eputnl()
+            exit 17
+        }
+        set rr.root: root_new as pointer[void]
+        rr
+    }
+}
