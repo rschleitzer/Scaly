@@ -20510,8 +20510,14 @@ define Planner
                     ; Channel.send moves its message (the last argument).
                     ; One channel type since the Channel/Mailbox
                     ; unification — same ownership rule as always.
+                    ; Cluster.send (stage 7, milestone 7.3) moves
+                    ; UNCONDITIONALLY too — memo rule 4: the region is
+                    ; serialized and freed at the send, whether or not
+                    ; the bytes ever arrive.
                     var is_send false
                     if call.mangled_name = "_ZN7Channel4sendEP7ChannelPv"
+                        set is_send: true
+                    if call.mangled_name = "_ZN7Cluster4sendEP8NodePeer3u64Pv"
                         set is_send: true
                     if is_send
                         if call.args <> null

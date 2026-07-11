@@ -334,6 +334,11 @@ procedure scaly_eio_wake_close(q: i32, w: i32) returns i32 extern
 ; TaskPool.default_pool. Never less than 1.
 function scaly_eio_ncpu() returns i32 extern
 
+; Monotonic nanosecond clock (shim rule a: the clockid value is
+; OS-specific) — deadline arithmetic for Channel.receive_timeout and
+; the Node heartbeat (stage 7, milestone 7.3).
+function scaly_eio_now_ns() returns i64 extern
+
 ; POSIX close(2) — pool pipes and pollers at thread exit (milestone 2.5
 ; residual). Declared (int)->(int) to MATCH scalyls's existing declare:
 ; the whole-program llvm-link sees ONE `close` declaration across the
@@ -356,6 +361,13 @@ procedure scaly_eio_tcp_listen(port: i32) returns i32 extern
 function scaly_eio_tcp_port(fd: i32) returns i32 extern
 procedure scaly_eio_tcp_connect(port: i32) returns i32 extern
 procedure scaly_eio_accept(fd: i32) returns i32 extern
+
+; Stage-7 node runtime (milestone 7.3): INADDR_ANY listener, getaddrinfo
+; connect (rule a: addrinfo layout is OS-specific), and the SIGPIPE-safe
+; socket write (rule a: MSG_NOSIGNAL/SO_NOSIGPIPE are OS-specific).
+procedure scaly_eio_tcp_listen_any(port: i32) returns i32 extern
+procedure scaly_eio_tcp_connect_host(host: pointer[const_char], port: i32) returns i32 extern
+procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 
 ; Guard-page overflow diagnostics (shim-owned: struct sigaction and
 ; stack_t layouts are OS-specific). Installs a SIGSEGV/SIGBUS handler on
@@ -1461,12 +1473,24 @@ define Io
             let arc scaly_eio_arm(q, fd, wr, null)
             if arc <> (0 as i32)
                 exit 107
+            ; The armed fd makes this an EXTERNAL I/O wait: count it, so
+            ; poll_io blocks unbounded instead of taking the channel-
+            ; deadlock-bounded branch (a main-context accept/read under
+            ; a scheduler exited 106 spuriously otherwise — found by the
+            ; stage-7 node tests). The null tag is the main context's
+            ; own event; poll_io only decrements TASK waiters, so the
+            ; count is undone here.
+            let sm current_scheduler as pointer[Scheduler]
+            set sm.io_waiting: sm.io_waiting + 1
             repeat
             {
                 if not Scheduler.step()
                 {
                     if Scheduler.poll_io()
+                    {
+                        set sm.io_waiting: sm.io_waiting - 1
                         return
+                    }
                 }
             }
         }
@@ -1537,6 +1561,49 @@ define Io
             set r: scaly_eio_accept(fd)
         }
         r
+    }
+
+    ; Listen on ALL interfaces (INADDR_ANY) — a cluster node accepting
+    ; real remote peers (stage 7, milestone 7.3). Same contract as
+    ; Io.listen otherwise.
+    procedure listen_any(port: i32) returns i32
+        scaly_eio_tcp_listen_any(port)
+
+    ; Resolve host by NAME (getaddrinfo in the shim, rule a) and
+    ; connect — blocking handshake like Io.connect. host must be
+    ; NUL-terminated (String.to_c_string). Returns the fd, -1 on
+    ; failure (resolution or connection).
+    procedure connect_host(host: pointer[const_char], port: i32) returns i32
+        scaly_eio_tcp_connect_host(host, port)
+
+    ; SIGPIPE-safe socket write (stage 7): a write racing a peer's death
+    ; must return -1/EPIPE, never kill the process. Suspension contract
+    ; of Io.write otherwise.
+    procedure tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64
+    {
+        var r scaly_eio_tcp_write(fd, buf, count)
+        while r = ((0 - 2) as i64)
+        {
+            Io.park(fd, true)
+            set r: scaly_eio_tcp_write(fd, buf, count)
+        }
+        r
+    }
+
+    ; Whole-buffer variant of tcp_write (the Node frame writer). False
+    ; on a hard error — the caller treats that as peer suspicion, not a
+    ; program error.
+    procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) returns bool
+    {
+        var done 0 as size_t
+        while done < count
+        {
+            let r Io.tcp_write(fd, ((buf as size_t) + done) as pointer[void], count - done)
+            if r <= (0 as i64)
+                return false
+            set done: done + (r as size_t)
+        }
+        true
     }
 
     ; Write the WHOLE buffer, looping over partial writes (milestone
@@ -2160,6 +2227,97 @@ define Channel
                 set s.chan_parked: s.chan_parked + 1
                 Fiber.yield()
             }
+        }
+    }
+
+    ; Bounded poller wait for the timed receive: one wake-handle slice,
+    ; io-task tags drained exactly as in poll_io. NO deadlock bracket —
+    ; a timed waiter always has its own way out, so it must not count
+    ; toward exit 106.
+    procedure timed_poll(slice_ms: i32)
+    {
+        let s current_scheduler as pointer[Scheduler]
+        var tagbuf u8[512]
+        let n scaly_eio_wait_timeout(s.eio, tagbuf as pointer[void], 64 as i32, slice_ms)
+        if n = ((0 - 1) as i32)
+            exit 107
+        var i 0
+        while i < (n as i64)
+        {
+            let raw *(((tagbuf as size_t) + ((i * 8) as size_t)) as pointer[size_t])
+            ; 0 = main-context own-event tag, 1 = wake sentinel (the
+            ; caller re-checks its queue on return); > 1 = an Io-parked
+            ; task's record.
+            if raw > (1 as size_t)
+            {
+                let t raw as pointer[SchedTask]
+                Scheduler.enqueue(t)
+                set s.blocked: s.blocked - 1
+                set s.io_waiting: s.io_waiting - 1
+            }
+            set i: i + 1
+        }
+    }
+
+    ; Timed receive (stage 7, memo rule 6 — timeouts are explicit and
+    ; local). Exactly receive's contract plus a deadline: a message, or
+    ; null with *timed_out=false for CLOSED AND DRAINED, or null with
+    ; *timed_out=true when ms milliseconds passed first. The main
+    ; context drives ready work and blocks in the poller in bounded
+    ; slices (a remote send/close pokes the armed wake handle, so a
+    ; slice normally ends early); overshoot is at most one slice
+    ; (CHAN_DEADLOCK_MS). A TASK caller cooperatively yields between
+    ; checks (v1: the runtime has no timer wheel — sibling tasks run in
+    ; between, an otherwise-idle scheduler spins until the deadline).
+    procedure receive_timeout(m: pointer[Channel], ms: i32, timed_out: pointer[bool]) returns pointer[void]
+    {
+        set *timed_out: false
+        Io.ensure_wake()
+        let me current_task as pointer[SchedTask]
+        let deadline scaly_eio_now_ns() + ((ms as i64) * (1000000 as i64))
+        repeat
+        {
+            Channel.acquire(m)
+            let n m.head
+            if n <> null
+            {
+                set m.head: n.next
+                if m.head = null
+                    set m.tail: null
+                set m.count: m.count - (1 as i64)
+                let snd Channel.pop_sender(m)
+                Channel.release(m)
+                if snd <> null
+                    Channel.route(snd)
+                return n.msg
+            }
+            if m.closed
+            {
+                Channel.release(m)
+                return null
+            }
+            set m.recv_sched: current_scheduler
+            Channel.release(m)
+            let remaining deadline - scaly_eio_now_ns()
+            if remaining <= (0 as i64)
+            {
+                set *timed_out: true
+                return null
+            }
+            if me = null
+            {
+                if not Scheduler.step()
+                {
+                    var slice (remaining + (999999 as i64)) / (1000000 as i64)
+                    if slice > (CHAN_DEADLOCK_MS as i64)
+                        set slice: CHAN_DEADLOCK_MS as i64
+                    if slice < (1 as i64)
+                        set slice: 1 as i64
+                    Channel.timed_poll(slice as i32)
+                }
+            }
+            else
+                Scheduler.yield()
         }
     }
 }

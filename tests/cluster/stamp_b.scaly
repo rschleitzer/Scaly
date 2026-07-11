@@ -1,0 +1,11 @@
+; Stage-7 rule-10 probe, side B (connector) — deliberately a different
+; program than stamp_a (different IR, different stamp). The harness
+; starts it only after stamp_a reported ready, so one connect suffices;
+; the handshake must refuse with both stamps in the error.
+
+define PORT i32 47623
+
+let peer Cluster.connect("127.0.0.1", PORT)
+if peer <> null
+    exit 4
+Console.println "B: refused"

@@ -1,0 +1,16 @@
+; Stage-7 rule-10 probe, side A (listener). A DIFFERENT program than
+; stamp_b, so the two binaries carry different build stamps: the
+; frozen-preamble handshake must refuse the connection loudly, with
+; BOTH stamps on stderr — the drunk-deploy failure mode is a refused
+; connect at startup, never garbage pointers at 3am.
+
+define PORT i32 47623
+
+let lfd Cluster.listen(PORT)
+if lfd < (0 as i32)
+    exit 3
+Console.println "A: ready"
+let peer Cluster.accept(lfd)
+if peer <> null
+    exit 4
+Console.println "A: refused"

@@ -30,8 +30,10 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <signal.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <time.h>
@@ -302,10 +304,22 @@ long scaly_eio_write(int fd, const void* buf, unsigned long count)
     return r;
 }
 
-/* A nonblocking TCP socket listening on 127.0.0.1:port (port 0 asks the
- * kernel for an ephemeral port — scaly_eio_tcp_port reads the assignment).
- * Returns the fd, -1 on failure. */
-int scaly_eio_tcp_listen(int port)
+/* Suppress SIGPIPE per SOCKET on darwin (SO_NOSIGPIPE — there is no
+ * MSG_NOSIGNAL send flag there); linux suppresses per WRITE in
+ * scaly_eio_tcp_write instead. A cluster write to a peer that died
+ * mid-frame must surface as -1/EPIPE, never kill the process (stage 7,
+ * milestone 7.3). Rule (a): both constants are OS-specific. */
+static void scaly_eio_sock_init(int fd)
+{
+#ifdef __APPLE__
+    int one = 1;
+    setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &one, sizeof one);
+#else
+    (void)fd;
+#endif
+}
+
+static int scaly_eio_tcp_listen_at(unsigned int ip_host_order, int port)
 {
     struct sockaddr_in addr;
     int one = 1;
@@ -313,10 +327,11 @@ int scaly_eio_tcp_listen(int port)
     if (fd < 0)
         return -1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+    scaly_eio_sock_init(fd);
     memset(&addr, 0, sizeof addr);
     addr.sin_family = AF_INET;
     addr.sin_port = htons((unsigned short)port);
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_addr.s_addr = htonl(ip_host_order);
     if (bind(fd, (struct sockaddr*)&addr, sizeof addr) < 0
         || listen(fd, 64) < 0
         || scaly_eio_set_nonblocking(fd) < 0)
@@ -325,6 +340,21 @@ int scaly_eio_tcp_listen(int port)
         return -1;
     }
     return fd;
+}
+
+/* A nonblocking TCP socket listening on 127.0.0.1:port (port 0 asks the
+ * kernel for an ephemeral port — scaly_eio_tcp_port reads the assignment).
+ * Returns the fd, -1 on failure. */
+int scaly_eio_tcp_listen(int port)
+{
+    return scaly_eio_tcp_listen_at(INADDR_LOOPBACK, port);
+}
+
+/* Like scaly_eio_tcp_listen but bound to INADDR_ANY — a cluster node
+ * accepting real remote peers (stage 7, milestone 7.3). */
+int scaly_eio_tcp_listen_any(int port)
+{
+    return scaly_eio_tcp_listen_at(INADDR_ANY, port);
 }
 
 /* The local port a bound socket ended up on, -1 on failure. */
@@ -359,7 +389,68 @@ int scaly_eio_tcp_connect(int port)
         close(fd);
         return -1;
     }
+    scaly_eio_sock_init(fd);
     return fd;
+}
+
+/* Resolve host by name and connect to host:port — real hosts for the
+ * stage-7 Node runtime (milestone 7.3). Shim rule (a): struct addrinfo's
+ * layout and the AI_/AF_ constant values are OS-specific, so getaddrinfo
+ * is unreachable from a portable Scaly extern. Blocking handshake like
+ * scaly_eio_tcp_connect; tries every returned address. Returns the fd,
+ * -1 on failure (resolution or connection). */
+int scaly_eio_tcp_connect_host(const char* host, int port)
+{
+    struct addrinfo hints;
+    struct addrinfo* res = 0;
+    struct addrinfo* ai;
+    char portbuf[16];
+    int fd = -1;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    snprintf(portbuf, sizeof portbuf, "%d", port);
+    if (getaddrinfo(host, portbuf, &hints, &res) != 0)
+        return -1;
+    for (ai = res; ai; ai = ai->ai_next)
+    {
+        int rc;
+        fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (fd < 0)
+            continue;
+        do
+            rc = connect(fd, ai->ai_addr, (socklen_t)ai->ai_addrlen);
+        while (rc < 0 && errno == EINTR);
+        if (rc == 0)
+        {
+            scaly_eio_sock_init(fd);
+            break;
+        }
+        close(fd);
+        fd = -1;
+    }
+    freeaddrinfo(res);
+    return fd;
+}
+
+/* Socket write that never raises SIGPIPE: send() with MSG_NOSIGNAL on
+ * linux; darwin lacks the flag, so sockets carry SO_NOSIGPIPE from
+ * scaly_eio_sock_init and plain send() suffices. Same EINTR retry and
+ * EAGAIN/EWOULDBLOCK -> -2 mapping as scaly_eio_write. */
+long scaly_eio_tcp_write(int fd, const void* buf, unsigned long count)
+{
+    long r;
+#ifdef __APPLE__
+    int flags = 0;
+#else
+    int flags = MSG_NOSIGNAL;
+#endif
+    do
+        r = send(fd, buf, count, flags);
+    while (r < 0 && errno == EINTR);
+    if (r < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        return -2;
+    return r;
 }
 
 /* Fiber guard-page overflow diagnostics (shim-owned per containment rule
@@ -418,7 +509,10 @@ int scaly_eio_accept(int fd)
     {
         int c = accept(fd, 0, 0);
         if (c >= 0)
+        {
+            scaly_eio_sock_init(c);
             return c;
+        }
         if (errno == EINTR || errno == ECONNABORTED)
             continue;
         if (errno == EAGAIN || errno == EWOULDBLOCK)

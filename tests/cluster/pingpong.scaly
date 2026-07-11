@@ -1,0 +1,136 @@
+; Stage-7 milestone 7.3 — cross-process ping-pong over REMOTE CHANNELS.
+; ONE program, two roles (PINGPONG_ROLE=a|b): under memo rule 10 a
+; cluster is one build, so both processes must run the same binary —
+; the roles branch at runtime, exactly like the distributed trainer
+; will. B accepts and echoes value+1 on channel 2 for every ping on
+; channel 1; A connects, drives ROUNDS round trips — every send moves
+; the message region's ownership into the transport, every receive
+; materializes a fresh region fixed by the 7.2 compiler walkers — then
+; says goodbye, which drains BOTH sides' channels to null (rule 2).
+
+define PORT i32 47621
+define ROUNDS i64 32
+
+define PingMsg
+(
+    value: i64
+    text: String
+)
+
+procedure run_b()
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+
+    let lfd Cluster.listen(PORT)
+    if lfd < (0 as i32)
+        exit 3
+    Console.println "B: ready"
+    let peer Cluster.accept(lfd)
+    if peer = null
+        exit 3
+
+    let ch Cluster.channel(peer, 1 as u64)
+    var rounds 0 as i64
+    var running true
+    while running
+    {
+        let raw Channel.receive(ch)
+        if raw = null
+            set running: false
+        else
+        {
+            let rr raw as pointer[ReceivedRegion]
+            let rroot rr.root
+            let m rroot as pointer[PingMsg]
+            rr.fix_graph(m)
+            let v m.value
+            let t m.text
+            let tl t.get_length()
+            if tl <> (4 as size_t)
+                exit 4
+            Cluster.dispose_message(rr)
+            set rounds: rounds + (1 as i64)
+
+            let mp Page.allocate_page()
+            let r mp.allocate(sizeof PingMsg, alignof PingMsg) as pointer[PingMsg]
+            set r.value: v + (1 as i64)
+            let s String^mp("pong" as pointer[const_char], 4 as size_t)
+            set r.text: s
+            Cluster.send(peer, 2 as u64, r as pointer[void])
+        }
+    }
+    if rounds <> ROUNDS
+    {
+        Console.println "B: FAIL"
+        exit 5
+    }
+    Console.println "B: PASS"
+    Cluster.dispose_peer(peer)
+}
+
+procedure run_a()
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+
+    var peer Cluster.connect("127.0.0.1", PORT)
+    var tries 0
+    while peer = null
+    {
+        set tries: tries + 1
+        if tries > 100
+            exit 3
+        poll(null as pointer[void], 0 as i32, 100 as i32)
+        set peer: Cluster.connect("127.0.0.1", PORT)
+    }
+
+    let ch2 Cluster.channel(peer, 2 as u64)
+    var i 0 as i64
+    var ok true
+    while i < ROUNDS
+    {
+        let mp Page.allocate_page()
+        let m mp.allocate(sizeof PingMsg, alignof PingMsg) as pointer[PingMsg]
+        set m.value: i
+        let s String^mp("ping" as pointer[const_char], 4 as size_t)
+        set m.text: s
+        Cluster.send(peer, 1 as u64, m as pointer[void])
+
+        let raw Channel.receive(ch2)
+        if raw = null
+            exit 4
+        let rr raw as pointer[ReceivedRegion]
+        let rroot rr.root
+        let r rroot as pointer[PingMsg]
+        rr.fix_graph(r)
+        if r.value <> i + (1 as i64)
+            set ok: false
+        let t r.text
+        let tl t.get_length()
+        if tl <> (4 as size_t)
+            set ok: false
+        Cluster.dispose_message(rr)
+        set i: i + (1 as i64)
+    }
+    Cluster.close(peer)
+    let tail Channel.receive(ch2)
+    if tail <> null
+        exit 5
+    if ok = false
+    {
+        Console.println "A: FAIL"
+        exit 5
+    }
+    Console.println "A: PASS"
+    Cluster.dispose_peer(peer)
+}
+
+let role getenv("PINGPONG_ROLE")
+if role = null
+    exit 2
+let rc (*role) as u8
+if rc = (98 as u8)
+    run_b()
+else
+    run_a()

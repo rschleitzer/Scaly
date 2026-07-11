@@ -1,0 +1,24 @@
+; Stage-7 move checker over REMOTE send (milestone 7.3, memo rule 4):
+; Cluster.send transfers ownership of the message region into the
+; transport UNCONDITIONALLY — the region is serialized and freed at the
+; send, whether or not the bytes ever arrive — so reading the message
+; binding afterwards must be rejected exactly like a Channel.send use.
+
+define Msg
+(
+    value: i64
+)
+
+mutable the_peer: pointer[void] null
+
+procedure producer()
+{
+    let p the_peer as pointer[NodePeer]
+    let mp Page.allocate_page()
+    let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+    set m.value: 42 as i64
+    Cluster.send(p, 1 as u64, m as pointer[void])
+    let v m.value
+}
+
+producer()
