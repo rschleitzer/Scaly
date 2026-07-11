@@ -1,0 +1,737 @@
+; Stage-7 milestone 7.4 — the distributed Mann trainer (the finale).
+; ONE binary, three roles chosen at runtime (rule 10: one cluster, one
+; build). A small pre-LN transformer trains by SYNCHRONOUS DATA-PARALLEL
+; SGD: every rank computes the gradient of ONE data window per step, the
+; workers ship their gradient region (7.1 serialization + 7.2 compiler
+; walkers) to the reducer (rank 0), the reducer SUMS them IN RANK ORDER
+; with its own, divides by the live count, and broadcasts the averaged
+; gradient back; every rank then injects that identical gradient and runs
+; the same adam_step, so all ranks — and a single-node reference summing
+; the same windows — stay in bit-lockstep (loss parity at matched steps).
+;
+;   TRAIN_RANK  < 0 or unset  -> solo reference (one process does the whole
+;                               global batch of TRAIN_N windows itself)
+;   TRAIN_RANK  = 0           -> reducer + worker (rank 0)
+;   TRAIN_RANK  > 0           -> pure worker
+;   TRAIN_N     = number of ranks = global batch size (default 2)
+;   TRAIN_PORT  = reducer TCP port (default 47700)
+;
+; A killed worker is DETECTED (its gradient channel wakes null — 7.3 rule
+; 2) and the run COMPLETES on the survivors: the reducer drops it and
+; averages over the remaining ranks.
+
+function scaly_eio_now_ns() returns i64 extern
+function exit(code: int) extern
+
+; --- message types (7.2 walkable object trees) ---
+
+; A worker's rank announcement (first message on HELLO_ID). No pointer
+; slots — the walker fixes nothing.
+define RankMsg
+(
+    rank: i64
+)
+
+; A flattened gradient (or the averaged broadcast). Vector[float] is one
+; of the 7.2 hardcoded walker shapes (length-bounded element loop).
+define GradMsg
+(
+    rank: i64
+    data: Vector[float]
+)
+
+define HELLO_ID u64 100
+define GRAD_ID u64 1
+define AVG_ID u64 2
+
+; --- small numeric helpers (mirrors demo/mann.scaly) ---
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function lcg(s: int) returns int
+    pmod(s * 1103515245 + 12345, 2147483648)
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+function fixed3(f: float) returns String
+{
+    var ok false
+    if f >= 0.0
+        if f < 100000.0
+            set ok: true
+    if ok = false
+        return "nan"
+    let m ((f * 1000.0) + 0.5) as int
+    let ip m / 1000
+    let fr m - ip * 1000
+    var sb StringBuilder()
+    let istr num_to_string(ip as i64)
+    sb.append istr
+    sb.append "."
+    if fr < 100
+        sb.append "0"
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr as i64)
+    sb.append fstr
+    sb.to_string()
+}
+
+function parse_int(s: pointer[const_char]) returns int
+{
+    if s = null
+        return 0 - 1
+    var neg false
+    var i 0 as size_t
+    if s[0] as int = 45
+    {
+        set neg: true
+        set i: 1 as size_t
+    }
+    var v 0
+    var any false
+    repeat
+    {
+        let c s[i] as int
+        if c < 48
+            break
+        if c > 57
+            break
+        set v: v * 10 + (c - 48)
+        set any: true
+        set i: i + (1 as size_t)
+    }
+    if any = false
+        return 0 - 1
+    if neg
+        return 0 - v
+    v
+}
+
+function env_int(name: pointer[const_char], dflt: int) returns int
+{
+    let e getenv(name)
+    if e = null
+        return dflt
+    let v parse_int(e)
+    if v = (0 - 1)
+        return dflt
+    v
+}
+
+function fill(tape: Tape, id: int, count: int, s0: int) returns int
+{
+    var s s0
+    var i 0
+    while i < count
+    {
+        set s: lcg(s)
+        let r pmod(s, 2001) - 1000
+        let rv (r as float) * 0.0001
+        tape.set_value(id, i, rv)
+        set i: i + 1
+    }
+    s
+}
+
+procedure fill_const(tape: Tape, id: int, count: int, v: float)
+{
+    var i 0
+    while i < count
+    {
+        tape.set_value(id, i, v)
+        set i: i + 1
+    }
+}
+
+; --- config ---
+let V 24
+let D 24
+let T 8
+let F 48
+let HEADS 4
+let STEPS env_int("TRAIN_STEPS", 60)
+var PROG STEPS / 6
+if PROG < 1
+    set PROG: 1
+let NPARAM 15
+
+let N env_int("TRAIN_N", 2)
+let RANK env_int("TRAIN_RANK", 0 - 1)
+let PORT env_int("TRAIN_PORT", 47700) as i32
+
+; --- synthetic deterministic corpus: next(v) = (v+7) mod V, so every
+; window's continuation is a pure function of its last token — learnable
+; in a few dozen steps, and identical in every process ---
+let ntok 600
+var toks Vector[i64](ntok as size_t)
+let tp toks.data
+var ci 0
+while ci < ntok
+{
+    set tp[ci]: (pmod(ci * 7 + 3, V)) as i64
+    set ci: ci + 1
+}
+
+; --- model: one pre-LN transformer block + head ---
+var tape Tape()
+let table tape.leaf(V, D)
+let posemb tape.leaf(T, D)
+let g1a tape.leaf(1, D)
+let b1a tape.leaf(1, D)
+let wq1 tape.leaf(D, D)
+let wk1 tape.leaf(D, D)
+let wv1 tape.leaf(D, D)
+let wo1 tape.leaf(D, D)
+let g1b tape.leaf(1, D)
+let b1b tape.leaf(1, D)
+let wf1 tape.leaf(D, F)
+let wp1 tape.leaf(F, D)
+let gf tape.leaf(1, D)
+let bf tape.leaf(1, D)
+let whead tape.leaf(D, V)
+
+var s 42
+set s: fill(tape, table, V * D, s)
+set s: fill(tape, posemb, T * D, s)
+set s: fill(tape, wq1, D * D, s)
+set s: fill(tape, wk1, D * D, s)
+set s: fill(tape, wv1, D * D, s)
+set s: fill(tape, wo1, D * D, s)
+set s: fill(tape, wf1, D * F, s)
+set s: fill(tape, wp1, F * D, s)
+set s: fill(tape, whead, D * V, s)
+fill_const(tape, g1a, D, 1.0)
+fill_const(tape, g1b, D, 1.0)
+fill_const(tape, gf, D, 1.0)
+
+let bsz T as size_t
+var ids Vector[i64](bsz)
+let emb tape.embedding(table, ids, T)
+let x0 tape.add(emb, posemb)
+let n1a tape.layernorm(x0, g1a, b1a, 0.00001)
+let q1 tape.matmul(n1a, wq1)
+let k1 tape.matmul(n1a, wk1)
+let v1 tape.matmul(n1a, wv1)
+let at1 tape.attention(q1, k1, v1, HEADS)
+let o1 tape.matmul(at1, wo1)
+let x1 tape.add(x0, o1)
+let n1b tape.layernorm(x1, g1b, b1b, 0.00001)
+let h1 tape.matmul(n1b, wf1)
+let e1 tape.gelu(h1)
+let m1 tape.matmul(e1, wp1)
+let x2 tape.add(x1, m1)
+let nf tape.layernorm(x2, gf, bf, 0.00001)
+let logits tape.matmul(nf, whead)
+var tgs Vector[i64](bsz)
+let loss tape.crossentropy(logits, tgs)
+
+var pids Vector[int](NPARAM as size_t)
+pids.put(0, table)
+pids.put(1, posemb)
+pids.put(2, g1a)
+pids.put(3, b1a)
+pids.put(4, wq1)
+pids.put(5, wk1)
+pids.put(6, wv1)
+pids.put(7, wo1)
+pids.put(8, g1b)
+pids.put(9, b1b)
+pids.put(10, wf1)
+pids.put(11, wp1)
+pids.put(12, gf)
+pids.put(13, bf)
+pids.put(14, whead)
+let pp pids.data
+
+; per-leaf element counts + total (deterministic, identical everywhere)
+var sizes Vector[int](NPARAM as size_t)
+let szp sizes.data
+var total 0
+var qi 0
+while qi < NPARAM
+{
+    let pid pp[qi]
+    let sz tape.node_rows(pid) * tape.node_cols(pid)
+    set szp[qi]: sz
+    set total: total + sz
+    set qi: qi + 1
+}
+
+; a persistent averaging buffer (reused every step)
+let accpage Page.allocate_page()
+let acc Vector[float]^accpage(total as size_t)
+let accp acc.data
+
+let lr: float 0.01
+
+; ======================================================================
+; SOLO reference: one process does the whole global batch of N windows,
+; summing their gradients in window order — the parity baseline.
+; ======================================================================
+if RANK < 0
+{
+    var win_sum: float 0.0
+    let t0 scaly_eio_now_ns()
+    var step 1
+    while step <= STEPS
+    {
+        ; draw N windows (identical draw sequence in every process)
+        var wins Vector[int](N as size_t)
+        let wp wins.data
+        var wi 0
+        while wi < N
+        {
+            set s: lcg(s)
+            set wp[wi]: pmod(s, ntok - T - 1)
+            set wi: wi + 1
+        }
+        ; sum each window's gradient into acc IN WINDOW ORDER — a fresh
+        ; zero_grads per window (backward accumulates into intermediate
+        ; nodes too, so each window's gradient must start from zero),
+        ; exactly matching how the reducer sums one gradient per rank.
+        var w 0
+        while w < N
+        {
+            let p wp[w]
+            tape.zero_grads()
+            var t 0
+            while t < T
+            {
+                tape.set_token(emb, t, tp[p + t])
+                tape.set_token(loss, t, tp[p + t + 1])
+                set t: t + 1
+            }
+            tape.recompute()
+            if w = 0
+                set win_sum: win_sum + tape.value_at(loss, 0)
+            tape.backward loss
+            var idx 0
+            var li 0
+            while li < NPARAM
+            {
+                let pid pp[li]
+                let sz szp[li]
+                var j 0
+                while j < sz
+                {
+                    if w = 0
+                        set accp[idx]: tape.grad_at(pid, j)
+                    else
+                        set accp[idx]: accp[idx] + tape.grad_at(pid, j)
+                    set idx: idx + 1
+                    set j: j + 1
+                }
+                set li: li + 1
+            }
+            set w: w + 1
+        }
+        ; average the summed gradient over the batch, inject, then step
+        var ni 0
+        while ni < total
+        {
+            set accp[ni]: accp[ni] / (N as float)
+            set ni: ni + 1
+        }
+        var gi 0
+        var gl 0
+        while gl < NPARAM
+        {
+            let pid pp[gl]
+            let sz szp[gl]
+            var gj 0
+            while gj < sz
+            {
+                tape.set_grad(pid, gj, accp[gi])
+                set gi: gi + 1
+                set gj: gj + 1
+            }
+            set gl: gl + 1
+        }
+        var ai 0
+        while ai < NPARAM
+        {
+            tape.adam_step(pp[ai], lr, 0.9, 0.999, 0.00000001, step)
+            set ai: ai + 1
+        }
+        if pmod(step, PROG) = 0
+        {
+            let avg win_sum / (PROG as float)
+            var sb StringBuilder()
+            sb.append "L "
+            let ns num_to_string(step as i64)
+            sb.append ns
+            sb.append " "
+            let fs fixed3(avg)
+            sb.append fs
+            let line sb.to_string()
+            Console.println(line.to_c_string())
+            set win_sum: 0.0
+        }
+        set step: step + 1
+    }
+    let t1 scaly_eio_now_ns()
+    var tb StringBuilder()
+    tb.append "S: done "
+    let sps num_to_string(((STEPS as i64) * 1000000000) / (t1 - t0))
+    tb.append sps
+    tb.append " steps/s"
+    let tl tb.to_string()
+    Console.println(tl.to_c_string())
+    exit 0
+}
+
+; ======================================================================
+; DISTRIBUTED: rank 0 is the reducer (and a worker); ranks 1..N-1 are
+; pure workers. All share the cluster runtime, so both need a scheduler.
+; ======================================================================
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+
+if RANK = 0
+{
+    ; --- reducer: listen, accept N-1 workers, learn each rank ---
+    let lfd Cluster.listen(PORT)
+    if lfd < (0 as i32)
+        exit 3
+    Console.println "R: ready"
+
+    var peers Vector[pointer[NodePeer]](N as size_t)
+    let pkv peers.data
+    var gchs Vector[pointer[Channel]](N as size_t)
+    let gcv gchs.data
+    var live Vector[int](N as size_t)
+    let lvv live.data
+    set lvv[0]: 1
+
+    var accepted 0
+    while accepted < N - 1
+    {
+        let peer Cluster.accept(lfd)
+        if peer = null
+            exit 3
+        let hch Cluster.channel(peer, HELLO_ID)
+        let hraw Channel.receive(hch)
+        if hraw = null
+            exit 3
+        let hrr hraw as pointer[ReceivedRegion]
+        let hm hrr.root as pointer[RankMsg]
+        hrr.fix_graph(hm)
+        let wr hm.rank as int
+        Cluster.dispose_message(hrr)
+        set pkv[wr]: peer
+        let gch Cluster.channel(peer, GRAD_ID)
+        set gcv[wr]: gch
+        set lvv[wr]: 1
+        set accepted: accepted + 1
+    }
+    Console.println "R: linked"
+
+    var live_count N
+    var win_sum: float 0.0
+    let t0 scaly_eio_now_ns()
+    var step 1
+    while step <= STEPS
+    {
+        var wins Vector[int](N as size_t)
+        let wp wins.data
+        var wi 0
+        while wi < N
+        {
+            set s: lcg(s)
+            set wp[wi]: pmod(s, ntok - T - 1)
+            set wi: wi + 1
+        }
+        ; rank 0's own window gradient
+        let p0 wp[0]
+        tape.zero_grads()
+        var t 0
+        while t < T
+        {
+            tape.set_token(emb, t, tp[p0 + t])
+            tape.set_token(loss, t, tp[p0 + t + 1])
+            set t: t + 1
+        }
+        tape.recompute()
+        set win_sum: win_sum + tape.value_at(loss, 0)
+        tape.backward loss
+        ; flatten our gradient into acc (rank 0's contribution, first)
+        var idx 0
+        var li 0
+        while li < NPARAM
+        {
+            let pid pp[li]
+            let sz szp[li]
+            var j 0
+            while j < sz
+            {
+                set accp[idx]: tape.grad_at(pid, j)
+                set idx: idx + 1
+                set j: j + 1
+            }
+            set li: li + 1
+        }
+        ; add each live worker's gradient IN RANK ORDER (null = it died)
+        var r 1
+        while r < N
+        {
+            if lvv[r] = 1
+            {
+                let raw Channel.receive(gcv[r])
+                if raw = null
+                {
+                    set lvv[r]: 0
+                    set live_count: live_count - 1
+                    var db StringBuilder()
+                    db.append "R: down "
+                    let rs num_to_string(r as i64)
+                    db.append rs
+                    let dl db.to_string()
+                    Console.println(dl.to_c_string())
+                }
+                else
+                {
+                    let rr raw as pointer[ReceivedRegion]
+                    let gm rr.root as pointer[GradMsg]
+                    rr.fix_graph(gm)
+                    let dp gm.data.data
+                    var ai 0
+                    while ai < total
+                    {
+                        set accp[ai]: accp[ai] + dp[ai]
+                        set ai: ai + 1
+                    }
+                    Cluster.dispose_message(rr)
+                }
+            }
+            set r: r + 1
+        }
+        ; average over the survivors
+        var ni 0
+        while ni < total
+        {
+            set accp[ni]: accp[ni] / (live_count as float)
+            set ni: ni + 1
+        }
+        ; broadcast the averaged gradient to every live worker
+        var br 1
+        while br < N
+        {
+            if lvv[br] = 1
+            {
+                let mp Page.allocate_page()
+                let mm mp.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
+                set mm.rank: 0 as i64
+                let dv Vector[float]^mp(total as size_t)
+                set mm.data: dv
+                let dp dv.data
+                var ci2 0
+                while ci2 < total
+                {
+                    set dp[ci2]: accp[ci2]
+                    set ci2: ci2 + 1
+                }
+                Cluster.send(pkv[br], AVG_ID, mm as pointer[void])
+            }
+            set br: br + 1
+        }
+        ; inject the averaged gradient locally + step (identical everywhere)
+        var ii 0
+        var li2 0
+        while li2 < NPARAM
+        {
+            let pid pp[li2]
+            let sz szp[li2]
+            var j2 0
+            while j2 < sz
+            {
+                tape.set_grad(pid, j2, accp[ii])
+                set ii: ii + 1
+                set j2: j2 + 1
+            }
+            set li2: li2 + 1
+        }
+        var si 0
+        while si < NPARAM
+        {
+            tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
+            set si: si + 1
+        }
+        if pmod(step, PROG) = 0
+        {
+            let avg win_sum / (PROG as float)
+            var sb StringBuilder()
+            sb.append "L "
+            let ns num_to_string(step as i64)
+            sb.append ns
+            sb.append " "
+            let fs fixed3(avg)
+            sb.append fs
+            let line sb.to_string()
+            Console.println(line.to_c_string())
+            set win_sum: 0.0
+        }
+        set step: step + 1
+    }
+    let t1 scaly_eio_now_ns()
+    var r2 1
+    while r2 < N
+    {
+        if lvv[r2] = 1
+            Cluster.close(pkv[r2])
+        set r2: r2 + 1
+    }
+    var tb StringBuilder()
+    tb.append "R: PASS "
+    let sps num_to_string(((STEPS as i64) * 1000000000) / (t1 - t0))
+    tb.append sps
+    tb.append " steps/s"
+    let tl tb.to_string()
+    Console.println(tl.to_c_string())
+    var r3 1
+    while r3 < N
+    {
+        if lvv[r3] = 1
+            Cluster.dispose_peer(pkv[r3])
+        set r3: r3 + 1
+    }
+    exit 0
+}
+
+; --- pure worker (RANK > 0) ---
+var peer Cluster.connect("127.0.0.1", PORT)
+var tries 0
+while peer = null
+{
+    set tries: tries + 1
+    if tries > 200
+        exit 3
+    poll(null as pointer[void], 0 as i32, 50 as i32)
+    set peer: Cluster.connect("127.0.0.1", PORT)
+}
+
+; announce our rank
+let hp Page.allocate_page()
+let hmsg hp.allocate(sizeof RankMsg, alignof RankMsg) as pointer[RankMsg]
+set hmsg.rank: RANK as i64
+Cluster.send(peer, HELLO_ID, hmsg as pointer[void])
+
+let avg_ch Cluster.channel(peer, AVG_ID)
+var wb StringBuilder()
+wb.append "W"
+let wrs num_to_string(RANK as i64)
+wb.append wrs
+wb.append ": ready"
+let wl wb.to_string()
+Console.println(wl.to_c_string())
+
+var running true
+var step 1
+while running
+{
+    var wins Vector[int](N as size_t)
+    let wp wins.data
+    var wi 0
+    while wi < N
+    {
+        set s: lcg(s)
+        set wp[wi]: pmod(s, ntok - T - 1)
+        set wi: wi + 1
+    }
+    let p wp[RANK]
+    tape.zero_grads()
+    var t 0
+    while t < T
+    {
+        tape.set_token(emb, t, tp[p + t])
+        tape.set_token(loss, t, tp[p + t + 1])
+        set t: t + 1
+    }
+    tape.recompute()
+    tape.backward loss
+    ; ship our gradient region to the reducer
+    let mp Page.allocate_page()
+    let mm mp.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
+    set mm.rank: RANK as i64
+    let dv Vector[float]^mp(total as size_t)
+    set mm.data: dv
+    let dp dv.data
+    var idx 0
+    var li 0
+    while li < NPARAM
+    {
+        let pid pp[li]
+        let sz szp[li]
+        var j 0
+        while j < sz
+        {
+            set dp[idx]: tape.grad_at(pid, j)
+            set idx: idx + 1
+            set j: j + 1
+        }
+        set li: li + 1
+    }
+    Cluster.send(peer, GRAD_ID, mm as pointer[void])
+    ; receive the averaged gradient (null = reducer done/gone)
+    let raw Channel.receive(avg_ch)
+    if raw = null
+        set running: false
+    else
+    {
+        let rr raw as pointer[ReceivedRegion]
+        let gm rr.root as pointer[GradMsg]
+        rr.fix_graph(gm)
+        let gdp gm.data.data
+        var ii 0
+        var li2 0
+        while li2 < NPARAM
+        {
+            let pid pp[li2]
+            let sz szp[li2]
+            var j2 0
+            while j2 < sz
+            {
+                tape.set_grad(pid, j2, gdp[ii])
+                set ii: ii + 1
+                set j2: j2 + 1
+            }
+            set li2: li2 + 1
+        }
+        Cluster.dispose_message(rr)
+        var si 0
+        while si < NPARAM
+        {
+            tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
+            set si: si + 1
+        }
+        set step: step + 1
+    }
+}
+Cluster.dispose_peer(peer)
+exit 0

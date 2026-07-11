@@ -383,6 +383,16 @@ define Tape
         p[i]
     }
 
+    ; Overwrite a gradient slot in place. The distributed trainer (7.4)
+    ; injects an all-reduced (averaged) gradient here before adam_step,
+    ; so every rank applies an identical update and stays in lockstep.
+    procedure set_grad(this: Tape, id: int, i: int, v: float)
+    {
+        let node nodes.get_buffer() + id
+        let g node.grad
+        g.put(i as size_t, v)
+    }
+
     function grad_at(this: Tape, id: int, i: int) returns float
     {
         let node nodes.get_buffer() + id
