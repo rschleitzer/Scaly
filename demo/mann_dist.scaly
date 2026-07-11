@@ -1,0 +1,983 @@
+; Stage-7 finale (ROADMAP 7.4): the DISTRIBUTED Mann trainer. The same
+; 2-layer pre-LN char transformer as demo/mann.scaly, trained by
+; SYNCHRONOUS DATA-PARALLEL SGD across N OS processes over the stage-7
+; remote channels — pure Scaly, zero Python, no MPI, no NCCL.
+;
+; ONE binary, three roles (memo rule 10: one cluster, one build):
+;   MANN_RANK < 0 or unset  -> solo baseline (one process, batch = MANN_N)
+;   MANN_RANK = 0           -> reducer + worker (rank 0), trains + generates
+;   MANN_RANK > 0           -> pure gradient worker
+;   MANN_N    = number of ranks = global batch size (default 4)
+;   MANN_PORT = reducer TCP port (default 47800)
+;
+; Each rank computes the gradient of ONE corpus window per step; the
+; workers ship their gradient REGION (7.1 serialization + 7.2 compiler
+; walkers) to the reducer, which sums them IN RANK ORDER with its own,
+; divides by the live count, and broadcasts the averaged gradient back;
+; every rank injects that identical gradient and runs the same adam_step,
+; so all ranks stay in bit-lockstep and the reducer's model is exactly a
+; batch-N single-node model. A killed worker is detected (its gradient
+; channel wakes null) and the run finishes on the survivors. After
+; training, the reducer extends a corpus prompt autoregressively and
+; prints the generated German text.
+;
+; Run via demo/run_mann_dist.sh (pins the cwd — the corpus loads
+; cwd-relative).
+
+function scaly_eio_now_ns() returns i64 extern
+function exit(code: int) extern
+
+; --- message types (7.2 walkable object trees) ---
+define RankMsg
+(
+    rank: i64
+)
+
+define GradMsg
+(
+    rank: i64
+    data: Vector[float]
+)
+
+define HELLO_ID u64 100
+define GRAD_ID u64 1
+define AVG_ID u64 2
+
+function pmod(v: int, m: int) returns int
+{
+    let q v / m
+    v - q * m
+}
+
+function lcg(s: int) returns int
+    pmod(s * 1103515245 + 12345, 2147483648)
+
+function num_to_string(n: i64) returns String
+{
+    if n = 0
+        return "0"
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var sb StringBuilder()
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            sb.append(*d)
+    }
+    sb.to_string()
+}
+
+function fixed3(f: float) returns String
+{
+    var ok false
+    if f >= 0.0
+        if f < 100000.0
+            set ok: true
+    if ok = false
+        return "nan"
+    let m ((f * 1000.0) + 0.5) as int
+    let ip m / 1000
+    let fr m - ip * 1000
+    var sb StringBuilder()
+    let istr num_to_string(ip as i64)
+    sb.append istr
+    sb.append "."
+    if fr < 100
+        sb.append "0"
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr as i64)
+    sb.append fstr
+    sb.to_string()
+}
+
+function secs_to_string(ns: i64) returns String
+{
+    let cs ns / 10000000
+    let ip cs / 100
+    let fr cs - ip * 100
+    var sb StringBuilder()
+    let istr num_to_string(ip)
+    sb.append istr
+    sb.append "."
+    if fr < 10
+        sb.append "0"
+    let fstr num_to_string(fr)
+    sb.append fstr
+    sb.to_string()
+}
+
+function parse_int(s: pointer[const_char]) returns int
+{
+    if s = null
+        return 0 - 1
+    var neg false
+    var i 0 as size_t
+    if s[0] as int = 45
+    {
+        set neg: true
+        set i: 1 as size_t
+    }
+    var v 0
+    var any false
+    repeat
+    {
+        let c s[i] as int
+        if c < 48
+            break
+        if c > 57
+            break
+        set v: v * 10 + (c - 48)
+        set any: true
+        set i: i + (1 as size_t)
+    }
+    if any = false
+        return 0 - 1
+    if neg
+        return 0 - v
+    v
+}
+
+function env_int(name: pointer[const_char], dflt: int) returns int
+{
+    let e getenv(name)
+    if e = null
+        return dflt
+    let v parse_int(e)
+    if v = (0 - 1)
+        return dflt
+    v
+}
+
+procedure fill(tape: Tape, id: int, count: int, s0: int) returns int
+{
+    var s s0
+    var i 0
+    while i < count
+    {
+        set s: lcg(s)
+        let r pmod(s, 2001) - 1000
+        let rv (r as float) * 0.0001
+        tape.set_value(id, i, rv)
+        set i: i + 1
+    }
+    s
+}
+
+procedure fill_const(tape: Tape, id: int, count: int, v: float)
+{
+    var i 0
+    while i < count
+    {
+        tape.set_value(id, i, v)
+        set i: i + 1
+    }
+}
+
+; --- distributed config ---
+let N env_int("MANN_N", 4)
+let RANK env_int("MANN_RANK", 0 - 1)
+let PORT env_int("MANN_PORT", 47800) as i32
+let is_head RANK <= 0
+
+; --- load the corpus (cwd-relative; demo/run_mann_dist.sh pins the cwd);
+; every rank tokenizes identically, so the data is deterministic ---
+let path String("tests/tensor/mann.txt")
+let text File.read_to_string(path)
+let tlen text.get_length() as int
+if tlen < 10000
+{
+    print("error: tests/tensor/mann.txt not found or empty - run via demo/run_mann_dist.sh\n")
+    exit(1)
+}
+
+var map Vector[int](16384)
+let mp map.data
+let tsz text.get_length()
+var toks Vector[i64](tsz)
+let tp toks.data
+var revlen Vector[int](256)
+let rl revlen.data
+var revbytes Vector[int](1024)
+let rb revbytes.data
+var ntok 0
+var vocab 0
+var pos 0
+var ptok 0
+var have_prompt false
+while pos < tlen
+{
+    let b0 text.get(pos as size_t) as int
+    if have_prompt = false
+    {
+        if b0 = 71
+            if pos + 5 < tlen
+                if text.get((pos + 1) as size_t) as int = 117
+                    if text.get((pos + 2) as size_t) as int = 115
+                        if text.get((pos + 3) as size_t) as int = 116
+                            if text.get((pos + 4) as size_t) as int = 97
+                                if text.get((pos + 5) as size_t) as int = 118
+                                {
+                                    set ptok: ntok
+                                    set have_prompt: true
+                                }
+    }
+    var cp b0
+    var adv 1
+    if b0 >= 192
+    {
+        if b0 < 224
+        {
+            let b1 text.get((pos + 1) as size_t) as int
+            set cp: (b0 - 192) * 64 + (b1 - 128)
+            set adv: 2
+        }
+    }
+    if b0 >= 224
+    {
+        if b0 < 240
+        {
+            let b1 text.get((pos + 1) as size_t) as int
+            let b2 text.get((pos + 2) as size_t) as int
+            set cp: ((b0 - 224) * 64 + (b1 - 128)) * 64 + (b2 - 128)
+            set adv: 3
+        }
+    }
+    if b0 >= 240
+    {
+        set cp: 0
+        set adv: 4
+    }
+    if cp >= 16384
+        set cp: 0
+    if mp[cp] = 0
+    {
+        set vocab: vocab + 1
+        set mp[cp]: vocab
+        let nid vocab - 1
+        if nid < 256
+        {
+            set rl[nid]: adv
+            var k 0
+            while k < adv
+            {
+                set rb[nid * 4 + k]: text.get((pos + k) as size_t) as int
+                set k: k + 1
+            }
+        }
+    }
+    let tid mp[cp] - 1
+    set tp[ntok]: tid as i64
+    set ntok: ntok + 1
+    set pos: pos + adv
+}
+if ntok < 1000
+{
+    print("error: corpus too small\n")
+    exit(1)
+}
+
+; --- model (identical on every rank: seed 42) ---
+let V vocab
+let D 64
+let T 64
+let F 128
+let HEADS 4
+let STEPS env_int("MANN_STEPS", 10000)
+let PROG 500
+let NPARAM 25
+var tape Tape()
+let table tape.leaf(V, D)
+let posemb tape.leaf(T, D)
+let g1a tape.leaf(1, D)
+let b1a tape.leaf(1, D)
+let wq1 tape.leaf(D, D)
+let wk1 tape.leaf(D, D)
+let wv1 tape.leaf(D, D)
+let wo1 tape.leaf(D, D)
+let g1b tape.leaf(1, D)
+let b1b tape.leaf(1, D)
+let wf1 tape.leaf(D, F)
+let wp1 tape.leaf(F, D)
+let g2a tape.leaf(1, D)
+let b2a tape.leaf(1, D)
+let wq2 tape.leaf(D, D)
+let wk2 tape.leaf(D, D)
+let wv2 tape.leaf(D, D)
+let wo2 tape.leaf(D, D)
+let g2b tape.leaf(1, D)
+let b2b tape.leaf(1, D)
+let wf2 tape.leaf(D, F)
+let wp2 tape.leaf(F, D)
+let gf tape.leaf(1, D)
+let bf tape.leaf(1, D)
+let whead tape.leaf(D, V)
+
+var s 42
+set s: fill(tape, table, V * D, s)
+set s: fill(tape, posemb, T * D, s)
+set s: fill(tape, wq1, D * D, s)
+set s: fill(tape, wk1, D * D, s)
+set s: fill(tape, wv1, D * D, s)
+set s: fill(tape, wo1, D * D, s)
+set s: fill(tape, wf1, D * F, s)
+set s: fill(tape, wp1, F * D, s)
+set s: fill(tape, wq2, D * D, s)
+set s: fill(tape, wk2, D * D, s)
+set s: fill(tape, wv2, D * D, s)
+set s: fill(tape, wo2, D * D, s)
+set s: fill(tape, wf2, D * F, s)
+set s: fill(tape, wp2, F * D, s)
+set s: fill(tape, whead, D * V, s)
+fill_const(tape, g1a, D, 1.0)
+fill_const(tape, g1b, D, 1.0)
+fill_const(tape, g2a, D, 1.0)
+fill_const(tape, g2b, D, 1.0)
+fill_const(tape, gf, D, 1.0)
+
+let bsz T as size_t
+var ids Vector[i64](bsz)
+let emb tape.embedding(table, ids, T)
+let x0 tape.add(emb, posemb)
+let n1a tape.layernorm(x0, g1a, b1a, 0.00001)
+let q1 tape.matmul(n1a, wq1)
+let k1 tape.matmul(n1a, wk1)
+let v1 tape.matmul(n1a, wv1)
+let at1 tape.attention(q1, k1, v1, HEADS)
+let o1 tape.matmul(at1, wo1)
+let x1 tape.add(x0, o1)
+let n1b tape.layernorm(x1, g1b, b1b, 0.00001)
+let h1 tape.matmul(n1b, wf1)
+let e1 tape.gelu(h1)
+let m1 tape.matmul(e1, wp1)
+let x2 tape.add(x1, m1)
+let n2a tape.layernorm(x2, g2a, b2a, 0.00001)
+let q2 tape.matmul(n2a, wq2)
+let k2 tape.matmul(n2a, wk2)
+let v2 tape.matmul(n2a, wv2)
+let at2 tape.attention(q2, k2, v2, HEADS)
+let o2 tape.matmul(at2, wo2)
+let x3 tape.add(x2, o2)
+let n2b tape.layernorm(x3, g2b, b2b, 0.00001)
+let h2 tape.matmul(n2b, wf2)
+let e2 tape.gelu(h2)
+let m2 tape.matmul(e2, wp2)
+let x4 tape.add(x3, m2)
+let nf tape.layernorm(x4, gf, bf, 0.00001)
+let logits tape.matmul(nf, whead)
+var tgs Vector[i64](bsz)
+let loss tape.crossentropy(logits, tgs)
+
+var pids Vector[int](25)
+pids.put(0, table)
+pids.put(1, posemb)
+pids.put(2, g1a)
+pids.put(3, b1a)
+pids.put(4, wq1)
+pids.put(5, wk1)
+pids.put(6, wv1)
+pids.put(7, wo1)
+pids.put(8, g1b)
+pids.put(9, b1b)
+pids.put(10, wf1)
+pids.put(11, wp1)
+pids.put(12, g2a)
+pids.put(13, b2a)
+pids.put(14, wq2)
+pids.put(15, wk2)
+pids.put(16, wv2)
+pids.put(17, wo2)
+pids.put(18, g2b)
+pids.put(19, b2b)
+pids.put(20, wf2)
+pids.put(21, wp2)
+pids.put(22, gf)
+pids.put(23, bf)
+pids.put(24, whead)
+let pp pids.data
+
+var sizes Vector[int](NPARAM as size_t)
+let szp sizes.data
+var total 0
+var qi 0
+while qi < NPARAM
+{
+    let pid pp[qi]
+    let sz tape.node_rows(pid) * tape.node_cols(pid)
+    set szp[qi]: sz
+    set total: total + sz
+    set qi: qi + 1
+}
+
+let accpage Page.allocate_page()
+let acc Vector[float]^accpage(total as size_t)
+let accp acc.data
+
+; --- header (reducer + solo) ---
+if is_head
+{
+    var hdr StringBuilder()
+    if RANK < 0
+        hdr.append "scaly mann demo (SOLO baseline): "
+    else
+        hdr.append "scaly mann demo (DISTRIBUTED): "
+    let vs num_to_string(V as i64)
+    hdr.append vs
+    hdr.append " chars vocab, "
+    let nts num_to_string(ntok as i64)
+    hdr.append nts
+    hdr.append " tokens, 2-layer transformer, "
+    let np num_to_string(total as i64)
+    hdr.append np
+    hdr.append " params/gradient"
+    let hline hdr.to_string()
+    Console.println(hline.to_c_string())
+    var h2 StringBuilder()
+    h2.append "data-parallel over "
+    let ns2 num_to_string(N as i64)
+    h2.append ns2
+    if RANK < 0
+        h2.append " windows/step on 1 process (reference)"
+    else
+        h2.append " nodes (1 reducer + workers), gradient all-reduce over TCP"
+    let h2l h2.to_string()
+    Console.println(h2l.to_c_string())
+}
+
+; ======================================================================
+; SOLO baseline: one process sums the whole global batch of N windows.
+; ======================================================================
+if RANK < 0
+{
+    let train_t0 scaly_eio_now_ns()
+    var win_t0 train_t0
+    var win_sum: float 0.0
+    var step 1
+    while step <= STEPS
+    {
+        var wins Vector[int](N as size_t)
+        let wpv wins.data
+        var wi 0
+        while wi < N
+        {
+            set s: lcg(s)
+            set wpv[wi]: pmod(s, ntok - T - 1)
+            set wi: wi + 1
+        }
+        var w 0
+        while w < N
+        {
+            let p wpv[w]
+            tape.zero_grads()
+            var t 0
+            while t < T
+            {
+                tape.set_token(emb, t, tp[p + t])
+                tape.set_token(loss, t, tp[p + t + 1])
+                set t: t + 1
+            }
+            tape.recompute()
+            if w = 0
+                set win_sum: win_sum + tape.value_at(loss, 0)
+            tape.backward loss
+            var idx 0
+            var li 0
+            while li < NPARAM
+            {
+                let pid pp[li]
+                let sz szp[li]
+                var j 0
+                while j < sz
+                {
+                    if w = 0
+                        set accp[idx]: tape.grad_at(pid, j)
+                    else
+                        set accp[idx]: accp[idx] + tape.grad_at(pid, j)
+                    set idx: idx + 1
+                    set j: j + 1
+                }
+                set li: li + 1
+            }
+            set w: w + 1
+        }
+        var ni 0
+        while ni < total
+        {
+            set accp[ni]: accp[ni] / (N as float)
+            set ni: ni + 1
+        }
+        var gi 0
+        var gl 0
+        while gl < NPARAM
+        {
+            let pid pp[gl]
+            let sz szp[gl]
+            var gj 0
+            while gj < sz
+            {
+                tape.set_grad(pid, gj, accp[gi])
+                set gi: gi + 1
+                set gj: gj + 1
+            }
+            set gl: gl + 1
+        }
+        var lr: float 0.003
+        if step * 4 > STEPS * 3
+            set lr: 0.001
+        var ai 0
+        while ai < NPARAM
+        {
+            tape.adam_step(pp[ai], lr, 0.9, 0.999, 0.00000001, step)
+            set ai: ai + 1
+        }
+        if pmod(step, PROG) = 0
+        {
+            let now scaly_eio_now_ns()
+            let ns now - win_t0
+            var sps 0 as i64
+            if ns > 0
+                set sps: ((PROG as i64) * 1000000000) / ns
+            var sb StringBuilder()
+            sb.append "step "
+            let ss num_to_string(step as i64)
+            sb.append ss
+            sb.append "/"
+            let sts num_to_string(STEPS as i64)
+            sb.append sts
+            sb.append "  loss "
+            let avg win_sum / (PROG as float)
+            let ls fixed3(avg)
+            sb.append ls
+            sb.append "  "
+            let sp num_to_string(sps)
+            sb.append sp
+            sb.append " steps/s"
+            let line sb.to_string()
+            Console.println(line.to_c_string())
+            set win_sum: 0.0
+            set win_t0: now
+            if now - train_t0 > 40000000000
+                set step: STEPS
+        }
+        set step: step + 1
+    }
+}
+else
+{
+    ; ==================================================================
+    ; DISTRIBUTED: rank 0 is the reducer (and a worker); ranks 1..N-1 are
+    ; pure workers. Both need the cluster runtime's scheduler.
+    ; ==================================================================
+    let cpage Page.allocate_page()
+    let sched Scheduler.create(cpage)
+
+    if RANK = 0
+    {
+        let lfd Cluster.listen(PORT)
+        if lfd < (0 as i32)
+            exit 3
+        var wb StringBuilder()
+        wb.append "reducer listening on port "
+        let ps num_to_string(PORT as i64)
+        wb.append ps
+        wb.append ", waiting for workers..."
+        let wl wb.to_string()
+        Console.println(wl.to_c_string())
+
+        var peers Vector[pointer[NodePeer]](N as size_t)
+        let pkv peers.data
+        var gchs Vector[pointer[Channel]](N as size_t)
+        let gcv gchs.data
+        var live Vector[int](N as size_t)
+        let lvv live.data
+        set lvv[0]: 1
+
+        var accepted 0
+        while accepted < N - 1
+        {
+            let peer Cluster.accept(lfd)
+            if peer = null
+                exit 3
+            let hch Cluster.channel(peer, HELLO_ID)
+            let hraw Channel.receive(hch)
+            if hraw = null
+                exit 3
+            let hrr hraw as pointer[ReceivedRegion]
+            let hm hrr.root as pointer[RankMsg]
+            hrr.fix_graph(hm)
+            let wr hm.rank as int
+            Cluster.dispose_message(hrr)
+            set pkv[wr]: peer
+            let gch Cluster.channel(peer, GRAD_ID)
+            set gcv[wr]: gch
+            set lvv[wr]: 1
+            set accepted: accepted + 1
+        }
+        Console.println("all nodes linked - training...")
+
+        var live_count N
+        let train_t0 scaly_eio_now_ns()
+        var win_t0 train_t0
+        var win_sum: float 0.0
+        var step 1
+        while step <= STEPS
+        {
+            var wins Vector[int](N as size_t)
+            let wpv wins.data
+            var wi 0
+            while wi < N
+            {
+                set s: lcg(s)
+                set wpv[wi]: pmod(s, ntok - T - 1)
+                set wi: wi + 1
+            }
+            let p0 wpv[0]
+            tape.zero_grads()
+            var t 0
+            while t < T
+            {
+                tape.set_token(emb, t, tp[p0 + t])
+                tape.set_token(loss, t, tp[p0 + t + 1])
+                set t: t + 1
+            }
+            tape.recompute()
+            set win_sum: win_sum + tape.value_at(loss, 0)
+            tape.backward loss
+            var idx 0
+            var li 0
+            while li < NPARAM
+            {
+                let pid pp[li]
+                let sz szp[li]
+                var j 0
+                while j < sz
+                {
+                    set accp[idx]: tape.grad_at(pid, j)
+                    set idx: idx + 1
+                    set j: j + 1
+                }
+                set li: li + 1
+            }
+            var r 1
+            while r < N
+            {
+                if lvv[r] = 1
+                {
+                    let raw Channel.receive(gcv[r])
+                    if raw = null
+                    {
+                        set lvv[r]: 0
+                        set live_count: live_count - 1
+                        var db StringBuilder()
+                        db.append "  [worker "
+                        let rs num_to_string(r as i64)
+                        db.append rs
+                        db.append " down - continuing on "
+                        let lcs num_to_string(live_count as i64)
+                        db.append lcs
+                        db.append " nodes]"
+                        let dl db.to_string()
+                        Console.println(dl.to_c_string())
+                    }
+                    else
+                    {
+                        let rr raw as pointer[ReceivedRegion]
+                        let gm rr.root as pointer[GradMsg]
+                        rr.fix_graph(gm)
+                        let dp gm.data.data
+                        var aidx 0
+                        while aidx < total
+                        {
+                            set accp[aidx]: accp[aidx] + dp[aidx]
+                            set aidx: aidx + 1
+                        }
+                        Cluster.dispose_message(rr)
+                    }
+                }
+                set r: r + 1
+            }
+            var ni 0
+            while ni < total
+            {
+                set accp[ni]: accp[ni] / (live_count as float)
+                set ni: ni + 1
+            }
+            var br 1
+            while br < N
+            {
+                if lvv[br] = 1
+                {
+                    let mpg Page.allocate_page()
+                    let mm mpg.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
+                    set mm.rank: 0 as i64
+                    let dv Vector[float]^mpg(total as size_t)
+                    set mm.data: dv
+                    let dp dv.data
+                    var ci2 0
+                    while ci2 < total
+                    {
+                        set dp[ci2]: accp[ci2]
+                        set ci2: ci2 + 1
+                    }
+                    Cluster.send(pkv[br], AVG_ID, mm as pointer[void])
+                }
+                set br: br + 1
+            }
+            var ii 0
+            var li2 0
+            while li2 < NPARAM
+            {
+                let pid pp[li2]
+                let sz szp[li2]
+                var j2 0
+                while j2 < sz
+                {
+                    tape.set_grad(pid, j2, accp[ii])
+                    set ii: ii + 1
+                    set j2: j2 + 1
+                }
+                set li2: li2 + 1
+            }
+            var lr: float 0.003
+            if step * 4 > STEPS * 3
+                set lr: 0.001
+            var si 0
+            while si < NPARAM
+            {
+                tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
+                set si: si + 1
+            }
+            if pmod(step, PROG) = 0
+            {
+                let now scaly_eio_now_ns()
+                let ns now - win_t0
+                var sps 0 as i64
+                if ns > 0
+                    set sps: ((PROG as i64) * 1000000000) / ns
+                var sb StringBuilder()
+                sb.append "step "
+                let ss num_to_string(step as i64)
+                sb.append ss
+                sb.append "/"
+                let sts num_to_string(STEPS as i64)
+                sb.append sts
+                sb.append "  loss "
+                let avg win_sum / (PROG as float)
+                let ls fixed3(avg)
+                sb.append ls
+                sb.append "  "
+                let sp num_to_string(sps)
+                sb.append sp
+                sb.append " steps/s ("
+                let bs num_to_string((sps * (live_count as i64)))
+                sb.append bs
+                sb.append " windows/s)"
+                let line sb.to_string()
+                Console.println(line.to_c_string())
+                set win_sum: 0.0
+                set win_t0: now
+                if now - train_t0 > 40000000000
+                    set step: STEPS
+            }
+            set step: step + 1
+        }
+        ; done training: say goodbye so the workers stop
+        var r2 1
+        while r2 < N
+        {
+            if lvv[r2] = 1
+                Cluster.close(pkv[r2])
+            set r2: r2 + 1
+        }
+    }
+    else
+    {
+        ; --- pure worker ---
+        var peer Cluster.connect("127.0.0.1", PORT)
+        var tries 0
+        while peer = null
+        {
+            set tries: tries + 1
+            if tries > 400
+                exit 3
+            poll(null as pointer[void], 0 as i32, 50 as i32)
+            set peer: Cluster.connect("127.0.0.1", PORT)
+        }
+        let hp Page.allocate_page()
+        let hmsg hp.allocate(sizeof RankMsg, alignof RankMsg) as pointer[RankMsg]
+        set hmsg.rank: RANK as i64
+        Cluster.send(peer, HELLO_ID, hmsg as pointer[void])
+        let avg_ch Cluster.channel(peer, AVG_ID)
+
+        var running true
+        var step 1
+        while running
+        {
+            var wins Vector[int](N as size_t)
+            let wpv wins.data
+            var wi 0
+            while wi < N
+            {
+                set s: lcg(s)
+                set wpv[wi]: pmod(s, ntok - T - 1)
+                set wi: wi + 1
+            }
+            let p wpv[RANK]
+            tape.zero_grads()
+            var t 0
+            while t < T
+            {
+                tape.set_token(emb, t, tp[p + t])
+                tape.set_token(loss, t, tp[p + t + 1])
+                set t: t + 1
+            }
+            tape.recompute()
+            tape.backward loss
+            let mpg Page.allocate_page()
+            let mm mpg.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
+            set mm.rank: RANK as i64
+            let dv Vector[float]^mpg(total as size_t)
+            set mm.data: dv
+            let dp dv.data
+            var idx 0
+            var li 0
+            while li < NPARAM
+            {
+                let pid pp[li]
+                let sz szp[li]
+                var j 0
+                while j < sz
+                {
+                    set dp[idx]: tape.grad_at(pid, j)
+                    set idx: idx + 1
+                    set j: j + 1
+                }
+                set li: li + 1
+            }
+            Cluster.send(peer, GRAD_ID, mm as pointer[void])
+            let raw Channel.receive(avg_ch)
+            if raw = null
+                set running: false
+            else
+            {
+                let rr raw as pointer[ReceivedRegion]
+                let gm rr.root as pointer[GradMsg]
+                rr.fix_graph(gm)
+                let gdp gm.data.data
+                var ii 0
+                var li2 0
+                while li2 < NPARAM
+                {
+                    let pid pp[li2]
+                    let sz szp[li2]
+                    var j2 0
+                    while j2 < sz
+                    {
+                        tape.set_grad(pid, j2, gdp[ii])
+                        set ii: ii + 1
+                        set j2: j2 + 1
+                    }
+                    set li2: li2 + 1
+                }
+                Cluster.dispose_message(rr)
+                var lr: float 0.003
+                if step * 4 > STEPS * 3
+                    set lr: 0.001
+                var si 0
+                while si < NPARAM
+                {
+                    tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
+                    set si: si + 1
+                }
+                set step: step + 1
+            }
+        }
+        Cluster.dispose_peer(peer)
+        exit 0
+    }
+}
+
+; ======================================================================
+; Inference: only the reducer (rank 0) and the solo baseline reach here.
+; Extend a corpus prompt autoregressively on the trained model.
+; ======================================================================
+Console.println("training done - generating text...")
+let P 40
+let GEN 600
+var hist Vector[i64]((P + GEN) as size_t)
+let hp2 hist.data
+var hi 0
+while hi < P
+{
+    set hp2[hi]: tp[ptok + hi]
+    set hi: hi + 1
+}
+let gen_t0 scaly_eio_now_ns()
+var hlen P
+while hlen < P + GEN
+{
+    var vis hlen
+    if vis > T
+        set vis: T
+    let start hlen - vis
+    var t2 0
+    while t2 < vis
+    {
+        tape.set_token(emb, t2, hp2[start + t2])
+        set t2: t2 + 1
+    }
+    tape.recompute()
+    set s: lcg(s)
+    let u (pmod(s, 10000) as float) * 0.0001
+    var pick tape.sample(logits, vis - 1, 0.8, u)
+    if pick < 0
+        set pick: 0
+    if pick >= V
+        set pick: 0
+    set hp2[hlen]: pick as i64
+    set hlen: hlen + 1
+}
+let gen_t1 scaly_eio_now_ns()
+
+var out StringBuilder()
+out.append "["
+var oi 0
+while oi < P + GEN
+{
+    if oi = P
+        out.append "]"
+    let id hp2[oi] as int
+    if id < 256
+    {
+        let n rl[id]
+        var k2 0
+        while k2 < n
+        {
+            out.append(rb[id * 4 + k2] as char)
+            set k2: k2 + 1
+        }
+    }
+    set oi: oi + 1
+}
+let text_out out.to_string()
+Console.println("------------------------------------------------------------")
+Console.println(text_out.to_c_string())
+Console.println("------------------------------------------------------------")
+var gl2 StringBuilder()
+let gs num_to_string(GEN as i64)
+gl2.append gs
+gl2.append " chars generated in "
+let gts secs_to_string(gen_t1 - gen_t0)
+gl2.append gts
+gl2.append " s (temperature 0.8, prompt in brackets)"
+let gline gl2.to_string()
+Console.println(gline.to_c_string())
