@@ -15324,7 +15324,22 @@ define Emitter
                 {
                     let break_value emit_operands(brk.result)
                     if break_value.handle <> null
-                        LLVMBuildStore(builder, break_value, loop_ctx.result_slot)
+                    {
+                        ; Struct-by-value break: when the operand is a pointer to
+                        ; the value (a promoted heap construction bound to a local,
+                        ; e.g. `break v` where v owns a Vector on the caller page)
+                        ; and the result slot holds the struct itself, LOAD the
+                        ; struct value first — otherwise the raw POINTER is stored
+                        ; into the value slot and the repeat.value load reads
+                        ; {pointer, garbage} instead of the value. Mirrors
+                        ; emit_return's struct-by-value load.
+                        var to_store break_value
+                        let slot_ty LLVMGetAllocatedType(loop_ctx.result_slot)
+                        if LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Struct()
+                            if LLVMGetTypeKind(LLVMTypeOf break_value) = LLVMTypeKind.Pointer()
+                                set to_store: LLVMBuildLoad2(builder, slot_ty, break_value, "break.load")
+                        LLVMBuildStore(builder, to_store, loop_ctx.result_slot)
+                    }
                 }
 
         ; Jump to the exit block of the target loop

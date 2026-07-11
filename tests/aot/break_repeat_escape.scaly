@@ -1,0 +1,42 @@
+; A break value carrying heap guts out of a `repeat` must outlive the frame:
+; `let x repeat { var v Vector[String](2); … break v }; return x` used to
+; allocate v on the function-local page, freed at function exit — the returned
+; struct's buffer then dangled and page-churn corrupted it (SIGSEGV). The fix
+; promotes break-flow locals to the caller page (plan collect) AND loads the
+; struct value (not the pointer) at the break site (emit_break). A directly
+; returned `return v` was always correct; this pins the break path.
+; Expected: PASS
+
+function make_via_break() returns Vector[String]
+{
+    let x repeat
+    {
+        var v Vector[String](2)
+        v.put(0 as size_t, String("alpha"))
+        v.put(1 as size_t, String("beta"))
+        break v
+    }
+    return x
+}
+
+let a make_via_break()
+; churn pages to overwrite any freed local page
+var i 0
+while i < 100
+{
+    var scratch Vector[String](8)
+    var j 0
+    while j < 8
+    {
+        scratch.put(j as size_t, String("xxxxxxxxxxxxxxxxxxxx"))
+        set j: j + 1
+    }
+    set i: i + 1
+}
+let a0 a.get(0 as size_t)
+let a1 a.get(1 as size_t)
+if a0 <> null
+    if a1 <> null
+        if (*a0).equals("alpha")
+            if (*a1).equals("beta")
+                print("PASS")

@@ -1,0 +1,15 @@
+; A `break &b` carrying a reference into a repeat-body frame-local out of the
+; loop, then returned, must be rejected — the pointee dies with the frame. The
+; break-value promotion (which moves heap CONSTRUCTIONS to the caller page)
+; must NOT silently accept a bare frame-local REFERENCE: `&b`'s operator head is
+; not collected, so b is never promoted/marked, and the return-site escape
+; check fires as it does for a direct `return &b`.
+function bad() returns pointer[int]
+{
+    let p repeat
+    {
+        var b 5
+        break &b
+    }
+    return p
+}

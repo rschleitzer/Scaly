@@ -22462,6 +22462,14 @@ define Planner
                                         this.collect_flow_stmt(lp.unwrap())
                                 }
                             }
+                            when rep: Repeat
+                                ; A repeat-valued initializer (`let x repeat { …
+                                ; break v }`) yields the value of its breaks. When
+                                ; x escapes, those break values escape too: walk the
+                                ; body via the returns-collector so the Break arm in
+                                ; collect_returns_stmt# seeds their flow locals for
+                                ; caller-page promotion (fixes the dangling-break P0).
+                                this.collect_returns_action(rep.action)
                             when tup: scalyc.compiler.Model.Tuple
                             {
                                 ; A PARENTHESIZED expression `(X)` is modeled as a
@@ -23149,6 +23157,14 @@ define Planner
                 }
                 when a: Action
                     this.collect_returns_action(a)
+                when br: Break
+                    ; A `break v` inside a repeat whose value escapes carries v
+                    ; out of the frame exactly like a return — seed the name-graph
+                    ; with its flow locals so plan_binding# promotes them to the
+                    ; caller page. Without this the break value's guts default to
+                    ; the function-local page, which emit_release_local_page frees
+                    ; at function exit, dangling the returned repeat value.
+                    this.collect_flow_locals(br.result)
                 else
                     0
         }
