@@ -1,0 +1,14 @@
+; B1: a bogus free call to `unwrap`/`unwrap_or` (not a method on an Option)
+; used to keep its unconditional call_is_intrinsic flag, skip the s185
+; function-not-found gate, and get SILENTLY DROPPED by emit_intrinsic_function
+; (rc 0). The flag is now cleared when the name resolved to nothing and it is
+; no Option method dispatch, so the not-found diagnostic fires. Self-hosted-only.
+; xfail: function not found: unwrap
+
+package scaly 0.1.0
+
+function main() returns int
+{
+    unwrap(1, 2)
+    return 0
+}

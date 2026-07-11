@@ -32457,6 +32457,19 @@ entry:
   ret float %deref
 }
 
+define linkonce_odr void @_ZN4Tape8set_gradEiif(ptr %0, i64 %1, i64 %2, float %3) {
+entry:
+  %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0
+  %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %field.inplace)
+  %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %call, i64 %1
+  %load.struct = load %_Z8TapeNode, ptr %ptr.add, align 8
+  %grad = extractvalue %_Z8TapeNode %load.struct, 10
+  %arg.tmp = alloca %_Z6VectorIfE, align 8
+  store %_Z6VectorIfE %grad, ptr %arg.tmp, align 1
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %2, float %3)
+  ret void
+}
+
 define linkonce_odr float @_ZN4Tape7grad_atEii(ptr %0, i64 %1, i64 %2) {
 entry:
   %field.inplace = getelementptr inbounds %_Z4Tape, ptr %0, i32 0, i32 0

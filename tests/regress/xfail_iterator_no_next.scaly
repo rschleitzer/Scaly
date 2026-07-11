@@ -1,0 +1,32 @@
+; B4: `for e in c` where c has a get_iterator whose iterator type has NO
+; matching `next`. is_iterator_loop stayed true with an empty next_name and a
+; void element_type, and the loop was emitted as a silent no-op (rc 0). The
+; missing-next case now diagnoses. Self-hosted-only.
+; xfail: iterator type has no matching next method
+
+define BadIter
+(
+    dummy: int
+)
+{
+    function noop(this: BadIter) returns int
+        dummy
+}
+
+define BadColl
+(
+    dummy: int
+)
+{
+    function get_iterator(this: BadColl) returns BadIter
+        BadIter(0)
+}
+
+function main() returns int
+{
+    var n 0
+    let c BadColl(0)
+    for e in c
+        set n: n + 1
+    return n
+}

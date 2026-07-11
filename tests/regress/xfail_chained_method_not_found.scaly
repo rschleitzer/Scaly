@@ -1,0 +1,21 @@
+; B2: a chained method hop that does not resolve (`b.val().nonexistent()`) was
+; silently spliced out of the chain and collapsed away (rc 0) — while the
+; non-chained `b.nonexistent()` already trapped (member not found). The chaining
+; loop now diagnoses an unresolved hop that has a following args Tuple.
+; Self-hosted-only.
+; xfail: method not found: nonexistent
+
+define Box
+(
+    value: int
+)
+{
+    function val(this: Box) returns int
+        value
+}
+
+function main() returns int
+{
+    let b Box(5)
+    return b.val().nonexistent()
+}

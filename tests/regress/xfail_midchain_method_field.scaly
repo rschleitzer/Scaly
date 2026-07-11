@@ -1,0 +1,32 @@
+; B5: a mid-chain method on a local followed by a field access
+; (`o.get.f`, where get() is a method) can't be field-accessed without calling
+; the method. Neither plan_type_operand return path fired (both key on the LAST
+; hop being a method), so the operand fell through to plan_type as a garbage
+; dotted Type (rc 0). It now diagnoses. Parenless zero-arg methods
+; (`name.length`) have the method as the last hop and are unaffected.
+; Self-hosted-only.
+; xfail: cannot access member of a method result without calling it
+
+define Inner
+(
+    f: int
+)
+{
+    function noop(this: Inner) returns int
+        f
+}
+
+define Outer
+(
+    dummy: int
+)
+{
+    function get(this: Outer) returns Inner
+        Inner(9)
+}
+
+function main() returns int
+{
+    let o Outer(0)
+    return o.get.f
+}

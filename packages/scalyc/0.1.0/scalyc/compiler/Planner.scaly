@@ -9205,6 +9205,39 @@ define Planner
                                 }
                             }
                         }
+                        ; B1: unwrap/unwrap_or set call_is_intrinsic
+                        ; UNCONDITIONALLY above; the match_ref downgrade only
+                        ; fires when a receiver/free match was found. A bogus
+                        ; free call `unwrap(1, 2)` resolves to nothing (mangled
+                        ; ""), is no Option method dispatch, yet stays flagged
+                        ; intrinsic — so the s185 not-found gate below is skipped
+                        ; and emit_intrinsic_function drops the whole statement
+                        ; (rc 0). Clear the flag for that case so the diagnostic
+                        ; fires. A genuine Option.unwrap()/unwrap_or() (NPO
+                        ; receiver, mangled "") keeps the flag — it IS a method
+                        ; dispatch on an Option receiver.
+                        if call_is_intrinsic
+                        {
+                            if mangled.get_length() = 0
+                            {
+                                var b1_is_unwrap: bool false
+                                if fn_name = "unwrap"
+                                    set b1_is_unwrap: true
+                                if fn_name = "unwrap_or"
+                                    set b1_is_unwrap: true
+                                if b1_is_unwrap
+                                {
+                                    var b1_recv_option: bool false
+                                    if is_method_dispatch
+                                    {
+                                        if receiver_op.result_type.name = "Option"
+                                            set b1_recv_option: true
+                                    }
+                                    if b1_recv_option = false
+                                        set call_is_intrinsic: false
+                                }
+                            }
+                        }
                         ; s185 (roadmap Step C): resolution exhausted —
                         ; mangled stays "". emit_call cannot look up such
                         ; a call; it would be SILENTLY dropped from the
@@ -9663,6 +9696,20 @@ define Planner
                                                         set prev_tuple: next_args
                                                         set next_idx: next_idx + 1
                                                         set keep_chaining: true
+                                                    }
+                                                    else
+                                                    {
+                                                        ; B2: a chained hop with a
+                                                        ; following args Tuple whose
+                                                        ; method does not resolve was
+                                                        ; silently spliced/collapsed
+                                                        ; (rc 0). Diagnose it, matching
+                                                        ; the non-chained `x.bogus()`
+                                                        ; hard failure.
+                                                        var b2_sb StringBuilder()
+                                                        b2_sb.append "method not found: "
+                                                        b2_sb.append method_name
+                                                        this.add_diagnostic(next_args.loc, b2_sb.to_string())
                                                     }
                                                 }
                                             }
@@ -14201,6 +14248,17 @@ define Planner
                                     }
                                 }
                             }
+                            ; B5: has_method is true but the method is NOT the
+                            ; final hop (`local.method.field`) — a method result
+                            ; can't be field-accessed without calling it. Both
+                            ; return paths above are keyed on the LAST hop being
+                            ; a method, so control reaches here only for the
+                            ; mid-chain-method shape. Without a diagnostic the
+                            ; operand fell through to plan_type as a garbage
+                            ; dotted Type. Parenless zero-arg methods
+                            ; (`name.length`) have the method as the last hop and
+                            ; return above, so they are unaffected.
+                            this.add_diagnostic(loc, "cannot access member of a method result without calling it")
                         }
                     }
 
@@ -15615,6 +15673,14 @@ define Planner
                                 set element_is_scalar: true
                         }
                     }
+                    else
+                    {
+                        ; B4: get_iterator resolved but its iterator type has
+                        ; no matching `next` — is_iterator_loop stayed true with
+                        ; empty next_name and void element_type, emitted as a
+                        ; silent no-op. Diagnose instead.
+                        this.add_diagnostic(f.span, "iterator type has no matching next method")
+                    }
                 }
                 if get_iter_match = null
                 {
@@ -15826,6 +15892,45 @@ define Planner
                 let tag this.lookup_variant_tag(union_type.name, variant_name)
                 if tag >= 0
                     set variant_tag: tag as size_t
+                ; B3: a resolved union with no such variant tag (misspelled
+                ; `when Nome:` over Option) previously left variant_tag at 0,
+                ; colliding with the real first variant — emit_choose's tag
+                ; dedup then dropped an arm and misdispatched with no error.
+                ; Key on tag<0 (NOT payload==null: an NPO None has null payload
+                ; but a valid tag). Throws-calls resolve their synthetic
+                ; Error/Success below and legitimately miss the union lookup.
+                ; Narrowed twice for emission-neutrality: (1) the scrutinee's
+                ; type must genuinely be a resolved Union (its variant table is
+                ; then authoritative); (2) the arm name must not itself be a
+                ; known concept — Modeler.scaly writes `when TypeSyntax` (a real
+                ; type) over ExpressionSyntax as a tolerated no-match arm backed
+                ; by an else, which a bare tag<0 flagged. A pure typo like
+                ; `Nome` names no concept, so it is still caught.
+                if tag < 0
+                {
+                    if is_throws_call = false
+                    {
+                        var b3_union_resolved: bool false
+                        let b3_cref this.lookup_concept(union_type.name)
+                        if b3_cref <> null
+                            choose (*b3_cref).definition
+                                when b3u: scalyc.compiler.Model.Union
+                                    set b3_union_resolved: true
+                                else
+                                    0
+                        if b3_union_resolved
+                        {
+                            let b3_vconc this.lookup_concept(variant_name)
+                            if b3_vconc = null
+                            {
+                                var uv_sb StringBuilder()
+                                uv_sb.append "unknown variant: "
+                                uv_sb.append variant_name
+                                this.add_diagnostic(w.span, uv_sb.to_string())
+                            }
+                        }
+                    }
+                }
             }
 
             ; s143: throws-call synthetic Error/Success variant assignment.
@@ -26409,6 +26514,13 @@ define Planner
                 when t: Type
                     PlannedDefinition.Type(this.plan_type(t))
                 when intr: Intrinsic
+                    PlannedDefinition.Type(Planner.make_void_type())
+                when d: Delegate
+                    ; B6: a delegate concept (`define Cb delegate(...)`) reaches
+                    ; here as a Concept but PlannedDefinition has no Delegate
+                    ; variant — the emitter lowers delegates via delegate_names,
+                    ; not this pl_def. The else-less choose left pl_def garbage;
+                    ; give the write a well-defined placeholder like Intrinsic.
                     PlannedDefinition.Type(Planner.make_void_type())
 
             ; Generic concepts get a simple length-prefixed name; fully

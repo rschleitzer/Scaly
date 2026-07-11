@@ -1,0 +1,26 @@
+; B3: a misspelled variant in a `when` arm over a RESOLVABLE union
+; (`when w: Nome` for `None`) used to leave variant_tag at 0 — colliding with
+; the real first variant — so emit_choose's tag dedup dropped an arm and
+; misdispatched with no error. A resolved union whose variant tag lookup fails
+; (and is not a throws-call synthetic Error/Success) now diagnoses.
+; Self-hosted-only.
+; xfail: unknown variant: Nome
+
+package scaly 0.1.0
+
+function check() returns int
+{
+    let x Option[int].Some(7)
+    choose x
+        when v: Some
+            return v
+        when w: Nome
+            return 0
+        else
+            return 0
+}
+
+function main() returns int
+{
+    return check()
+}
