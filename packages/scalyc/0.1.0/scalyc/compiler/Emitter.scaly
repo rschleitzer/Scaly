@@ -4153,6 +4153,17 @@ define Emitter
         if config.emit_debug_info
             LLVMDIBuilderFinalize di_builder
 
+        ; Rule-10 build stamp (stage 7): every PROGRAM module — one that
+        ; DEFINES main, via the top-level-statements wrapper above or as
+        ; an explicit main function (the compiler's own main.scaly) —
+        ; carries `scaly_build_stamp()`. The name goes in as a raw cstring
+        ; cast (the s-main func_cstr pattern): a String constant's c_data()
+        ; has no NUL terminator, and this lookup DEPENDS on matching.
+        let stamp_main LLVMGetNamedFunction(llvm_module, "main" as pointer[const_char])
+        if stamp_main.handle <> null
+            if LLVMIsDeclaration(stamp_main) = 0
+                emit_build_stamp()
+
         true
     }
 
@@ -4192,6 +4203,106 @@ define Emitter
         call_args.put(0, arg0)
         let result LLVMBuildCall2(builder, pg_ty, page_get, call_args.data, 1, "page")
         LLVMBuildRet(builder, result)
+        if saved_block.handle <> null
+            LLVMPositionBuilderAtEnd(builder, saved_block)
+    }
+
+    ; Rule-10 build stamp (stage 7, milestone 7.3): every PROGRAM module
+    ; (top-level statements — the same gate as the main wrapper) defines
+    ; `u64 scaly_build_stamp()` returning the FNV-1a-64 of the module's
+    ; PRE-STAMP IR text. The hash skips the `; ModuleID` comment, the
+    ; `source_filename` line and the `target datalayout` line, so a
+    ; byte-identical source build reproduces the stamp regardless of the
+    ; checkout path or the --target choice (the LP64-LE wire format keeps
+    ; arm64<->x86_64 interop, memo rule 8 — the stamp must not break it).
+    ; External linkage like main: whole-program opt must never drop it.
+    ; The stdlib Node handshake reads the stamp through an extern
+    ; declaration and exchanges it as the FIRST bytes on the wire — two
+    ; binaries from different builds refuse each other loudly (rule 10).
+    function stamp_line_skipped(this, text: pointer[char], i: size_t) returns bool
+    {
+        let b0 (*(((text as size_t) + i) as pointer[char])) as u8
+        ; "; M..." — the ModuleID comment (Function-Attrs comments are
+        ; "; F", they stay hashed; printed IR has no other comments).
+        if b0 = (59 as u8)
+        {
+            let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
+            if b1 = (32 as u8)
+            {
+                let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
+                if b2 = (77 as u8)
+                    return true
+            }
+            return false
+        }
+        ; "sou..." — source_filename (no block label collides: the
+        ; emitter's block names are entry/then/else/...).
+        if b0 = (115 as u8)
+        {
+            let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
+            if b1 = (111 as u8)
+            {
+                let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
+                if b2 = (117 as u8)
+                    return true
+            }
+            return false
+        }
+        ; "tar..." — the target datalayout line.
+        if b0 = (116 as u8)
+        {
+            let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
+            if b1 = (97 as u8)
+            {
+                let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
+                if b2 = (114 as u8)
+                    return true
+            }
+            return false
+        }
+        false
+    }
+
+    procedure emit_build_stamp(this)
+    {
+        let existing LLVMGetNamedFunction(llvm_module, "scaly_build_stamp" as pointer[const_char])
+        if existing.handle <> null
+            return
+
+        let text LLVMPrintModuleToString(llvm_module)
+        if text = null
+            return
+
+        var hash 0xcbf29ce484222325 as u64
+        var i 0 as size_t
+        var line_begin true
+        var skipping false
+        repeat
+        {
+            let b (*(((text as size_t) + i) as pointer[char])) as u8
+            if b = (0 as u8)
+                break
+            if line_begin
+                set skipping: stamp_line_skipped(text, i)
+            if skipping = false
+                set hash: (hash xor (b as u64)) * (0x100000001b3 as u64)
+            if b = (10 as u8)
+                set line_begin: true
+            else
+                set line_begin: false
+            set i: i + (1 as size_t)
+        }
+        LLVMDisposeMessage text
+
+        clear_debug_location()
+        let saved_block LLVMGetInsertBlock(builder)
+        let i64_type LLVMInt64TypeInContext(context)
+        let stamp_type LLVMFunctionType(i64_type, null as pointer[LLVMTypeRef], 0, 0)
+        let stamp_fn LLVMAddFunction(llvm_module, "scaly_build_stamp" as pointer[const_char], stamp_type)
+        let block LLVMAppendBasicBlockInContext(context, stamp_fn, "entry" as pointer[const_char])
+        LLVMPositionBuilderAtEnd(builder, block)
+        let cval LLVMConstInt(i64_type, hash as size_t, 0)
+        LLVMBuildRet(builder, cval)
         if saved_block.handle <> null
             LLVMPositionBuilderAtEnd(builder, saved_block)
     }

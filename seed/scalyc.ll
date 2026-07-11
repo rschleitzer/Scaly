@@ -2764,939 +2764,943 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @.str.1501 = private unnamed_addr constant [7 x i8] c"memset\00", align 1
 @.sconst.1502 = private constant [6 x i8] c"\04main\00"
 @.sconst.1503 = private constant [7 x i8] c"\05entry\00"
-@.str.1504 = private unnamed_addr constant [16 x i8] c"_ZN4Page3getEPv\00", align 1
-@.str.1505 = private unnamed_addr constant [9 x i8] c"_Z3getPv\00", align 1
-@.str.1506 = private unnamed_addr constant [6 x i8] c"entry\00", align 1
-@.str.1507 = private unnamed_addr constant [5 x i8] c"page\00", align 1
-@.str.1508 = private unnamed_addr constant [11 x i8] c"stub.entry\00", align 1
-@.str.1509 = private unnamed_addr constant [8 x i8] c"jitstub\00", align 1
-@.str.1510 = private unnamed_addr constant [21 x i8] c"JIT: emission failed\00", align 1
-@.str.1511 = private unnamed_addr constant [32 x i8] c"JIT: module verification failed\00", align 1
-@.str.1512 = private unnamed_addr constant [8 x i8] c"generic\00", align 1
-@.str.1513 = private unnamed_addr constant [28 x i8] c"JIT: could not create LLJIT\00", align 1
-@.str.1514 = private unnamed_addr constant [40 x i8] c"JIT: could not create process generator\00", align 1
-@.str.1515 = private unnamed_addr constant [26 x i8] c"JIT: could not add module\00", align 1
-@.str.1516 = private unnamed_addr constant [26 x i8] c"JIT: symbol lookup failed\00", align 1
-@.str.1517 = private unnamed_addr constant [8 x i8] c"generic\00", align 1
-@.str.1518 = private unnamed_addr constant [12 x i8] c"default<O1>\00", align 1
-@.str.1519 = private unnamed_addr constant [12 x i8] c"default<O2>\00", align 1
-@.str.1520 = private unnamed_addr constant [12 x i8] c"default<O3>\00", align 1
-@.str.1521 = private unnamed_addr constant [12 x i8] c"load.struct\00", align 1
-@.sconst.1522 = private constant [6 x i8] c"\04void\00"
-@.str.1523 = private unnamed_addr constant [28 x i8] c"Emitter: member not found: \00", align 1
-@.str.1524 = private unnamed_addr constant [2 x i8] c".\00", align 1
-@.str.1525 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.str.1526 = private unnamed_addr constant [10 x i8] c"union.tmp\00", align 1
-@.str.1527 = private unnamed_addr constant [15 x i8] c"union.data.ptr\00", align 1
-@.str.1528 = private unnamed_addr constant [12 x i8] c"union.value\00", align 1
-@.sconst.1529 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1530 = private constant [5 x i8] c"\03ref\00"
-@.sconst.1531 = private constant [6 x i8] c"\04void\00"
-@.str.1532 = private unnamed_addr constant [38 x i8] c"Emitter: no layout for field access: \00", align 1
-@.str.1533 = private unnamed_addr constant [2 x i8] c".\00", align 1
-@.str.1534 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.str.1535 = private unnamed_addr constant [6 x i8] c"deref\00", align 1
-@.sconst.1536 = private constant [6 x i8] c"\04void\00"
-@.sconst.1537 = private constant [3 x i8] c"\01v\00"
-@.str.1538 = private unnamed_addr constant [8 x i8] c"closure\00", align 1
-@.sconst.1539 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
-@.str.1540 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.str.1541 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.sconst.1542 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
-@.str.1543 = private unnamed_addr constant [8 x i8] c"closure\00", align 1
-@.str.1544 = private unnamed_addr constant [7 x i8] c"clo.fn\00", align 1
-@.str.1545 = private unnamed_addr constant [8 x i8] c"clo.cap\00", align 1
-@.sconst.1546 = private constant [5 x i8] c"\03_rp\00"
-@.str.1547 = private unnamed_addr constant [6 x i8] c"entry\00", align 1
-@.str.1548 = private unnamed_addr constant [4 x i8] c"cap\00", align 1
-@.str.1549 = private unnamed_addr constant [4 x i8] c"cap\00", align 1
-@.sconst.1550 = private constant [6 x i8] c"\04void\00"
-@.str.1551 = private unnamed_addr constant [12 x i8] c"global.load\00", align 1
-@.str.1552 = private unnamed_addr constant [10 x i8] c"array.ptr\00", align 1
-@.sconst.1553 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1554 = private constant [5 x i8] c"\03_rp\00"
-@.sconst.1555 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
-@.str.1556 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.str.1557 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.sconst.1558 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
-@.str.1559 = private unnamed_addr constant [14 x i8] c"struct.region\00", align 1
-@.str.1560 = private unnamed_addr constant [12 x i8] c"struct.init\00", align 1
-@.str.1561 = private unnamed_addr constant [12 x i8] c"tuple.field\00", align 1
-@.str.1562 = private unnamed_addr constant [8 x i8] c"arg.tmp\00", align 1
-@.sconst.1563 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1564 = private constant [12 x i8] c"\0Aconst_char\00"
-@.sconst.1565 = private constant [4 x i8] c"\02i8\00"
-@.sconst.1566 = private constant [6 x i8] c"\04char\00"
-@.sconst.1567 = private constant [4 x i8] c"\02u8\00"
-@.sconst.1568 = private constant [6 x i8] c"\04void\00"
-@.sconst.1569 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1570 = private constant [12 x i8] c"\0Aconst_char\00"
-@.sconst.1571 = private constant [4 x i8] c"\02i8\00"
-@.sconst.1572 = private constant [6 x i8] c"\04char\00"
-@.sconst.1573 = private constant [4 x i8] c"\02u8\00"
-@.str.1574 = private unnamed_addr constant [18 x i8] c".scaly.empty.cstr\00", align 1
-@.str.1575 = private unnamed_addr constant [18 x i8] c".scaly.empty.cstr\00", align 1
-@.str.1576 = private unnamed_addr constant [11 x i8] c"str.coerce\00", align 1
-@.str.1577 = private unnamed_addr constant [25 x i8] c"_ZN6String10get_bufferEv\00", align 1
-@.str.1578 = private unnamed_addr constant [25 x i8] c"_ZN6String10get_bufferEv\00", align 1
-@.str.1579 = private unnamed_addr constant [5 x i8] c"cstr\00", align 1
-@.str.1580 = private unnamed_addr constant [8 x i8] c"cstr.nn\00", align 1
-@.str.1581 = private unnamed_addr constant [7 x i8] c"cstr.g\00", align 1
-@.sconst.1582 = private constant [15 x i8] c"\0Dscaly_atomic_\00"
-@.sconst.1583 = private constant [23 x i8] c"\15scaly_atomic_load_u64\00"
-@.str.1584 = private unnamed_addr constant [12 x i8] c"atomic.load\00", align 1
-@.sconst.1585 = private constant [24 x i8] c"\16scaly_atomic_store_u64\00"
-@.sconst.1586 = private constant [21 x i8] c"\13scaly_atomic_or_u64\00"
-@.sconst.1587 = private constant [22 x i8] c"\14scaly_atomic_and_u64\00"
-@.sconst.1588 = private constant [22 x i8] c"\14scaly_atomic_add_u64\00"
-@.sconst.1589 = private constant [22 x i8] c"\14scaly_atomic_cas_u64\00"
-@.str.1590 = private unnamed_addr constant [8 x i8] c"cas.old\00", align 1
-@.sconst.1591 = private constant [16 x i8] c"\0Escaly_call_ptr\00"
-@.sconst.1592 = private constant [14 x i8] c"\0C_scaly_walk_\00"
-@.sconst.1593 = private constant [6 x i8] c"\04Page\00"
-@.sconst.1594 = private constant [10 x i8] c"\08PageList\00"
-@.sconst.1595 = private constant [10 x i8] c"\08PageNode\00"
-@.sconst.1596 = private constant [18 x i8] c"\10PageListIterator\00"
-@.sconst.1597 = private constant [18 x i8] c"\10HeapBucketHeader\00"
-@.sconst.1598 = private constant [19 x i8] c"\11StackBucketHeader\00"
-@.sconst.1599 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1600 = private constant [5 x i8] c"\03ref\00"
-@.sconst.1601 = private constant [8 x i8] c"\06Option\00"
-@.sconst.1602 = private constant [8 x i8] c"\06String\00"
-@.sconst.1603 = private constant [12 x i8] c"\0Aconst_char\00"
-@.sconst.1604 = private constant [6 x i8] c"\04void\00"
-@.sconst.1605 = private constant [12 x i8] c"\0Aconst_char\00"
+@.str.1504 = private unnamed_addr constant [5 x i8] c"main\00", align 1
+@.str.1505 = private unnamed_addr constant [16 x i8] c"_ZN4Page3getEPv\00", align 1
+@.str.1506 = private unnamed_addr constant [9 x i8] c"_Z3getPv\00", align 1
+@.str.1507 = private unnamed_addr constant [6 x i8] c"entry\00", align 1
+@.str.1508 = private unnamed_addr constant [5 x i8] c"page\00", align 1
+@.str.1509 = private unnamed_addr constant [18 x i8] c"scaly_build_stamp\00", align 1
+@.str.1510 = private unnamed_addr constant [18 x i8] c"scaly_build_stamp\00", align 1
+@.str.1511 = private unnamed_addr constant [6 x i8] c"entry\00", align 1
+@.str.1512 = private unnamed_addr constant [11 x i8] c"stub.entry\00", align 1
+@.str.1513 = private unnamed_addr constant [8 x i8] c"jitstub\00", align 1
+@.str.1514 = private unnamed_addr constant [21 x i8] c"JIT: emission failed\00", align 1
+@.str.1515 = private unnamed_addr constant [32 x i8] c"JIT: module verification failed\00", align 1
+@.str.1516 = private unnamed_addr constant [8 x i8] c"generic\00", align 1
+@.str.1517 = private unnamed_addr constant [28 x i8] c"JIT: could not create LLJIT\00", align 1
+@.str.1518 = private unnamed_addr constant [40 x i8] c"JIT: could not create process generator\00", align 1
+@.str.1519 = private unnamed_addr constant [26 x i8] c"JIT: could not add module\00", align 1
+@.str.1520 = private unnamed_addr constant [26 x i8] c"JIT: symbol lookup failed\00", align 1
+@.str.1521 = private unnamed_addr constant [8 x i8] c"generic\00", align 1
+@.str.1522 = private unnamed_addr constant [12 x i8] c"default<O1>\00", align 1
+@.str.1523 = private unnamed_addr constant [12 x i8] c"default<O2>\00", align 1
+@.str.1524 = private unnamed_addr constant [12 x i8] c"default<O3>\00", align 1
+@.str.1525 = private unnamed_addr constant [12 x i8] c"load.struct\00", align 1
+@.sconst.1526 = private constant [6 x i8] c"\04void\00"
+@.str.1527 = private unnamed_addr constant [28 x i8] c"Emitter: member not found: \00", align 1
+@.str.1528 = private unnamed_addr constant [2 x i8] c".\00", align 1
+@.str.1529 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.str.1530 = private unnamed_addr constant [10 x i8] c"union.tmp\00", align 1
+@.str.1531 = private unnamed_addr constant [15 x i8] c"union.data.ptr\00", align 1
+@.str.1532 = private unnamed_addr constant [12 x i8] c"union.value\00", align 1
+@.sconst.1533 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1534 = private constant [5 x i8] c"\03ref\00"
+@.sconst.1535 = private constant [6 x i8] c"\04void\00"
+@.str.1536 = private unnamed_addr constant [38 x i8] c"Emitter: no layout for field access: \00", align 1
+@.str.1537 = private unnamed_addr constant [2 x i8] c".\00", align 1
+@.str.1538 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.str.1539 = private unnamed_addr constant [6 x i8] c"deref\00", align 1
+@.sconst.1540 = private constant [6 x i8] c"\04void\00"
+@.sconst.1541 = private constant [3 x i8] c"\01v\00"
+@.str.1542 = private unnamed_addr constant [8 x i8] c"closure\00", align 1
+@.sconst.1543 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
+@.str.1544 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.str.1545 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.sconst.1546 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
+@.str.1547 = private unnamed_addr constant [8 x i8] c"closure\00", align 1
+@.str.1548 = private unnamed_addr constant [7 x i8] c"clo.fn\00", align 1
+@.str.1549 = private unnamed_addr constant [8 x i8] c"clo.cap\00", align 1
+@.sconst.1550 = private constant [5 x i8] c"\03_rp\00"
+@.str.1551 = private unnamed_addr constant [6 x i8] c"entry\00", align 1
+@.str.1552 = private unnamed_addr constant [4 x i8] c"cap\00", align 1
+@.str.1553 = private unnamed_addr constant [4 x i8] c"cap\00", align 1
+@.sconst.1554 = private constant [6 x i8] c"\04void\00"
+@.str.1555 = private unnamed_addr constant [12 x i8] c"global.load\00", align 1
+@.str.1556 = private unnamed_addr constant [10 x i8] c"array.ptr\00", align 1
+@.sconst.1557 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1558 = private constant [5 x i8] c"\03_rp\00"
+@.sconst.1559 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
+@.str.1560 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.str.1561 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.sconst.1562 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
+@.str.1563 = private unnamed_addr constant [14 x i8] c"struct.region\00", align 1
+@.str.1564 = private unnamed_addr constant [12 x i8] c"struct.init\00", align 1
+@.str.1565 = private unnamed_addr constant [12 x i8] c"tuple.field\00", align 1
+@.str.1566 = private unnamed_addr constant [8 x i8] c"arg.tmp\00", align 1
+@.sconst.1567 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1568 = private constant [12 x i8] c"\0Aconst_char\00"
+@.sconst.1569 = private constant [4 x i8] c"\02i8\00"
+@.sconst.1570 = private constant [6 x i8] c"\04char\00"
+@.sconst.1571 = private constant [4 x i8] c"\02u8\00"
+@.sconst.1572 = private constant [6 x i8] c"\04void\00"
+@.sconst.1573 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1574 = private constant [12 x i8] c"\0Aconst_char\00"
+@.sconst.1575 = private constant [4 x i8] c"\02i8\00"
+@.sconst.1576 = private constant [6 x i8] c"\04char\00"
+@.sconst.1577 = private constant [4 x i8] c"\02u8\00"
+@.str.1578 = private unnamed_addr constant [18 x i8] c".scaly.empty.cstr\00", align 1
+@.str.1579 = private unnamed_addr constant [18 x i8] c".scaly.empty.cstr\00", align 1
+@.str.1580 = private unnamed_addr constant [11 x i8] c"str.coerce\00", align 1
+@.str.1581 = private unnamed_addr constant [25 x i8] c"_ZN6String10get_bufferEv\00", align 1
+@.str.1582 = private unnamed_addr constant [25 x i8] c"_ZN6String10get_bufferEv\00", align 1
+@.str.1583 = private unnamed_addr constant [5 x i8] c"cstr\00", align 1
+@.str.1584 = private unnamed_addr constant [8 x i8] c"cstr.nn\00", align 1
+@.str.1585 = private unnamed_addr constant [7 x i8] c"cstr.g\00", align 1
+@.sconst.1586 = private constant [15 x i8] c"\0Dscaly_atomic_\00"
+@.sconst.1587 = private constant [23 x i8] c"\15scaly_atomic_load_u64\00"
+@.str.1588 = private unnamed_addr constant [12 x i8] c"atomic.load\00", align 1
+@.sconst.1589 = private constant [24 x i8] c"\16scaly_atomic_store_u64\00"
+@.sconst.1590 = private constant [21 x i8] c"\13scaly_atomic_or_u64\00"
+@.sconst.1591 = private constant [22 x i8] c"\14scaly_atomic_and_u64\00"
+@.sconst.1592 = private constant [22 x i8] c"\14scaly_atomic_add_u64\00"
+@.sconst.1593 = private constant [22 x i8] c"\14scaly_atomic_cas_u64\00"
+@.str.1594 = private unnamed_addr constant [8 x i8] c"cas.old\00", align 1
+@.sconst.1595 = private constant [16 x i8] c"\0Escaly_call_ptr\00"
+@.sconst.1596 = private constant [14 x i8] c"\0C_scaly_walk_\00"
+@.sconst.1597 = private constant [6 x i8] c"\04Page\00"
+@.sconst.1598 = private constant [10 x i8] c"\08PageList\00"
+@.sconst.1599 = private constant [10 x i8] c"\08PageNode\00"
+@.sconst.1600 = private constant [18 x i8] c"\10PageListIterator\00"
+@.sconst.1601 = private constant [18 x i8] c"\10HeapBucketHeader\00"
+@.sconst.1602 = private constant [19 x i8] c"\11StackBucketHeader\00"
+@.sconst.1603 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1604 = private constant [5 x i8] c"\03ref\00"
+@.sconst.1605 = private constant [8 x i8] c"\06Option\00"
 @.sconst.1606 = private constant [8 x i8] c"\06String\00"
-@.sconst.1607 = private constant [33 x i8] c"\1F_ZN14ReceivedRegion9fix_valueEm\00"
-@.str.1608 = private unnamed_addr constant [9 x i8] c"walk.old\00", align 1
-@.str.1609 = private unnamed_addr constant [9 x i8] c"walk.new\00", align 1
-@.str.1610 = private unnamed_addr constant [8 x i8] c"walk.nn\00", align 1
-@.str.1611 = private unnamed_addr constant [10 x i8] c"walk.desc\00", align 1
-@.str.1612 = private unnamed_addr constant [10 x i8] c"walk.cont\00", align 1
-@.str.1613 = private unnamed_addr constant [7 x i8] c"walk.p\00", align 1
-@.sconst.1614 = private constant [8 x i8] c"\06String\00"
-@.str.1615 = private unnamed_addr constant [9 x i8] c"walk.dnn\00", align 1
-@.str.1616 = private unnamed_addr constant [14 x i8] c"walk.loop.pre\00", align 1
-@.str.1617 = private unnamed_addr constant [15 x i8] c"walk.loop.head\00", align 1
-@.str.1618 = private unnamed_addr constant [15 x i8] c"walk.loop.body\00", align 1
-@.str.1619 = private unnamed_addr constant [15 x i8] c"walk.loop.exit\00", align 1
-@.str.1620 = private unnamed_addr constant [10 x i8] c"walk.data\00", align 1
-@.str.1621 = private unnamed_addr constant [7 x i8] c"walk.i\00", align 1
-@.str.1622 = private unnamed_addr constant [8 x i8] c"walk.iv\00", align 1
-@.str.1623 = private unnamed_addr constant [9 x i8] c"walk.cmp\00", align 1
-@.str.1624 = private unnamed_addr constant [7 x i8] c"walk.e\00", align 1
-@.str.1625 = private unnamed_addr constant [9 x i8] c"walk.inc\00", align 1
-@.str.1626 = private unnamed_addr constant [11 x i8] c"walk.vdata\00", align 1
-@.str.1627 = private unnamed_addr constant [14 x i8] c"walk.vlen.ptr\00", align 1
-@.str.1628 = private unnamed_addr constant [10 x i8] c"walk.vlen\00", align 1
-@.str.1629 = private unnamed_addr constant [10 x i8] c"walk.avec\00", align 1
-@.str.1630 = private unnamed_addr constant [9 x i8] c"walk.ann\00", align 1
-@.str.1631 = private unnamed_addr constant [13 x i8] c"walk.avec.in\00", align 1
-@.str.1632 = private unnamed_addr constant [14 x i8] c"walk.avec.out\00", align 1
-@.str.1633 = private unnamed_addr constant [11 x i8] c"walk.avecp\00", align 1
-@.str.1634 = private unnamed_addr constant [11 x i8] c"walk.adata\00", align 1
-@.str.1635 = private unnamed_addr constant [14 x i8] c"walk.alen.ptr\00", align 1
-@.str.1636 = private unnamed_addr constant [10 x i8] c"walk.alen\00", align 1
-@.str.1637 = private unnamed_addr constant [42 x i8] c"emit_region_node_body: no layout for Node\00", align 1
-@.str.1638 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.str.1639 = private unnamed_addr constant [8 x i8] c"walk.nd\00", align 1
-@.str.1640 = private unnamed_addr constant [11 x i8] c"walk.chain\00", align 1
-@.str.1641 = private unnamed_addr constant [16 x i8] c"walk.chain.exit\00", align 1
-@.str.1642 = private unnamed_addr constant [9 x i8] c"walk.ndv\00", align 1
-@.str.1643 = private unnamed_addr constant [11 x i8] c"walk.nelem\00", align 1
-@.str.1644 = private unnamed_addr constant [11 x i8] c"walk.nnext\00", align 1
-@.str.1645 = private unnamed_addr constant [11 x i8] c"walk.ncont\00", align 1
-@.str.1646 = private unnamed_addr constant [8 x i8] c"walk.np\00", align 1
-@.str.1647 = private unnamed_addr constant [9 x i8] c"walk.tag\00", align 1
-@.str.1648 = private unnamed_addr constant [9 x i8] c"walk.pay\00", align 1
-@.str.1649 = private unnamed_addr constant [13 x i8] c"walk.usw.end\00", align 1
-@.str.1650 = private unnamed_addr constant [11 x i8] c"walk.ucase\00", align 1
-@.sconst.1651 = private constant [8 x i8] c"\06String\00"
-@.sconst.1652 = private constant [8 x i8] c"\06Vector\00"
-@.sconst.1653 = private constant [7 x i8] c"\05Array\00"
-@.sconst.1654 = private constant [6 x i8] c"\04Node\00"
-@.str.1655 = private unnamed_addr constant [59 x i8] c"emit_region_walk_body: no struct layout for message type: \00", align 1
-@.str.1656 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.str.1657 = private unnamed_addr constant [7 x i8] c"walk.f\00", align 1
-@.str.1658 = private unnamed_addr constant [52 x i8] c"emit_region_walk_body: no layout for message type: \00", align 1
-@.str.1659 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.str.1660 = private unnamed_addr constant [6 x i8] c"entry\00", align 1
-@.sconst.1661 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1662 = private constant [16 x i8] c"\0E__jit_indirect\00"
-@.str.1663 = private unnamed_addr constant [9 x i8] c"jit.call\00", align 1
-@.str.1664 = private unnamed_addr constant [10 x i8] c"clo.thunk\00", align 1
-@.sconst.1665 = private constant [14 x i8] c"\0C_scaly_walk_\00"
-@.sconst.1666 = private constant [5 x i8] c"\03C1E\00"
-@.sconst.1667 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1668 = private constant [5 x i8] c"\03ref\00"
-@.str.1669 = private unnamed_addr constant [12 x i8] c"sret.result\00", align 1
-@.sconst.1670 = private constant [6 x i8] c"\04call\00"
-@.sconst.1671 = private constant [6 x i8] c"\04call\00"
-@.sconst.1672 = private constant [5 x i8] c"\03_rp\00"
-@.sconst.1673 = private constant [6 x i8] c"\04LLVM\00"
-@.sconst.1674 = private constant [6 x i8] c"\04LLVM\00"
-@.str.1675 = private unnamed_addr constant [11 x i8] c"base.deref\00", align 1
-@.str.1676 = private unnamed_addr constant [14 x i8] c"field.inplace\00", align 1
-@.str.1677 = private unnamed_addr constant [11 x i8] c"deref.recv\00", align 1
-@.str.1678 = private unnamed_addr constant [10 x i8] c"field.val\00", align 1
-@.sconst.1679 = private constant [6 x i8] c"\04LLVM\00"
-@.sconst.1680 = private constant [3 x i8] c"\01*\00"
-@.sconst.1681 = private constant [3 x i8] c"\01*\00"
-@.sconst.1682 = private constant [6 x i8] c"\04LLVM\00"
-@.str.1683 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
-@.str.1684 = private unnamed_addr constant [8 x i8] c"arg.tmp\00", align 1
-@.sconst.1685 = private constant [3 x i8] c"\01&\00"
+@.sconst.1607 = private constant [12 x i8] c"\0Aconst_char\00"
+@.sconst.1608 = private constant [6 x i8] c"\04void\00"
+@.sconst.1609 = private constant [12 x i8] c"\0Aconst_char\00"
+@.sconst.1610 = private constant [8 x i8] c"\06String\00"
+@.sconst.1611 = private constant [33 x i8] c"\1F_ZN14ReceivedRegion9fix_valueEm\00"
+@.str.1612 = private unnamed_addr constant [9 x i8] c"walk.old\00", align 1
+@.str.1613 = private unnamed_addr constant [9 x i8] c"walk.new\00", align 1
+@.str.1614 = private unnamed_addr constant [8 x i8] c"walk.nn\00", align 1
+@.str.1615 = private unnamed_addr constant [10 x i8] c"walk.desc\00", align 1
+@.str.1616 = private unnamed_addr constant [10 x i8] c"walk.cont\00", align 1
+@.str.1617 = private unnamed_addr constant [7 x i8] c"walk.p\00", align 1
+@.sconst.1618 = private constant [8 x i8] c"\06String\00"
+@.str.1619 = private unnamed_addr constant [9 x i8] c"walk.dnn\00", align 1
+@.str.1620 = private unnamed_addr constant [14 x i8] c"walk.loop.pre\00", align 1
+@.str.1621 = private unnamed_addr constant [15 x i8] c"walk.loop.head\00", align 1
+@.str.1622 = private unnamed_addr constant [15 x i8] c"walk.loop.body\00", align 1
+@.str.1623 = private unnamed_addr constant [15 x i8] c"walk.loop.exit\00", align 1
+@.str.1624 = private unnamed_addr constant [10 x i8] c"walk.data\00", align 1
+@.str.1625 = private unnamed_addr constant [7 x i8] c"walk.i\00", align 1
+@.str.1626 = private unnamed_addr constant [8 x i8] c"walk.iv\00", align 1
+@.str.1627 = private unnamed_addr constant [9 x i8] c"walk.cmp\00", align 1
+@.str.1628 = private unnamed_addr constant [7 x i8] c"walk.e\00", align 1
+@.str.1629 = private unnamed_addr constant [9 x i8] c"walk.inc\00", align 1
+@.str.1630 = private unnamed_addr constant [11 x i8] c"walk.vdata\00", align 1
+@.str.1631 = private unnamed_addr constant [14 x i8] c"walk.vlen.ptr\00", align 1
+@.str.1632 = private unnamed_addr constant [10 x i8] c"walk.vlen\00", align 1
+@.str.1633 = private unnamed_addr constant [10 x i8] c"walk.avec\00", align 1
+@.str.1634 = private unnamed_addr constant [9 x i8] c"walk.ann\00", align 1
+@.str.1635 = private unnamed_addr constant [13 x i8] c"walk.avec.in\00", align 1
+@.str.1636 = private unnamed_addr constant [14 x i8] c"walk.avec.out\00", align 1
+@.str.1637 = private unnamed_addr constant [11 x i8] c"walk.avecp\00", align 1
+@.str.1638 = private unnamed_addr constant [11 x i8] c"walk.adata\00", align 1
+@.str.1639 = private unnamed_addr constant [14 x i8] c"walk.alen.ptr\00", align 1
+@.str.1640 = private unnamed_addr constant [10 x i8] c"walk.alen\00", align 1
+@.str.1641 = private unnamed_addr constant [42 x i8] c"emit_region_node_body: no layout for Node\00", align 1
+@.str.1642 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.str.1643 = private unnamed_addr constant [8 x i8] c"walk.nd\00", align 1
+@.str.1644 = private unnamed_addr constant [11 x i8] c"walk.chain\00", align 1
+@.str.1645 = private unnamed_addr constant [16 x i8] c"walk.chain.exit\00", align 1
+@.str.1646 = private unnamed_addr constant [9 x i8] c"walk.ndv\00", align 1
+@.str.1647 = private unnamed_addr constant [11 x i8] c"walk.nelem\00", align 1
+@.str.1648 = private unnamed_addr constant [11 x i8] c"walk.nnext\00", align 1
+@.str.1649 = private unnamed_addr constant [11 x i8] c"walk.ncont\00", align 1
+@.str.1650 = private unnamed_addr constant [8 x i8] c"walk.np\00", align 1
+@.str.1651 = private unnamed_addr constant [9 x i8] c"walk.tag\00", align 1
+@.str.1652 = private unnamed_addr constant [9 x i8] c"walk.pay\00", align 1
+@.str.1653 = private unnamed_addr constant [13 x i8] c"walk.usw.end\00", align 1
+@.str.1654 = private unnamed_addr constant [11 x i8] c"walk.ucase\00", align 1
+@.sconst.1655 = private constant [8 x i8] c"\06String\00"
+@.sconst.1656 = private constant [8 x i8] c"\06Vector\00"
+@.sconst.1657 = private constant [7 x i8] c"\05Array\00"
+@.sconst.1658 = private constant [6 x i8] c"\04Node\00"
+@.str.1659 = private unnamed_addr constant [59 x i8] c"emit_region_walk_body: no struct layout for message type: \00", align 1
+@.str.1660 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.str.1661 = private unnamed_addr constant [7 x i8] c"walk.f\00", align 1
+@.str.1662 = private unnamed_addr constant [52 x i8] c"emit_region_walk_body: no layout for message type: \00", align 1
+@.str.1663 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.str.1664 = private unnamed_addr constant [6 x i8] c"entry\00", align 1
+@.sconst.1665 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1666 = private constant [16 x i8] c"\0E__jit_indirect\00"
+@.str.1667 = private unnamed_addr constant [9 x i8] c"jit.call\00", align 1
+@.str.1668 = private unnamed_addr constant [10 x i8] c"clo.thunk\00", align 1
+@.sconst.1669 = private constant [14 x i8] c"\0C_scaly_walk_\00"
+@.sconst.1670 = private constant [5 x i8] c"\03C1E\00"
+@.sconst.1671 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1672 = private constant [5 x i8] c"\03ref\00"
+@.str.1673 = private unnamed_addr constant [12 x i8] c"sret.result\00", align 1
+@.sconst.1674 = private constant [6 x i8] c"\04call\00"
+@.sconst.1675 = private constant [6 x i8] c"\04call\00"
+@.sconst.1676 = private constant [5 x i8] c"\03_rp\00"
+@.sconst.1677 = private constant [6 x i8] c"\04LLVM\00"
+@.sconst.1678 = private constant [6 x i8] c"\04LLVM\00"
+@.str.1679 = private unnamed_addr constant [11 x i8] c"base.deref\00", align 1
+@.str.1680 = private unnamed_addr constant [14 x i8] c"field.inplace\00", align 1
+@.str.1681 = private unnamed_addr constant [11 x i8] c"deref.recv\00", align 1
+@.str.1682 = private unnamed_addr constant [10 x i8] c"field.val\00", align 1
+@.sconst.1683 = private constant [6 x i8] c"\04LLVM\00"
+@.sconst.1684 = private constant [3 x i8] c"\01*\00"
+@.sconst.1685 = private constant [3 x i8] c"\01*\00"
 @.sconst.1686 = private constant [6 x i8] c"\04LLVM\00"
-@.str.1687 = private unnamed_addr constant [13 x i8] c"wrapper.load\00", align 1
-@.str.1688 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
-@.sconst.1689 = private constant [6 x i8] c"\04LLVM\00"
-@.str.1690 = private unnamed_addr constant [13 x i8] c"wrapper.load\00", align 1
-@.str.1691 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
-@.sconst.1692 = private constant [6 x i8] c"\04LLVM\00"
-@.str.1693 = private unnamed_addr constant [13 x i8] c"wrapper.load\00", align 1
-@.str.1694 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
-@.sconst.1695 = private constant [6 x i8] c"\04call\00"
-@.str.1696 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.1697 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.1698 = private constant [3 x i8] c"\01&\00"
-@.str.1699 = private unnamed_addr constant [10 x i8] c"addr.heap\00", align 1
-@.str.1700 = private unnamed_addr constant [9 x i8] c"addr.gep\00", align 1
-@.sconst.1701 = private constant [4 x i8] c"\02||\00"
-@.sconst.1702 = private constant [4 x i8] c"\02&&\00"
-@.sconst.1703 = private constant [4 x i8] c"\02or\00"
-@.sconst.1704 = private constant [5 x i8] c"\03and\00"
+@.str.1687 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
+@.str.1688 = private unnamed_addr constant [8 x i8] c"arg.tmp\00", align 1
+@.sconst.1689 = private constant [3 x i8] c"\01&\00"
+@.sconst.1690 = private constant [6 x i8] c"\04LLVM\00"
+@.str.1691 = private unnamed_addr constant [13 x i8] c"wrapper.load\00", align 1
+@.str.1692 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
+@.sconst.1693 = private constant [6 x i8] c"\04LLVM\00"
+@.str.1694 = private unnamed_addr constant [13 x i8] c"wrapper.load\00", align 1
+@.str.1695 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
+@.sconst.1696 = private constant [6 x i8] c"\04LLVM\00"
+@.str.1697 = private unnamed_addr constant [13 x i8] c"wrapper.load\00", align 1
+@.str.1698 = private unnamed_addr constant [7 x i8] c"handle\00", align 1
+@.sconst.1699 = private constant [6 x i8] c"\04call\00"
+@.str.1700 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.1701 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.1702 = private constant [3 x i8] c"\01&\00"
+@.str.1703 = private unnamed_addr constant [10 x i8] c"addr.heap\00", align 1
+@.str.1704 = private unnamed_addr constant [9 x i8] c"addr.gep\00", align 1
 @.sconst.1705 = private constant [4 x i8] c"\02||\00"
-@.sconst.1706 = private constant [4 x i8] c"\02or\00"
-@.str.1707 = private unnamed_addr constant [8 x i8] c"lor.rhs\00", align 1
-@.str.1708 = private unnamed_addr constant [8 x i8] c"lor.end\00", align 1
-@.str.1709 = private unnamed_addr constant [11 x i8] c"lor.result\00", align 1
-@.sconst.1710 = private constant [3 x i8] c"\01-\00"
-@.str.1711 = private unnamed_addr constant [5 x i8] c"fneg\00", align 1
-@.str.1712 = private unnamed_addr constant [4 x i8] c"neg\00", align 1
-@.sconst.1713 = private constant [3 x i8] c"\01+\00"
-@.sconst.1714 = private constant [5 x i8] c"\03abs\00"
+@.sconst.1706 = private constant [4 x i8] c"\02&&\00"
+@.sconst.1707 = private constant [4 x i8] c"\02or\00"
+@.sconst.1708 = private constant [5 x i8] c"\03and\00"
+@.sconst.1709 = private constant [4 x i8] c"\02||\00"
+@.sconst.1710 = private constant [4 x i8] c"\02or\00"
+@.str.1711 = private unnamed_addr constant [8 x i8] c"lor.rhs\00", align 1
+@.str.1712 = private unnamed_addr constant [8 x i8] c"lor.end\00", align 1
+@.str.1713 = private unnamed_addr constant [11 x i8] c"lor.result\00", align 1
+@.sconst.1714 = private constant [3 x i8] c"\01-\00"
 @.str.1715 = private unnamed_addr constant [5 x i8] c"fneg\00", align 1
-@.str.1716 = private unnamed_addr constant [6 x i8] c"isneg\00", align 1
-@.str.1717 = private unnamed_addr constant [5 x i8] c"fabs\00", align 1
-@.str.1718 = private unnamed_addr constant [4 x i8] c"neg\00", align 1
-@.str.1719 = private unnamed_addr constant [6 x i8] c"isneg\00", align 1
-@.str.1720 = private unnamed_addr constant [4 x i8] c"abs\00", align 1
-@.sconst.1721 = private constant [3 x i8] c"\01!\00"
-@.str.1722 = private unnamed_addr constant [4 x i8] c"not\00", align 1
-@.sconst.1723 = private constant [5 x i8] c"\03not\00"
-@.str.1724 = private unnamed_addr constant [4 x i8] c"not\00", align 1
-@.sconst.1725 = private constant [3 x i8] c"\01~\00"
-@.str.1726 = private unnamed_addr constant [7 x i8] c"bitnot\00", align 1
-@.sconst.1727 = private constant [3 x i8] c"\01*\00"
-@.str.1728 = private unnamed_addr constant [13 x i8] c"deref.unwrap\00", align 1
-@.str.1729 = private unnamed_addr constant [10 x i8] c"deref.tmp\00", align 1
-@.str.1730 = private unnamed_addr constant [6 x i8] c"deref\00", align 1
-@.str.1731 = private unnamed_addr constant [10 x i8] c"deref.tmp\00", align 1
-@.str.1732 = private unnamed_addr constant [6 x i8] c"deref\00", align 1
-@.sconst.1733 = private constant [3 x i8] c"\01&\00"
-@.str.1734 = private unnamed_addr constant [9 x i8] c"addr.tmp\00", align 1
-@.str.1735 = private unnamed_addr constant [34 x i8] c"Emitter: unknown unary operator: \00", align 1
-@.str.1736 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.sconst.1737 = private constant [3 x i8] c"\01+\00"
-@.sconst.1738 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1739 = private constant [6 x i8] c"\04void\00"
-@.str.1740 = private unnamed_addr constant [8 x i8] c"ptr.add\00", align 1
-@.sconst.1741 = private constant [3 x i8] c"\01-\00"
+@.str.1716 = private unnamed_addr constant [4 x i8] c"neg\00", align 1
+@.sconst.1717 = private constant [3 x i8] c"\01+\00"
+@.sconst.1718 = private constant [5 x i8] c"\03abs\00"
+@.str.1719 = private unnamed_addr constant [5 x i8] c"fneg\00", align 1
+@.str.1720 = private unnamed_addr constant [6 x i8] c"isneg\00", align 1
+@.str.1721 = private unnamed_addr constant [5 x i8] c"fabs\00", align 1
+@.str.1722 = private unnamed_addr constant [4 x i8] c"neg\00", align 1
+@.str.1723 = private unnamed_addr constant [6 x i8] c"isneg\00", align 1
+@.str.1724 = private unnamed_addr constant [4 x i8] c"abs\00", align 1
+@.sconst.1725 = private constant [3 x i8] c"\01!\00"
+@.str.1726 = private unnamed_addr constant [4 x i8] c"not\00", align 1
+@.sconst.1727 = private constant [5 x i8] c"\03not\00"
+@.str.1728 = private unnamed_addr constant [4 x i8] c"not\00", align 1
+@.sconst.1729 = private constant [3 x i8] c"\01~\00"
+@.str.1730 = private unnamed_addr constant [7 x i8] c"bitnot\00", align 1
+@.sconst.1731 = private constant [3 x i8] c"\01*\00"
+@.str.1732 = private unnamed_addr constant [13 x i8] c"deref.unwrap\00", align 1
+@.str.1733 = private unnamed_addr constant [10 x i8] c"deref.tmp\00", align 1
+@.str.1734 = private unnamed_addr constant [6 x i8] c"deref\00", align 1
+@.str.1735 = private unnamed_addr constant [10 x i8] c"deref.tmp\00", align 1
+@.str.1736 = private unnamed_addr constant [6 x i8] c"deref\00", align 1
+@.sconst.1737 = private constant [3 x i8] c"\01&\00"
+@.str.1738 = private unnamed_addr constant [9 x i8] c"addr.tmp\00", align 1
+@.str.1739 = private unnamed_addr constant [34 x i8] c"Emitter: unknown unary operator: \00", align 1
+@.str.1740 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.sconst.1741 = private constant [3 x i8] c"\01+\00"
 @.sconst.1742 = private constant [9 x i8] c"\07pointer\00"
-@.str.1743 = private unnamed_addr constant [4 x i8] c"neg\00", align 1
-@.str.1744 = private unnamed_addr constant [8 x i8] c"ptr.sub\00", align 1
-@.str.1745 = private unnamed_addr constant [5 x i8] c"zext\00", align 1
-@.str.1746 = private unnamed_addr constant [5 x i8] c"zext\00", align 1
-@.str.1747 = private unnamed_addr constant [6 x i8] c"fpext\00", align 1
-@.str.1748 = private unnamed_addr constant [6 x i8] c"fpext\00", align 1
-@.sconst.1749 = private constant [3 x i8] c"\01+\00"
-@.str.1750 = private unnamed_addr constant [5 x i8] c"fadd\00", align 1
-@.str.1751 = private unnamed_addr constant [4 x i8] c"add\00", align 1
-@.sconst.1752 = private constant [3 x i8] c"\01-\00"
-@.str.1753 = private unnamed_addr constant [5 x i8] c"fsub\00", align 1
-@.str.1754 = private unnamed_addr constant [4 x i8] c"sub\00", align 1
-@.sconst.1755 = private constant [3 x i8] c"\01*\00"
-@.str.1756 = private unnamed_addr constant [5 x i8] c"fmul\00", align 1
-@.str.1757 = private unnamed_addr constant [4 x i8] c"mul\00", align 1
-@.sconst.1758 = private constant [3 x i8] c"\01/\00"
-@.str.1759 = private unnamed_addr constant [5 x i8] c"fdiv\00", align 1
-@.str.1760 = private unnamed_addr constant [5 x i8] c"sdiv\00", align 1
-@.str.1761 = private unnamed_addr constant [5 x i8] c"udiv\00", align 1
-@.sconst.1762 = private constant [3 x i8] c"\01%\00"
-@.str.1763 = private unnamed_addr constant [5 x i8] c"frem\00", align 1
-@.str.1764 = private unnamed_addr constant [5 x i8] c"srem\00", align 1
-@.str.1765 = private unnamed_addr constant [5 x i8] c"urem\00", align 1
-@.sconst.1766 = private constant [5 x i8] c"\03div\00"
-@.str.1767 = private unnamed_addr constant [5 x i8] c"fdiv\00", align 1
-@.str.1768 = private unnamed_addr constant [5 x i8] c"sdiv\00", align 1
-@.str.1769 = private unnamed_addr constant [5 x i8] c"udiv\00", align 1
-@.sconst.1770 = private constant [5 x i8] c"\03mod\00"
-@.str.1771 = private unnamed_addr constant [5 x i8] c"frem\00", align 1
-@.str.1772 = private unnamed_addr constant [5 x i8] c"srem\00", align 1
-@.str.1773 = private unnamed_addr constant [5 x i8] c"urem\00", align 1
-@.sconst.1774 = private constant [4 x i8] c"\02&&\00"
-@.str.1775 = private unnamed_addr constant [5 x i8] c"land\00", align 1
-@.sconst.1776 = private constant [4 x i8] c"\02||\00"
-@.str.1777 = private unnamed_addr constant [4 x i8] c"lor\00", align 1
-@.sconst.1778 = private constant [5 x i8] c"\03and\00"
+@.sconst.1743 = private constant [6 x i8] c"\04void\00"
+@.str.1744 = private unnamed_addr constant [8 x i8] c"ptr.add\00", align 1
+@.sconst.1745 = private constant [3 x i8] c"\01-\00"
+@.sconst.1746 = private constant [9 x i8] c"\07pointer\00"
+@.str.1747 = private unnamed_addr constant [4 x i8] c"neg\00", align 1
+@.str.1748 = private unnamed_addr constant [8 x i8] c"ptr.sub\00", align 1
+@.str.1749 = private unnamed_addr constant [5 x i8] c"zext\00", align 1
+@.str.1750 = private unnamed_addr constant [5 x i8] c"zext\00", align 1
+@.str.1751 = private unnamed_addr constant [6 x i8] c"fpext\00", align 1
+@.str.1752 = private unnamed_addr constant [6 x i8] c"fpext\00", align 1
+@.sconst.1753 = private constant [3 x i8] c"\01+\00"
+@.str.1754 = private unnamed_addr constant [5 x i8] c"fadd\00", align 1
+@.str.1755 = private unnamed_addr constant [4 x i8] c"add\00", align 1
+@.sconst.1756 = private constant [3 x i8] c"\01-\00"
+@.str.1757 = private unnamed_addr constant [5 x i8] c"fsub\00", align 1
+@.str.1758 = private unnamed_addr constant [4 x i8] c"sub\00", align 1
+@.sconst.1759 = private constant [3 x i8] c"\01*\00"
+@.str.1760 = private unnamed_addr constant [5 x i8] c"fmul\00", align 1
+@.str.1761 = private unnamed_addr constant [4 x i8] c"mul\00", align 1
+@.sconst.1762 = private constant [3 x i8] c"\01/\00"
+@.str.1763 = private unnamed_addr constant [5 x i8] c"fdiv\00", align 1
+@.str.1764 = private unnamed_addr constant [5 x i8] c"sdiv\00", align 1
+@.str.1765 = private unnamed_addr constant [5 x i8] c"udiv\00", align 1
+@.sconst.1766 = private constant [3 x i8] c"\01%\00"
+@.str.1767 = private unnamed_addr constant [5 x i8] c"frem\00", align 1
+@.str.1768 = private unnamed_addr constant [5 x i8] c"srem\00", align 1
+@.str.1769 = private unnamed_addr constant [5 x i8] c"urem\00", align 1
+@.sconst.1770 = private constant [5 x i8] c"\03div\00"
+@.str.1771 = private unnamed_addr constant [5 x i8] c"fdiv\00", align 1
+@.str.1772 = private unnamed_addr constant [5 x i8] c"sdiv\00", align 1
+@.str.1773 = private unnamed_addr constant [5 x i8] c"udiv\00", align 1
+@.sconst.1774 = private constant [5 x i8] c"\03mod\00"
+@.str.1775 = private unnamed_addr constant [5 x i8] c"frem\00", align 1
+@.str.1776 = private unnamed_addr constant [5 x i8] c"srem\00", align 1
+@.str.1777 = private unnamed_addr constant [5 x i8] c"urem\00", align 1
+@.sconst.1778 = private constant [4 x i8] c"\02&&\00"
 @.str.1779 = private unnamed_addr constant [5 x i8] c"land\00", align 1
-@.sconst.1780 = private constant [4 x i8] c"\02or\00"
+@.sconst.1780 = private constant [4 x i8] c"\02||\00"
 @.str.1781 = private unnamed_addr constant [4 x i8] c"lor\00", align 1
-@.sconst.1782 = private constant [3 x i8] c"\01&\00"
-@.str.1783 = private unnamed_addr constant [4 x i8] c"and\00", align 1
-@.sconst.1784 = private constant [3 x i8] c"\01|\00"
-@.str.1785 = private unnamed_addr constant [3 x i8] c"or\00", align 1
-@.sconst.1786 = private constant [3 x i8] c"\01^\00"
-@.str.1787 = private unnamed_addr constant [4 x i8] c"xor\00", align 1
-@.sconst.1788 = private constant [5 x i8] c"\03xor\00"
-@.str.1789 = private unnamed_addr constant [4 x i8] c"xor\00", align 1
-@.sconst.1790 = private constant [4 x i8] c"\02<<\00"
-@.str.1791 = private unnamed_addr constant [4 x i8] c"shl\00", align 1
-@.sconst.1792 = private constant [4 x i8] c"\02>>\00"
-@.str.1793 = private unnamed_addr constant [5 x i8] c"ashr\00", align 1
-@.str.1794 = private unnamed_addr constant [5 x i8] c"lshr\00", align 1
-@.sconst.1795 = private constant [3 x i8] c"\01=\00"
-@.str.1796 = private unnamed_addr constant [3 x i8] c"eq\00", align 1
-@.str.1797 = private unnamed_addr constant [3 x i8] c"eq\00", align 1
-@.sconst.1798 = private constant [4 x i8] c"\02<>\00"
-@.str.1799 = private unnamed_addr constant [3 x i8] c"ne\00", align 1
-@.str.1800 = private unnamed_addr constant [3 x i8] c"ne\00", align 1
-@.sconst.1801 = private constant [3 x i8] c"\01<\00"
-@.str.1802 = private unnamed_addr constant [3 x i8] c"lt\00", align 1
-@.str.1803 = private unnamed_addr constant [3 x i8] c"lt\00", align 1
-@.str.1804 = private unnamed_addr constant [3 x i8] c"lt\00", align 1
-@.sconst.1805 = private constant [4 x i8] c"\02<=\00"
-@.str.1806 = private unnamed_addr constant [3 x i8] c"le\00", align 1
-@.str.1807 = private unnamed_addr constant [3 x i8] c"le\00", align 1
-@.str.1808 = private unnamed_addr constant [3 x i8] c"le\00", align 1
-@.sconst.1809 = private constant [3 x i8] c"\01>\00"
-@.str.1810 = private unnamed_addr constant [3 x i8] c"gt\00", align 1
-@.str.1811 = private unnamed_addr constant [3 x i8] c"gt\00", align 1
-@.str.1812 = private unnamed_addr constant [3 x i8] c"gt\00", align 1
-@.sconst.1813 = private constant [4 x i8] c"\02>=\00"
-@.str.1814 = private unnamed_addr constant [3 x i8] c"ge\00", align 1
-@.str.1815 = private unnamed_addr constant [3 x i8] c"ge\00", align 1
-@.str.1816 = private unnamed_addr constant [3 x i8] c"ge\00", align 1
-@.sconst.1817 = private constant [4 x i8] c"\02[]\00"
-@.str.1818 = private unnamed_addr constant [35 x i8] c"Emitter: unknown binary operator: \00", align 1
-@.str.1819 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.sconst.1820 = private constant [8 x i8] c"\06unwrap\00"
-@.str.1821 = private unnamed_addr constant [13 x i8] c"unwrap.value\00", align 1
-@.sconst.1822 = private constant [11 x i8] c"\09unwrap_or\00"
-@.sconst.1823 = private constant [7 x i8] c"\05float\00"
-@.sconst.1824 = private constant [8 x i8] c"\06double\00"
-@.sconst.1825 = private constant [4 x i8] c"\02u8\00"
-@.sconst.1826 = private constant [5 x i8] c"\03u16\00"
-@.sconst.1827 = private constant [5 x i8] c"\03u32\00"
-@.sconst.1828 = private constant [5 x i8] c"\03u64\00"
-@.sconst.1829 = private constant [6 x i8] c"\04uint\00"
-@.sconst.1830 = private constant [8 x i8] c"\06size_t\00"
-@.sconst.1831 = private constant [6 x i8] c"\04size\00"
-@.sconst.1832 = private constant [7 x i8] c"\05usize\00"
-@.sconst.1833 = private constant [6 x i8] c"\04bool\00"
-@.sconst.1834 = private constant [6 x i8] c"\04char\00"
-@.str.1835 = private unnamed_addr constant [6 x i8] c"tuple\00", align 1
-@.str.1836 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
-@.sconst.1837 = private constant [3 x i8] c"\01*\00"
-@.str.1838 = private unnamed_addr constant [14 x i8] c"grp.deref.val\00", align 1
-@.sconst.1839 = private constant [5 x i8] c"\03_rp\00"
-@.sconst.1840 = private constant [12 x i8] c"\0Alocal_page\00"
-@.sconst.1841 = private constant [6 x i8] c"\04this\00"
-@.sconst.1842 = private constant [10 x i8] c"\08_Z3getPv\00"
-@.str.1843 = private unnamed_addr constant [9 x i8] c"_Z3getPv\00", align 1
-@.str.1844 = private unnamed_addr constant [9 x i8] c"_Z3getPv\00", align 1
-@.sconst.1845 = private constant [10 x i8] c"\08_Z3getPv\00"
-@.str.1846 = private unnamed_addr constant [9 x i8] c"own_page\00", align 1
-@.sconst.1847 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
-@.str.1848 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.str.1849 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.sconst.1850 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
-@.str.1851 = private unnamed_addr constant [13 x i8] c"tuple.region\00", align 1
-@.str.1852 = private unnamed_addr constant [6 x i8] c"tuple\00", align 1
-@.str.1853 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
-@.sconst.1854 = private constant [7 x i8] c"\05Array\00"
-@.str.1855 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
-@.str.1856 = private unnamed_addr constant [17 x i8] c"wholestruct.load\00", align 1
+@.sconst.1782 = private constant [5 x i8] c"\03and\00"
+@.str.1783 = private unnamed_addr constant [5 x i8] c"land\00", align 1
+@.sconst.1784 = private constant [4 x i8] c"\02or\00"
+@.str.1785 = private unnamed_addr constant [4 x i8] c"lor\00", align 1
+@.sconst.1786 = private constant [3 x i8] c"\01&\00"
+@.str.1787 = private unnamed_addr constant [4 x i8] c"and\00", align 1
+@.sconst.1788 = private constant [3 x i8] c"\01|\00"
+@.str.1789 = private unnamed_addr constant [3 x i8] c"or\00", align 1
+@.sconst.1790 = private constant [3 x i8] c"\01^\00"
+@.str.1791 = private unnamed_addr constant [4 x i8] c"xor\00", align 1
+@.sconst.1792 = private constant [5 x i8] c"\03xor\00"
+@.str.1793 = private unnamed_addr constant [4 x i8] c"xor\00", align 1
+@.sconst.1794 = private constant [4 x i8] c"\02<<\00"
+@.str.1795 = private unnamed_addr constant [4 x i8] c"shl\00", align 1
+@.sconst.1796 = private constant [4 x i8] c"\02>>\00"
+@.str.1797 = private unnamed_addr constant [5 x i8] c"ashr\00", align 1
+@.str.1798 = private unnamed_addr constant [5 x i8] c"lshr\00", align 1
+@.sconst.1799 = private constant [3 x i8] c"\01=\00"
+@.str.1800 = private unnamed_addr constant [3 x i8] c"eq\00", align 1
+@.str.1801 = private unnamed_addr constant [3 x i8] c"eq\00", align 1
+@.sconst.1802 = private constant [4 x i8] c"\02<>\00"
+@.str.1803 = private unnamed_addr constant [3 x i8] c"ne\00", align 1
+@.str.1804 = private unnamed_addr constant [3 x i8] c"ne\00", align 1
+@.sconst.1805 = private constant [3 x i8] c"\01<\00"
+@.str.1806 = private unnamed_addr constant [3 x i8] c"lt\00", align 1
+@.str.1807 = private unnamed_addr constant [3 x i8] c"lt\00", align 1
+@.str.1808 = private unnamed_addr constant [3 x i8] c"lt\00", align 1
+@.sconst.1809 = private constant [4 x i8] c"\02<=\00"
+@.str.1810 = private unnamed_addr constant [3 x i8] c"le\00", align 1
+@.str.1811 = private unnamed_addr constant [3 x i8] c"le\00", align 1
+@.str.1812 = private unnamed_addr constant [3 x i8] c"le\00", align 1
+@.sconst.1813 = private constant [3 x i8] c"\01>\00"
+@.str.1814 = private unnamed_addr constant [3 x i8] c"gt\00", align 1
+@.str.1815 = private unnamed_addr constant [3 x i8] c"gt\00", align 1
+@.str.1816 = private unnamed_addr constant [3 x i8] c"gt\00", align 1
+@.sconst.1817 = private constant [4 x i8] c"\02>=\00"
+@.str.1818 = private unnamed_addr constant [3 x i8] c"ge\00", align 1
+@.str.1819 = private unnamed_addr constant [3 x i8] c"ge\00", align 1
+@.str.1820 = private unnamed_addr constant [3 x i8] c"ge\00", align 1
+@.sconst.1821 = private constant [4 x i8] c"\02[]\00"
+@.str.1822 = private unnamed_addr constant [35 x i8] c"Emitter: unknown binary operator: \00", align 1
+@.str.1823 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.sconst.1824 = private constant [8 x i8] c"\06unwrap\00"
+@.str.1825 = private unnamed_addr constant [13 x i8] c"unwrap.value\00", align 1
+@.sconst.1826 = private constant [11 x i8] c"\09unwrap_or\00"
+@.sconst.1827 = private constant [7 x i8] c"\05float\00"
+@.sconst.1828 = private constant [8 x i8] c"\06double\00"
+@.sconst.1829 = private constant [4 x i8] c"\02u8\00"
+@.sconst.1830 = private constant [5 x i8] c"\03u16\00"
+@.sconst.1831 = private constant [5 x i8] c"\03u32\00"
+@.sconst.1832 = private constant [5 x i8] c"\03u64\00"
+@.sconst.1833 = private constant [6 x i8] c"\04uint\00"
+@.sconst.1834 = private constant [8 x i8] c"\06size_t\00"
+@.sconst.1835 = private constant [6 x i8] c"\04size\00"
+@.sconst.1836 = private constant [7 x i8] c"\05usize\00"
+@.sconst.1837 = private constant [6 x i8] c"\04bool\00"
+@.sconst.1838 = private constant [6 x i8] c"\04char\00"
+@.str.1839 = private unnamed_addr constant [6 x i8] c"tuple\00", align 1
+@.str.1840 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
+@.sconst.1841 = private constant [3 x i8] c"\01*\00"
+@.str.1842 = private unnamed_addr constant [14 x i8] c"grp.deref.val\00", align 1
+@.sconst.1843 = private constant [5 x i8] c"\03_rp\00"
+@.sconst.1844 = private constant [12 x i8] c"\0Alocal_page\00"
+@.sconst.1845 = private constant [6 x i8] c"\04this\00"
+@.sconst.1846 = private constant [10 x i8] c"\08_Z3getPv\00"
+@.str.1847 = private unnamed_addr constant [9 x i8] c"_Z3getPv\00", align 1
+@.str.1848 = private unnamed_addr constant [9 x i8] c"_Z3getPv\00", align 1
+@.sconst.1849 = private constant [10 x i8] c"\08_Z3getPv\00"
+@.str.1850 = private unnamed_addr constant [9 x i8] c"own_page\00", align 1
+@.sconst.1851 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
+@.str.1852 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.str.1853 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.sconst.1854 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
+@.str.1855 = private unnamed_addr constant [13 x i8] c"tuple.region\00", align 1
+@.str.1856 = private unnamed_addr constant [6 x i8] c"tuple\00", align 1
 @.str.1857 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
-@.sconst.1858 = private constant [10 x i8] c"\08_Z5Array\00"
-@.str.1859 = private unnamed_addr constant [11 x i8] c"arr.length\00", align 1
-@.str.1860 = private unnamed_addr constant [11 x i8] c"arr.vector\00", align 1
-@.str.1861 = private unnamed_addr constant [15 x i8] c"arr.vec.isnull\00", align 1
-@.sconst.1862 = private constant [12 x i8] c"\0Aconv.empty\00"
-@.sconst.1863 = private constant [12 x i8] c"\0Aconv.deref\00"
-@.sconst.1864 = private constant [10 x i8] c"\08conv.end\00"
-@.str.1865 = private unnamed_addr constant [13 x i8] c"v.length.ptr\00", align 1
-@.str.1866 = private unnamed_addr constant [11 x i8] c"v.data.ptr\00", align 1
-@.str.1867 = private unnamed_addr constant [10 x i8] c"arr.inner\00", align 1
-@.str.1868 = private unnamed_addr constant [15 x i8] c"arr.inner.data\00", align 1
+@.sconst.1858 = private constant [7 x i8] c"\05Array\00"
+@.str.1859 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
+@.str.1860 = private unnamed_addr constant [17 x i8] c"wholestruct.load\00", align 1
+@.str.1861 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
+@.sconst.1862 = private constant [10 x i8] c"\08_Z5Array\00"
+@.str.1863 = private unnamed_addr constant [11 x i8] c"arr.length\00", align 1
+@.str.1864 = private unnamed_addr constant [11 x i8] c"arr.vector\00", align 1
+@.str.1865 = private unnamed_addr constant [15 x i8] c"arr.vec.isnull\00", align 1
+@.sconst.1866 = private constant [12 x i8] c"\0Aconv.empty\00"
+@.sconst.1867 = private constant [12 x i8] c"\0Aconv.deref\00"
+@.sconst.1868 = private constant [10 x i8] c"\08conv.end\00"
 @.str.1869 = private unnamed_addr constant [13 x i8] c"v.length.ptr\00", align 1
 @.str.1870 = private unnamed_addr constant [11 x i8] c"v.data.ptr\00", align 1
-@.str.1871 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
-@.sconst.1872 = private constant [11 x i8] c"\09_Z6Vector\00"
-@.str.1873 = private unnamed_addr constant [12 x i8] c"arrptr.load\00", align 1
-@.str.1874 = private unnamed_addr constant [11 x i8] c"arr.length\00", align 1
-@.str.1875 = private unnamed_addr constant [11 x i8] c"arr.vector\00", align 1
-@.str.1876 = private unnamed_addr constant [15 x i8] c"arr.vec.isnull\00", align 1
-@.sconst.1877 = private constant [13 x i8] c"\0Bconvp.empty\00"
-@.sconst.1878 = private constant [13 x i8] c"\0Bconvp.deref\00"
-@.sconst.1879 = private constant [11 x i8] c"\09convp.end\00"
-@.str.1880 = private unnamed_addr constant [13 x i8] c"v.length.ptr\00", align 1
-@.str.1881 = private unnamed_addr constant [11 x i8] c"v.data.ptr\00", align 1
-@.str.1882 = private unnamed_addr constant [10 x i8] c"arr.inner\00", align 1
-@.str.1883 = private unnamed_addr constant [15 x i8] c"arr.inner.data\00", align 1
+@.str.1871 = private unnamed_addr constant [10 x i8] c"arr.inner\00", align 1
+@.str.1872 = private unnamed_addr constant [15 x i8] c"arr.inner.data\00", align 1
+@.str.1873 = private unnamed_addr constant [13 x i8] c"v.length.ptr\00", align 1
+@.str.1874 = private unnamed_addr constant [11 x i8] c"v.data.ptr\00", align 1
+@.str.1875 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
+@.sconst.1876 = private constant [11 x i8] c"\09_Z6Vector\00"
+@.str.1877 = private unnamed_addr constant [12 x i8] c"arrptr.load\00", align 1
+@.str.1878 = private unnamed_addr constant [11 x i8] c"arr.length\00", align 1
+@.str.1879 = private unnamed_addr constant [11 x i8] c"arr.vector\00", align 1
+@.str.1880 = private unnamed_addr constant [15 x i8] c"arr.vec.isnull\00", align 1
+@.sconst.1881 = private constant [13 x i8] c"\0Bconvp.empty\00"
+@.sconst.1882 = private constant [13 x i8] c"\0Bconvp.deref\00"
+@.sconst.1883 = private constant [11 x i8] c"\09convp.end\00"
 @.str.1884 = private unnamed_addr constant [13 x i8] c"v.length.ptr\00", align 1
 @.str.1885 = private unnamed_addr constant [11 x i8] c"v.data.ptr\00", align 1
-@.str.1886 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
-@.str.1887 = private unnamed_addr constant [11 x i8] c"tuple.sext\00", align 1
-@.str.1888 = private unnamed_addr constant [12 x i8] c"tuple.trunc\00", align 1
-@.str.1889 = private unnamed_addr constant [11 x i8] c"field.load\00", align 1
-@.str.1890 = private unnamed_addr constant [12 x i8] c"tuple.field\00", align 1
-@.str.1891 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
-@.str.1892 = private unnamed_addr constant [6 x i8] c"array\00", align 1
-@.str.1893 = private unnamed_addr constant [11 x i8] c"array.elem\00", align 1
-@.str.1894 = private unnamed_addr constant [10 x i8] c"if.tobool\00", align 1
-@.sconst.1895 = private constant [9 x i8] c"\07if.then\00"
-@.sconst.1896 = private constant [9 x i8] c"\07if.else\00"
-@.sconst.1897 = private constant [8 x i8] c"\06if.end\00"
-@.str.1898 = private unnamed_addr constant [9 x i8] c"if.value\00", align 1
-@.sconst.1899 = private constant [11 x i8] c"\09match.end\00"
-@.sconst.1900 = private constant [12 x i8] c"\0Amatch.case\00"
-@.sconst.1901 = private constant [12 x i8] c"\0Amatch.next\00"
-@.sconst.1902 = private constant [12 x i8] c"\0Amatch.next\00"
-@.str.1903 = private unnamed_addr constant [10 x i8] c"match.cmp\00", align 1
-@.str.1904 = private unnamed_addr constant [10 x i8] c"match.cmp\00", align 1
-@.str.1905 = private unnamed_addr constant [9 x i8] c"match.or\00", align 1
-@.str.1906 = private unnamed_addr constant [12 x i8] c"match.value\00", align 1
-@.sconst.1907 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1908 = private constant [5 x i8] c"\03ref\00"
-@.sconst.1909 = private constant [5 x i8] c"\03ref\00"
-@.sconst.1910 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1911 = private constant [8 x i8] c"\06Option\00"
+@.str.1886 = private unnamed_addr constant [10 x i8] c"arr.inner\00", align 1
+@.str.1887 = private unnamed_addr constant [15 x i8] c"arr.inner.data\00", align 1
+@.str.1888 = private unnamed_addr constant [13 x i8] c"v.length.ptr\00", align 1
+@.str.1889 = private unnamed_addr constant [11 x i8] c"v.data.ptr\00", align 1
+@.str.1890 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
+@.str.1891 = private unnamed_addr constant [11 x i8] c"tuple.sext\00", align 1
+@.str.1892 = private unnamed_addr constant [12 x i8] c"tuple.trunc\00", align 1
+@.str.1893 = private unnamed_addr constant [11 x i8] c"field.load\00", align 1
+@.str.1894 = private unnamed_addr constant [12 x i8] c"tuple.field\00", align 1
+@.str.1895 = private unnamed_addr constant [10 x i8] c"tuple.val\00", align 1
+@.str.1896 = private unnamed_addr constant [6 x i8] c"array\00", align 1
+@.str.1897 = private unnamed_addr constant [11 x i8] c"array.elem\00", align 1
+@.str.1898 = private unnamed_addr constant [10 x i8] c"if.tobool\00", align 1
+@.sconst.1899 = private constant [9 x i8] c"\07if.then\00"
+@.sconst.1900 = private constant [9 x i8] c"\07if.else\00"
+@.sconst.1901 = private constant [8 x i8] c"\06if.end\00"
+@.str.1902 = private unnamed_addr constant [9 x i8] c"if.value\00", align 1
+@.sconst.1903 = private constant [11 x i8] c"\09match.end\00"
+@.sconst.1904 = private constant [12 x i8] c"\0Amatch.case\00"
+@.sconst.1905 = private constant [12 x i8] c"\0Amatch.next\00"
+@.sconst.1906 = private constant [12 x i8] c"\0Amatch.next\00"
+@.str.1907 = private unnamed_addr constant [10 x i8] c"match.cmp\00", align 1
+@.str.1908 = private unnamed_addr constant [10 x i8] c"match.cmp\00", align 1
+@.str.1909 = private unnamed_addr constant [9 x i8] c"match.or\00", align 1
+@.str.1910 = private unnamed_addr constant [12 x i8] c"match.value\00", align 1
+@.sconst.1911 = private constant [9 x i8] c"\07pointer\00"
 @.sconst.1912 = private constant [5 x i8] c"\03ref\00"
-@.sconst.1913 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.1914 = private constant [6 x i8] c"\04void\00"
-@.sconst.1915 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1913 = private constant [5 x i8] c"\03ref\00"
+@.sconst.1914 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1915 = private constant [8 x i8] c"\06Option\00"
 @.sconst.1916 = private constant [5 x i8] c"\03ref\00"
-@.str.1917 = private unnamed_addr constant [13 x i8] c"choose.union\00", align 1
-@.str.1918 = private unnamed_addr constant [4 x i8] c"tag\00", align 1
-@.str.1919 = private unnamed_addr constant [8 x i8] c"tag.ptr\00", align 1
-@.str.1920 = private unnamed_addr constant [4 x i8] c"tag\00", align 1
-@.str.1921 = private unnamed_addr constant [16 x i8] c"throws.data.ptr\00", align 1
-@.str.1922 = private unnamed_addr constant [8 x i8] c"is.none\00", align 1
-@.str.1923 = private unnamed_addr constant [8 x i8] c"tag.npo\00", align 1
-@.sconst.1924 = private constant [12 x i8] c"\0Achoose.end\00"
-@.sconst.1925 = private constant [13 x i8] c"\0Bchoose.else\00"
-@.sconst.1926 = private constant [13 x i8] c"\0Bchoose.when\00"
-@.str.1927 = private unnamed_addr constant [19 x i8] c"throws.success.val\00", align 1
-@.str.1928 = private unnamed_addr constant [15 x i8] c"throws.err.val\00", align 1
-@.str.1929 = private unnamed_addr constant [21 x i8] c"variant.c_data().ptr\00", align 1
-@.str.1930 = private unnamed_addr constant [22 x i8] c"variant.c_data().cast\00", align 1
-@.str.1931 = private unnamed_addr constant [12 x i8] c"variant.val\00", align 1
-@.str.1932 = private unnamed_addr constant [16 x i8] c"choose.arm.load\00", align 1
-@.str.1933 = private unnamed_addr constant [16 x i8] c"choose.alt.load\00", align 1
-@.str.1934 = private unnamed_addr constant [13 x i8] c"choose.value\00", align 1
-@.str.1935 = private unnamed_addr constant [8 x i8] c"counter\00", align 1
-@.sconst.1936 = private constant [10 x i8] c"\08for.cond\00"
-@.sconst.1937 = private constant [10 x i8] c"\08for.body\00"
-@.sconst.1938 = private constant [10 x i8] c"\08for.incr\00"
-@.sconst.1939 = private constant [10 x i8] c"\08for.exit\00"
-@.str.1940 = private unnamed_addr constant [2 x i8] c"i\00", align 1
-@.str.1941 = private unnamed_addr constant [8 x i8] c"for.cmp\00", align 1
-@.str.1942 = private unnamed_addr constant [7 x i8] c"i.load\00", align 1
-@.str.1943 = private unnamed_addr constant [7 x i8] c"i.next\00", align 1
-@.str.1944 = private unnamed_addr constant [9 x i8] c"coll.tmp\00", align 1
-@.str.1945 = private unnamed_addr constant [12 x i8] c"iter.alloca\00", align 1
-@.sconst.1946 = private constant [5 x i8] c"\03_rp\00"
-@.sconst.1947 = private constant [10 x i8] c"\08for.cond\00"
-@.sconst.1948 = private constant [10 x i8] c"\08for.body\00"
-@.sconst.1949 = private constant [10 x i8] c"\08for.exit\00"
-@.str.1950 = private unnamed_addr constant [5 x i8] c"next\00", align 1
-@.str.1951 = private unnamed_addr constant [8 x i8] c"is.done\00", align 1
-@.sconst.1952 = private constant [6 x i8] c"\04init\00"
-@.str.1953 = private unnamed_addr constant [11 x i8] c"parfor.cap\00", align 1
-@.str.1954 = private unnamed_addr constant [7 x i8] c"parfor\00", align 1
-@.sconst.1955 = private constant [7 x i8] c"\05entry\00"
-@.str.1956 = private unnamed_addr constant [15 x i8] c"parfor.buf.ptr\00", align 1
-@.str.1957 = private unnamed_addr constant [11 x i8] c"parfor.buf\00", align 1
-@.str.1958 = private unnamed_addr constant [14 x i8] c"parfor.lo.ptr\00", align 1
-@.str.1959 = private unnamed_addr constant [10 x i8] c"parfor.lo\00", align 1
-@.str.1960 = private unnamed_addr constant [14 x i8] c"parfor.hi.ptr\00", align 1
-@.str.1961 = private unnamed_addr constant [10 x i8] c"parfor.hi\00", align 1
-@.str.1962 = private unnamed_addr constant [15 x i8] c"parfor.cap.ptr\00", align 1
-@.str.1963 = private unnamed_addr constant [15 x i8] c"parfor.iv.slot\00", align 1
-@.sconst.1964 = private constant [19 x i8] c"\11parfor.chunk.cond\00"
-@.sconst.1965 = private constant [19 x i8] c"\11parfor.chunk.body\00"
-@.sconst.1966 = private constant [18 x i8] c"\10parfor.chunk.inc\00"
-@.sconst.1967 = private constant [12 x i8] c"\0Aparfor.ret\00"
-@.str.1968 = private unnamed_addr constant [10 x i8] c"parfor.iv\00", align 1
-@.str.1969 = private unnamed_addr constant [18 x i8] c"parfor.chunk.more\00", align 1
-@.str.1970 = private unnamed_addr constant [17 x i8] c"parfor.elem.addr\00", align 1
-@.str.1971 = private unnamed_addr constant [14 x i8] c"parfor.iv.cur\00", align 1
-@.str.1972 = private unnamed_addr constant [15 x i8] c"parfor.iv.next\00", align 1
-@.sconst.1973 = private constant [30 x i8] c"\1C_ZN8TaskPool12default_poolEv\00"
-@.sconst.1974 = private constant [24 x i8] c"\16_ZN9TaskGroup6createEv\00"
-@.sconst.1975 = private constant [10 x i8] c"\08_Z3getPv\00"
-@.sconst.1976 = private constant [32 x i8] c"\1E_ZN9TaskGroup4waitEP9TaskGroup\00"
-@.sconst.1977 = private constant [35 x i8] c"!_ZN9TaskGroup7disposeEP9TaskGroup\00"
-@.sconst.1978 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
-@.sconst.1979 = private constant [47 x i8] c"-_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup\00"
-@.sconst.1980 = private constant [21 x i8] c"\13_ZN8TaskPool4ncpuEv\00"
-@.sconst.1981 = private constant [18 x i8] c"\10scaly_eio_now_ns\00"
-@.sconst.1982 = private constant [17 x i8] c"\0Fparfor.site.vol\00"
-@.sconst.1983 = private constant [19 x i8] c"\11parfor.site.calns\00"
-@.sconst.1984 = private constant [22 x i8] c"\14parfor.site.caliters\00"
-@.sconst.1985 = private constant [17 x i8] c"\0Fparfor.site.p1k\00"
-@.str.1986 = private unnamed_addr constant [9 x i8] c"parfor.i\00", align 1
-@.str.1987 = private unnamed_addr constant [17 x i8] c"parfor.nextcheck\00", align 1
-@.str.1988 = private unnamed_addr constant [10 x i8] c"parfor.t0\00", align 1
-@.str.1989 = private unnamed_addr constant [10 x i8] c"parfor.i0\00", align 1
-@.str.1990 = private unnamed_addr constant [15 x i8] c"parfor.fork.lo\00", align 1
-@.str.1991 = private unnamed_addr constant [14 x i8] c"parfor.fork.n\00", align 1
-@.str.1992 = private unnamed_addr constant [16 x i8] c"parfor.fork.p1k\00", align 1
-@.str.1993 = private unnamed_addr constant [16 x i8] c"parfor.fork.buf\00", align 1
-@.str.1994 = private unnamed_addr constant [16 x i8] c"parfor.fork.grp\00", align 1
-@.str.1995 = private unnamed_addr constant [18 x i8] c"parfor.fork.gpage\00", align 1
-@.str.1996 = private unnamed_addr constant [14 x i8] c"parfor.entryp\00", align 1
-@.str.1997 = private unnamed_addr constant [14 x i8] c"parfor.tentry\00", align 1
-@.str.1998 = private unnamed_addr constant [12 x i8] c"parfor.fp1k\00", align 1
-@.sconst.1999 = private constant [15 x i8] c"\0Dpfor.dispatch\00"
-@.sconst.2000 = private constant [11 x i8] c"\09pfor.done\00"
-@.sconst.2001 = private constant [16 x i8] c"\0Epfor.exit.acct\00"
-@.sconst.2002 = private constant [13 x i8] c"\0Bpfor.exit.n\00"
-@.sconst.2003 = private constant [15 x i8] c"\0Dpfor.exit.add\00"
-@.sconst.2004 = private constant [16 x i8] c"\0Epfor.exit.meas\00"
-@.sconst.2005 = private constant [15 x i8] c"\0Dpfor.exit.pub\00"
-@.str.2006 = private unnamed_addr constant [11 x i8] c"parfor.n64\00", align 1
-@.sconst.2007 = private constant [15 x i8] c"\0Dpfor.inl.cond\00"
-@.sconst.2008 = private constant [14 x i8] c"\0Cpfor.inl.chk\00"
-@.sconst.2009 = private constant [15 x i8] c"\0Dpfor.inl.body\00"
-@.sconst.2010 = private constant [14 x i8] c"\0Cpfor.inl.inc\00"
-@.sconst.2011 = private constant [12 x i8] c"\0Apfor.check\00"
-@.sconst.2012 = private constant [18 x i8] c"\10pfor.check.first\00"
-@.sconst.2013 = private constant [17 x i8] c"\0Fpfor.check.meas\00"
-@.sconst.2014 = private constant [18 x i8] c"\10pfor.check.later\00"
-@.sconst.2015 = private constant [19 x i8] c"\11pfor.check.decide\00"
-@.sconst.2016 = private constant [11 x i8] c"\09pfor.fork\00"
-@.sconst.2017 = private constant [16 x i8] c"\0Epfor.gate.prom\00"
-@.sconst.2018 = private constant [20 x i8] c"\12pfor.gate.headfork\00"
-@.sconst.2019 = private constant [15 x i8] c"\0Dpfor.gate.seq\00"
-@.sconst.2020 = private constant [16 x i8] c"\0Epfor.gate.cold\00"
-@.sconst.2021 = private constant [15 x i8] c"\0Dpfor.gate.hot\00"
-@.str.2022 = private unnamed_addr constant [13 x i8] c"parfor.sitep\00", align 1
-@.str.2023 = private unnamed_addr constant [19 x i8] c"parfor.gate.isprom\00", align 1
-@.str.2024 = private unnamed_addr constant [15 x i8] c"parfor.gate.c0\00", align 1
-@.str.2025 = private unnamed_addr constant [17 x i8] c"parfor.gate.cpos\00", align 1
-@.str.2026 = private unnamed_addr constant [14 x i8] c"parfor.gate.c\00", align 1
-@.str.2027 = private unnamed_addr constant [17 x i8] c"parfor.gate.fits\00", align 1
-@.str.2028 = private unnamed_addr constant [13 x i8] c"parfor.group\00", align 1
-@.str.2029 = private unnamed_addr constant [13 x i8] c"parfor.gpage\00", align 1
-@.str.2030 = private unnamed_addr constant [12 x i8] c"parfor.volv\00", align 1
-@.str.2031 = private unnamed_addr constant [18 x i8] c"parfor.gate.ishot\00", align 1
-@.str.2032 = private unnamed_addr constant [14 x i8] c"parfor.tentry\00", align 1
-@.str.2033 = private unnamed_addr constant [13 x i8] c"parfor.i.cur\00", align 1
-@.str.2034 = private unnamed_addr constant [16 x i8] c"parfor.inl.more\00", align 1
-@.str.2035 = private unnamed_addr constant [10 x i8] c"parfor.nc\00", align 1
-@.str.2036 = private unnamed_addr constant [15 x i8] c"parfor.chk.hit\00", align 1
-@.str.2037 = private unnamed_addr constant [14 x i8] c"parfor.i.body\00", align 1
-@.str.2038 = private unnamed_addr constant [13 x i8] c"parfor.i.inc\00", align 1
-@.str.2039 = private unnamed_addr constant [14 x i8] c"parfor.i.next\00", align 1
-@.str.2040 = private unnamed_addr constant [9 x i8] c"parfor.t\00", align 1
-@.str.2041 = private unnamed_addr constant [11 x i8] c"parfor.t0v\00", align 1
-@.str.2042 = private unnamed_addr constant [19 x i8] c"parfor.chk.isfirst\00", align 1
-@.str.2043 = private unnamed_addr constant [14 x i8] c"parfor.nc.dbl\00", align 1
-@.str.2044 = private unnamed_addr constant [15 x i8] c"parfor.elapsed\00", align 1
-@.str.2045 = private unnamed_addr constant [13 x i8] c"parfor.calib\00", align 1
-@.str.2046 = private unnamed_addr constant [15 x i8] c"parfor.nc.dbl2\00", align 1
-@.str.2047 = private unnamed_addr constant [11 x i8] c"parfor.i0v\00", align 1
-@.str.2048 = private unnamed_addr constant [13 x i8] c"parfor.iters\00", align 1
-@.str.2049 = private unnamed_addr constant [11 x i8] c"parfor.e10\00", align 1
-@.str.2050 = private unnamed_addr constant [11 x i8] c"parfor.p1k\00", align 1
-@.str.2051 = private unnamed_addr constant [11 x i8] c"parfor.rem\00", align 1
-@.str.2052 = private unnamed_addr constant [13 x i8] c"parfor.proj0\00", align 1
-@.str.2053 = private unnamed_addr constant [12 x i8] c"parfor.proj\00", align 1
-@.str.2054 = private unnamed_addr constant [14 x i8] c"parfor.dofork\00", align 1
-@.str.2055 = private unnamed_addr constant [13 x i8] c"parfor.group\00", align 1
-@.str.2056 = private unnamed_addr constant [13 x i8] c"parfor.gpage\00", align 1
-@.str.2057 = private unnamed_addr constant [16 x i8] c"parfor.coll.tmp\00", align 1
-@.str.2058 = private unnamed_addr constant [12 x i8] c"parfor.iter\00", align 1
-@.sconst.2059 = private constant [5 x i8] c"\03_rp\00"
-@.sconst.2060 = private constant [14 x i8] c"\0Cpfor.it.cond\00"
-@.sconst.2061 = private constant [13 x i8] c"\0Bpfor.it.chk\00"
-@.sconst.2062 = private constant [14 x i8] c"\0Cpfor.it.body\00"
-@.sconst.2063 = private constant [13 x i8] c"\0Bpfor.it.inc\00"
-@.sconst.2064 = private constant [12 x i8] c"\0Apfor.check\00"
-@.sconst.2065 = private constant [18 x i8] c"\10pfor.check.first\00"
-@.sconst.2066 = private constant [17 x i8] c"\0Fpfor.check.meas\00"
-@.sconst.2067 = private constant [18 x i8] c"\10pfor.check.later\00"
-@.sconst.2068 = private constant [11 x i8] c"\09pfor.fork\00"
-@.sconst.2069 = private constant [17 x i8] c"\0Fpfor.check.prom\00"
-@.sconst.2070 = private constant [18 x i8] c"\10pfor.check.clock\00"
-@.sconst.2071 = private constant [18 x i8] c"\10pfor.check.forkm\00"
-@.sconst.2072 = private constant [16 x i8] c"\0Epfor.gate.prom\00"
-@.sconst.2073 = private constant [16 x i8] c"\0Epfor.gate.cold\00"
-@.sconst.2074 = private constant [15 x i8] c"\0Dpfor.gate.hot\00"
-@.str.2075 = private unnamed_addr constant [13 x i8] c"parfor.sitep\00", align 1
-@.str.2076 = private unnamed_addr constant [19 x i8] c"parfor.gate.isprom\00", align 1
-@.str.2077 = private unnamed_addr constant [14 x i8] c"parfor.gate.c\00", align 1
-@.str.2078 = private unnamed_addr constant [12 x i8] c"parfor.volv\00", align 1
-@.str.2079 = private unnamed_addr constant [18 x i8] c"parfor.gate.ishot\00", align 1
-@.str.2080 = private unnamed_addr constant [14 x i8] c"parfor.tentry\00", align 1
-@.str.2081 = private unnamed_addr constant [12 x i8] c"parfor.next\00", align 1
-@.str.2082 = private unnamed_addr constant [15 x i8] c"parfor.it.done\00", align 1
-@.str.2083 = private unnamed_addr constant [13 x i8] c"parfor.i.cur\00", align 1
-@.str.2084 = private unnamed_addr constant [10 x i8] c"parfor.nc\00", align 1
-@.str.2085 = private unnamed_addr constant [15 x i8] c"parfor.chk.hit\00", align 1
-@.str.2086 = private unnamed_addr constant [13 x i8] c"parfor.i.inc\00", align 1
-@.str.2087 = private unnamed_addr constant [14 x i8] c"parfor.i.next\00", align 1
-@.str.2088 = private unnamed_addr constant [10 x i8] c"parfor.ep\00", align 1
-@.str.2089 = private unnamed_addr constant [18 x i8] c"parfor.chk.isprom\00", align 1
-@.str.2090 = private unnamed_addr constant [9 x i8] c"parfor.t\00", align 1
-@.str.2091 = private unnamed_addr constant [11 x i8] c"parfor.t0v\00", align 1
-@.str.2092 = private unnamed_addr constant [19 x i8] c"parfor.chk.isfirst\00", align 1
-@.str.2093 = private unnamed_addr constant [14 x i8] c"parfor.nc.dbl\00", align 1
-@.str.2094 = private unnamed_addr constant [15 x i8] c"parfor.elapsed\00", align 1
-@.str.2095 = private unnamed_addr constant [14 x i8] c"parfor.dofork\00", align 1
-@.str.2096 = private unnamed_addr constant [15 x i8] c"parfor.nc.dbl2\00", align 1
-@.str.2097 = private unnamed_addr constant [11 x i8] c"parfor.i0v\00", align 1
-@.str.2098 = private unnamed_addr constant [13 x i8] c"parfor.iters\00", align 1
-@.str.2099 = private unnamed_addr constant [11 x i8] c"parfor.e10\00", align 1
-@.str.2100 = private unnamed_addr constant [11 x i8] c"parfor.p1k\00", align 1
-@.str.2101 = private unnamed_addr constant [13 x i8] c"parfor.fp1kv\00", align 1
-@.str.2102 = private unnamed_addr constant [13 x i8] c"parfor.group\00", align 1
-@.str.2103 = private unnamed_addr constant [13 x i8] c"parfor.gpage\00", align 1
-@.str.2104 = private unnamed_addr constant [14 x i8] c"parfor.dr.cap\00", align 1
-@.str.2105 = private unnamed_addr constant [12 x i8] c"parfor.dr.n\00", align 1
-@.str.2106 = private unnamed_addr constant [14 x i8] c"parfor.dr.buf\00", align 1
-@.str.2107 = private unnamed_addr constant [13 x i8] c"parfor.dr.ci\00", align 1
-@.str.2108 = private unnamed_addr constant [15 x i8] c"parfor.dr.buf0\00", align 1
-@.sconst.2109 = private constant [17 x i8] c"\0Fpfor.drain.cond\00"
-@.sconst.2110 = private constant [17 x i8] c"\0Fpfor.drain.have\00"
-@.sconst.2111 = private constant [17 x i8] c"\0Fpfor.drain.grow\00"
-@.sconst.2112 = private constant [22 x i8] c"\14pfor.drain.copy.cond\00"
-@.sconst.2113 = private constant [22 x i8] c"\14pfor.drain.copy.body\00"
-@.sconst.2114 = private constant [22 x i8] c"\14pfor.drain.copy.done\00"
-@.sconst.2115 = private constant [16 x i8] c"\0Epfor.drain.put\00"
-@.sconst.2116 = private constant [17 x i8] c"\0Fpfor.drain.done\00"
-@.str.2117 = private unnamed_addr constant [15 x i8] c"parfor.dr.next\00", align 1
-@.str.2118 = private unnamed_addr constant [14 x i8] c"parfor.dr.fin\00", align 1
-@.str.2119 = private unnamed_addr constant [13 x i8] c"parfor.dr.nv\00", align 1
-@.str.2120 = private unnamed_addr constant [15 x i8] c"parfor.dr.capv\00", align 1
-@.str.2121 = private unnamed_addr constant [15 x i8] c"parfor.dr.full\00", align 1
-@.str.2122 = private unnamed_addr constant [15 x i8] c"parfor.dr.cap2\00", align 1
-@.str.2123 = private unnamed_addr constant [17 x i8] c"parfor.dr.gbytes\00", align 1
-@.str.2124 = private unnamed_addr constant [15 x i8] c"parfor.dr.nbuf\00", align 1
-@.str.2125 = private unnamed_addr constant [15 x i8] c"parfor.dr.obuf\00", align 1
-@.str.2126 = private unnamed_addr constant [14 x i8] c"parfor.dr.civ\00", align 1
-@.str.2127 = private unnamed_addr constant [16 x i8] c"parfor.dr.cmore\00", align 1
-@.str.2128 = private unnamed_addr constant [14 x i8] c"parfor.dr.src\00", align 1
-@.str.2129 = private unnamed_addr constant [14 x i8] c"parfor.dr.val\00", align 1
-@.str.2130 = private unnamed_addr constant [14 x i8] c"parfor.dr.dst\00", align 1
-@.str.2131 = private unnamed_addr constant [14 x i8] c"parfor.dr.ci1\00", align 1
-@.str.2132 = private unnamed_addr constant [15 x i8] c"parfor.dr.bufv\00", align 1
-@.str.2133 = private unnamed_addr constant [13 x i8] c"parfor.dr.n2\00", align 1
-@.str.2134 = private unnamed_addr constant [15 x i8] c"parfor.dr.slot\00", align 1
-@.str.2135 = private unnamed_addr constant [13 x i8] c"parfor.dr.n1\00", align 1
-@.str.2136 = private unnamed_addr constant [9 x i8] c"parfor.m\00", align 1
-@.str.2137 = private unnamed_addr constant [17 x i8] c"parfor.buf.final\00", align 1
-@.str.2138 = private unnamed_addr constant [12 x i8] c"parfor.x.ep\00", align 1
-@.str.2139 = private unnamed_addr constant [16 x i8] c"parfor.x.isprom\00", align 1
-@.str.2140 = private unnamed_addr constant [15 x i8] c"parfor.x.iters\00", align 1
-@.str.2141 = private unnamed_addr constant [13 x i8] c"parfor.x.ran\00", align 1
-@.str.2142 = private unnamed_addr constant [13 x i8] c"parfor.x.add\00", align 1
-@.str.2143 = private unnamed_addr constant [12 x i8] c"parfor.x.v0\00", align 1
-@.str.2144 = private unnamed_addr constant [12 x i8] c"parfor.x.v1\00", align 1
-@.str.2145 = private unnamed_addr constant [14 x i8] c"parfor.x.over\00", align 1
-@.str.2146 = private unnamed_addr constant [12 x i8] c"parfor.x.v2\00", align 1
-@.str.2147 = private unnamed_addr constant [12 x i8] c"parfor.x.t0\00", align 1
-@.str.2148 = private unnamed_addr constant [13 x i8] c"parfor.x.hot\00", align 1
-@.str.2149 = private unnamed_addr constant [12 x i8] c"parfor.x.te\00", align 1
-@.str.2150 = private unnamed_addr constant [13 x i8] c"parfor.x.el0\00", align 1
-@.str.2151 = private unnamed_addr constant [13 x i8] c"parfor.x.big\00", align 1
-@.str.2152 = private unnamed_addr constant [12 x i8] c"parfor.x.el\00", align 1
-@.str.2153 = private unnamed_addr constant [13 x i8] c"parfor.x.cn0\00", align 1
-@.str.2154 = private unnamed_addr constant [13 x i8] c"parfor.x.cn1\00", align 1
-@.str.2155 = private unnamed_addr constant [13 x i8] c"parfor.x.ci0\00", align 1
-@.str.2156 = private unnamed_addr constant [13 x i8] c"parfor.x.ci1\00", align 1
-@.str.2157 = private unnamed_addr constant [16 x i8] c"parfor.x.ready0\00", align 1
-@.str.2158 = private unnamed_addr constant [16 x i8] c"parfor.x.enough\00", align 1
-@.str.2159 = private unnamed_addr constant [15 x i8] c"parfor.x.ready\00", align 1
-@.str.2160 = private unnamed_addr constant [13 x i8] c"parfor.x.e10\00", align 1
-@.str.2161 = private unnamed_addr constant [11 x i8] c"parfor.x.p\00", align 1
-@.str.2162 = private unnamed_addr constant [14 x i8] c"parfor.x.ppos\00", align 1
-@.str.2163 = private unnamed_addr constant [12 x i8] c"parfor.x.pf\00", align 1
-@.str.2164 = private unnamed_addr constant [13 x i8] c"parfor.d.lo0\00", align 1
-@.str.2165 = private unnamed_addr constant [11 x i8] c"parfor.d.n\00", align 1
-@.str.2166 = private unnamed_addr constant [14 x i8] c"parfor.d.p1k0\00", align 1
-@.str.2167 = private unnamed_addr constant [13 x i8] c"parfor.d.grp\00", align 1
-@.str.2168 = private unnamed_addr constant [15 x i8] c"parfor.d.gpage\00", align 1
-@.str.2169 = private unnamed_addr constant [13 x i8] c"parfor.d.buf\00", align 1
-@.str.2170 = private unnamed_addr constant [16 x i8] c"parfor.d.p1kpos\00", align 1
-@.str.2171 = private unnamed_addr constant [13 x i8] c"parfor.d.p1k\00", align 1
-@.str.2172 = private unnamed_addr constant [14 x i8] c"parfor.d.minc\00", align 1
-@.str.2173 = private unnamed_addr constant [13 x i8] c"parfor.d.rem\00", align 1
-@.str.2174 = private unnamed_addr constant [12 x i8] c"parfor.ncpu\00", align 1
-@.str.2175 = private unnamed_addr constant [15 x i8] c"parfor.d.denom\00", align 1
-@.str.2176 = private unnamed_addr constant [13 x i8] c"parfor.d.bal\00", align 1
-@.str.2177 = private unnamed_addr constant [12 x i8] c"parfor.d.gt\00", align 1
-@.str.2178 = private unnamed_addr constant [16 x i8] c"parfor.d.chunk0\00", align 1
-@.str.2179 = private unnamed_addr constant [14 x i8] c"parfor.d.cpos\00", align 1
-@.str.2180 = private unnamed_addr constant [15 x i8] c"parfor.d.chunk\00", align 1
-@.str.2181 = private unnamed_addr constant [12 x i8] c"parfor.pool\00", align 1
-@.str.2182 = private unnamed_addr constant [14 x i8] c"parfor.c.slot\00", align 1
-@.sconst.2183 = private constant [15 x i8] c"\0Dpfor.sub.cond\00"
-@.sconst.2184 = private constant [15 x i8] c"\0Dpfor.sub.body\00"
-@.sconst.2185 = private constant [15 x i8] c"\0Dpfor.sub.done\00"
-@.str.2186 = private unnamed_addr constant [12 x i8] c"parfor.c.lo\00", align 1
-@.str.2187 = private unnamed_addr constant [16 x i8] c"parfor.sub.more\00", align 1
-@.str.2188 = private unnamed_addr constant [17 x i8] c"parfor.chunk.hi0\00", align 1
-@.str.2189 = private unnamed_addr constant [12 x i8] c"parfor.hilt\00", align 1
-@.str.2190 = private unnamed_addr constant [16 x i8] c"parfor.chunk.hi\00", align 1
-@.str.2191 = private unnamed_addr constant [12 x i8] c"parfor.cell\00", align 1
-@.str.2192 = private unnamed_addr constant [16 x i8] c"parfor.cell.buf\00", align 1
-@.str.2193 = private unnamed_addr constant [15 x i8] c"parfor.cell.lo\00", align 1
-@.str.2194 = private unnamed_addr constant [15 x i8] c"parfor.cell.hi\00", align 1
-@.str.2195 = private unnamed_addr constant [16 x i8] c"parfor.cell.cap\00", align 1
-@.sconst.2196 = private constant [12 x i8] c"\0Awhile.cond\00"
-@.sconst.2197 = private constant [12 x i8] c"\0Awhile.body\00"
-@.sconst.2198 = private constant [12 x i8] c"\0Awhile.exit\00"
-@.sconst.2199 = private constant [5 x i8] c"\03var\00"
-@.str.2200 = private unnamed_addr constant [13 x i8] c"while.tobool\00", align 1
-@.sconst.2201 = private constant [6 x i8] c"\04void\00"
-@.sconst.2202 = private constant [15 x i8] c"\0Drepeat.result\00"
-@.sconst.2203 = private constant [13 x i8] c"\0Brepeat.body\00"
-@.sconst.2204 = private constant [13 x i8] c"\0Brepeat.exit\00"
-@.sconst.2205 = private constant [14 x i8] c"\0Crepeat.value\00"
-@.str.2206 = private unnamed_addr constant [4 x i8] c"tag\00", align 1
-@.sconst.2207 = private constant [8 x i8] c"\06try.ok\00"
-@.sconst.2208 = private constant [9 x i8] c"\07try.end\00"
-@.sconst.2209 = private constant [9 x i8] c"\07try.err\00"
-@.str.2210 = private unnamed_addr constant [6 x i8] c"is.ok\00", align 1
-@.str.2211 = private unnamed_addr constant [12 x i8] c"ok.data.ptr\00", align 1
-@.str.2212 = private unnamed_addr constant [7 x i8] c"ok.val\00", align 1
-@.sconst.2213 = private constant [5 x i8] c"\03var\00"
-@.str.2214 = private unnamed_addr constant [12 x i8] c"err.tag.ptr\00", align 1
-@.str.2215 = private unnamed_addr constant [8 x i8] c"err.tag\00", align 1
-@.str.2216 = private unnamed_addr constant [16 x i8] c"err.payload.ptr\00", align 1
-@.sconst.2217 = private constant [15 x i8] c"\0Dtry.unmatched\00"
-@.sconst.2218 = private constant [10 x i8] c"\08try.else\00"
-@.sconst.2219 = private constant [11 x i8] c"\09try.catch\00"
-@.sconst.2220 = private constant [6 x i8] c"\04void\00"
-@.str.2221 = private unnamed_addr constant [8 x i8] c"err.val\00", align 1
-@.sconst.2222 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.2223 = private constant [5 x i8] c"\03ref\00"
-@.sconst.2224 = private constant [8 x i8] c"\06Option\00"
-@.sconst.2225 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.2226 = private constant [5 x i8] c"\03ref\00"
-@.str.2227 = private unnamed_addr constant [9 x i8] c"is.union\00", align 1
-@.str.2228 = private unnamed_addr constant [11 x i8] c"is.tag.ptr\00", align 1
-@.str.2229 = private unnamed_addr constant [7 x i8] c"is.tag\00", align 1
-@.str.2230 = private unnamed_addr constant [10 x i8] c"is.result\00", align 1
-@.str.2231 = private unnamed_addr constant [11 x i8] c"option.val\00", align 1
-@.str.2232 = private unnamed_addr constant [8 x i8] c"is.null\00", align 1
-@.str.2233 = private unnamed_addr constant [9 x i8] c"is.union\00", align 1
-@.str.2234 = private unnamed_addr constant [9 x i8] c"is.union\00", align 1
-@.str.2235 = private unnamed_addr constant [11 x i8] c"is.tag.ptr\00", align 1
-@.str.2236 = private unnamed_addr constant [7 x i8] c"is.tag\00", align 1
-@.str.2237 = private unnamed_addr constant [10 x i8] c"is.result\00", align 1
-@.str.2238 = private unnamed_addr constant [5 x i8] c".str\00", align 1
-@.sconst.2239 = private constant [8 x i8] c"\06String\00"
-@.str.2240 = private unnamed_addr constant [7 x i8] c"as.ptr\00", align 1
-@.str.2241 = private unnamed_addr constant [12 x i8] c"as.ptrtoint\00", align 1
-@.str.2242 = private unnamed_addr constant [12 x i8] c"as.inttoptr\00", align 1
-@.str.2243 = private unnamed_addr constant [9 x i8] c"as.trunc\00", align 1
-@.str.2244 = private unnamed_addr constant [8 x i8] c"as.zext\00", align 1
-@.str.2245 = private unnamed_addr constant [10 x i8] c"as.sitofp\00", align 1
-@.str.2246 = private unnamed_addr constant [10 x i8] c"as.sitofp\00", align 1
-@.str.2247 = private unnamed_addr constant [10 x i8] c"as.fptosi\00", align 1
-@.str.2248 = private unnamed_addr constant [9 x i8] c"as.fpext\00", align 1
-@.str.2249 = private unnamed_addr constant [10 x i8] c"as.fptosi\00", align 1
-@.str.2250 = private unnamed_addr constant [11 x i8] c"as.fptrunc\00", align 1
-@.str.2251 = private unnamed_addr constant [36 x i8] c"Emitter: cannot cast this value to \00", align 1
-@.str.2252 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@.sconst.2253 = private constant [5 x i8] c"\03ref\00"
-@.sconst.2254 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.2255 = private constant [6 x i8] c"\04None\00"
-@.sconst.2256 = private constant [6 x i8] c"\04Some\00"
-@.str.2257 = private unnamed_addr constant [12 x i8] c"option.some\00", align 1
-@.str.2258 = private unnamed_addr constant [12 x i8] c"variant.ptr\00", align 1
-@.str.2259 = private unnamed_addr constant [16 x i8] c"variant.tag.ptr\00", align 1
-@.str.2260 = private unnamed_addr constant [17 x i8] c"variant.data.ptr\00", align 1
-@.str.2261 = private unnamed_addr constant [16 x i8] c"variant.payload\00", align 1
-@.str.2262 = private unnamed_addr constant [12 x i8] c"variant.val\00", align 1
-@.sconst.2263 = private constant [5 x i8] c"\03C1E\00"
-@.sconst.2264 = private constant [6 x i8] c"\04this\00"
-@.sconst.2265 = private constant [9 x i8] c"\07pointer\00"
-@.str.2266 = private unnamed_addr constant [9 x i8] c"set.dest\00", align 1
-@.str.2267 = private unnamed_addr constant [9 x i8] c"set.thru\00", align 1
-@.sconst.2268 = private constant [5 x i8] c"\03_rp\00"
-@.str.2269 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.str.2270 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.str.2271 = private unnamed_addr constant [9 x i8] c"set.heap\00", align 1
-@.str.2272 = private unnamed_addr constant [9 x i8] c"set.load\00", align 1
-@.sconst.2273 = private constant [3 x i8] c"\01*\00"
-@.str.2274 = private unnamed_addr constant [11 x i8] c"store.load\00", align 1
-@.sconst.2275 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.2276 = private constant [5 x i8] c"\03ref\00"
-@.str.2277 = private unnamed_addr constant [8 x i8] c"gv.load\00", align 1
-@.sconst.2278 = private constant [6 x i8] c"\04this\00"
-@.sconst.2279 = private constant [5 x i8] c"\03C1E\00"
-@.str.2280 = private unnamed_addr constant [16 x i8] c"_ZN4Page3getEPv\00", align 1
-@.str.2281 = private unnamed_addr constant [16 x i8] c"_ZN4Page3getEPv\00", align 1
-@.str.2282 = private unnamed_addr constant [12 x i8] c"parent.page\00", align 1
-@.str.2283 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.str.2284 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
-@.str.2285 = private unnamed_addr constant [10 x i8] c"ctor.heap\00", align 1
-@.str.2286 = private unnamed_addr constant [7 x i8] c"memcpy\00", align 1
-@.str.2287 = private unnamed_addr constant [7 x i8] c"memcpy\00", align 1
-@.sconst.2288 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.2289 = private constant [5 x i8] c"\03ref\00"
-@.sconst.2290 = private constant [6 x i8] c"\04this\00"
-@.str.2291 = private unnamed_addr constant [9 x i8] c"ptr.load\00", align 1
-@.str.2292 = private unnamed_addr constant [9 x i8] c"ptr.load\00", align 1
-@.sconst.2293 = private constant [8 x i8] c"\06Option\00"
-@.sconst.2294 = private constant [5 x i8] c"\03ref\00"
-@.sconst.2295 = private constant [9 x i8] c"\07pointer\00"
-@.str.2296 = private unnamed_addr constant [12 x i8] c"field.deref\00", align 1
-@.str.2297 = private unnamed_addr constant [11 x i8] c"field.load\00", align 1
-@.str.2298 = private unnamed_addr constant [13 x i8] c"bind.fptrunc\00", align 1
-@.str.2299 = private unnamed_addr constant [11 x i8] c"bind.fpext\00", align 1
-@.sconst.2300 = private constant [5 x i8] c"\03var\00"
-@.str.2301 = private unnamed_addr constant [13 x i8] c"binding.load\00", align 1
-@.sconst.2302 = private constant [5 x i8] c"\03int\00"
-@.sconst.2303 = private constant [6 x i8] c"\04bool\00"
-@.sconst.2304 = private constant [9 x i8] c"\07pointer\00"
-@.str.2305 = private unnamed_addr constant [8 x i8] c"arr.ptr\00", align 1
-@.str.2306 = private unnamed_addr constant [12 x i8] c"ret.tag.ptr\00", align 1
-@.str.2307 = private unnamed_addr constant [13 x i8] c"ret.data.ptr\00", align 1
-@.str.2308 = private unnamed_addr constant [10 x i8] c"sret.body\00", align 1
-@.str.2309 = private unnamed_addr constant [9 x i8] c"ret.load\00", align 1
-@.str.2310 = private unnamed_addr constant [13 x i8] c"throw.result\00", align 1
-@.str.2311 = private unnamed_addr constant [14 x i8] c"throw.tag.ptr\00", align 1
-@.str.2312 = private unnamed_addr constant [15 x i8] c"throw.data.ptr\00", align 1
-@.str.2313 = private unnamed_addr constant [10 x i8] c"throw.val\00", align 1
-@.str.2314 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.2315 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.2316 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.2317 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.2318 = private constant [3 x i8] c"\01-\00"
-@.sconst.2319 = private constant [4 x i8] c"\02-h\00"
-@.sconst.2320 = private constant [8 x i8] c"\06--help\00"
-@.sconst.2321 = private constant [4 x i8] c"\02-v\00"
-@.sconst.2322 = private constant [11 x i8] c"\09--verbose\00"
-@.sconst.2323 = private constant [4 x i8] c"\02-S\00"
-@.sconst.2324 = private constant [4 x i8] c"\02-c\00"
-@.sconst.2325 = private constant [4 x i8] c"\02-g\00"
-@.sconst.2326 = private constant [7 x i8] c"\05--lex\00"
-@.sconst.2327 = private constant [9 x i8] c"\07--parse\00"
-@.sconst.2328 = private constant [9 x i8] c"\07--model\00"
-@.sconst.2329 = private constant [8 x i8] c"\06--plan\00"
-@.sconst.2330 = private constant [14 x i8] c"\0C--no-prelude\00"
-@.sconst.2331 = private constant [12 x i8] c"\0A--no-tests\00"
-@.sconst.2332 = private constant [11 x i8] c"\09--use-vis\00"
-@.sconst.2333 = private constant [14 x i8] c"\0C--no-use-vis\00"
-@.sconst.2334 = private constant [13 x i8] c"\0B--task-plan\00"
-@.sconst.2335 = private constant [5 x i8] c"\03-O0\00"
-@.sconst.2336 = private constant [5 x i8] c"\03-O1\00"
-@.sconst.2337 = private constant [5 x i8] c"\03-O2\00"
-@.sconst.2338 = private constant [5 x i8] c"\03-O3\00"
-@.sconst.2339 = private constant [7 x i8] c"\05--jit\00"
-@.sconst.2340 = private constant [4 x i8] c"\02-o\00"
-@.sconst.2341 = private constant [24 x i8] c"\16-o requires a filename\00"
-@.sconst.2342 = private constant [7 x i8] c"\05--run\00"
-@.sconst.2343 = private constant [32 x i8] c"\1E--run requires a function name\00"
-@.sconst.2344 = private constant [10 x i8] c"\08--target\00"
-@.sconst.2345 = private constant [28 x i8] c"\1A--target requires a triple\00"
-@.sconst.2346 = private constant [4 x i8] c"\02-L\00"
-@.sconst.2347 = private constant [4 x i8] c"\02-l\00"
-@.sconst.2348 = private constant [18 x i8] c"\10Unknown option: \00"
-@.sconst.2349 = private constant [4 x i8] c"\02.a\00"
-@.sconst.2350 = private constant [4 x i8] c"\02.o\00"
-@.sconst.2351 = private constant [40 x i8] c"&Multiple input files not yet supported\00"
-@.str.2352 = private unnamed_addr constant [37 x i8] c"Usage: scalyc [options] <input file>\00", align 1
-@.str.2353 = private unnamed_addr constant [9 x i8] c"Options:\00", align 1
-@.str.2354 = private unnamed_addr constant [40 x i8] c"  -h, --help     Show this help message\00", align 1
-@.str.2355 = private unnamed_addr constant [32 x i8] c"  -v, --verbose  Verbose output\00", align 1
-@.str.2356 = private unnamed_addr constant [29 x i8] c"  -o <file>      Output file\00", align 1
-@.str.2357 = private unnamed_addr constant [30 x i8] c"  -S             Emit LLVM IR\00", align 1
-@.str.2358 = private unnamed_addr constant [40 x i8] c"  -c             Compile only (no link)\00", align 1
-@.str.2359 = private unnamed_addr constant [41 x i8] c"  -L<path>       Add library search path\00", align 1
-@.str.2360 = private unnamed_addr constant [38 x i8] c"  -l<name>       Link library by name\00", align 1
-@.str.2361 = private unnamed_addr constant [40 x i8] c"  <file>.a/.o    Positional link inputs\00", align 1
-@.str.2362 = private unnamed_addr constant [44 x i8] c"  --lex          Lex input and print tokens\00", align 1
-@.str.2363 = private unnamed_addr constant [49 x i8] c"  --parse        Parse input and validate syntax\00", align 1
-@.str.2364 = private unnamed_addr constant [38 x i8] c"  --model        Build semantic model\00", align 1
-@.str.2365 = private unnamed_addr constant [47 x i8] c"  --plan         Run planner (type resolution)\00", align 1
-@.str.2366 = private unnamed_addr constant [50 x i8] c"  --no-prelude   Skip auto-loading prelude module\00", align 1
-@.str.2367 = private unnamed_addr constant [57 x i8] c"  --no-tests     Omit test/test_* functions (seed build)\00", align 1
-@.str.2368 = private unnamed_addr constant [53 x i8] c"  --run <fn>     JIT-compile and run <fn> in-process\00", align 1
-@.str.2369 = private unnamed_addr constant [55 x i8] c"  --jit          JIT-compile and run the whole program\00", align 1
-@.str.2370 = private unnamed_addr constant [64 x i8] c"  --target <t>   Cross-emit object for triple <t> (use with -c)\00", align 1
-@.str.2371 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
-@.sconst.2372 = private constant [17 x i8] c"\0F/tmp/libscaly.a\00"
-@.sconst.2373 = private constant [17 x i8] c"\0F/tmp/libscaly.a\00"
-@.sconst.2374 = private constant [17 x i8] c"\0F/lib/libscaly.a\00"
-@.str.2375 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
-@.str.2376 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
-@.sconst.2377 = private constant [7 x i8] c"\05clang\00"
-@.sconst.2378 = private constant [7 x i8] c"\05clang\00"
-@.str.2379 = private unnamed_addr constant [8 x i8] c"Error: \00", align 1
-@.str.2380 = private unnamed_addr constant [31 x i8] c"Error: No input file specified\00", align 1
-@.str.2381 = private unnamed_addr constant [12 x i8] c"Compiling: \00", align 1
-@.str.2382 = private unnamed_addr constant [33 x i8] c"Error: Could not read input file\00", align 1
-@.str.2383 = private unnamed_addr constant [30 x i8] c"Read source file successfully\00", align 1
-@.str.2384 = private unnamed_addr constant [8 x i8] c"Tokens:\00", align 1
-@.str.2385 = private unnamed_addr constant [10 x i8] c"  <token>\00", align 1
-@.str.2386 = private unnamed_addr constant [12 x i8] c"Parse error\00", align 1
-@.str.2387 = private unnamed_addr constant [31 x i8] c"Parsing completed successfully\00", align 1
-@.str.2388 = private unnamed_addr constant [17 x i8] c"Parse successful\00", align 1
-@.str.2389 = private unnamed_addr constant [25 x i8] c"Model built successfully\00", align 1
-@.str.2390 = private unnamed_addr constant [25 x i8] c"Model built successfully\00", align 1
-@.str.2391 = private unnamed_addr constant [14 x i8] c"Planner error\00", align 1
-@.str.2392 = private unnamed_addr constant [32 x i8] c"Planning completed successfully\00", align 1
-@.str.2393 = private unnamed_addr constant [32 x i8] c"Planning completed successfully\00", align 1
-@.str.2394 = private unnamed_addr constant [32 x i8] c"Error: --run function not found\00", align 1
-@.sconst.2395 = private constant [6 x i8] c"\04main\00"
-@.str.2396 = private unnamed_addr constant [14 x i8] c"Emitter error\00", align 1
-@.str.2397 = private unnamed_addr constant [39 x i8] c"Code generation completed successfully\00", align 1
-@.str.2398 = private unnamed_addr constant [29 x i8] c"Error: -S requires -o <file>\00", align 1
-@.str.2399 = private unnamed_addr constant [31 x i8] c"Error: Could not write IR file\00", align 1
-@.str.2400 = private unnamed_addr constant [29 x i8] c"Error: -c requires -o <file>\00", align 1
-@.str.2401 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
-@.str.2402 = private unnamed_addr constant [38 x i8] c"Error: -o <file> required for linking\00", align 1
-@.sconst.2403 = private constant [19 x i8] c"\11/tmp/scalyc_out.o\00"
-@.str.2404 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
-@.sconst.2405 = private constant [3 x i8] c"\01 \00"
-@.sconst.2406 = private constant [3 x i8] c"\01 \00"
-@.sconst.2407 = private constant [3 x i8] c"\01 \00"
-@.sconst.2408 = private constant [5 x i8] c"\03 -L\00"
-@.sconst.2409 = private constant [5 x i8] c"\03 -l\00"
-@.sconst.2410 = private constant [6 x i8] c"\04 -o \00"
-@.sconst.2411 = private constant [11 x i8] c"\09dsymutil \00"
-@.sconst.2412 = private constant [14 x i8] c"\0C 2>/dev/null\00"
-@.str.2413 = private unnamed_addr constant [21 x i8] c"Error: Linker failed\00", align 1
-@.sconst.2414 = private constant [3 x i8] c"\01:\00"
-@.sconst.2415 = private constant [3 x i8] c"\01:\00"
-@.sconst.2416 = private constant [4 x i8] c"\02: \00"
-@.sconst.2417 = private constant [3 x i8] c"\01:\00"
+@.sconst.1917 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1918 = private constant [6 x i8] c"\04void\00"
+@.sconst.1919 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.1920 = private constant [5 x i8] c"\03ref\00"
+@.str.1921 = private unnamed_addr constant [13 x i8] c"choose.union\00", align 1
+@.str.1922 = private unnamed_addr constant [4 x i8] c"tag\00", align 1
+@.str.1923 = private unnamed_addr constant [8 x i8] c"tag.ptr\00", align 1
+@.str.1924 = private unnamed_addr constant [4 x i8] c"tag\00", align 1
+@.str.1925 = private unnamed_addr constant [16 x i8] c"throws.data.ptr\00", align 1
+@.str.1926 = private unnamed_addr constant [8 x i8] c"is.none\00", align 1
+@.str.1927 = private unnamed_addr constant [8 x i8] c"tag.npo\00", align 1
+@.sconst.1928 = private constant [12 x i8] c"\0Achoose.end\00"
+@.sconst.1929 = private constant [13 x i8] c"\0Bchoose.else\00"
+@.sconst.1930 = private constant [13 x i8] c"\0Bchoose.when\00"
+@.str.1931 = private unnamed_addr constant [19 x i8] c"throws.success.val\00", align 1
+@.str.1932 = private unnamed_addr constant [15 x i8] c"throws.err.val\00", align 1
+@.str.1933 = private unnamed_addr constant [21 x i8] c"variant.c_data().ptr\00", align 1
+@.str.1934 = private unnamed_addr constant [22 x i8] c"variant.c_data().cast\00", align 1
+@.str.1935 = private unnamed_addr constant [12 x i8] c"variant.val\00", align 1
+@.str.1936 = private unnamed_addr constant [16 x i8] c"choose.arm.load\00", align 1
+@.str.1937 = private unnamed_addr constant [16 x i8] c"choose.alt.load\00", align 1
+@.str.1938 = private unnamed_addr constant [13 x i8] c"choose.value\00", align 1
+@.str.1939 = private unnamed_addr constant [8 x i8] c"counter\00", align 1
+@.sconst.1940 = private constant [10 x i8] c"\08for.cond\00"
+@.sconst.1941 = private constant [10 x i8] c"\08for.body\00"
+@.sconst.1942 = private constant [10 x i8] c"\08for.incr\00"
+@.sconst.1943 = private constant [10 x i8] c"\08for.exit\00"
+@.str.1944 = private unnamed_addr constant [2 x i8] c"i\00", align 1
+@.str.1945 = private unnamed_addr constant [8 x i8] c"for.cmp\00", align 1
+@.str.1946 = private unnamed_addr constant [7 x i8] c"i.load\00", align 1
+@.str.1947 = private unnamed_addr constant [7 x i8] c"i.next\00", align 1
+@.str.1948 = private unnamed_addr constant [9 x i8] c"coll.tmp\00", align 1
+@.str.1949 = private unnamed_addr constant [12 x i8] c"iter.alloca\00", align 1
+@.sconst.1950 = private constant [5 x i8] c"\03_rp\00"
+@.sconst.1951 = private constant [10 x i8] c"\08for.cond\00"
+@.sconst.1952 = private constant [10 x i8] c"\08for.body\00"
+@.sconst.1953 = private constant [10 x i8] c"\08for.exit\00"
+@.str.1954 = private unnamed_addr constant [5 x i8] c"next\00", align 1
+@.str.1955 = private unnamed_addr constant [8 x i8] c"is.done\00", align 1
+@.sconst.1956 = private constant [6 x i8] c"\04init\00"
+@.str.1957 = private unnamed_addr constant [11 x i8] c"parfor.cap\00", align 1
+@.str.1958 = private unnamed_addr constant [7 x i8] c"parfor\00", align 1
+@.sconst.1959 = private constant [7 x i8] c"\05entry\00"
+@.str.1960 = private unnamed_addr constant [15 x i8] c"parfor.buf.ptr\00", align 1
+@.str.1961 = private unnamed_addr constant [11 x i8] c"parfor.buf\00", align 1
+@.str.1962 = private unnamed_addr constant [14 x i8] c"parfor.lo.ptr\00", align 1
+@.str.1963 = private unnamed_addr constant [10 x i8] c"parfor.lo\00", align 1
+@.str.1964 = private unnamed_addr constant [14 x i8] c"parfor.hi.ptr\00", align 1
+@.str.1965 = private unnamed_addr constant [10 x i8] c"parfor.hi\00", align 1
+@.str.1966 = private unnamed_addr constant [15 x i8] c"parfor.cap.ptr\00", align 1
+@.str.1967 = private unnamed_addr constant [15 x i8] c"parfor.iv.slot\00", align 1
+@.sconst.1968 = private constant [19 x i8] c"\11parfor.chunk.cond\00"
+@.sconst.1969 = private constant [19 x i8] c"\11parfor.chunk.body\00"
+@.sconst.1970 = private constant [18 x i8] c"\10parfor.chunk.inc\00"
+@.sconst.1971 = private constant [12 x i8] c"\0Aparfor.ret\00"
+@.str.1972 = private unnamed_addr constant [10 x i8] c"parfor.iv\00", align 1
+@.str.1973 = private unnamed_addr constant [18 x i8] c"parfor.chunk.more\00", align 1
+@.str.1974 = private unnamed_addr constant [17 x i8] c"parfor.elem.addr\00", align 1
+@.str.1975 = private unnamed_addr constant [14 x i8] c"parfor.iv.cur\00", align 1
+@.str.1976 = private unnamed_addr constant [15 x i8] c"parfor.iv.next\00", align 1
+@.sconst.1977 = private constant [30 x i8] c"\1C_ZN8TaskPool12default_poolEv\00"
+@.sconst.1978 = private constant [24 x i8] c"\16_ZN9TaskGroup6createEv\00"
+@.sconst.1979 = private constant [10 x i8] c"\08_Z3getPv\00"
+@.sconst.1980 = private constant [32 x i8] c"\1E_ZN9TaskGroup4waitEP9TaskGroup\00"
+@.sconst.1981 = private constant [35 x i8] c"!_ZN9TaskGroup7disposeEP9TaskGroup\00"
+@.sconst.1982 = private constant [22 x i8] c"\14_ZN4Page8allocateEmm\00"
+@.sconst.1983 = private constant [47 x i8] c"-_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup\00"
+@.sconst.1984 = private constant [21 x i8] c"\13_ZN8TaskPool4ncpuEv\00"
+@.sconst.1985 = private constant [18 x i8] c"\10scaly_eio_now_ns\00"
+@.sconst.1986 = private constant [17 x i8] c"\0Fparfor.site.vol\00"
+@.sconst.1987 = private constant [19 x i8] c"\11parfor.site.calns\00"
+@.sconst.1988 = private constant [22 x i8] c"\14parfor.site.caliters\00"
+@.sconst.1989 = private constant [17 x i8] c"\0Fparfor.site.p1k\00"
+@.str.1990 = private unnamed_addr constant [9 x i8] c"parfor.i\00", align 1
+@.str.1991 = private unnamed_addr constant [17 x i8] c"parfor.nextcheck\00", align 1
+@.str.1992 = private unnamed_addr constant [10 x i8] c"parfor.t0\00", align 1
+@.str.1993 = private unnamed_addr constant [10 x i8] c"parfor.i0\00", align 1
+@.str.1994 = private unnamed_addr constant [15 x i8] c"parfor.fork.lo\00", align 1
+@.str.1995 = private unnamed_addr constant [14 x i8] c"parfor.fork.n\00", align 1
+@.str.1996 = private unnamed_addr constant [16 x i8] c"parfor.fork.p1k\00", align 1
+@.str.1997 = private unnamed_addr constant [16 x i8] c"parfor.fork.buf\00", align 1
+@.str.1998 = private unnamed_addr constant [16 x i8] c"parfor.fork.grp\00", align 1
+@.str.1999 = private unnamed_addr constant [18 x i8] c"parfor.fork.gpage\00", align 1
+@.str.2000 = private unnamed_addr constant [14 x i8] c"parfor.entryp\00", align 1
+@.str.2001 = private unnamed_addr constant [14 x i8] c"parfor.tentry\00", align 1
+@.str.2002 = private unnamed_addr constant [12 x i8] c"parfor.fp1k\00", align 1
+@.sconst.2003 = private constant [15 x i8] c"\0Dpfor.dispatch\00"
+@.sconst.2004 = private constant [11 x i8] c"\09pfor.done\00"
+@.sconst.2005 = private constant [16 x i8] c"\0Epfor.exit.acct\00"
+@.sconst.2006 = private constant [13 x i8] c"\0Bpfor.exit.n\00"
+@.sconst.2007 = private constant [15 x i8] c"\0Dpfor.exit.add\00"
+@.sconst.2008 = private constant [16 x i8] c"\0Epfor.exit.meas\00"
+@.sconst.2009 = private constant [15 x i8] c"\0Dpfor.exit.pub\00"
+@.str.2010 = private unnamed_addr constant [11 x i8] c"parfor.n64\00", align 1
+@.sconst.2011 = private constant [15 x i8] c"\0Dpfor.inl.cond\00"
+@.sconst.2012 = private constant [14 x i8] c"\0Cpfor.inl.chk\00"
+@.sconst.2013 = private constant [15 x i8] c"\0Dpfor.inl.body\00"
+@.sconst.2014 = private constant [14 x i8] c"\0Cpfor.inl.inc\00"
+@.sconst.2015 = private constant [12 x i8] c"\0Apfor.check\00"
+@.sconst.2016 = private constant [18 x i8] c"\10pfor.check.first\00"
+@.sconst.2017 = private constant [17 x i8] c"\0Fpfor.check.meas\00"
+@.sconst.2018 = private constant [18 x i8] c"\10pfor.check.later\00"
+@.sconst.2019 = private constant [19 x i8] c"\11pfor.check.decide\00"
+@.sconst.2020 = private constant [11 x i8] c"\09pfor.fork\00"
+@.sconst.2021 = private constant [16 x i8] c"\0Epfor.gate.prom\00"
+@.sconst.2022 = private constant [20 x i8] c"\12pfor.gate.headfork\00"
+@.sconst.2023 = private constant [15 x i8] c"\0Dpfor.gate.seq\00"
+@.sconst.2024 = private constant [16 x i8] c"\0Epfor.gate.cold\00"
+@.sconst.2025 = private constant [15 x i8] c"\0Dpfor.gate.hot\00"
+@.str.2026 = private unnamed_addr constant [13 x i8] c"parfor.sitep\00", align 1
+@.str.2027 = private unnamed_addr constant [19 x i8] c"parfor.gate.isprom\00", align 1
+@.str.2028 = private unnamed_addr constant [15 x i8] c"parfor.gate.c0\00", align 1
+@.str.2029 = private unnamed_addr constant [17 x i8] c"parfor.gate.cpos\00", align 1
+@.str.2030 = private unnamed_addr constant [14 x i8] c"parfor.gate.c\00", align 1
+@.str.2031 = private unnamed_addr constant [17 x i8] c"parfor.gate.fits\00", align 1
+@.str.2032 = private unnamed_addr constant [13 x i8] c"parfor.group\00", align 1
+@.str.2033 = private unnamed_addr constant [13 x i8] c"parfor.gpage\00", align 1
+@.str.2034 = private unnamed_addr constant [12 x i8] c"parfor.volv\00", align 1
+@.str.2035 = private unnamed_addr constant [18 x i8] c"parfor.gate.ishot\00", align 1
+@.str.2036 = private unnamed_addr constant [14 x i8] c"parfor.tentry\00", align 1
+@.str.2037 = private unnamed_addr constant [13 x i8] c"parfor.i.cur\00", align 1
+@.str.2038 = private unnamed_addr constant [16 x i8] c"parfor.inl.more\00", align 1
+@.str.2039 = private unnamed_addr constant [10 x i8] c"parfor.nc\00", align 1
+@.str.2040 = private unnamed_addr constant [15 x i8] c"parfor.chk.hit\00", align 1
+@.str.2041 = private unnamed_addr constant [14 x i8] c"parfor.i.body\00", align 1
+@.str.2042 = private unnamed_addr constant [13 x i8] c"parfor.i.inc\00", align 1
+@.str.2043 = private unnamed_addr constant [14 x i8] c"parfor.i.next\00", align 1
+@.str.2044 = private unnamed_addr constant [9 x i8] c"parfor.t\00", align 1
+@.str.2045 = private unnamed_addr constant [11 x i8] c"parfor.t0v\00", align 1
+@.str.2046 = private unnamed_addr constant [19 x i8] c"parfor.chk.isfirst\00", align 1
+@.str.2047 = private unnamed_addr constant [14 x i8] c"parfor.nc.dbl\00", align 1
+@.str.2048 = private unnamed_addr constant [15 x i8] c"parfor.elapsed\00", align 1
+@.str.2049 = private unnamed_addr constant [13 x i8] c"parfor.calib\00", align 1
+@.str.2050 = private unnamed_addr constant [15 x i8] c"parfor.nc.dbl2\00", align 1
+@.str.2051 = private unnamed_addr constant [11 x i8] c"parfor.i0v\00", align 1
+@.str.2052 = private unnamed_addr constant [13 x i8] c"parfor.iters\00", align 1
+@.str.2053 = private unnamed_addr constant [11 x i8] c"parfor.e10\00", align 1
+@.str.2054 = private unnamed_addr constant [11 x i8] c"parfor.p1k\00", align 1
+@.str.2055 = private unnamed_addr constant [11 x i8] c"parfor.rem\00", align 1
+@.str.2056 = private unnamed_addr constant [13 x i8] c"parfor.proj0\00", align 1
+@.str.2057 = private unnamed_addr constant [12 x i8] c"parfor.proj\00", align 1
+@.str.2058 = private unnamed_addr constant [14 x i8] c"parfor.dofork\00", align 1
+@.str.2059 = private unnamed_addr constant [13 x i8] c"parfor.group\00", align 1
+@.str.2060 = private unnamed_addr constant [13 x i8] c"parfor.gpage\00", align 1
+@.str.2061 = private unnamed_addr constant [16 x i8] c"parfor.coll.tmp\00", align 1
+@.str.2062 = private unnamed_addr constant [12 x i8] c"parfor.iter\00", align 1
+@.sconst.2063 = private constant [5 x i8] c"\03_rp\00"
+@.sconst.2064 = private constant [14 x i8] c"\0Cpfor.it.cond\00"
+@.sconst.2065 = private constant [13 x i8] c"\0Bpfor.it.chk\00"
+@.sconst.2066 = private constant [14 x i8] c"\0Cpfor.it.body\00"
+@.sconst.2067 = private constant [13 x i8] c"\0Bpfor.it.inc\00"
+@.sconst.2068 = private constant [12 x i8] c"\0Apfor.check\00"
+@.sconst.2069 = private constant [18 x i8] c"\10pfor.check.first\00"
+@.sconst.2070 = private constant [17 x i8] c"\0Fpfor.check.meas\00"
+@.sconst.2071 = private constant [18 x i8] c"\10pfor.check.later\00"
+@.sconst.2072 = private constant [11 x i8] c"\09pfor.fork\00"
+@.sconst.2073 = private constant [17 x i8] c"\0Fpfor.check.prom\00"
+@.sconst.2074 = private constant [18 x i8] c"\10pfor.check.clock\00"
+@.sconst.2075 = private constant [18 x i8] c"\10pfor.check.forkm\00"
+@.sconst.2076 = private constant [16 x i8] c"\0Epfor.gate.prom\00"
+@.sconst.2077 = private constant [16 x i8] c"\0Epfor.gate.cold\00"
+@.sconst.2078 = private constant [15 x i8] c"\0Dpfor.gate.hot\00"
+@.str.2079 = private unnamed_addr constant [13 x i8] c"parfor.sitep\00", align 1
+@.str.2080 = private unnamed_addr constant [19 x i8] c"parfor.gate.isprom\00", align 1
+@.str.2081 = private unnamed_addr constant [14 x i8] c"parfor.gate.c\00", align 1
+@.str.2082 = private unnamed_addr constant [12 x i8] c"parfor.volv\00", align 1
+@.str.2083 = private unnamed_addr constant [18 x i8] c"parfor.gate.ishot\00", align 1
+@.str.2084 = private unnamed_addr constant [14 x i8] c"parfor.tentry\00", align 1
+@.str.2085 = private unnamed_addr constant [12 x i8] c"parfor.next\00", align 1
+@.str.2086 = private unnamed_addr constant [15 x i8] c"parfor.it.done\00", align 1
+@.str.2087 = private unnamed_addr constant [13 x i8] c"parfor.i.cur\00", align 1
+@.str.2088 = private unnamed_addr constant [10 x i8] c"parfor.nc\00", align 1
+@.str.2089 = private unnamed_addr constant [15 x i8] c"parfor.chk.hit\00", align 1
+@.str.2090 = private unnamed_addr constant [13 x i8] c"parfor.i.inc\00", align 1
+@.str.2091 = private unnamed_addr constant [14 x i8] c"parfor.i.next\00", align 1
+@.str.2092 = private unnamed_addr constant [10 x i8] c"parfor.ep\00", align 1
+@.str.2093 = private unnamed_addr constant [18 x i8] c"parfor.chk.isprom\00", align 1
+@.str.2094 = private unnamed_addr constant [9 x i8] c"parfor.t\00", align 1
+@.str.2095 = private unnamed_addr constant [11 x i8] c"parfor.t0v\00", align 1
+@.str.2096 = private unnamed_addr constant [19 x i8] c"parfor.chk.isfirst\00", align 1
+@.str.2097 = private unnamed_addr constant [14 x i8] c"parfor.nc.dbl\00", align 1
+@.str.2098 = private unnamed_addr constant [15 x i8] c"parfor.elapsed\00", align 1
+@.str.2099 = private unnamed_addr constant [14 x i8] c"parfor.dofork\00", align 1
+@.str.2100 = private unnamed_addr constant [15 x i8] c"parfor.nc.dbl2\00", align 1
+@.str.2101 = private unnamed_addr constant [11 x i8] c"parfor.i0v\00", align 1
+@.str.2102 = private unnamed_addr constant [13 x i8] c"parfor.iters\00", align 1
+@.str.2103 = private unnamed_addr constant [11 x i8] c"parfor.e10\00", align 1
+@.str.2104 = private unnamed_addr constant [11 x i8] c"parfor.p1k\00", align 1
+@.str.2105 = private unnamed_addr constant [13 x i8] c"parfor.fp1kv\00", align 1
+@.str.2106 = private unnamed_addr constant [13 x i8] c"parfor.group\00", align 1
+@.str.2107 = private unnamed_addr constant [13 x i8] c"parfor.gpage\00", align 1
+@.str.2108 = private unnamed_addr constant [14 x i8] c"parfor.dr.cap\00", align 1
+@.str.2109 = private unnamed_addr constant [12 x i8] c"parfor.dr.n\00", align 1
+@.str.2110 = private unnamed_addr constant [14 x i8] c"parfor.dr.buf\00", align 1
+@.str.2111 = private unnamed_addr constant [13 x i8] c"parfor.dr.ci\00", align 1
+@.str.2112 = private unnamed_addr constant [15 x i8] c"parfor.dr.buf0\00", align 1
+@.sconst.2113 = private constant [17 x i8] c"\0Fpfor.drain.cond\00"
+@.sconst.2114 = private constant [17 x i8] c"\0Fpfor.drain.have\00"
+@.sconst.2115 = private constant [17 x i8] c"\0Fpfor.drain.grow\00"
+@.sconst.2116 = private constant [22 x i8] c"\14pfor.drain.copy.cond\00"
+@.sconst.2117 = private constant [22 x i8] c"\14pfor.drain.copy.body\00"
+@.sconst.2118 = private constant [22 x i8] c"\14pfor.drain.copy.done\00"
+@.sconst.2119 = private constant [16 x i8] c"\0Epfor.drain.put\00"
+@.sconst.2120 = private constant [17 x i8] c"\0Fpfor.drain.done\00"
+@.str.2121 = private unnamed_addr constant [15 x i8] c"parfor.dr.next\00", align 1
+@.str.2122 = private unnamed_addr constant [14 x i8] c"parfor.dr.fin\00", align 1
+@.str.2123 = private unnamed_addr constant [13 x i8] c"parfor.dr.nv\00", align 1
+@.str.2124 = private unnamed_addr constant [15 x i8] c"parfor.dr.capv\00", align 1
+@.str.2125 = private unnamed_addr constant [15 x i8] c"parfor.dr.full\00", align 1
+@.str.2126 = private unnamed_addr constant [15 x i8] c"parfor.dr.cap2\00", align 1
+@.str.2127 = private unnamed_addr constant [17 x i8] c"parfor.dr.gbytes\00", align 1
+@.str.2128 = private unnamed_addr constant [15 x i8] c"parfor.dr.nbuf\00", align 1
+@.str.2129 = private unnamed_addr constant [15 x i8] c"parfor.dr.obuf\00", align 1
+@.str.2130 = private unnamed_addr constant [14 x i8] c"parfor.dr.civ\00", align 1
+@.str.2131 = private unnamed_addr constant [16 x i8] c"parfor.dr.cmore\00", align 1
+@.str.2132 = private unnamed_addr constant [14 x i8] c"parfor.dr.src\00", align 1
+@.str.2133 = private unnamed_addr constant [14 x i8] c"parfor.dr.val\00", align 1
+@.str.2134 = private unnamed_addr constant [14 x i8] c"parfor.dr.dst\00", align 1
+@.str.2135 = private unnamed_addr constant [14 x i8] c"parfor.dr.ci1\00", align 1
+@.str.2136 = private unnamed_addr constant [15 x i8] c"parfor.dr.bufv\00", align 1
+@.str.2137 = private unnamed_addr constant [13 x i8] c"parfor.dr.n2\00", align 1
+@.str.2138 = private unnamed_addr constant [15 x i8] c"parfor.dr.slot\00", align 1
+@.str.2139 = private unnamed_addr constant [13 x i8] c"parfor.dr.n1\00", align 1
+@.str.2140 = private unnamed_addr constant [9 x i8] c"parfor.m\00", align 1
+@.str.2141 = private unnamed_addr constant [17 x i8] c"parfor.buf.final\00", align 1
+@.str.2142 = private unnamed_addr constant [12 x i8] c"parfor.x.ep\00", align 1
+@.str.2143 = private unnamed_addr constant [16 x i8] c"parfor.x.isprom\00", align 1
+@.str.2144 = private unnamed_addr constant [15 x i8] c"parfor.x.iters\00", align 1
+@.str.2145 = private unnamed_addr constant [13 x i8] c"parfor.x.ran\00", align 1
+@.str.2146 = private unnamed_addr constant [13 x i8] c"parfor.x.add\00", align 1
+@.str.2147 = private unnamed_addr constant [12 x i8] c"parfor.x.v0\00", align 1
+@.str.2148 = private unnamed_addr constant [12 x i8] c"parfor.x.v1\00", align 1
+@.str.2149 = private unnamed_addr constant [14 x i8] c"parfor.x.over\00", align 1
+@.str.2150 = private unnamed_addr constant [12 x i8] c"parfor.x.v2\00", align 1
+@.str.2151 = private unnamed_addr constant [12 x i8] c"parfor.x.t0\00", align 1
+@.str.2152 = private unnamed_addr constant [13 x i8] c"parfor.x.hot\00", align 1
+@.str.2153 = private unnamed_addr constant [12 x i8] c"parfor.x.te\00", align 1
+@.str.2154 = private unnamed_addr constant [13 x i8] c"parfor.x.el0\00", align 1
+@.str.2155 = private unnamed_addr constant [13 x i8] c"parfor.x.big\00", align 1
+@.str.2156 = private unnamed_addr constant [12 x i8] c"parfor.x.el\00", align 1
+@.str.2157 = private unnamed_addr constant [13 x i8] c"parfor.x.cn0\00", align 1
+@.str.2158 = private unnamed_addr constant [13 x i8] c"parfor.x.cn1\00", align 1
+@.str.2159 = private unnamed_addr constant [13 x i8] c"parfor.x.ci0\00", align 1
+@.str.2160 = private unnamed_addr constant [13 x i8] c"parfor.x.ci1\00", align 1
+@.str.2161 = private unnamed_addr constant [16 x i8] c"parfor.x.ready0\00", align 1
+@.str.2162 = private unnamed_addr constant [16 x i8] c"parfor.x.enough\00", align 1
+@.str.2163 = private unnamed_addr constant [15 x i8] c"parfor.x.ready\00", align 1
+@.str.2164 = private unnamed_addr constant [13 x i8] c"parfor.x.e10\00", align 1
+@.str.2165 = private unnamed_addr constant [11 x i8] c"parfor.x.p\00", align 1
+@.str.2166 = private unnamed_addr constant [14 x i8] c"parfor.x.ppos\00", align 1
+@.str.2167 = private unnamed_addr constant [12 x i8] c"parfor.x.pf\00", align 1
+@.str.2168 = private unnamed_addr constant [13 x i8] c"parfor.d.lo0\00", align 1
+@.str.2169 = private unnamed_addr constant [11 x i8] c"parfor.d.n\00", align 1
+@.str.2170 = private unnamed_addr constant [14 x i8] c"parfor.d.p1k0\00", align 1
+@.str.2171 = private unnamed_addr constant [13 x i8] c"parfor.d.grp\00", align 1
+@.str.2172 = private unnamed_addr constant [15 x i8] c"parfor.d.gpage\00", align 1
+@.str.2173 = private unnamed_addr constant [13 x i8] c"parfor.d.buf\00", align 1
+@.str.2174 = private unnamed_addr constant [16 x i8] c"parfor.d.p1kpos\00", align 1
+@.str.2175 = private unnamed_addr constant [13 x i8] c"parfor.d.p1k\00", align 1
+@.str.2176 = private unnamed_addr constant [14 x i8] c"parfor.d.minc\00", align 1
+@.str.2177 = private unnamed_addr constant [13 x i8] c"parfor.d.rem\00", align 1
+@.str.2178 = private unnamed_addr constant [12 x i8] c"parfor.ncpu\00", align 1
+@.str.2179 = private unnamed_addr constant [15 x i8] c"parfor.d.denom\00", align 1
+@.str.2180 = private unnamed_addr constant [13 x i8] c"parfor.d.bal\00", align 1
+@.str.2181 = private unnamed_addr constant [12 x i8] c"parfor.d.gt\00", align 1
+@.str.2182 = private unnamed_addr constant [16 x i8] c"parfor.d.chunk0\00", align 1
+@.str.2183 = private unnamed_addr constant [14 x i8] c"parfor.d.cpos\00", align 1
+@.str.2184 = private unnamed_addr constant [15 x i8] c"parfor.d.chunk\00", align 1
+@.str.2185 = private unnamed_addr constant [12 x i8] c"parfor.pool\00", align 1
+@.str.2186 = private unnamed_addr constant [14 x i8] c"parfor.c.slot\00", align 1
+@.sconst.2187 = private constant [15 x i8] c"\0Dpfor.sub.cond\00"
+@.sconst.2188 = private constant [15 x i8] c"\0Dpfor.sub.body\00"
+@.sconst.2189 = private constant [15 x i8] c"\0Dpfor.sub.done\00"
+@.str.2190 = private unnamed_addr constant [12 x i8] c"parfor.c.lo\00", align 1
+@.str.2191 = private unnamed_addr constant [16 x i8] c"parfor.sub.more\00", align 1
+@.str.2192 = private unnamed_addr constant [17 x i8] c"parfor.chunk.hi0\00", align 1
+@.str.2193 = private unnamed_addr constant [12 x i8] c"parfor.hilt\00", align 1
+@.str.2194 = private unnamed_addr constant [16 x i8] c"parfor.chunk.hi\00", align 1
+@.str.2195 = private unnamed_addr constant [12 x i8] c"parfor.cell\00", align 1
+@.str.2196 = private unnamed_addr constant [16 x i8] c"parfor.cell.buf\00", align 1
+@.str.2197 = private unnamed_addr constant [15 x i8] c"parfor.cell.lo\00", align 1
+@.str.2198 = private unnamed_addr constant [15 x i8] c"parfor.cell.hi\00", align 1
+@.str.2199 = private unnamed_addr constant [16 x i8] c"parfor.cell.cap\00", align 1
+@.sconst.2200 = private constant [12 x i8] c"\0Awhile.cond\00"
+@.sconst.2201 = private constant [12 x i8] c"\0Awhile.body\00"
+@.sconst.2202 = private constant [12 x i8] c"\0Awhile.exit\00"
+@.sconst.2203 = private constant [5 x i8] c"\03var\00"
+@.str.2204 = private unnamed_addr constant [13 x i8] c"while.tobool\00", align 1
+@.sconst.2205 = private constant [6 x i8] c"\04void\00"
+@.sconst.2206 = private constant [15 x i8] c"\0Drepeat.result\00"
+@.sconst.2207 = private constant [13 x i8] c"\0Brepeat.body\00"
+@.sconst.2208 = private constant [13 x i8] c"\0Brepeat.exit\00"
+@.sconst.2209 = private constant [14 x i8] c"\0Crepeat.value\00"
+@.str.2210 = private unnamed_addr constant [4 x i8] c"tag\00", align 1
+@.sconst.2211 = private constant [8 x i8] c"\06try.ok\00"
+@.sconst.2212 = private constant [9 x i8] c"\07try.end\00"
+@.sconst.2213 = private constant [9 x i8] c"\07try.err\00"
+@.str.2214 = private unnamed_addr constant [6 x i8] c"is.ok\00", align 1
+@.str.2215 = private unnamed_addr constant [12 x i8] c"ok.data.ptr\00", align 1
+@.str.2216 = private unnamed_addr constant [7 x i8] c"ok.val\00", align 1
+@.sconst.2217 = private constant [5 x i8] c"\03var\00"
+@.str.2218 = private unnamed_addr constant [12 x i8] c"err.tag.ptr\00", align 1
+@.str.2219 = private unnamed_addr constant [8 x i8] c"err.tag\00", align 1
+@.str.2220 = private unnamed_addr constant [16 x i8] c"err.payload.ptr\00", align 1
+@.sconst.2221 = private constant [15 x i8] c"\0Dtry.unmatched\00"
+@.sconst.2222 = private constant [10 x i8] c"\08try.else\00"
+@.sconst.2223 = private constant [11 x i8] c"\09try.catch\00"
+@.sconst.2224 = private constant [6 x i8] c"\04void\00"
+@.str.2225 = private unnamed_addr constant [8 x i8] c"err.val\00", align 1
+@.sconst.2226 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.2227 = private constant [5 x i8] c"\03ref\00"
+@.sconst.2228 = private constant [8 x i8] c"\06Option\00"
+@.sconst.2229 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.2230 = private constant [5 x i8] c"\03ref\00"
+@.str.2231 = private unnamed_addr constant [9 x i8] c"is.union\00", align 1
+@.str.2232 = private unnamed_addr constant [11 x i8] c"is.tag.ptr\00", align 1
+@.str.2233 = private unnamed_addr constant [7 x i8] c"is.tag\00", align 1
+@.str.2234 = private unnamed_addr constant [10 x i8] c"is.result\00", align 1
+@.str.2235 = private unnamed_addr constant [11 x i8] c"option.val\00", align 1
+@.str.2236 = private unnamed_addr constant [8 x i8] c"is.null\00", align 1
+@.str.2237 = private unnamed_addr constant [9 x i8] c"is.union\00", align 1
+@.str.2238 = private unnamed_addr constant [9 x i8] c"is.union\00", align 1
+@.str.2239 = private unnamed_addr constant [11 x i8] c"is.tag.ptr\00", align 1
+@.str.2240 = private unnamed_addr constant [7 x i8] c"is.tag\00", align 1
+@.str.2241 = private unnamed_addr constant [10 x i8] c"is.result\00", align 1
+@.str.2242 = private unnamed_addr constant [5 x i8] c".str\00", align 1
+@.sconst.2243 = private constant [8 x i8] c"\06String\00"
+@.str.2244 = private unnamed_addr constant [7 x i8] c"as.ptr\00", align 1
+@.str.2245 = private unnamed_addr constant [12 x i8] c"as.ptrtoint\00", align 1
+@.str.2246 = private unnamed_addr constant [12 x i8] c"as.inttoptr\00", align 1
+@.str.2247 = private unnamed_addr constant [9 x i8] c"as.trunc\00", align 1
+@.str.2248 = private unnamed_addr constant [8 x i8] c"as.zext\00", align 1
+@.str.2249 = private unnamed_addr constant [10 x i8] c"as.sitofp\00", align 1
+@.str.2250 = private unnamed_addr constant [10 x i8] c"as.sitofp\00", align 1
+@.str.2251 = private unnamed_addr constant [10 x i8] c"as.fptosi\00", align 1
+@.str.2252 = private unnamed_addr constant [9 x i8] c"as.fpext\00", align 1
+@.str.2253 = private unnamed_addr constant [10 x i8] c"as.fptosi\00", align 1
+@.str.2254 = private unnamed_addr constant [11 x i8] c"as.fptrunc\00", align 1
+@.str.2255 = private unnamed_addr constant [36 x i8] c"Emitter: cannot cast this value to \00", align 1
+@.str.2256 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@.sconst.2257 = private constant [5 x i8] c"\03ref\00"
+@.sconst.2258 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.2259 = private constant [6 x i8] c"\04None\00"
+@.sconst.2260 = private constant [6 x i8] c"\04Some\00"
+@.str.2261 = private unnamed_addr constant [12 x i8] c"option.some\00", align 1
+@.str.2262 = private unnamed_addr constant [12 x i8] c"variant.ptr\00", align 1
+@.str.2263 = private unnamed_addr constant [16 x i8] c"variant.tag.ptr\00", align 1
+@.str.2264 = private unnamed_addr constant [17 x i8] c"variant.data.ptr\00", align 1
+@.str.2265 = private unnamed_addr constant [16 x i8] c"variant.payload\00", align 1
+@.str.2266 = private unnamed_addr constant [12 x i8] c"variant.val\00", align 1
+@.sconst.2267 = private constant [5 x i8] c"\03C1E\00"
+@.sconst.2268 = private constant [6 x i8] c"\04this\00"
+@.sconst.2269 = private constant [9 x i8] c"\07pointer\00"
+@.str.2270 = private unnamed_addr constant [9 x i8] c"set.dest\00", align 1
+@.str.2271 = private unnamed_addr constant [9 x i8] c"set.thru\00", align 1
+@.sconst.2272 = private constant [5 x i8] c"\03_rp\00"
+@.str.2273 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.str.2274 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.str.2275 = private unnamed_addr constant [9 x i8] c"set.heap\00", align 1
+@.str.2276 = private unnamed_addr constant [9 x i8] c"set.load\00", align 1
+@.sconst.2277 = private constant [3 x i8] c"\01*\00"
+@.str.2278 = private unnamed_addr constant [11 x i8] c"store.load\00", align 1
+@.sconst.2279 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.2280 = private constant [5 x i8] c"\03ref\00"
+@.str.2281 = private unnamed_addr constant [8 x i8] c"gv.load\00", align 1
+@.sconst.2282 = private constant [6 x i8] c"\04this\00"
+@.sconst.2283 = private constant [5 x i8] c"\03C1E\00"
+@.str.2284 = private unnamed_addr constant [16 x i8] c"_ZN4Page3getEPv\00", align 1
+@.str.2285 = private unnamed_addr constant [16 x i8] c"_ZN4Page3getEPv\00", align 1
+@.str.2286 = private unnamed_addr constant [12 x i8] c"parent.page\00", align 1
+@.str.2287 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.str.2288 = private unnamed_addr constant [21 x i8] c"_ZN4Page8allocateEmm\00", align 1
+@.str.2289 = private unnamed_addr constant [10 x i8] c"ctor.heap\00", align 1
+@.str.2290 = private unnamed_addr constant [7 x i8] c"memcpy\00", align 1
+@.str.2291 = private unnamed_addr constant [7 x i8] c"memcpy\00", align 1
+@.sconst.2292 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.2293 = private constant [5 x i8] c"\03ref\00"
+@.sconst.2294 = private constant [6 x i8] c"\04this\00"
+@.str.2295 = private unnamed_addr constant [9 x i8] c"ptr.load\00", align 1
+@.str.2296 = private unnamed_addr constant [9 x i8] c"ptr.load\00", align 1
+@.sconst.2297 = private constant [8 x i8] c"\06Option\00"
+@.sconst.2298 = private constant [5 x i8] c"\03ref\00"
+@.sconst.2299 = private constant [9 x i8] c"\07pointer\00"
+@.str.2300 = private unnamed_addr constant [12 x i8] c"field.deref\00", align 1
+@.str.2301 = private unnamed_addr constant [11 x i8] c"field.load\00", align 1
+@.str.2302 = private unnamed_addr constant [13 x i8] c"bind.fptrunc\00", align 1
+@.str.2303 = private unnamed_addr constant [11 x i8] c"bind.fpext\00", align 1
+@.sconst.2304 = private constant [5 x i8] c"\03var\00"
+@.str.2305 = private unnamed_addr constant [13 x i8] c"binding.load\00", align 1
+@.sconst.2306 = private constant [5 x i8] c"\03int\00"
+@.sconst.2307 = private constant [6 x i8] c"\04bool\00"
+@.sconst.2308 = private constant [9 x i8] c"\07pointer\00"
+@.str.2309 = private unnamed_addr constant [8 x i8] c"arr.ptr\00", align 1
+@.str.2310 = private unnamed_addr constant [12 x i8] c"ret.tag.ptr\00", align 1
+@.str.2311 = private unnamed_addr constant [13 x i8] c"ret.data.ptr\00", align 1
+@.str.2312 = private unnamed_addr constant [10 x i8] c"sret.body\00", align 1
+@.str.2313 = private unnamed_addr constant [9 x i8] c"ret.load\00", align 1
+@.str.2314 = private unnamed_addr constant [13 x i8] c"throw.result\00", align 1
+@.str.2315 = private unnamed_addr constant [14 x i8] c"throw.tag.ptr\00", align 1
+@.str.2316 = private unnamed_addr constant [15 x i8] c"throw.data.ptr\00", align 1
+@.str.2317 = private unnamed_addr constant [10 x i8] c"throw.val\00", align 1
+@.str.2318 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.2319 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.2320 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.2321 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.2322 = private constant [3 x i8] c"\01-\00"
+@.sconst.2323 = private constant [4 x i8] c"\02-h\00"
+@.sconst.2324 = private constant [8 x i8] c"\06--help\00"
+@.sconst.2325 = private constant [4 x i8] c"\02-v\00"
+@.sconst.2326 = private constant [11 x i8] c"\09--verbose\00"
+@.sconst.2327 = private constant [4 x i8] c"\02-S\00"
+@.sconst.2328 = private constant [4 x i8] c"\02-c\00"
+@.sconst.2329 = private constant [4 x i8] c"\02-g\00"
+@.sconst.2330 = private constant [7 x i8] c"\05--lex\00"
+@.sconst.2331 = private constant [9 x i8] c"\07--parse\00"
+@.sconst.2332 = private constant [9 x i8] c"\07--model\00"
+@.sconst.2333 = private constant [8 x i8] c"\06--plan\00"
+@.sconst.2334 = private constant [14 x i8] c"\0C--no-prelude\00"
+@.sconst.2335 = private constant [12 x i8] c"\0A--no-tests\00"
+@.sconst.2336 = private constant [11 x i8] c"\09--use-vis\00"
+@.sconst.2337 = private constant [14 x i8] c"\0C--no-use-vis\00"
+@.sconst.2338 = private constant [13 x i8] c"\0B--task-plan\00"
+@.sconst.2339 = private constant [5 x i8] c"\03-O0\00"
+@.sconst.2340 = private constant [5 x i8] c"\03-O1\00"
+@.sconst.2341 = private constant [5 x i8] c"\03-O2\00"
+@.sconst.2342 = private constant [5 x i8] c"\03-O3\00"
+@.sconst.2343 = private constant [7 x i8] c"\05--jit\00"
+@.sconst.2344 = private constant [4 x i8] c"\02-o\00"
+@.sconst.2345 = private constant [24 x i8] c"\16-o requires a filename\00"
+@.sconst.2346 = private constant [7 x i8] c"\05--run\00"
+@.sconst.2347 = private constant [32 x i8] c"\1E--run requires a function name\00"
+@.sconst.2348 = private constant [10 x i8] c"\08--target\00"
+@.sconst.2349 = private constant [28 x i8] c"\1A--target requires a triple\00"
+@.sconst.2350 = private constant [4 x i8] c"\02-L\00"
+@.sconst.2351 = private constant [4 x i8] c"\02-l\00"
+@.sconst.2352 = private constant [18 x i8] c"\10Unknown option: \00"
+@.sconst.2353 = private constant [4 x i8] c"\02.a\00"
+@.sconst.2354 = private constant [4 x i8] c"\02.o\00"
+@.sconst.2355 = private constant [40 x i8] c"&Multiple input files not yet supported\00"
+@.str.2356 = private unnamed_addr constant [37 x i8] c"Usage: scalyc [options] <input file>\00", align 1
+@.str.2357 = private unnamed_addr constant [9 x i8] c"Options:\00", align 1
+@.str.2358 = private unnamed_addr constant [40 x i8] c"  -h, --help     Show this help message\00", align 1
+@.str.2359 = private unnamed_addr constant [32 x i8] c"  -v, --verbose  Verbose output\00", align 1
+@.str.2360 = private unnamed_addr constant [29 x i8] c"  -o <file>      Output file\00", align 1
+@.str.2361 = private unnamed_addr constant [30 x i8] c"  -S             Emit LLVM IR\00", align 1
+@.str.2362 = private unnamed_addr constant [40 x i8] c"  -c             Compile only (no link)\00", align 1
+@.str.2363 = private unnamed_addr constant [41 x i8] c"  -L<path>       Add library search path\00", align 1
+@.str.2364 = private unnamed_addr constant [38 x i8] c"  -l<name>       Link library by name\00", align 1
+@.str.2365 = private unnamed_addr constant [40 x i8] c"  <file>.a/.o    Positional link inputs\00", align 1
+@.str.2366 = private unnamed_addr constant [44 x i8] c"  --lex          Lex input and print tokens\00", align 1
+@.str.2367 = private unnamed_addr constant [49 x i8] c"  --parse        Parse input and validate syntax\00", align 1
+@.str.2368 = private unnamed_addr constant [38 x i8] c"  --model        Build semantic model\00", align 1
+@.str.2369 = private unnamed_addr constant [47 x i8] c"  --plan         Run planner (type resolution)\00", align 1
+@.str.2370 = private unnamed_addr constant [50 x i8] c"  --no-prelude   Skip auto-loading prelude module\00", align 1
+@.str.2371 = private unnamed_addr constant [57 x i8] c"  --no-tests     Omit test/test_* functions (seed build)\00", align 1
+@.str.2372 = private unnamed_addr constant [53 x i8] c"  --run <fn>     JIT-compile and run <fn> in-process\00", align 1
+@.str.2373 = private unnamed_addr constant [55 x i8] c"  --jit          JIT-compile and run the whole program\00", align 1
+@.str.2374 = private unnamed_addr constant [64 x i8] c"  --target <t>   Cross-emit object for triple <t> (use with -c)\00", align 1
+@.str.2375 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
+@.sconst.2376 = private constant [17 x i8] c"\0F/tmp/libscaly.a\00"
+@.sconst.2377 = private constant [17 x i8] c"\0F/tmp/libscaly.a\00"
+@.sconst.2378 = private constant [17 x i8] c"\0F/lib/libscaly.a\00"
+@.str.2379 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
+@.str.2380 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
+@.sconst.2381 = private constant [7 x i8] c"\05clang\00"
+@.sconst.2382 = private constant [7 x i8] c"\05clang\00"
+@.str.2383 = private unnamed_addr constant [8 x i8] c"Error: \00", align 1
+@.str.2384 = private unnamed_addr constant [31 x i8] c"Error: No input file specified\00", align 1
+@.str.2385 = private unnamed_addr constant [12 x i8] c"Compiling: \00", align 1
+@.str.2386 = private unnamed_addr constant [33 x i8] c"Error: Could not read input file\00", align 1
+@.str.2387 = private unnamed_addr constant [30 x i8] c"Read source file successfully\00", align 1
+@.str.2388 = private unnamed_addr constant [8 x i8] c"Tokens:\00", align 1
+@.str.2389 = private unnamed_addr constant [10 x i8] c"  <token>\00", align 1
+@.str.2390 = private unnamed_addr constant [12 x i8] c"Parse error\00", align 1
+@.str.2391 = private unnamed_addr constant [31 x i8] c"Parsing completed successfully\00", align 1
+@.str.2392 = private unnamed_addr constant [17 x i8] c"Parse successful\00", align 1
+@.str.2393 = private unnamed_addr constant [25 x i8] c"Model built successfully\00", align 1
+@.str.2394 = private unnamed_addr constant [25 x i8] c"Model built successfully\00", align 1
+@.str.2395 = private unnamed_addr constant [14 x i8] c"Planner error\00", align 1
+@.str.2396 = private unnamed_addr constant [32 x i8] c"Planning completed successfully\00", align 1
+@.str.2397 = private unnamed_addr constant [32 x i8] c"Planning completed successfully\00", align 1
+@.str.2398 = private unnamed_addr constant [32 x i8] c"Error: --run function not found\00", align 1
+@.sconst.2399 = private constant [6 x i8] c"\04main\00"
+@.str.2400 = private unnamed_addr constant [14 x i8] c"Emitter error\00", align 1
+@.str.2401 = private unnamed_addr constant [39 x i8] c"Code generation completed successfully\00", align 1
+@.str.2402 = private unnamed_addr constant [29 x i8] c"Error: -S requires -o <file>\00", align 1
+@.str.2403 = private unnamed_addr constant [31 x i8] c"Error: Could not write IR file\00", align 1
+@.str.2404 = private unnamed_addr constant [29 x i8] c"Error: -c requires -o <file>\00", align 1
+@.str.2405 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
+@.str.2406 = private unnamed_addr constant [38 x i8] c"Error: -o <file> required for linking\00", align 1
+@.sconst.2407 = private constant [19 x i8] c"\11/tmp/scalyc_out.o\00"
+@.str.2408 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
+@.sconst.2409 = private constant [3 x i8] c"\01 \00"
+@.sconst.2410 = private constant [3 x i8] c"\01 \00"
+@.sconst.2411 = private constant [3 x i8] c"\01 \00"
+@.sconst.2412 = private constant [5 x i8] c"\03 -L\00"
+@.sconst.2413 = private constant [5 x i8] c"\03 -l\00"
+@.sconst.2414 = private constant [6 x i8] c"\04 -o \00"
+@.sconst.2415 = private constant [11 x i8] c"\09dsymutil \00"
+@.sconst.2416 = private constant [14 x i8] c"\0C 2>/dev/null\00"
+@.str.2417 = private unnamed_addr constant [21 x i8] c"Error: Linker failed\00", align 1
 @.sconst.2418 = private constant [3 x i8] c"\01:\00"
-@.sconst.2419 = private constant [11 x i8] c"\09: error: \00"
-@.sconst.2420 = private constant [11 x i8] c"\09use-vis: \00"
-@.sconst.2421 = private constant [12 x i8] c"\0A visible, \00"
-@.sconst.2422 = private constant [22 x i8] c"\14 invisible lookups, \00"
-@.sconst.2423 = private constant [11 x i8] c"\09 distinct\00"
-@.sconst.2424 = private constant [16 x i8] c"\0Euse-vis MISS: \00"
-@.sconst.2425 = private constant [4 x i8] c"\02: \00"
-@.sconst.2426 = private constant [11 x i8] c"\09 (origin \00"
-@.sconst.2427 = private constant [3 x i8] c"\01)\00"
-@.sconst.2428 = private constant [9 x i8] c"\07 [lazy]\00"
-@.sconst.2429 = private constant [13 x i8] c"\0Btask-plan: \00"
-@.sconst.2430 = private constant [14 x i8] c"\0C for-loops, \00"
-@.sconst.2431 = private constant [17 x i8] c"\0F parallelizable\00"
-@.sconst.2432 = private constant [13 x i8] c"\0Btask-plan: \00"
-@.sconst.2433 = private constant [3 x i8] c"\01:\00"
-@.sconst.2434 = private constant [3 x i8] c"\01:\00"
-@.sconst.2435 = private constant [4 x i8] c"\02: \00"
-@.sconst.2436 = private constant [3 x i8] c"\010\00"
+@.sconst.2419 = private constant [3 x i8] c"\01:\00"
+@.sconst.2420 = private constant [4 x i8] c"\02: \00"
+@.sconst.2421 = private constant [3 x i8] c"\01:\00"
+@.sconst.2422 = private constant [3 x i8] c"\01:\00"
+@.sconst.2423 = private constant [11 x i8] c"\09: error: \00"
+@.sconst.2424 = private constant [11 x i8] c"\09use-vis: \00"
+@.sconst.2425 = private constant [12 x i8] c"\0A visible, \00"
+@.sconst.2426 = private constant [22 x i8] c"\14 invisible lookups, \00"
+@.sconst.2427 = private constant [11 x i8] c"\09 distinct\00"
+@.sconst.2428 = private constant [16 x i8] c"\0Euse-vis MISS: \00"
+@.sconst.2429 = private constant [4 x i8] c"\02: \00"
+@.sconst.2430 = private constant [11 x i8] c"\09 (origin \00"
+@.sconst.2431 = private constant [3 x i8] c"\01)\00"
+@.sconst.2432 = private constant [9 x i8] c"\07 [lazy]\00"
+@.sconst.2433 = private constant [13 x i8] c"\0Btask-plan: \00"
+@.sconst.2434 = private constant [14 x i8] c"\0C for-loops, \00"
+@.sconst.2435 = private constant [17 x i8] c"\0F parallelizable\00"
+@.sconst.2436 = private constant [13 x i8] c"\0Btask-plan: \00"
+@.sconst.2437 = private constant [3 x i8] c"\01:\00"
+@.sconst.2438 = private constant [3 x i8] c"\01:\00"
+@.sconst.2439 = private constant [4 x i8] c"\02: \00"
+@.sconst.2440 = private constant [3 x i8] c"\010\00"
 
 declare ptr @memcpy(...)
 
@@ -247748,8 +247752,30 @@ if.then224:                                       ; preds = %if.end140
   br label %if.end225
 
 if.end225:                                        ; preds = %if.then224, %if.end140
+  %load.struct228 = load %_Z7Emitter, ptr %0, align 8
+  %llvm_module229 = extractvalue %_Z7Emitter %load.struct228, 4
+  %handle230 = extractvalue %_Z13LLVMModuleRef %llvm_module229, 0
+  %call231 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle230, ptr @.str.1504)
+  %handle232 = extractvalue %_Z12LLVMValueRef %call231, 0
+  %ne233 = icmp ne ptr %handle232, null
+  br i1 %ne233, label %if.then234, label %if.end235
+
+if.then234:                                       ; preds = %if.end225
+  %handle236 = extractvalue %_Z12LLVMValueRef %call231, 0
+  %call237 = call i64 @LLVMIsDeclaration(ptr %handle236)
+  %eq238 = icmp eq i64 %call237, 0
+  br i1 %eq238, label %if.then239, label %if.end240
+
+if.end235:                                        ; preds = %if.end240, %if.end225
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
+
+if.then239:                                       ; preds = %if.then234
+  call void @_ZN7Emitter16emit_build_stampEv(ptr %0)
+  br label %if.end240
+
+if.end240:                                        ; preds = %if.then239, %if.then234
+  br label %if.end235
 }
 
 define linkonce_odr void @_ZN7Emitter20ensure_free_page_getEv(ptr %0) {
@@ -247760,7 +247786,7 @@ entry:
   %load.struct = load %_Z7Emitter, ptr %0, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct, 4
   %handle = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle, ptr @.str.1504)
+  %call = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle, ptr @.str.1505)
   %handle1 = extractvalue %_Z12LLVMValueRef %call, 0
   %eq = icmp eq ptr %handle1, null
   br i1 %eq, label %if.then, label %if.end
@@ -247783,7 +247809,7 @@ if.end5:                                          ; preds = %if.end
   %load.struct6 = load %_Z7Emitter, ptr %0, align 8
   %llvm_module7 = extractvalue %_Z7Emitter %load.struct6, 4
   %handle8 = extractvalue %_Z13LLVMModuleRef %llvm_module7, 0
-  %call9 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle8, ptr @.str.1505)
+  %call9 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle8, ptr @.str.1506)
   %handle10 = extractvalue %_Z12LLVMValueRef %call9, 0
   %eq11 = icmp eq ptr %handle10, null
   br i1 %eq11, label %if.then12, label %if.end13
@@ -247814,7 +247840,7 @@ if.end18:                                         ; preds = %if.end13
   %context = extractvalue %_Z7Emitter %load.struct24, 1
   %handle25 = extractvalue %_Z14LLVMContextRef %context, 0
   %handle26 = extractvalue %_Z12LLVMValueRef %call9, 0
-  %call27 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle25, ptr %handle26, ptr @.str.1506)
+  %call27 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle25, ptr %handle26, ptr @.str.1507)
   %load.struct28 = load %_Z7Emitter, ptr %0, align 8
   %builder29 = extractvalue %_Z7Emitter %load.struct28, 5
   %handle30 = extractvalue %_Z14LLVMBuilderRef %builder29, 0
@@ -247838,7 +247864,7 @@ if.end18:                                         ; preds = %if.end13
   %call_args42 = load ptr, ptr %call_args, align 8
   %load.struct43 = load %_Z6VectorI12LLVMValueRefE, ptr %call_args42, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct43, 1
-  %call44 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle39, ptr %handle40, ptr %handle41, ptr %data, i64 1, ptr @.str.1507)
+  %call44 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle39, ptr %handle40, ptr %handle41, ptr %data, i64 1, ptr @.str.1508)
   %load.struct45 = load %_Z7Emitter, ptr %0, align 8
   %builder46 = extractvalue %_Z7Emitter %load.struct45, 5
   %handle47 = extractvalue %_Z14LLVMBuilderRef %builder46, 0
@@ -247858,6 +247884,249 @@ if.then52:                                        ; preds = %if.end18
 
 if.end53:                                         ; preds = %if.then52, %if.end18
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret void
+}
+
+define linkonce_odr i1 @_ZN7Emitter18stamp_line_skippedEPcm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %as.ptrtoint = ptrtoint ptr %1 to i64
+  %add = add i64 %as.ptrtoint, %2
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %deref = load i8, ptr %as.inttoptr, align 1
+  %eq = icmp eq i8 %deref, 59
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %as.ptrtoint1 = ptrtoint ptr %1 to i64
+  %add2 = add i64 %as.ptrtoint1, %2
+  %add3 = add i64 %add2, 1
+  %as.inttoptr4 = inttoptr i64 %add3 to ptr
+  %deref5 = load i8, ptr %as.inttoptr4, align 1
+  %eq6 = icmp eq i8 %deref5, 32
+  br i1 %eq6, label %if.then7, label %if.end8
+
+if.end:                                           ; preds = %entry
+  %eq17 = icmp eq i8 %deref, 115
+  br i1 %eq17, label %if.then18, label %if.end19
+
+if.then7:                                         ; preds = %if.then
+  %as.ptrtoint9 = ptrtoint ptr %1 to i64
+  %add10 = add i64 %as.ptrtoint9, %2
+  %add11 = add i64 %add10, 2
+  %as.inttoptr12 = inttoptr i64 %add11 to ptr
+  %deref13 = load i8, ptr %as.inttoptr12, align 1
+  %eq14 = icmp eq i8 %deref13, 77
+  br i1 %eq14, label %if.then15, label %if.end16
+
+if.end8:                                          ; preds = %if.end16, %if.then
+  ret i1 false
+
+if.then15:                                        ; preds = %if.then7
+  ret i1 true
+
+if.end16:                                         ; preds = %if.then7
+  br label %if.end8
+
+if.then18:                                        ; preds = %if.end
+  %as.ptrtoint20 = ptrtoint ptr %1 to i64
+  %add21 = add i64 %as.ptrtoint20, %2
+  %add22 = add i64 %add21, 1
+  %as.inttoptr23 = inttoptr i64 %add22 to ptr
+  %deref24 = load i8, ptr %as.inttoptr23, align 1
+  %eq25 = icmp eq i8 %deref24, 111
+  br i1 %eq25, label %if.then26, label %if.end27
+
+if.end19:                                         ; preds = %if.end
+  %eq36 = icmp eq i8 %deref, 116
+  br i1 %eq36, label %if.then37, label %if.end38
+
+if.then26:                                        ; preds = %if.then18
+  %as.ptrtoint28 = ptrtoint ptr %1 to i64
+  %add29 = add i64 %as.ptrtoint28, %2
+  %add30 = add i64 %add29, 2
+  %as.inttoptr31 = inttoptr i64 %add30 to ptr
+  %deref32 = load i8, ptr %as.inttoptr31, align 1
+  %eq33 = icmp eq i8 %deref32, 117
+  br i1 %eq33, label %if.then34, label %if.end35
+
+if.end27:                                         ; preds = %if.end35, %if.then18
+  ret i1 false
+
+if.then34:                                        ; preds = %if.then26
+  ret i1 true
+
+if.end35:                                         ; preds = %if.then26
+  br label %if.end27
+
+if.then37:                                        ; preds = %if.end19
+  %as.ptrtoint39 = ptrtoint ptr %1 to i64
+  %add40 = add i64 %as.ptrtoint39, %2
+  %add41 = add i64 %add40, 1
+  %as.inttoptr42 = inttoptr i64 %add41 to ptr
+  %deref43 = load i8, ptr %as.inttoptr42, align 1
+  %eq44 = icmp eq i8 %deref43, 97
+  br i1 %eq44, label %if.then45, label %if.end46
+
+if.end38:                                         ; preds = %if.end19
+  ret i1 false
+
+if.then45:                                        ; preds = %if.then37
+  %as.ptrtoint47 = ptrtoint ptr %1 to i64
+  %add48 = add i64 %as.ptrtoint47, %2
+  %add49 = add i64 %add48, 2
+  %as.inttoptr50 = inttoptr i64 %add49 to ptr
+  %deref51 = load i8, ptr %as.inttoptr50, align 1
+  %eq52 = icmp eq i8 %deref51, 114
+  br i1 %eq52, label %if.then53, label %if.end54
+
+if.end46:                                         ; preds = %if.end54, %if.then37
+  ret i1 false
+
+if.then53:                                        ; preds = %if.then45
+  ret i1 true
+
+if.end54:                                         ; preds = %if.then45
+  br label %if.end46
+}
+
+define linkonce_odr void @_ZN7Emitter16emit_build_stampEv(ptr %0) {
+entry:
+  %skipping = alloca i1, align 1
+  %line_begin = alloca i1, align 1
+  %i = alloca i64, align 8
+  %hash = alloca i64, align 8
+  %load.struct = load %_Z7Emitter, ptr %0, align 8
+  %llvm_module = extractvalue %_Z7Emitter %load.struct, 4
+  %handle = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
+  %call = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle, ptr @.str.1509)
+  %handle1 = extractvalue %_Z12LLVMValueRef %call, 0
+  %ne = icmp ne ptr %handle1, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %load.struct2 = load %_Z7Emitter, ptr %0, align 8
+  %llvm_module3 = extractvalue %_Z7Emitter %load.struct2, 4
+  %handle4 = extractvalue %_Z13LLVMModuleRef %llvm_module3, 0
+  %call5 = call ptr @LLVMPrintModuleToString(ptr %handle4)
+  %eq = icmp eq ptr %call5, null
+  br i1 %eq, label %if.then6, label %if.end7
+
+if.then6:                                         ; preds = %if.end
+  ret void
+
+if.end7:                                          ; preds = %if.end
+  store i64 -3750763034362895579, ptr %hash, align 1
+  store i64 0, ptr %i, align 1
+  store i1 true, ptr %line_begin, align 1
+  store i1 false, ptr %skipping, align 1
+  br label %repeat.body
+
+repeat.body:                                      ; preds = %if.end24, %if.end7
+  %as.ptrtoint = ptrtoint ptr %call5 to i64
+  %i8 = load i64, ptr %i, align 8
+  %add = add i64 %as.ptrtoint, %i8
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %deref = load i8, ptr %as.inttoptr, align 1
+  %eq9 = icmp eq i8 %deref, 0
+  br i1 %eq9, label %if.then10, label %if.end11
+
+repeat.exit:                                      ; preds = %if.then10
+  call void @LLVMDisposeMessage(ptr %call5)
+  call void @_ZN7Emitter20clear_debug_locationEv(ptr %0)
+  %load.struct27 = load %_Z7Emitter, ptr %0, align 8
+  %builder = extractvalue %_Z7Emitter %load.struct27, 5
+  %handle28 = extractvalue %_Z14LLVMBuilderRef %builder, 0
+  %call29 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle28)
+  %load.struct30 = load %_Z7Emitter, ptr %0, align 8
+  %context = extractvalue %_Z7Emitter %load.struct30, 1
+  %handle31 = extractvalue %_Z14LLVMContextRef %context, 0
+  %call32 = call %_Z11LLVMTypeRef @LLVMInt64TypeInContext(ptr %handle31)
+  %handle33 = extractvalue %_Z11LLVMTypeRef %call32, 0
+  %call34 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle33, ptr null, i64 0, i64 0)
+  %load.struct35 = load %_Z7Emitter, ptr %0, align 8
+  %llvm_module36 = extractvalue %_Z7Emitter %load.struct35, 4
+  %handle37 = extractvalue %_Z13LLVMModuleRef %llvm_module36, 0
+  %handle38 = extractvalue %_Z11LLVMTypeRef %call34, 0
+  %call39 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle37, ptr @.str.1510, ptr %handle38)
+  %load.struct40 = load %_Z7Emitter, ptr %0, align 8
+  %context41 = extractvalue %_Z7Emitter %load.struct40, 1
+  %handle42 = extractvalue %_Z14LLVMContextRef %context41, 0
+  %handle43 = extractvalue %_Z12LLVMValueRef %call39, 0
+  %call44 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle42, ptr %handle43, ptr @.str.1511)
+  %load.struct45 = load %_Z7Emitter, ptr %0, align 8
+  %builder46 = extractvalue %_Z7Emitter %load.struct45, 5
+  %handle47 = extractvalue %_Z14LLVMBuilderRef %builder46, 0
+  %handle48 = extractvalue %_Z17LLVMBasicBlockRef %call44, 0
+  call void @LLVMPositionBuilderAtEnd(ptr %handle47, ptr %handle48)
+  %handle49 = extractvalue %_Z11LLVMTypeRef %call32, 0
+  %hash50 = load i64, ptr %hash, align 8
+  %call51 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle49, i64 %hash50, i64 0)
+  %load.struct52 = load %_Z7Emitter, ptr %0, align 8
+  %builder53 = extractvalue %_Z7Emitter %load.struct52, 5
+  %handle54 = extractvalue %_Z14LLVMBuilderRef %builder53, 0
+  %handle55 = extractvalue %_Z12LLVMValueRef %call51, 0
+  %call56 = call %_Z12LLVMValueRef @LLVMBuildRet(ptr %handle54, ptr %handle55)
+  %handle57 = extractvalue %_Z17LLVMBasicBlockRef %call29, 0
+  %ne58 = icmp ne ptr %handle57, null
+  br i1 %ne58, label %if.then59, label %if.end60
+
+if.then10:                                        ; preds = %repeat.body
+  br label %repeat.exit
+
+if.end11:                                         ; preds = %repeat.body
+  %line_begin12 = load i1, ptr %line_begin, align 1
+  br i1 %line_begin12, label %if.then13, label %if.end14
+
+if.then13:                                        ; preds = %if.end11
+  %i15 = load i64, ptr %i, align 8
+  %call16 = call i1 @_ZN7Emitter18stamp_line_skippedEPcm(ptr %0, ptr %call5, i64 %i15)
+  store i1 %call16, ptr %skipping, align 1
+  br label %if.end14
+
+if.end14:                                         ; preds = %if.then13, %if.end11
+  %skipping17 = load i1, ptr %skipping, align 1
+  %eq18 = icmp eq i1 %skipping17, false
+  br i1 %eq18, label %if.then19, label %if.end20
+
+if.then19:                                        ; preds = %if.end14
+  %hash21 = load i64, ptr %hash, align 8
+  %as.zext = zext i8 %deref to i64
+  %xor = xor i64 %hash21, %as.zext
+  %mul = mul i64 %xor, 1099511628211
+  store i64 %mul, ptr %hash, align 1
+  br label %if.end20
+
+if.end20:                                         ; preds = %if.then19, %if.end14
+  %eq22 = icmp eq i8 %deref, 10
+  br i1 %eq22, label %if.then23, label %if.else
+
+if.then23:                                        ; preds = %if.end20
+  store i1 true, ptr %line_begin, align 1
+  br label %if.end24
+
+if.else:                                          ; preds = %if.end20
+  store i1 false, ptr %line_begin, align 1
+  br label %if.end24
+
+if.end24:                                         ; preds = %if.else, %if.then23
+  %if.value = phi i1 [ true, %if.then23 ], [ false, %if.else ]
+  %i25 = load i64, ptr %i, align 8
+  %add26 = add i64 %i25, 1
+  store i64 %add26, ptr %i, align 1
+  br label %repeat.body
+
+if.then59:                                        ; preds = %repeat.exit
+  %load.struct61 = load %_Z7Emitter, ptr %0, align 8
+  %builder62 = extractvalue %_Z7Emitter %load.struct61, 5
+  %handle63 = extractvalue %_Z14LLVMBuilderRef %builder62, 0
+  %handle64 = extractvalue %_Z17LLVMBasicBlockRef %call29, 0
+  call void @LLVMPositionBuilderAtEnd(ptr %handle63, ptr %handle64)
+  br label %if.end60
+
+if.end60:                                         ; preds = %if.then59, %repeat.exit
   ret void
 }
 
@@ -248105,7 +248374,7 @@ if.then111:                                       ; preds = %if.end32
   %handle117 = extractvalue %_Z14LLVMContextRef %context, 0
   %func118 = load %_Z12LLVMValueRef, ptr %func, align 8
   %handle119 = extractvalue %_Z12LLVMValueRef %func118, 0
-  %call120 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle117, ptr %handle119, ptr @.str.1508)
+  %call120 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle117, ptr %handle119, ptr @.str.1512)
   %load.struct121 = load %_Z7Emitter, ptr %0, align 8
   %builder122 = extractvalue %_Z7Emitter %load.struct121, 5
   %handle123 = extractvalue %_Z14LLVMBuilderRef %builder122, 0
@@ -248279,7 +248548,7 @@ if.then25:                                        ; preds = %if.end17
   %handle31 = extractvalue %_Z14LLVMContextRef %context, 0
   %func32 = load %_Z12LLVMValueRef, ptr %func, align 8
   %handle33 = extractvalue %_Z12LLVMValueRef %func32, 0
-  %call34 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle31, ptr %handle33, ptr @.str.1509)
+  %call34 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle31, ptr %handle33, ptr @.str.1513)
   %load.struct35 = load %_Z7Emitter, ptr %0, align 8
   %builder36 = extractvalue %_Z7Emitter %load.struct35, 5
   %handle37 = extractvalue %_Z14LLVMBuilderRef %builder36, 0
@@ -248386,7 +248655,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call3 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.1510)
+  %call3 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.1514)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret i64 127
 
@@ -248405,7 +248674,7 @@ if.end:                                           ; preds = %entry
   br i1 %eq5, label %if.then6, label %if.end7
 
 if.then6:                                         ; preds = %if.end
-  %call8 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.1511)
+  %call8 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.1515)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret i64 127
 
@@ -248447,7 +248716,7 @@ if.end17:                                         ; preds = %if.end24, %if.end7
 if.then23:                                        ; preds = %if.then16
   %jit_target25 = load %_Z13LLVMTargetRef, ptr %jit_target, align 8
   %handle26 = extractvalue %_Z13LLVMTargetRef %jit_target25, 0
-  %call27 = call %_Z20LLVMTargetMachineRef @LLVMCreateTargetMachine(ptr %handle26, ptr %call15, ptr @.str.1512, ptr @.scaly.empty.cstr, i64 0, i64 2, i64 0)
+  %call27 = call %_Z20LLVMTargetMachineRef @LLVMCreateTargetMachine(ptr %handle26, ptr %call15, ptr @.str.1516, ptr @.scaly.empty.cstr, i64 0, i64 2, i64 0)
   %handle28 = extractvalue %_Z20LLVMTargetMachineRef %call27, 0
   %ne29 = icmp ne ptr %handle28, null
   br i1 %ne29, label %if.then30, label %if.end31
@@ -248471,7 +248740,7 @@ if.end31:                                         ; preds = %if.then30, %if.then
 
 if.then43:                                        ; preds = %if.end17
   store %_Z12LLVMErrorRef %call40, ptr %arg.tmp, align 1
-  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp, ptr @.str.1513)
+  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp, ptr @.str.1517)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret i64 127
 
@@ -248493,7 +248762,7 @@ if.end44:                                         ; preds = %if.end17
 
 if.then57:                                        ; preds = %if.end44
   store %_Z12LLVMErrorRef %call54, ptr %arg.tmp59, align 1
-  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp59, ptr @.str.1514)
+  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp59, ptr @.str.1518)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret i64 127
 
@@ -248513,7 +248782,7 @@ if.end58:                                         ; preds = %if.end44
 
 if.then70:                                        ; preds = %if.end58
   store %_Z12LLVMErrorRef %call67, ptr %arg.tmp72, align 1
-  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp72, ptr @.str.1515)
+  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp72, ptr @.str.1519)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret i64 127
 
@@ -248529,7 +248798,7 @@ if.end71:                                         ; preds = %if.end58
 
 if.then79:                                        ; preds = %if.end71
   store %_Z12LLVMErrorRef %call76, ptr %arg.tmp81, align 1
-  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp81, ptr @.str.1516)
+  call void @_ZN7Emitter16report_jit_errorE12LLVMErrorRefP10const_char(ptr %0, ptr %arg.tmp81, ptr @.str.1520)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 127
 
@@ -248667,7 +248936,7 @@ if.end24:                                         ; preds = %if.then23, %if.end1
   %handle26 = extractvalue %_Z13LLVMTargetRef %target25, 0
   %triple27 = load ptr, ptr %triple, align 8
   %tm_level28 = load i64, ptr %tm_level, align 8
-  %call29 = call %_Z20LLVMTargetMachineRef @LLVMCreateTargetMachine(ptr %handle26, ptr %triple27, ptr @.str.1517, ptr @.scaly.empty.cstr, i64 %tm_level28, i64 2, i64 0)
+  %call29 = call %_Z20LLVMTargetMachineRef @LLVMCreateTargetMachine(ptr %handle26, ptr %triple27, ptr @.str.1521, ptr @.scaly.empty.cstr, i64 %tm_level28, i64 2, i64 0)
   %handle30 = extractvalue %_Z20LLVMTargetMachineRef %call29, 0
   %eq31 = icmp eq ptr %handle30, null
   br i1 %eq31, label %if.then32, label %if.end33
@@ -248685,7 +248954,7 @@ if.end33:                                         ; preds = %if.end24
 
 if.then38:                                        ; preds = %if.end33
   %call40 = call %_Z25LLVMPassBuilderOptionsRef @LLVMCreatePassBuilderOptions()
-  store ptr @.str.1518, ptr %pipeline, align 1
+  store ptr @.str.1522, ptr %pipeline, align 1
   %load.struct41 = load %_Z7Emitter, ptr %0, align 8
   %config42 = extractvalue %_Z7Emitter %load.struct41, 0
   %opt_level43 = extractvalue %_Z13EmitterConfig %config42, 2
@@ -248706,7 +248975,7 @@ if.end39:                                         ; preds = %if.end63, %if.end33
   ret i1 %eq72
 
 if.then45:                                        ; preds = %if.then38
-  store ptr @.str.1519, ptr %pipeline, align 1
+  store ptr @.str.1523, ptr %pipeline, align 1
   br label %if.end46
 
 if.end46:                                         ; preds = %if.then45, %if.then38
@@ -248717,7 +248986,7 @@ if.end46:                                         ; preds = %if.then45, %if.then
   br i1 %ge, label %if.then50, label %if.end51
 
 if.then50:                                        ; preds = %if.end46
-  store ptr @.str.1520, ptr %pipeline, align 1
+  store ptr @.str.1524, ptr %pipeline, align 1
   br label %if.end51
 
 if.end51:                                         ; preds = %if.then50, %if.end46
@@ -249028,7 +249297,7 @@ if.then57:                                        ; preds = %if.then50
   %handle63 = extractvalue %_Z11LLVMTypeRef %wrapper.load62, 0
   %current_value64 = load %_Z12LLVMValueRef, ptr %current_value, align 8
   %handle65 = extractvalue %_Z12LLVMValueRef %current_value64, 0
-  %call66 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle60, ptr %handle63, ptr %handle65, ptr @.str.1521)
+  %call66 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle60, ptr %handle63, ptr %handle65, ptr @.str.1525)
   store %_Z12LLVMValueRef %call66, ptr %current_value, align 1
   br label %if.end58
 
@@ -249079,7 +249348,7 @@ if.end77:                                         ; preds = %if.end81, %if.then7
 if.then80:                                        ; preds = %if.then76
   %field.inplace = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 5
   %field.inplace82 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1522 }, ptr %arg.tmp83, align 1
+  store { ptr } { ptr @.sconst.1526 }, ptr %arg.tmp83, align 1
   %call84 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace82, ptr %arg.tmp83)
   br i1 %call84, label %if.then85, label %if.end86
 
@@ -249138,16 +249407,16 @@ if.end111:                                        ; preds = %if.then110, %if.the
   br label %if.end105
 
 if.then112:                                       ; preds = %if.end98
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1523)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1527)
   %field.inplace114 = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 4
   %field.inplace115 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace114, i32 0, i32 1
   %call116 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %field.inplace115)
   call void @_Z11scaly_eputsP10const_char(ptr %call116)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1524)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1528)
   %field.inplace117 = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 0
   %call118 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %field.inplace117)
   call void @_Z11scaly_eputsP10const_char(ptr %call118)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1525)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1529)
   call void @exit(i64 16)
   br label %if.end113
 
@@ -249159,7 +249428,7 @@ if.then121:                                       ; preds = %if.end77
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result92, ptr %1, ptr %2, ptr %field.inplace123)
   %field.inplace125 = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 5
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result124, ptr %1, ptr %2, ptr %field.inplace125)
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %sret.result92, ptr @.str.1526)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %sret.result92, ptr @.str.1530)
   %load.struct126 = load %_Z7Emitter, ptr %2, align 8
   %builder127 = extractvalue %_Z7Emitter %load.struct126, 5
   %handle128 = extractvalue %_Z14LLVMBuilderRef %builder127, 0
@@ -249175,14 +249444,14 @@ if.then121:                                       ; preds = %if.end77
   %handle138 = extractvalue %_Z11LLVMTypeRef %wrapper.load137, 0
   %wrapper.load139 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle140 = extractvalue %_Z12LLVMValueRef %wrapper.load139, 0
-  %call141 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle136, ptr %handle138, ptr %handle140, i64 1, ptr @.str.1527)
+  %call141 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle136, ptr %handle138, ptr %handle140, i64 1, ptr @.str.1531)
   %load.struct142 = load %_Z7Emitter, ptr %2, align 8
   %builder143 = extractvalue %_Z7Emitter %load.struct142, 5
   %handle144 = extractvalue %_Z14LLVMBuilderRef %builder143, 0
   %wrapper.load145 = load %_Z11LLVMTypeRef, ptr %sret.result124, align 8
   %handle146 = extractvalue %_Z11LLVMTypeRef %wrapper.load145, 0
   %handle147 = extractvalue %_Z12LLVMValueRef %call141, 0
-  %call148 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle144, ptr %handle146, ptr %handle147, ptr @.str.1528)
+  %call148 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle144, ptr %handle146, ptr %handle147, ptr @.str.1532)
   store %_Z12LLVMValueRef %call148, ptr %current_value, align 1
   br label %if.end122
 
@@ -249207,7 +249476,7 @@ if.then157:                                       ; preds = %if.else
   store %_Z11PlannedType %parent_type160, ptr %arg.tmp, align 1
   %field.inplace161 = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 4
   %field.inplace162 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace161, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1529 }, ptr %arg.tmp163, align 1
+  store { ptr } { ptr @.sconst.1533 }, ptr %arg.tmp163, align 1
   %call164 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace162, ptr %arg.tmp163)
   br i1 %call164, label %if.then165, label %if.end166
 
@@ -249227,7 +249496,7 @@ if.then165:                                       ; preds = %if.then157
 if.end166:                                        ; preds = %if.end171, %if.then157
   %field.inplace185 = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 4
   %field.inplace186 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace185, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1530 }, ptr %arg.tmp187, align 1
+  store { ptr } { ptr @.sconst.1534 }, ptr %arg.tmp187, align 1
   %call188 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace186, ptr %arg.tmp187)
   br i1 %call188, label %if.then189, label %if.end190
 
@@ -249369,7 +249638,7 @@ if.end240:                                        ; preds = %if.end228
   %handle273 = extractvalue %_Z11LLVMTypeRef %wrapper.load272, 0
   %current_value274 = load %_Z12LLVMValueRef, ptr %current_value, align 8
   %handle275 = extractvalue %_Z12LLVMValueRef %current_value274, 0
-  %call276 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle270, ptr %handle273, ptr %handle275, ptr @.str.1535)
+  %call276 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle270, ptr %handle273, ptr %handle275, ptr @.str.1539)
   store %_Z12LLVMValueRef %call276, ptr %current_value, align 1
   %current_value277 = load %_Z12LLVMValueRef, ptr %current_value, align 8
   %handle278 = extractvalue %_Z12LLVMValueRef %current_value277, 0
@@ -249395,7 +249664,7 @@ if.end245:                                        ; preds = %if.end250, %if.then
 if.then249:                                       ; preds = %if.then244
   %field.inplace251 = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 5
   %field.inplace252 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace251, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1531 }, ptr %arg.tmp253, align 1
+  store { ptr } { ptr @.sconst.1535 }, ptr %arg.tmp253, align 1
   %call254 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace252, ptr %arg.tmp253)
   %not = xor i1 %call254, true
   br i1 %not, label %if.then255, label %if.end256
@@ -249413,15 +249682,15 @@ if.end256:                                        ; preds = %if.end261, %if.then
   br label %if.end250
 
 if.then260:                                       ; preds = %if.then255
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1532)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1536)
   %field.inplace262 = getelementptr inbounds %_Z11PlannedType, ptr %arg.tmp, i32 0, i32 1
   %call263 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %field.inplace262)
   call void @_Z11scaly_eputsP10const_char(ptr %call263)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1533)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1537)
   %field.inplace264 = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %call70, i32 0, i32 0
   %call265 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %field.inplace264)
   call void @_Z11scaly_eputsP10const_char(ptr %call265)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1534)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1538)
   call void @exit(i64 16)
   br label %if.end261
 
@@ -249570,9 +249839,9 @@ choose.when:                                      ; preds = %entry
   %tuple.field4 = getelementptr inbounds %_Z11PlannedType, ptr %tuple.region3, i32 0, i32 0
   store %_Z4Span %field.load, ptr %tuple.field4, align 1
   %tuple.field5 = getelementptr inbounds %_Z11PlannedType, ptr %tuple.region3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1536 }, ptr %tuple.field5, align 1
+  store { ptr } { ptr @.sconst.1540 }, ptr %tuple.field5, align 1
   %tuple.field6 = getelementptr inbounds %_Z11PlannedType, ptr %tuple.region3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1537 }, ptr %tuple.field6, align 1
+  store { ptr } { ptr @.sconst.1541 }, ptr %tuple.field6, align 1
   %tuple.field7 = getelementptr inbounds %_Z11PlannedType, ptr %tuple.region3, i32 0, i32 3
   store ptr null, ptr %tuple.field7, align 1
   %field.load8 = load %_Z8Lifetime, ptr %tuple.region2, align 1
@@ -250007,7 +250276,7 @@ choose.when:                                      ; preds = %if.end48
 
 if.then54:                                        ; preds = %choose.end
   %clo_ty56 = load ptr, ptr %clo_ty, align 8
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %clo_ty56, ptr @.str.1538)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %clo_ty56, ptr @.str.1542)
   %set.load57 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %record, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   br label %if.end55
@@ -250041,7 +250310,7 @@ if.then66:                                        ; preds = %if.then59
   ret void
 
 if.end67:                                         ; preds = %if.then59
-  store { ptr } { ptr @.sconst.1539 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.1543 }, ptr %arg.tmp71, align 1
   call void @_ZN7Emitter21lookup_function_cacheEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %tuple68, ptr %1, ptr %2, ptr %arg.tmp71)
   store ptr %tuple68, ptr %alloc_func, align 1
   %alloc_func72 = load ptr, ptr %alloc_func, align 8
@@ -250054,7 +250323,7 @@ if.then76:                                        ; preds = %if.end67
   %load.struct78 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module79 = extractvalue %_Z7Emitter %load.struct78, 4
   %handle80 = extractvalue %_Z13LLVMModuleRef %llvm_module79, 0
-  %call81 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle80, ptr @.str.1540)
+  %call81 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle80, ptr @.str.1544)
   %set.heap82 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call81, ptr %set.heap82, align 1
   store ptr %set.heap82, ptr %alloc_func, align 1
@@ -250097,7 +250366,7 @@ if.then87:                                        ; preds = %if.end77
   %llvm_module110 = extractvalue %_Z7Emitter %load.struct109, 4
   %handle111 = extractvalue %_Z13LLVMModuleRef %llvm_module110, 0
   %handle112 = extractvalue %_Z11LLVMTypeRef %call108, 0
-  %call113 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle111, ptr @.str.1541, ptr %handle112)
+  %call113 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle111, ptr @.str.1545, ptr %handle112)
   %set.heap114 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call113, ptr %set.heap114, align 1
   store ptr %set.heap114, ptr %alloc_func, align 1
@@ -250106,7 +250375,7 @@ if.then87:                                        ; preds = %if.end77
   %handle117 = extractvalue %_Z12LLVMValueRef %wrapper.load116, 0
   %call118 = call i64 @_ZN11LLVMLinkage8ExternalEv()
   call void @LLVMSetLinkage(ptr %handle117, i64 %call118)
-  store { ptr } { ptr @.sconst.1542 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.1546 }, ptr %arg.tmp71, align 1
   %alloc_func119 = load ptr, ptr %alloc_func, align 8
   call void @_ZN7Emitter14cache_functionE6String12LLVMValueRef(ptr %2, ptr %arg.tmp71, ptr %alloc_func119)
   br label %if.end88
@@ -250167,7 +250436,7 @@ if.end88:                                         ; preds = %if.then87, %if.end7
   %alloc_args160 = load ptr, ptr %apt, align 8
   %load.struct161 = load %_Z6VectorI12LLVMValueRefE, ptr %alloc_args160, align 8
   %data162 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct161, 1
-  %call163 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle155, ptr %handle156, ptr %handle159, ptr %data162, i64 3, ptr @.str.1543)
+  %call163 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle155, ptr %handle156, ptr %handle159, ptr %data162, i64 3, ptr @.str.1547)
   store %_Z12LLVMValueRef %call163, ptr %record, align 1
   br label %if.end60
 
@@ -250188,7 +250457,7 @@ if.end168:                                        ; preds = %if.end60
   %handle177 = extractvalue %_Z11LLVMTypeRef %wrapper.load176, 0
   %record178 = load %_Z12LLVMValueRef, ptr %record, align 8
   %handle179 = extractvalue %_Z12LLVMValueRef %record178, 0
-  %call180 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle174, ptr %handle177, ptr %handle179, i64 0, ptr @.str.1544)
+  %call180 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle174, ptr %handle177, ptr %handle179, i64 0, ptr @.str.1548)
   %load.struct181 = load %_Z7Emitter, ptr %2, align 8
   %builder182 = extractvalue %_Z7Emitter %load.struct181, 5
   %handle183 = extractvalue %_Z14LLVMBuilderRef %builder182, 0
@@ -250244,7 +250513,7 @@ if.then202:                                       ; preds = %if.then195
   %ci212 = load i64, ptr %fi, align 8
   %add213 = add i64 %ci212, 1
   %as.trunc214 = trunc i64 %add213 to i32
-  %call215 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle206, ptr %handle209, ptr %handle211, i32 %as.trunc214, ptr @.str.1545)
+  %call215 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle206, ptr %handle209, ptr %handle211, i32 %as.trunc214, ptr @.str.1549)
   %load.struct216 = load %_Z7Emitter, ptr %2, align 8
   %builder217 = extractvalue %_Z7Emitter %load.struct216, 5
   %handle218 = extractvalue %_Z14LLVMBuilderRef %builder217, 0
@@ -250285,7 +250554,7 @@ choose.when:                                      ; preds = %entry
   br label %choose.end
 
 if.then:                                          ; preds = %choose.end
-  store { ptr } { ptr @.sconst.1546 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1550 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter15lookup_variableEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result, ptr %1, ptr %2, ptr %arg.tmp)
   %load.struct = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle = extractvalue %_Z12LLVMValueRef %load.struct, 0
@@ -250422,7 +250691,7 @@ while.exit:                                       ; preds = %while.cond
   %context47 = extractvalue %_Z7Emitter %load.struct46, 1
   %handle48 = extractvalue %_Z14LLVMContextRef %context47, 0
   %handle49 = extractvalue %_Z12LLVMValueRef %call40, 0
-  %call50 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle48, ptr %handle49, ptr @.str.1547)
+  %call50 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle48, ptr %handle49, ptr @.str.1551)
   %load.struct51 = load %_Z7Emitter, ptr %2, align 8
   %builder52 = extractvalue %_Z7Emitter %load.struct51, 5
   %handle53 = extractvalue %_Z14LLVMBuilderRef %builder52, 0
@@ -250491,14 +250760,14 @@ if.end74:                                         ; preds = %if.then73, %while.b
   %k82 = load i64, ptr %k, align 8
   %add83 = add i64 %k82, 1
   %as.trunc84 = trunc i64 %add83 to i32
-  %call85 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle78, ptr %handle80, ptr %handle81, i32 %as.trunc84, ptr @.str.1548)
+  %call85 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle78, ptr %handle80, ptr %handle81, i32 %as.trunc84, ptr @.str.1552)
   %load.struct86 = load %_Z7Emitter, ptr %2, align 8
   %builder87 = extractvalue %_Z7Emitter %load.struct86, 5
   %handle88 = extractvalue %_Z14LLVMBuilderRef %builder87, 0
   %ct89 = load %_Z11LLVMTypeRef, ptr %ct, align 8
   %handle90 = extractvalue %_Z11LLVMTypeRef %ct89, 0
   %handle91 = extractvalue %_Z12LLVMValueRef %call85, 0
-  %call92 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle88, ptr %handle90, ptr %handle91, ptr @.str.1549)
+  %call92 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle88, ptr %handle90, ptr %handle91, ptr @.str.1553)
   %real_args93 = load ptr, ptr %real_args, align 8
   %k94 = load i64, ptr %k, align 8
   store %_Z12LLVMValueRef %call92, ptr %arg.tmp95, align 1
@@ -250603,7 +250872,7 @@ if.end147:                                        ; preds = %if.then146, %while.
   %call168 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle160, ptr %handle161, ptr %handle163, ptr %data166, i32 %as.trunc167, ptr @.scaly.empty.cstr)
   %field.inplace169 = getelementptr inbounds %_Z14PlannedClosure, ptr %3, i32 0, i32 7
   %field.inplace170 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace169, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1550 }, ptr %arg.tmp171, align 1
+  store { ptr } { ptr @.sconst.1554 }, ptr %arg.tmp171, align 1
   %call172 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace170, ptr %arg.tmp171)
   br i1 %call172, label %if.then173, label %if.else
 
@@ -251334,7 +251603,7 @@ if.then6:                                         ; preds = %if.end
   %handle11 = extractvalue %_Z14LLVMBuilderRef %builder, 0
   %handle12 = extractvalue %_Z11LLVMTypeRef %call9, 0
   %handle13 = extractvalue %_Z12LLVMValueRef %call1, 0
-  %call14 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle11, ptr %handle12, ptr %handle13, ptr @.str.1551)
+  %call14 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle11, ptr %handle12, ptr %handle13, ptr @.str.1555)
   store %_Z12LLVMValueRef %call14, ptr %0, align 1
   ret void
 
@@ -251373,7 +251642,7 @@ if.then18:                                        ; preds = %if.end7
   %indices35 = load ptr, ptr %indices, align 8
   %load.struct36 = load %_Z6VectorI12LLVMValueRefE, ptr %indices35, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct36, 1
-  %call37 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle32, ptr %handle33, ptr %handle34, ptr %data, i64 2, ptr @.str.1552)
+  %call37 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle32, ptr %handle33, ptr %handle34, ptr %data, i64 2, ptr @.str.1556)
   store %_Z12LLVMValueRef %call37, ptr %0, align 1
   ret void
 
@@ -251446,7 +251715,7 @@ entry:
   store %_Z11PlannedType %result_type, ptr %ctor_rt, align 1
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %ctor_rt, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1553 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1557 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -251614,7 +251883,7 @@ if.end48:                                         ; preds = %if.then47, %if.then
   br i1 %eq52, label %if.then53, label %if.end54
 
 if.then53:                                        ; preds = %if.end48
-  store { ptr } { ptr @.sconst.1554 }, ptr %arg.tmp56, align 1
+  store { ptr } { ptr @.sconst.1558 }, ptr %arg.tmp56, align 1
   call void @_ZN7Emitter15lookup_variableEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result55, ptr %1, ptr %2, ptr %arg.tmp56)
   %load.struct57 = load %_Z12LLVMValueRef, ptr %sret.result55, align 8
   %handle58 = extractvalue %_Z12LLVMValueRef %load.struct57, 0
@@ -251677,7 +251946,7 @@ if.end87:                                         ; preds = %if.end205, %if.end8
   br i1 %ne208, label %if.then209, label %if.end210
 
 if.then89:                                        ; preds = %if.then86
-  store { ptr } { ptr @.sconst.1555 }, ptr %arg.tmp56, align 1
+  store { ptr } { ptr @.sconst.1559 }, ptr %arg.tmp56, align 1
   call void @_ZN7Emitter21lookup_function_cacheEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %tuple75, ptr %1, ptr %2, ptr %arg.tmp56)
   store ptr %tuple75, ptr %alloc_func, align 1
   %alloc_func91 = load ptr, ptr %alloc_func, align 8
@@ -251695,7 +251964,7 @@ if.then95:                                        ; preds = %if.then89
   %load.struct97 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct97, 4
   %handle98 = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call99 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle98, ptr @.str.1556)
+  %call99 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle98, ptr @.str.1560)
   %set.heap = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call99, ptr %set.heap, align 1
   store ptr %set.heap, ptr %alloc_func, align 1
@@ -251746,7 +252015,7 @@ if.then104:                                       ; preds = %if.end96
   %llvm_module132 = extractvalue %_Z7Emitter %load.struct131, 4
   %handle133 = extractvalue %_Z13LLVMModuleRef %llvm_module132, 0
   %handle134 = extractvalue %_Z11LLVMTypeRef %call130, 0
-  %call135 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle133, ptr @.str.1557, ptr %handle134)
+  %call135 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle133, ptr @.str.1561, ptr %handle134)
   %set.heap136 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call135, ptr %set.heap136, align 1
   store ptr %set.heap136, ptr %alloc_func, align 1
@@ -251755,7 +252024,7 @@ if.then104:                                       ; preds = %if.end96
   %handle138 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
   %call139 = call i64 @_ZN11LLVMLinkage8ExternalEv()
   call void @LLVMSetLinkage(ptr %handle138, i64 %call139)
-  store { ptr } { ptr @.sconst.1558 }, ptr %arg.tmp56, align 1
+  store { ptr } { ptr @.sconst.1562 }, ptr %arg.tmp56, align 1
   %alloc_func140 = load ptr, ptr %alloc_func, align 8
   call void @_ZN7Emitter14cache_functionE6String12LLVMValueRef(ptr %2, ptr %arg.tmp56, ptr %alloc_func140)
   br label %if.end105
@@ -251839,12 +252108,12 @@ if.end150:                                        ; preds = %if.then149, %if.end
   %alloc_args198 = load ptr, ptr %alloc_param_types_d, align 8
   %load.struct199 = load %_Z6VectorI12LLVMValueRefE, ptr %alloc_args198, align 8
   %data200 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct199, 1
-  %call201 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle193, ptr %handle194, ptr %handle197, ptr %data200, i64 3, ptr @.str.1559)
+  %call201 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle193, ptr %handle194, ptr %handle197, ptr %data200, i64 3, ptr @.str.1563)
   store %_Z12LLVMValueRef %call201, ptr %struct_ptr, align 1
   br label %if.end90
 
 if.then204:                                       ; preds = %if.end90
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %size_const, ptr %1, ptr %2, ptr %sret.result, ptr @.str.1560)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %size_const, ptr %1, ptr %2, ptr %sret.result, ptr @.str.1564)
   %set.load206 = load %_Z12LLVMValueRef, ptr %size_const, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %struct_ptr, ptr align 1 %size_const, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   br label %if.end205
@@ -251957,7 +252226,7 @@ if.then252:                                       ; preds = %while.body
   %handle260 = extractvalue %_Z12LLVMValueRef %struct_ptr259, 0
   %fi261 = load i64, ptr %fi, align 8
   %as.trunc = trunc i64 %fi261 to i32
-  %call262 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle256, ptr %handle258, ptr %handle260, i32 %as.trunc, ptr @.str.1561)
+  %call262 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle256, ptr %handle258, ptr %handle260, i32 %as.trunc, ptr @.str.1565)
   %handle263 = extractvalue %_Z11LLVMTypeRef %call249, 0
   %call264 = call %_Z12LLVMValueRef @LLVMConstNull(ptr %handle263)
   %load.struct265 = load %_Z7Emitter, ptr %2, align 8
@@ -252113,7 +252382,7 @@ if.then347:                                       ; preds = %if.end335
   %handle351 = extractvalue %_Z12LLVMValueRef %wrapper.load350, 0
   %call352 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle351)
   store %_Z11LLVMTypeRef %call352, ptr %arg.tmp353, align 1
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple336, ptr %1, ptr %2, ptr %arg.tmp353, ptr @.str.1562)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple336, ptr %1, ptr %2, ptr %arg.tmp353, ptr @.str.1566)
   %arg_value354 = load ptr, ptr %alloc_param_types_c, align 8
   %wrapper.load355 = load %_Z12LLVMValueRef, ptr %arg_value354, align 8
   %handle356 = extractvalue %_Z12LLVMValueRef %wrapper.load355, 0
@@ -252240,7 +252509,7 @@ entry:
   store i1 false, ptr %result, align 1
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1563 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1567 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -252278,7 +252547,7 @@ if.end7:                                          ; preds = %if.end11, %if.then1
 if.then10:                                        ; preds = %if.then6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   %field.inplace13 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1564 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.1568 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace13, ptr %arg.tmp14)
   br i1 %call15, label %if.then16, label %if.end17
 
@@ -252291,7 +252560,7 @@ if.then16:                                        ; preds = %if.then10
 
 if.end17:                                         ; preds = %if.then16, %if.then10
   %field.inplace18 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1565 }, ptr %arg.tmp19, align 1
+  store { ptr } { ptr @.sconst.1569 }, ptr %arg.tmp19, align 1
   %call20 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace18, ptr %arg.tmp19)
   br i1 %call20, label %if.then21, label %if.end22
 
@@ -252301,7 +252570,7 @@ if.then21:                                        ; preds = %if.end17
 
 if.end22:                                         ; preds = %if.then21, %if.end17
   %field.inplace23 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1566 }, ptr %arg.tmp24, align 1
+  store { ptr } { ptr @.sconst.1570 }, ptr %arg.tmp24, align 1
   %call25 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace23, ptr %arg.tmp24)
   br i1 %call25, label %if.then26, label %if.end27
 
@@ -252311,7 +252580,7 @@ if.then26:                                        ; preds = %if.end22
 
 if.end27:                                         ; preds = %if.then26, %if.end22
   %field.inplace28 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1567 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.1571 }, ptr %arg.tmp29, align 1
   %call30 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace28, ptr %arg.tmp29)
   br i1 %call30, label %if.then31, label %if.end32
 
@@ -252321,7 +252590,7 @@ if.then31:                                        ; preds = %if.end27
 
 if.end32:                                         ; preds = %if.then31, %if.end27
   %field.inplace33 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1568 }, ptr %arg.tmp34, align 1
+  store { ptr } { ptr @.sconst.1572 }, ptr %arg.tmp34, align 1
   %call35 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace33, ptr %arg.tmp34)
   br i1 %call35, label %if.then36, label %if.end37
 
@@ -252346,7 +252615,7 @@ entry:
   store i1 false, ptr %result, align 1
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1569 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1573 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -252384,7 +252653,7 @@ if.end7:                                          ; preds = %if.end11, %if.then1
 if.then10:                                        ; preds = %if.then6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call8, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   %field.inplace13 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1570 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.1574 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace13, ptr %arg.tmp14)
   br i1 %call15, label %if.then16, label %if.end17
 
@@ -252397,7 +252666,7 @@ if.then16:                                        ; preds = %if.then10
 
 if.end17:                                         ; preds = %if.then16, %if.then10
   %field.inplace18 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1571 }, ptr %arg.tmp19, align 1
+  store { ptr } { ptr @.sconst.1575 }, ptr %arg.tmp19, align 1
   %call20 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace18, ptr %arg.tmp19)
   br i1 %call20, label %if.then21, label %if.end22
 
@@ -252407,7 +252676,7 @@ if.then21:                                        ; preds = %if.end17
 
 if.end22:                                         ; preds = %if.then21, %if.end17
   %field.inplace23 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1572 }, ptr %arg.tmp24, align 1
+  store { ptr } { ptr @.sconst.1576 }, ptr %arg.tmp24, align 1
   %call25 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace23, ptr %arg.tmp24)
   br i1 %call25, label %if.then26, label %if.end27
 
@@ -252417,7 +252686,7 @@ if.then26:                                        ; preds = %if.end22
 
 if.end27:                                         ; preds = %if.then26, %if.end22
   %field.inplace28 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp12, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1573 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.1577 }, ptr %arg.tmp29, align 1
   %call30 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace28, ptr %arg.tmp29)
   br i1 %call30, label %if.then31, label %if.end32
 
@@ -252437,7 +252706,7 @@ entry:
   %load.struct = load %_Z7Emitter, ptr %2, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct, 4
   %handle = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call = call %_Z12LLVMValueRef @LLVMGetNamedGlobal(ptr %handle, ptr @.str.1574)
+  %call = call %_Z12LLVMValueRef @LLVMGetNamedGlobal(ptr %handle, ptr @.str.1578)
   %g = alloca %_Z12LLVMValueRef, align 8
   store %_Z12LLVMValueRef %call, ptr %g, align 1
   %g1 = load %_Z12LLVMValueRef, ptr %g, align 8
@@ -252475,7 +252744,7 @@ if.end:                                           ; preds = %entry
   %llvm_module17 = extractvalue %_Z7Emitter %load.struct16, 4
   %handle18 = extractvalue %_Z13LLVMModuleRef %llvm_module17, 0
   %handle19 = extractvalue %_Z11LLVMTypeRef %call8, 0
-  %call20 = call %_Z12LLVMValueRef @LLVMAddGlobal(ptr %handle18, ptr %handle19, ptr @.str.1575)
+  %call20 = call %_Z12LLVMValueRef @LLVMAddGlobal(ptr %handle18, ptr %handle19, ptr @.str.1579)
   store %_Z12LLVMValueRef %call20, ptr %g, align 1
   %g21 = load %_Z12LLVMValueRef, ptr %g, align 8
   %handle22 = extractvalue %_Z12LLVMValueRef %g21, 0
@@ -252525,7 +252794,7 @@ if.then:                                          ; preds = %entry
   %handle9 = extractvalue %_Z12LLVMValueRef %sv8, 0
   %call10 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle9)
   store %_Z11LLVMTypeRef %call10, ptr %arg.tmp, align 1
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1576)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1580)
   %load.struct11 = load %_Z7Emitter, ptr %2, align 8
   %builder = extractvalue %_Z7Emitter %load.struct11, 5
   %handle12 = extractvalue %_Z14LLVMBuilderRef %builder, 0
@@ -252553,7 +252822,7 @@ if.end:                                           ; preds = %if.then, %entry
   %load.struct22 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct22, 4
   %handle23 = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call24 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle23, ptr @.str.1577)
+  %call24 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle23, ptr @.str.1581)
   store %_Z12LLVMValueRef %call24, ptr %sret.result, align 1
   %gb = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle25 = extractvalue %_Z12LLVMValueRef %gb, 0
@@ -252565,7 +252834,7 @@ if.then27:                                        ; preds = %if.end
   %llvm_module30 = extractvalue %_Z7Emitter %load.struct29, 4
   %handle31 = extractvalue %_Z13LLVMModuleRef %llvm_module30, 0
   %handle32 = extractvalue %_Z11LLVMTypeRef %call21, 0
-  %call33 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle31, ptr @.str.1578, ptr %handle32)
+  %call33 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle31, ptr @.str.1582, ptr %handle32)
   store %_Z12LLVMValueRef %call33, ptr %sret.result, align 1
   br label %if.end28
 
@@ -252584,12 +252853,12 @@ if.end28:                                         ; preds = %if.then27, %if.end
   %ca42 = load ptr, ptr %ca, align 8
   %load.struct43 = load %_Z6VectorI12LLVMValueRefE, ptr %ca42, align 8
   %data44 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct43, 1
-  %call45 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle38, ptr %handle39, ptr %handle41, ptr %data44, i64 1, ptr @.str.1579)
+  %call45 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle38, ptr %handle39, ptr %handle41, ptr %data44, i64 1, ptr @.str.1583)
   %load.struct46 = load %_Z7Emitter, ptr %2, align 8
   %builder47 = extractvalue %_Z7Emitter %load.struct46, 5
   %handle48 = extractvalue %_Z14LLVMBuilderRef %builder47, 0
   %handle49 = extractvalue %_Z12LLVMValueRef %call45, 0
-  %call50 = call %_Z12LLVMValueRef @LLVMBuildIsNotNull(ptr %handle48, ptr %handle49, ptr @.str.1580)
+  %call50 = call %_Z12LLVMValueRef @LLVMBuildIsNotNull(ptr %handle48, ptr %handle49, ptr @.str.1584)
   %load.struct51 = load %_Z7Emitter, ptr %2, align 8
   %builder52 = extractvalue %_Z7Emitter %load.struct51, 5
   %handle53 = extractvalue %_Z14LLVMBuilderRef %builder52, 0
@@ -252598,7 +252867,7 @@ if.end28:                                         ; preds = %if.then27, %if.end
   call void @_ZN7Emitter23get_or_build_empty_cstrEPN4scaly6memory4PageE(ptr noalias sret(%_Z12LLVMValueRef) %sret.result56, ptr %1, ptr %2)
   %wrapper.load57 = load %_Z12LLVMValueRef, ptr %sret.result56, align 8
   %handle58 = extractvalue %_Z12LLVMValueRef %wrapper.load57, 0
-  %call59 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle53, ptr %handle54, ptr %handle55, ptr %handle58, ptr @.str.1581)
+  %call59 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle53, ptr %handle54, ptr %handle55, ptr %handle58, ptr @.str.1585)
   store %_Z12LLVMValueRef %call59, ptr %0, align 1
   ret void
 }
@@ -252620,7 +252889,7 @@ entry:
   %tuple = alloca %_Z12LLVMValueRef, align 8
   %field.inplace = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1582 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1586 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace, ptr %arg.tmp)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
@@ -252663,7 +252932,7 @@ if.end10:                                         ; preds = %if.end3
   call void @_ZN7Emitter12emit_operandEPN4scaly6memory4PageE14PlannedOperand(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %call7)
   store ptr %tuple, ptr %ptr, align 1
   %field.inplace13 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1583 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.1587 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace13, ptr %arg.tmp14)
   br i1 %call15, label %if.then16, label %if.end17
 
@@ -252679,7 +252948,7 @@ if.then16:                                        ; preds = %if.end10
   %ptr23 = load ptr, ptr %ptr, align 8
   %wrapper.load = load %_Z12LLVMValueRef, ptr %ptr23, align 8
   %handle24 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
-  %call25 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle21, ptr %handle22, ptr %handle24, ptr @.str.1584)
+  %call25 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle21, ptr %handle22, ptr %handle24, ptr @.str.1588)
   %handle26 = extractvalue %_Z12LLVMValueRef %call25, 0
   call void @LLVMSetOrdering(ptr %handle26, i32 7)
   %handle27 = extractvalue %_Z12LLVMValueRef %call25, 0
@@ -252720,7 +252989,7 @@ if.end40:                                         ; preds = %if.end31
   call void @_ZN7Emitter12emit_operandEPN4scaly6memory4PageE14PlannedOperand(ptr noalias sret(%_Z12LLVMValueRef) %tuple32, ptr %1, ptr %2, ptr %call37)
   store ptr %tuple32, ptr %val, align 1
   %field.inplace43 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1585 }, ptr %arg.tmp44, align 1
+  store { ptr } { ptr @.sconst.1589 }, ptr %arg.tmp44, align 1
   %call45 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace43, ptr %arg.tmp44)
   br i1 %call45, label %if.then46, label %if.end47
 
@@ -252744,7 +253013,7 @@ if.then46:                                        ; preds = %if.end40
 
 if.end47:                                         ; preds = %if.end40
   %field.inplace60 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1586 }, ptr %arg.tmp61, align 1
+  store { ptr } { ptr @.sconst.1590 }, ptr %arg.tmp61, align 1
   %call62 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace60, ptr %arg.tmp61)
   br i1 %call62, label %if.then63, label %if.end64
 
@@ -252764,7 +253033,7 @@ if.then63:                                        ; preds = %if.end47
 
 if.end64:                                         ; preds = %if.end47
   %field.inplace75 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1587 }, ptr %arg.tmp76, align 1
+  store { ptr } { ptr @.sconst.1591 }, ptr %arg.tmp76, align 1
   %call77 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace75, ptr %arg.tmp76)
   br i1 %call77, label %if.then78, label %if.end79
 
@@ -252784,7 +253053,7 @@ if.then78:                                        ; preds = %if.end64
 
 if.end79:                                         ; preds = %if.end64
   %field.inplace90 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1588 }, ptr %arg.tmp91, align 1
+  store { ptr } { ptr @.sconst.1592 }, ptr %arg.tmp91, align 1
   %call92 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace90, ptr %arg.tmp91)
   br i1 %call92, label %if.then93, label %if.end94
 
@@ -252804,7 +253073,7 @@ if.then93:                                        ; preds = %if.end79
 
 if.end94:                                         ; preds = %if.end79
   %field.inplace105 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1589 }, ptr %arg.tmp106, align 1
+  store { ptr } { ptr @.sconst.1593 }, ptr %arg.tmp106, align 1
   %call107 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace105, ptr %arg.tmp106)
   br i1 %call107, label %if.then108, label %if.end109
 
@@ -252864,7 +253133,7 @@ if.end125:                                        ; preds = %if.end116
   %builder142 = extractvalue %_Z7Emitter %load.struct141, 5
   %handle143 = extractvalue %_Z14LLVMBuilderRef %builder142, 0
   %handle144 = extractvalue %_Z12LLVMValueRef %call140, 0
-  %call145 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle143, ptr %handle144, i64 0, ptr @.str.1590)
+  %call145 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle143, ptr %handle144, i64 0, ptr @.str.1594)
   store %_Z12LLVMValueRef %call145, ptr %0, align 1
   ret void
 }
@@ -252880,7 +253149,7 @@ entry:
   %tuple = alloca %_Z12LLVMValueRef, align 8
   %field.inplace = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1591 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1595 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   %not = xor i1 %call, true
   br i1 %not, label %if.then, label %if.end
@@ -252999,7 +253268,7 @@ entry:
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1592 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1596 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb1, ptr %arg.tmp)
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %3, i32 0, i32 2
   %call = call i64 @_ZN6String10get_lengthEv(ptr %field.inplace)
@@ -253035,7 +253304,7 @@ entry:
   %arg.tmp5 = alloca { ptr }, align 8
   %arg.tmp1 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1593 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1597 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -253043,7 +253312,7 @@ if.then:                                          ; preds = %entry
   ret i1 true
 
 if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.1594 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.1598 }, ptr %arg.tmp1, align 1
   %call2 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp1)
   br i1 %call2, label %if.then3, label %if.end4
 
@@ -253051,7 +253320,7 @@ if.then3:                                         ; preds = %if.end
   ret i1 true
 
 if.end4:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.1595 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.1599 }, ptr %arg.tmp5, align 1
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp5)
   br i1 %call6, label %if.then7, label %if.end8
 
@@ -253059,7 +253328,7 @@ if.then7:                                         ; preds = %if.end4
   ret i1 true
 
 if.end8:                                          ; preds = %if.end4
-  store { ptr } { ptr @.sconst.1596 }, ptr %arg.tmp9, align 1
+  store { ptr } { ptr @.sconst.1600 }, ptr %arg.tmp9, align 1
   %call10 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp9)
   br i1 %call10, label %if.then11, label %if.end12
 
@@ -253067,7 +253336,7 @@ if.then11:                                        ; preds = %if.end8
   ret i1 true
 
 if.end12:                                         ; preds = %if.end8
-  store { ptr } { ptr @.sconst.1597 }, ptr %arg.tmp13, align 1
+  store { ptr } { ptr @.sconst.1601 }, ptr %arg.tmp13, align 1
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp13)
   br i1 %call14, label %if.then15, label %if.end16
 
@@ -253075,7 +253344,7 @@ if.then15:                                        ; preds = %if.end12
   ret i1 true
 
 if.end16:                                         ; preds = %if.end12
-  store { ptr } { ptr @.sconst.1598 }, ptr %arg.tmp17, align 1
+  store { ptr } { ptr @.sconst.1602 }, ptr %arg.tmp17, align 1
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp17)
   br i1 %call18, label %if.then19, label %if.end20
 
@@ -253091,7 +253360,7 @@ entry:
   %arg.tmp2 = alloca { ptr }, align 8
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1599 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1603 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -253100,7 +253369,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace1 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1600 }, ptr %arg.tmp2, align 1
+  store { ptr } { ptr @.sconst.1604 }, ptr %arg.tmp2, align 1
   %call3 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace1, ptr %arg.tmp2)
   br i1 %call3, label %if.then4, label %if.end5
 
@@ -253128,7 +253397,7 @@ entry:
   store %_Z11PlannedType %binding.load, ptr %inner, align 1
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %3, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1601 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1605 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -253453,7 +253722,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1602 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1606 }, ptr %arg.tmp, align 1
   %call1 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call1, label %if.then2, label %if.end3
 
@@ -253472,7 +253741,7 @@ if.then6:                                         ; preds = %if.end3
 
 if.end7:                                          ; preds = %if.end3
   %field.inplace8 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1603 }, ptr %arg.tmp9, align 1
+  store { ptr } { ptr @.sconst.1607 }, ptr %arg.tmp9, align 1
   %call10 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace8, ptr %arg.tmp9)
   br i1 %call10, label %if.then11, label %if.end12
 
@@ -253625,7 +253894,7 @@ entry:
   %arg.tmp2 = alloca { ptr }, align 8
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1604 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1608 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -253634,7 +253903,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace1 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1605 }, ptr %arg.tmp2, align 1
+  store { ptr } { ptr @.sconst.1609 }, ptr %arg.tmp2, align 1
   %call3 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace1, ptr %arg.tmp2)
   br i1 %call3, label %if.then4, label %if.end5
 
@@ -253673,7 +253942,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1606 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1610 }, ptr %arg.tmp, align 1
   %call1 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call1, label %if.then2, label %if.end3
 
@@ -253689,7 +253958,7 @@ define linkonce_odr void @_ZN7Emitter19region_fix_value_fnEPN4scaly6memory4PageE
 entry:
   %sret.result = alloca %_Z11LLVMTypeRef, align 8
   %sym = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1607 }, ptr %sym, align 1
+  store { ptr } { ptr @.sconst.1611 }, ptr %sym, align 1
   %load.struct = load %_Z7Emitter, ptr %2, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct, 4
   %handle = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
@@ -253794,7 +254063,7 @@ entry:
   %handle3 = extractvalue %_Z11LLVMTypeRef %call, 0
   %wrapper.load = load %_Z12LLVMValueRef, ptr %4, align 8
   %handle4 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
-  %call5 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2, ptr %handle3, ptr %handle4, ptr @.str.1608)
+  %call5 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2, ptr %handle3, ptr %handle4, ptr @.str.1612)
   %handle6 = extractvalue %_Z12LLVMValueRef %call5, 0
   call void @LLVMSetAlignment(ptr %handle6, i32 1)
   %sret.result = alloca %_Z12LLVMValueRef, align 8
@@ -253821,7 +254090,7 @@ entry:
   %fargs17 = load ptr, ptr %fargs, align 8
   %load.struct18 = load %_Z6VectorI12LLVMValueRefE, ptr %fargs17, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct18, 1
-  %call19 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle11, ptr %handle14, ptr %handle16, ptr %data, i64 2, ptr @.str.1609)
+  %call19 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle11, ptr %handle14, ptr %handle16, ptr %data, i64 2, ptr @.str.1613)
   %load.struct20 = load %_Z7Emitter, ptr %2, align 8
   %builder21 = extractvalue %_Z7Emitter %load.struct20, 5
   %handle22 = extractvalue %_Z14LLVMBuilderRef %builder21, 0
@@ -253883,7 +254152,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1614 }, ptr %arg.tmp57, align 1
+  store { ptr } { ptr @.sconst.1618 }, ptr %arg.tmp57, align 1
   %call58 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp57)
   br i1 %call58, label %if.then59, label %if.end60
 
@@ -253901,19 +254170,19 @@ if.then3:                                         ; preds = %if.then
   %wrapper.load = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle11 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
   %handle12 = extractvalue %_Z12LLVMValueRef %call7, 0
-  %call13 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle9, i64 %call10, ptr %handle11, ptr %handle12, ptr @.str.1610)
+  %call13 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle9, i64 %call10, ptr %handle11, ptr %handle12, ptr @.str.1614)
   %load.struct14 = load %_Z7Emitter, ptr %0, align 8
   %context15 = extractvalue %_Z7Emitter %load.struct14, 1
   %handle16 = extractvalue %_Z14LLVMContextRef %context15, 0
   %wrapper.load17 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle18 = extractvalue %_Z12LLVMValueRef %wrapper.load17, 0
-  %call19 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle16, ptr %handle18, ptr @.str.1611)
+  %call19 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle16, ptr %handle18, ptr @.str.1615)
   %load.struct20 = load %_Z7Emitter, ptr %0, align 8
   %context21 = extractvalue %_Z7Emitter %load.struct20, 1
   %handle22 = extractvalue %_Z14LLVMContextRef %context21, 0
   %wrapper.load23 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle24 = extractvalue %_Z12LLVMValueRef %wrapper.load23, 0
-  %call25 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle22, ptr %handle24, ptr @.str.1612)
+  %call25 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle22, ptr %handle24, ptr @.str.1616)
   %load.struct26 = load %_Z7Emitter, ptr %0, align 8
   %builder27 = extractvalue %_Z7Emitter %load.struct26, 5
   %handle28 = extractvalue %_Z14LLVMBuilderRef %builder27, 0
@@ -253936,7 +254205,7 @@ if.then3:                                         ; preds = %if.then
   %wrapper.load44 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle45 = extractvalue %_Z12LLVMValueRef %wrapper.load44, 0
   %handle46 = extractvalue %_Z11LLVMTypeRef %call40, 0
-  %call47 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle43, ptr %handle45, ptr %handle46, ptr @.str.1613)
+  %call47 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle43, ptr %handle45, ptr %handle46, ptr @.str.1617)
   store %_Z12LLVMValueRef %call47, ptr %arg.tmp, align 1
   call void @_ZN7Emitter23emit_region_walker_callE12LLVMValueRef12LLVMValueRef11PlannedType(ptr %0, ptr %2, ptr %arg.tmp, ptr %sret.result1)
   %load.struct48 = load %_Z7Emitter, ptr %0, align 8
@@ -253995,31 +254264,31 @@ entry:
   %wrapper.load = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle12 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
   %handle13 = extractvalue %_Z12LLVMValueRef %call6, 0
-  %call14 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle10, i64 %call11, ptr %handle12, ptr %handle13, ptr @.str.1615)
+  %call14 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle10, i64 %call11, ptr %handle12, ptr %handle13, ptr @.str.1619)
   %load.struct15 = load %_Z7Emitter, ptr %0, align 8
   %context16 = extractvalue %_Z7Emitter %load.struct15, 1
   %handle17 = extractvalue %_Z14LLVMContextRef %context16, 0
   %wrapper.load18 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle19 = extractvalue %_Z12LLVMValueRef %wrapper.load18, 0
-  %call20 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle17, ptr %handle19, ptr @.str.1616)
+  %call20 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle17, ptr %handle19, ptr @.str.1620)
   %load.struct21 = load %_Z7Emitter, ptr %0, align 8
   %context22 = extractvalue %_Z7Emitter %load.struct21, 1
   %handle23 = extractvalue %_Z14LLVMContextRef %context22, 0
   %wrapper.load24 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle25 = extractvalue %_Z12LLVMValueRef %wrapper.load24, 0
-  %call26 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle23, ptr %handle25, ptr @.str.1617)
+  %call26 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle23, ptr %handle25, ptr @.str.1621)
   %load.struct27 = load %_Z7Emitter, ptr %0, align 8
   %context28 = extractvalue %_Z7Emitter %load.struct27, 1
   %handle29 = extractvalue %_Z14LLVMContextRef %context28, 0
   %wrapper.load30 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle31 = extractvalue %_Z12LLVMValueRef %wrapper.load30, 0
-  %call32 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle29, ptr %handle31, ptr @.str.1618)
+  %call32 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle29, ptr %handle31, ptr @.str.1622)
   %load.struct33 = load %_Z7Emitter, ptr %0, align 8
   %context34 = extractvalue %_Z7Emitter %load.struct33, 1
   %handle35 = extractvalue %_Z14LLVMContextRef %context34, 0
   %wrapper.load36 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle37 = extractvalue %_Z12LLVMValueRef %wrapper.load36, 0
-  %call38 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle35, ptr %handle37, ptr @.str.1619)
+  %call38 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle35, ptr %handle37, ptr @.str.1623)
   %load.struct39 = load %_Z7Emitter, ptr %0, align 8
   %builder40 = extractvalue %_Z7Emitter %load.struct39, 5
   %handle41 = extractvalue %_Z14LLVMBuilderRef %builder40, 0
@@ -254038,12 +254307,12 @@ entry:
   %wrapper.load53 = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle54 = extractvalue %_Z12LLVMValueRef %wrapper.load53, 0
   %handle55 = extractvalue %_Z11LLVMTypeRef %call4, 0
-  %call56 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle52, ptr %handle54, ptr %handle55, ptr @.str.1620)
+  %call56 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle52, ptr %handle54, ptr %handle55, ptr @.str.1624)
   %load.struct57 = load %_Z7Emitter, ptr %0, align 8
   %builder58 = extractvalue %_Z7Emitter %load.struct57, 5
   %handle59 = extractvalue %_Z14LLVMBuilderRef %builder58, 0
   %handle60 = extractvalue %_Z11LLVMTypeRef %call, 0
-  %call61 = call %_Z12LLVMValueRef @LLVMBuildAlloca(ptr %handle59, ptr %handle60, ptr @.str.1621)
+  %call61 = call %_Z12LLVMValueRef @LLVMBuildAlloca(ptr %handle59, ptr %handle60, ptr @.str.1625)
   %load.struct62 = load %_Z7Emitter, ptr %0, align 8
   %builder63 = extractvalue %_Z7Emitter %load.struct62, 5
   %handle64 = extractvalue %_Z14LLVMBuilderRef %builder63, 0
@@ -254065,7 +254334,7 @@ entry:
   %handle79 = extractvalue %_Z14LLVMBuilderRef %builder78, 0
   %handle80 = extractvalue %_Z11LLVMTypeRef %call, 0
   %handle81 = extractvalue %_Z12LLVMValueRef %call61, 0
-  %call82 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle79, ptr %handle80, ptr %handle81, ptr @.str.1622)
+  %call82 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle79, ptr %handle80, ptr %handle81, ptr @.str.1626)
   %load.struct83 = load %_Z7Emitter, ptr %0, align 8
   %builder84 = extractvalue %_Z7Emitter %load.struct83, 5
   %handle85 = extractvalue %_Z14LLVMBuilderRef %builder84, 0
@@ -254073,7 +254342,7 @@ entry:
   %handle87 = extractvalue %_Z12LLVMValueRef %call82, 0
   %wrapper.load88 = load %_Z12LLVMValueRef, ptr %4, align 8
   %handle89 = extractvalue %_Z12LLVMValueRef %wrapper.load88, 0
-  %call90 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle85, i64 %call86, ptr %handle87, ptr %handle89, ptr @.str.1623)
+  %call90 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle85, i64 %call86, ptr %handle87, ptr %handle89, ptr @.str.1627)
   %load.struct91 = load %_Z7Emitter, ptr %0, align 8
   %builder92 = extractvalue %_Z7Emitter %load.struct91, 5
   %handle93 = extractvalue %_Z14LLVMBuilderRef %builder92, 0
@@ -254105,7 +254374,7 @@ entry:
   %eidx109 = load ptr, ptr %eidx, align 8
   %load.struct110 = load %_Z6VectorI12LLVMValueRefE, ptr %eidx109, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct110, 1
-  %call111 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle105, ptr %handle107, ptr %handle108, ptr %data, i64 1, ptr @.str.1624)
+  %call111 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle105, ptr %handle107, ptr %handle108, ptr %data, i64 1, ptr @.str.1628)
   %arg.tmp112 = alloca %_Z12LLVMValueRef, align 8
   store %_Z12LLVMValueRef %call111, ptr %arg.tmp112, align 1
   call void @_ZN7Emitter20emit_region_value_atE12LLVMValueRef12LLVMValueRef12LLVMValueRef11PlannedType(ptr %0, ptr %1, ptr %2, ptr %arg.tmp112, ptr %5)
@@ -254114,7 +254383,7 @@ entry:
   %handle115 = extractvalue %_Z14LLVMBuilderRef %builder114, 0
   %handle116 = extractvalue %_Z12LLVMValueRef %call82, 0
   %handle117 = extractvalue %_Z12LLVMValueRef %call8, 0
-  %call118 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle115, ptr %handle116, ptr %handle117, ptr @.str.1625)
+  %call118 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle115, ptr %handle116, ptr %handle117, ptr @.str.1629)
   %load.struct119 = load %_Z7Emitter, ptr %0, align 8
   %builder120 = extractvalue %_Z7Emitter %load.struct119, 5
   %handle121 = extractvalue %_Z14LLVMBuilderRef %builder120, 0
@@ -254173,7 +254442,7 @@ entry:
   %handle16 = extractvalue %_Z11LLVMTypeRef %call13, 0
   %wrapper.load = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle17 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
-  %call18 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle15, ptr %handle16, ptr %handle17, i64 1, ptr @.str.1626)
+  %call18 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle15, ptr %handle16, ptr %handle17, i64 1, ptr @.str.1630)
   %sret.result = alloca %_Z12LLVMValueRef, align 8
   %arg.tmp19 = alloca %_Z12LLVMValueRef, align 8
   store %_Z12LLVMValueRef %call18, ptr %arg.tmp19, align 1
@@ -254226,13 +254495,13 @@ if.end35:                                         ; preds = %if.end30
   %handle39 = extractvalue %_Z11LLVMTypeRef %call13, 0
   %wrapper.load40 = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle41 = extractvalue %_Z12LLVMValueRef %wrapper.load40, 0
-  %call42 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle38, ptr %handle39, ptr %handle41, i64 0, ptr @.str.1627)
+  %call42 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle38, ptr %handle39, ptr %handle41, i64 0, ptr @.str.1631)
   %load.struct43 = load %_Z7Emitter, ptr %0, align 8
   %builder44 = extractvalue %_Z7Emitter %load.struct43, 5
   %handle45 = extractvalue %_Z14LLVMBuilderRef %builder44, 0
   %handle46 = extractvalue %_Z11LLVMTypeRef %call, 0
   %handle47 = extractvalue %_Z12LLVMValueRef %call42, 0
-  %call48 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle45, ptr %handle46, ptr %handle47, ptr @.str.1628)
+  %call48 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle45, ptr %handle46, ptr %handle47, ptr @.str.1632)
   %handle49 = extractvalue %_Z12LLVMValueRef %call48, 0
   call void @LLVMSetAlignment(ptr %handle49, i32 1)
   store %_Z12LLVMValueRef %call48, ptr %arg.tmp19, align 1
@@ -254278,7 +254547,7 @@ entry:
   %handle16 = extractvalue %_Z11LLVMTypeRef %call13, 0
   %wrapper.load = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle17 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
-  %call18 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle15, ptr %handle16, ptr %handle17, i64 1, ptr @.str.1629)
+  %call18 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle15, ptr %handle16, ptr %handle17, i64 1, ptr @.str.1633)
   %sret.result = alloca %_Z12LLVMValueRef, align 8
   %arg.tmp19 = alloca %_Z12LLVMValueRef, align 8
   store %_Z12LLVMValueRef %call18, ptr %arg.tmp19, align 1
@@ -254292,19 +254561,19 @@ entry:
   %wrapper.load26 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle27 = extractvalue %_Z12LLVMValueRef %wrapper.load26, 0
   %handle28 = extractvalue %_Z12LLVMValueRef %call21, 0
-  %call29 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle24, i64 %call25, ptr %handle27, ptr %handle28, ptr @.str.1630)
+  %call29 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle24, i64 %call25, ptr %handle27, ptr %handle28, ptr @.str.1634)
   %load.struct30 = load %_Z7Emitter, ptr %0, align 8
   %context31 = extractvalue %_Z7Emitter %load.struct30, 1
   %handle32 = extractvalue %_Z14LLVMContextRef %context31, 0
   %wrapper.load33 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle34 = extractvalue %_Z12LLVMValueRef %wrapper.load33, 0
-  %call35 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle32, ptr %handle34, ptr @.str.1631)
+  %call35 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle32, ptr %handle34, ptr @.str.1635)
   %load.struct36 = load %_Z7Emitter, ptr %0, align 8
   %context37 = extractvalue %_Z7Emitter %load.struct36, 1
   %handle38 = extractvalue %_Z14LLVMContextRef %context37, 0
   %wrapper.load39 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle40 = extractvalue %_Z12LLVMValueRef %wrapper.load39, 0
-  %call41 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle38, ptr %handle40, ptr @.str.1632)
+  %call41 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle38, ptr %handle40, ptr @.str.1636)
   %load.struct42 = load %_Z7Emitter, ptr %0, align 8
   %builder43 = extractvalue %_Z7Emitter %load.struct42, 5
   %handle44 = extractvalue %_Z14LLVMBuilderRef %builder43, 0
@@ -254323,13 +254592,13 @@ entry:
   %wrapper.load56 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle57 = extractvalue %_Z12LLVMValueRef %wrapper.load56, 0
   %handle58 = extractvalue %_Z11LLVMTypeRef %call4, 0
-  %call59 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle55, ptr %handle57, ptr %handle58, ptr @.str.1633)
+  %call59 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle55, ptr %handle57, ptr %handle58, ptr @.str.1637)
   %load.struct60 = load %_Z7Emitter, ptr %0, align 8
   %builder61 = extractvalue %_Z7Emitter %load.struct60, 5
   %handle62 = extractvalue %_Z14LLVMBuilderRef %builder61, 0
   %handle63 = extractvalue %_Z11LLVMTypeRef %call13, 0
   %handle64 = extractvalue %_Z12LLVMValueRef %call59, 0
-  %call65 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle62, ptr %handle63, ptr %handle64, i64 1, ptr @.str.1634)
+  %call65 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle62, ptr %handle63, ptr %handle64, i64 1, ptr @.str.1638)
   %arg.tmp66 = alloca %_Z12LLVMValueRef, align 8
   store %_Z12LLVMValueRef %call65, ptr %arg.tmp66, align 1
   call void @_ZN7Emitter20emit_region_fix_slotEPN4scaly6memory4PageE12LLVMValueRef12LLVMValueRef(ptr noalias sret(%_Z12LLVMValueRef) %arg.tmp19, ptr %local_page, ptr %0, ptr %2, ptr %arg.tmp66)
@@ -254384,13 +254653,13 @@ if.then80:                                        ; preds = %if.end
   %handle85 = extractvalue %_Z11LLVMTypeRef %call13, 0
   %wrapper.load86 = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle87 = extractvalue %_Z12LLVMValueRef %wrapper.load86, 0
-  %call88 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle84, ptr %handle85, ptr %handle87, i64 0, ptr @.str.1635)
+  %call88 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle84, ptr %handle85, ptr %handle87, i64 0, ptr @.str.1639)
   %load.struct89 = load %_Z7Emitter, ptr %0, align 8
   %builder90 = extractvalue %_Z7Emitter %load.struct89, 5
   %handle91 = extractvalue %_Z14LLVMBuilderRef %builder90, 0
   %handle92 = extractvalue %_Z11LLVMTypeRef %call, 0
   %handle93 = extractvalue %_Z12LLVMValueRef %call88, 0
-  %call94 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle91, ptr %handle92, ptr %handle93, ptr @.str.1636)
+  %call94 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle91, ptr %handle92, ptr %handle93, ptr @.str.1640)
   %handle95 = extractvalue %_Z12LLVMValueRef %call94, 0
   call void @LLVMSetAlignment(ptr %handle95, i32 1)
   store %_Z12LLVMValueRef %call94, ptr %arg.tmp66, align 1
@@ -254440,8 +254709,8 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1637)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1638)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1641)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1642)
   call void @exit(i64 18)
   br label %if.end
 
@@ -254469,7 +254738,7 @@ if.end12:                                         ; preds = %if.end17, %if.end
   %builder = extractvalue %_Z7Emitter %load.struct23, 5
   %handle24 = extractvalue %_Z14LLVMBuilderRef %builder, 0
   %handle25 = extractvalue %_Z11LLVMTypeRef %call4, 0
-  %call26 = call %_Z12LLVMValueRef @LLVMBuildAlloca(ptr %handle24, ptr %handle25, ptr @.str.1639)
+  %call26 = call %_Z12LLVMValueRef @LLVMBuildAlloca(ptr %handle24, ptr %handle25, ptr @.str.1643)
   %load.struct27 = load %_Z7Emitter, ptr %0, align 8
   %builder28 = extractvalue %_Z7Emitter %load.struct27, 5
   %handle29 = extractvalue %_Z14LLVMBuilderRef %builder28, 0
@@ -254482,13 +254751,13 @@ if.end12:                                         ; preds = %if.end17, %if.end
   %handle36 = extractvalue %_Z14LLVMContextRef %context35, 0
   %wrapper.load37 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle38 = extractvalue %_Z12LLVMValueRef %wrapper.load37, 0
-  %call39 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle36, ptr %handle38, ptr @.str.1640)
+  %call39 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle36, ptr %handle38, ptr @.str.1644)
   %load.struct40 = load %_Z7Emitter, ptr %0, align 8
   %context41 = extractvalue %_Z7Emitter %load.struct40, 1
   %handle42 = extractvalue %_Z14LLVMContextRef %context41, 0
   %wrapper.load43 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle44 = extractvalue %_Z12LLVMValueRef %wrapper.load43, 0
-  %call45 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle42, ptr %handle44, ptr @.str.1641)
+  %call45 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle42, ptr %handle44, ptr @.str.1645)
   %load.struct46 = load %_Z7Emitter, ptr %0, align 8
   %builder47 = extractvalue %_Z7Emitter %load.struct46, 5
   %handle48 = extractvalue %_Z14LLVMBuilderRef %builder47, 0
@@ -254504,7 +254773,7 @@ if.end12:                                         ; preds = %if.end17, %if.end
   %handle57 = extractvalue %_Z14LLVMBuilderRef %builder56, 0
   %handle58 = extractvalue %_Z11LLVMTypeRef %call4, 0
   %handle59 = extractvalue %_Z12LLVMValueRef %call26, 0
-  %call60 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle57, ptr %handle58, ptr %handle59, ptr @.str.1642)
+  %call60 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle57, ptr %handle58, ptr %handle59, ptr @.str.1646)
   %elem_acts61 = load i1, ptr %elem_acts, align 1
   br i1 %elem_acts61, label %if.then62, label %if.end63
 
@@ -254534,7 +254803,7 @@ if.then62:                                        ; preds = %if.end12
   %wrapper.load67 = load %_Z11LLVMTypeRef, ptr %sret.result, align 8
   %handle68 = extractvalue %_Z11LLVMTypeRef %wrapper.load67, 0
   %handle69 = extractvalue %_Z12LLVMValueRef %call60, 0
-  %call70 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle66, ptr %handle68, ptr %handle69, i64 0, ptr @.str.1643)
+  %call70 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle66, ptr %handle68, ptr %handle69, i64 0, ptr @.str.1647)
   store %_Z12LLVMValueRef %call70, ptr %arg.tmp, align 1
   call void @_ZN7Emitter20emit_region_value_atE12LLVMValueRef12LLVMValueRef12LLVMValueRef11PlannedType(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, ptr %elem)
   br label %if.end63
@@ -254546,7 +254815,7 @@ if.end63:                                         ; preds = %if.then62, %if.end1
   %wrapper.load74 = load %_Z11LLVMTypeRef, ptr %sret.result, align 8
   %handle75 = extractvalue %_Z11LLVMTypeRef %wrapper.load74, 0
   %handle76 = extractvalue %_Z12LLVMValueRef %call60, 0
-  %call77 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle73, ptr %handle75, ptr %handle76, i64 1, ptr @.str.1644)
+  %call77 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle73, ptr %handle75, ptr %handle76, i64 1, ptr @.str.1648)
   store %_Z12LLVMValueRef %call77, ptr %arg.tmp79, align 1
   call void @_ZN7Emitter20emit_region_fix_slotEPN4scaly6memory4PageE12LLVMValueRef12LLVMValueRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result78, ptr %local_page, ptr %0, ptr %2, ptr %arg.tmp79)
   %handle80 = extractvalue %_Z11LLVMTypeRef %call, 0
@@ -254558,14 +254827,14 @@ if.end63:                                         ; preds = %if.then62, %if.end1
   %wrapper.load86 = load %_Z12LLVMValueRef, ptr %sret.result78, align 8
   %handle87 = extractvalue %_Z12LLVMValueRef %wrapper.load86, 0
   %handle88 = extractvalue %_Z12LLVMValueRef %call81, 0
-  %call89 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle84, i64 %call85, ptr %handle87, ptr %handle88, ptr @.str.1645)
+  %call89 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle84, i64 %call85, ptr %handle87, ptr %handle88, ptr @.str.1649)
   %load.struct90 = load %_Z7Emitter, ptr %0, align 8
   %builder91 = extractvalue %_Z7Emitter %load.struct90, 5
   %handle92 = extractvalue %_Z14LLVMBuilderRef %builder91, 0
   %wrapper.load93 = load %_Z12LLVMValueRef, ptr %sret.result78, align 8
   %handle94 = extractvalue %_Z12LLVMValueRef %wrapper.load93, 0
   %handle95 = extractvalue %_Z11LLVMTypeRef %call4, 0
-  %call96 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle92, ptr %handle94, ptr %handle95, ptr @.str.1646)
+  %call96 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle92, ptr %handle94, ptr %handle95, ptr @.str.1650)
   %load.struct97 = load %_Z7Emitter, ptr %0, align 8
   %builder98 = extractvalue %_Z7Emitter %load.struct97, 5
   %handle99 = extractvalue %_Z14LLVMBuilderRef %builder98, 0
@@ -254645,7 +254914,7 @@ if.end10:                                         ; preds = %if.then9, %if.end
   %handle18 = extractvalue %_Z11LLVMTypeRef %tag_ty17, 0
   %wrapper.load = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle19 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
-  %call20 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle16, ptr %handle18, ptr %handle19, ptr @.str.1647)
+  %call20 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle16, ptr %handle18, ptr %handle19, ptr @.str.1651)
   %handle21 = extractvalue %_Z12LLVMValueRef %call20, 0
   call void @LLVMSetAlignment(ptr %handle21, i32 1)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
@@ -254666,7 +254935,7 @@ if.end10:                                         ; preds = %if.then9, %if.end
   %pidx32 = load ptr, ptr %pidx, align 8
   %load.struct33 = load %_Z6VectorI12LLVMValueRefE, ptr %pidx32, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct33, 1
-  %call34 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle28, ptr %handle29, ptr %handle31, ptr %data, i64 1, ptr @.str.1648)
+  %call34 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle28, ptr %handle29, ptr %handle31, ptr %data, i64 1, ptr @.str.1652)
   store i64 0, ptr %act_count, align 1
   store i64 0, ptr %vi, align 1
   br label %while.cond
@@ -254690,7 +254959,7 @@ while.exit:                                       ; preds = %while.cond
   %handle56 = extractvalue %_Z14LLVMContextRef %context55, 0
   %wrapper.load57 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle58 = extractvalue %_Z12LLVMValueRef %wrapper.load57, 0
-  %call59 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle56, ptr %handle58, ptr @.str.1649)
+  %call59 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle56, ptr %handle58, ptr @.str.1653)
   %load.struct60 = load %_Z7Emitter, ptr %0, align 8
   %builder61 = extractvalue %_Z7Emitter %load.struct60, 5
   %handle62 = extractvalue %_Z14LLVMBuilderRef %builder61, 0
@@ -254781,7 +255050,7 @@ if.then88:                                        ; preds = %if.then82
   %handle92 = extractvalue %_Z14LLVMContextRef %context91, 0
   %wrapper.load93 = load %_Z12LLVMValueRef, ptr %1, align 8
   %handle94 = extractvalue %_Z12LLVMValueRef %wrapper.load93, 0
-  %call95 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle92, ptr %handle94, ptr @.str.1650)
+  %call95 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle92, ptr %handle94, ptr @.str.1654)
   %handle96 = extractvalue %_Z12LLVMValueRef %call66, 0
   %tag_ty97 = load %_Z11LLVMTypeRef, ptr %tag_ty, align 8
   %handle98 = extractvalue %_Z11LLVMTypeRef %tag_ty97, 0
@@ -254832,7 +255101,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1651 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1655 }, ptr %arg.tmp, align 1
   %call1 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call1, label %if.then2, label %if.end3
 
@@ -254843,7 +255112,7 @@ if.then2:                                         ; preds = %if.end
 
 if.end3:                                          ; preds = %if.end
   %field.inplace4 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1652 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.1656 }, ptr %arg.tmp5, align 1
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace4, ptr %arg.tmp5)
   br i1 %call6, label %if.then7, label %if.end8
 
@@ -254854,7 +255123,7 @@ if.then7:                                         ; preds = %if.end3
 
 if.end8:                                          ; preds = %if.end3
   %field.inplace9 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1653 }, ptr %arg.tmp10, align 1
+  store { ptr } { ptr @.sconst.1657 }, ptr %arg.tmp10, align 1
   %call11 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace9, ptr %arg.tmp10)
   br i1 %call11, label %if.then12, label %if.end13
 
@@ -254865,7 +255134,7 @@ if.then12:                                        ; preds = %if.end8
 
 if.end13:                                         ; preds = %if.end8
   %field.inplace14 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1654 }, ptr %arg.tmp15, align 1
+  store { ptr } { ptr @.sconst.1658 }, ptr %arg.tmp15, align 1
   %call16 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace14, ptr %arg.tmp15)
   br i1 %call16, label %if.then17, label %if.end18
 
@@ -254898,11 +255167,11 @@ if.end23:                                         ; preds = %if.end18
   br i1 %ne62, label %if.then63, label %if.end64
 
 if.then28:                                        ; preds = %if.then22
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1655)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1659)
   %field.inplace30 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
   %call31 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %field.inplace30)
   call void @_Z11scaly_eputsP10const_char(ptr %call31)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1656)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1660)
   call void @exit(i64 18)
   br label %if.end29
 
@@ -254961,7 +255230,7 @@ if.then47:                                        ; preds = %if.then42
   %wrapper.load53 = load %_Z12LLVMValueRef, ptr %3, align 8
   %handle54 = extractvalue %_Z12LLVMValueRef %wrapper.load53, 0
   %pi55 = load i64, ptr %pi, align 8
-  %call56 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle50, ptr %handle52, ptr %handle54, i64 %pi55, ptr @.str.1657)
+  %call56 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle50, ptr %handle52, ptr %handle54, i64 %pi55, ptr @.str.1661)
   store %_Z12LLVMValueRef %call56, ptr %sret.result, align 1
   store %_Z11PlannedType %prop_type, ptr %arg.tmp57, align 1
   call void @_ZN7Emitter20emit_region_value_atE12LLVMValueRef12LLVMValueRef12LLVMValueRef11PlannedType(ptr %0, ptr %1, ptr %2, ptr %sret.result, ptr %arg.tmp57)
@@ -254976,11 +255245,11 @@ if.then63:                                        ; preds = %if.end23
   ret void
 
 if.end64:                                         ; preds = %if.end23
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1658)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1662)
   %field.inplace65 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
   %call66 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %field.inplace65)
   call void @_Z11scaly_eputsP10const_char(ptr %call66)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1659)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1663)
   call void @exit(i64 18)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
@@ -255083,7 +255352,7 @@ if.end20:                                         ; preds = %if.then19, %while.e
   %handle35 = extractvalue %_Z14LLVMContextRef %context, 0
   %fn36 = load %_Z12LLVMValueRef, ptr %fn, align 8
   %handle37 = extractvalue %_Z12LLVMValueRef %fn36, 0
-  %call38 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle35, ptr %handle37, ptr @.str.1660)
+  %call38 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle35, ptr %handle37, ptr @.str.1664)
   %load.struct39 = load %_Z7Emitter, ptr %2, align 8
   %builder40 = extractvalue %_Z7Emitter %load.struct39, 5
   %handle41 = extractvalue %_Z14LLVMBuilderRef %builder40, 0
@@ -255170,7 +255439,7 @@ if.end11:                                         ; preds = %if.end6
   %result_type = extractvalue %_Z14PlannedOperand %load.struct13, 3
   %name = extractvalue %_Z11PlannedType %result_type, 1
   store { ptr } %name, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.1661 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.1665 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %arg.tmp14)
   %not = xor i1 %call15, true
   br i1 %not, label %if.then16, label %if.end17
@@ -255355,7 +255624,7 @@ if.end8:                                          ; preds = %if.end11, %if.then2
 if.then10:                                        ; preds = %if.then7
   call void @_ZN7Emitter12emit_operandEPN4scaly6memory4PageE14PlannedOperand(ptr noalias sret(%_Z12LLVMValueRef) %sret.result, ptr %1, ptr %2, ptr %call)
   %field.inplace = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1662 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1666 }, ptr %arg.tmp, align 1
   %call12 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call12, label %if.then13, label %if.end14
 
@@ -255375,7 +255644,7 @@ if.then13:                                        ; preds = %if.then10
   %handle21 = extractvalue %_Z11LLVMTypeRef %call18, 0
   %wrapper.load = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle22 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
-  %call23 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle20, ptr %handle21, ptr %handle22, ptr null, i64 0, ptr @.str.1663)
+  %call23 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle20, ptr %handle21, ptr %handle22, ptr null, i64 0, ptr @.str.1667)
   store %_Z12LLVMValueRef %call23, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
@@ -255391,7 +255660,7 @@ if.end14:                                         ; preds = %if.then10
   %handle31 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load32 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle33 = extractvalue %_Z12LLVMValueRef %wrapper.load32, 0
-  %call34 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle30, ptr %handle31, ptr %handle33, ptr @.str.1664)
+  %call34 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle30, ptr %handle31, ptr %handle33, ptr @.str.1668)
   %load.struct35 = load %_Z6VectorI6StringE, ptr %deref.tmp, align 8
   %length36 = extractvalue %_Z6VectorI6StringE %load.struct35, 0
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11LLVMTypeRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11LLVMTypeRefE }, ptr null, i64 0, i32 1) to i64))
@@ -255516,7 +255785,7 @@ if.then93:                                        ; preds = %if.end87
 
 if.end94:                                         ; preds = %if.end87
   %field.inplace96 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1665 }, ptr %arg.tmp97, align 1
+  store { ptr } { ptr @.sconst.1669 }, ptr %arg.tmp97, align 1
   %call98 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace96, ptr %arg.tmp97)
   br i1 %call98, label %if.then99, label %if.end100
 
@@ -255526,7 +255795,7 @@ if.then99:                                        ; preds = %if.end94
 
 if.end100:                                        ; preds = %if.then99, %if.end94
   %field.inplace101 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1666 }, ptr %arg.tmp102, align 1
+  store { ptr } { ptr @.sconst.1670 }, ptr %arg.tmp102, align 1
   %call103 = call i1 @_ZN6String8containsE6String(ptr %field.inplace101, ptr %arg.tmp102)
   br i1 %call103, label %if.then104, label %if.end105
 
@@ -255691,7 +255960,7 @@ if.then185:                                       ; preds = %if.then178
   store i1 false, ptr %rt_is_ref, align 1
   %field.inplace187 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 8
   %field.inplace188 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace187, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1667 }, ptr %arg.tmp189, align 1
+  store { ptr } { ptr @.sconst.1671 }, ptr %arg.tmp189, align 1
   %call190 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace188, ptr %arg.tmp189)
   br i1 %call190, label %if.then191, label %if.end192
 
@@ -255712,7 +255981,7 @@ if.then191:                                       ; preds = %if.then185
 if.end192:                                        ; preds = %if.then191, %if.then185
   %field.inplace193 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 8
   %field.inplace194 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace193, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1668 }, ptr %arg.tmp195, align 1
+  store { ptr } { ptr @.sconst.1672 }, ptr %arg.tmp195, align 1
   %call196 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace194, ptr %arg.tmp195)
   br i1 %call196, label %if.then197, label %if.end198
 
@@ -255771,7 +256040,7 @@ if.then228:                                       ; preds = %if.end179
   br i1 %eq234, label %if.then235, label %if.end236
 
 if.end229:                                        ; preds = %if.end242, %if.end179
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %sret_element_ty, ptr @.str.1669)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %sret_element_ty, ptr @.str.1673)
   %set.load248 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret_slot, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   br label %if.end175
@@ -255895,7 +256164,7 @@ if.end310:                                        ; preds = %if.end316, %if.end2
   %wrapper.load327 = load %_Z11LLVMTypeRef, ptr %result_type326, align 8
   %handle328 = extractvalue %_Z11LLVMTypeRef %wrapper.load327, 0
   %call329 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle328, ptr null, i64 0, i64 0)
-  store { ptr } { ptr @.sconst.1670 }, ptr %call_name, align 1
+  store { ptr } { ptr @.sconst.1674 }, ptr %call_name, align 1
   %result_type330 = load ptr, ptr %arg_vals, align 8
   %wrapper.load331 = load %_Z11LLVMTypeRef, ptr %result_type330, align 8
   %handle332 = extractvalue %_Z11LLVMTypeRef %wrapper.load331, 0
@@ -256053,7 +256322,7 @@ if.end415:                                        ; preds = %if.end421, %if.end3
   %wrapper.load432 = load %_Z11LLVMTypeRef, ptr %result_type431, align 8
   %handle433 = extractvalue %_Z11LLVMTypeRef %wrapper.load432, 0
   %call434 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle433, ptr null, i64 0, i64 0)
-  store { ptr } { ptr @.sconst.1671 }, ptr %call_name, align 1
+  store { ptr } { ptr @.sconst.1675 }, ptr %call_name, align 1
   %result_type435 = load ptr, ptr %arg_vals, align 8
   %wrapper.load436 = load %_Z11LLVMTypeRef, ptr %result_type435, align 8
   %handle437 = extractvalue %_Z11LLVMTypeRef %wrapper.load436, 0
@@ -256170,7 +256439,7 @@ if.end472:                                        ; preds = %if.then471, %if.end
   br i1 %eq477, label %if.then478, label %if.end479
 
 if.then478:                                       ; preds = %if.end472
-  store { ptr } { ptr @.sconst.1672 }, ptr %arg.tmp481, align 1
+  store { ptr } { ptr @.sconst.1676 }, ptr %arg.tmp481, align 1
   call void @_ZN7Emitter15lookup_variableEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result480, ptr %1, ptr %2, ptr %arg.tmp481)
   %load.struct482 = load %_Z12LLVMValueRef, ptr %sret.result480, align 8
   %handle483 = extractvalue %_Z12LLVMValueRef %load.struct482, 0
@@ -256312,7 +256581,7 @@ while.exit552:                                    ; preds = %while.cond550
   %data1257 = extractvalue %_Z6VectorI11LLVMTypeRefE %load.struct1256, 1
   %as.trunc1258 = trunc i64 %add504 to i32
   %call1259 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle1254, ptr %data1257, i32 %as.trunc1258, i64 0)
-  store { ptr } { ptr @.sconst.1695 }, ptr %call_name1260, align 1
+  store { ptr } { ptr @.sconst.1699 }, ptr %call_name1260, align 1
   %result_type1261 = load ptr, ptr %arg_vals, align 8
   %wrapper.load1262 = load %_Z11LLVMTypeRef, ptr %result_type1261, align 8
   %handle1263 = extractvalue %_Z11LLVMTypeRef %wrapper.load1262, 0
@@ -256368,7 +256637,7 @@ choose.when574:                                   ; preds = %if.then566
 
 if.then577:                                       ; preds = %choose.when574
   %field.inplace579 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1673 }, ptr %call_name, align 1
+  store { ptr } { ptr @.sconst.1677 }, ptr %call_name, align 1
   %call580 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace579, ptr %call_name)
   %eq581 = icmp eq i1 %call580, false
   br i1 %eq581, label %if.then582, label %if.end583
@@ -256442,7 +256711,7 @@ if.end613:                                        ; preds = %if.end618, %if.end5
 
 if.then617:                                       ; preds = %if.then612
   %field.inplace619 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1674 }, ptr %arg.tmp481, align 1
+  store { ptr } { ptr @.sconst.1678 }, ptr %arg.tmp481, align 1
   %call620 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace619, ptr %arg.tmp481)
   %eq621 = icmp eq i1 %call620, false
   br i1 %eq621, label %if.then622, label %if.end623
@@ -256627,7 +256896,7 @@ if.then712:                                       ; preds = %if.then706
   %handle721 = extractvalue %_Z11LLVMTypeRef %call720, 0
   %current_ptr722 = load %_Z12LLVMValueRef, ptr %current_ptr, align 8
   %handle723 = extractvalue %_Z12LLVMValueRef %current_ptr722, 0
-  %call724 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle716, ptr %handle721, ptr %handle723, ptr @.str.1675)
+  %call724 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle716, ptr %handle721, ptr %handle723, ptr @.str.1679)
   store %_Z12LLVMValueRef %call724, ptr %current_ptr, align 1
   br label %if.end713
 
@@ -256699,7 +256968,7 @@ if.then749:                                       ; preds = %if.end747
   %load.struct769 = load %_Z19PlannedMemberAccess, ptr %deref.tmp751, align 8
   %field_index770 = extractvalue %_Z19PlannedMemberAccess %load.struct769, 1
   %as.trunc771 = trunc i64 %field_index770 to i32
-  %call772 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle763, ptr %handle766, ptr %handle768, i32 %as.trunc771, ptr @.str.1676)
+  %call772 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle763, ptr %handle766, ptr %handle768, i32 %as.trunc771, ptr @.str.1680)
   store %_Z12LLVMValueRef %call772, ptr %current_ptr, align 1
   %ci773 = load i64, ptr %ci, align 8
   %add774 = add i64 %ci773, 1
@@ -256740,7 +257009,7 @@ if.then789:                                       ; preds = %if.then786
   %handle798 = extractvalue %_Z11LLVMTypeRef %call797, 0
   %current_ptr799 = load %_Z12LLVMValueRef, ptr %current_ptr, align 8
   %handle800 = extractvalue %_Z12LLVMValueRef %current_ptr799, 0
-  %call801 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle793, ptr %handle798, ptr %handle800, ptr @.str.1677)
+  %call801 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle793, ptr %handle798, ptr %handle800, ptr @.str.1681)
   store %_Z12LLVMValueRef %call801, ptr %current_ptr, align 1
   br label %if.end790
 
@@ -256771,7 +257040,7 @@ if.then811:                                       ; preds = %if.then804
   %handle817 = extractvalue %_Z11LLVMTypeRef %last_field_ty816, 0
   %current_ptr818 = load %_Z12LLVMValueRef, ptr %current_ptr, align 8
   %handle819 = extractvalue %_Z12LLVMValueRef %current_ptr818, 0
-  %call820 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle815, ptr %handle817, ptr %handle819, ptr @.str.1678)
+  %call820 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle815, ptr %handle817, ptr %handle819, ptr @.str.1682)
   store %_Z12LLVMValueRef %call820, ptr %current_ptr, align 1
   br label %if.end812
 
@@ -256791,7 +257060,7 @@ if.end826:                                        ; preds = %if.end831, %if.end6
 
 if.then830:                                       ; preds = %if.then825
   %field.inplace832 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1679 }, ptr %arg.tmp663, align 1
+  store { ptr } { ptr @.sconst.1683 }, ptr %arg.tmp663, align 1
   %call833 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace832, ptr %arg.tmp663)
   %eq834 = icmp eq i1 %call833, false
   br i1 %eq834, label %if.then835, label %if.end836
@@ -256930,7 +257199,7 @@ choose.when898:                                   ; preds = %if.then888
 if.then902:                                       ; preds = %choose.when898
   %name904 = extractvalue %_Z11PlannedCall %variant.val900, 1
   store { ptr } %name904, ptr %arg.tmp905, align 1
-  store { ptr } { ptr @.sconst.1680 }, ptr %arg.tmp906, align 1
+  store { ptr } { ptr @.sconst.1684 }, ptr %arg.tmp906, align 1
   %call907 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp905, ptr %arg.tmp906)
   br i1 %call907, label %if.then908, label %if.end909
 
@@ -256954,7 +257223,7 @@ choose.when912:                                   ; preds = %if.then835
 if.then916:                                       ; preds = %choose.when912
   %name918 = extractvalue %_Z11PlannedCall %variant.val914, 1
   store { ptr } %name918, ptr %arg.tmp919, align 1
-  store { ptr } { ptr @.sconst.1681 }, ptr %arg.tmp920, align 1
+  store { ptr } { ptr @.sconst.1685 }, ptr %arg.tmp920, align 1
   %call921 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp919, ptr %arg.tmp920)
   br i1 %call921, label %if.then922, label %if.end923
 
@@ -257124,7 +257393,7 @@ if.end997:                                        ; preds = %if.end1065, %if.end
 if.then1005:                                      ; preds = %if.then996
   store i1 false, ptr %has_local2, align 1
   %field.inplace1007 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1682 }, ptr %arg.tmp1008, align 1
+  store { ptr } { ptr @.sconst.1686 }, ptr %arg.tmp1008, align 1
   %call1009 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace1007, ptr %arg.tmp1008)
   br i1 %call1009, label %if.then1010, label %if.end1011
 
@@ -257171,7 +257440,7 @@ if.then1026:                                      ; preds = %if.then1018
   %handle1030 = extractvalue %_Z14LLVMBuilderRef %builder1029, 0
   %arg_value1031 = load %_Z12LLVMValueRef, ptr %arg_value, align 8
   %handle1032 = extractvalue %_Z12LLVMValueRef %arg_value1031, 0
-  %call1033 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1030, ptr %handle1032, i64 0, ptr @.str.1683)
+  %call1033 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1030, ptr %handle1032, i64 0, ptr @.str.1687)
   store %_Z12LLVMValueRef %call1033, ptr %arg_value, align 1
   store i1 true, ptr %has_local2, align 1
   br label %if.end1027
@@ -257184,7 +257453,7 @@ if.then1035:                                      ; preds = %if.end1011
   %handle1038 = extractvalue %_Z12LLVMValueRef %arg_value1037, 0
   %call1039 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle1038)
   store %_Z11LLVMTypeRef %call1039, ptr %last_field_ty, align 1
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %current_ptr, ptr %1, ptr %2, ptr %last_field_ty, ptr @.str.1684)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %current_ptr, ptr %1, ptr %2, ptr %last_field_ty, ptr @.str.1688)
   %arg_value1040 = load %_Z12LLVMValueRef, ptr %arg_value, align 8
   %handle1041 = extractvalue %_Z12LLVMValueRef %arg_value1040, 0
   %call1042 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle1041)
@@ -257211,7 +257480,7 @@ choose.when1052:                                  ; preds = %if.end1006
   %variant.val1054 = load %_Z11PlannedCall, ptr %"variant.c_data().ptr1053", align 8
   %name1055 = extractvalue %_Z11PlannedCall %variant.val1054, 1
   store { ptr } %name1055, ptr %arg.tmp1056, align 1
-  store { ptr } { ptr @.sconst.1685 }, ptr %arg.tmp1057, align 1
+  store { ptr } { ptr @.sconst.1689 }, ptr %arg.tmp1057, align 1
   %call1058 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp1056, ptr %arg.tmp1057)
   br i1 %call1058, label %if.then1059, label %if.end1060
 
@@ -257232,7 +257501,7 @@ if.end1065:                                       ; preds = %if.end1068, %choose
 
 if.then1067:                                      ; preds = %if.then1064
   %field.inplace1069 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.1686 }, ptr %arg.tmp1070, align 1
+  store { ptr } { ptr @.sconst.1690 }, ptr %arg.tmp1070, align 1
   %call1071 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace1069, ptr %arg.tmp1070)
   br i1 %call1071, label %if.then1072, label %if.end1073
 
@@ -257301,12 +257570,12 @@ if.then1105:                                      ; preds = %if.then1097
   %handle1110 = extractvalue %_Z11LLVMTypeRef %call1083, 0
   %arg_value1111 = load %_Z12LLVMValueRef, ptr %arg_value, align 8
   %handle1112 = extractvalue %_Z12LLVMValueRef %arg_value1111, 0
-  %call1113 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1109, ptr %handle1110, ptr %handle1112, ptr @.str.1687)
+  %call1113 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1109, ptr %handle1110, ptr %handle1112, ptr @.str.1691)
   %load.struct1114 = load %_Z7Emitter, ptr %2, align 8
   %builder1115 = extractvalue %_Z7Emitter %load.struct1114, 5
   %handle1116 = extractvalue %_Z14LLVMBuilderRef %builder1115, 0
   %handle1117 = extractvalue %_Z12LLVMValueRef %call1113, 0
-  %call1118 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1116, ptr %handle1117, i64 0, ptr @.str.1688)
+  %call1118 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1116, ptr %handle1117, i64 0, ptr @.str.1692)
   store %_Z12LLVMValueRef %call1118, ptr %arg_value, align 1
   br label %if.end1106
 
@@ -257327,7 +257596,7 @@ if.end1122:                                       ; preds = %if.end1180, %if.end
 if.then1128:                                      ; preds = %if.then1121
   %field.inplace1130 = getelementptr inbounds %_Z14PlannedOperand, ptr %call557, i32 0, i32 3
   %field.inplace1131 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace1130, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1689 }, ptr %arg.tmp1132, align 1
+  store { ptr } { ptr @.sconst.1693 }, ptr %arg.tmp1132, align 1
   %call1133 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace1131, ptr %arg.tmp1132)
   br i1 %call1133, label %if.then1134, label %if.end1135
 
@@ -257389,12 +257658,12 @@ if.then1162:                                      ; preds = %if.then1153
   %handle1168 = extractvalue %_Z11LLVMTypeRef %wrapper.load1167, 0
   %arg_value1169 = load %_Z12LLVMValueRef, ptr %arg_value, align 8
   %handle1170 = extractvalue %_Z12LLVMValueRef %arg_value1169, 0
-  %call1171 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1166, ptr %handle1168, ptr %handle1170, ptr @.str.1690)
+  %call1171 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1166, ptr %handle1168, ptr %handle1170, ptr @.str.1694)
   %load.struct1172 = load %_Z7Emitter, ptr %2, align 8
   %builder1173 = extractvalue %_Z7Emitter %load.struct1172, 5
   %handle1174 = extractvalue %_Z14LLVMBuilderRef %builder1173, 0
   %handle1175 = extractvalue %_Z12LLVMValueRef %call1171, 0
-  %call1176 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1174, ptr %handle1175, i64 0, ptr @.str.1691)
+  %call1176 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1174, ptr %handle1175, i64 0, ptr @.str.1695)
   store %_Z12LLVMValueRef %call1176, ptr %arg_value, align 1
   br label %if.end1163
 
@@ -257415,7 +257684,7 @@ if.end1180:                                       ; preds = %if.end1187, %if.end
 if.then1186:                                      ; preds = %if.then1179
   %field.inplace1188 = getelementptr inbounds %_Z14PlannedOperand, ptr %call557, i32 0, i32 3
   %field.inplace1189 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace1188, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1692 }, ptr %arg.tmp1190, align 1
+  store { ptr } { ptr @.sconst.1696 }, ptr %arg.tmp1190, align 1
   %call1191 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace1189, ptr %arg.tmp1190)
   br i1 %call1191, label %if.then1192, label %if.end1193
 
@@ -257475,12 +257744,12 @@ if.then1220:                                      ; preds = %if.then1211
   %handle1226 = extractvalue %_Z11LLVMTypeRef %wrapper.load1225, 0
   %arg_value1227 = load %_Z12LLVMValueRef, ptr %arg_value, align 8
   %handle1228 = extractvalue %_Z12LLVMValueRef %arg_value1227, 0
-  %call1229 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1224, ptr %handle1226, ptr %handle1228, ptr @.str.1693)
+  %call1229 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1224, ptr %handle1226, ptr %handle1228, ptr @.str.1697)
   %load.struct1230 = load %_Z7Emitter, ptr %2, align 8
   %builder1231 = extractvalue %_Z7Emitter %load.struct1230, 5
   %handle1232 = extractvalue %_Z14LLVMBuilderRef %builder1231, 0
   %handle1233 = extractvalue %_Z12LLVMValueRef %call1229, 0
-  %call1234 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1232, ptr %handle1233, i64 0, ptr @.str.1694)
+  %call1234 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle1232, ptr %handle1233, i64 0, ptr @.str.1698)
   store %_Z12LLVMValueRef %call1234, ptr %arg_value, align 1
   br label %if.end1221
 
@@ -257584,7 +257853,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1696)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1700)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -258320,7 +258589,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1697)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1701)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -258742,7 +259011,7 @@ if.then7:                                         ; preds = %if.then4
 
 if.end8:                                          ; preds = %if.then4
   %field.inplace11 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1698 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1702 }, ptr %arg.tmp, align 1
   %call12 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace11, ptr %arg.tmp)
   br i1 %call12, label %if.then13, label %if.end14
 
@@ -258849,7 +259118,7 @@ if.then43:                                        ; preds = %if.then37
   %handle50 = extractvalue %_Z11LLVMTypeRef %call47, 0
   %wrapper.load51 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle52 = extractvalue %_Z12LLVMValueRef %wrapper.load51, 0
-  %call53 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle49, ptr %handle50, ptr %handle52, ptr @.str.1699)
+  %call53 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle49, ptr %handle50, ptr %handle52, ptr @.str.1703)
   store %_Z12LLVMValueRef %call53, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
@@ -258983,7 +259252,7 @@ if.then115:                                       ; preds = %if.then105
   %load.struct124 = load %_Z19PlannedMemberAccess, ptr %deref.tmp107, align 8
   %field_index = extractvalue %_Z19PlannedMemberAccess %load.struct124, 1
   %as.trunc = trunc i64 %field_index to i32
-  %call125 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle119, ptr %handle121, ptr %handle123, i32 %as.trunc, ptr @.str.1700)
+  %call125 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle119, ptr %handle121, ptr %handle123, i32 %as.trunc, ptr @.str.1704)
   store %_Z12LLVMValueRef %call125, ptr %gep_ptr, align 1
   store i1 true, ptr %gep_advanced, align 1
   br label %if.end116
@@ -259053,7 +259322,7 @@ if.then156:                                       ; preds = %if.end152
 if.end157:                                        ; preds = %if.end152
   store i1 false, ptr %af_is_ptr, align 1
   %field.inplace160 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1701 }, ptr %arg.tmp22, align 1
+  store { ptr } { ptr @.sconst.1705 }, ptr %arg.tmp22, align 1
   %call161 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace160, ptr %arg.tmp22)
   br i1 %call161, label %if.then162, label %if.end163
 
@@ -259063,7 +259332,7 @@ if.then162:                                       ; preds = %if.end157
 
 if.end163:                                        ; preds = %if.then162, %if.end157
   %field.inplace164 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1702 }, ptr %arg.tmp165, align 1
+  store { ptr } { ptr @.sconst.1706 }, ptr %arg.tmp165, align 1
   %call166 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace164, ptr %arg.tmp165)
   br i1 %call166, label %if.then167, label %if.end168
 
@@ -259073,7 +259342,7 @@ if.then167:                                       ; preds = %if.end163
 
 if.end168:                                        ; preds = %if.then167, %if.end163
   %field.inplace169 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1703 }, ptr %arg.tmp170, align 1
+  store { ptr } { ptr @.sconst.1707 }, ptr %arg.tmp170, align 1
   %call171 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace169, ptr %arg.tmp170)
   br i1 %call171, label %if.then172, label %if.end173
 
@@ -259083,7 +259352,7 @@ if.then172:                                       ; preds = %if.end168
 
 if.end173:                                        ; preds = %if.then172, %if.end168
   %field.inplace174 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1704 }, ptr %arg.tmp175, align 1
+  store { ptr } { ptr @.sconst.1708 }, ptr %arg.tmp175, align 1
   %call176 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace174, ptr %arg.tmp175)
   br i1 %call176, label %if.then177, label %if.end178
 
@@ -259098,7 +259367,7 @@ if.end178:                                        ; preds = %if.then177, %if.end
 if.then179:                                       ; preds = %if.end178
   store i1 false, ptr %gep_advanced, align 1
   %field.inplace181 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1705 }, ptr %arg.tmp182, align 1
+  store { ptr } { ptr @.sconst.1709 }, ptr %arg.tmp182, align 1
   %call183 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace181, ptr %arg.tmp182)
   br i1 %call183, label %if.then184, label %if.end185
 
@@ -259120,7 +259389,7 @@ if.then184:                                       ; preds = %if.then179
 
 if.end185:                                        ; preds = %if.then184, %if.then179
   %field.inplace186 = getelementptr inbounds %_Z11PlannedCall, ptr %3, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1706 }, ptr %arg.tmp187, align 1
+  store { ptr } { ptr @.sconst.1710 }, ptr %arg.tmp187, align 1
   %call188 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace186, ptr %arg.tmp187)
   br i1 %call188, label %if.then189, label %if.end190
 
@@ -259156,14 +259425,14 @@ if.end200:                                        ; preds = %if.end208, %if.end1
   %load.struct219 = load %_Z7Emitter, ptr %2, align 8
   %current_function = extractvalue %_Z7Emitter %load.struct219, 29
   %handle220 = extractvalue %_Z12LLVMValueRef %current_function, 0
-  %call221 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle218, ptr %handle220, ptr @.str.1707)
+  %call221 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle218, ptr %handle220, ptr @.str.1711)
   %load.struct222 = load %_Z7Emitter, ptr %2, align 8
   %context223 = extractvalue %_Z7Emitter %load.struct222, 1
   %handle224 = extractvalue %_Z14LLVMContextRef %context223, 0
   %load.struct225 = load %_Z7Emitter, ptr %2, align 8
   %current_function226 = extractvalue %_Z7Emitter %load.struct225, 29
   %handle227 = extractvalue %_Z12LLVMValueRef %current_function226, 0
-  %call228 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle224, ptr %handle227, ptr @.str.1708)
+  %call228 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle224, ptr %handle227, ptr @.str.1712)
   %is_or229 = load i1, ptr %gep_advanced, align 1
   br i1 %is_or229, label %if.then230, label %if.end231
 
@@ -259274,7 +259543,7 @@ if.end272:                                        ; preds = %if.then271, %if.end
   %builder289 = extractvalue %_Z7Emitter %load.struct288, 5
   %handle290 = extractvalue %_Z14LLVMBuilderRef %builder289, 0
   %handle291 = extractvalue %_Z11LLVMTypeRef %call194, 0
-  %call292 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle290, ptr %handle291, ptr @.str.1709)
+  %call292 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle290, ptr %handle291, ptr @.str.1713)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region, i64 2)
   store ptr %struct.region, ptr %lvalues, align 1
@@ -259337,7 +259606,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result, ptr %1, ptr %2, ptr %5)
   %call = call i1 @_ZN7Emitter22is_floating_point_typeE11PlannedType(ptr %2, ptr %5)
-  store { ptr } { ptr @.sconst.1710 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1714 }, ptr %arg.tmp, align 1
   %call2 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp)
   br i1 %call2, label %if.then3, label %if.end4
 
@@ -259345,7 +259614,7 @@ if.then3:                                         ; preds = %if.end
   br i1 %call, label %if.then5, label %if.end6
 
 if.end4:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.1713 }, ptr %arg.tmp17, align 1
+  store { ptr } { ptr @.sconst.1717 }, ptr %arg.tmp17, align 1
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp17)
   br i1 %call18, label %if.then19, label %if.end20
 
@@ -259355,7 +259624,7 @@ if.then5:                                         ; preds = %if.then3
   %handle7 = extractvalue %_Z14LLVMBuilderRef %builder, 0
   %op8 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle9 = extractvalue %_Z12LLVMValueRef %op8, 0
-  %call10 = call %_Z12LLVMValueRef @LLVMBuildFNeg(ptr %handle7, ptr %handle9, ptr @.str.1711)
+  %call10 = call %_Z12LLVMValueRef @LLVMBuildFNeg(ptr %handle7, ptr %handle9, ptr @.str.1715)
   store %_Z12LLVMValueRef %call10, ptr %0, align 1
   ret void
 
@@ -259365,7 +259634,7 @@ if.end6:                                          ; preds = %if.then3
   %handle13 = extractvalue %_Z14LLVMBuilderRef %builder12, 0
   %op14 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle15 = extractvalue %_Z12LLVMValueRef %op14, 0
-  %call16 = call %_Z12LLVMValueRef @LLVMBuildNeg(ptr %handle13, ptr %handle15, ptr @.str.1712)
+  %call16 = call %_Z12LLVMValueRef @LLVMBuildNeg(ptr %handle13, ptr %handle15, ptr @.str.1716)
   store %_Z12LLVMValueRef %call16, ptr %0, align 1
   ret void
 
@@ -259375,7 +259644,7 @@ if.then19:                                        ; preds = %if.end4
   ret void
 
 if.end20:                                         ; preds = %if.end4
-  store { ptr } { ptr @.sconst.1714 }, ptr %arg.tmp22, align 1
+  store { ptr } { ptr @.sconst.1718 }, ptr %arg.tmp22, align 1
   %call23 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp22)
   br i1 %call23, label %if.then24, label %if.end25
 
@@ -259383,7 +259652,7 @@ if.then24:                                        ; preds = %if.end20
   br i1 %call, label %if.then26, label %if.end27
 
 if.end25:                                         ; preds = %if.end20
-  store { ptr } { ptr @.sconst.1721 }, ptr %arg.tmp77, align 1
+  store { ptr } { ptr @.sconst.1725 }, ptr %arg.tmp77, align 1
   %call78 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp77)
   br i1 %call78, label %if.then79, label %if.end80
 
@@ -259396,7 +259665,7 @@ if.then26:                                        ; preds = %if.then24
   %handle32 = extractvalue %_Z14LLVMBuilderRef %builder31, 0
   %op33 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle34 = extractvalue %_Z12LLVMValueRef %op33, 0
-  %call35 = call %_Z12LLVMValueRef @LLVMBuildFNeg(ptr %handle32, ptr %handle34, ptr @.str.1715)
+  %call35 = call %_Z12LLVMValueRef @LLVMBuildFNeg(ptr %handle32, ptr %handle34, ptr @.str.1719)
   %load.struct36 = load %_Z7Emitter, ptr %2, align 8
   %builder37 = extractvalue %_Z7Emitter %load.struct36, 5
   %handle38 = extractvalue %_Z14LLVMBuilderRef %builder37, 0
@@ -259404,7 +259673,7 @@ if.then26:                                        ; preds = %if.then24
   %op40 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle41 = extractvalue %_Z12LLVMValueRef %op40, 0
   %handle42 = extractvalue %_Z12LLVMValueRef %call29, 0
-  %call43 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle38, i64 %call39, ptr %handle41, ptr %handle42, ptr @.str.1716)
+  %call43 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle38, i64 %call39, ptr %handle41, ptr %handle42, ptr @.str.1720)
   %load.struct44 = load %_Z7Emitter, ptr %2, align 8
   %builder45 = extractvalue %_Z7Emitter %load.struct44, 5
   %handle46 = extractvalue %_Z14LLVMBuilderRef %builder45, 0
@@ -259412,7 +259681,7 @@ if.then26:                                        ; preds = %if.then24
   %handle48 = extractvalue %_Z12LLVMValueRef %call35, 0
   %op49 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle50 = extractvalue %_Z12LLVMValueRef %op49, 0
-  %call51 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle46, ptr %handle47, ptr %handle48, ptr %handle50, ptr @.str.1717)
+  %call51 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle46, ptr %handle47, ptr %handle48, ptr %handle50, ptr @.str.1721)
   store %_Z12LLVMValueRef %call51, ptr %0, align 1
   ret void
 
@@ -259425,7 +259694,7 @@ if.end27:                                         ; preds = %if.then24
   %handle57 = extractvalue %_Z14LLVMBuilderRef %builder56, 0
   %op58 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle59 = extractvalue %_Z12LLVMValueRef %op58, 0
-  %call60 = call %_Z12LLVMValueRef @LLVMBuildNeg(ptr %handle57, ptr %handle59, ptr @.str.1718)
+  %call60 = call %_Z12LLVMValueRef @LLVMBuildNeg(ptr %handle57, ptr %handle59, ptr @.str.1722)
   %load.struct61 = load %_Z7Emitter, ptr %2, align 8
   %builder62 = extractvalue %_Z7Emitter %load.struct61, 5
   %handle63 = extractvalue %_Z14LLVMBuilderRef %builder62, 0
@@ -259433,7 +259702,7 @@ if.end27:                                         ; preds = %if.then24
   %op65 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle66 = extractvalue %_Z12LLVMValueRef %op65, 0
   %handle67 = extractvalue %_Z12LLVMValueRef %call54, 0
-  %call68 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle63, i64 %call64, ptr %handle66, ptr %handle67, ptr @.str.1719)
+  %call68 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle63, i64 %call64, ptr %handle66, ptr %handle67, ptr @.str.1723)
   %load.struct69 = load %_Z7Emitter, ptr %2, align 8
   %builder70 = extractvalue %_Z7Emitter %load.struct69, 5
   %handle71 = extractvalue %_Z14LLVMBuilderRef %builder70, 0
@@ -259441,7 +259710,7 @@ if.end27:                                         ; preds = %if.then24
   %handle73 = extractvalue %_Z12LLVMValueRef %call60, 0
   %op74 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle75 = extractvalue %_Z12LLVMValueRef %op74, 0
-  %call76 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle71, ptr %handle72, ptr %handle73, ptr %handle75, ptr @.str.1720)
+  %call76 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle71, ptr %handle72, ptr %handle73, ptr %handle75, ptr @.str.1724)
   store %_Z12LLVMValueRef %call76, ptr %0, align 1
   ret void
 
@@ -259451,12 +259720,12 @@ if.then79:                                        ; preds = %if.end25
   %handle83 = extractvalue %_Z14LLVMBuilderRef %builder82, 0
   %op84 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle85 = extractvalue %_Z12LLVMValueRef %op84, 0
-  %call86 = call %_Z12LLVMValueRef @LLVMBuildNot(ptr %handle83, ptr %handle85, ptr @.str.1722)
+  %call86 = call %_Z12LLVMValueRef @LLVMBuildNot(ptr %handle83, ptr %handle85, ptr @.str.1726)
   store %_Z12LLVMValueRef %call86, ptr %0, align 1
   ret void
 
 if.end80:                                         ; preds = %if.end25
-  store { ptr } { ptr @.sconst.1723 }, ptr %arg.tmp87, align 1
+  store { ptr } { ptr @.sconst.1727 }, ptr %arg.tmp87, align 1
   %call88 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp87)
   br i1 %call88, label %if.then89, label %if.end90
 
@@ -259466,12 +259735,12 @@ if.then89:                                        ; preds = %if.end80
   %handle93 = extractvalue %_Z14LLVMBuilderRef %builder92, 0
   %op94 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle95 = extractvalue %_Z12LLVMValueRef %op94, 0
-  %call96 = call %_Z12LLVMValueRef @LLVMBuildNot(ptr %handle93, ptr %handle95, ptr @.str.1724)
+  %call96 = call %_Z12LLVMValueRef @LLVMBuildNot(ptr %handle93, ptr %handle95, ptr @.str.1728)
   store %_Z12LLVMValueRef %call96, ptr %0, align 1
   ret void
 
 if.end90:                                         ; preds = %if.end80
-  store { ptr } { ptr @.sconst.1725 }, ptr %arg.tmp97, align 1
+  store { ptr } { ptr @.sconst.1729 }, ptr %arg.tmp97, align 1
   %call98 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp97)
   br i1 %call98, label %if.then99, label %if.end100
 
@@ -259481,12 +259750,12 @@ if.then99:                                        ; preds = %if.end90
   %handle103 = extractvalue %_Z14LLVMBuilderRef %builder102, 0
   %op104 = load %_Z12LLVMValueRef, ptr %op, align 8
   %handle105 = extractvalue %_Z12LLVMValueRef %op104, 0
-  %call106 = call %_Z12LLVMValueRef @LLVMBuildNot(ptr %handle103, ptr %handle105, ptr @.str.1726)
+  %call106 = call %_Z12LLVMValueRef @LLVMBuildNot(ptr %handle103, ptr %handle105, ptr @.str.1730)
   store %_Z12LLVMValueRef %call106, ptr %0, align 1
   ret void
 
 if.end100:                                        ; preds = %if.end90
-  store { ptr } { ptr @.sconst.1727 }, ptr %arg.tmp107, align 1
+  store { ptr } { ptr @.sconst.1731 }, ptr %arg.tmp107, align 1
   %call108 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp107)
   br i1 %call108, label %if.then109, label %if.end110
 
@@ -259503,7 +259772,7 @@ if.then109:                                       ; preds = %if.end100
   br i1 %eq117, label %if.then118, label %if.end119
 
 if.end110:                                        ; preds = %if.end100
-  store { ptr } { ptr @.sconst.1733 }, ptr %arg.tmp188, align 1
+  store { ptr } { ptr @.sconst.1737 }, ptr %arg.tmp188, align 1
   %call189 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp188)
   br i1 %call189, label %if.then190, label %if.end191
 
@@ -259539,7 +259808,7 @@ if.then131:                                       ; preds = %if.then123
   %handle135 = extractvalue %_Z14LLVMBuilderRef %builder134, 0
   %opv136 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle137 = extractvalue %_Z12LLVMValueRef %opv136, 0
-  %call138 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle135, ptr %handle137, i64 0, ptr @.str.1728)
+  %call138 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle135, ptr %handle137, i64 0, ptr @.str.1732)
   store %_Z12LLVMValueRef %call138, ptr %tuple, align 1
   br label %if.end132
 
@@ -259561,12 +259830,12 @@ if.end145:                                        ; preds = %if.end119
   %handle184 = extractvalue %_Z11LLVMTypeRef %wrapper.load183, 0
   %opv185 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle186 = extractvalue %_Z12LLVMValueRef %opv185, 0
-  %call187 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle182, ptr %handle184, ptr %handle186, ptr @.str.1732)
+  %call187 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle182, ptr %handle184, ptr %handle186, ptr @.str.1736)
   store %_Z12LLVMValueRef %call187, ptr %0, align 1
   ret void
 
 if.then149:                                       ; preds = %if.then144
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result151, ptr %1, ptr %2, ptr %sret.result, ptr @.str.1729)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result151, ptr %1, ptr %2, ptr %sret.result, ptr @.str.1733)
   %wrapper.load152 = load %_Z11LLVMTypeRef, ptr %sret.result, align 8
   %handle153 = extractvalue %_Z11LLVMTypeRef %wrapper.load152, 0
   %call154 = call %_Z12LLVMValueRef @LLVMSizeOf(ptr %handle153)
@@ -259591,8 +259860,8 @@ if.end150:                                        ; preds = %if.then144
   %handle168 = extractvalue %_Z11LLVMTypeRef %wrapper.load167, 0
   %opv169 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle170 = extractvalue %_Z12LLVMValueRef %opv169, 0
-  %call171 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle166, ptr %handle168, ptr %handle170, ptr @.str.1730)
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result151, ptr %1, ptr %2, ptr %sret.result, ptr @.str.1731)
+  %call171 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle166, ptr %handle168, ptr %handle170, ptr @.str.1734)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result151, ptr %1, ptr %2, ptr %sret.result, ptr @.str.1735)
   %load.struct172 = load %_Z7Emitter, ptr %2, align 8
   %builder173 = extractvalue %_Z7Emitter %load.struct172, 5
   %handle174 = extractvalue %_Z14LLVMBuilderRef %builder173, 0
@@ -259615,10 +259884,10 @@ if.then190:                                       ; preds = %if.end110
   br i1 %eq198, label %if.then199, label %if.end200
 
 if.end191:                                        ; preds = %if.end110
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1735)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1739)
   %call215 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %3)
   call void @_Z11scaly_eputsP10const_char(ptr %call215)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1736)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1740)
   call void @exit(i64 14)
   %tuple.field216 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple, i32 0, i32 0
   store ptr null, ptr %tuple.field216, align 1
@@ -259631,7 +259900,7 @@ if.then199:                                       ; preds = %if.then190
   %handle202 = extractvalue %_Z12LLVMValueRef %op201, 0
   %call203 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle202)
   store %_Z11LLVMTypeRef %call203, ptr %arg.tmp204, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp204, ptr @.str.1734)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp204, ptr @.str.1738)
   %load.struct205 = load %_Z7Emitter, ptr %2, align 8
   %builder206 = extractvalue %_Z7Emitter %load.struct205, 5
   %handle207 = extractvalue %_Z14LLVMBuilderRef %builder206, 0
@@ -259790,7 +260059,7 @@ if.end40:                                         ; preds = %if.end44, %if.end32
   br i1 %eq135, label %if.then136, label %if.end137
 
 if.then43:                                        ; preds = %if.then39
-  store { ptr } { ptr @.sconst.1737 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1741 }, ptr %arg.tmp, align 1
   %call45 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp)
   br i1 %call45, label %if.then46, label %if.end47
 
@@ -259804,12 +260073,12 @@ if.then46:                                        ; preds = %if.then43
   %call49 = call %_Z11LLVMTypeRef @LLVMInt8TypeInContext(ptr %handle48)
   store %_Z11LLVMTypeRef %call49, ptr %elem_ty, align 1
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %6, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1738 }, ptr %arg.tmp50, align 1
+  store { ptr } { ptr @.sconst.1742 }, ptr %arg.tmp50, align 1
   %call51 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp50)
   br i1 %call51, label %if.then52, label %if.end53
 
 if.end47:                                         ; preds = %if.then43
-  store { ptr } { ptr @.sconst.1741 }, ptr %arg.tmp84, align 1
+  store { ptr } { ptr @.sconst.1745 }, ptr %arg.tmp84, align 1
   %call85 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp84)
   br i1 %call85, label %if.then86, label %if.end87
 
@@ -259835,7 +260104,7 @@ if.end53:                                         ; preds = %if.end56, %if.then4
   %indices81 = load ptr, ptr %indices, align 8
   %load.struct82 = load %_Z6VectorI12LLVMValueRefE, ptr %indices81, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct82, 1
-  %call83 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle76, ptr %handle78, ptr %handle80, ptr %data, i64 1, ptr @.str.1740)
+  %call83 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle76, ptr %handle78, ptr %handle80, ptr %data, i64 1, ptr @.str.1744)
   store %_Z12LLVMValueRef %call83, ptr %0, align 1
   ret void
 
@@ -259864,7 +260133,7 @@ if.then64:                                        ; preds = %if.then60
   %load.struct67 = load %_Z11PlannedType, ptr %deref.tmp66, align 8
   %name = extractvalue %_Z11PlannedType %load.struct67, 1
   store { ptr } %name, ptr %arg.tmp68, align 1
-  store { ptr } { ptr @.sconst.1739 }, ptr %arg.tmp69, align 1
+  store { ptr } { ptr @.sconst.1743 }, ptr %arg.tmp69, align 1
   %call70 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp68, ptr %arg.tmp69)
   %not = xor i1 %call70, true
   br i1 %not, label %if.then71, label %if.end72
@@ -259888,7 +260157,7 @@ if.then86:                                        ; preds = %if.end47
   %call91 = call %_Z11LLVMTypeRef @LLVMInt8TypeInContext(ptr %handle90)
   store %_Z11LLVMTypeRef %call91, ptr %elem_ty, align 1
   %field.inplace92 = getelementptr inbounds %_Z11PlannedType, ptr %6, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1742 }, ptr %arg.tmp93, align 1
+  store { ptr } { ptr @.sconst.1746 }, ptr %arg.tmp93, align 1
   %call94 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace92, ptr %arg.tmp93)
   br i1 %call94, label %if.then95, label %if.end96
 
@@ -259907,7 +260176,7 @@ if.end96:                                         ; preds = %if.end101, %if.then
   %handle117 = extractvalue %_Z14LLVMBuilderRef %builder116, 0
   %r118 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle119 = extractvalue %_Z12LLVMValueRef %r118, 0
-  %call120 = call %_Z12LLVMValueRef @LLVMBuildNeg(ptr %handle117, ptr %handle119, ptr @.str.1743)
+  %call120 = call %_Z12LLVMValueRef @LLVMBuildNeg(ptr %handle117, ptr %handle119, ptr @.str.1747)
   %struct.region121 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region121, i64 1)
   store ptr %struct.region121, ptr %indices, align 1
@@ -259924,7 +260193,7 @@ if.end96:                                         ; preds = %if.end101, %if.then
   %indices130 = load ptr, ptr %indices, align 8
   %load.struct131 = load %_Z6VectorI12LLVMValueRefE, ptr %indices130, align 8
   %data132 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct131, 1
-  %call133 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle125, ptr %handle127, ptr %handle129, ptr %data132, i64 1, ptr @.str.1744)
+  %call133 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle125, ptr %handle127, ptr %handle129, ptr %data132, i64 1, ptr @.str.1748)
   store %_Z12LLVMValueRef %call133, ptr %0, align 1
   ret void
 
@@ -260001,7 +260270,7 @@ if.then156:                                       ; preds = %if.then153
   %handle164 = extractvalue %_Z12LLVMValueRef %l163, 0
   %call165 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle164)
   %handle166 = extractvalue %_Z11LLVMTypeRef %call165, 0
-  %call167 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle160, ptr %handle162, ptr %handle166, ptr @.str.1745)
+  %call167 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle160, ptr %handle162, ptr %handle166, ptr @.str.1749)
   store %_Z12LLVMValueRef %call167, ptr %r, align 1
   br label %if.end157
 
@@ -260019,7 +260288,7 @@ if.then168:                                       ; preds = %if.end157
   %handle176 = extractvalue %_Z12LLVMValueRef %r175, 0
   %call177 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle176)
   %handle178 = extractvalue %_Z11LLVMTypeRef %call177, 0
-  %call179 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle172, ptr %handle174, ptr %handle178, ptr @.str.1746)
+  %call179 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle172, ptr %handle174, ptr %handle178, ptr @.str.1750)
   store %_Z12LLVMValueRef %call179, ptr %l, align 1
   br label %if.end169
 
@@ -260046,7 +260315,7 @@ if.then186:                                       ; preds = %if.then182
   %handle194 = extractvalue %_Z12LLVMValueRef %r193, 0
   %call195 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle194)
   %handle196 = extractvalue %_Z11LLVMTypeRef %call195, 0
-  %call197 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle190, ptr %handle192, ptr %handle196, ptr @.str.1747)
+  %call197 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle190, ptr %handle192, ptr %handle196, ptr @.str.1751)
   store %_Z12LLVMValueRef %call197, ptr %l, align 1
   br label %if.end187
 
@@ -260059,7 +260328,7 @@ if.then200:                                       ; preds = %if.end183
   br i1 %eq203, label %if.then204, label %if.end205
 
 if.end201:                                        ; preds = %if.end205, %if.end183
-  store { ptr } { ptr @.sconst.1749 }, ptr %arg.tmp216, align 1
+  store { ptr } { ptr @.sconst.1753 }, ptr %arg.tmp216, align 1
   %call217 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp216)
   br i1 %call217, label %if.then218, label %if.end219
 
@@ -260073,7 +260342,7 @@ if.then204:                                       ; preds = %if.then200
   %handle212 = extractvalue %_Z12LLVMValueRef %l211, 0
   %call213 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle212)
   %handle214 = extractvalue %_Z11LLVMTypeRef %call213, 0
-  %call215 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle208, ptr %handle210, ptr %handle214, ptr @.str.1748)
+  %call215 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle208, ptr %handle210, ptr %handle214, ptr @.str.1752)
   store %_Z12LLVMValueRef %call215, ptr %r, align 1
   br label %if.end205
 
@@ -260085,7 +260354,7 @@ if.then218:                                       ; preds = %if.end201
   br i1 %is_float220, label %if.then221, label %if.end222
 
 if.end219:                                        ; preds = %if.end201
-  store { ptr } { ptr @.sconst.1752 }, ptr %arg.tmp239, align 1
+  store { ptr } { ptr @.sconst.1756 }, ptr %arg.tmp239, align 1
   %call240 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp239)
   br i1 %call240, label %if.then241, label %if.end242
 
@@ -260097,7 +260366,7 @@ if.then221:                                       ; preds = %if.then218
   %handle227 = extractvalue %_Z12LLVMValueRef %l226, 0
   %r228 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle229 = extractvalue %_Z12LLVMValueRef %r228, 0
-  %call230 = call %_Z12LLVMValueRef @LLVMBuildFAdd(ptr %handle225, ptr %handle227, ptr %handle229, ptr @.str.1750)
+  %call230 = call %_Z12LLVMValueRef @LLVMBuildFAdd(ptr %handle225, ptr %handle227, ptr %handle229, ptr @.str.1754)
   store %_Z12LLVMValueRef %call230, ptr %0, align 1
   ret void
 
@@ -260109,7 +260378,7 @@ if.end222:                                        ; preds = %if.then218
   %handle235 = extractvalue %_Z12LLVMValueRef %l234, 0
   %r236 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle237 = extractvalue %_Z12LLVMValueRef %r236, 0
-  %call238 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle233, ptr %handle235, ptr %handle237, ptr @.str.1751)
+  %call238 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle233, ptr %handle235, ptr %handle237, ptr @.str.1755)
   store %_Z12LLVMValueRef %call238, ptr %0, align 1
   ret void
 
@@ -260118,7 +260387,7 @@ if.then241:                                       ; preds = %if.end219
   br i1 %is_float243, label %if.then244, label %if.end245
 
 if.end242:                                        ; preds = %if.end219
-  store { ptr } { ptr @.sconst.1755 }, ptr %arg.tmp262, align 1
+  store { ptr } { ptr @.sconst.1759 }, ptr %arg.tmp262, align 1
   %call263 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp262)
   br i1 %call263, label %if.then264, label %if.end265
 
@@ -260130,7 +260399,7 @@ if.then244:                                       ; preds = %if.then241
   %handle250 = extractvalue %_Z12LLVMValueRef %l249, 0
   %r251 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle252 = extractvalue %_Z12LLVMValueRef %r251, 0
-  %call253 = call %_Z12LLVMValueRef @LLVMBuildFSub(ptr %handle248, ptr %handle250, ptr %handle252, ptr @.str.1753)
+  %call253 = call %_Z12LLVMValueRef @LLVMBuildFSub(ptr %handle248, ptr %handle250, ptr %handle252, ptr @.str.1757)
   store %_Z12LLVMValueRef %call253, ptr %0, align 1
   ret void
 
@@ -260142,7 +260411,7 @@ if.end245:                                        ; preds = %if.then241
   %handle258 = extractvalue %_Z12LLVMValueRef %l257, 0
   %r259 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle260 = extractvalue %_Z12LLVMValueRef %r259, 0
-  %call261 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle256, ptr %handle258, ptr %handle260, ptr @.str.1754)
+  %call261 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle256, ptr %handle258, ptr %handle260, ptr @.str.1758)
   store %_Z12LLVMValueRef %call261, ptr %0, align 1
   ret void
 
@@ -260151,7 +260420,7 @@ if.then264:                                       ; preds = %if.end242
   br i1 %is_float266, label %if.then267, label %if.end268
 
 if.end265:                                        ; preds = %if.end242
-  store { ptr } { ptr @.sconst.1758 }, ptr %arg.tmp285, align 1
+  store { ptr } { ptr @.sconst.1762 }, ptr %arg.tmp285, align 1
   %call286 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp285)
   br i1 %call286, label %if.then287, label %if.end288
 
@@ -260163,7 +260432,7 @@ if.then267:                                       ; preds = %if.then264
   %handle273 = extractvalue %_Z12LLVMValueRef %l272, 0
   %r274 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle275 = extractvalue %_Z12LLVMValueRef %r274, 0
-  %call276 = call %_Z12LLVMValueRef @LLVMBuildFMul(ptr %handle271, ptr %handle273, ptr %handle275, ptr @.str.1756)
+  %call276 = call %_Z12LLVMValueRef @LLVMBuildFMul(ptr %handle271, ptr %handle273, ptr %handle275, ptr @.str.1760)
   store %_Z12LLVMValueRef %call276, ptr %0, align 1
   ret void
 
@@ -260175,7 +260444,7 @@ if.end268:                                        ; preds = %if.then264
   %handle281 = extractvalue %_Z12LLVMValueRef %l280, 0
   %r282 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle283 = extractvalue %_Z12LLVMValueRef %r282, 0
-  %call284 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle279, ptr %handle281, ptr %handle283, ptr @.str.1757)
+  %call284 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle279, ptr %handle281, ptr %handle283, ptr @.str.1761)
   store %_Z12LLVMValueRef %call284, ptr %0, align 1
   ret void
 
@@ -260184,7 +260453,7 @@ if.then287:                                       ; preds = %if.end265
   br i1 %is_float289, label %if.then290, label %if.end291
 
 if.end288:                                        ; preds = %if.end265
-  store { ptr } { ptr @.sconst.1762 }, ptr %arg.tmp319, align 1
+  store { ptr } { ptr @.sconst.1766 }, ptr %arg.tmp319, align 1
   %call320 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp319)
   br i1 %call320, label %if.then321, label %if.end322
 
@@ -260196,7 +260465,7 @@ if.then290:                                       ; preds = %if.then287
   %handle296 = extractvalue %_Z12LLVMValueRef %l295, 0
   %r297 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle298 = extractvalue %_Z12LLVMValueRef %r297, 0
-  %call299 = call %_Z12LLVMValueRef @LLVMBuildFDiv(ptr %handle294, ptr %handle296, ptr %handle298, ptr @.str.1759)
+  %call299 = call %_Z12LLVMValueRef @LLVMBuildFDiv(ptr %handle294, ptr %handle296, ptr %handle298, ptr @.str.1763)
   store %_Z12LLVMValueRef %call299, ptr %0, align 1
   ret void
 
@@ -260212,7 +260481,7 @@ if.then301:                                       ; preds = %if.end291
   %handle307 = extractvalue %_Z12LLVMValueRef %l306, 0
   %r308 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle309 = extractvalue %_Z12LLVMValueRef %r308, 0
-  %call310 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle305, ptr %handle307, ptr %handle309, ptr @.str.1760)
+  %call310 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle305, ptr %handle307, ptr %handle309, ptr @.str.1764)
   store %_Z12LLVMValueRef %call310, ptr %0, align 1
   ret void
 
@@ -260224,7 +260493,7 @@ if.end302:                                        ; preds = %if.end291
   %handle315 = extractvalue %_Z12LLVMValueRef %l314, 0
   %r316 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle317 = extractvalue %_Z12LLVMValueRef %r316, 0
-  %call318 = call %_Z12LLVMValueRef @LLVMBuildUDiv(ptr %handle313, ptr %handle315, ptr %handle317, ptr @.str.1761)
+  %call318 = call %_Z12LLVMValueRef @LLVMBuildUDiv(ptr %handle313, ptr %handle315, ptr %handle317, ptr @.str.1765)
   store %_Z12LLVMValueRef %call318, ptr %0, align 1
   ret void
 
@@ -260233,7 +260502,7 @@ if.then321:                                       ; preds = %if.end288
   br i1 %is_float323, label %if.then324, label %if.end325
 
 if.end322:                                        ; preds = %if.end288
-  store { ptr } { ptr @.sconst.1766 }, ptr %arg.tmp353, align 1
+  store { ptr } { ptr @.sconst.1770 }, ptr %arg.tmp353, align 1
   %call354 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp353)
   br i1 %call354, label %if.then355, label %if.end356
 
@@ -260245,7 +260514,7 @@ if.then324:                                       ; preds = %if.then321
   %handle330 = extractvalue %_Z12LLVMValueRef %l329, 0
   %r331 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle332 = extractvalue %_Z12LLVMValueRef %r331, 0
-  %call333 = call %_Z12LLVMValueRef @LLVMBuildFRem(ptr %handle328, ptr %handle330, ptr %handle332, ptr @.str.1763)
+  %call333 = call %_Z12LLVMValueRef @LLVMBuildFRem(ptr %handle328, ptr %handle330, ptr %handle332, ptr @.str.1767)
   store %_Z12LLVMValueRef %call333, ptr %0, align 1
   ret void
 
@@ -260261,7 +260530,7 @@ if.then335:                                       ; preds = %if.end325
   %handle341 = extractvalue %_Z12LLVMValueRef %l340, 0
   %r342 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle343 = extractvalue %_Z12LLVMValueRef %r342, 0
-  %call344 = call %_Z12LLVMValueRef @LLVMBuildSRem(ptr %handle339, ptr %handle341, ptr %handle343, ptr @.str.1764)
+  %call344 = call %_Z12LLVMValueRef @LLVMBuildSRem(ptr %handle339, ptr %handle341, ptr %handle343, ptr @.str.1768)
   store %_Z12LLVMValueRef %call344, ptr %0, align 1
   ret void
 
@@ -260273,7 +260542,7 @@ if.end336:                                        ; preds = %if.end325
   %handle349 = extractvalue %_Z12LLVMValueRef %l348, 0
   %r350 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle351 = extractvalue %_Z12LLVMValueRef %r350, 0
-  %call352 = call %_Z12LLVMValueRef @LLVMBuildURem(ptr %handle347, ptr %handle349, ptr %handle351, ptr @.str.1765)
+  %call352 = call %_Z12LLVMValueRef @LLVMBuildURem(ptr %handle347, ptr %handle349, ptr %handle351, ptr @.str.1769)
   store %_Z12LLVMValueRef %call352, ptr %0, align 1
   ret void
 
@@ -260282,7 +260551,7 @@ if.then355:                                       ; preds = %if.end322
   br i1 %is_float357, label %if.then358, label %if.end359
 
 if.end356:                                        ; preds = %if.end322
-  store { ptr } { ptr @.sconst.1770 }, ptr %arg.tmp387, align 1
+  store { ptr } { ptr @.sconst.1774 }, ptr %arg.tmp387, align 1
   %call388 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp387)
   br i1 %call388, label %if.then389, label %if.end390
 
@@ -260294,7 +260563,7 @@ if.then358:                                       ; preds = %if.then355
   %handle364 = extractvalue %_Z12LLVMValueRef %l363, 0
   %r365 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle366 = extractvalue %_Z12LLVMValueRef %r365, 0
-  %call367 = call %_Z12LLVMValueRef @LLVMBuildFDiv(ptr %handle362, ptr %handle364, ptr %handle366, ptr @.str.1767)
+  %call367 = call %_Z12LLVMValueRef @LLVMBuildFDiv(ptr %handle362, ptr %handle364, ptr %handle366, ptr @.str.1771)
   store %_Z12LLVMValueRef %call367, ptr %0, align 1
   ret void
 
@@ -260310,7 +260579,7 @@ if.then369:                                       ; preds = %if.end359
   %handle375 = extractvalue %_Z12LLVMValueRef %l374, 0
   %r376 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle377 = extractvalue %_Z12LLVMValueRef %r376, 0
-  %call378 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle373, ptr %handle375, ptr %handle377, ptr @.str.1768)
+  %call378 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle373, ptr %handle375, ptr %handle377, ptr @.str.1772)
   store %_Z12LLVMValueRef %call378, ptr %0, align 1
   ret void
 
@@ -260322,7 +260591,7 @@ if.end370:                                        ; preds = %if.end359
   %handle383 = extractvalue %_Z12LLVMValueRef %l382, 0
   %r384 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle385 = extractvalue %_Z12LLVMValueRef %r384, 0
-  %call386 = call %_Z12LLVMValueRef @LLVMBuildUDiv(ptr %handle381, ptr %handle383, ptr %handle385, ptr @.str.1769)
+  %call386 = call %_Z12LLVMValueRef @LLVMBuildUDiv(ptr %handle381, ptr %handle383, ptr %handle385, ptr @.str.1773)
   store %_Z12LLVMValueRef %call386, ptr %0, align 1
   ret void
 
@@ -260331,7 +260600,7 @@ if.then389:                                       ; preds = %if.end356
   br i1 %is_float391, label %if.then392, label %if.end393
 
 if.end390:                                        ; preds = %if.end356
-  store { ptr } { ptr @.sconst.1774 }, ptr %arg.tmp421, align 1
+  store { ptr } { ptr @.sconst.1778 }, ptr %arg.tmp421, align 1
   %call422 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp421)
   br i1 %call422, label %if.then423, label %if.end424
 
@@ -260343,7 +260612,7 @@ if.then392:                                       ; preds = %if.then389
   %handle398 = extractvalue %_Z12LLVMValueRef %l397, 0
   %r399 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle400 = extractvalue %_Z12LLVMValueRef %r399, 0
-  %call401 = call %_Z12LLVMValueRef @LLVMBuildFRem(ptr %handle396, ptr %handle398, ptr %handle400, ptr @.str.1771)
+  %call401 = call %_Z12LLVMValueRef @LLVMBuildFRem(ptr %handle396, ptr %handle398, ptr %handle400, ptr @.str.1775)
   store %_Z12LLVMValueRef %call401, ptr %0, align 1
   ret void
 
@@ -260359,7 +260628,7 @@ if.then403:                                       ; preds = %if.end393
   %handle409 = extractvalue %_Z12LLVMValueRef %l408, 0
   %r410 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle411 = extractvalue %_Z12LLVMValueRef %r410, 0
-  %call412 = call %_Z12LLVMValueRef @LLVMBuildSRem(ptr %handle407, ptr %handle409, ptr %handle411, ptr @.str.1772)
+  %call412 = call %_Z12LLVMValueRef @LLVMBuildSRem(ptr %handle407, ptr %handle409, ptr %handle411, ptr @.str.1776)
   store %_Z12LLVMValueRef %call412, ptr %0, align 1
   ret void
 
@@ -260371,7 +260640,7 @@ if.end404:                                        ; preds = %if.end393
   %handle417 = extractvalue %_Z12LLVMValueRef %l416, 0
   %r418 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle419 = extractvalue %_Z12LLVMValueRef %r418, 0
-  %call420 = call %_Z12LLVMValueRef @LLVMBuildURem(ptr %handle415, ptr %handle417, ptr %handle419, ptr @.str.1773)
+  %call420 = call %_Z12LLVMValueRef @LLVMBuildURem(ptr %handle415, ptr %handle417, ptr %handle419, ptr @.str.1777)
   store %_Z12LLVMValueRef %call420, ptr %0, align 1
   ret void
 
@@ -260383,12 +260652,12 @@ if.then423:                                       ; preds = %if.end390
   %handle429 = extractvalue %_Z12LLVMValueRef %l428, 0
   %r430 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle431 = extractvalue %_Z12LLVMValueRef %r430, 0
-  %call432 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle427, ptr %handle429, ptr %handle431, ptr @.str.1775)
+  %call432 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle427, ptr %handle429, ptr %handle431, ptr @.str.1779)
   store %_Z12LLVMValueRef %call432, ptr %0, align 1
   ret void
 
 if.end424:                                        ; preds = %if.end390
-  store { ptr } { ptr @.sconst.1776 }, ptr %arg.tmp433, align 1
+  store { ptr } { ptr @.sconst.1780 }, ptr %arg.tmp433, align 1
   %call434 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp433)
   br i1 %call434, label %if.then435, label %if.end436
 
@@ -260400,12 +260669,12 @@ if.then435:                                       ; preds = %if.end424
   %handle441 = extractvalue %_Z12LLVMValueRef %l440, 0
   %r442 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle443 = extractvalue %_Z12LLVMValueRef %r442, 0
-  %call444 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle439, ptr %handle441, ptr %handle443, ptr @.str.1777)
+  %call444 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle439, ptr %handle441, ptr %handle443, ptr @.str.1781)
   store %_Z12LLVMValueRef %call444, ptr %0, align 1
   ret void
 
 if.end436:                                        ; preds = %if.end424
-  store { ptr } { ptr @.sconst.1778 }, ptr %arg.tmp445, align 1
+  store { ptr } { ptr @.sconst.1782 }, ptr %arg.tmp445, align 1
   %call446 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp445)
   br i1 %call446, label %if.then447, label %if.end448
 
@@ -260417,12 +260686,12 @@ if.then447:                                       ; preds = %if.end436
   %handle453 = extractvalue %_Z12LLVMValueRef %l452, 0
   %r454 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle455 = extractvalue %_Z12LLVMValueRef %r454, 0
-  %call456 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle451, ptr %handle453, ptr %handle455, ptr @.str.1779)
+  %call456 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle451, ptr %handle453, ptr %handle455, ptr @.str.1783)
   store %_Z12LLVMValueRef %call456, ptr %0, align 1
   ret void
 
 if.end448:                                        ; preds = %if.end436
-  store { ptr } { ptr @.sconst.1780 }, ptr %arg.tmp457, align 1
+  store { ptr } { ptr @.sconst.1784 }, ptr %arg.tmp457, align 1
   %call458 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp457)
   br i1 %call458, label %if.then459, label %if.end460
 
@@ -260434,12 +260703,12 @@ if.then459:                                       ; preds = %if.end448
   %handle465 = extractvalue %_Z12LLVMValueRef %l464, 0
   %r466 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle467 = extractvalue %_Z12LLVMValueRef %r466, 0
-  %call468 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle463, ptr %handle465, ptr %handle467, ptr @.str.1781)
+  %call468 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle463, ptr %handle465, ptr %handle467, ptr @.str.1785)
   store %_Z12LLVMValueRef %call468, ptr %0, align 1
   ret void
 
 if.end460:                                        ; preds = %if.end448
-  store { ptr } { ptr @.sconst.1782 }, ptr %arg.tmp469, align 1
+  store { ptr } { ptr @.sconst.1786 }, ptr %arg.tmp469, align 1
   %call470 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp469)
   br i1 %call470, label %if.then471, label %if.end472
 
@@ -260451,12 +260720,12 @@ if.then471:                                       ; preds = %if.end460
   %handle477 = extractvalue %_Z12LLVMValueRef %l476, 0
   %r478 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle479 = extractvalue %_Z12LLVMValueRef %r478, 0
-  %call480 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle475, ptr %handle477, ptr %handle479, ptr @.str.1783)
+  %call480 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle475, ptr %handle477, ptr %handle479, ptr @.str.1787)
   store %_Z12LLVMValueRef %call480, ptr %0, align 1
   ret void
 
 if.end472:                                        ; preds = %if.end460
-  store { ptr } { ptr @.sconst.1784 }, ptr %arg.tmp481, align 1
+  store { ptr } { ptr @.sconst.1788 }, ptr %arg.tmp481, align 1
   %call482 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp481)
   br i1 %call482, label %if.then483, label %if.end484
 
@@ -260468,12 +260737,12 @@ if.then483:                                       ; preds = %if.end472
   %handle489 = extractvalue %_Z12LLVMValueRef %l488, 0
   %r490 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle491 = extractvalue %_Z12LLVMValueRef %r490, 0
-  %call492 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle487, ptr %handle489, ptr %handle491, ptr @.str.1785)
+  %call492 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle487, ptr %handle489, ptr %handle491, ptr @.str.1789)
   store %_Z12LLVMValueRef %call492, ptr %0, align 1
   ret void
 
 if.end484:                                        ; preds = %if.end472
-  store { ptr } { ptr @.sconst.1786 }, ptr %arg.tmp493, align 1
+  store { ptr } { ptr @.sconst.1790 }, ptr %arg.tmp493, align 1
   %call494 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp493)
   br i1 %call494, label %if.then495, label %if.end496
 
@@ -260485,12 +260754,12 @@ if.then495:                                       ; preds = %if.end484
   %handle501 = extractvalue %_Z12LLVMValueRef %l500, 0
   %r502 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle503 = extractvalue %_Z12LLVMValueRef %r502, 0
-  %call504 = call %_Z12LLVMValueRef @LLVMBuildXor(ptr %handle499, ptr %handle501, ptr %handle503, ptr @.str.1787)
+  %call504 = call %_Z12LLVMValueRef @LLVMBuildXor(ptr %handle499, ptr %handle501, ptr %handle503, ptr @.str.1791)
   store %_Z12LLVMValueRef %call504, ptr %0, align 1
   ret void
 
 if.end496:                                        ; preds = %if.end484
-  store { ptr } { ptr @.sconst.1788 }, ptr %arg.tmp505, align 1
+  store { ptr } { ptr @.sconst.1792 }, ptr %arg.tmp505, align 1
   %call506 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp505)
   br i1 %call506, label %if.then507, label %if.end508
 
@@ -260502,12 +260771,12 @@ if.then507:                                       ; preds = %if.end496
   %handle513 = extractvalue %_Z12LLVMValueRef %l512, 0
   %r514 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle515 = extractvalue %_Z12LLVMValueRef %r514, 0
-  %call516 = call %_Z12LLVMValueRef @LLVMBuildXor(ptr %handle511, ptr %handle513, ptr %handle515, ptr @.str.1789)
+  %call516 = call %_Z12LLVMValueRef @LLVMBuildXor(ptr %handle511, ptr %handle513, ptr %handle515, ptr @.str.1793)
   store %_Z12LLVMValueRef %call516, ptr %0, align 1
   ret void
 
 if.end508:                                        ; preds = %if.end496
-  store { ptr } { ptr @.sconst.1790 }, ptr %arg.tmp517, align 1
+  store { ptr } { ptr @.sconst.1794 }, ptr %arg.tmp517, align 1
   %call518 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp517)
   br i1 %call518, label %if.then519, label %if.end520
 
@@ -260519,12 +260788,12 @@ if.then519:                                       ; preds = %if.end508
   %handle525 = extractvalue %_Z12LLVMValueRef %l524, 0
   %r526 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle527 = extractvalue %_Z12LLVMValueRef %r526, 0
-  %call528 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle523, ptr %handle525, ptr %handle527, ptr @.str.1791)
+  %call528 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle523, ptr %handle525, ptr %handle527, ptr @.str.1795)
   store %_Z12LLVMValueRef %call528, ptr %0, align 1
   ret void
 
 if.end520:                                        ; preds = %if.end508
-  store { ptr } { ptr @.sconst.1792 }, ptr %arg.tmp529, align 1
+  store { ptr } { ptr @.sconst.1796 }, ptr %arg.tmp529, align 1
   %call530 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp529)
   br i1 %call530, label %if.then531, label %if.end532
 
@@ -260533,7 +260802,7 @@ if.then531:                                       ; preds = %if.end520
   br i1 %is_signed533, label %if.then534, label %if.end535
 
 if.end532:                                        ; preds = %if.end520
-  store { ptr } { ptr @.sconst.1795 }, ptr %arg.tmp552, align 1
+  store { ptr } { ptr @.sconst.1799 }, ptr %arg.tmp552, align 1
   %call553 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp552)
   br i1 %call553, label %if.then554, label %if.end555
 
@@ -260545,7 +260814,7 @@ if.then534:                                       ; preds = %if.then531
   %handle540 = extractvalue %_Z12LLVMValueRef %l539, 0
   %r541 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle542 = extractvalue %_Z12LLVMValueRef %r541, 0
-  %call543 = call %_Z12LLVMValueRef @LLVMBuildAShr(ptr %handle538, ptr %handle540, ptr %handle542, ptr @.str.1793)
+  %call543 = call %_Z12LLVMValueRef @LLVMBuildAShr(ptr %handle538, ptr %handle540, ptr %handle542, ptr @.str.1797)
   store %_Z12LLVMValueRef %call543, ptr %0, align 1
   ret void
 
@@ -260557,7 +260826,7 @@ if.end535:                                        ; preds = %if.then531
   %handle548 = extractvalue %_Z12LLVMValueRef %l547, 0
   %r549 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle550 = extractvalue %_Z12LLVMValueRef %r549, 0
-  %call551 = call %_Z12LLVMValueRef @LLVMBuildLShr(ptr %handle546, ptr %handle548, ptr %handle550, ptr @.str.1794)
+  %call551 = call %_Z12LLVMValueRef @LLVMBuildLShr(ptr %handle546, ptr %handle548, ptr %handle550, ptr @.str.1798)
   store %_Z12LLVMValueRef %call551, ptr %0, align 1
   ret void
 
@@ -260566,7 +260835,7 @@ if.then554:                                       ; preds = %if.end532
   br i1 %is_float556, label %if.then557, label %if.end558
 
 if.end555:                                        ; preds = %if.end532
-  store { ptr } { ptr @.sconst.1798 }, ptr %arg.tmp593, align 1
+  store { ptr } { ptr @.sconst.1802 }, ptr %arg.tmp593, align 1
   %call594 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp593)
   br i1 %call594, label %if.then595, label %if.end596
 
@@ -260579,7 +260848,7 @@ if.then557:                                       ; preds = %if.then554
   %handle564 = extractvalue %_Z12LLVMValueRef %l563, 0
   %r565 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle566 = extractvalue %_Z12LLVMValueRef %r565, 0
-  %call567 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle561, i64 %call562, ptr %handle564, ptr %handle566, ptr @.str.1796)
+  %call567 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle561, i64 %call562, ptr %handle564, ptr %handle566, ptr @.str.1800)
   store %_Z12LLVMValueRef %call567, ptr %0, align 1
   ret void
 
@@ -260613,7 +260882,7 @@ if.end580:                                        ; preds = %if.end558
   %handle589 = extractvalue %_Z12LLVMValueRef %l588, 0
   %r590 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle591 = extractvalue %_Z12LLVMValueRef %r590, 0
-  %call592 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle586, i64 %call587, ptr %handle589, ptr %handle591, ptr @.str.1797)
+  %call592 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle586, i64 %call587, ptr %handle589, ptr %handle591, ptr @.str.1801)
   store %_Z12LLVMValueRef %call592, ptr %0, align 1
   ret void
 
@@ -260622,7 +260891,7 @@ if.then595:                                       ; preds = %if.end555
   br i1 %is_float597, label %if.then598, label %if.end599
 
 if.end596:                                        ; preds = %if.end555
-  store { ptr } { ptr @.sconst.1801 }, ptr %arg.tmp633, align 1
+  store { ptr } { ptr @.sconst.1805 }, ptr %arg.tmp633, align 1
   %call634 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp633)
   br i1 %call634, label %if.then635, label %if.end636
 
@@ -260635,7 +260904,7 @@ if.then598:                                       ; preds = %if.then595
   %handle605 = extractvalue %_Z12LLVMValueRef %l604, 0
   %r606 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle607 = extractvalue %_Z12LLVMValueRef %r606, 0
-  %call608 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle602, i64 %call603, ptr %handle605, ptr %handle607, ptr @.str.1799)
+  %call608 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle602, i64 %call603, ptr %handle605, ptr %handle607, ptr @.str.1803)
   store %_Z12LLVMValueRef %call608, ptr %0, align 1
   ret void
 
@@ -260669,7 +260938,7 @@ if.end621:                                        ; preds = %if.end599
   %handle629 = extractvalue %_Z12LLVMValueRef %l628, 0
   %r630 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle631 = extractvalue %_Z12LLVMValueRef %r630, 0
-  %call632 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle626, i64 %call627, ptr %handle629, ptr %handle631, ptr @.str.1800)
+  %call632 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle626, i64 %call627, ptr %handle629, ptr %handle631, ptr @.str.1804)
   store %_Z12LLVMValueRef %call632, ptr %0, align 1
   ret void
 
@@ -260678,7 +260947,7 @@ if.then635:                                       ; preds = %if.end596
   br i1 %is_float637, label %if.then638, label %if.end639
 
 if.end636:                                        ; preds = %if.end596
-  store { ptr } { ptr @.sconst.1805 }, ptr %arg.tmp685, align 1
+  store { ptr } { ptr @.sconst.1809 }, ptr %arg.tmp685, align 1
   %call686 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp685)
   br i1 %call686, label %if.then687, label %if.end688
 
@@ -260691,7 +260960,7 @@ if.then638:                                       ; preds = %if.then635
   %handle645 = extractvalue %_Z12LLVMValueRef %l644, 0
   %r646 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle647 = extractvalue %_Z12LLVMValueRef %r646, 0
-  %call648 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle642, i64 %call643, ptr %handle645, ptr %handle647, ptr @.str.1802)
+  %call648 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle642, i64 %call643, ptr %handle645, ptr %handle647, ptr @.str.1806)
   store %_Z12LLVMValueRef %call648, ptr %0, align 1
   ret void
 
@@ -260729,7 +260998,7 @@ if.then665:                                       ; preds = %if.end661
   %handle672 = extractvalue %_Z12LLVMValueRef %l671, 0
   %r673 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle674 = extractvalue %_Z12LLVMValueRef %r673, 0
-  %call675 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle669, i64 %call670, ptr %handle672, ptr %handle674, ptr @.str.1803)
+  %call675 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle669, i64 %call670, ptr %handle672, ptr %handle674, ptr @.str.1807)
   store %_Z12LLVMValueRef %call675, ptr %0, align 1
   ret void
 
@@ -260742,7 +261011,7 @@ if.end666:                                        ; preds = %if.end661
   %handle681 = extractvalue %_Z12LLVMValueRef %l680, 0
   %r682 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle683 = extractvalue %_Z12LLVMValueRef %r682, 0
-  %call684 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle678, i64 %call679, ptr %handle681, ptr %handle683, ptr @.str.1804)
+  %call684 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle678, i64 %call679, ptr %handle681, ptr %handle683, ptr @.str.1808)
   store %_Z12LLVMValueRef %call684, ptr %0, align 1
   ret void
 
@@ -260751,7 +261020,7 @@ if.then687:                                       ; preds = %if.end636
   br i1 %is_float689, label %if.then690, label %if.end691
 
 if.end688:                                        ; preds = %if.end636
-  store { ptr } { ptr @.sconst.1809 }, ptr %arg.tmp737, align 1
+  store { ptr } { ptr @.sconst.1813 }, ptr %arg.tmp737, align 1
   %call738 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp737)
   br i1 %call738, label %if.then739, label %if.end740
 
@@ -260764,7 +261033,7 @@ if.then690:                                       ; preds = %if.then687
   %handle697 = extractvalue %_Z12LLVMValueRef %l696, 0
   %r698 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle699 = extractvalue %_Z12LLVMValueRef %r698, 0
-  %call700 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle694, i64 %call695, ptr %handle697, ptr %handle699, ptr @.str.1806)
+  %call700 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle694, i64 %call695, ptr %handle697, ptr %handle699, ptr @.str.1810)
   store %_Z12LLVMValueRef %call700, ptr %0, align 1
   ret void
 
@@ -260802,7 +261071,7 @@ if.then717:                                       ; preds = %if.end713
   %handle724 = extractvalue %_Z12LLVMValueRef %l723, 0
   %r725 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle726 = extractvalue %_Z12LLVMValueRef %r725, 0
-  %call727 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle721, i64 %call722, ptr %handle724, ptr %handle726, ptr @.str.1807)
+  %call727 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle721, i64 %call722, ptr %handle724, ptr %handle726, ptr @.str.1811)
   store %_Z12LLVMValueRef %call727, ptr %0, align 1
   ret void
 
@@ -260815,7 +261084,7 @@ if.end718:                                        ; preds = %if.end713
   %handle733 = extractvalue %_Z12LLVMValueRef %l732, 0
   %r734 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle735 = extractvalue %_Z12LLVMValueRef %r734, 0
-  %call736 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle730, i64 %call731, ptr %handle733, ptr %handle735, ptr @.str.1808)
+  %call736 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle730, i64 %call731, ptr %handle733, ptr %handle735, ptr @.str.1812)
   store %_Z12LLVMValueRef %call736, ptr %0, align 1
   ret void
 
@@ -260824,7 +261093,7 @@ if.then739:                                       ; preds = %if.end688
   br i1 %is_float741, label %if.then742, label %if.end743
 
 if.end740:                                        ; preds = %if.end688
-  store { ptr } { ptr @.sconst.1813 }, ptr %arg.tmp789, align 1
+  store { ptr } { ptr @.sconst.1817 }, ptr %arg.tmp789, align 1
   %call790 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp789)
   br i1 %call790, label %if.then791, label %if.end792
 
@@ -260837,7 +261106,7 @@ if.then742:                                       ; preds = %if.then739
   %handle749 = extractvalue %_Z12LLVMValueRef %l748, 0
   %r750 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle751 = extractvalue %_Z12LLVMValueRef %r750, 0
-  %call752 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle746, i64 %call747, ptr %handle749, ptr %handle751, ptr @.str.1810)
+  %call752 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle746, i64 %call747, ptr %handle749, ptr %handle751, ptr @.str.1814)
   store %_Z12LLVMValueRef %call752, ptr %0, align 1
   ret void
 
@@ -260875,7 +261144,7 @@ if.then769:                                       ; preds = %if.end765
   %handle776 = extractvalue %_Z12LLVMValueRef %l775, 0
   %r777 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle778 = extractvalue %_Z12LLVMValueRef %r777, 0
-  %call779 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle773, i64 %call774, ptr %handle776, ptr %handle778, ptr @.str.1811)
+  %call779 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle773, i64 %call774, ptr %handle776, ptr %handle778, ptr @.str.1815)
   store %_Z12LLVMValueRef %call779, ptr %0, align 1
   ret void
 
@@ -260888,7 +261157,7 @@ if.end770:                                        ; preds = %if.end765
   %handle785 = extractvalue %_Z12LLVMValueRef %l784, 0
   %r786 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle787 = extractvalue %_Z12LLVMValueRef %r786, 0
-  %call788 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle782, i64 %call783, ptr %handle785, ptr %handle787, ptr @.str.1812)
+  %call788 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle782, i64 %call783, ptr %handle785, ptr %handle787, ptr @.str.1816)
   store %_Z12LLVMValueRef %call788, ptr %0, align 1
   ret void
 
@@ -260897,7 +261166,7 @@ if.then791:                                       ; preds = %if.end740
   br i1 %is_float793, label %if.then794, label %if.end795
 
 if.end792:                                        ; preds = %if.end740
-  store { ptr } { ptr @.sconst.1817 }, ptr %arg.tmp841, align 1
+  store { ptr } { ptr @.sconst.1821 }, ptr %arg.tmp841, align 1
   %call842 = call i1 @_ZN6String6equalsE6String(ptr %3, ptr %arg.tmp841)
   br i1 %call842, label %if.then843, label %if.end844
 
@@ -260910,7 +261179,7 @@ if.then794:                                       ; preds = %if.then791
   %handle801 = extractvalue %_Z12LLVMValueRef %l800, 0
   %r802 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle803 = extractvalue %_Z12LLVMValueRef %r802, 0
-  %call804 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle798, i64 %call799, ptr %handle801, ptr %handle803, ptr @.str.1814)
+  %call804 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle798, i64 %call799, ptr %handle801, ptr %handle803, ptr @.str.1818)
   store %_Z12LLVMValueRef %call804, ptr %0, align 1
   ret void
 
@@ -260948,7 +261217,7 @@ if.then821:                                       ; preds = %if.end817
   %handle828 = extractvalue %_Z12LLVMValueRef %l827, 0
   %r829 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle830 = extractvalue %_Z12LLVMValueRef %r829, 0
-  %call831 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle825, i64 %call826, ptr %handle828, ptr %handle830, ptr @.str.1815)
+  %call831 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle825, i64 %call826, ptr %handle828, ptr %handle830, ptr @.str.1819)
   store %_Z12LLVMValueRef %call831, ptr %0, align 1
   ret void
 
@@ -260961,7 +261230,7 @@ if.end822:                                        ; preds = %if.end817
   %handle837 = extractvalue %_Z12LLVMValueRef %l836, 0
   %r838 = load %_Z12LLVMValueRef, ptr %r, align 8
   %handle839 = extractvalue %_Z12LLVMValueRef %r838, 0
-  %call840 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle834, i64 %call835, ptr %handle837, ptr %handle839, ptr @.str.1816)
+  %call840 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle834, i64 %call835, ptr %handle837, ptr %handle839, ptr @.str.1820)
   store %_Z12LLVMValueRef %call840, ptr %0, align 1
   ret void
 
@@ -260973,10 +261242,10 @@ if.then843:                                       ; preds = %if.end792
   ret void
 
 if.end844:                                        ; preds = %if.end792
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1818)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1822)
   %call847 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %3)
   call void @_Z11scaly_eputsP10const_char(ptr %call847)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1819)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1823)
   call void @exit(i64 14)
   %tuple.field848 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple581, i32 0, i32 0
   store ptr null, ptr %tuple.field848, align 1
@@ -260997,7 +261266,7 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } %name, ptr %arg.tmp, align 1
   %arg.tmp1 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1820 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.1824 }, ptr %arg.tmp1, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %arg.tmp1)
   br i1 %call, label %if.then, label %if.end
 
@@ -261009,7 +261278,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.end4, %entry
   store { ptr } %name, ptr %arg.tmp45, align 1
-  store { ptr } { ptr @.sconst.1822 }, ptr %arg.tmp46, align 1
+  store { ptr } { ptr @.sconst.1826 }, ptr %arg.tmp46, align 1
   %call47 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp45, ptr %arg.tmp46)
   br i1 %call47, label %if.then48, label %if.end49
 
@@ -261092,7 +261361,7 @@ if.end33:                                         ; preds = %if.then25
   %handle40 = extractvalue %_Z11LLVMTypeRef %wrapper.load39, 0
   %wrapper.load41 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle42 = extractvalue %_Z12LLVMValueRef %wrapper.load41, 0
-  %call43 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle38, ptr %handle40, ptr %handle42, ptr @.str.1821)
+  %call43 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle38, ptr %handle40, ptr %handle42, ptr @.str.1825)
   store %_Z12LLVMValueRef %call43, ptr %0, align 1
   ret void
 
@@ -261155,7 +261424,7 @@ entry:
   %arg.tmp2 = alloca { ptr }, align 8
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1823 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1827 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -261164,7 +261433,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace1 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1824 }, ptr %arg.tmp2, align 1
+  store { ptr } { ptr @.sconst.1828 }, ptr %arg.tmp2, align 1
   %call3 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace1, ptr %arg.tmp2)
   br i1 %call3, label %if.then4, label %if.end5
 
@@ -261188,7 +261457,7 @@ entry:
   %arg.tmp2 = alloca { ptr }, align 8
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1825 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1829 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -261197,7 +261466,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %field.inplace1 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1826 }, ptr %arg.tmp2, align 1
+  store { ptr } { ptr @.sconst.1830 }, ptr %arg.tmp2, align 1
   %call3 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace1, ptr %arg.tmp2)
   br i1 %call3, label %if.then4, label %if.end5
 
@@ -261206,7 +261475,7 @@ if.then4:                                         ; preds = %if.end
 
 if.end5:                                          ; preds = %if.end
   %field.inplace6 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1827 }, ptr %arg.tmp7, align 1
+  store { ptr } { ptr @.sconst.1831 }, ptr %arg.tmp7, align 1
   %call8 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace6, ptr %arg.tmp7)
   br i1 %call8, label %if.then9, label %if.end10
 
@@ -261215,7 +261484,7 @@ if.then9:                                         ; preds = %if.end5
 
 if.end10:                                         ; preds = %if.end5
   %field.inplace11 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1828 }, ptr %arg.tmp12, align 1
+  store { ptr } { ptr @.sconst.1832 }, ptr %arg.tmp12, align 1
   %call13 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace11, ptr %arg.tmp12)
   br i1 %call13, label %if.then14, label %if.end15
 
@@ -261224,7 +261493,7 @@ if.then14:                                        ; preds = %if.end10
 
 if.end15:                                         ; preds = %if.end10
   %field.inplace16 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1829 }, ptr %arg.tmp17, align 1
+  store { ptr } { ptr @.sconst.1833 }, ptr %arg.tmp17, align 1
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace16, ptr %arg.tmp17)
   br i1 %call18, label %if.then19, label %if.end20
 
@@ -261233,7 +261502,7 @@ if.then19:                                        ; preds = %if.end15
 
 if.end20:                                         ; preds = %if.end15
   %field.inplace21 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1830 }, ptr %arg.tmp22, align 1
+  store { ptr } { ptr @.sconst.1834 }, ptr %arg.tmp22, align 1
   %call23 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace21, ptr %arg.tmp22)
   br i1 %call23, label %if.then24, label %if.end25
 
@@ -261242,7 +261511,7 @@ if.then24:                                        ; preds = %if.end20
 
 if.end25:                                         ; preds = %if.end20
   %field.inplace26 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1831 }, ptr %arg.tmp27, align 1
+  store { ptr } { ptr @.sconst.1835 }, ptr %arg.tmp27, align 1
   %call28 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace26, ptr %arg.tmp27)
   br i1 %call28, label %if.then29, label %if.end30
 
@@ -261251,7 +261520,7 @@ if.then29:                                        ; preds = %if.end25
 
 if.end30:                                         ; preds = %if.end25
   %field.inplace31 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1832 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.1836 }, ptr %arg.tmp32, align 1
   %call33 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace31, ptr %arg.tmp32)
   br i1 %call33, label %if.then34, label %if.end35
 
@@ -261260,7 +261529,7 @@ if.then34:                                        ; preds = %if.end30
 
 if.end35:                                         ; preds = %if.end30
   %field.inplace36 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1833 }, ptr %arg.tmp37, align 1
+  store { ptr } { ptr @.sconst.1837 }, ptr %arg.tmp37, align 1
   %call38 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace36, ptr %arg.tmp37)
   br i1 %call38, label %if.then39, label %if.end40
 
@@ -261269,7 +261538,7 @@ if.then39:                                        ; preds = %if.end35
 
 if.end40:                                         ; preds = %if.end35
   %field.inplace41 = getelementptr inbounds %_Z11PlannedType, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1834 }, ptr %arg.tmp42, align 1
+  store { ptr } { ptr @.sconst.1838 }, ptr %arg.tmp42, align 1
   %call43 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace41, ptr %arg.tmp42)
   br i1 %call43, label %if.then44, label %if.end45
 
@@ -261418,7 +261687,7 @@ if.end22:                                         ; preds = %if.then21, %if.then
 
 if.then29:                                        ; preds = %if.end22
   %struct_type32 = load ptr, ptr %struct_type, align 8
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result31, ptr %1, ptr %2, ptr %struct_type32, ptr @.str.1835)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result31, ptr %1, ptr %2, ptr %struct_type32, ptr @.str.1839)
   %load.struct33 = load %_Z7Emitter, ptr %2, align 8
   %builder = extractvalue %_Z7Emitter %load.struct33, 5
   %handle34 = extractvalue %_Z14LLVMBuilderRef %builder, 0
@@ -261447,7 +261716,7 @@ if.then44:                                        ; preds = %if.then29
   %handle51 = extractvalue %_Z11LLVMTypeRef %wrapper.load50, 0
   %wrapper.load52 = load %_Z12LLVMValueRef, ptr %sret.result31, align 8
   %handle53 = extractvalue %_Z12LLVMValueRef %wrapper.load52, 0
-  %call54 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle48, ptr %handle51, ptr %handle53, ptr @.str.1836)
+  %call54 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle48, ptr %handle51, ptr %handle53, ptr @.str.1840)
   store %_Z12LLVMValueRef %call54, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
@@ -261662,7 +261931,7 @@ choose.when:                                      ; preds = %if.then149
   %variant.val = load %_Z11PlannedCall, ptr %"variant.c_data().ptr", align 8
   %name153 = extractvalue %_Z11PlannedCall %variant.val, 1
   store { ptr } %name153, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.1837 }, ptr %arg.tmp154, align 1
+  store { ptr } { ptr @.sconst.1841 }, ptr %arg.tmp154, align 1
   %call155 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %arg.tmp154)
   br i1 %call155, label %if.then156, label %if.end157
 
@@ -261704,7 +261973,7 @@ if.then173:                                       ; preds = %if.end164
   %handle179 = extractvalue %_Z11LLVMTypeRef %wrapper.load178, 0
   %wrapper.load180 = load %_Z12LLVMValueRef, ptr %sret.result31, align 8
   %handle181 = extractvalue %_Z12LLVMValueRef %wrapper.load180, 0
-  %call182 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle177, ptr %handle179, ptr %handle181, ptr @.str.1838)
+  %call182 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle177, ptr %handle179, ptr %handle181, ptr @.str.1842)
   store %_Z12LLVMValueRef %call182, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
@@ -261867,7 +262136,7 @@ if.end253:                                        ; preds = %if.then252, %if.end
   br i1 %is_region_alloc262, label %if.then263, label %if.end264
 
 if.then263:                                       ; preds = %if.end253
-  store { ptr } { ptr @.sconst.1839 }, ptr %page_var_name, align 1
+  store { ptr } { ptr @.sconst.1843 }, ptr %page_var_name, align 1
   %load.struct265 = load %_Z12PlannedTuple, ptr %3, align 8
   %life = extractvalue %_Z12PlannedTuple %load.struct265, 4
   store %_Z8Lifetime %life, ptr %choose.union266, align 1
@@ -261885,7 +262154,7 @@ if.end264:                                        ; preds = %if.end282, %if.end2
   br i1 %eq449, label %if.then450, label %if.end451
 
 choose.end269:                                    ; preds = %choose.else270, %choose.when274, %choose.when271
-  %choose.value277 = phi { ptr } [ { ptr @.sconst.1840 }, %choose.when271 ], [ %location, %choose.when274 ], [ undef, %choose.else270 ]
+  %choose.value277 = phi { ptr } [ { ptr @.sconst.1844 }, %choose.when271 ], [ %location, %choose.when274 ], [ undef, %choose.else270 ]
   call void @_ZN7Emitter15lookup_variableEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result31, ptr %1, ptr %2, ptr %page_var_name)
   %load.struct278 = load %_Z12LLVMValueRef, ptr %sret.result31, align 8
   %handle279 = extractvalue %_Z12LLVMValueRef %load.struct278, 0
@@ -261898,7 +262167,7 @@ choose.else270:                                   ; preds = %if.then263
 choose.when271:                                   ; preds = %if.then263
   %"variant.c_data().ptr272" = getelementptr inbounds %_Z8Lifetime, ptr %choose.union266, i32 0, i32 1
   %variant.val273 = load %_Z5Local, ptr %"variant.c_data().ptr272", align 8
-  store { ptr } { ptr @.sconst.1840 }, ptr %page_var_name, align 1
+  store { ptr } { ptr @.sconst.1844 }, ptr %page_var_name, align 1
   br label %choose.end269
 
 choose.when274:                                   ; preds = %if.then263
@@ -261911,7 +262180,7 @@ choose.when274:                                   ; preds = %if.then263
 if.then281:                                       ; preds = %choose.end269
   %binding.load = load %_Z12LLVMValueRef, ptr %sret.result31, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %page_val, ptr align 1 %sret.result31, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
-  store { ptr } { ptr @.sconst.1841 }, ptr %arg.tmp283, align 1
+  store { ptr } { ptr @.sconst.1845 }, ptr %arg.tmp283, align 1
   %call284 = call i1 @_ZN6String6equalsE6String(ptr %page_var_name, ptr %arg.tmp283)
   br i1 %call284, label %if.then285, label %if.end286
 
@@ -261919,7 +262188,7 @@ if.end282:                                        ; preds = %if.end358, %choose.
   br label %if.end264
 
 if.then285:                                       ; preds = %if.then281
-  store { ptr } { ptr @.sconst.1842 }, ptr %arg.tmp288, align 1
+  store { ptr } { ptr @.sconst.1846 }, ptr %arg.tmp288, align 1
   call void @_ZN7Emitter21lookup_function_cacheEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result287, ptr %1, ptr %2, ptr %arg.tmp288)
   store ptr %sret.result287, ptr %get_fn, align 1
   %get_fn289 = load ptr, ptr %get_fn, align 8
@@ -261929,7 +262198,7 @@ if.then285:                                       ; preds = %if.then281
   br i1 %eq292, label %if.then293, label %if.end294
 
 if.end286:                                        ; preds = %if.end316, %if.then281
-  store { ptr } { ptr @.sconst.1847 }, ptr %arg.tmp342, align 1
+  store { ptr } { ptr @.sconst.1851 }, ptr %arg.tmp342, align 1
   call void @_ZN7Emitter21lookup_function_cacheEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result341, ptr %1, ptr %2, ptr %arg.tmp342)
   store ptr %sret.result341, ptr %get_fn, align 1
   %alloc_func = load ptr, ptr %get_fn, align 8
@@ -261942,7 +262211,7 @@ if.then293:                                       ; preds = %if.then285
   %load.struct295 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct295, 4
   %handle296 = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call297 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle296, ptr @.str.1843)
+  %call297 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle296, ptr @.str.1847)
   %set.heap298 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call297, ptr %set.heap298, align 1
   store ptr %set.heap298, ptr %get_fn, align 1
@@ -261975,7 +262244,7 @@ if.then315:                                       ; preds = %if.end294
   %llvm_module318 = extractvalue %_Z7Emitter %load.struct317, 4
   %handle319 = extractvalue %_Z13LLVMModuleRef %llvm_module318, 0
   %handle320 = extractvalue %_Z11LLVMTypeRef %call310, 0
-  %call321 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle319, ptr @.str.1844, ptr %handle320)
+  %call321 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle319, ptr @.str.1848, ptr %handle320)
   %set.heap322 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call321, ptr %set.heap322, align 1
   store ptr %set.heap322, ptr %get_fn, align 1
@@ -261984,7 +262253,7 @@ if.then315:                                       ; preds = %if.end294
   %handle325 = extractvalue %_Z12LLVMValueRef %wrapper.load324, 0
   %call326 = call i64 @_ZN11LLVMLinkage8ExternalEv()
   call void @LLVMSetLinkage(ptr %handle325, i64 %call326)
-  store { ptr } { ptr @.sconst.1845 }, ptr %arg.tmp288, align 1
+  store { ptr } { ptr @.sconst.1849 }, ptr %arg.tmp288, align 1
   %get_fn327 = load ptr, ptr %get_fn, align 8
   call void @_ZN7Emitter14cache_functionE6String12LLVMValueRef(ptr %2, ptr %arg.tmp288, ptr %get_fn327)
   br label %if.end316
@@ -262005,7 +262274,7 @@ if.end316:                                        ; preds = %if.then315, %if.end
   %get_args337 = load ptr, ptr %get_args, align 8
   %load.struct338 = load %_Z6VectorI12LLVMValueRefE, ptr %get_args337, align 8
   %data339 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct338, 1
-  %call340 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle332, ptr %handle333, ptr %handle336, ptr %data339, i64 1, ptr @.str.1846)
+  %call340 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle332, ptr %handle333, ptr %handle336, ptr %data339, i64 1, ptr @.str.1850)
   store %_Z12LLVMValueRef %call340, ptr %page_val, align 1
   br label %if.end286
 
@@ -262013,7 +262282,7 @@ if.then346:                                       ; preds = %if.end286
   %load.struct348 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module349 = extractvalue %_Z7Emitter %load.struct348, 4
   %handle350 = extractvalue %_Z13LLVMModuleRef %llvm_module349, 0
-  %call351 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle350, ptr @.str.1848)
+  %call351 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle350, ptr @.str.1852)
   %set.heap352 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call351, ptr %set.heap352, align 1
   store ptr %set.heap352, ptr %get_fn, align 1
@@ -262064,7 +262333,7 @@ if.then357:                                       ; preds = %if.end347
   %llvm_module387 = extractvalue %_Z7Emitter %load.struct386, 4
   %handle388 = extractvalue %_Z13LLVMModuleRef %llvm_module387, 0
   %handle389 = extractvalue %_Z11LLVMTypeRef %call385, 0
-  %call390 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle388, ptr @.str.1849, ptr %handle389)
+  %call390 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle388, ptr @.str.1853, ptr %handle389)
   %set.heap391 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12LLVMValueRef }, ptr null, i64 0, i32 1) to i64))
   store %_Z12LLVMValueRef %call390, ptr %set.heap391, align 1
   store ptr %set.heap391, ptr %get_fn, align 1
@@ -262073,7 +262342,7 @@ if.then357:                                       ; preds = %if.end347
   %handle394 = extractvalue %_Z12LLVMValueRef %wrapper.load393, 0
   %call395 = call i64 @_ZN11LLVMLinkage8ExternalEv()
   call void @LLVMSetLinkage(ptr %handle394, i64 %call395)
-  store { ptr } { ptr @.sconst.1850 }, ptr %arg.tmp342, align 1
+  store { ptr } { ptr @.sconst.1854 }, ptr %arg.tmp342, align 1
   %alloc_func396 = load ptr, ptr %get_fn, align 8
   call void @_ZN7Emitter14cache_functionE6String12LLVMValueRef(ptr %2, ptr %arg.tmp342, ptr %alloc_func396)
   br label %if.end358
@@ -262141,13 +262410,13 @@ if.end358:                                        ; preds = %if.then357, %if.end
   %alloc_args444 = load ptr, ptr %get_param_tys, align 8
   %load.struct445 = load %_Z6VectorI12LLVMValueRefE, ptr %alloc_args444, align 8
   %data446 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct445, 1
-  %call447 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle439, ptr %handle440, ptr %handle443, ptr %data446, i64 3, ptr @.str.1851)
+  %call447 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle439, ptr %handle440, ptr %handle443, ptr %data446, i64 3, ptr @.str.1855)
   store %_Z12LLVMValueRef %call447, ptr %tuple, align 1
   br label %if.end282
 
 if.then450:                                       ; preds = %if.end264
   %struct_type452 = load ptr, ptr %struct_type247, align 8
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result31, ptr %1, ptr %2, ptr %struct_type452, ptr @.str.1852)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result31, ptr %1, ptr %2, ptr %struct_type452, ptr @.str.1856)
   %set.load = load %_Z12LLVMValueRef, ptr %sret.result31, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %tuple, ptr align 1 %sret.result31, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   br label %if.end451
@@ -262179,7 +262448,7 @@ if.then463:                                       ; preds = %if.then458
   %handle470 = extractvalue %_Z11LLVMTypeRef %wrapper.load469, 0
   %tuple_ptr471 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle472 = extractvalue %_Z12LLVMValueRef %tuple_ptr471, 0
-  %call473 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle467, ptr %handle470, ptr %handle472, ptr @.str.1853)
+  %call473 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle467, ptr %handle470, ptr %handle472, ptr @.str.1857)
   store %_Z12LLVMValueRef %call473, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
@@ -262270,7 +262539,7 @@ if.end509:                                        ; preds = %if.end515, %if.then
 if.then514:                                       ; preds = %if.then508
   %field.inplace516 = getelementptr inbounds %_Z14PlannedOperand, ptr %call512, i32 0, i32 3
   %field.inplace517 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace516, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1854 }, ptr %page_var_name, align 1
+  store { ptr } { ptr @.sconst.1858 }, ptr %page_var_name, align 1
   %call518 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace517, ptr %page_var_name)
   br i1 %call518, label %if.then519, label %if.end520
 
@@ -262313,7 +262582,7 @@ if.then538:                                       ; preds = %if.then526
   %handle545 = extractvalue %_Z11LLVMTypeRef %wrapper.load544, 0
   %tuple_ptr546 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle547 = extractvalue %_Z12LLVMValueRef %tuple_ptr546, 0
-  %call548 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle542, ptr %handle545, ptr %handle547, ptr @.str.1855)
+  %call548 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle542, ptr %handle545, ptr %handle547, ptr @.str.1859)
   store %_Z12LLVMValueRef %call548, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
@@ -262349,7 +262618,7 @@ if.then563:                                       ; preds = %if.then554
   %wrapper.load569 = load %_Z11LLVMTypeRef, ptr %struct_type568, align 8
   %handle570 = extractvalue %_Z11LLVMTypeRef %wrapper.load569, 0
   %handle571 = extractvalue %_Z12LLVMValueRef %grp.deref.val, 0
-  %call572 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle567, ptr %handle570, ptr %handle571, ptr @.str.1856)
+  %call572 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle567, ptr %handle570, ptr %handle571, ptr @.str.1860)
   %load.struct573 = load %_Z7Emitter, ptr %2, align 8
   %builder574 = extractvalue %_Z7Emitter %load.struct573, 5
   %handle575 = extractvalue %_Z14LLVMBuilderRef %builder574, 0
@@ -262374,7 +262643,7 @@ if.then583:                                       ; preds = %if.then563
   %handle590 = extractvalue %_Z11LLVMTypeRef %wrapper.load589, 0
   %tuple_ptr591 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle592 = extractvalue %_Z12LLVMValueRef %tuple_ptr591, 0
-  %call593 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle587, ptr %handle590, ptr %handle592, ptr @.str.1857)
+  %call593 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle587, ptr %handle590, ptr %handle592, ptr @.str.1861)
   store %_Z12LLVMValueRef %call593, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
@@ -262412,7 +262681,7 @@ if.end607:                                        ; preds = %if.end612, %if.then
 if.then611:                                       ; preds = %if.then606
   %struct.region613 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EP10const_char(ptr %struct.region613, ptr %call609)
-  store { ptr } { ptr @.sconst.1858 }, ptr %arg.tmp614, align 1
+  store { ptr } { ptr @.sconst.1862 }, ptr %arg.tmp614, align 1
   %call615 = call i1 @_ZN6String11starts_withE6String(ptr %struct.region613, ptr %arg.tmp614)
   br i1 %call615, label %if.then616, label %if.end617
 
@@ -262424,12 +262693,12 @@ if.then616:                                       ; preds = %if.then611
   %builder619 = extractvalue %_Z7Emitter %load.struct618, 5
   %handle620 = extractvalue %_Z14LLVMBuilderRef %builder619, 0
   %handle621 = extractvalue %_Z12LLVMValueRef %grp.deref.val, 0
-  %call622 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle620, ptr %handle621, i64 0, ptr @.str.1859)
+  %call622 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle620, ptr %handle621, i64 0, ptr @.str.1863)
   %load.struct623 = load %_Z7Emitter, ptr %2, align 8
   %builder624 = extractvalue %_Z7Emitter %load.struct623, 5
   %handle625 = extractvalue %_Z14LLVMBuilderRef %builder624, 0
   %handle626 = extractvalue %_Z12LLVMValueRef %grp.deref.val, 0
-  %call627 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle625, ptr %handle626, i64 1, ptr @.str.1860)
+  %call627 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle625, ptr %handle626, i64 1, ptr @.str.1864)
   %load.struct628 = load %_Z7Emitter, ptr %2, align 8
   %context629 = extractvalue %_Z7Emitter %load.struct628, 1
   %handle630 = extractvalue %_Z14LLVMContextRef %context629, 0
@@ -262442,12 +262711,12 @@ if.then616:                                       ; preds = %if.then611
   %call637 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle638 = extractvalue %_Z12LLVMValueRef %call627, 0
   %handle639 = extractvalue %_Z12LLVMValueRef %call633, 0
-  %call640 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle636, i64 %call637, ptr %handle638, ptr %handle639, ptr @.str.1861)
-  store { ptr } { ptr @.sconst.1862 }, ptr %arg.tmp642, align 1
+  %call640 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle636, i64 %call637, ptr %handle638, ptr %handle639, ptr @.str.1865)
+  store { ptr } { ptr @.sconst.1866 }, ptr %arg.tmp642, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result641, ptr %1, ptr %2, ptr %arg.tmp642)
-  store { ptr } { ptr @.sconst.1863 }, ptr %arg.tmp642, align 1
+  store { ptr } { ptr @.sconst.1867 }, ptr %arg.tmp642, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result643, ptr %1, ptr %2, ptr %arg.tmp642)
-  store { ptr } { ptr @.sconst.1864 }, ptr %arg.tmp642, align 1
+  store { ptr } { ptr @.sconst.1868 }, ptr %arg.tmp642, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result644, ptr %1, ptr %2, ptr %arg.tmp642)
   %load.struct645 = load %_Z7Emitter, ptr %2, align 8
   %builder646 = extractvalue %_Z7Emitter %load.struct645, 5
@@ -262472,7 +262741,7 @@ if.then616:                                       ; preds = %if.then611
   %handle664 = extractvalue %_Z11LLVMTypeRef %wrapper.load663, 0
   %tuple_ptr665 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle666 = extractvalue %_Z12LLVMValueRef %tuple_ptr665, 0
-  %call667 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle661, ptr %handle664, ptr %handle666, i32 0, ptr @.str.1865)
+  %call667 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle661, ptr %handle664, ptr %handle666, i32 0, ptr @.str.1869)
   %load.struct668 = load %_Z7Emitter, ptr %2, align 8
   %builder669 = extractvalue %_Z7Emitter %load.struct668, 5
   %handle670 = extractvalue %_Z14LLVMBuilderRef %builder669, 0
@@ -262493,7 +262762,7 @@ if.then616:                                       ; preds = %if.then611
   %handle685 = extractvalue %_Z11LLVMTypeRef %wrapper.load684, 0
   %tuple_ptr686 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle687 = extractvalue %_Z12LLVMValueRef %tuple_ptr686, 0
-  %call688 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle682, ptr %handle685, ptr %handle687, i32 1, ptr @.str.1866)
+  %call688 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle682, ptr %handle685, ptr %handle687, i32 1, ptr @.str.1870)
   %load.struct689 = load %_Z7Emitter, ptr %2, align 8
   %builder690 = extractvalue %_Z7Emitter %load.struct689, 5
   %handle691 = extractvalue %_Z14LLVMBuilderRef %builder690, 0
@@ -262541,12 +262810,12 @@ if.then616:                                       ; preds = %if.then611
   %handle727 = extractvalue %_Z14LLVMBuilderRef %builder726, 0
   %handle728 = extractvalue %_Z11LLVMTypeRef %call724, 0
   %handle729 = extractvalue %_Z12LLVMValueRef %call627, 0
-  %call730 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle727, ptr %handle728, ptr %handle729, ptr @.str.1867)
+  %call730 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle727, ptr %handle728, ptr %handle729, ptr @.str.1871)
   %load.struct731 = load %_Z7Emitter, ptr %2, align 8
   %builder732 = extractvalue %_Z7Emitter %load.struct731, 5
   %handle733 = extractvalue %_Z14LLVMBuilderRef %builder732, 0
   %handle734 = extractvalue %_Z12LLVMValueRef %call730, 0
-  %call735 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle733, ptr %handle734, i64 1, ptr @.str.1868)
+  %call735 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle733, ptr %handle734, i64 1, ptr @.str.1872)
   %load.struct736 = load %_Z7Emitter, ptr %2, align 8
   %builder737 = extractvalue %_Z7Emitter %load.struct736, 5
   %handle738 = extractvalue %_Z14LLVMBuilderRef %builder737, 0
@@ -262555,7 +262824,7 @@ if.then616:                                       ; preds = %if.then611
   %handle741 = extractvalue %_Z11LLVMTypeRef %wrapper.load740, 0
   %tuple_ptr742 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle743 = extractvalue %_Z12LLVMValueRef %tuple_ptr742, 0
-  %call744 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle738, ptr %handle741, ptr %handle743, i32 0, ptr @.str.1869)
+  %call744 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle738, ptr %handle741, ptr %handle743, i32 0, ptr @.str.1873)
   %load.struct745 = load %_Z7Emitter, ptr %2, align 8
   %builder746 = extractvalue %_Z7Emitter %load.struct745, 5
   %handle747 = extractvalue %_Z14LLVMBuilderRef %builder746, 0
@@ -262570,7 +262839,7 @@ if.then616:                                       ; preds = %if.then611
   %handle756 = extractvalue %_Z11LLVMTypeRef %wrapper.load755, 0
   %tuple_ptr757 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle758 = extractvalue %_Z12LLVMValueRef %tuple_ptr757, 0
-  %call759 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle753, ptr %handle756, ptr %handle758, i32 1, ptr @.str.1870)
+  %call759 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle753, ptr %handle756, ptr %handle758, i32 1, ptr @.str.1874)
   %load.struct760 = load %_Z7Emitter, ptr %2, align 8
   %builder761 = extractvalue %_Z7Emitter %load.struct760, 5
   %handle762 = extractvalue %_Z14LLVMBuilderRef %builder761, 0
@@ -262606,7 +262875,7 @@ if.then780:                                       ; preds = %if.then616
   %handle787 = extractvalue %_Z11LLVMTypeRef %wrapper.load786, 0
   %tuple_ptr788 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle789 = extractvalue %_Z12LLVMValueRef %tuple_ptr788, 0
-  %call790 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle784, ptr %handle787, ptr %handle789, ptr @.str.1871)
+  %call790 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle784, ptr %handle787, ptr %handle789, ptr @.str.1875)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   store %_Z12LLVMValueRef %call790, ptr %0, align 1
   ret void
@@ -262638,7 +262907,7 @@ if.end800:                                        ; preds = %if.end807, %if.then
 if.then806:                                       ; preds = %if.then799
   %struct.region808 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EP10const_char(ptr %struct.region808, ptr %call804)
-  store { ptr } { ptr @.sconst.1872 }, ptr %arg.tmp642, align 1
+  store { ptr } { ptr @.sconst.1876 }, ptr %arg.tmp642, align 1
   %call809 = call i1 @_ZN6String11starts_withE6String(ptr %struct.region808, ptr %arg.tmp642)
   br i1 %call809, label %if.then810, label %if.end811
 
@@ -262675,17 +262944,17 @@ if.then810:                                       ; preds = %if.then806
   %handle833 = extractvalue %_Z14LLVMBuilderRef %builder832, 0
   %handle834 = extractvalue %_Z11LLVMTypeRef %call830, 0
   %handle835 = extractvalue %_Z12LLVMValueRef %grp.deref.val, 0
-  %call836 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle833, ptr %handle834, ptr %handle835, ptr @.str.1873)
+  %call836 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle833, ptr %handle834, ptr %handle835, ptr @.str.1877)
   %load.struct837 = load %_Z7Emitter, ptr %2, align 8
   %builder838 = extractvalue %_Z7Emitter %load.struct837, 5
   %handle839 = extractvalue %_Z14LLVMBuilderRef %builder838, 0
   %handle840 = extractvalue %_Z12LLVMValueRef %call836, 0
-  %call841 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle839, ptr %handle840, i64 0, ptr @.str.1874)
+  %call841 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle839, ptr %handle840, i64 0, ptr @.str.1878)
   %load.struct842 = load %_Z7Emitter, ptr %2, align 8
   %builder843 = extractvalue %_Z7Emitter %load.struct842, 5
   %handle844 = extractvalue %_Z14LLVMBuilderRef %builder843, 0
   %handle845 = extractvalue %_Z12LLVMValueRef %call836, 0
-  %call846 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle844, ptr %handle845, i64 1, ptr @.str.1875)
+  %call846 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle844, ptr %handle845, i64 1, ptr @.str.1879)
   %load.struct847 = load %_Z7Emitter, ptr %2, align 8
   %context848 = extractvalue %_Z7Emitter %load.struct847, 1
   %handle849 = extractvalue %_Z14LLVMContextRef %context848, 0
@@ -262698,12 +262967,12 @@ if.then810:                                       ; preds = %if.then806
   %call856 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle857 = extractvalue %_Z12LLVMValueRef %call846, 0
   %handle858 = extractvalue %_Z12LLVMValueRef %call852, 0
-  %call859 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle855, i64 %call856, ptr %handle857, ptr %handle858, ptr @.str.1876)
-  store { ptr } { ptr @.sconst.1877 }, ptr %arg.tmp860, align 1
+  %call859 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle855, i64 %call856, ptr %handle857, ptr %handle858, ptr @.str.1880)
+  store { ptr } { ptr @.sconst.1881 }, ptr %arg.tmp860, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result641, ptr %1, ptr %2, ptr %arg.tmp860)
-  store { ptr } { ptr @.sconst.1878 }, ptr %arg.tmp860, align 1
+  store { ptr } { ptr @.sconst.1882 }, ptr %arg.tmp860, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result643, ptr %1, ptr %2, ptr %arg.tmp860)
-  store { ptr } { ptr @.sconst.1879 }, ptr %arg.tmp860, align 1
+  store { ptr } { ptr @.sconst.1883 }, ptr %arg.tmp860, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result644, ptr %1, ptr %2, ptr %arg.tmp860)
   %load.struct861 = load %_Z7Emitter, ptr %2, align 8
   %builder862 = extractvalue %_Z7Emitter %load.struct861, 5
@@ -262728,7 +262997,7 @@ if.then810:                                       ; preds = %if.then806
   %handle880 = extractvalue %_Z11LLVMTypeRef %wrapper.load879, 0
   %tuple_ptr881 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle882 = extractvalue %_Z12LLVMValueRef %tuple_ptr881, 0
-  %call883 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle877, ptr %handle880, ptr %handle882, i32 0, ptr @.str.1880)
+  %call883 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle877, ptr %handle880, ptr %handle882, i32 0, ptr @.str.1884)
   %load.struct884 = load %_Z7Emitter, ptr %2, align 8
   %builder885 = extractvalue %_Z7Emitter %load.struct884, 5
   %handle886 = extractvalue %_Z14LLVMBuilderRef %builder885, 0
@@ -262749,7 +263018,7 @@ if.then810:                                       ; preds = %if.then806
   %handle901 = extractvalue %_Z11LLVMTypeRef %wrapper.load900, 0
   %tuple_ptr902 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle903 = extractvalue %_Z12LLVMValueRef %tuple_ptr902, 0
-  %call904 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle898, ptr %handle901, ptr %handle903, i32 1, ptr @.str.1881)
+  %call904 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle898, ptr %handle901, ptr %handle903, i32 1, ptr @.str.1885)
   %load.struct905 = load %_Z7Emitter, ptr %2, align 8
   %builder906 = extractvalue %_Z7Emitter %load.struct905, 5
   %handle907 = extractvalue %_Z14LLVMBuilderRef %builder906, 0
@@ -262797,12 +263066,12 @@ if.then810:                                       ; preds = %if.then806
   %handle943 = extractvalue %_Z14LLVMBuilderRef %builder942, 0
   %handle944 = extractvalue %_Z11LLVMTypeRef %call940, 0
   %handle945 = extractvalue %_Z12LLVMValueRef %call846, 0
-  %call946 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle943, ptr %handle944, ptr %handle945, ptr @.str.1882)
+  %call946 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle943, ptr %handle944, ptr %handle945, ptr @.str.1886)
   %load.struct947 = load %_Z7Emitter, ptr %2, align 8
   %builder948 = extractvalue %_Z7Emitter %load.struct947, 5
   %handle949 = extractvalue %_Z14LLVMBuilderRef %builder948, 0
   %handle950 = extractvalue %_Z12LLVMValueRef %call946, 0
-  %call951 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle949, ptr %handle950, i64 1, ptr @.str.1883)
+  %call951 = call %_Z12LLVMValueRef @LLVMBuildExtractValue(ptr %handle949, ptr %handle950, i64 1, ptr @.str.1887)
   %load.struct952 = load %_Z7Emitter, ptr %2, align 8
   %builder953 = extractvalue %_Z7Emitter %load.struct952, 5
   %handle954 = extractvalue %_Z14LLVMBuilderRef %builder953, 0
@@ -262811,7 +263080,7 @@ if.then810:                                       ; preds = %if.then806
   %handle957 = extractvalue %_Z11LLVMTypeRef %wrapper.load956, 0
   %tuple_ptr958 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle959 = extractvalue %_Z12LLVMValueRef %tuple_ptr958, 0
-  %call960 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle954, ptr %handle957, ptr %handle959, i32 0, ptr @.str.1884)
+  %call960 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle954, ptr %handle957, ptr %handle959, i32 0, ptr @.str.1888)
   %load.struct961 = load %_Z7Emitter, ptr %2, align 8
   %builder962 = extractvalue %_Z7Emitter %load.struct961, 5
   %handle963 = extractvalue %_Z14LLVMBuilderRef %builder962, 0
@@ -262826,7 +263095,7 @@ if.then810:                                       ; preds = %if.then806
   %handle972 = extractvalue %_Z11LLVMTypeRef %wrapper.load971, 0
   %tuple_ptr973 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle974 = extractvalue %_Z12LLVMValueRef %tuple_ptr973, 0
-  %call975 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle969, ptr %handle972, ptr %handle974, i32 1, ptr @.str.1885)
+  %call975 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle969, ptr %handle972, ptr %handle974, i32 1, ptr @.str.1889)
   %load.struct976 = load %_Z7Emitter, ptr %2, align 8
   %builder977 = extractvalue %_Z7Emitter %load.struct976, 5
   %handle978 = extractvalue %_Z14LLVMBuilderRef %builder977, 0
@@ -262862,7 +263131,7 @@ if.then996:                                       ; preds = %if.then810
   %handle1003 = extractvalue %_Z11LLVMTypeRef %wrapper.load1002, 0
   %tuple_ptr1004 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle1005 = extractvalue %_Z12LLVMValueRef %tuple_ptr1004, 0
-  %call1006 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1000, ptr %handle1003, ptr %handle1005, ptr @.str.1886)
+  %call1006 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1000, ptr %handle1003, ptr %handle1005, ptr @.str.1890)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   store %_Z12LLVMValueRef %call1006, ptr %0, align 1
   ret void
@@ -262931,7 +263200,7 @@ if.end1028:                                       ; preds = %if.end1073, %if.the
   %handle1108 = extractvalue %_Z12LLVMValueRef %tuple_ptr1107, 0
   %i1109 = load i64, ptr %i, align 8
   %as.trunc1110 = trunc i64 %i1109 to i32
-  %call1111 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle1103, ptr %handle1106, ptr %handle1108, i32 %as.trunc1110, ptr @.str.1890)
+  %call1111 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle1103, ptr %handle1106, ptr %handle1108, i32 %as.trunc1110, ptr @.str.1894)
   %cv1112 = load %_Z12LLVMValueRef, ptr %cv, align 8
   %handle1113 = extractvalue %_Z12LLVMValueRef %cv1112, 0
   %call1114 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle1113)
@@ -262972,7 +263241,7 @@ if.then1049:                                      ; preds = %if.then1042
   %cv1054 = load %_Z12LLVMValueRef, ptr %cv, align 8
   %handle1055 = extractvalue %_Z12LLVMValueRef %cv1054, 0
   %handle1056 = extractvalue %_Z11LLVMTypeRef %call1024, 0
-  %call1057 = call %_Z12LLVMValueRef @LLVMBuildSExt(ptr %handle1053, ptr %handle1055, ptr %handle1056, ptr @.str.1887)
+  %call1057 = call %_Z12LLVMValueRef @LLVMBuildSExt(ptr %handle1053, ptr %handle1055, ptr %handle1056, ptr @.str.1891)
   store %_Z12LLVMValueRef %call1057, ptr %cv, align 1
   br label %if.end1050
 
@@ -262987,7 +263256,7 @@ if.then1059:                                      ; preds = %if.end1050
   %cv1064 = load %_Z12LLVMValueRef, ptr %cv, align 8
   %handle1065 = extractvalue %_Z12LLVMValueRef %cv1064, 0
   %handle1066 = extractvalue %_Z11LLVMTypeRef %call1024, 0
-  %call1067 = call %_Z12LLVMValueRef @LLVMBuildTrunc(ptr %handle1063, ptr %handle1065, ptr %handle1066, ptr @.str.1888)
+  %call1067 = call %_Z12LLVMValueRef @LLVMBuildTrunc(ptr %handle1063, ptr %handle1065, ptr %handle1066, ptr @.str.1892)
   store %_Z12LLVMValueRef %call1067, ptr %cv, align 1
   br label %if.end1060
 
@@ -263034,7 +263303,7 @@ if.then1092:                                      ; preds = %if.end1085
   %handle1097 = extractvalue %_Z11LLVMTypeRef %call1024, 0
   %cv1098 = load %_Z12LLVMValueRef, ptr %cv, align 8
   %handle1099 = extractvalue %_Z12LLVMValueRef %cv1098, 0
-  %call1100 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1096, ptr %handle1097, ptr %handle1099, ptr @.str.1889)
+  %call1100 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1096, ptr %handle1097, ptr %handle1099, ptr @.str.1893)
   store %_Z12LLVMValueRef %call1100, ptr %cv, align 1
   br label %if.end1093
 
@@ -263050,7 +263319,7 @@ if.then1122:                                      ; preds = %while.exit1010
   %handle1129 = extractvalue %_Z11LLVMTypeRef %wrapper.load1128, 0
   %tuple_ptr1130 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle1131 = extractvalue %_Z12LLVMValueRef %tuple_ptr1130, 0
-  %call1132 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1126, ptr %handle1129, ptr %handle1131, ptr @.str.1891)
+  %call1132 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1126, ptr %handle1129, ptr %handle1131, ptr @.str.1895)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   store %_Z12LLVMValueRef %call1132, ptr %0, align 1
   ret void
@@ -263233,7 +263502,7 @@ if.end57:                                         ; preds = %while.exit23
   %total_count62 = load i64, ptr %total_count, align 8
   %call63 = call %_Z11LLVMTypeRef @LLVMArrayType2(ptr %handle61, i64 %total_count62)
   store %_Z11LLVMTypeRef %call63, ptr %arg.tmp, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1892)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1896)
   %load.struct64 = load %_Z7Emitter, ptr %2, align 8
   %context = extractvalue %_Z7Emitter %load.struct64, 1
   %handle65 = extractvalue %_Z14LLVMContextRef %context, 0
@@ -263284,7 +263553,7 @@ if.then79:                                        ; preds = %while.body70
   %indices94 = load ptr, ptr %indices, align 8
   %load.struct95 = load %_Z6VectorI12LLVMValueRefE, ptr %indices94, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct95, 1
-  %call96 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle90, ptr %handle91, ptr %handle93, ptr %data, i64 2, ptr @.str.1893)
+  %call96 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle90, ptr %handle91, ptr %handle93, ptr %data, i64 2, ptr @.str.1897)
   %load.struct97 = load %_Z7Emitter, ptr %2, align 8
   %builder98 = extractvalue %_Z7Emitter %load.struct97, 5
   %handle99 = extractvalue %_Z14LLVMBuilderRef %builder98, 0
@@ -263460,12 +263729,12 @@ if.then4:                                         ; preds = %if.end
   %wrapper.load11 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle12 = extractvalue %_Z12LLVMValueRef %wrapper.load11, 0
   %handle13 = extractvalue %_Z12LLVMValueRef %call7, 0
-  %call14 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle9, i64 %call10, ptr %handle12, ptr %handle13, ptr @.str.1894)
+  %call14 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle9, i64 %call10, ptr %handle12, ptr %handle13, ptr @.str.1898)
   store %_Z12LLVMValueRef %call14, ptr %tuple, align 1
   br label %if.end5
 
 if.end5:                                          ; preds = %if.then4, %if.end
-  store { ptr } { ptr @.sconst.1895 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1899 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result15, ptr %1, ptr %2, ptr %arg.tmp)
   %tuple.field17 = getelementptr inbounds %_Z17LLVMBasicBlockRef, ptr %tuple16, i32 0, i32 0
   store ptr null, ptr %tuple.field17, align 1
@@ -263477,14 +263746,14 @@ if.end5:                                          ; preds = %if.then4, %if.end
   br i1 %ne20, label %if.then21, label %if.end22
 
 if.then21:                                        ; preds = %if.end5
-  store { ptr } { ptr @.sconst.1896 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1900 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %tuple16, ptr %1, ptr %2, ptr %arg.tmp)
   %set.load = load %_Z17LLVMBasicBlockRef, ptr %tuple16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %else_block, ptr align 1 %tuple16, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
   br label %if.end22
 
 if.end22:                                         ; preds = %if.then21, %if.end5
-  store { ptr } { ptr @.sconst.1897 }, ptr %arg.tmp24, align 1
+  store { ptr } { ptr @.sconst.1901 }, ptr %arg.tmp24, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result23, ptr %1, ptr %2, ptr %arg.tmp24)
   %load.struct25 = load %_Z7Emitter, ptr %2, align 8
   %builder26 = extractvalue %_Z7Emitter %load.struct25, 5
@@ -263781,7 +264050,7 @@ if.end199:                                        ; preds = %if.end191
   %builder203 = extractvalue %_Z7Emitter %load.struct202, 5
   %handle204 = extractvalue %_Z14LLVMBuilderRef %builder203, 0
   %handle205 = extractvalue %_Z11LLVMTypeRef %call174, 0
-  %call206 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle204, ptr %handle205, ptr @.str.1898)
+  %call206 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle204, ptr %handle205, ptr @.str.1902)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region, i64 2)
   store ptr %struct.region, ptr %values, align 1
@@ -263917,7 +264186,7 @@ if.then10:                                        ; preds = %if.end7
   br label %if.end11
 
 if.end11:                                         ; preds = %if.then10, %if.end7
-  store { ptr } { ptr @.sconst.1899 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1903 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result12, ptr %1, ptr %2, ptr %arg.tmp)
   store i64 0, ptr %branch_total, align 1
   %load.struct13 = load %_Z12PlannedMatch, ptr %3, align 8
@@ -264018,7 +264287,7 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end46
 
 if.then54:                                        ; preds = %while.body
-  store { ptr } { ptr @.sconst.1900 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1904 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result56, ptr %1, ptr %2, ptr %arg.tmp)
   %binding.load = load %_Z17LLVMBasicBlockRef, ptr %sret.result12, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %next_block, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
@@ -264036,7 +264305,7 @@ if.end55:                                         ; preds = %if.end254, %while.b
   br label %while.cond
 
 if.then61:                                        ; preds = %if.then54
-  store { ptr } { ptr @.sconst.1901 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1905 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result63, ptr %1, ptr %2, ptr %arg.tmp)
   %set.load = load %_Z17LLVMBasicBlockRef, ptr %sret.result63, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %next_block, ptr align 1 %sret.result63, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
@@ -264059,7 +264328,7 @@ if.end62:                                         ; preds = %if.end66, %if.then6
   br i1 %ne74, label %if.then75, label %if.end76
 
 if.then65:                                        ; preds = %if.else
-  store { ptr } { ptr @.sconst.1902 }, ptr %arg.tmp68, align 1
+  store { ptr } { ptr @.sconst.1906 }, ptr %arg.tmp68, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result67, ptr %1, ptr %2, ptr %arg.tmp68)
   %set.load69 = load %_Z17LLVMBasicBlockRef, ptr %sret.result67, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %next_block, ptr align 1 %sret.result67, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
@@ -264124,7 +264393,7 @@ if.then92:                                        ; preds = %if.then86
   %handle100 = extractvalue %_Z12LLVMValueRef %wrapper.load99, 0
   %wrapper.load101 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle102 = extractvalue %_Z12LLVMValueRef %wrapper.load101, 0
-  %call103 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle97, i64 %call98, ptr %handle100, ptr %handle102, ptr @.str.1903)
+  %call103 = call %_Z12LLVMValueRef @LLVMBuildFCmp(ptr %handle97, i64 %call98, ptr %handle100, ptr %handle102, ptr @.str.1907)
   store %_Z12LLVMValueRef %call103, ptr %case_cmp, align 1
   br label %if.end94
 
@@ -264137,7 +264406,7 @@ if.else93:                                        ; preds = %if.then86
   %handle109 = extractvalue %_Z12LLVMValueRef %wrapper.load108, 0
   %wrapper.load110 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle111 = extractvalue %_Z12LLVMValueRef %wrapper.load110, 0
-  %call112 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle106, i64 %call107, ptr %handle109, ptr %handle111, ptr @.str.1904)
+  %call112 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle106, i64 %call107, ptr %handle109, ptr %handle111, ptr @.str.1908)
   store %_Z12LLVMValueRef %call112, ptr %case_cmp, align 1
   br label %if.end94
 
@@ -264161,7 +264430,7 @@ if.else117:                                       ; preds = %if.end94
   %handle124 = extractvalue %_Z12LLVMValueRef %branch_cond123, 0
   %case_cmp125 = load %_Z12LLVMValueRef, ptr %case_cmp, align 8
   %handle126 = extractvalue %_Z12LLVMValueRef %case_cmp125, 0
-  %call127 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle122, ptr %handle124, ptr %handle126, ptr @.str.1905)
+  %call127 = call %_Z12LLVMValueRef @LLVMBuildOr(ptr %handle122, ptr %handle124, ptr %handle126, ptr @.str.1909)
   store %_Z12LLVMValueRef %call127, ptr %branch_cond, align 1
   br label %if.end118
 
@@ -264578,7 +264847,7 @@ while.exit367:                                    ; preds = %while.cond365
   %builder385 = extractvalue %_Z7Emitter %load.struct384, 5
   %handle386 = extractvalue %_Z14LLVMBuilderRef %builder385, 0
   %handle387 = extractvalue %_Z11LLVMTypeRef %call362, 0
-  %call388 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle386, ptr %handle387, ptr @.str.1906)
+  %call388 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle386, ptr %handle387, ptr @.str.1910)
   %handle389 = extractvalue %_Z12LLVMValueRef %call388, 0
   %phi_values390 = load ptr, ptr %phi_values, align 8
   %load.struct391 = load %_Z6VectorI12LLVMValueRefE, ptr %phi_values390, align 8
@@ -264753,7 +265022,7 @@ if.then15:                                        ; preds = %if.then10
   %result_type = extractvalue %_Z14PlannedOperand %load.struct18, 3
   store %_Z11PlannedType %result_type, ptr %rt, align 1
   %field.inplace19 = getelementptr inbounds %_Z11PlannedType, ptr %rt, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1907 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1911 }, ptr %arg.tmp, align 1
   %call20 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace19, ptr %arg.tmp)
   br i1 %call20, label %if.then21, label %if.end22
 
@@ -264768,7 +265037,7 @@ if.then21:                                        ; preds = %if.then15
 
 if.end22:                                         ; preds = %if.end26, %if.then15
   %field.inplace40 = getelementptr inbounds %_Z11PlannedType, ptr %rt, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1908 }, ptr %arg.tmp41, align 1
+  store { ptr } { ptr @.sconst.1912 }, ptr %arg.tmp41, align 1
   %call42 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace40, ptr %arg.tmp41)
   br i1 %call42, label %if.then43, label %if.end44
 
@@ -264810,7 +265079,7 @@ if.then43:                                        ; preds = %if.end22
 if.end44:                                         ; preds = %if.end49, %if.end22
   %field.inplace63 = getelementptr inbounds %_Z14PlannedOperand, ptr %deref.tmp17, i32 0, i32 3
   %field.inplace64 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace63, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1909 }, ptr %arg.tmp65, align 1
+  store { ptr } { ptr @.sconst.1913 }, ptr %arg.tmp65, align 1
   %call66 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace64, ptr %arg.tmp65)
   br i1 %call66, label %if.then67, label %if.end68
 
@@ -264850,7 +265119,7 @@ if.then67:                                        ; preds = %if.end44
 if.end68:                                         ; preds = %if.then67, %if.end44
   %field.inplace69 = getelementptr inbounds %_Z14PlannedOperand, ptr %deref.tmp17, i32 0, i32 3
   %field.inplace70 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace69, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1910 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.1914 }, ptr %arg.tmp71, align 1
   %call72 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace70, ptr %arg.tmp71)
   br i1 %call72, label %if.then73, label %if.end74
 
@@ -264861,7 +265130,7 @@ if.then73:                                        ; preds = %if.end68
 if.end74:                                         ; preds = %if.then73, %if.end68
   %field.inplace75 = getelementptr inbounds %_Z14PlannedOperand, ptr %deref.tmp17, i32 0, i32 3
   %field.inplace76 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace75, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1911 }, ptr %arg.tmp77, align 1
+  store { ptr } { ptr @.sconst.1915 }, ptr %arg.tmp77, align 1
   %call78 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace76, ptr %arg.tmp77)
   br i1 %call78, label %if.then79, label %if.end80
 
@@ -264900,7 +265169,7 @@ if.end94:                                         ; preds = %if.end98, %if.then8
 if.then97:                                        ; preds = %if.then93
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp99, ptr align 1 %call95, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   %field.inplace100 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp99, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1912 }, ptr %arg.tmp101, align 1
+  store { ptr } { ptr @.sconst.1916 }, ptr %arg.tmp101, align 1
   %call102 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace100, ptr %arg.tmp101)
   br i1 %call102, label %if.then103, label %if.end104
 
@@ -264913,7 +265182,7 @@ if.then103:                                       ; preds = %if.then97
 
 if.end104:                                        ; preds = %if.then103, %if.then97
   %field.inplace105 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp99, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1913 }, ptr %arg.tmp106, align 1
+  store { ptr } { ptr @.sconst.1917 }, ptr %arg.tmp106, align 1
   %call107 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace105, ptr %arg.tmp106)
   br i1 %call107, label %if.then108, label %if.end109
 
@@ -265015,7 +265284,7 @@ if.then132:                                       ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp134, ptr align 1 %call130, i64 ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64), i1 false)
   %field.inplace135 = getelementptr inbounds %_Z11PlannedWhen, ptr %deref.tmp134, i32 0, i32 2
   %field.inplace136 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace135, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1914 }, ptr %arg.tmp137, align 1
+  store { ptr } { ptr @.sconst.1918 }, ptr %arg.tmp137, align 1
   %call138 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace136, ptr %arg.tmp137)
   %not = xor i1 %call138, true
   br i1 %not, label %if.then139, label %if.end140
@@ -265165,7 +265434,7 @@ if.then214:                                       ; preds = %if.then207
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp17, ptr align 1 %call212, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
   %field.inplace216 = getelementptr inbounds %_Z14PlannedOperand, ptr %deref.tmp17, i32 0, i32 3
   %field.inplace217 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace216, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1915 }, ptr %arg.tmp218, align 1
+  store { ptr } { ptr @.sconst.1919 }, ptr %arg.tmp218, align 1
   %call219 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace217, ptr %arg.tmp218)
   br i1 %call219, label %if.then220, label %if.end221
 
@@ -265179,7 +265448,7 @@ if.then220:                                       ; preds = %if.then214
 if.end221:                                        ; preds = %if.then220, %if.then214
   %field.inplace222 = getelementptr inbounds %_Z14PlannedOperand, ptr %deref.tmp17, i32 0, i32 3
   %field.inplace223 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace222, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1916 }, ptr %arg.tmp224, align 1
+  store { ptr } { ptr @.sconst.1920 }, ptr %arg.tmp224, align 1
   %call225 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace223, ptr %arg.tmp224)
   br i1 %call225, label %if.then226, label %if.end227
 
@@ -265340,7 +265609,7 @@ if.end300:                                        ; preds = %if.end304, %if.end2
   br i1 %throws_is_ptr316, label %if.then317, label %if.end318
 
 if.then303:                                       ; preds = %if.then299
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result305, ptr %1, ptr %2, ptr %union_type, ptr @.str.1917)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result305, ptr %1, ptr %2, ptr %union_type, ptr @.str.1921)
   %set.load306 = load %_Z12LLVMValueRef, ptr %sret.result305, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %tuple, ptr align 1 %sret.result305, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7Emitter17copy_struct_valueEPN4scaly6memory4PageE12LLVMValueRef12LLVMValueRef11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result307, ptr %1, ptr %2, ptr %tuple, ptr %sret.result, ptr %union_type)
@@ -265379,7 +265648,7 @@ if.then323:                                       ; preds = %if.then321
   %handle327 = extractvalue %_Z11LLVMTypeRef %call310, 0
   %union_ptr = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle328 = extractvalue %_Z12LLVMValueRef %union_ptr, 0
-  %call329 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle326, ptr %handle327, ptr %handle328, ptr @.str.1918)
+  %call329 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle326, ptr %handle327, ptr %handle328, ptr @.str.1922)
   store %_Z12LLVMValueRef %call329, ptr %tag314, align 1
   br label %if.end324
 
@@ -265396,13 +265665,13 @@ if.then332:                                       ; preds = %if.end324
   %handle338 = extractvalue %_Z11LLVMTypeRef %union_type337, 0
   %union_ptr339 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle340 = extractvalue %_Z12LLVMValueRef %union_ptr339, 0
-  %call341 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle336, ptr %handle338, ptr %handle340, i64 0, ptr @.str.1919)
+  %call341 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle336, ptr %handle338, ptr %handle340, i64 0, ptr @.str.1923)
   %load.struct342 = load %_Z7Emitter, ptr %2, align 8
   %builder343 = extractvalue %_Z7Emitter %load.struct342, 5
   %handle344 = extractvalue %_Z14LLVMBuilderRef %builder343, 0
   %handle345 = extractvalue %_Z11LLVMTypeRef %call310, 0
   %handle346 = extractvalue %_Z12LLVMValueRef %call341, 0
-  %call347 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle344, ptr %handle345, ptr %handle346, ptr @.str.1920)
+  %call347 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle344, ptr %handle345, ptr %handle346, ptr @.str.1924)
   store %_Z12LLVMValueRef %call347, ptr %tag314, align 1
   br label %if.end333
 
@@ -265435,7 +265704,7 @@ if.then355:                                       ; preds = %if.end353
   %idx_vec366 = load ptr, ptr %idx_vec, align 8
   %load.struct367 = load %_Z6VectorI12LLVMValueRefE, ptr %idx_vec366, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct367, 1
-  %call368 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle362, ptr %handle363, ptr %handle365, ptr %data, i64 1, ptr @.str.1921)
+  %call368 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle362, ptr %handle363, ptr %handle365, ptr %data, i64 1, ptr @.str.1925)
   store %_Z12LLVMValueRef %call368, ptr %throws_success_ptr, align 1
   br label %if.end356
 
@@ -265457,20 +265726,20 @@ if.then370:                                       ; preds = %if.end356
   %wrapper.load382 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle383 = extractvalue %_Z12LLVMValueRef %wrapper.load382, 0
   %handle384 = extractvalue %_Z12LLVMValueRef %call377, 0
-  %call385 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle380, i64 %call381, ptr %handle383, ptr %handle384, ptr @.str.1922)
+  %call385 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle380, i64 %call381, ptr %handle383, ptr %handle384, ptr @.str.1926)
   %load.struct386 = load %_Z7Emitter, ptr %2, align 8
   %builder387 = extractvalue %_Z7Emitter %load.struct386, 5
   %handle388 = extractvalue %_Z14LLVMBuilderRef %builder387, 0
   %handle389 = extractvalue %_Z12LLVMValueRef %call385, 0
   %handle390 = extractvalue %_Z11LLVMTypeRef %call310, 0
-  %call391 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle388, ptr %handle389, ptr %handle390, ptr @.str.1923)
+  %call391 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle388, ptr %handle389, ptr %handle390, ptr @.str.1927)
   store %_Z12LLVMValueRef %call391, ptr %tag314, align 1
   br label %if.end371
 
 if.end371:                                        ; preds = %if.then370, %if.end356
-  store { ptr } { ptr @.sconst.1924 }, ptr %arg.tmp393, align 1
+  store { ptr } { ptr @.sconst.1928 }, ptr %arg.tmp393, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result392, ptr %1, ptr %2, ptr %arg.tmp393)
-  store { ptr } { ptr @.sconst.1925 }, ptr %arg.tmp393, align 1
+  store { ptr } { ptr @.sconst.1929 }, ptr %arg.tmp393, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result394, ptr %1, ptr %2, ptr %arg.tmp393)
   %load.struct395 = load %_Z13PlannedChoose, ptr %3, align 8
   %cases396 = extractvalue %_Z13PlannedChoose %load.struct395, 2
@@ -265606,7 +265875,7 @@ if.end455:                                        ; preds = %if.then454, %while.
   br i1 %eq457, label %if.then458, label %if.end459
 
 if.then458:                                       ; preds = %if.end455
-  store { ptr } { ptr @.sconst.1926 }, ptr %arg.tmp393, align 1
+  store { ptr } { ptr @.sconst.1930 }, ptr %arg.tmp393, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %tuple423, ptr %1, ptr %2, ptr %arg.tmp393)
   %handle460 = extractvalue %_Z11LLVMTypeRef %call310, 0
   %load.struct461 = load %_Z11PlannedWhen, ptr %next, align 8
@@ -265736,7 +266005,7 @@ if.then525:                                       ; preds = %if.end511
   %handle531 = extractvalue %_Z11LLVMTypeRef %wrapper.load530, 0
   %throws_success_ptr532 = load %_Z12LLVMValueRef, ptr %throws_success_ptr, align 8
   %handle533 = extractvalue %_Z12LLVMValueRef %throws_success_ptr532, 0
-  %call534 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle529, ptr %handle531, ptr %handle533, ptr @.str.1927)
+  %call534 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle529, ptr %handle531, ptr %handle533, ptr @.str.1931)
   %handle535 = extractvalue %_Z12LLVMValueRef %call534, 0
   call void @LLVMSetAlignment(ptr %handle535, i32 1)
   %field.inplace536 = getelementptr inbounds %_Z11PlannedWhen, ptr %next, i32 0, i32 1
@@ -265788,7 +266057,7 @@ if.then564:                                       ; preds = %if.end550
   %handle570 = extractvalue %_Z11LLVMTypeRef %wrapper.load569, 0
   %throws_success_ptr571 = load %_Z12LLVMValueRef, ptr %throws_success_ptr, align 8
   %handle572 = extractvalue %_Z12LLVMValueRef %throws_success_ptr571, 0
-  %call573 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle568, ptr %handle570, ptr %handle572, ptr @.str.1928)
+  %call573 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle568, ptr %handle570, ptr %handle572, ptr @.str.1932)
   %handle574 = extractvalue %_Z12LLVMValueRef %call573, 0
   call void @LLVMSetAlignment(ptr %handle574, i32 1)
   %field.inplace575 = getelementptr inbounds %_Z11PlannedWhen, ptr %next, i32 0, i32 1
@@ -265848,7 +266117,7 @@ if.then604:                                       ; preds = %if.end594
   %handle610 = extractvalue %_Z11LLVMTypeRef %union_type609, 0
   %union_ptr611 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle612 = extractvalue %_Z12LLVMValueRef %union_ptr611, 0
-  %call613 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle608, ptr %handle610, ptr %handle612, i64 1, ptr @.str.1929)
+  %call613 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle608, ptr %handle610, ptr %handle612, i64 1, ptr @.str.1933)
   %field.inplace614 = getelementptr inbounds %_Z11PlannedWhen, ptr %next, i32 0, i32 2
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %tuple420, ptr %1, ptr %2, ptr %field.inplace614)
   %wrapper.load615 = load %_Z11LLVMTypeRef, ptr %tuple420, align 8
@@ -265891,14 +266160,14 @@ if.then635:                                       ; preds = %if.end621
   %handle643 = extractvalue %_Z14LLVMContextRef %context642, 0
   %call644 = call %_Z11LLVMTypeRef @LLVMPointerTypeInContext(ptr %handle643, i64 0)
   %handle645 = extractvalue %_Z11LLVMTypeRef %call644, 0
-  %call646 = call %_Z12LLVMValueRef @LLVMBuildBitCast(ptr %handle639, ptr %handle640, ptr %handle645, ptr @.str.1930)
+  %call646 = call %_Z12LLVMValueRef @LLVMBuildBitCast(ptr %handle639, ptr %handle640, ptr %handle645, ptr @.str.1934)
   %load.struct647 = load %_Z7Emitter, ptr %2, align 8
   %builder648 = extractvalue %_Z7Emitter %load.struct647, 5
   %handle649 = extractvalue %_Z14LLVMBuilderRef %builder648, 0
   %wrapper.load650 = load %_Z11LLVMTypeRef, ptr %tuple420, align 8
   %handle651 = extractvalue %_Z11LLVMTypeRef %wrapper.load650, 0
   %handle652 = extractvalue %_Z12LLVMValueRef %call646, 0
-  %call653 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle649, ptr %handle651, ptr %handle652, ptr @.str.1931)
+  %call653 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle649, ptr %handle651, ptr %handle652, ptr @.str.1935)
   %field.inplace654 = getelementptr inbounds %_Z11PlannedWhen, ptr %next, i32 0, i32 1
   store %_Z12LLVMValueRef %call653, ptr %arg.tmp655, align 1
   call void @_ZN7Emitter15define_variableE6String12LLVMValueRef(ptr %2, ptr %field.inplace654, ptr %arg.tmp655)
@@ -266031,7 +266300,7 @@ if.then724:                                       ; preds = %if.end704
   %handle730 = extractvalue %_Z11LLVMTypeRef %wrapper.load729, 0
   %case_value731 = load %_Z12LLVMValueRef, ptr %case_value, align 8
   %handle732 = extractvalue %_Z12LLVMValueRef %case_value731, 0
-  %call733 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle728, ptr %handle730, ptr %handle732, ptr @.str.1932)
+  %call733 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle728, ptr %handle730, ptr %handle732, ptr @.str.1936)
   store %_Z12LLVMValueRef %call733, ptr %case_value, align 1
   br label %if.end725
 
@@ -266236,7 +266505,7 @@ if.then860:                                       ; preds = %if.then851
   %handle866 = extractvalue %_Z11LLVMTypeRef %wrapper.load865, 0
   %alt_value867 = load %_Z12LLVMValueRef, ptr %alt_value, align 8
   %handle868 = extractvalue %_Z12LLVMValueRef %alt_value867, 0
-  %call869 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle864, ptr %handle866, ptr %handle868, ptr @.str.1933)
+  %call869 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle864, ptr %handle866, ptr %handle868, ptr @.str.1937)
   store %_Z12LLVMValueRef %call869, ptr %alt_value, align 1
   br label %if.end861
 
@@ -266475,7 +266744,7 @@ while.exit1004:                                   ; preds = %while.cond1002
   %builder1022 = extractvalue %_Z7Emitter %load.struct1021, 5
   %handle1023 = extractvalue %_Z14LLVMBuilderRef %builder1022, 0
   %handle1024 = extractvalue %_Z11LLVMTypeRef %call999, 0
-  %call1025 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle1023, ptr %handle1024, ptr @.str.1934)
+  %call1025 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle1023, ptr %handle1024, ptr @.str.1938)
   %handle1026 = extractvalue %_Z12LLVMValueRef %call1025, 0
   %phi_values1027 = load ptr, ptr %idx_vec, align 8
   %load.struct1028 = load %_Z6VectorI12LLVMValueRefE, ptr %phi_values1027, align 8
@@ -266595,7 +266864,7 @@ if.end:                                           ; preds = %entry
   %handle1 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
   %call = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle1)
   store %_Z11LLVMTypeRef %call, ptr %arg.tmp, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1935)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1939)
   %handle2 = extractvalue %_Z11LLVMTypeRef %call, 0
   %call3 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle2, i64 0, i64 0)
   %load.struct4 = load %_Z7Emitter, ptr %2, align 8
@@ -266605,13 +266874,13 @@ if.end:                                           ; preds = %entry
   %wrapper.load7 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle8 = extractvalue %_Z12LLVMValueRef %wrapper.load7, 0
   %call9 = call %_Z12LLVMValueRef @LLVMBuildStore(ptr %handle5, ptr %handle6, ptr %handle8)
-  store { ptr } { ptr @.sconst.1936 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.1940 }, ptr %arg.tmp11, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result10, ptr %1, ptr %2, ptr %arg.tmp11)
-  store { ptr } { ptr @.sconst.1937 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.1941 }, ptr %arg.tmp11, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result12, ptr %1, ptr %2, ptr %arg.tmp11)
-  store { ptr } { ptr @.sconst.1938 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.1942 }, ptr %arg.tmp11, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result13, ptr %1, ptr %2, ptr %arg.tmp11)
-  store { ptr } { ptr @.sconst.1939 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.1943 }, ptr %arg.tmp11, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result14, ptr %1, ptr %2, ptr %arg.tmp11)
   %field.inplace15 = getelementptr inbounds %_Z10PlannedFor, ptr %3, i32 0, i32 10
   %tuple.field17 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple16, i32 0, i32 0
@@ -266637,7 +266906,7 @@ if.end:                                           ; preds = %entry
   %handle34 = extractvalue %_Z11LLVMTypeRef %call, 0
   %wrapper.load35 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle36 = extractvalue %_Z12LLVMValueRef %wrapper.load35, 0
-  %call37 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle33, ptr %handle34, ptr %handle36, ptr @.str.1940)
+  %call37 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle33, ptr %handle34, ptr %handle36, ptr @.str.1944)
   %load.struct38 = load %_Z7Emitter, ptr %2, align 8
   %builder39 = extractvalue %_Z7Emitter %load.struct38, 5
   %handle40 = extractvalue %_Z14LLVMBuilderRef %builder39, 0
@@ -266645,7 +266914,7 @@ if.end:                                           ; preds = %entry
   %handle42 = extractvalue %_Z12LLVMValueRef %call37, 0
   %wrapper.load43 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle44 = extractvalue %_Z12LLVMValueRef %wrapper.load43, 0
-  %call45 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle40, i64 %call41, ptr %handle42, ptr %handle44, ptr @.str.1941)
+  %call45 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle40, i64 %call41, ptr %handle42, ptr %handle44, ptr @.str.1945)
   %load.struct46 = load %_Z7Emitter, ptr %2, align 8
   %builder47 = extractvalue %_Z7Emitter %load.struct46, 5
   %handle48 = extractvalue %_Z14LLVMBuilderRef %builder47, 0
@@ -266709,7 +266978,7 @@ if.end82:                                         ; preds = %if.then81, %if.end
   %handle97 = extractvalue %_Z11LLVMTypeRef %call, 0
   %wrapper.load98 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle99 = extractvalue %_Z12LLVMValueRef %wrapper.load98, 0
-  %call100 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle96, ptr %handle97, ptr %handle99, ptr @.str.1942)
+  %call100 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle96, ptr %handle97, ptr %handle99, ptr @.str.1946)
   %handle101 = extractvalue %_Z11LLVMTypeRef %call, 0
   %call102 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle101, i64 1, i64 0)
   %load.struct103 = load %_Z7Emitter, ptr %2, align 8
@@ -266717,7 +266986,7 @@ if.end82:                                         ; preds = %if.then81, %if.end
   %handle105 = extractvalue %_Z14LLVMBuilderRef %builder104, 0
   %handle106 = extractvalue %_Z12LLVMValueRef %call100, 0
   %handle107 = extractvalue %_Z12LLVMValueRef %call102, 0
-  %call108 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle105, ptr %handle106, ptr %handle107, ptr @.str.1943)
+  %call108 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle105, ptr %handle106, ptr %handle107, ptr @.str.1947)
   %load.struct109 = load %_Z7Emitter, ptr %2, align 8
   %builder110 = extractvalue %_Z7Emitter %load.struct109, 5
   %handle111 = extractvalue %_Z14LLVMBuilderRef %builder110, 0
@@ -266806,7 +267075,7 @@ if.end:                                           ; preds = %entry
 
 if.then5:                                         ; preds = %if.end
   store %_Z11LLVMTypeRef %call, ptr %arg.tmp, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result7, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1944)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result7, ptr %1, ptr %2, ptr %arg.tmp, ptr @.str.1948)
   %set.load = load %_Z12LLVMValueRef, ptr %sret.result7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %tuple, ptr align 1 %sret.result7, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   %load.struct8 = load %_Z7Emitter, ptr %2, align 8
@@ -266841,7 +267110,7 @@ if.then21:                                        ; preds = %if.end6
 if.end22:                                         ; preds = %if.end6
   %field.inplace27 = getelementptr inbounds %_Z10PlannedFor, ptr %3, i32 0, i32 6
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result26, ptr %1, ptr %2, ptr %field.inplace27)
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple23, ptr %1, ptr %2, ptr %sret.result26, ptr @.str.1945)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple23, ptr %1, ptr %2, ptr %sret.result26, ptr @.str.1949)
   %load.struct28 = load %_Z7Emitter, ptr %2, align 8
   %context = extractvalue %_Z7Emitter %load.struct28, 1
   %handle29 = extractvalue %_Z14LLVMContextRef %context, 0
@@ -266854,7 +267123,7 @@ if.end22:                                         ; preds = %if.end6
   %context36 = extractvalue %_Z7Emitter %load.struct35, 1
   %handle37 = extractvalue %_Z14LLVMContextRef %context36, 0
   %call38 = call %_Z11LLVMTypeRef @LLVMPointerTypeInContext(ptr %handle37, i64 0)
-  store { ptr } { ptr @.sconst.1946 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.1950 }, ptr %arg.tmp40, align 1
   call void @_ZN7Emitter15lookup_variableEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result39, ptr %1, ptr %2, ptr %arg.tmp40)
   %binding.load41 = load %_Z12LLVMValueRef, ptr %sret.result39, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %page_arg, ptr align 1 %sret.result39, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
@@ -266942,11 +267211,11 @@ if.then92:                                        ; preds = %if.end53
   ret void
 
 if.end93:                                         ; preds = %if.end53
-  store { ptr } { ptr @.sconst.1947 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.1951 }, ptr %arg.tmp40, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result96, ptr %1, ptr %2, ptr %arg.tmp40)
-  store { ptr } { ptr @.sconst.1948 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.1952 }, ptr %arg.tmp40, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result97, ptr %1, ptr %2, ptr %arg.tmp40)
-  store { ptr } { ptr @.sconst.1949 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.1953 }, ptr %arg.tmp40, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result98, ptr %1, ptr %2, ptr %arg.tmp40)
   %field.inplace99 = getelementptr inbounds %_Z10PlannedFor, ptr %3, i32 0, i32 10
   %tuple.field100 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple54, i32 0, i32 0
@@ -267000,7 +267269,7 @@ if.end93:                                         ; preds = %if.end53
   %next_args139 = load ptr, ptr %next_args, align 8
   %load.struct140 = load %_Z6VectorI12LLVMValueRefE, ptr %next_args139, align 8
   %data141 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct140, 1
-  %call142 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle136, ptr %handle137, ptr %handle138, ptr %data141, i64 1, ptr @.str.1950)
+  %call142 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle136, ptr %handle137, ptr %handle138, ptr %data141, i64 1, ptr @.str.1954)
   %handle143 = extractvalue %_Z11LLVMTypeRef %call123, 0
   %call144 = call %_Z12LLVMValueRef @LLVMConstNull(ptr %handle143)
   %load.struct145 = load %_Z7Emitter, ptr %2, align 8
@@ -267009,7 +267278,7 @@ if.end93:                                         ; preds = %if.end53
   %call148 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle149 = extractvalue %_Z12LLVMValueRef %call142, 0
   %handle150 = extractvalue %_Z12LLVMValueRef %call144, 0
-  %call151 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle147, i64 %call148, ptr %handle149, ptr %handle150, ptr @.str.1951)
+  %call151 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle147, i64 %call148, ptr %handle149, ptr %handle150, ptr @.str.1955)
   %load.struct152 = load %_Z7Emitter, ptr %2, align 8
   %builder153 = extractvalue %_Z7Emitter %load.struct152, 5
   %handle154 = extractvalue %_Z14LLVMBuilderRef %builder153, 0
@@ -268093,7 +268362,7 @@ if.end5:                                          ; preds = %if.end2
 define linkonce_odr i1 @_ZN7Emitter29parfor_weight_is_constructionE6String(ptr %0, ptr %1) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.1952 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1956 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -269394,7 +269663,7 @@ if.then63:                                        ; preds = %if.end55
   %handle70 = extractvalue %_Z11LLVMTypeRef %call67, 0
   %wrapper.load71 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle72 = extractvalue %_Z12LLVMValueRef %wrapper.load71, 0
-  %call73 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle69, ptr %handle70, ptr %handle72, ptr @.str.1953)
+  %call73 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle69, ptr %handle70, ptr %handle72, ptr @.str.1957)
   %cap_values74 = load ptr, ptr %cap_values, align 8
   %ci75 = load i64, ptr %ci, align 8
   store %_Z12LLVMValueRef %call73, ptr %tuple56, align 1
@@ -269530,7 +269799,7 @@ while.exit131:                                    ; preds = %while.cond129
   %llvm_module = extractvalue %_Z7Emitter %load.struct164, 4
   %handle165 = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
   %handle166 = extractvalue %_Z11LLVMTypeRef %call163, 0
-  %call167 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle165, ptr @.str.1954, ptr %handle166)
+  %call167 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle165, ptr @.str.1958, ptr %handle166)
   %handle168 = extractvalue %_Z12LLVMValueRef %call167, 0
   %call169 = call i64 @_ZN11LLVMLinkage7PrivateEv()
   call void @LLVMSetLinkage(ptr %handle168, i64 %call169)
@@ -269588,7 +269857,7 @@ while.exit131:                                    ; preds = %while.cond129
   %context205 = extractvalue %_Z7Emitter %load.struct204, 1
   %handle206 = extractvalue %_Z14LLVMContextRef %context205, 0
   %handle207 = extractvalue %_Z12LLVMValueRef %call167, 0
-  store { ptr } { ptr @.sconst.1955 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1959 }, ptr %deref.tmp, align 1
   %call208 = call ptr @_ZN6String6c_dataEv(ptr %deref.tmp)
   %call209 = call %_Z17LLVMBasicBlockRef @LLVMAppendBasicBlockInContext(ptr %handle206, ptr %handle207, ptr %call208)
   %load.struct210 = load %_Z7Emitter, ptr %2, align 8
@@ -269633,13 +269902,13 @@ if.then221:                                       ; preds = %while.exit131
   %handle225 = extractvalue %_Z14LLVMBuilderRef %builder224, 0
   %handle226 = extractvalue %_Z11LLVMTypeRef %call155, 0
   %handle227 = extractvalue %_Z12LLVMValueRef %call215, 0
-  %call228 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle225, ptr %handle226, ptr %handle227, i64 0, ptr @.str.1956)
+  %call228 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle225, ptr %handle226, ptr %handle227, i64 0, ptr @.str.1960)
   %load.struct229 = load %_Z7Emitter, ptr %2, align 8
   %builder230 = extractvalue %_Z7Emitter %load.struct229, 5
   %handle231 = extractvalue %_Z14LLVMBuilderRef %builder230, 0
   %handle232 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %handle233 = extractvalue %_Z12LLVMValueRef %call228, 0
-  %call234 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle231, ptr %handle232, ptr %handle233, ptr @.str.1957)
+  %call234 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle231, ptr %handle232, ptr %handle233, ptr @.str.1961)
   store %_Z12LLVMValueRef %call234, ptr %chunk_buf, align 1
   store i64 1, ptr %lo_idx, align 1
   br label %if.end222
@@ -269651,13 +269920,13 @@ if.end222:                                        ; preds = %if.then221, %while.
   %handle238 = extractvalue %_Z11LLVMTypeRef %call155, 0
   %handle239 = extractvalue %_Z12LLVMValueRef %call215, 0
   %lo_idx240 = load i64, ptr %lo_idx, align 8
-  %call241 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle237, ptr %handle238, ptr %handle239, i64 %lo_idx240, ptr @.str.1958)
+  %call241 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle237, ptr %handle238, ptr %handle239, i64 %lo_idx240, ptr @.str.1962)
   %load.struct242 = load %_Z7Emitter, ptr %2, align 8
   %builder243 = extractvalue %_Z7Emitter %load.struct242, 5
   %handle244 = extractvalue %_Z14LLVMBuilderRef %builder243, 0
   %handle245 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle246 = extractvalue %_Z12LLVMValueRef %call241, 0
-  %call247 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle244, ptr %handle245, ptr %handle246, ptr @.str.1959)
+  %call247 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle244, ptr %handle245, ptr %handle246, ptr @.str.1963)
   %load.struct248 = load %_Z7Emitter, ptr %2, align 8
   %builder249 = extractvalue %_Z7Emitter %load.struct248, 5
   %handle250 = extractvalue %_Z14LLVMBuilderRef %builder249, 0
@@ -269665,13 +269934,13 @@ if.end222:                                        ; preds = %if.then221, %while.
   %handle252 = extractvalue %_Z12LLVMValueRef %call215, 0
   %lo_idx253 = load i64, ptr %lo_idx, align 8
   %add254 = add i64 %lo_idx253, 1
-  %call255 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle250, ptr %handle251, ptr %handle252, i64 %add254, ptr @.str.1960)
+  %call255 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle250, ptr %handle251, ptr %handle252, i64 %add254, ptr @.str.1964)
   %load.struct256 = load %_Z7Emitter, ptr %2, align 8
   %builder257 = extractvalue %_Z7Emitter %load.struct256, 5
   %handle258 = extractvalue %_Z14LLVMBuilderRef %builder257, 0
   %handle259 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle260 = extractvalue %_Z12LLVMValueRef %call255, 0
-  %call261 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle258, ptr %handle259, ptr %handle260, ptr @.str.1961)
+  %call261 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle258, ptr %handle259, ptr %handle260, ptr @.str.1965)
   store i64 0, ptr %ci, align 1
   br label %while.cond262
 
@@ -269698,7 +269967,7 @@ while.body263:                                    ; preds = %while.cond262
   %base_fields279 = load i64, ptr %base_fields, align 8
   %ci280 = load i64, ptr %ci, align 8
   %add281 = add i64 %base_fields279, %ci280
-  %call282 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle276, ptr %handle277, ptr %handle278, i64 %add281, ptr @.str.1962)
+  %call282 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle276, ptr %handle277, ptr %handle278, i64 %add281, ptr @.str.1966)
   %load.struct283 = load %_Z7Emitter, ptr %2, align 8
   %builder284 = extractvalue %_Z7Emitter %load.struct283, 5
   %handle285 = extractvalue %_Z14LLVMBuilderRef %builder284, 0
@@ -269718,20 +269987,20 @@ while.exit264:                                    ; preds = %while.cond262
   %builder321 = extractvalue %_Z7Emitter %load.struct320, 5
   %handle322 = extractvalue %_Z14LLVMBuilderRef %builder321, 0
   %handle323 = extractvalue %_Z11LLVMTypeRef %call27, 0
-  %call324 = call %_Z12LLVMValueRef @LLVMBuildAlloca(ptr %handle322, ptr %handle323, ptr @.str.1963)
+  %call324 = call %_Z12LLVMValueRef @LLVMBuildAlloca(ptr %handle322, ptr %handle323, ptr @.str.1967)
   %load.struct325 = load %_Z7Emitter, ptr %2, align 8
   %builder326 = extractvalue %_Z7Emitter %load.struct325, 5
   %handle327 = extractvalue %_Z14LLVMBuilderRef %builder326, 0
   %handle328 = extractvalue %_Z12LLVMValueRef %call247, 0
   %handle329 = extractvalue %_Z12LLVMValueRef %call324, 0
   %call330 = call %_Z12LLVMValueRef @LLVMBuildStore(ptr %handle327, ptr %handle328, ptr %handle329)
-  store { ptr } { ptr @.sconst.1964 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1968 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result331, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.1965 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1969 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result332, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.1966 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1970 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result333, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.1967 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1971 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result334, ptr %1, ptr %2, ptr %deref.tmp)
   %load.struct335 = load %_Z7Emitter, ptr %2, align 8
   %builder336 = extractvalue %_Z7Emitter %load.struct335, 5
@@ -269750,14 +270019,14 @@ while.exit264:                                    ; preds = %while.cond262
   %handle348 = extractvalue %_Z14LLVMBuilderRef %builder347, 0
   %handle349 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle350 = extractvalue %_Z12LLVMValueRef %call324, 0
-  %call351 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle348, ptr %handle349, ptr %handle350, ptr @.str.1968)
+  %call351 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle348, ptr %handle349, ptr %handle350, ptr @.str.1972)
   %load.struct352 = load %_Z7Emitter, ptr %2, align 8
   %builder353 = extractvalue %_Z7Emitter %load.struct352, 5
   %handle354 = extractvalue %_Z14LLVMBuilderRef %builder353, 0
   %call355 = call i64 @_ZN16LLVMIntPredicate3SLTEv()
   %handle356 = extractvalue %_Z12LLVMValueRef %call351, 0
   %handle357 = extractvalue %_Z12LLVMValueRef %call261, 0
-  %call358 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle354, i64 %call355, ptr %handle356, ptr %handle357, ptr @.str.1969)
+  %call358 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle354, i64 %call355, ptr %handle356, ptr %handle357, ptr @.str.1973)
   %load.struct359 = load %_Z7Emitter, ptr %2, align 8
   %builder360 = extractvalue %_Z7Emitter %load.struct359, 5
   %handle361 = extractvalue %_Z14LLVMBuilderRef %builder360, 0
@@ -269837,7 +270106,7 @@ if.then375:                                       ; preds = %while.exit264
   %ev_idx386 = load ptr, ptr %ev_idx, align 8
   %load.struct387 = load %_Z6VectorI12LLVMValueRefE, ptr %ev_idx386, align 8
   %data388 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct387, 1
-  %call389 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle382, ptr %handle383, ptr %handle385, ptr %data388, i64 1, ptr @.str.1970)
+  %call389 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle382, ptr %handle383, ptr %handle385, ptr %data388, i64 1, ptr @.str.1974)
   %load.struct390 = load %_Z7Emitter, ptr %2, align 8
   %builder391 = extractvalue %_Z7Emitter %load.struct390, 5
   %handle392 = extractvalue %_Z14LLVMBuilderRef %builder391, 0
@@ -269942,7 +270211,7 @@ if.end448:                                        ; preds = %if.then447, %if.end
   %handle462 = extractvalue %_Z14LLVMBuilderRef %builder461, 0
   %handle463 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle464 = extractvalue %_Z12LLVMValueRef %call324, 0
-  %call465 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle462, ptr %handle463, ptr %handle464, ptr @.str.1971)
+  %call465 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle462, ptr %handle463, ptr %handle464, ptr @.str.1975)
   %handle466 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %call467 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle466, i64 1, i64 0)
   %load.struct468 = load %_Z7Emitter, ptr %2, align 8
@@ -269950,7 +270219,7 @@ if.end448:                                        ; preds = %if.then447, %if.end
   %handle470 = extractvalue %_Z14LLVMBuilderRef %builder469, 0
   %handle471 = extractvalue %_Z12LLVMValueRef %call465, 0
   %handle472 = extractvalue %_Z12LLVMValueRef %call467, 0
-  %call473 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle470, ptr %handle471, ptr %handle472, ptr @.str.1972)
+  %call473 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle470, ptr %handle471, ptr %handle472, ptr @.str.1976)
   %load.struct474 = load %_Z7Emitter, ptr %2, align 8
   %builder475 = extractvalue %_Z7Emitter %load.struct474, 5
   %handle476 = extractvalue %_Z14LLVMBuilderRef %builder475, 0
@@ -270067,12 +270336,12 @@ if.then549:                                       ; preds = %while.exit502
 if.end550:                                        ; preds = %if.then549, %while.exit502
   %handle552 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %call553 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle552, ptr null, i64 0, i64 0)
-  store { ptr } { ptr @.sconst.1973 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1977 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call553, ptr %deref.tmp273, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result554, ptr %1, ptr %2, ptr %deref.tmp, ptr %deref.tmp273)
   %handle555 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %call556 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle555, ptr null, i64 0, i64 0)
-  store { ptr } { ptr @.sconst.1974 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1978 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call556, ptr %deref.tmp273, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result557, ptr %1, ptr %2, ptr %deref.tmp, ptr %deref.tmp273)
   %struct.region558 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11LLVMTypeRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11LLVMTypeRefE }, ptr null, i64 0, i32 1) to i64))
@@ -270086,7 +270355,7 @@ if.end550:                                        ; preds = %if.then549, %while.
   %load.struct561 = load %_Z6VectorI11LLVMTypeRefE, ptr %p1_tys560, align 8
   %data562 = extractvalue %_Z6VectorI11LLVMTypeRefE %load.struct561, 1
   %call563 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle559, ptr %data562, i64 1, i64 0)
-  store { ptr } { ptr @.sconst.1975 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1979 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call563, ptr %arg.tmp565, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result564, ptr %1, ptr %2, ptr %deref.tmp, ptr %arg.tmp565)
   %handle566 = extractvalue %_Z11LLVMTypeRef %call31, 0
@@ -270094,10 +270363,10 @@ if.end550:                                        ; preds = %if.then549, %while.
   %load.struct568 = load %_Z6VectorI11LLVMTypeRefE, ptr %p1_tys567, align 8
   %data569 = extractvalue %_Z6VectorI11LLVMTypeRefE %load.struct568, 1
   %call570 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle566, ptr %data569, i64 1, i64 0)
-  store { ptr } { ptr @.sconst.1976 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1980 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call570, ptr %arg.tmp565, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result571, ptr %1, ptr %2, ptr %deref.tmp, ptr %arg.tmp565)
-  store { ptr } { ptr @.sconst.1977 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1981 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call570, ptr %arg.tmp565, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result572, ptr %1, ptr %2, ptr %deref.tmp, ptr %arg.tmp565)
   %struct.region573 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11LLVMTypeRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11LLVMTypeRefE }, ptr null, i64 0, i32 1) to i64))
@@ -270117,7 +270386,7 @@ if.end550:                                        ; preds = %if.then549, %while.
   %load.struct581 = load %_Z6VectorI11LLVMTypeRefE, ptr %alloc_tys580, align 8
   %data582 = extractvalue %_Z6VectorI11LLVMTypeRefE %load.struct581, 1
   %call583 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle579, ptr %data582, i64 3, i64 0)
-  store { ptr } { ptr @.sconst.1978 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1982 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call583, ptr %arg.tmp585, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result584, ptr %1, ptr %2, ptr %deref.tmp, ptr %arg.tmp585)
   %struct.region586 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11LLVMTypeRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11LLVMTypeRefE }, ptr null, i64 0, i32 1) to i64))
@@ -270140,17 +270409,17 @@ if.end550:                                        ; preds = %if.then549, %while.
   %load.struct596 = load %_Z6VectorI11LLVMTypeRefE, ptr %sub_tys595, align 8
   %data597 = extractvalue %_Z6VectorI11LLVMTypeRefE %load.struct596, 1
   %call598 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle594, ptr %data597, i64 4, i64 0)
-  store { ptr } { ptr @.sconst.1979 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1983 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call598, ptr %arg.tmp600, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result599, ptr %1, ptr %2, ptr %deref.tmp, ptr %arg.tmp600)
   %handle601 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %call602 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle601, ptr null, i64 0, i64 0)
-  store { ptr } { ptr @.sconst.1980 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1984 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call602, ptr %arg.tmp600, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result603, ptr %1, ptr %2, ptr %deref.tmp, ptr %arg.tmp600)
   %handle604 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %call605 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle604, ptr null, i64 0, i64 0)
-  store { ptr } { ptr @.sconst.1981 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1985 }, ptr %deref.tmp, align 1
   store %_Z11LLVMTypeRef %call605, ptr %arg.tmp600, align 1
   call void @_ZN7Emitter21get_parfor_runtime_fnEPN4scaly6memory4PageE6String11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result606, ptr %1, ptr %2, ptr %deref.tmp, ptr %arg.tmp600)
   store %_Z11LLVMTypeRef %call155, ptr %arg.tmp600, align 1
@@ -270223,7 +270492,7 @@ if.end621:                                        ; preds = %if.then620, %if.end
   %llvm_module659 = extractvalue %_Z7Emitter %load.struct658, 4
   %handle660 = extractvalue %_Z13LLVMModuleRef %llvm_module659, 0
   %handle661 = extractvalue %_Z11LLVMTypeRef %call27, 0
-  store { ptr } { ptr @.sconst.1982 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1986 }, ptr %deref.tmp, align 1
   %call662 = call ptr @_ZN6String6c_dataEv(ptr %deref.tmp)
   %call663 = call %_Z12LLVMValueRef @LLVMAddGlobal(ptr %handle660, ptr %handle661, ptr %call662)
   %handle664 = extractvalue %_Z12LLVMValueRef %call663, 0
@@ -270238,7 +270507,7 @@ if.end621:                                        ; preds = %if.then620, %if.end
   %llvm_module670 = extractvalue %_Z7Emitter %load.struct669, 4
   %handle671 = extractvalue %_Z13LLVMModuleRef %llvm_module670, 0
   %handle672 = extractvalue %_Z11LLVMTypeRef %call27, 0
-  store { ptr } { ptr @.sconst.1983 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1987 }, ptr %deref.tmp, align 1
   %call673 = call ptr @_ZN6String6c_dataEv(ptr %deref.tmp)
   %call674 = call %_Z12LLVMValueRef @LLVMAddGlobal(ptr %handle671, ptr %handle672, ptr %call673)
   %handle675 = extractvalue %_Z12LLVMValueRef %call674, 0
@@ -270253,7 +270522,7 @@ if.end621:                                        ; preds = %if.then620, %if.end
   %llvm_module681 = extractvalue %_Z7Emitter %load.struct680, 4
   %handle682 = extractvalue %_Z13LLVMModuleRef %llvm_module681, 0
   %handle683 = extractvalue %_Z11LLVMTypeRef %call27, 0
-  store { ptr } { ptr @.sconst.1984 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1988 }, ptr %deref.tmp, align 1
   %call684 = call ptr @_ZN6String6c_dataEv(ptr %deref.tmp)
   %call685 = call %_Z12LLVMValueRef @LLVMAddGlobal(ptr %handle682, ptr %handle683, ptr %call684)
   %handle686 = extractvalue %_Z12LLVMValueRef %call685, 0
@@ -270268,7 +270537,7 @@ if.end621:                                        ; preds = %if.then620, %if.end
   %llvm_module692 = extractvalue %_Z7Emitter %load.struct691, 4
   %handle693 = extractvalue %_Z13LLVMModuleRef %llvm_module692, 0
   %handle694 = extractvalue %_Z11LLVMTypeRef %call27, 0
-  store { ptr } { ptr @.sconst.1985 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.1989 }, ptr %deref.tmp, align 1
   %call695 = call ptr @_ZN6String6c_dataEv(ptr %deref.tmp)
   %call696 = call %_Z12LLVMValueRef @LLVMAddGlobal(ptr %handle693, ptr %handle694, ptr %call695)
   %handle697 = extractvalue %_Z12LLVMValueRef %call696, 0
@@ -270278,31 +270547,31 @@ if.end621:                                        ; preds = %if.then620, %if.end
   %call700 = call i64 @_ZN11LLVMLinkage7PrivateEv()
   call void @LLVMSetLinkage(ptr %handle699, i64 %call700)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result701, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1986)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result701, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1990)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result702, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1987)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result702, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1991)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result703, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1988)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result703, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1992)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result704, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1989)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result704, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1993)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result705, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1990)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result705, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1994)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result706, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1991)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result706, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1995)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result707, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1992)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result707, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1996)
   store %_Z11LLVMTypeRef %call23, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result708, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1993)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result708, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1997)
   store %_Z11LLVMTypeRef %call23, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result709, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1994)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result709, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1998)
   store %_Z11LLVMTypeRef %call23, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result710, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1995)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result710, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1999)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result711, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1996)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result711, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.2000)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result712, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1997)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result712, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.2001)
   store %_Z11LLVMTypeRef %call27, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result713, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.1998)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result713, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.2002)
   %load.struct714 = load %_Z7Emitter, ptr %2, align 8
   %builder715 = extractvalue %_Z7Emitter %load.struct714, 5
   %handle716 = extractvalue %_Z14LLVMBuilderRef %builder715, 0
@@ -270347,19 +270616,19 @@ if.end621:                                        ; preds = %if.then620, %if.end
   %wrapper.load755 = load %_Z12LLVMValueRef, ptr %sret.result708, align 8
   %handle756 = extractvalue %_Z12LLVMValueRef %wrapper.load755, 0
   %call757 = call %_Z12LLVMValueRef @LLVMBuildStore(ptr %handle753, ptr %handle754, ptr %handle756)
-  store { ptr } { ptr @.sconst.1999 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result758, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2000 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result759, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2001 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result760, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2002 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result761, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2003 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result762, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result758, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2004 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result763, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result759, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2005 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result760, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2006 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result761, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2007 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result762, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2008 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result763, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2009 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result764, ptr %1, ptr %2, ptr %deref.tmp)
   %load.struct765 = load %_Z10PlannedFor, ptr %3, align 8
   %is_iterator_loop766 = extractvalue %_Z10PlannedFor %load.struct765, 4
@@ -270387,47 +270656,47 @@ if.then774:                                       ; preds = %if.then768
   %wrapper.load779 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle780 = extractvalue %_Z12LLVMValueRef %wrapper.load779, 0
   %handle781 = extractvalue %_Z11LLVMTypeRef %call27, 0
-  %call782 = call %_Z12LLVMValueRef @LLVMBuildSExt(ptr %handle778, ptr %handle780, ptr %handle781, ptr @.str.2006)
+  %call782 = call %_Z12LLVMValueRef @LLVMBuildSExt(ptr %handle778, ptr %handle780, ptr %handle781, ptr @.str.2010)
   store %_Z12LLVMValueRef %call782, ptr %n64, align 1
   br label %if.end775
 
 if.end775:                                        ; preds = %if.then774, %if.then768
-  store { ptr } { ptr @.sconst.2007 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result783, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2008 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result784, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2009 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result785, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2010 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result786, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2011 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result787, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result783, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2012 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result788, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result784, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2013 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result789, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result785, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2014 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result790, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result786, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2015 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result791, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result787, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2016 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result792, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result788, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2017 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result793, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result789, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2018 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result794, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result790, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2019 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result795, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result791, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2020 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result796, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result792, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2021 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result793, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2022 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result794, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2023 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result795, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2024 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result796, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2025 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result797, ptr %1, ptr %2, ptr %deref.tmp)
   %load.struct798 = load %_Z7Emitter, ptr %2, align 8
   %builder799 = extractvalue %_Z7Emitter %load.struct798, 5
   %handle800 = extractvalue %_Z14LLVMBuilderRef %builder799, 0
   %handle801 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle802 = extractvalue %_Z12LLVMValueRef %call696, 0
-  %call803 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle800, ptr %handle801, ptr %handle802, ptr @.str.2022)
+  %call803 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle800, ptr %handle801, ptr %handle802, ptr @.str.2026)
   %load.struct804 = load %_Z7Emitter, ptr %2, align 8
   %builder805 = extractvalue %_Z7Emitter %load.struct804, 5
   %handle806 = extractvalue %_Z14LLVMBuilderRef %builder805, 0
@@ -270441,7 +270710,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %call814 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle815 = extractvalue %_Z12LLVMValueRef %call803, 0
   %handle816 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call817 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle813, i64 %call814, ptr %handle815, ptr %handle816, ptr @.str.2023)
+  %call817 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle813, i64 %call814, ptr %handle815, ptr %handle816, ptr @.str.2027)
   %load.struct818 = load %_Z7Emitter, ptr %2, align 8
   %builder819 = extractvalue %_Z7Emitter %load.struct818, 5
   %handle820 = extractvalue %_Z14LLVMBuilderRef %builder819, 0
@@ -270462,21 +270731,21 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle834 = extractvalue %_Z14LLVMBuilderRef %builder833, 0
   %handle835 = extractvalue %_Z12LLVMValueRef %call654, 0
   %handle836 = extractvalue %_Z12LLVMValueRef %call803, 0
-  %call837 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle834, ptr %handle835, ptr %handle836, ptr @.str.2024)
+  %call837 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle834, ptr %handle835, ptr %handle836, ptr @.str.2028)
   %load.struct838 = load %_Z7Emitter, ptr %2, align 8
   %builder839 = extractvalue %_Z7Emitter %load.struct838, 5
   %handle840 = extractvalue %_Z14LLVMBuilderRef %builder839, 0
   %call841 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle842 = extractvalue %_Z12LLVMValueRef %call837, 0
   %handle843 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call844 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle840, i64 %call841, ptr %handle842, ptr %handle843, ptr @.str.2025)
+  %call844 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle840, i64 %call841, ptr %handle842, ptr %handle843, ptr @.str.2029)
   %load.struct845 = load %_Z7Emitter, ptr %2, align 8
   %builder846 = extractvalue %_Z7Emitter %load.struct845, 5
   %handle847 = extractvalue %_Z14LLVMBuilderRef %builder846, 0
   %handle848 = extractvalue %_Z12LLVMValueRef %call844, 0
   %handle849 = extractvalue %_Z12LLVMValueRef %call837, 0
   %handle850 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call851 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle847, ptr %handle848, ptr %handle849, ptr %handle850, ptr @.str.2026)
+  %call851 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle847, ptr %handle848, ptr %handle849, ptr %handle850, ptr @.str.2030)
   %load.struct852 = load %_Z7Emitter, ptr %2, align 8
   %builder853 = extractvalue %_Z7Emitter %load.struct852, 5
   %handle854 = extractvalue %_Z14LLVMBuilderRef %builder853, 0
@@ -270484,7 +270753,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %n64856 = load %_Z12LLVMValueRef, ptr %n64, align 8
   %handle857 = extractvalue %_Z12LLVMValueRef %n64856, 0
   %handle858 = extractvalue %_Z12LLVMValueRef %call851, 0
-  %call859 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle854, i64 %call855, ptr %handle857, ptr %handle858, ptr @.str.2027)
+  %call859 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle854, i64 %call855, ptr %handle857, ptr %handle858, ptr @.str.2031)
   %load.struct860 = load %_Z7Emitter, ptr %2, align 8
   %builder861 = extractvalue %_Z7Emitter %load.struct860, 5
   %handle862 = extractvalue %_Z14LLVMBuilderRef %builder861, 0
@@ -270506,7 +270775,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle877 = extractvalue %_Z11LLVMTypeRef %call556, 0
   %wrapper.load878 = load %_Z12LLVMValueRef, ptr %sret.result557, align 8
   %handle879 = extractvalue %_Z12LLVMValueRef %wrapper.load878, 0
-  %call880 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle876, ptr %handle877, ptr %handle879, ptr null, i64 0, ptr @.str.2028)
+  %call880 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle876, ptr %handle877, ptr %handle879, ptr null, i64 0, ptr @.str.2032)
   %struct.region881 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region881, i64 1)
   store ptr %struct.region881, ptr %hf_pget_args, align 1
@@ -270522,7 +270791,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %hf_pget_args890 = load ptr, ptr %hf_pget_args, align 8
   %load.struct891 = load %_Z6VectorI12LLVMValueRefE, ptr %hf_pget_args890, align 8
   %data892 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct891, 1
-  %call893 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle886, ptr %handle887, ptr %handle889, ptr %data892, i64 1, ptr @.str.2029)
+  %call893 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle886, ptr %handle887, ptr %handle889, ptr %data892, i64 1, ptr @.str.2033)
   %load.struct894 = load %_Z7Emitter, ptr %2, align 8
   %builder895 = extractvalue %_Z7Emitter %load.struct894, 5
   %handle896 = extractvalue %_Z14LLVMBuilderRef %builder895, 0
@@ -270596,14 +270865,14 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle962 = extractvalue %_Z14LLVMBuilderRef %builder961, 0
   %handle963 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle964 = extractvalue %_Z12LLVMValueRef %call663, 0
-  %call965 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle962, ptr %handle963, ptr %handle964, ptr @.str.2030)
+  %call965 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle962, ptr %handle963, ptr %handle964, ptr @.str.2034)
   %load.struct966 = load %_Z7Emitter, ptr %2, align 8
   %builder967 = extractvalue %_Z7Emitter %load.struct966, 5
   %handle968 = extractvalue %_Z14LLVMBuilderRef %builder967, 0
   %call969 = call i64 @_ZN16LLVMIntPredicate3SGEEv()
   %handle970 = extractvalue %_Z12LLVMValueRef %call965, 0
   %handle971 = extractvalue %_Z12LLVMValueRef %call644, 0
-  %call972 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle968, i64 %call969, ptr %handle970, ptr %handle971, ptr @.str.2031)
+  %call972 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle968, i64 %call969, ptr %handle970, ptr %handle971, ptr @.str.2035)
   %load.struct973 = load %_Z7Emitter, ptr %2, align 8
   %builder974 = extractvalue %_Z7Emitter %load.struct973, 5
   %handle975 = extractvalue %_Z14LLVMBuilderRef %builder974, 0
@@ -270625,7 +270894,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle990 = extractvalue %_Z11LLVMTypeRef %call605, 0
   %wrapper.load991 = load %_Z12LLVMValueRef, ptr %sret.result606, align 8
   %handle992 = extractvalue %_Z12LLVMValueRef %wrapper.load991, 0
-  %call993 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle989, ptr %handle990, ptr %handle992, ptr null, i64 0, ptr @.str.2032)
+  %call993 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle989, ptr %handle990, ptr %handle992, ptr null, i64 0, ptr @.str.2036)
   %load.struct994 = load %_Z7Emitter, ptr %2, align 8
   %builder995 = extractvalue %_Z7Emitter %load.struct994, 5
   %handle996 = extractvalue %_Z14LLVMBuilderRef %builder995, 0
@@ -270651,7 +270920,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle1015 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1016 = load %_Z12LLVMValueRef, ptr %sret.result701, align 8
   %handle1017 = extractvalue %_Z12LLVMValueRef %wrapper.load1016, 0
-  %call1018 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1014, ptr %handle1015, ptr %handle1017, ptr @.str.2033)
+  %call1018 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1014, ptr %handle1015, ptr %handle1017, ptr @.str.2037)
   %load.struct1019 = load %_Z7Emitter, ptr %2, align 8
   %builder1020 = extractvalue %_Z7Emitter %load.struct1019, 5
   %handle1021 = extractvalue %_Z14LLVMBuilderRef %builder1020, 0
@@ -270659,7 +270928,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle1023 = extractvalue %_Z12LLVMValueRef %call1018, 0
   %n641024 = load %_Z12LLVMValueRef, ptr %n64, align 8
   %handle1025 = extractvalue %_Z12LLVMValueRef %n641024, 0
-  %call1026 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1021, i64 %call1022, ptr %handle1023, ptr %handle1025, ptr @.str.2034)
+  %call1026 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1021, i64 %call1022, ptr %handle1023, ptr %handle1025, ptr @.str.2038)
   %load.struct1027 = load %_Z7Emitter, ptr %2, align 8
   %builder1028 = extractvalue %_Z7Emitter %load.struct1027, 5
   %handle1029 = extractvalue %_Z14LLVMBuilderRef %builder1028, 0
@@ -270681,14 +270950,14 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle1044 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1045 = load %_Z12LLVMValueRef, ptr %sret.result702, align 8
   %handle1046 = extractvalue %_Z12LLVMValueRef %wrapper.load1045, 0
-  %call1047 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1043, ptr %handle1044, ptr %handle1046, ptr @.str.2035)
+  %call1047 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1043, ptr %handle1044, ptr %handle1046, ptr @.str.2039)
   %load.struct1048 = load %_Z7Emitter, ptr %2, align 8
   %builder1049 = extractvalue %_Z7Emitter %load.struct1048, 5
   %handle1050 = extractvalue %_Z14LLVMBuilderRef %builder1049, 0
   %call1051 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle1052 = extractvalue %_Z12LLVMValueRef %call1018, 0
   %handle1053 = extractvalue %_Z12LLVMValueRef %call1047, 0
-  %call1054 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1050, i64 %call1051, ptr %handle1052, ptr %handle1053, ptr @.str.2036)
+  %call1054 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1050, i64 %call1051, ptr %handle1052, ptr %handle1053, ptr @.str.2040)
   %load.struct1055 = load %_Z7Emitter, ptr %2, align 8
   %builder1056 = extractvalue %_Z7Emitter %load.struct1055, 5
   %handle1057 = extractvalue %_Z14LLVMBuilderRef %builder1056, 0
@@ -270711,7 +270980,7 @@ if.end775:                                        ; preds = %if.then774, %if.the
   %handle1072 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1073 = load %_Z12LLVMValueRef, ptr %sret.result701, align 8
   %handle1074 = extractvalue %_Z12LLVMValueRef %wrapper.load1073, 0
-  %call1075 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1071, ptr %handle1072, ptr %handle1074, ptr @.str.2037)
+  %call1075 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1071, ptr %handle1072, ptr %handle1074, ptr @.str.2041)
   store %_Z12LLVMValueRef %call1075, ptr %il_bind, align 1
   %lt1076 = icmp slt i64 %call772, 64
   br i1 %lt1076, label %if.then1077, label %if.end1078
@@ -270774,13 +271043,13 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %handle1120 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1121 = load %_Z12LLVMValueRef, ptr %sret.result701, align 8
   %handle1122 = extractvalue %_Z12LLVMValueRef %wrapper.load1121, 0
-  %call1123 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1119, ptr %handle1120, ptr %handle1122, ptr @.str.2038)
+  %call1123 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1119, ptr %handle1120, ptr %handle1122, ptr @.str.2042)
   %load.struct1124 = load %_Z7Emitter, ptr %2, align 8
   %builder1125 = extractvalue %_Z7Emitter %load.struct1124, 5
   %handle1126 = extractvalue %_Z14LLVMBuilderRef %builder1125, 0
   %handle1127 = extractvalue %_Z12LLVMValueRef %call1123, 0
   %handle1128 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call1129 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle1126, ptr %handle1127, ptr %handle1128, ptr @.str.2039)
+  %call1129 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle1126, ptr %handle1127, ptr %handle1128, ptr @.str.2043)
   %load.struct1130 = load %_Z7Emitter, ptr %2, align 8
   %builder1131 = extractvalue %_Z7Emitter %load.struct1130, 5
   %handle1132 = extractvalue %_Z14LLVMBuilderRef %builder1131, 0
@@ -270806,21 +271075,21 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %handle1151 = extractvalue %_Z11LLVMTypeRef %call605, 0
   %wrapper.load1152 = load %_Z12LLVMValueRef, ptr %sret.result606, align 8
   %handle1153 = extractvalue %_Z12LLVMValueRef %wrapper.load1152, 0
-  %call1154 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1150, ptr %handle1151, ptr %handle1153, ptr null, i64 0, ptr @.str.2040)
+  %call1154 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1150, ptr %handle1151, ptr %handle1153, ptr null, i64 0, ptr @.str.2044)
   %load.struct1155 = load %_Z7Emitter, ptr %2, align 8
   %builder1156 = extractvalue %_Z7Emitter %load.struct1155, 5
   %handle1157 = extractvalue %_Z14LLVMBuilderRef %builder1156, 0
   %handle1158 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1159 = load %_Z12LLVMValueRef, ptr %sret.result703, align 8
   %handle1160 = extractvalue %_Z12LLVMValueRef %wrapper.load1159, 0
-  %call1161 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1157, ptr %handle1158, ptr %handle1160, ptr @.str.2041)
+  %call1161 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1157, ptr %handle1158, ptr %handle1160, ptr @.str.2045)
   %load.struct1162 = load %_Z7Emitter, ptr %2, align 8
   %builder1163 = extractvalue %_Z7Emitter %load.struct1162, 5
   %handle1164 = extractvalue %_Z14LLVMBuilderRef %builder1163, 0
   %call1165 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle1166 = extractvalue %_Z12LLVMValueRef %call1161, 0
   %handle1167 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call1168 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1164, i64 %call1165, ptr %handle1166, ptr %handle1167, ptr @.str.2042)
+  %call1168 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1164, i64 %call1165, ptr %handle1166, ptr %handle1167, ptr @.str.2046)
   %load.struct1169 = load %_Z7Emitter, ptr %2, align 8
   %builder1170 = extractvalue %_Z7Emitter %load.struct1169, 5
   %handle1171 = extractvalue %_Z14LLVMBuilderRef %builder1170, 0
@@ -270855,7 +271124,7 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %handle1199 = extractvalue %_Z14LLVMBuilderRef %builder1198, 0
   %handle1200 = extractvalue %_Z12LLVMValueRef %call1018, 0
   %handle1201 = extractvalue %_Z12LLVMValueRef %call630, 0
-  %call1202 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1199, ptr %handle1200, ptr %handle1201, ptr @.str.2043)
+  %call1202 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1199, ptr %handle1200, ptr %handle1201, ptr @.str.2047)
   %load.struct1203 = load %_Z7Emitter, ptr %2, align 8
   %builder1204 = extractvalue %_Z7Emitter %load.struct1203, 5
   %handle1205 = extractvalue %_Z14LLVMBuilderRef %builder1204, 0
@@ -270880,14 +271149,14 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %handle1223 = extractvalue %_Z14LLVMBuilderRef %builder1222, 0
   %handle1224 = extractvalue %_Z12LLVMValueRef %call1154, 0
   %handle1225 = extractvalue %_Z12LLVMValueRef %call1161, 0
-  %call1226 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1223, ptr %handle1224, ptr %handle1225, ptr @.str.2044)
+  %call1226 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1223, ptr %handle1224, ptr %handle1225, ptr @.str.2048)
   %load.struct1227 = load %_Z7Emitter, ptr %2, align 8
   %builder1228 = extractvalue %_Z7Emitter %load.struct1227, 5
   %handle1229 = extractvalue %_Z14LLVMBuilderRef %builder1228, 0
   %call1230 = call i64 @_ZN16LLVMIntPredicate3SGEEv()
   %handle1231 = extractvalue %_Z12LLVMValueRef %call1226, 0
   %handle1232 = extractvalue %_Z12LLVMValueRef %call634, 0
-  %call1233 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1229, i64 %call1230, ptr %handle1231, ptr %handle1232, ptr @.str.2045)
+  %call1233 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1229, i64 %call1230, ptr %handle1231, ptr %handle1232, ptr @.str.2049)
   %load.struct1234 = load %_Z7Emitter, ptr %2, align 8
   %builder1235 = extractvalue %_Z7Emitter %load.struct1234, 5
   %handle1236 = extractvalue %_Z14LLVMBuilderRef %builder1235, 0
@@ -270908,7 +271177,7 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %handle1250 = extractvalue %_Z14LLVMBuilderRef %builder1249, 0
   %handle1251 = extractvalue %_Z12LLVMValueRef %call1018, 0
   %handle1252 = extractvalue %_Z12LLVMValueRef %call630, 0
-  %call1253 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1250, ptr %handle1251, ptr %handle1252, ptr @.str.2046)
+  %call1253 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1250, ptr %handle1251, ptr %handle1252, ptr @.str.2050)
   %load.struct1254 = load %_Z7Emitter, ptr %2, align 8
   %builder1255 = extractvalue %_Z7Emitter %load.struct1254, 5
   %handle1256 = extractvalue %_Z14LLVMBuilderRef %builder1255, 0
@@ -270934,51 +271203,51 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %handle1275 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1276 = load %_Z12LLVMValueRef, ptr %sret.result704, align 8
   %handle1277 = extractvalue %_Z12LLVMValueRef %wrapper.load1276, 0
-  %call1278 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1274, ptr %handle1275, ptr %handle1277, ptr @.str.2047)
+  %call1278 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1274, ptr %handle1275, ptr %handle1277, ptr @.str.2051)
   %load.struct1279 = load %_Z7Emitter, ptr %2, align 8
   %builder1280 = extractvalue %_Z7Emitter %load.struct1279, 5
   %handle1281 = extractvalue %_Z14LLVMBuilderRef %builder1280, 0
   %handle1282 = extractvalue %_Z12LLVMValueRef %call1018, 0
   %handle1283 = extractvalue %_Z12LLVMValueRef %call1278, 0
-  %call1284 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1281, ptr %handle1282, ptr %handle1283, ptr @.str.2048)
+  %call1284 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1281, ptr %handle1282, ptr %handle1283, ptr @.str.2052)
   %load.struct1285 = load %_Z7Emitter, ptr %2, align 8
   %builder1286 = extractvalue %_Z7Emitter %load.struct1285, 5
   %handle1287 = extractvalue %_Z14LLVMBuilderRef %builder1286, 0
   %handle1288 = extractvalue %_Z12LLVMValueRef %call1226, 0
   %handle1289 = extractvalue %_Z12LLVMValueRef %call632, 0
-  %call1290 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle1287, ptr %handle1288, ptr %handle1289, ptr @.str.2049)
+  %call1290 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle1287, ptr %handle1288, ptr %handle1289, ptr @.str.2053)
   %load.struct1291 = load %_Z7Emitter, ptr %2, align 8
   %builder1292 = extractvalue %_Z7Emitter %load.struct1291, 5
   %handle1293 = extractvalue %_Z14LLVMBuilderRef %builder1292, 0
   %handle1294 = extractvalue %_Z12LLVMValueRef %call1290, 0
   %handle1295 = extractvalue %_Z12LLVMValueRef %call1284, 0
-  %call1296 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle1293, ptr %handle1294, ptr %handle1295, ptr @.str.2050)
+  %call1296 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle1293, ptr %handle1294, ptr %handle1295, ptr @.str.2054)
   %load.struct1297 = load %_Z7Emitter, ptr %2, align 8
   %builder1298 = extractvalue %_Z7Emitter %load.struct1297, 5
   %handle1299 = extractvalue %_Z14LLVMBuilderRef %builder1298, 0
   %n641300 = load %_Z12LLVMValueRef, ptr %n64, align 8
   %handle1301 = extractvalue %_Z12LLVMValueRef %n641300, 0
   %handle1302 = extractvalue %_Z12LLVMValueRef %call1018, 0
-  %call1303 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1299, ptr %handle1301, ptr %handle1302, ptr @.str.2051)
+  %call1303 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1299, ptr %handle1301, ptr %handle1302, ptr @.str.2055)
   %load.struct1304 = load %_Z7Emitter, ptr %2, align 8
   %builder1305 = extractvalue %_Z7Emitter %load.struct1304, 5
   %handle1306 = extractvalue %_Z14LLVMBuilderRef %builder1305, 0
   %handle1307 = extractvalue %_Z12LLVMValueRef %call1303, 0
   %handle1308 = extractvalue %_Z12LLVMValueRef %call1296, 0
-  %call1309 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1306, ptr %handle1307, ptr %handle1308, ptr @.str.2052)
+  %call1309 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1306, ptr %handle1307, ptr %handle1308, ptr @.str.2056)
   %load.struct1310 = load %_Z7Emitter, ptr %2, align 8
   %builder1311 = extractvalue %_Z7Emitter %load.struct1310, 5
   %handle1312 = extractvalue %_Z14LLVMBuilderRef %builder1311, 0
   %handle1313 = extractvalue %_Z12LLVMValueRef %call1309, 0
   %handle1314 = extractvalue %_Z12LLVMValueRef %call632, 0
-  %call1315 = call %_Z12LLVMValueRef @LLVMBuildAShr(ptr %handle1312, ptr %handle1313, ptr %handle1314, ptr @.str.2053)
+  %call1315 = call %_Z12LLVMValueRef @LLVMBuildAShr(ptr %handle1312, ptr %handle1313, ptr %handle1314, ptr @.str.2057)
   %load.struct1316 = load %_Z7Emitter, ptr %2, align 8
   %builder1317 = extractvalue %_Z7Emitter %load.struct1316, 5
   %handle1318 = extractvalue %_Z14LLVMBuilderRef %builder1317, 0
   %call1319 = call i64 @_ZN16LLVMIntPredicate3SGEEv()
   %handle1320 = extractvalue %_Z12LLVMValueRef %call1315, 0
   %handle1321 = extractvalue %_Z12LLVMValueRef %call636, 0
-  %call1322 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1318, i64 %call1319, ptr %handle1320, ptr %handle1321, ptr @.str.2054)
+  %call1322 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1318, i64 %call1319, ptr %handle1320, ptr %handle1321, ptr @.str.2058)
   %load.struct1323 = load %_Z7Emitter, ptr %2, align 8
   %builder1324 = extractvalue %_Z7Emitter %load.struct1323, 5
   %handle1325 = extractvalue %_Z14LLVMBuilderRef %builder1324, 0
@@ -271006,7 +271275,7 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %handle1346 = extractvalue %_Z11LLVMTypeRef %call556, 0
   %wrapper.load1347 = load %_Z12LLVMValueRef, ptr %sret.result557, align 8
   %handle1348 = extractvalue %_Z12LLVMValueRef %wrapper.load1347, 0
-  %call1349 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1345, ptr %handle1346, ptr %handle1348, ptr null, i64 0, ptr @.str.2055)
+  %call1349 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1345, ptr %handle1346, ptr %handle1348, ptr null, i64 0, ptr @.str.2059)
   %struct.region1350 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region1350, i64 1)
   store ptr %struct.region1350, ptr %rf_pget_args, align 1
@@ -271022,7 +271291,7 @@ if.end1105:                                       ; preds = %if.then1104, %if.en
   %rf_pget_args1359 = load ptr, ptr %rf_pget_args, align 8
   %load.struct1360 = load %_Z6VectorI12LLVMValueRefE, ptr %rf_pget_args1359, align 8
   %data1361 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct1360, 1
-  %call1362 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1355, ptr %handle1356, ptr %handle1358, ptr %data1361, i64 1, ptr @.str.2056)
+  %call1362 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1355, ptr %handle1356, ptr %handle1358, ptr %data1361, i64 1, ptr @.str.2060)
   %load.struct1363 = load %_Z7Emitter, ptr %2, align 8
   %builder1364 = extractvalue %_Z7Emitter %load.struct1363, 5
   %handle1365 = extractvalue %_Z14LLVMBuilderRef %builder1364, 0
@@ -271092,14 +271361,14 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2429 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2430 = load %_Z12LLVMValueRef, ptr %sret.result711, align 8
   %handle2431 = extractvalue %_Z12LLVMValueRef %wrapper.load2430, 0
-  %call2432 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2428, ptr %handle2429, ptr %handle2431, ptr @.str.2138)
+  %call2432 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2428, ptr %handle2429, ptr %handle2431, ptr @.str.2142)
   %load.struct2433 = load %_Z7Emitter, ptr %2, align 8
   %builder2434 = extractvalue %_Z7Emitter %load.struct2433, 5
   %handle2435 = extractvalue %_Z14LLVMBuilderRef %builder2434, 0
   %call2436 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2437 = extractvalue %_Z12LLVMValueRef %call2432, 0
   %handle2438 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call2439 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2435, i64 %call2436, ptr %handle2437, ptr %handle2438, ptr @.str.2139)
+  %call2439 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2435, i64 %call2436, ptr %handle2437, ptr %handle2438, ptr @.str.2143)
   %load.struct2440 = load %_Z7Emitter, ptr %2, align 8
   %builder2441 = extractvalue %_Z7Emitter %load.struct2440, 5
   %handle2442 = extractvalue %_Z14LLVMBuilderRef %builder2441, 0
@@ -271121,14 +271390,14 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2457 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2458 = load %_Z12LLVMValueRef, ptr %sret.result701, align 8
   %handle2459 = extractvalue %_Z12LLVMValueRef %wrapper.load2458, 0
-  %call2460 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2456, ptr %handle2457, ptr %handle2459, ptr @.str.2140)
+  %call2460 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2456, ptr %handle2457, ptr %handle2459, ptr @.str.2144)
   %load.struct2461 = load %_Z7Emitter, ptr %2, align 8
   %builder2462 = extractvalue %_Z7Emitter %load.struct2461, 5
   %handle2463 = extractvalue %_Z14LLVMBuilderRef %builder2462, 0
   %call2464 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2465 = extractvalue %_Z12LLVMValueRef %call2460, 0
   %handle2466 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call2467 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2463, i64 %call2464, ptr %handle2465, ptr %handle2466, ptr @.str.2141)
+  %call2467 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2463, i64 %call2464, ptr %handle2465, ptr %handle2466, ptr @.str.2145)
   %load.struct2468 = load %_Z7Emitter, ptr %2, align 8
   %builder2469 = extractvalue %_Z7Emitter %load.struct2468, 5
   %handle2470 = extractvalue %_Z14LLVMBuilderRef %builder2469, 0
@@ -271149,33 +271418,33 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2484 = extractvalue %_Z14LLVMBuilderRef %builder2483, 0
   %handle2485 = extractvalue %_Z12LLVMValueRef %call2460, 0
   %handle2486 = extractvalue %_Z12LLVMValueRef %call657, 0
-  %call2487 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2484, ptr %handle2485, ptr %handle2486, ptr @.str.2142)
+  %call2487 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2484, ptr %handle2485, ptr %handle2486, ptr @.str.2146)
   %load.struct2488 = load %_Z7Emitter, ptr %2, align 8
   %builder2489 = extractvalue %_Z7Emitter %load.struct2488, 5
   %handle2490 = extractvalue %_Z14LLVMBuilderRef %builder2489, 0
   %handle2491 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle2492 = extractvalue %_Z12LLVMValueRef %call663, 0
-  %call2493 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2490, ptr %handle2491, ptr %handle2492, ptr @.str.2143)
+  %call2493 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2490, ptr %handle2491, ptr %handle2492, ptr @.str.2147)
   %load.struct2494 = load %_Z7Emitter, ptr %2, align 8
   %builder2495 = extractvalue %_Z7Emitter %load.struct2494, 5
   %handle2496 = extractvalue %_Z14LLVMBuilderRef %builder2495, 0
   %handle2497 = extractvalue %_Z12LLVMValueRef %call2493, 0
   %handle2498 = extractvalue %_Z12LLVMValueRef %call2487, 0
-  %call2499 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2496, ptr %handle2497, ptr %handle2498, ptr @.str.2144)
+  %call2499 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2496, ptr %handle2497, ptr %handle2498, ptr @.str.2148)
   %load.struct2500 = load %_Z7Emitter, ptr %2, align 8
   %builder2501 = extractvalue %_Z7Emitter %load.struct2500, 5
   %handle2502 = extractvalue %_Z14LLVMBuilderRef %builder2501, 0
   %call2503 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2504 = extractvalue %_Z12LLVMValueRef %call2499, 0
   %handle2505 = extractvalue %_Z12LLVMValueRef %call646, 0
-  %call2506 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2502, i64 %call2503, ptr %handle2504, ptr %handle2505, ptr @.str.2145)
+  %call2506 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2502, i64 %call2503, ptr %handle2504, ptr %handle2505, ptr @.str.2149)
   %load.struct2507 = load %_Z7Emitter, ptr %2, align 8
   %builder2508 = extractvalue %_Z7Emitter %load.struct2507, 5
   %handle2509 = extractvalue %_Z14LLVMBuilderRef %builder2508, 0
   %handle2510 = extractvalue %_Z12LLVMValueRef %call2506, 0
   %handle2511 = extractvalue %_Z12LLVMValueRef %call646, 0
   %handle2512 = extractvalue %_Z12LLVMValueRef %call2499, 0
-  %call2513 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2509, ptr %handle2510, ptr %handle2511, ptr %handle2512, ptr @.str.2146)
+  %call2513 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2509, ptr %handle2510, ptr %handle2511, ptr %handle2512, ptr @.str.2150)
   %load.struct2514 = load %_Z7Emitter, ptr %2, align 8
   %builder2515 = extractvalue %_Z7Emitter %load.struct2514, 5
   %handle2516 = extractvalue %_Z14LLVMBuilderRef %builder2515, 0
@@ -271188,14 +271457,14 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2523 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2524 = load %_Z12LLVMValueRef, ptr %sret.result712, align 8
   %handle2525 = extractvalue %_Z12LLVMValueRef %wrapper.load2524, 0
-  %call2526 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2522, ptr %handle2523, ptr %handle2525, ptr @.str.2147)
+  %call2526 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2522, ptr %handle2523, ptr %handle2525, ptr @.str.2151)
   %load.struct2527 = load %_Z7Emitter, ptr %2, align 8
   %builder2528 = extractvalue %_Z7Emitter %load.struct2527, 5
   %handle2529 = extractvalue %_Z14LLVMBuilderRef %builder2528, 0
   %call2530 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2531 = extractvalue %_Z12LLVMValueRef %call2526, 0
   %handle2532 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call2533 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2529, i64 %call2530, ptr %handle2531, ptr %handle2532, ptr @.str.2148)
+  %call2533 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2529, i64 %call2530, ptr %handle2531, ptr %handle2532, ptr @.str.2152)
   %load.struct2534 = load %_Z7Emitter, ptr %2, align 8
   %builder2535 = extractvalue %_Z7Emitter %load.struct2534, 5
   %handle2536 = extractvalue %_Z14LLVMBuilderRef %builder2535, 0
@@ -271217,39 +271486,39 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2551 = extractvalue %_Z11LLVMTypeRef %call605, 0
   %wrapper.load2552 = load %_Z12LLVMValueRef, ptr %sret.result606, align 8
   %handle2553 = extractvalue %_Z12LLVMValueRef %wrapper.load2552, 0
-  %call2554 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2550, ptr %handle2551, ptr %handle2553, ptr null, i64 0, ptr @.str.2149)
+  %call2554 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2550, ptr %handle2551, ptr %handle2553, ptr null, i64 0, ptr @.str.2153)
   %load.struct2555 = load %_Z7Emitter, ptr %2, align 8
   %builder2556 = extractvalue %_Z7Emitter %load.struct2555, 5
   %handle2557 = extractvalue %_Z14LLVMBuilderRef %builder2556, 0
   %handle2558 = extractvalue %_Z12LLVMValueRef %call2554, 0
   %handle2559 = extractvalue %_Z12LLVMValueRef %call2526, 0
-  %call2560 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle2557, ptr %handle2558, ptr %handle2559, ptr @.str.2150)
+  %call2560 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle2557, ptr %handle2558, ptr %handle2559, ptr @.str.2154)
   %load.struct2561 = load %_Z7Emitter, ptr %2, align 8
   %builder2562 = extractvalue %_Z7Emitter %load.struct2561, 5
   %handle2563 = extractvalue %_Z14LLVMBuilderRef %builder2562, 0
   %call2564 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2565 = extractvalue %_Z12LLVMValueRef %call2560, 0
   %handle2566 = extractvalue %_Z12LLVMValueRef %call652, 0
-  %call2567 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2563, i64 %call2564, ptr %handle2565, ptr %handle2566, ptr @.str.2151)
+  %call2567 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2563, i64 %call2564, ptr %handle2565, ptr %handle2566, ptr @.str.2155)
   %load.struct2568 = load %_Z7Emitter, ptr %2, align 8
   %builder2569 = extractvalue %_Z7Emitter %load.struct2568, 5
   %handle2570 = extractvalue %_Z14LLVMBuilderRef %builder2569, 0
   %handle2571 = extractvalue %_Z12LLVMValueRef %call2567, 0
   %handle2572 = extractvalue %_Z12LLVMValueRef %call652, 0
   %handle2573 = extractvalue %_Z12LLVMValueRef %call2560, 0
-  %call2574 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2570, ptr %handle2571, ptr %handle2572, ptr %handle2573, ptr @.str.2152)
+  %call2574 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2570, ptr %handle2571, ptr %handle2572, ptr %handle2573, ptr @.str.2156)
   %load.struct2575 = load %_Z7Emitter, ptr %2, align 8
   %builder2576 = extractvalue %_Z7Emitter %load.struct2575, 5
   %handle2577 = extractvalue %_Z14LLVMBuilderRef %builder2576, 0
   %handle2578 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle2579 = extractvalue %_Z12LLVMValueRef %call674, 0
-  %call2580 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2577, ptr %handle2578, ptr %handle2579, ptr @.str.2153)
+  %call2580 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2577, ptr %handle2578, ptr %handle2579, ptr @.str.2157)
   %load.struct2581 = load %_Z7Emitter, ptr %2, align 8
   %builder2582 = extractvalue %_Z7Emitter %load.struct2581, 5
   %handle2583 = extractvalue %_Z14LLVMBuilderRef %builder2582, 0
   %handle2584 = extractvalue %_Z12LLVMValueRef %call2580, 0
   %handle2585 = extractvalue %_Z12LLVMValueRef %call2574, 0
-  %call2586 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2583, ptr %handle2584, ptr %handle2585, ptr @.str.2154)
+  %call2586 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2583, ptr %handle2584, ptr %handle2585, ptr @.str.2158)
   %load.struct2587 = load %_Z7Emitter, ptr %2, align 8
   %builder2588 = extractvalue %_Z7Emitter %load.struct2587, 5
   %handle2589 = extractvalue %_Z14LLVMBuilderRef %builder2588, 0
@@ -271261,13 +271530,13 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2595 = extractvalue %_Z14LLVMBuilderRef %builder2594, 0
   %handle2596 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle2597 = extractvalue %_Z12LLVMValueRef %call685, 0
-  %call2598 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2595, ptr %handle2596, ptr %handle2597, ptr @.str.2155)
+  %call2598 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2595, ptr %handle2596, ptr %handle2597, ptr @.str.2159)
   %load.struct2599 = load %_Z7Emitter, ptr %2, align 8
   %builder2600 = extractvalue %_Z7Emitter %load.struct2599, 5
   %handle2601 = extractvalue %_Z14LLVMBuilderRef %builder2600, 0
   %handle2602 = extractvalue %_Z12LLVMValueRef %call2598, 0
   %handle2603 = extractvalue %_Z12LLVMValueRef %call2460, 0
-  %call2604 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2601, ptr %handle2602, ptr %handle2603, ptr @.str.2156)
+  %call2604 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2601, ptr %handle2602, ptr %handle2603, ptr @.str.2160)
   %load.struct2605 = load %_Z7Emitter, ptr %2, align 8
   %builder2606 = extractvalue %_Z7Emitter %load.struct2605, 5
   %handle2607 = extractvalue %_Z14LLVMBuilderRef %builder2606, 0
@@ -271280,20 +271549,20 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %call2614 = call i64 @_ZN16LLVMIntPredicate3SGEEv()
   %handle2615 = extractvalue %_Z12LLVMValueRef %call2586, 0
   %handle2616 = extractvalue %_Z12LLVMValueRef %call648, 0
-  %call2617 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2613, i64 %call2614, ptr %handle2615, ptr %handle2616, ptr @.str.2157)
+  %call2617 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2613, i64 %call2614, ptr %handle2615, ptr %handle2616, ptr @.str.2161)
   %load.struct2618 = load %_Z7Emitter, ptr %2, align 8
   %builder2619 = extractvalue %_Z7Emitter %load.struct2618, 5
   %handle2620 = extractvalue %_Z14LLVMBuilderRef %builder2619, 0
   %call2621 = call i64 @_ZN16LLVMIntPredicate3SGEEv()
   %handle2622 = extractvalue %_Z12LLVMValueRef %call2604, 0
   %handle2623 = extractvalue %_Z12LLVMValueRef %call650, 0
-  %call2624 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2620, i64 %call2621, ptr %handle2622, ptr %handle2623, ptr @.str.2158)
+  %call2624 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2620, i64 %call2621, ptr %handle2622, ptr %handle2623, ptr @.str.2162)
   %load.struct2625 = load %_Z7Emitter, ptr %2, align 8
   %builder2626 = extractvalue %_Z7Emitter %load.struct2625, 5
   %handle2627 = extractvalue %_Z14LLVMBuilderRef %builder2626, 0
   %handle2628 = extractvalue %_Z12LLVMValueRef %call2617, 0
   %handle2629 = extractvalue %_Z12LLVMValueRef %call2624, 0
-  %call2630 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle2627, ptr %handle2628, ptr %handle2629, ptr @.str.2159)
+  %call2630 = call %_Z12LLVMValueRef @LLVMBuildAnd(ptr %handle2627, ptr %handle2628, ptr %handle2629, ptr @.str.2163)
   %load.struct2631 = load %_Z7Emitter, ptr %2, align 8
   %builder2632 = extractvalue %_Z7Emitter %load.struct2631, 5
   %handle2633 = extractvalue %_Z14LLVMBuilderRef %builder2632, 0
@@ -271314,27 +271583,27 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2647 = extractvalue %_Z14LLVMBuilderRef %builder2646, 0
   %handle2648 = extractvalue %_Z12LLVMValueRef %call2586, 0
   %handle2649 = extractvalue %_Z12LLVMValueRef %call632, 0
-  %call2650 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle2647, ptr %handle2648, ptr %handle2649, ptr @.str.2160)
+  %call2650 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle2647, ptr %handle2648, ptr %handle2649, ptr @.str.2164)
   %load.struct2651 = load %_Z7Emitter, ptr %2, align 8
   %builder2652 = extractvalue %_Z7Emitter %load.struct2651, 5
   %handle2653 = extractvalue %_Z14LLVMBuilderRef %builder2652, 0
   %handle2654 = extractvalue %_Z12LLVMValueRef %call2650, 0
   %handle2655 = extractvalue %_Z12LLVMValueRef %call2604, 0
-  %call2656 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle2653, ptr %handle2654, ptr %handle2655, ptr @.str.2161)
+  %call2656 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle2653, ptr %handle2654, ptr %handle2655, ptr @.str.2165)
   %load.struct2657 = load %_Z7Emitter, ptr %2, align 8
   %builder2658 = extractvalue %_Z7Emitter %load.struct2657, 5
   %handle2659 = extractvalue %_Z14LLVMBuilderRef %builder2658, 0
   %call2660 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2661 = extractvalue %_Z12LLVMValueRef %call2656, 0
   %handle2662 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call2663 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2659, i64 %call2660, ptr %handle2661, ptr %handle2662, ptr @.str.2162)
+  %call2663 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2659, i64 %call2660, ptr %handle2661, ptr %handle2662, ptr @.str.2166)
   %load.struct2664 = load %_Z7Emitter, ptr %2, align 8
   %builder2665 = extractvalue %_Z7Emitter %load.struct2664, 5
   %handle2666 = extractvalue %_Z14LLVMBuilderRef %builder2665, 0
   %handle2667 = extractvalue %_Z12LLVMValueRef %call2663, 0
   %handle2668 = extractvalue %_Z12LLVMValueRef %call2656, 0
   %handle2669 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call2670 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2666, ptr %handle2667, ptr %handle2668, ptr %handle2669, ptr @.str.2163)
+  %call2670 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2666, ptr %handle2667, ptr %handle2668, ptr %handle2669, ptr @.str.2167)
   %load.struct2671 = load %_Z7Emitter, ptr %2, align 8
   %builder2672 = extractvalue %_Z7Emitter %load.struct2671, 5
   %handle2673 = extractvalue %_Z14LLVMBuilderRef %builder2672, 0
@@ -271359,124 +271628,124 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2691 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2692 = load %_Z12LLVMValueRef, ptr %sret.result705, align 8
   %handle2693 = extractvalue %_Z12LLVMValueRef %wrapper.load2692, 0
-  %call2694 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2690, ptr %handle2691, ptr %handle2693, ptr @.str.2164)
+  %call2694 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2690, ptr %handle2691, ptr %handle2693, ptr @.str.2168)
   %load.struct2695 = load %_Z7Emitter, ptr %2, align 8
   %builder2696 = extractvalue %_Z7Emitter %load.struct2695, 5
   %handle2697 = extractvalue %_Z14LLVMBuilderRef %builder2696, 0
   %handle2698 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2699 = load %_Z12LLVMValueRef, ptr %sret.result706, align 8
   %handle2700 = extractvalue %_Z12LLVMValueRef %wrapper.load2699, 0
-  %call2701 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2697, ptr %handle2698, ptr %handle2700, ptr @.str.2165)
+  %call2701 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2697, ptr %handle2698, ptr %handle2700, ptr @.str.2169)
   %load.struct2702 = load %_Z7Emitter, ptr %2, align 8
   %builder2703 = extractvalue %_Z7Emitter %load.struct2702, 5
   %handle2704 = extractvalue %_Z14LLVMBuilderRef %builder2703, 0
   %handle2705 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2706 = load %_Z12LLVMValueRef, ptr %sret.result707, align 8
   %handle2707 = extractvalue %_Z12LLVMValueRef %wrapper.load2706, 0
-  %call2708 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2704, ptr %handle2705, ptr %handle2707, ptr @.str.2166)
+  %call2708 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2704, ptr %handle2705, ptr %handle2707, ptr @.str.2170)
   %load.struct2709 = load %_Z7Emitter, ptr %2, align 8
   %builder2710 = extractvalue %_Z7Emitter %load.struct2709, 5
   %handle2711 = extractvalue %_Z14LLVMBuilderRef %builder2710, 0
   %handle2712 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %wrapper.load2713 = load %_Z12LLVMValueRef, ptr %sret.result709, align 8
   %handle2714 = extractvalue %_Z12LLVMValueRef %wrapper.load2713, 0
-  %call2715 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2711, ptr %handle2712, ptr %handle2714, ptr @.str.2167)
+  %call2715 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2711, ptr %handle2712, ptr %handle2714, ptr @.str.2171)
   %load.struct2716 = load %_Z7Emitter, ptr %2, align 8
   %builder2717 = extractvalue %_Z7Emitter %load.struct2716, 5
   %handle2718 = extractvalue %_Z14LLVMBuilderRef %builder2717, 0
   %handle2719 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %wrapper.load2720 = load %_Z12LLVMValueRef, ptr %sret.result710, align 8
   %handle2721 = extractvalue %_Z12LLVMValueRef %wrapper.load2720, 0
-  %call2722 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2718, ptr %handle2719, ptr %handle2721, ptr @.str.2168)
+  %call2722 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2718, ptr %handle2719, ptr %handle2721, ptr @.str.2172)
   %load.struct2723 = load %_Z7Emitter, ptr %2, align 8
   %builder2724 = extractvalue %_Z7Emitter %load.struct2723, 5
   %handle2725 = extractvalue %_Z14LLVMBuilderRef %builder2724, 0
   %handle2726 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %wrapper.load2727 = load %_Z12LLVMValueRef, ptr %sret.result708, align 8
   %handle2728 = extractvalue %_Z12LLVMValueRef %wrapper.load2727, 0
-  %call2729 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2725, ptr %handle2726, ptr %handle2728, ptr @.str.2169)
+  %call2729 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2725, ptr %handle2726, ptr %handle2728, ptr @.str.2173)
   %load.struct2730 = load %_Z7Emitter, ptr %2, align 8
   %builder2731 = extractvalue %_Z7Emitter %load.struct2730, 5
   %handle2732 = extractvalue %_Z14LLVMBuilderRef %builder2731, 0
   %call2733 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2734 = extractvalue %_Z12LLVMValueRef %call2708, 0
   %handle2735 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call2736 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2732, i64 %call2733, ptr %handle2734, ptr %handle2735, ptr @.str.2170)
+  %call2736 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2732, i64 %call2733, ptr %handle2734, ptr %handle2735, ptr @.str.2174)
   %load.struct2737 = load %_Z7Emitter, ptr %2, align 8
   %builder2738 = extractvalue %_Z7Emitter %load.struct2737, 5
   %handle2739 = extractvalue %_Z14LLVMBuilderRef %builder2738, 0
   %handle2740 = extractvalue %_Z12LLVMValueRef %call2736, 0
   %handle2741 = extractvalue %_Z12LLVMValueRef %call2708, 0
   %handle2742 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call2743 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2739, ptr %handle2740, ptr %handle2741, ptr %handle2742, ptr @.str.2171)
+  %call2743 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2739, ptr %handle2740, ptr %handle2741, ptr %handle2742, ptr @.str.2175)
   %load.struct2744 = load %_Z7Emitter, ptr %2, align 8
   %builder2745 = extractvalue %_Z7Emitter %load.struct2744, 5
   %handle2746 = extractvalue %_Z14LLVMBuilderRef %builder2745, 0
   %handle2747 = extractvalue %_Z12LLVMValueRef %call640, 0
   %handle2748 = extractvalue %_Z12LLVMValueRef %call2743, 0
-  %call2749 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle2746, ptr %handle2747, ptr %handle2748, ptr @.str.2172)
+  %call2749 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle2746, ptr %handle2747, ptr %handle2748, ptr @.str.2176)
   %load.struct2750 = load %_Z7Emitter, ptr %2, align 8
   %builder2751 = extractvalue %_Z7Emitter %load.struct2750, 5
   %handle2752 = extractvalue %_Z14LLVMBuilderRef %builder2751, 0
   %handle2753 = extractvalue %_Z12LLVMValueRef %call2701, 0
   %handle2754 = extractvalue %_Z12LLVMValueRef %call2694, 0
-  %call2755 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle2752, ptr %handle2753, ptr %handle2754, ptr @.str.2173)
+  %call2755 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle2752, ptr %handle2753, ptr %handle2754, ptr @.str.2177)
   %load.struct2756 = load %_Z7Emitter, ptr %2, align 8
   %builder2757 = extractvalue %_Z7Emitter %load.struct2756, 5
   %handle2758 = extractvalue %_Z14LLVMBuilderRef %builder2757, 0
   %handle2759 = extractvalue %_Z11LLVMTypeRef %call602, 0
   %wrapper.load2760 = load %_Z12LLVMValueRef, ptr %sret.result603, align 8
   %handle2761 = extractvalue %_Z12LLVMValueRef %wrapper.load2760, 0
-  %call2762 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2758, ptr %handle2759, ptr %handle2761, ptr null, i64 0, ptr @.str.2174)
+  %call2762 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2758, ptr %handle2759, ptr %handle2761, ptr null, i64 0, ptr @.str.2178)
   %load.struct2763 = load %_Z7Emitter, ptr %2, align 8
   %builder2764 = extractvalue %_Z7Emitter %load.struct2763, 5
   %handle2765 = extractvalue %_Z14LLVMBuilderRef %builder2764, 0
   %handle2766 = extractvalue %_Z12LLVMValueRef %call2762, 0
   %handle2767 = extractvalue %_Z12LLVMValueRef %call642, 0
-  %call2768 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2765, ptr %handle2766, ptr %handle2767, ptr @.str.2175)
+  %call2768 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2765, ptr %handle2766, ptr %handle2767, ptr @.str.2179)
   %load.struct2769 = load %_Z7Emitter, ptr %2, align 8
   %builder2770 = extractvalue %_Z7Emitter %load.struct2769, 5
   %handle2771 = extractvalue %_Z14LLVMBuilderRef %builder2770, 0
   %handle2772 = extractvalue %_Z12LLVMValueRef %call2755, 0
   %handle2773 = extractvalue %_Z12LLVMValueRef %call2768, 0
-  %call2774 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle2771, ptr %handle2772, ptr %handle2773, ptr @.str.2176)
+  %call2774 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle2771, ptr %handle2772, ptr %handle2773, ptr @.str.2180)
   %load.struct2775 = load %_Z7Emitter, ptr %2, align 8
   %builder2776 = extractvalue %_Z7Emitter %load.struct2775, 5
   %handle2777 = extractvalue %_Z14LLVMBuilderRef %builder2776, 0
   %call2778 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2779 = extractvalue %_Z12LLVMValueRef %call2749, 0
   %handle2780 = extractvalue %_Z12LLVMValueRef %call2774, 0
-  %call2781 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2777, i64 %call2778, ptr %handle2779, ptr %handle2780, ptr @.str.2177)
+  %call2781 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2777, i64 %call2778, ptr %handle2779, ptr %handle2780, ptr @.str.2181)
   %load.struct2782 = load %_Z7Emitter, ptr %2, align 8
   %builder2783 = extractvalue %_Z7Emitter %load.struct2782, 5
   %handle2784 = extractvalue %_Z14LLVMBuilderRef %builder2783, 0
   %handle2785 = extractvalue %_Z12LLVMValueRef %call2781, 0
   %handle2786 = extractvalue %_Z12LLVMValueRef %call2749, 0
   %handle2787 = extractvalue %_Z12LLVMValueRef %call2774, 0
-  %call2788 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2784, ptr %handle2785, ptr %handle2786, ptr %handle2787, ptr @.str.2178)
+  %call2788 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2784, ptr %handle2785, ptr %handle2786, ptr %handle2787, ptr @.str.2182)
   %load.struct2789 = load %_Z7Emitter, ptr %2, align 8
   %builder2790 = extractvalue %_Z7Emitter %load.struct2789, 5
   %handle2791 = extractvalue %_Z14LLVMBuilderRef %builder2790, 0
   %call2792 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle2793 = extractvalue %_Z12LLVMValueRef %call2788, 0
   %handle2794 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call2795 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2791, i64 %call2792, ptr %handle2793, ptr %handle2794, ptr @.str.2179)
+  %call2795 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2791, i64 %call2792, ptr %handle2793, ptr %handle2794, ptr @.str.2183)
   %load.struct2796 = load %_Z7Emitter, ptr %2, align 8
   %builder2797 = extractvalue %_Z7Emitter %load.struct2796, 5
   %handle2798 = extractvalue %_Z14LLVMBuilderRef %builder2797, 0
   %handle2799 = extractvalue %_Z12LLVMValueRef %call2795, 0
   %handle2800 = extractvalue %_Z12LLVMValueRef %call2788, 0
   %handle2801 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call2802 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2798, ptr %handle2799, ptr %handle2800, ptr %handle2801, ptr @.str.2180)
+  %call2802 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2798, ptr %handle2799, ptr %handle2800, ptr %handle2801, ptr @.str.2184)
   %load.struct2803 = load %_Z7Emitter, ptr %2, align 8
   %builder2804 = extractvalue %_Z7Emitter %load.struct2803, 5
   %handle2805 = extractvalue %_Z14LLVMBuilderRef %builder2804, 0
   %handle2806 = extractvalue %_Z11LLVMTypeRef %call553, 0
   %wrapper.load2807 = load %_Z12LLVMValueRef, ptr %sret.result554, align 8
   %handle2808 = extractvalue %_Z12LLVMValueRef %wrapper.load2807, 0
-  %call2809 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2805, ptr %handle2806, ptr %handle2808, ptr null, i64 0, ptr @.str.2181)
+  %call2809 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2805, ptr %handle2806, ptr %handle2808, ptr null, i64 0, ptr @.str.2185)
   store %_Z11LLVMTypeRef %call27, ptr %sret.result1439, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %n64, ptr %1, ptr %2, ptr %sret.result1439, ptr @.str.2182)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %n64, ptr %1, ptr %2, ptr %sret.result1439, ptr @.str.2186)
   %load.struct2810 = load %_Z7Emitter, ptr %2, align 8
   %builder2811 = extractvalue %_Z7Emitter %load.struct2810, 5
   %handle2812 = extractvalue %_Z14LLVMBuilderRef %builder2811, 0
@@ -271484,11 +271753,11 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %wrapper.load2814 = load %_Z12LLVMValueRef, ptr %n64, align 8
   %handle2815 = extractvalue %_Z12LLVMValueRef %wrapper.load2814, 0
   %call2816 = call %_Z12LLVMValueRef @LLVMBuildStore(ptr %handle2812, ptr %handle2813, ptr %handle2815)
-  store { ptr } { ptr @.sconst.2183 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.2187 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result783, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2184 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.2188 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result784, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2185 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.2189 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result785, ptr %1, ptr %2, ptr %deref.tmp)
   %load.struct2817 = load %_Z7Emitter, ptr %2, align 8
   %builder2818 = extractvalue %_Z7Emitter %load.struct2817, 5
@@ -271508,14 +271777,14 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2831 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2832 = load %_Z12LLVMValueRef, ptr %n64, align 8
   %handle2833 = extractvalue %_Z12LLVMValueRef %wrapper.load2832, 0
-  %call2834 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2830, ptr %handle2831, ptr %handle2833, ptr @.str.2186)
+  %call2834 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2830, ptr %handle2831, ptr %handle2833, ptr @.str.2190)
   %load.struct2835 = load %_Z7Emitter, ptr %2, align 8
   %builder2836 = extractvalue %_Z7Emitter %load.struct2835, 5
   %handle2837 = extractvalue %_Z14LLVMBuilderRef %builder2836, 0
   %call2838 = call i64 @_ZN16LLVMIntPredicate3SLTEv()
   %handle2839 = extractvalue %_Z12LLVMValueRef %call2834, 0
   %handle2840 = extractvalue %_Z12LLVMValueRef %call2701, 0
-  %call2841 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2837, i64 %call2838, ptr %handle2839, ptr %handle2840, ptr @.str.2187)
+  %call2841 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2837, i64 %call2838, ptr %handle2839, ptr %handle2840, ptr @.str.2191)
   %load.struct2842 = load %_Z7Emitter, ptr %2, align 8
   %builder2843 = extractvalue %_Z7Emitter %load.struct2842, 5
   %handle2844 = extractvalue %_Z14LLVMBuilderRef %builder2843, 0
@@ -271536,21 +271805,21 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %handle2858 = extractvalue %_Z14LLVMBuilderRef %builder2857, 0
   %handle2859 = extractvalue %_Z12LLVMValueRef %call2834, 0
   %handle2860 = extractvalue %_Z12LLVMValueRef %call2802, 0
-  %call2861 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2858, ptr %handle2859, ptr %handle2860, ptr @.str.2188)
+  %call2861 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2858, ptr %handle2859, ptr %handle2860, ptr @.str.2192)
   %load.struct2862 = load %_Z7Emitter, ptr %2, align 8
   %builder2863 = extractvalue %_Z7Emitter %load.struct2862, 5
   %handle2864 = extractvalue %_Z14LLVMBuilderRef %builder2863, 0
   %call2865 = call i64 @_ZN16LLVMIntPredicate3SLTEv()
   %handle2866 = extractvalue %_Z12LLVMValueRef %call2861, 0
   %handle2867 = extractvalue %_Z12LLVMValueRef %call2701, 0
-  %call2868 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2864, i64 %call2865, ptr %handle2866, ptr %handle2867, ptr @.str.2189)
+  %call2868 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2864, i64 %call2865, ptr %handle2866, ptr %handle2867, ptr @.str.2193)
   %load.struct2869 = load %_Z7Emitter, ptr %2, align 8
   %builder2870 = extractvalue %_Z7Emitter %load.struct2869, 5
   %handle2871 = extractvalue %_Z14LLVMBuilderRef %builder2870, 0
   %handle2872 = extractvalue %_Z12LLVMValueRef %call2868, 0
   %handle2873 = extractvalue %_Z12LLVMValueRef %call2861, 0
   %handle2874 = extractvalue %_Z12LLVMValueRef %call2701, 0
-  %call2875 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2871, ptr %handle2872, ptr %handle2873, ptr %handle2874, ptr @.str.2190)
+  %call2875 = call %_Z12LLVMValueRef @LLVMBuildSelect(ptr %handle2871, ptr %handle2872, ptr %handle2873, ptr %handle2874, ptr @.str.2194)
   %struct.region2876 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region2876, i64 3)
   store ptr %struct.region2876, ptr %hf_pget_args, align 1
@@ -271572,7 +271841,7 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
   %sb_alloc_args2885 = load ptr, ptr %hf_pget_args, align 8
   %load.struct2886 = load %_Z6VectorI12LLVMValueRefE, ptr %sb_alloc_args2885, align 8
   %data2887 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct2886, 1
-  %call2888 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2881, ptr %handle2882, ptr %handle2884, ptr %data2887, i64 3, ptr @.str.2191)
+  %call2888 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2881, ptr %handle2882, ptr %handle2884, ptr %data2887, i64 3, ptr @.str.2195)
   store i64 0, ptr %sb_fi, align 1
   %load.struct2889 = load %_Z10PlannedFor, ptr %3, align 8
   %is_iterator_loop2890 = extractvalue %_Z10PlannedFor %load.struct2889, 4
@@ -271580,7 +271849,7 @@ if.end1408:                                       ; preds = %if.end1712, %if.end
 
 if.then1417:                                      ; preds = %if.then1407
   store %_Z11LLVMTypeRef %call1412, ptr %arg.tmp600, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %il_bind, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.2057)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %il_bind, ptr %1, ptr %2, ptr %arg.tmp600, ptr @.str.2061)
   %set.load = load %_Z12LLVMValueRef, ptr %il_bind, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %n64, ptr align 1 %il_bind, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   %load.struct1419 = load %_Z7Emitter, ptr %2, align 8
@@ -271615,8 +271884,8 @@ if.then1434:                                      ; preds = %if.end1418
 if.end1435:                                       ; preds = %if.end1418
   %field.inplace1440 = getelementptr inbounds %_Z10PlannedFor, ptr %3, i32 0, i32 6
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result1439, ptr %1, ptr %2, ptr %field.inplace1440)
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple1436, ptr %1, ptr %2, ptr %sret.result1439, ptr @.str.2058)
-  store { ptr } { ptr @.sconst.2059 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple1436, ptr %1, ptr %2, ptr %sret.result1439, ptr @.str.2062)
+  store { ptr } { ptr @.sconst.2063 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter15lookup_variableEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result1441, ptr %1, ptr %2, ptr %deref.tmp)
   %binding.load1442 = load %_Z12LLVMValueRef, ptr %sret.result1441, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %page_arg, ptr align 1 %sret.result1441, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
@@ -271718,42 +271987,42 @@ if.end1490:                                       ; preds = %if.end1454
   %call1502 = call %_Z11LLVMTypeRef @LLVMFunctionType(ptr %handle1498, ptr %data1501, i64 1, i64 0)
   %handle1503 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %call1504 = call %_Z12LLVMValueRef @LLVMConstNull(ptr %handle1503)
-  store { ptr } { ptr @.sconst.2060 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result783, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2061 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result784, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2062 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result785, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2063 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result786, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2064 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result787, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result783, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2065 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result788, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result784, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2066 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result789, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result785, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2067 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result790, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result786, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2068 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result791, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result787, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2069 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result792, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result788, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2070 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result793, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result789, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2071 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result794, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result790, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2072 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result795, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result791, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2073 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result796, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result792, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2074 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result793, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2075 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result794, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2076 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result795, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2077 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result796, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2078 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result797, ptr %1, ptr %2, ptr %deref.tmp)
   %load.struct1505 = load %_Z7Emitter, ptr %2, align 8
   %builder1506 = extractvalue %_Z7Emitter %load.struct1505, 5
   %handle1507 = extractvalue %_Z14LLVMBuilderRef %builder1506, 0
   %handle1508 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle1509 = extractvalue %_Z12LLVMValueRef %call696, 0
-  %call1510 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1507, ptr %handle1508, ptr %handle1509, ptr @.str.2075)
+  %call1510 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1507, ptr %handle1508, ptr %handle1509, ptr @.str.2079)
   %load.struct1511 = load %_Z7Emitter, ptr %2, align 8
   %builder1512 = extractvalue %_Z7Emitter %load.struct1511, 5
   %handle1513 = extractvalue %_Z14LLVMBuilderRef %builder1512, 0
@@ -271767,7 +272036,7 @@ if.end1490:                                       ; preds = %if.end1454
   %call1521 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle1522 = extractvalue %_Z12LLVMValueRef %call1510, 0
   %handle1523 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call1524 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1520, i64 %call1521, ptr %handle1522, ptr %handle1523, ptr @.str.2076)
+  %call1524 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1520, i64 %call1521, ptr %handle1522, ptr %handle1523, ptr @.str.2080)
   %load.struct1525 = load %_Z7Emitter, ptr %2, align 8
   %builder1526 = extractvalue %_Z7Emitter %load.struct1525, 5
   %handle1527 = extractvalue %_Z14LLVMBuilderRef %builder1526, 0
@@ -271788,7 +272057,7 @@ if.end1490:                                       ; preds = %if.end1454
   %handle1541 = extractvalue %_Z14LLVMBuilderRef %builder1540, 0
   %handle1542 = extractvalue %_Z12LLVMValueRef %call654, 0
   %handle1543 = extractvalue %_Z12LLVMValueRef %call1510, 0
-  %call1544 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle1541, ptr %handle1542, ptr %handle1543, ptr @.str.2077)
+  %call1544 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle1541, ptr %handle1542, ptr %handle1543, ptr @.str.2081)
   %load.struct1545 = load %_Z7Emitter, ptr %2, align 8
   %builder1546 = extractvalue %_Z7Emitter %load.struct1545, 5
   %handle1547 = extractvalue %_Z14LLVMBuilderRef %builder1546, 0
@@ -271813,14 +272082,14 @@ if.end1490:                                       ; preds = %if.end1454
   %handle1565 = extractvalue %_Z14LLVMBuilderRef %builder1564, 0
   %handle1566 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %handle1567 = extractvalue %_Z12LLVMValueRef %call663, 0
-  %call1568 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1565, ptr %handle1566, ptr %handle1567, ptr @.str.2078)
+  %call1568 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1565, ptr %handle1566, ptr %handle1567, ptr @.str.2082)
   %load.struct1569 = load %_Z7Emitter, ptr %2, align 8
   %builder1570 = extractvalue %_Z7Emitter %load.struct1569, 5
   %handle1571 = extractvalue %_Z14LLVMBuilderRef %builder1570, 0
   %call1572 = call i64 @_ZN16LLVMIntPredicate3SGEEv()
   %handle1573 = extractvalue %_Z12LLVMValueRef %call1568, 0
   %handle1574 = extractvalue %_Z12LLVMValueRef %call644, 0
-  %call1575 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1571, i64 %call1572, ptr %handle1573, ptr %handle1574, ptr @.str.2079)
+  %call1575 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1571, i64 %call1572, ptr %handle1573, ptr %handle1574, ptr @.str.2083)
   %load.struct1576 = load %_Z7Emitter, ptr %2, align 8
   %builder1577 = extractvalue %_Z7Emitter %load.struct1576, 5
   %handle1578 = extractvalue %_Z14LLVMBuilderRef %builder1577, 0
@@ -271842,7 +272111,7 @@ if.end1490:                                       ; preds = %if.end1454
   %handle1593 = extractvalue %_Z11LLVMTypeRef %call605, 0
   %wrapper.load1594 = load %_Z12LLVMValueRef, ptr %sret.result606, align 8
   %handle1595 = extractvalue %_Z12LLVMValueRef %wrapper.load1594, 0
-  %call1596 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1592, ptr %handle1593, ptr %handle1595, ptr null, i64 0, ptr @.str.2080)
+  %call1596 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1592, ptr %handle1593, ptr %handle1595, ptr null, i64 0, ptr @.str.2084)
   %load.struct1597 = load %_Z7Emitter, ptr %2, align 8
   %builder1598 = extractvalue %_Z7Emitter %load.struct1597, 5
   %handle1599 = extractvalue %_Z14LLVMBuilderRef %builder1598, 0
@@ -271870,14 +272139,14 @@ if.end1490:                                       ; preds = %if.end1454
   %next_args1620 = load ptr, ptr %next_args, align 8
   %load.struct1621 = load %_Z6VectorI12LLVMValueRefE, ptr %next_args1620, align 8
   %data1622 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct1621, 1
-  %call1623 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1617, ptr %handle1618, ptr %handle1619, ptr %data1622, i64 1, ptr @.str.2081)
+  %call1623 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1617, ptr %handle1618, ptr %handle1619, ptr %data1622, i64 1, ptr @.str.2085)
   %load.struct1624 = load %_Z7Emitter, ptr %2, align 8
   %builder1625 = extractvalue %_Z7Emitter %load.struct1624, 5
   %handle1626 = extractvalue %_Z14LLVMBuilderRef %builder1625, 0
   %call1627 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle1628 = extractvalue %_Z12LLVMValueRef %call1623, 0
   %handle1629 = extractvalue %_Z12LLVMValueRef %call1504, 0
-  %call1630 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1626, i64 %call1627, ptr %handle1628, ptr %handle1629, ptr @.str.2082)
+  %call1630 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1626, i64 %call1627, ptr %handle1628, ptr %handle1629, ptr @.str.2086)
   %load.struct1631 = load %_Z7Emitter, ptr %2, align 8
   %builder1632 = extractvalue %_Z7Emitter %load.struct1631, 5
   %handle1633 = extractvalue %_Z14LLVMBuilderRef %builder1632, 0
@@ -271899,21 +272168,21 @@ if.end1490:                                       ; preds = %if.end1454
   %handle1648 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1649 = load %_Z12LLVMValueRef, ptr %sret.result701, align 8
   %handle1650 = extractvalue %_Z12LLVMValueRef %wrapper.load1649, 0
-  %call1651 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1647, ptr %handle1648, ptr %handle1650, ptr @.str.2083)
+  %call1651 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1647, ptr %handle1648, ptr %handle1650, ptr @.str.2087)
   %load.struct1652 = load %_Z7Emitter, ptr %2, align 8
   %builder1653 = extractvalue %_Z7Emitter %load.struct1652, 5
   %handle1654 = extractvalue %_Z14LLVMBuilderRef %builder1653, 0
   %handle1655 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1656 = load %_Z12LLVMValueRef, ptr %sret.result702, align 8
   %handle1657 = extractvalue %_Z12LLVMValueRef %wrapper.load1656, 0
-  %call1658 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1654, ptr %handle1655, ptr %handle1657, ptr @.str.2084)
+  %call1658 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1654, ptr %handle1655, ptr %handle1657, ptr @.str.2088)
   %load.struct1659 = load %_Z7Emitter, ptr %2, align 8
   %builder1660 = extractvalue %_Z7Emitter %load.struct1659, 5
   %handle1661 = extractvalue %_Z14LLVMBuilderRef %builder1660, 0
   %call1662 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle1663 = extractvalue %_Z12LLVMValueRef %call1651, 0
   %handle1664 = extractvalue %_Z12LLVMValueRef %call1658, 0
-  %call1665 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1661, i64 %call1662, ptr %handle1663, ptr %handle1664, ptr @.str.2085)
+  %call1665 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1661, i64 %call1662, ptr %handle1663, ptr %handle1664, ptr @.str.2089)
   %load.struct1666 = load %_Z7Emitter, ptr %2, align 8
   %builder1667 = extractvalue %_Z7Emitter %load.struct1666, 5
   %handle1668 = extractvalue %_Z14LLVMBuilderRef %builder1667, 0
@@ -271995,13 +272264,13 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1727 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1728 = load %_Z12LLVMValueRef, ptr %sret.result701, align 8
   %handle1729 = extractvalue %_Z12LLVMValueRef %wrapper.load1728, 0
-  %call1730 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1726, ptr %handle1727, ptr %handle1729, ptr @.str.2086)
+  %call1730 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1726, ptr %handle1727, ptr %handle1729, ptr @.str.2090)
   %load.struct1731 = load %_Z7Emitter, ptr %2, align 8
   %builder1732 = extractvalue %_Z7Emitter %load.struct1731, 5
   %handle1733 = extractvalue %_Z14LLVMBuilderRef %builder1732, 0
   %handle1734 = extractvalue %_Z12LLVMValueRef %call1730, 0
   %handle1735 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call1736 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle1733, ptr %handle1734, ptr %handle1735, ptr @.str.2087)
+  %call1736 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle1733, ptr %handle1734, ptr %handle1735, ptr @.str.2091)
   %load.struct1737 = load %_Z7Emitter, ptr %2, align 8
   %builder1738 = extractvalue %_Z7Emitter %load.struct1737, 5
   %handle1739 = extractvalue %_Z14LLVMBuilderRef %builder1738, 0
@@ -272027,14 +272296,14 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1758 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1759 = load %_Z12LLVMValueRef, ptr %sret.result711, align 8
   %handle1760 = extractvalue %_Z12LLVMValueRef %wrapper.load1759, 0
-  %call1761 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1757, ptr %handle1758, ptr %handle1760, ptr @.str.2088)
+  %call1761 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1757, ptr %handle1758, ptr %handle1760, ptr @.str.2092)
   %load.struct1762 = load %_Z7Emitter, ptr %2, align 8
   %builder1763 = extractvalue %_Z7Emitter %load.struct1762, 5
   %handle1764 = extractvalue %_Z14LLVMBuilderRef %builder1763, 0
   %call1765 = call i64 @_ZN16LLVMIntPredicate3SGTEv()
   %handle1766 = extractvalue %_Z12LLVMValueRef %call1761, 0
   %handle1767 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call1768 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1764, i64 %call1765, ptr %handle1766, ptr %handle1767, ptr @.str.2089)
+  %call1768 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1764, i64 %call1765, ptr %handle1766, ptr %handle1767, ptr @.str.2093)
   %load.struct1769 = load %_Z7Emitter, ptr %2, align 8
   %builder1770 = extractvalue %_Z7Emitter %load.struct1769, 5
   %handle1771 = extractvalue %_Z14LLVMBuilderRef %builder1770, 0
@@ -272075,21 +272344,21 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1804 = extractvalue %_Z11LLVMTypeRef %call605, 0
   %wrapper.load1805 = load %_Z12LLVMValueRef, ptr %sret.result606, align 8
   %handle1806 = extractvalue %_Z12LLVMValueRef %wrapper.load1805, 0
-  %call1807 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1803, ptr %handle1804, ptr %handle1806, ptr null, i64 0, ptr @.str.2090)
+  %call1807 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1803, ptr %handle1804, ptr %handle1806, ptr null, i64 0, ptr @.str.2094)
   %load.struct1808 = load %_Z7Emitter, ptr %2, align 8
   %builder1809 = extractvalue %_Z7Emitter %load.struct1808, 5
   %handle1810 = extractvalue %_Z14LLVMBuilderRef %builder1809, 0
   %handle1811 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1812 = load %_Z12LLVMValueRef, ptr %sret.result703, align 8
   %handle1813 = extractvalue %_Z12LLVMValueRef %wrapper.load1812, 0
-  %call1814 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1810, ptr %handle1811, ptr %handle1813, ptr @.str.2091)
+  %call1814 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1810, ptr %handle1811, ptr %handle1813, ptr @.str.2095)
   %load.struct1815 = load %_Z7Emitter, ptr %2, align 8
   %builder1816 = extractvalue %_Z7Emitter %load.struct1815, 5
   %handle1817 = extractvalue %_Z14LLVMBuilderRef %builder1816, 0
   %call1818 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle1819 = extractvalue %_Z12LLVMValueRef %call1814, 0
   %handle1820 = extractvalue %_Z12LLVMValueRef %call626, 0
-  %call1821 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1817, i64 %call1818, ptr %handle1819, ptr %handle1820, ptr @.str.2092)
+  %call1821 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1817, i64 %call1818, ptr %handle1819, ptr %handle1820, ptr @.str.2096)
   %load.struct1822 = load %_Z7Emitter, ptr %2, align 8
   %builder1823 = extractvalue %_Z7Emitter %load.struct1822, 5
   %handle1824 = extractvalue %_Z14LLVMBuilderRef %builder1823, 0
@@ -272124,7 +272393,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1852 = extractvalue %_Z14LLVMBuilderRef %builder1851, 0
   %handle1853 = extractvalue %_Z12LLVMValueRef %call1651, 0
   %handle1854 = extractvalue %_Z12LLVMValueRef %call630, 0
-  %call1855 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1852, ptr %handle1853, ptr %handle1854, ptr @.str.2093)
+  %call1855 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1852, ptr %handle1853, ptr %handle1854, ptr @.str.2097)
   %load.struct1856 = load %_Z7Emitter, ptr %2, align 8
   %builder1857 = extractvalue %_Z7Emitter %load.struct1856, 5
   %handle1858 = extractvalue %_Z14LLVMBuilderRef %builder1857, 0
@@ -272149,14 +272418,14 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1876 = extractvalue %_Z14LLVMBuilderRef %builder1875, 0
   %handle1877 = extractvalue %_Z12LLVMValueRef %call1807, 0
   %handle1878 = extractvalue %_Z12LLVMValueRef %call1814, 0
-  %call1879 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1876, ptr %handle1877, ptr %handle1878, ptr @.str.2094)
+  %call1879 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1876, ptr %handle1877, ptr %handle1878, ptr @.str.2098)
   %load.struct1880 = load %_Z7Emitter, ptr %2, align 8
   %builder1881 = extractvalue %_Z7Emitter %load.struct1880, 5
   %handle1882 = extractvalue %_Z14LLVMBuilderRef %builder1881, 0
   %call1883 = call i64 @_ZN16LLVMIntPredicate3SGEEv()
   %handle1884 = extractvalue %_Z12LLVMValueRef %call1879, 0
   %handle1885 = extractvalue %_Z12LLVMValueRef %call638, 0
-  %call1886 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1882, i64 %call1883, ptr %handle1884, ptr %handle1885, ptr @.str.2095)
+  %call1886 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle1882, i64 %call1883, ptr %handle1884, ptr %handle1885, ptr @.str.2099)
   %load.struct1887 = load %_Z7Emitter, ptr %2, align 8
   %builder1888 = extractvalue %_Z7Emitter %load.struct1887, 5
   %handle1889 = extractvalue %_Z14LLVMBuilderRef %builder1888, 0
@@ -272177,7 +272446,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1903 = extractvalue %_Z14LLVMBuilderRef %builder1902, 0
   %handle1904 = extractvalue %_Z12LLVMValueRef %call1651, 0
   %handle1905 = extractvalue %_Z12LLVMValueRef %call630, 0
-  %call1906 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1903, ptr %handle1904, ptr %handle1905, ptr @.str.2096)
+  %call1906 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle1903, ptr %handle1904, ptr %handle1905, ptr @.str.2100)
   %load.struct1907 = load %_Z7Emitter, ptr %2, align 8
   %builder1908 = extractvalue %_Z7Emitter %load.struct1907, 5
   %handle1909 = extractvalue %_Z14LLVMBuilderRef %builder1908, 0
@@ -272203,25 +272472,25 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1928 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1929 = load %_Z12LLVMValueRef, ptr %sret.result704, align 8
   %handle1930 = extractvalue %_Z12LLVMValueRef %wrapper.load1929, 0
-  %call1931 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1927, ptr %handle1928, ptr %handle1930, ptr @.str.2097)
+  %call1931 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1927, ptr %handle1928, ptr %handle1930, ptr @.str.2101)
   %load.struct1932 = load %_Z7Emitter, ptr %2, align 8
   %builder1933 = extractvalue %_Z7Emitter %load.struct1932, 5
   %handle1934 = extractvalue %_Z14LLVMBuilderRef %builder1933, 0
   %handle1935 = extractvalue %_Z12LLVMValueRef %call1651, 0
   %handle1936 = extractvalue %_Z12LLVMValueRef %call1931, 0
-  %call1937 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1934, ptr %handle1935, ptr %handle1936, ptr @.str.2098)
+  %call1937 = call %_Z12LLVMValueRef @LLVMBuildSub(ptr %handle1934, ptr %handle1935, ptr %handle1936, ptr @.str.2102)
   %load.struct1938 = load %_Z7Emitter, ptr %2, align 8
   %builder1939 = extractvalue %_Z7Emitter %load.struct1938, 5
   %handle1940 = extractvalue %_Z14LLVMBuilderRef %builder1939, 0
   %handle1941 = extractvalue %_Z12LLVMValueRef %call1879, 0
   %handle1942 = extractvalue %_Z12LLVMValueRef %call632, 0
-  %call1943 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle1940, ptr %handle1941, ptr %handle1942, ptr @.str.2099)
+  %call1943 = call %_Z12LLVMValueRef @LLVMBuildShl(ptr %handle1940, ptr %handle1941, ptr %handle1942, ptr @.str.2103)
   %load.struct1944 = load %_Z7Emitter, ptr %2, align 8
   %builder1945 = extractvalue %_Z7Emitter %load.struct1944, 5
   %handle1946 = extractvalue %_Z14LLVMBuilderRef %builder1945, 0
   %handle1947 = extractvalue %_Z12LLVMValueRef %call1943, 0
   %handle1948 = extractvalue %_Z12LLVMValueRef %call1937, 0
-  %call1949 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle1946, ptr %handle1947, ptr %handle1948, ptr @.str.2100)
+  %call1949 = call %_Z12LLVMValueRef @LLVMBuildSDiv(ptr %handle1946, ptr %handle1947, ptr %handle1948, ptr @.str.2104)
   %load.struct1950 = load %_Z7Emitter, ptr %2, align 8
   %builder1951 = extractvalue %_Z7Emitter %load.struct1950, 5
   %handle1952 = extractvalue %_Z14LLVMBuilderRef %builder1951, 0
@@ -272247,7 +272516,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1971 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load1972 = load %_Z12LLVMValueRef, ptr %sret.result713, align 8
   %handle1973 = extractvalue %_Z12LLVMValueRef %wrapper.load1972, 0
-  %call1974 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1970, ptr %handle1971, ptr %handle1973, ptr @.str.2101)
+  %call1974 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle1970, ptr %handle1971, ptr %handle1973, ptr @.str.2105)
   %load.struct1975 = load %_Z7Emitter, ptr %2, align 8
   %builder1976 = extractvalue %_Z7Emitter %load.struct1975, 5
   %handle1977 = extractvalue %_Z14LLVMBuilderRef %builder1976, 0
@@ -272260,7 +272529,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle1984 = extractvalue %_Z11LLVMTypeRef %call556, 0
   %wrapper.load1985 = load %_Z12LLVMValueRef, ptr %sret.result557, align 8
   %handle1986 = extractvalue %_Z12LLVMValueRef %wrapper.load1985, 0
-  %call1987 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1983, ptr %handle1984, ptr %handle1986, ptr null, i64 0, ptr @.str.2102)
+  %call1987 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1983, ptr %handle1984, ptr %handle1986, ptr null, i64 0, ptr @.str.2106)
   %struct.region1988 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region1988, i64 1)
   store ptr %struct.region1988, ptr %if_pget_args, align 1
@@ -272276,15 +272545,15 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %if_pget_args1997 = load ptr, ptr %if_pget_args, align 8
   %load.struct1998 = load %_Z6VectorI12LLVMValueRefE, ptr %if_pget_args1997, align 8
   %data1999 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct1998, 1
-  %call2000 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1993, ptr %handle1994, ptr %handle1996, ptr %data1999, i64 1, ptr @.str.2103)
+  %call2000 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle1993, ptr %handle1994, ptr %handle1996, ptr %data1999, i64 1, ptr @.str.2107)
   store %_Z11LLVMTypeRef %call27, ptr %sret.result1684, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2001, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2104)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2001, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2108)
   store %_Z11LLVMTypeRef %call27, ptr %sret.result1684, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2002, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2105)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2002, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2109)
   store %_Z11LLVMTypeRef %call23, ptr %sret.result1684, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2003, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2106)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2003, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2110)
   store %_Z11LLVMTypeRef %call27, ptr %sret.result1684, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2004, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2107)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result2004, ptr %1, ptr %2, ptr %sret.result1684, ptr @.str.2111)
   %handle2005 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %call2006 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle2005, i64 8, i64 0)
   %handle2007 = extractvalue %_Z11LLVMTypeRef %call27, 0
@@ -272319,7 +272588,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %dr_a02031 = load ptr, ptr %dr_a0, align 8
   %load.struct2032 = load %_Z6VectorI12LLVMValueRefE, ptr %dr_a02031, align 8
   %data2033 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct2032, 1
-  %call2034 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2027, ptr %handle2028, ptr %handle2030, ptr %data2033, i64 3, ptr @.str.2108)
+  %call2034 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2027, ptr %handle2028, ptr %handle2030, ptr %data2033, i64 3, ptr @.str.2112)
   %load.struct2035 = load %_Z7Emitter, ptr %2, align 8
   %builder2036 = extractvalue %_Z7Emitter %load.struct2035, 5
   %handle2037 = extractvalue %_Z14LLVMBuilderRef %builder2036, 0
@@ -272340,21 +272609,21 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %wrapper.load2052 = load %_Z12LLVMValueRef, ptr %sret.result2002, align 8
   %handle2053 = extractvalue %_Z12LLVMValueRef %wrapper.load2052, 0
   %call2054 = call %_Z12LLVMValueRef @LLVMBuildStore(ptr %handle2050, ptr %handle2051, ptr %handle2053)
-  store { ptr } { ptr @.sconst.2109 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2055, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2110 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2056, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2111 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2057, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2112 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2058, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2113 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2059, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2055, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2114 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2060, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2056, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2115 }, ptr %deref.tmp, align 1
-  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2061, ptr %1, ptr %2, ptr %deref.tmp)
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2057, ptr %1, ptr %2, ptr %deref.tmp)
   store { ptr } { ptr @.sconst.2116 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2058, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2117 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2059, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2118 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2060, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2119 }, ptr %deref.tmp, align 1
+  call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2061, ptr %1, ptr %2, ptr %deref.tmp)
+  store { ptr } { ptr @.sconst.2120 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2062, ptr %1, ptr %2, ptr %deref.tmp)
   %load.struct2063 = load %_Z7Emitter, ptr %2, align 8
   %builder2064 = extractvalue %_Z7Emitter %load.struct2063, 5
@@ -272376,14 +272645,14 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %next_args2079 = load ptr, ptr %next_args, align 8
   %load.struct2080 = load %_Z6VectorI12LLVMValueRefE, ptr %next_args2079, align 8
   %data2081 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct2080, 1
-  %call2082 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2076, ptr %handle2077, ptr %handle2078, ptr %data2081, i64 1, ptr @.str.2117)
+  %call2082 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2076, ptr %handle2077, ptr %handle2078, ptr %data2081, i64 1, ptr @.str.2121)
   %load.struct2083 = load %_Z7Emitter, ptr %2, align 8
   %builder2084 = extractvalue %_Z7Emitter %load.struct2083, 5
   %handle2085 = extractvalue %_Z14LLVMBuilderRef %builder2084, 0
   %call2086 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle2087 = extractvalue %_Z12LLVMValueRef %call2082, 0
   %handle2088 = extractvalue %_Z12LLVMValueRef %call1504, 0
-  %call2089 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2085, i64 %call2086, ptr %handle2087, ptr %handle2088, ptr @.str.2118)
+  %call2089 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2085, i64 %call2086, ptr %handle2087, ptr %handle2088, ptr @.str.2122)
   %load.struct2090 = load %_Z7Emitter, ptr %2, align 8
   %builder2091 = extractvalue %_Z7Emitter %load.struct2090, 5
   %handle2092 = extractvalue %_Z14LLVMBuilderRef %builder2091, 0
@@ -272405,21 +272674,21 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle2107 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2108 = load %_Z12LLVMValueRef, ptr %sret.result2002, align 8
   %handle2109 = extractvalue %_Z12LLVMValueRef %wrapper.load2108, 0
-  %call2110 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2106, ptr %handle2107, ptr %handle2109, ptr @.str.2119)
+  %call2110 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2106, ptr %handle2107, ptr %handle2109, ptr @.str.2123)
   %load.struct2111 = load %_Z7Emitter, ptr %2, align 8
   %builder2112 = extractvalue %_Z7Emitter %load.struct2111, 5
   %handle2113 = extractvalue %_Z14LLVMBuilderRef %builder2112, 0
   %handle2114 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2115 = load %_Z12LLVMValueRef, ptr %sret.result2001, align 8
   %handle2116 = extractvalue %_Z12LLVMValueRef %wrapper.load2115, 0
-  %call2117 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2113, ptr %handle2114, ptr %handle2116, ptr @.str.2120)
+  %call2117 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2113, ptr %handle2114, ptr %handle2116, ptr @.str.2124)
   %load.struct2118 = load %_Z7Emitter, ptr %2, align 8
   %builder2119 = extractvalue %_Z7Emitter %load.struct2118, 5
   %handle2120 = extractvalue %_Z14LLVMBuilderRef %builder2119, 0
   %call2121 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle2122 = extractvalue %_Z12LLVMValueRef %call2110, 0
   %handle2123 = extractvalue %_Z12LLVMValueRef %call2117, 0
-  %call2124 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2120, i64 %call2121, ptr %handle2122, ptr %handle2123, ptr @.str.2121)
+  %call2124 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2120, i64 %call2121, ptr %handle2122, ptr %handle2123, ptr @.str.2125)
   %load.struct2125 = load %_Z7Emitter, ptr %2, align 8
   %builder2126 = extractvalue %_Z7Emitter %load.struct2125, 5
   %handle2127 = extractvalue %_Z14LLVMBuilderRef %builder2126, 0
@@ -272440,13 +272709,13 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle2141 = extractvalue %_Z14LLVMBuilderRef %builder2140, 0
   %handle2142 = extractvalue %_Z12LLVMValueRef %call2117, 0
   %handle2143 = extractvalue %_Z12LLVMValueRef %call630, 0
-  %call2144 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2141, ptr %handle2142, ptr %handle2143, ptr @.str.2122)
+  %call2144 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2141, ptr %handle2142, ptr %handle2143, ptr @.str.2126)
   %load.struct2145 = load %_Z7Emitter, ptr %2, align 8
   %builder2146 = extractvalue %_Z7Emitter %load.struct2145, 5
   %handle2147 = extractvalue %_Z14LLVMBuilderRef %builder2146, 0
   %handle2148 = extractvalue %_Z12LLVMValueRef %call2144, 0
   %handle2149 = extractvalue %_Z12LLVMValueRef %call2006, 0
-  %call2150 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2147, ptr %handle2148, ptr %handle2149, ptr @.str.2123)
+  %call2150 = call %_Z12LLVMValueRef @LLVMBuildMul(ptr %handle2147, ptr %handle2148, ptr %handle2149, ptr @.str.2127)
   %struct.region2151 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region2151, i64 3)
   store ptr %struct.region2151, ptr %dg_args, align 1
@@ -272468,14 +272737,14 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %dg_args2164 = load ptr, ptr %dg_args, align 8
   %load.struct2165 = load %_Z6VectorI12LLVMValueRefE, ptr %dg_args2164, align 8
   %data2166 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct2165, 1
-  %call2167 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2160, ptr %handle2161, ptr %handle2163, ptr %data2166, i64 3, ptr @.str.2124)
+  %call2167 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle2160, ptr %handle2161, ptr %handle2163, ptr %data2166, i64 3, ptr @.str.2128)
   %load.struct2168 = load %_Z7Emitter, ptr %2, align 8
   %builder2169 = extractvalue %_Z7Emitter %load.struct2168, 5
   %handle2170 = extractvalue %_Z14LLVMBuilderRef %builder2169, 0
   %handle2171 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %wrapper.load2172 = load %_Z12LLVMValueRef, ptr %sret.result2003, align 8
   %handle2173 = extractvalue %_Z12LLVMValueRef %wrapper.load2172, 0
-  %call2174 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2170, ptr %handle2171, ptr %handle2173, ptr @.str.2125)
+  %call2174 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2170, ptr %handle2171, ptr %handle2173, ptr @.str.2129)
   %load.struct2175 = load %_Z7Emitter, ptr %2, align 8
   %builder2176 = extractvalue %_Z7Emitter %load.struct2175, 5
   %handle2177 = extractvalue %_Z14LLVMBuilderRef %builder2176, 0
@@ -272501,14 +272770,14 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle2196 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2197 = load %_Z12LLVMValueRef, ptr %sret.result2004, align 8
   %handle2198 = extractvalue %_Z12LLVMValueRef %wrapper.load2197, 0
-  %call2199 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2195, ptr %handle2196, ptr %handle2198, ptr @.str.2126)
+  %call2199 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2195, ptr %handle2196, ptr %handle2198, ptr @.str.2130)
   %load.struct2200 = load %_Z7Emitter, ptr %2, align 8
   %builder2201 = extractvalue %_Z7Emitter %load.struct2200, 5
   %handle2202 = extractvalue %_Z14LLVMBuilderRef %builder2201, 0
   %call2203 = call i64 @_ZN16LLVMIntPredicate3SLTEv()
   %handle2204 = extractvalue %_Z12LLVMValueRef %call2199, 0
   %handle2205 = extractvalue %_Z12LLVMValueRef %call2110, 0
-  %call2206 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2202, i64 %call2203, ptr %handle2204, ptr %handle2205, ptr @.str.2127)
+  %call2206 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle2202, i64 %call2203, ptr %handle2204, ptr %handle2205, ptr @.str.2131)
   %load.struct2207 = load %_Z7Emitter, ptr %2, align 8
   %builder2208 = extractvalue %_Z7Emitter %load.struct2207, 5
   %handle2209 = extractvalue %_Z14LLVMBuilderRef %builder2208, 0
@@ -272538,13 +272807,13 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %dc_sidx2229 = load ptr, ptr %dc_sidx, align 8
   %load.struct2230 = load %_Z6VectorI12LLVMValueRefE, ptr %dc_sidx2229, align 8
   %data2231 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct2230, 1
-  %call2232 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle2226, ptr %handle2227, ptr %handle2228, ptr %data2231, i64 1, ptr @.str.2128)
+  %call2232 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle2226, ptr %handle2227, ptr %handle2228, ptr %data2231, i64 1, ptr @.str.2132)
   %load.struct2233 = load %_Z7Emitter, ptr %2, align 8
   %builder2234 = extractvalue %_Z7Emitter %load.struct2233, 5
   %handle2235 = extractvalue %_Z14LLVMBuilderRef %builder2234, 0
   %handle2236 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %handle2237 = extractvalue %_Z12LLVMValueRef %call2232, 0
-  %call2238 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2235, ptr %handle2236, ptr %handle2237, ptr @.str.2129)
+  %call2238 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2235, ptr %handle2236, ptr %handle2237, ptr @.str.2133)
   %load.struct2239 = load %_Z7Emitter, ptr %2, align 8
   %builder2240 = extractvalue %_Z7Emitter %load.struct2239, 5
   %handle2241 = extractvalue %_Z14LLVMBuilderRef %builder2240, 0
@@ -272553,7 +272822,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %dc_sidx2244 = load ptr, ptr %dc_sidx, align 8
   %load.struct2245 = load %_Z6VectorI12LLVMValueRefE, ptr %dc_sidx2244, align 8
   %data2246 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct2245, 1
-  %call2247 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle2241, ptr %handle2242, ptr %handle2243, ptr %data2246, i64 1, ptr @.str.2130)
+  %call2247 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle2241, ptr %handle2242, ptr %handle2243, ptr %data2246, i64 1, ptr @.str.2134)
   %load.struct2248 = load %_Z7Emitter, ptr %2, align 8
   %builder2249 = extractvalue %_Z7Emitter %load.struct2248, 5
   %handle2250 = extractvalue %_Z14LLVMBuilderRef %builder2249, 0
@@ -272565,7 +272834,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle2256 = extractvalue %_Z14LLVMBuilderRef %builder2255, 0
   %handle2257 = extractvalue %_Z12LLVMValueRef %call2199, 0
   %handle2258 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call2259 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2256, ptr %handle2257, ptr %handle2258, ptr @.str.2131)
+  %call2259 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2256, ptr %handle2257, ptr %handle2258, ptr @.str.2135)
   %load.struct2260 = load %_Z7Emitter, ptr %2, align 8
   %builder2261 = extractvalue %_Z7Emitter %load.struct2260, 5
   %handle2262 = extractvalue %_Z14LLVMBuilderRef %builder2261, 0
@@ -272617,14 +272886,14 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle2306 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %wrapper.load2307 = load %_Z12LLVMValueRef, ptr %sret.result2003, align 8
   %handle2308 = extractvalue %_Z12LLVMValueRef %wrapper.load2307, 0
-  %call2309 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2305, ptr %handle2306, ptr %handle2308, ptr @.str.2132)
+  %call2309 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2305, ptr %handle2306, ptr %handle2308, ptr @.str.2136)
   %load.struct2310 = load %_Z7Emitter, ptr %2, align 8
   %builder2311 = extractvalue %_Z7Emitter %load.struct2310, 5
   %handle2312 = extractvalue %_Z14LLVMBuilderRef %builder2311, 0
   %handle2313 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2314 = load %_Z12LLVMValueRef, ptr %sret.result2002, align 8
   %handle2315 = extractvalue %_Z12LLVMValueRef %wrapper.load2314, 0
-  %call2316 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2312, ptr %handle2313, ptr %handle2315, ptr @.str.2133)
+  %call2316 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2312, ptr %handle2313, ptr %handle2315, ptr @.str.2137)
   %struct.region2317 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region2317, i64 1)
   store ptr %struct.region2317, ptr %du_idx, align 1
@@ -272639,7 +272908,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %du_idx2325 = load ptr, ptr %du_idx, align 8
   %load.struct2326 = load %_Z6VectorI12LLVMValueRefE, ptr %du_idx2325, align 8
   %data2327 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct2326, 1
-  %call2328 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle2322, ptr %handle2323, ptr %handle2324, ptr %data2327, i64 1, ptr @.str.2134)
+  %call2328 = call %_Z12LLVMValueRef @LLVMBuildGEP2(ptr %handle2322, ptr %handle2323, ptr %handle2324, ptr %data2327, i64 1, ptr @.str.2138)
   %load.struct2329 = load %_Z7Emitter, ptr %2, align 8
   %builder2330 = extractvalue %_Z7Emitter %load.struct2329, 5
   %handle2331 = extractvalue %_Z14LLVMBuilderRef %builder2330, 0
@@ -272651,7 +272920,7 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle2337 = extractvalue %_Z14LLVMBuilderRef %builder2336, 0
   %handle2338 = extractvalue %_Z12LLVMValueRef %call2316, 0
   %handle2339 = extractvalue %_Z12LLVMValueRef %call628, 0
-  %call2340 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2337, ptr %handle2338, ptr %handle2339, ptr @.str.2135)
+  %call2340 = call %_Z12LLVMValueRef @LLVMBuildAdd(ptr %handle2337, ptr %handle2338, ptr %handle2339, ptr @.str.2139)
   %load.struct2341 = load %_Z7Emitter, ptr %2, align 8
   %builder2342 = extractvalue %_Z7Emitter %load.struct2341, 5
   %handle2343 = extractvalue %_Z14LLVMBuilderRef %builder2342, 0
@@ -272677,14 +272946,14 @@ if.end1712:                                       ; preds = %if.then1711, %if.en
   %handle2362 = extractvalue %_Z11LLVMTypeRef %call27, 0
   %wrapper.load2363 = load %_Z12LLVMValueRef, ptr %sret.result2002, align 8
   %handle2364 = extractvalue %_Z12LLVMValueRef %wrapper.load2363, 0
-  %call2365 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2361, ptr %handle2362, ptr %handle2364, ptr @.str.2136)
+  %call2365 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2361, ptr %handle2362, ptr %handle2364, ptr @.str.2140)
   %load.struct2366 = load %_Z7Emitter, ptr %2, align 8
   %builder2367 = extractvalue %_Z7Emitter %load.struct2366, 5
   %handle2368 = extractvalue %_Z14LLVMBuilderRef %builder2367, 0
   %handle2369 = extractvalue %_Z11LLVMTypeRef %call23, 0
   %wrapper.load2370 = load %_Z12LLVMValueRef, ptr %sret.result2003, align 8
   %handle2371 = extractvalue %_Z12LLVMValueRef %wrapper.load2370, 0
-  %call2372 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2368, ptr %handle2369, ptr %handle2371, ptr @.str.2137)
+  %call2372 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle2368, ptr %handle2369, ptr %handle2371, ptr @.str.2141)
   %load.struct2373 = load %_Z7Emitter, ptr %2, align 8
   %builder2374 = extractvalue %_Z7Emitter %load.struct2373, 5
   %handle2375 = extractvalue %_Z14LLVMBuilderRef %builder2374, 0
@@ -272741,7 +273010,7 @@ if.then2891:                                      ; preds = %if.end1408
   %handle2895 = extractvalue %_Z14LLVMBuilderRef %builder2894, 0
   %handle2896 = extractvalue %_Z11LLVMTypeRef %call155, 0
   %handle2897 = extractvalue %_Z12LLVMValueRef %call2888, 0
-  %call2898 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2895, ptr %handle2896, ptr %handle2897, i64 0, ptr @.str.2192)
+  %call2898 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2895, ptr %handle2896, ptr %handle2897, i64 0, ptr @.str.2196)
   %load.struct2899 = load %_Z7Emitter, ptr %2, align 8
   %builder2900 = extractvalue %_Z7Emitter %load.struct2899, 5
   %handle2901 = extractvalue %_Z14LLVMBuilderRef %builder2900, 0
@@ -272758,7 +273027,7 @@ if.end2892:                                       ; preds = %if.then2891, %if.en
   %handle2908 = extractvalue %_Z11LLVMTypeRef %call155, 0
   %handle2909 = extractvalue %_Z12LLVMValueRef %call2888, 0
   %sb_fi2910 = load i64, ptr %sb_fi, align 8
-  %call2911 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2907, ptr %handle2908, ptr %handle2909, i64 %sb_fi2910, ptr @.str.2193)
+  %call2911 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2907, ptr %handle2908, ptr %handle2909, i64 %sb_fi2910, ptr @.str.2197)
   %load.struct2912 = load %_Z7Emitter, ptr %2, align 8
   %builder2913 = extractvalue %_Z7Emitter %load.struct2912, 5
   %handle2914 = extractvalue %_Z14LLVMBuilderRef %builder2913, 0
@@ -272772,7 +273041,7 @@ if.end2892:                                       ; preds = %if.then2891, %if.en
   %handle2922 = extractvalue %_Z12LLVMValueRef %call2888, 0
   %sb_fi2923 = load i64, ptr %sb_fi, align 8
   %add2924 = add i64 %sb_fi2923, 1
-  %call2925 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2920, ptr %handle2921, ptr %handle2922, i64 %add2924, ptr @.str.2194)
+  %call2925 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2920, ptr %handle2921, ptr %handle2922, i64 %add2924, ptr @.str.2198)
   %load.struct2926 = load %_Z7Emitter, ptr %2, align 8
   %builder2927 = extractvalue %_Z7Emitter %load.struct2926, 5
   %handle2928 = extractvalue %_Z14LLVMBuilderRef %builder2927, 0
@@ -272799,7 +273068,7 @@ while.body2933:                                   ; preds = %while.cond2932
   %base_fields2945 = load i64, ptr %base_fields, align 8
   %ci2946 = load i64, ptr %ci, align 8
   %add2947 = add i64 %base_fields2945, %ci2946
-  %call2948 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2942, ptr %handle2943, ptr %handle2944, i64 %add2947, ptr @.str.2195)
+  %call2948 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle2942, ptr %handle2943, ptr %handle2944, i64 %add2947, ptr @.str.2199)
   %load.struct2949 = load %_Z7Emitter, ptr %2, align 8
   %builder2950 = extractvalue %_Z7Emitter %load.struct2949, 5
   %handle2951 = extractvalue %_Z14LLVMBuilderRef %builder2950, 0
@@ -272920,13 +273189,13 @@ entry:
   %tuple15 = alloca %_Z12LLVMValueRef, align 8
   %sret.result = alloca %_Z17LLVMBasicBlockRef, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2196 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2200 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result, ptr %1, ptr %2, ptr %arg.tmp)
   %sret.result1 = alloca %_Z17LLVMBasicBlockRef, align 8
-  store { ptr } { ptr @.sconst.2197 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2201 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result1, ptr %1, ptr %2, ptr %arg.tmp)
   %sret.result2 = alloca %_Z17LLVMBasicBlockRef, align 8
-  store { ptr } { ptr @.sconst.2198 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2202 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result2, ptr %1, ptr %2, ptr %arg.tmp)
   %field.inplace = getelementptr inbounds %_Z12PlannedWhile, ptr %3, i32 0, i32 3
   %tuple = alloca %_Z12LLVMValueRef, align 8
@@ -272982,7 +273251,7 @@ if.then19:                                        ; preds = %if.end
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %name24, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   %field.inplace25 = getelementptr inbounds %_Z12PlannedWhile, ptr %3, i32 0, i32 1
   %field.inplace26 = getelementptr inbounds %_Z14PlannedBinding, ptr %field.inplace25, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2199 }, ptr %arg.tmp27, align 1
+  store { ptr } { ptr @.sconst.2203 }, ptr %arg.tmp27, align 1
   %call28 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace26, ptr %arg.tmp27)
   br i1 %call28, label %if.then29, label %if.else
 
@@ -273028,7 +273297,7 @@ if.then51:                                        ; preds = %if.end20
   %handle55 = extractvalue %_Z14LLVMBuilderRef %builder54, 0
   %wrapper.load56 = load %_Z12LLVMValueRef, ptr %sret.result10, align 8
   %handle57 = extractvalue %_Z12LLVMValueRef %wrapper.load56, 0
-  %call58 = call %_Z12LLVMValueRef @LLVMBuildIsNotNull(ptr %handle55, ptr %handle57, ptr @.str.2200)
+  %call58 = call %_Z12LLVMValueRef @LLVMBuildIsNotNull(ptr %handle55, ptr %handle57, ptr @.str.2204)
   store %_Z12LLVMValueRef %call58, ptr %sret.result34, align 1
   br label %if.end52
 
@@ -273109,7 +273378,7 @@ entry:
   %field.inplace = getelementptr inbounds %_Z13PlannedRepeat, ptr %3, i32 0, i32 3
   %field.inplace4 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2201 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2205 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace4, ptr %arg.tmp)
   %not = xor i1 %call, true
   br i1 %not, label %if.then, label %if.end
@@ -273119,7 +273388,7 @@ if.then:                                          ; preds = %entry
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %tuple1, ptr %1, ptr %2, ptr %field.inplace5)
   %set.load = load %_Z11LLVMTypeRef, ptr %tuple1, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %value_llvm_ty, ptr align 1 %tuple1, i64 ptrtoint (ptr getelementptr (%_Z11LLVMTypeRef, ptr null, i32 1) to i64), i1 false)
-  store { ptr } { ptr @.sconst.2202 }, ptr %slot_name, align 1
+  store { ptr } { ptr @.sconst.2206 }, ptr %slot_name, align 1
   %call6 = call ptr @_ZN6String6c_dataEv(ptr %slot_name)
   call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %value_llvm_ty, ptr %call6)
   %set.load7 = load %_Z12LLVMValueRef, ptr %tuple, align 8
@@ -273127,9 +273396,9 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  store { ptr } { ptr @.sconst.2203 }, ptr %slot_name, align 1
+  store { ptr } { ptr @.sconst.2207 }, ptr %slot_name, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result, ptr %1, ptr %2, ptr %slot_name)
-  store { ptr } { ptr @.sconst.2204 }, ptr %slot_name, align 1
+  store { ptr } { ptr @.sconst.2208 }, ptr %slot_name, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result8, ptr %1, ptr %2, ptr %slot_name)
   %field.inplace9 = getelementptr inbounds %_Z13PlannedRepeat, ptr %3, i32 0, i32 2
   call void @_ZN7Emitter9push_loopE17LLVMBasicBlockRef17LLVMBasicBlockRef6String12LLVMValueRef(ptr %2, ptr %sret.result8, ptr %sret.result, ptr %field.inplace9, ptr %result_slot)
@@ -273182,7 +273451,7 @@ if.end27:                                         ; preds = %if.then26, %if.end
   br i1 %ne, label %if.then41, label %if.end42
 
 if.then41:                                        ; preds = %if.end27
-  store { ptr } { ptr @.sconst.2205 }, ptr %slot_name, align 1
+  store { ptr } { ptr @.sconst.2209 }, ptr %slot_name, align 1
   %load.struct43 = load %_Z7Emitter, ptr %2, align 8
   %builder44 = extractvalue %_Z7Emitter %load.struct43, 5
   %handle45 = extractvalue %_Z14LLVMBuilderRef %builder44, 0
@@ -273277,7 +273546,7 @@ if.end7:                                          ; preds = %if.end
   %handle17 = extractvalue %_Z11LLVMTypeRef %call, 0
   %wrapper.load = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle18 = extractvalue %_Z12LLVMValueRef %wrapper.load, 0
-  %call19 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle16, ptr %handle17, ptr %handle18, ptr @.str.2206)
+  %call19 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle16, ptr %handle17, ptr %handle18, ptr @.str.2210)
   %handle20 = extractvalue %_Z12LLVMValueRef %call19, 0
   call void @LLVMSetAlignment(ptr %handle20, i32 1)
   store i1 false, ptr %has_err, align 1
@@ -273327,9 +273596,9 @@ if.then31:                                        ; preds = %if.end24
   br label %if.end32
 
 if.end32:                                         ; preds = %if.then31, %if.end24
-  store { ptr } { ptr @.sconst.2207 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.2211 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result33, ptr %1, ptr %2, ptr %deref.tmp)
-  store { ptr } { ptr @.sconst.2208 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.2212 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result34, ptr %1, ptr %2, ptr %deref.tmp)
   %tuple.field36 = getelementptr inbounds %_Z17LLVMBasicBlockRef, ptr %tuple35, i32 0, i32 0
   store ptr null, ptr %tuple.field36, align 1
@@ -273339,7 +273608,7 @@ if.end32:                                         ; preds = %if.then31, %if.end2
   br i1 %has_err38, label %if.then39, label %if.end40
 
 if.then39:                                        ; preds = %if.end32
-  store { ptr } { ptr @.sconst.2209 }, ptr %deref.tmp, align 1
+  store { ptr } { ptr @.sconst.2213 }, ptr %deref.tmp, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %tuple35, ptr %1, ptr %2, ptr %deref.tmp)
   %set.load = load %_Z17LLVMBasicBlockRef, ptr %tuple35, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %err_block, ptr align 1 %tuple35, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
@@ -273354,7 +273623,7 @@ if.end40:                                         ; preds = %if.then39, %if.end3
   %call46 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle47 = extractvalue %_Z12LLVMValueRef %call19, 0
   %handle48 = extractvalue %_Z12LLVMValueRef %call42, 0
-  %call49 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle45, i64 %call46, ptr %handle47, ptr %handle48, ptr @.str.2210)
+  %call49 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle45, i64 %call46, ptr %handle47, ptr %handle48, ptr @.str.2214)
   %err_block50 = load %_Z17LLVMBasicBlockRef, ptr %err_block, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %err_target, ptr align 1 %err_block, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
   %err_block51 = load %_Z17LLVMBasicBlockRef, ptr %err_block, align 8
@@ -273424,14 +273693,14 @@ if.end80:                                         ; preds = %if.end90, %if.end55
   %ok_idx101 = load ptr, ptr %ok_idx, align 8
   %load.struct102 = load %_Z6VectorI12LLVMValueRefE, ptr %ok_idx101, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct102, 1
-  %call103 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle97, ptr %handle98, ptr %handle100, ptr %data, i64 1, ptr @.str.2211)
+  %call103 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle97, ptr %handle98, ptr %handle100, ptr %data, i64 1, ptr @.str.2215)
   %load.struct104 = load %_Z7Emitter, ptr %2, align 8
   %builder105 = extractvalue %_Z7Emitter %load.struct104, 5
   %handle106 = extractvalue %_Z14LLVMBuilderRef %builder105, 0
   %ok_type107 = load %_Z11LLVMTypeRef, ptr %ok_type, align 8
   %handle108 = extractvalue %_Z11LLVMTypeRef %ok_type107, 0
   %handle109 = extractvalue %_Z12LLVMValueRef %call103, 0
-  %call110 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle106, ptr %handle108, ptr %handle109, ptr @.str.2212)
+  %call110 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle106, ptr %handle108, ptr %handle109, ptr @.str.2216)
   %handle111 = extractvalue %_Z12LLVMValueRef %call110, 0
   call void @LLVMSetAlignment(ptr %handle111, i32 1)
   %load.struct112 = load %_Z10PlannedTry, ptr %3, align 8
@@ -273457,7 +273726,7 @@ if.then117:                                       ; preds = %if.end80
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp123, ptr align 1 %name122, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   %field.inplace124 = getelementptr inbounds %_Z10PlannedTry, ptr %3, i32 0, i32 1
   %field.inplace125 = getelementptr inbounds %_Z14PlannedBinding, ptr %field.inplace124, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2213 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2217 }, ptr %arg.tmp, align 1
   %call126 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace125, ptr %arg.tmp)
   br i1 %call126, label %if.then127, label %if.else
 
@@ -273532,13 +273801,13 @@ if.then157:                                       ; preds = %if.end147
   %et_idx175 = load ptr, ptr %et_idx, align 8
   %load.struct176 = load %_Z6VectorI12LLVMValueRefE, ptr %et_idx175, align 8
   %data177 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct176, 1
-  %call178 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle171, ptr %handle172, ptr %handle174, ptr %data177, i64 1, ptr @.str.2214)
+  %call178 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle171, ptr %handle172, ptr %handle174, ptr %data177, i64 1, ptr @.str.2218)
   %load.struct179 = load %_Z7Emitter, ptr %2, align 8
   %builder180 = extractvalue %_Z7Emitter %load.struct179, 5
   %handle181 = extractvalue %_Z14LLVMBuilderRef %builder180, 0
   %handle182 = extractvalue %_Z11LLVMTypeRef %call, 0
   %handle183 = extractvalue %_Z12LLVMValueRef %call178, 0
-  %call184 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle181, ptr %handle182, ptr %handle183, ptr @.str.2215)
+  %call184 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle181, ptr %handle182, ptr %handle183, ptr @.str.2219)
   %handle185 = extractvalue %_Z12LLVMValueRef %call184, 0
   call void @LLVMSetAlignment(ptr %handle185, i32 1)
   %handle186 = extractvalue %_Z11LLVMTypeRef %call, 0
@@ -273558,7 +273827,7 @@ if.then157:                                       ; preds = %if.end147
   %pl_idx197 = load ptr, ptr %pl_idx, align 8
   %load.struct198 = load %_Z6VectorI12LLVMValueRefE, ptr %pl_idx197, align 8
   %data199 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct198, 1
-  %call200 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle193, ptr %handle194, ptr %handle196, ptr %data199, i64 1, ptr @.str.2216)
+  %call200 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle193, ptr %handle194, ptr %handle196, ptr %data199, i64 1, ptr @.str.2220)
   store i1 false, ptr %has_catches, align 1
   %load.struct201 = load %_Z10PlannedTry, ptr %3, align 8
   %catches202 = extractvalue %_Z10PlannedTry %load.struct201, 2
@@ -273596,7 +273865,7 @@ if.end212:                                        ; preds = %if.then211, %if.the
   br label %if.end205
 
 if.then214:                                       ; preds = %if.end205
-  store { ptr } { ptr @.sconst.2217 }, ptr %deref.tmp123, align 1
+  store { ptr } { ptr @.sconst.2221 }, ptr %deref.tmp123, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result216, ptr %1, ptr %2, ptr %deref.tmp123)
   store ptr %sret.result216, ptr %default_block, align 1
   store i1 false, ptr %have_else, align 1
@@ -273611,7 +273880,7 @@ if.end215:                                        ; preds = %if.end312, %if.end2
   br i1 %eq338, label %if.then339, label %if.end340
 
 if.then220:                                       ; preds = %if.then214
-  store { ptr } { ptr @.sconst.2218 }, ptr %deref.tmp123, align 1
+  store { ptr } { ptr @.sconst.2222 }, ptr %deref.tmp123, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result222, ptr %1, ptr %2, ptr %deref.tmp123)
   %set.dest = load ptr, ptr %default_block, align 8
   %set.thru = load %_Z17LLVMBasicBlockRef, ptr %sret.result222, align 8
@@ -273643,7 +273912,7 @@ for.cond:                                         ; preds = %if.end289, %if.end2
   br i1 %is.done, label %for.exit, label %for.body
 
 for.body:                                         ; preds = %for.cond
-  store { ptr } { ptr @.sconst.2219 }, ptr %arg.tmp238, align 1
+  store { ptr } { ptr @.sconst.2223 }, ptr %arg.tmp238, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result237, ptr %1, ptr %2, ptr %arg.tmp238)
   %handle239 = extractvalue %_Z11LLVMTypeRef %call, 0
   %load.struct240 = load %_Z11PlannedWhen, ptr %next, align 8
@@ -273680,7 +273949,7 @@ for.exit:                                         ; preds = %for.cond
 if.then254:                                       ; preds = %for.body
   %field.inplace256 = getelementptr inbounds %_Z11PlannedWhen, ptr %next, i32 0, i32 2
   %field.inplace257 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace256, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2220 }, ptr %arg.tmp238, align 1
+  store { ptr } { ptr @.sconst.2224 }, ptr %arg.tmp238, align 1
   %call258 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace257, ptr %arg.tmp238)
   %not = xor i1 %call258, true
   br i1 %not, label %if.then259, label %if.end260
@@ -273700,7 +273969,7 @@ if.then259:                                       ; preds = %if.then254
   %wrapper.load266 = load %_Z11LLVMTypeRef, ptr %sret.result261, align 8
   %handle267 = extractvalue %_Z11LLVMTypeRef %wrapper.load266, 0
   %handle268 = extractvalue %_Z12LLVMValueRef %call200, 0
-  %call269 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle265, ptr %handle267, ptr %handle268, ptr @.str.2221)
+  %call269 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle265, ptr %handle267, ptr %handle268, ptr @.str.2225)
   %handle270 = extractvalue %_Z12LLVMValueRef %call269, 0
   call void @LLVMSetAlignment(ptr %handle270, i32 1)
   %field.inplace271 = getelementptr inbounds %_Z11PlannedWhen, ptr %next, i32 0, i32 1
@@ -273946,7 +274215,7 @@ if.then7:                                         ; preds = %if.end
   store %_Z11PlannedType %result_type, ptr %opt_ty, align 1
   store i1 false, ptr %value_is_ptr, align 1
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %opt_ty, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2222 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2226 }, ptr %arg.tmp, align 1
   %call12 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call12, label %lor.end, label %lor.rhs
 
@@ -273970,7 +274239,7 @@ if.end8:                                          ; preds = %if.end
 
 lor.rhs:                                          ; preds = %if.then7
   %field.inplace13 = getelementptr inbounds %_Z11PlannedType, ptr %opt_ty, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2223 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.2227 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace13, ptr %arg.tmp14)
   br label %lor.end
 
@@ -273987,7 +274256,7 @@ if.then16:                                        ; preds = %lor.end
 if.end17:                                         ; preds = %if.end20, %lor.end
   store i1 true, ptr %uses_npo, align 1
   %field.inplace31 = getelementptr inbounds %_Z11PlannedType, ptr %opt_ty, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2224 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.2228 }, ptr %arg.tmp32, align 1
   %call33 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace31, ptr %arg.tmp32)
   br i1 %call33, label %if.then34, label %if.end35
 
@@ -274058,7 +274327,7 @@ if.then50:                                        ; preds = %if.then46
   %load.struct53 = load %_Z11PlannedType, ptr %deref.tmp52, align 8
   %name = extractvalue %_Z11PlannedType %load.struct53, 1
   store { ptr } %name, ptr %arg.tmp54, align 1
-  store { ptr } { ptr @.sconst.2225 }, ptr %arg.tmp55, align 1
+  store { ptr } { ptr @.sconst.2229 }, ptr %arg.tmp55, align 1
   %call56 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp54, ptr %arg.tmp55)
   br i1 %call56, label %if.then57, label %if.end58
 
@@ -274074,7 +274343,7 @@ if.end58:                                         ; preds = %if.then57, %if.then
   %load.struct60 = load %_Z11PlannedType, ptr %deref.tmp59, align 8
   %name61 = extractvalue %_Z11PlannedType %load.struct60, 1
   store { ptr } %name61, ptr %arg.tmp62, align 1
-  store { ptr } { ptr @.sconst.2226 }, ptr %arg.tmp63, align 1
+  store { ptr } { ptr @.sconst.2230 }, ptr %arg.tmp63, align 1
   %call64 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp62, ptr %arg.tmp63)
   br i1 %call64, label %if.then65, label %if.end66
 
@@ -274167,7 +274436,7 @@ if.end106:                                        ; preds = %if.then98
 
 if.then114:                                       ; preds = %if.then105
   %union_llvm_type_n117 = load ptr, ptr %union_llvm_type_n, align 8
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result116, ptr %1, ptr %2, ptr %union_llvm_type_n117, ptr @.str.2227)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result116, ptr %1, ptr %2, ptr %union_llvm_type_n117, ptr @.str.2231)
   %set.load118 = load %_Z12LLVMValueRef, ptr %sret.result116, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %union_ptr_n, ptr align 1 %sret.result116, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   %load.struct119 = load %_Z7Emitter, ptr %2, align 8
@@ -274189,13 +274458,13 @@ if.end115:                                        ; preds = %if.then114, %if.the
   %handle131 = extractvalue %_Z11LLVMTypeRef %wrapper.load130, 0
   %union_ptr_n132 = load %_Z12LLVMValueRef, ptr %union_ptr_n, align 8
   %handle133 = extractvalue %_Z12LLVMValueRef %union_ptr_n132, 0
-  %call134 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle128, ptr %handle131, ptr %handle133, i64 0, ptr @.str.2228)
+  %call134 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle128, ptr %handle131, ptr %handle133, i64 0, ptr @.str.2232)
   %load.struct135 = load %_Z7Emitter, ptr %2, align 8
   %builder136 = extractvalue %_Z7Emitter %load.struct135, 5
   %handle137 = extractvalue %_Z14LLVMBuilderRef %builder136, 0
   %handle138 = extractvalue %_Z11LLVMTypeRef %call74, 0
   %handle139 = extractvalue %_Z12LLVMValueRef %call134, 0
-  %call140 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle137, ptr %handle138, ptr %handle139, ptr @.str.2229)
+  %call140 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle137, ptr %handle138, ptr %handle139, ptr @.str.2233)
   %handle141 = extractvalue %_Z11LLVMTypeRef %call74, 0
   %call142 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle141, i64 1, i64 0)
   %load.struct143 = load %_Z7Emitter, ptr %2, align 8
@@ -274204,7 +274473,7 @@ if.end115:                                        ; preds = %if.then114, %if.the
   %call146 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle147 = extractvalue %_Z12LLVMValueRef %call140, 0
   %handle148 = extractvalue %_Z12LLVMValueRef %call142, 0
-  %call149 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle145, i64 %call146, ptr %handle147, ptr %handle148, ptr @.str.2230)
+  %call149 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle145, i64 %call146, ptr %handle147, ptr %handle148, ptr @.str.2234)
   store %_Z12LLVMValueRef %call149, ptr %0, align 1
   ret void
 
@@ -274222,7 +274491,7 @@ if.end157:                                        ; preds = %if.end160, %if.end7
   %npo_value = load %_Z12LLVMValueRef, ptr %union_ptr_n, align 8
   %handle174 = extractvalue %_Z12LLVMValueRef %npo_value, 0
   %handle175 = extractvalue %_Z12LLVMValueRef %call169, 0
-  %call176 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle172, i64 %call173, ptr %handle174, ptr %handle175, ptr @.str.2232)
+  %call176 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle172, i64 %call173, ptr %handle174, ptr %handle175, ptr @.str.2236)
   store %_Z12LLVMValueRef %call176, ptr %0, align 1
   ret void
 
@@ -274233,7 +274502,7 @@ if.then159:                                       ; preds = %if.then156
   %handle164 = extractvalue %_Z11LLVMTypeRef %call153, 0
   %wrapper.load165 = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   %handle166 = extractvalue %_Z12LLVMValueRef %wrapper.load165, 0
-  %call167 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle163, ptr %handle164, ptr %handle166, ptr @.str.2231)
+  %call167 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle163, ptr %handle164, ptr %handle166, ptr @.str.2235)
   store %_Z12LLVMValueRef %call167, ptr %union_ptr_n, align 1
   br label %if.end160
 
@@ -274277,13 +274546,13 @@ if.end206:                                        ; preds = %if.end212, %if.end1
   %handle242 = extractvalue %_Z11LLVMTypeRef %wrapper.load241, 0
   %union_ptr243 = load %_Z12LLVMValueRef, ptr %union_ptr_n, align 8
   %handle244 = extractvalue %_Z12LLVMValueRef %union_ptr243, 0
-  %call245 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle239, ptr %handle242, ptr %handle244, i64 0, ptr @.str.2235)
+  %call245 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle239, ptr %handle242, ptr %handle244, i64 0, ptr @.str.2239)
   %load.struct246 = load %_Z7Emitter, ptr %2, align 8
   %builder247 = extractvalue %_Z7Emitter %load.struct246, 5
   %handle248 = extractvalue %_Z14LLVMBuilderRef %builder247, 0
   %handle249 = extractvalue %_Z11LLVMTypeRef %call180, 0
   %handle250 = extractvalue %_Z12LLVMValueRef %call245, 0
-  %call251 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle248, ptr %handle249, ptr %handle250, ptr @.str.2236)
+  %call251 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle248, ptr %handle249, ptr %handle250, ptr @.str.2240)
   %handle252 = extractvalue %_Z11LLVMTypeRef %call180, 0
   %load.struct253 = load %_Z9PlannedIs, ptr %3, align 8
   %variant_tag = extractvalue %_Z9PlannedIs %load.struct253, 2
@@ -274294,13 +274563,13 @@ if.end206:                                        ; preds = %if.end212, %if.end1
   %call258 = call i64 @_ZN16LLVMIntPredicate2EQEv()
   %handle259 = extractvalue %_Z12LLVMValueRef %call251, 0
   %handle260 = extractvalue %_Z12LLVMValueRef %call254, 0
-  %call261 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle257, i64 %call258, ptr %handle259, ptr %handle260, ptr @.str.2237)
+  %call261 = call %_Z12LLVMValueRef @LLVMBuildICmp(ptr %handle257, i64 %call258, ptr %handle259, ptr %handle260, ptr @.str.2241)
   store %_Z12LLVMValueRef %call261, ptr %0, align 1
   ret void
 
 if.then211:                                       ; preds = %if.then205
   %union_llvm_type214 = load ptr, ptr %union_llvm_type_n, align 8
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result213, ptr %1, ptr %2, ptr %union_llvm_type214, ptr @.str.2233)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result213, ptr %1, ptr %2, ptr %union_llvm_type214, ptr @.str.2237)
   %set.load215 = load %_Z12LLVMValueRef, ptr %sret.result213, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %union_ptr_n, ptr align 1 %sret.result213, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   %load.struct216 = load %_Z7Emitter, ptr %2, align 8
@@ -274318,7 +274587,7 @@ if.else:                                          ; preds = %if.then205
   %handle224 = extractvalue %_Z12LLVMValueRef %wrapper.load223, 0
   %call225 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle224)
   store %_Z11LLVMTypeRef %call225, ptr %arg.tmp227, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result226, ptr %1, ptr %2, ptr %arg.tmp227, ptr @.str.2234)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result226, ptr %1, ptr %2, ptr %arg.tmp227, ptr @.str.2238)
   %set.load228 = load %_Z12LLVMValueRef, ptr %sret.result226, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %union_ptr_n, ptr align 1 %sret.result226, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   %load.struct229 = load %_Z7Emitter, ptr %2, align 8
@@ -274443,7 +274712,7 @@ if.end23:                                         ; preds = %choose.when16
   %value25 = extractvalue %_Z14StringConstant %variant.val18, 1
   store { ptr } %value25, ptr %arg.tmp26, align 1
   %call27 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp26)
-  %call28 = call %_Z12LLVMValueRef @LLVMBuildGlobalStringPtr(ptr %handle, ptr %call27, ptr @.str.2238)
+  %call28 = call %_Z12LLVMValueRef @LLVMBuildGlobalStringPtr(ptr %handle, ptr %call27, ptr @.str.2242)
   store %_Z12LLVMValueRef %call28, ptr %0, align 1
   ret void
 
@@ -274542,7 +274811,7 @@ if.end82:                                         ; preds = %if.end86, %if.end71
 if.then85:                                        ; preds = %if.then81
   %field.inplace87 = getelementptr inbounds %_Z14PlannedOperand, ptr %value2, i32 0, i32 3
   %field.inplace88 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace87, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2239 }, ptr %arg.tmp89, align 1
+  store { ptr } { ptr @.sconst.2243 }, ptr %arg.tmp89, align 1
   %call90 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace88, ptr %arg.tmp89)
   br i1 %call90, label %if.then91, label %if.end92
 
@@ -274575,7 +274844,7 @@ if.then98:                                        ; preds = %if.then95
   %dst_type105 = load ptr, ptr %dst_type, align 8
   %wrapper.load106 = load %_Z11LLVMTypeRef, ptr %dst_type105, align 8
   %handle107 = extractvalue %_Z11LLVMTypeRef %wrapper.load106, 0
-  %call108 = call %_Z12LLVMValueRef @LLVMBuildBitCast(ptr %handle102, ptr %handle104, ptr %handle107, ptr @.str.2240)
+  %call108 = call %_Z12LLVMValueRef @LLVMBuildBitCast(ptr %handle102, ptr %handle104, ptr %handle107, ptr @.str.2244)
   store %_Z12LLVMValueRef %call108, ptr %0, align 1
   ret void
 
@@ -274592,7 +274861,7 @@ if.then110:                                       ; preds = %if.end99
   %dst_type117 = load ptr, ptr %dst_type, align 8
   %wrapper.load118 = load %_Z11LLVMTypeRef, ptr %dst_type117, align 8
   %handle119 = extractvalue %_Z11LLVMTypeRef %wrapper.load118, 0
-  %call120 = call %_Z12LLVMValueRef @LLVMBuildPtrToInt(ptr %handle114, ptr %handle116, ptr %handle119, ptr @.str.2241)
+  %call120 = call %_Z12LLVMValueRef @LLVMBuildPtrToInt(ptr %handle114, ptr %handle116, ptr %handle119, ptr @.str.2245)
   store %_Z12LLVMValueRef %call120, ptr %0, align 1
   ret void
 
@@ -274616,7 +274885,7 @@ if.then125:                                       ; preds = %if.then122
   %dst_type132 = load ptr, ptr %dst_type, align 8
   %wrapper.load133 = load %_Z11LLVMTypeRef, ptr %dst_type132, align 8
   %handle134 = extractvalue %_Z11LLVMTypeRef %wrapper.load133, 0
-  %call135 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle129, ptr %handle131, ptr %handle134, ptr @.str.2242)
+  %call135 = call %_Z12LLVMValueRef @LLVMBuildIntToPtr(ptr %handle129, ptr %handle131, ptr %handle134, ptr @.str.2246)
   store %_Z12LLVMValueRef %call135, ptr %0, align 1
   ret void
 
@@ -274647,7 +274916,7 @@ if.then145:                                       ; preds = %if.then137
   %dst_type152 = load ptr, ptr %dst_type, align 8
   %wrapper.load153 = load %_Z11LLVMTypeRef, ptr %dst_type152, align 8
   %handle154 = extractvalue %_Z11LLVMTypeRef %wrapper.load153, 0
-  %call155 = call %_Z12LLVMValueRef @LLVMBuildTrunc(ptr %handle149, ptr %handle151, ptr %handle154, ptr @.str.2243)
+  %call155 = call %_Z12LLVMValueRef @LLVMBuildTrunc(ptr %handle149, ptr %handle151, ptr %handle154, ptr @.str.2247)
   store %_Z12LLVMValueRef %call155, ptr %0, align 1
   ret void
 
@@ -274664,7 +274933,7 @@ if.then156:                                       ; preds = %if.end146
   %dst_type163 = load ptr, ptr %dst_type, align 8
   %wrapper.load164 = load %_Z11LLVMTypeRef, ptr %dst_type163, align 8
   %handle165 = extractvalue %_Z11LLVMTypeRef %wrapper.load164, 0
-  %call166 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle160, ptr %handle162, ptr %handle165, ptr @.str.2244)
+  %call166 = call %_Z12LLVMValueRef @LLVMBuildZExt(ptr %handle160, ptr %handle162, ptr %handle165, ptr @.str.2248)
   store %_Z12LLVMValueRef %call166, ptr %0, align 1
   ret void
 
@@ -274682,7 +274951,7 @@ if.then169:                                       ; preds = %if.end138
   %dst_type176 = load ptr, ptr %dst_type, align 8
   %wrapper.load177 = load %_Z11LLVMTypeRef, ptr %dst_type176, align 8
   %handle178 = extractvalue %_Z11LLVMTypeRef %wrapper.load177, 0
-  %call179 = call %_Z12LLVMValueRef @LLVMBuildSIToFP(ptr %handle173, ptr %handle175, ptr %handle178, ptr @.str.2245)
+  %call179 = call %_Z12LLVMValueRef @LLVMBuildSIToFP(ptr %handle173, ptr %handle175, ptr %handle178, ptr @.str.2249)
   store %_Z12LLVMValueRef %call179, ptr %0, align 1
   ret void
 
@@ -274699,7 +274968,7 @@ if.then181:                                       ; preds = %if.end170
   %dst_type188 = load ptr, ptr %dst_type, align 8
   %wrapper.load189 = load %_Z11LLVMTypeRef, ptr %dst_type188, align 8
   %handle190 = extractvalue %_Z11LLVMTypeRef %wrapper.load189, 0
-  %call191 = call %_Z12LLVMValueRef @LLVMBuildSIToFP(ptr %handle185, ptr %handle187, ptr %handle190, ptr @.str.2246)
+  %call191 = call %_Z12LLVMValueRef @LLVMBuildSIToFP(ptr %handle185, ptr %handle187, ptr %handle190, ptr @.str.2250)
   store %_Z12LLVMValueRef %call191, ptr %0, align 1
   ret void
 
@@ -274723,7 +274992,7 @@ if.then196:                                       ; preds = %if.then193
   %dst_type203 = load ptr, ptr %dst_type, align 8
   %wrapper.load204 = load %_Z11LLVMTypeRef, ptr %dst_type203, align 8
   %handle205 = extractvalue %_Z11LLVMTypeRef %wrapper.load204, 0
-  %call206 = call %_Z12LLVMValueRef @LLVMBuildFPToSI(ptr %handle200, ptr %handle202, ptr %handle205, ptr @.str.2247)
+  %call206 = call %_Z12LLVMValueRef @LLVMBuildFPToSI(ptr %handle200, ptr %handle202, ptr %handle205, ptr @.str.2251)
   store %_Z12LLVMValueRef %call206, ptr %0, align 1
   ret void
 
@@ -274740,7 +275009,7 @@ if.then208:                                       ; preds = %if.end197
   %dst_type215 = load ptr, ptr %dst_type, align 8
   %wrapper.load216 = load %_Z11LLVMTypeRef, ptr %dst_type215, align 8
   %handle217 = extractvalue %_Z11LLVMTypeRef %wrapper.load216, 0
-  %call218 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle212, ptr %handle214, ptr %handle217, ptr @.str.2248)
+  %call218 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle212, ptr %handle214, ptr %handle217, ptr @.str.2252)
   store %_Z12LLVMValueRef %call218, ptr %0, align 1
   ret void
 
@@ -274761,12 +275030,12 @@ if.then224:                                       ; preds = %if.end194
   br i1 %eq226, label %if.then227, label %if.end228
 
 if.end225:                                        ; preds = %if.end252, %if.end194
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.2251)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.2255)
   %field.inplace254 = getelementptr inbounds %_Z9PlannedAs, ptr %3, i32 0, i32 1
   %field.inplace255 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace254, i32 0, i32 1
   %call256 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %field.inplace255)
   call void @_Z11scaly_eputsP10const_char(ptr %call256)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.2252)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.2256)
   call void @exit(i64 14)
   %tuple.field257 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple35, i32 0, i32 0
   store ptr null, ptr %tuple.field257, align 1
@@ -274783,7 +275052,7 @@ if.then227:                                       ; preds = %if.then224
   %dst_type234 = load ptr, ptr %dst_type, align 8
   %wrapper.load235 = load %_Z11LLVMTypeRef, ptr %dst_type234, align 8
   %handle236 = extractvalue %_Z11LLVMTypeRef %wrapper.load235, 0
-  %call237 = call %_Z12LLVMValueRef @LLVMBuildFPToSI(ptr %handle231, ptr %handle233, ptr %handle236, ptr @.str.2249)
+  %call237 = call %_Z12LLVMValueRef @LLVMBuildFPToSI(ptr %handle231, ptr %handle233, ptr %handle236, ptr @.str.2253)
   store %_Z12LLVMValueRef %call237, ptr %0, align 1
   ret void
 
@@ -274800,7 +275069,7 @@ if.then239:                                       ; preds = %if.end228
   %dst_type246 = load ptr, ptr %dst_type, align 8
   %wrapper.load247 = load %_Z11LLVMTypeRef, ptr %dst_type246, align 8
   %handle248 = extractvalue %_Z11LLVMTypeRef %wrapper.load247, 0
-  %call249 = call %_Z12LLVMValueRef @LLVMBuildFPTrunc(ptr %handle243, ptr %handle245, ptr %handle248, ptr @.str.2250)
+  %call249 = call %_Z12LLVMValueRef @LLVMBuildFPTrunc(ptr %handle243, ptr %handle245, ptr %handle248, ptr @.str.2254)
   store %_Z12LLVMValueRef %call249, ptr %0, align 1
   ret void
 
@@ -274955,7 +275224,7 @@ if.end46:                                         ; preds = %if.end50, %if.then3
 if.then49:                                        ; preds = %if.then45
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp51, ptr align 1 %call47, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   %field.inplace52 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp51, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2253 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2257 }, ptr %arg.tmp, align 1
   %call53 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace52, ptr %arg.tmp)
   br i1 %call53, label %if.then54, label %if.end55
 
@@ -274968,7 +275237,7 @@ if.then54:                                        ; preds = %if.then49
 
 if.end55:                                         ; preds = %if.then54, %if.then49
   %field.inplace56 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp51, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2254 }, ptr %arg.tmp57, align 1
+  store { ptr } { ptr @.sconst.2258 }, ptr %arg.tmp57, align 1
   %call58 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace56, ptr %arg.tmp57)
   br i1 %call58, label %if.then59, label %if.end60
 
@@ -274988,7 +275257,7 @@ if.end64:                                         ; preds = %if.then63, %if.end4
 
 if.then66:                                        ; preds = %if.end38
   %field.inplace68 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.2255 }, ptr %arg.tmp69, align 1
+  store { ptr } { ptr @.sconst.2259 }, ptr %arg.tmp69, align 1
   %call70 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace68, ptr %arg.tmp69)
   br i1 %call70, label %if.then71, label %if.end72
 
@@ -275015,7 +275284,7 @@ if.then71:                                        ; preds = %if.then66
 
 if.end72:                                         ; preds = %if.then66
   %field.inplace77 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %3, i32 0, i32 2
-  store { ptr } { ptr @.sconst.2256 }, ptr %arg.tmp78, align 1
+  store { ptr } { ptr @.sconst.2260 }, ptr %arg.tmp78, align 1
   %call79 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace77, ptr %arg.tmp78)
   br i1 %call79, label %if.then80, label %if.end81
 
@@ -275064,7 +275333,7 @@ if.then99:                                        ; preds = %if.end95
 
 if.end100:                                        ; preds = %if.end95
   store %_Z11LLVMTypeRef %call89, ptr %arg.tmp101, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp101, ptr @.str.2257)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %arg.tmp101, ptr @.str.2261)
   store %_Z11LLVMTypeRef %call89, ptr %arg.tmp101, align 1
   call void @_ZN7Emitter17copy_struct_valueEPN4scaly6memory4PageE12LLVMValueRef12LLVMValueRef11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %sret.result102, ptr %1, ptr %2, ptr %tuple, ptr %sret.result, ptr %arg.tmp101)
   %sret.body103 = load %_Z12LLVMValueRef, ptr %tuple, align 8
@@ -275096,7 +275365,7 @@ if.then121:                                       ; preds = %if.end113
 
 if.end122:                                        ; preds = %if.end113
   %union_type125 = load ptr, ptr %union_type107, align 8
-  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %union_type125, ptr @.str.2258)
+  call void @_ZN7Emitter12acquire_tempEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %tuple, ptr %1, ptr %2, ptr %union_type125, ptr @.str.2262)
   %load.struct126 = load %_Z7Emitter, ptr %2, align 8
   %context127 = extractvalue %_Z7Emitter %load.struct126, 1
   %handle128 = extractvalue %_Z14LLVMContextRef %context127, 0
@@ -275109,7 +275378,7 @@ if.end122:                                        ; preds = %if.end113
   %handle134 = extractvalue %_Z11LLVMTypeRef %wrapper.load133, 0
   %wrapper.load135 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle136 = extractvalue %_Z12LLVMValueRef %wrapper.load135, 0
-  %call137 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle131, ptr %handle134, ptr %handle136, i64 0, ptr @.str.2259)
+  %call137 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle131, ptr %handle134, ptr %handle136, i64 0, ptr @.str.2263)
   %handle138 = extractvalue %_Z11LLVMTypeRef %call129, 0
   %load.struct139 = load %_Z26PlannedVariantConstruction, ptr %3, align 8
   %variant_tag = extractvalue %_Z26PlannedVariantConstruction %load.struct139, 3
@@ -275143,7 +275412,7 @@ if.end151:                                        ; preds = %if.end159, %if.end1
   %handle211 = extractvalue %_Z11LLVMTypeRef %wrapper.load210, 0
   %wrapper.load212 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle213 = extractvalue %_Z12LLVMValueRef %wrapper.load212, 0
-  %call214 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle208, ptr %handle211, ptr %handle213, ptr @.str.2262)
+  %call214 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle208, ptr %handle211, ptr %handle213, ptr @.str.2266)
   store %_Z12LLVMValueRef %call214, ptr %0, align 1
   ret void
 
@@ -275156,7 +275425,7 @@ if.then158:                                       ; preds = %if.then150
   %handle165 = extractvalue %_Z11LLVMTypeRef %wrapper.load164, 0
   %wrapper.load166 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle167 = extractvalue %_Z12LLVMValueRef %wrapper.load166, 0
-  %call168 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle162, ptr %handle165, ptr %handle167, i64 1, ptr @.str.2260)
+  %call168 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle162, ptr %handle165, ptr %handle167, i64 1, ptr @.str.2264)
   %binding.load = load %_Z12LLVMValueRef, ptr %sret.result154, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %to_store, ptr align 1 %sret.result154, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   %field.inplace170 = getelementptr inbounds %_Z14PlannedOperand, ptr %value153, i32 0, i32 3
@@ -275207,7 +275476,7 @@ if.then190:                                       ; preds = %if.then181
   %handle196 = extractvalue %_Z11LLVMTypeRef %wrapper.load195, 0
   %wrapper.load197 = load %_Z12LLVMValueRef, ptr %sret.result154, align 8
   %handle198 = extractvalue %_Z12LLVMValueRef %wrapper.load197, 0
-  %call199 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle194, ptr %handle196, ptr %handle198, ptr @.str.2261)
+  %call199 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle194, ptr %handle196, ptr %handle198, ptr @.str.2265)
   store %_Z12LLVMValueRef %call199, ptr %to_store, align 1
   br label %if.end191
 
@@ -275885,7 +276154,7 @@ choose.when49:                                    ; preds = %choose.when
   %variant.val51 = load %_Z11PlannedCall, ptr %"variant.c_data().ptr50", align 8
   %mangled_name = extractvalue %_Z11PlannedCall %variant.val51, 2
   store { ptr } %mangled_name, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.2263 }, ptr %arg.tmp52, align 1
+  store { ptr } { ptr @.sconst.2267 }, ptr %arg.tmp52, align 1
   %call53 = call i1 @_ZN6String8containsE6String(ptr %arg.tmp, ptr %arg.tmp52)
   %eq54 = icmp eq i1 %call53, false
   br i1 %eq54, label %if.then55, label %if.end56
@@ -275933,7 +276202,7 @@ choose.when67:                                    ; preds = %if.end58
   %variant.val69 = load %_Z9Reference, ptr %"variant.c_data().ptr68", align 8
   %location = extractvalue %_Z9Reference %variant.val69, 1
   store { ptr } %location, ptr %arg.tmp70, align 1
-  store { ptr } { ptr @.sconst.2264 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.2268 }, ptr %arg.tmp71, align 1
   %call72 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp70, ptr %arg.tmp71)
   br i1 %call72, label %if.then73, label %if.end74
 
@@ -275991,7 +276260,7 @@ if.end98:                                         ; preds = %if.end92
   %result_type = extractvalue %_Z11PlannedCall %variant.val51, 8
   store %_Z11PlannedType %result_type, ptr %ctor_rt, align 1
   %field.inplace99 = getelementptr inbounds %_Z11PlannedType, ptr %ctor_rt, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2265 }, ptr %arg.tmp100, align 1
+  store { ptr } { ptr @.sconst.2269 }, ptr %arg.tmp100, align 1
   %call101 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace99, ptr %arg.tmp100)
   br i1 %call101, label %if.then102, label %if.end103
 
@@ -276423,7 +276692,7 @@ if.then128:                                       ; preds = %if.then122
   %handle135 = extractvalue %_Z11LLVMTypeRef %call134, 0
   %wrapper.load136 = load %_Z12LLVMValueRef, ptr %tuple, align 8
   %handle137 = extractvalue %_Z12LLVMValueRef %wrapper.load136, 0
-  %call138 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle131, ptr %handle135, ptr %handle137, ptr @.str.2266)
+  %call138 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle131, ptr %handle135, ptr %handle137, ptr @.str.2270)
   %load.struct139 = load %_Z7Emitter, ptr %2, align 8
   %builder140 = extractvalue %_Z7Emitter %load.struct139, 5
   %handle141 = extractvalue %_Z14LLVMBuilderRef %builder140, 0
@@ -276432,7 +276701,7 @@ if.then128:                                       ; preds = %if.then122
   %value144 = load ptr, ptr %value, align 8
   %wrapper.load145 = load %_Z12LLVMValueRef, ptr %value144, align 8
   %handle146 = extractvalue %_Z12LLVMValueRef %wrapper.load145, 0
-  %call147 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle141, ptr %handle143, ptr %handle146, ptr @.str.2267)
+  %call147 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle141, ptr %handle143, ptr %handle146, ptr @.str.2271)
   store %_Z12LLVMValueRef %call138, ptr %arg.tmp148, align 1
   store %_Z12LLVMValueRef %call147, ptr %arg.tmp149, align 1
   call void @_ZN7Emitter17copy_struct_valueEPN4scaly6memory4PageE12LLVMValueRef12LLVMValueRef11LLVMTypeRef(ptr noalias sret(%_Z12LLVMValueRef) %tuple64, ptr %1, ptr %2, ptr %arg.tmp148, ptr %arg.tmp149, ptr %sret.result82)
@@ -276503,7 +276772,7 @@ if.end186:                                        ; preds = %if.end203, %if.then
   br label %if.end180
 
 if.then191:                                       ; preds = %if.then185
-  store { ptr } { ptr @.sconst.2268 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2272 }, ptr %arg.tmp, align 1
   call void @_ZN7Emitter15lookup_variableEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result193, ptr %1, ptr %2, ptr %arg.tmp)
   %load.struct194 = load %_Z12LLVMValueRef, ptr %sret.result193, align 8
   %handle195 = extractvalue %_Z12LLVMValueRef %load.struct194, 0
@@ -276528,7 +276797,7 @@ if.then202:                                       ; preds = %if.end192
   %load.struct204 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct204, 4
   %handle205 = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call206 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle205, ptr @.str.2269)
+  %call206 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle205, ptr @.str.2273)
   store %_Z12LLVMValueRef %call206, ptr %alloc_func, align 1
   %alloc_func207 = load %_Z12LLVMValueRef, ptr %alloc_func, align 8
   %handle208 = extractvalue %_Z12LLVMValueRef %alloc_func207, 0
@@ -276576,7 +276845,7 @@ if.then210:                                       ; preds = %if.then202
   %llvm_module239 = extractvalue %_Z7Emitter %load.struct238, 4
   %handle240 = extractvalue %_Z13LLVMModuleRef %llvm_module239, 0
   %handle241 = extractvalue %_Z11LLVMTypeRef %call237, 0
-  %call242 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle240, ptr @.str.2270, ptr %handle241)
+  %call242 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle240, ptr @.str.2274, ptr %handle241)
   store %_Z12LLVMValueRef %call242, ptr %alloc_func, align 1
   %alloc_func243 = load %_Z12LLVMValueRef, ptr %alloc_func, align 8
   %handle244 = extractvalue %_Z12LLVMValueRef %alloc_func243, 0
@@ -276642,7 +276911,7 @@ if.end211:                                        ; preds = %if.then210, %if.the
   %alloc_args289 = load ptr, ptr %ap_param_types, align 8
   %load.struct290 = load %_Z6VectorI12LLVMValueRefE, ptr %alloc_args289, align 8
   %data291 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct290, 1
-  %call292 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle285, ptr %handle286, ptr %handle288, ptr %data291, i64 3, ptr @.str.2271)
+  %call292 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle285, ptr %handle286, ptr %handle288, ptr %data291, i64 3, ptr @.str.2275)
   %handle293 = extractvalue %_Z12LLVMValueRef %call292, 0
   %ne294 = icmp ne ptr %handle293, null
   br i1 %ne294, label %if.then295, label %if.end296
@@ -276713,7 +276982,7 @@ if.then329:                                       ; preds = %if.then323
   %handle334 = extractvalue %_Z11LLVMTypeRef %call307, 0
   %store_val335 = load %_Z12LLVMValueRef, ptr %store_val, align 8
   %handle336 = extractvalue %_Z12LLVMValueRef %store_val335, 0
-  %call337 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle333, ptr %handle334, ptr %handle336, ptr @.str.2272)
+  %call337 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle333, ptr %handle334, ptr %handle336, ptr @.str.2276)
   store %_Z12LLVMValueRef %call337, ptr %store_val, align 1
   br label %if.end330
 
@@ -276725,7 +276994,7 @@ choose.when342:                                   ; preds = %if.end20
   %variant.val344 = load %_Z11PlannedCall, ptr %"variant.c_data().ptr343", align 8
   %name345 = extractvalue %_Z11PlannedCall %variant.val344, 1
   store { ptr } %name345, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.2273 }, ptr %arg.tmp346, align 1
+  store { ptr } { ptr @.sconst.2277 }, ptr %arg.tmp346, align 1
   %call347 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %arg.tmp346)
   br i1 %call347, label %if.then348, label %if.end349
 
@@ -276843,7 +277112,7 @@ if.then403:                                       ; preds = %if.then393
   %value410 = load ptr, ptr %value, align 8
   %wrapper.load411 = load %_Z12LLVMValueRef, ptr %value410, align 8
   %handle412 = extractvalue %_Z12LLVMValueRef %wrapper.load411, 0
-  %call413 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle407, ptr %handle409, ptr %handle412, ptr @.str.2274)
+  %call413 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle407, ptr %handle409, ptr %handle412, ptr @.str.2278)
   store %_Z12LLVMValueRef %call413, ptr %store_val, align 1
   br label %if.end404
 
@@ -276900,7 +277169,7 @@ if.then447:                                       ; preds = %if.then440
   %global_type = extractvalue %_Z16PlannedGlobalRef %variant.val424, 3
   %name449 = extractvalue %_Z11PlannedType %global_type, 1
   store { ptr } %name449, ptr %arg.tmp428, align 1
-  store { ptr } { ptr @.sconst.2275 }, ptr %arg.tmp450, align 1
+  store { ptr } { ptr @.sconst.2279 }, ptr %arg.tmp450, align 1
   %call451 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp428, ptr %arg.tmp450)
   store i1 %call451, ptr %is_ptr_global, align 1
   %is_ptr_global452 = load i1, ptr %is_ptr_global, align 1
@@ -276914,7 +277183,7 @@ if.then454:                                       ; preds = %if.then447
   %global_type456 = extractvalue %_Z16PlannedGlobalRef %variant.val424, 3
   %name457 = extractvalue %_Z11PlannedType %global_type456, 1
   store { ptr } %name457, ptr %arg.tmp428, align 1
-  store { ptr } { ptr @.sconst.2276 }, ptr %arg.tmp450, align 1
+  store { ptr } { ptr @.sconst.2280 }, ptr %arg.tmp450, align 1
   %call458 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp428, ptr %arg.tmp450)
   store i1 %call458, ptr %is_ptr_global, align 1
   br label %if.end455
@@ -276933,7 +277202,7 @@ if.then460:                                       ; preds = %if.end455
   %handle468 = extractvalue %_Z14LLVMBuilderRef %builder467, 0
   %handle469 = extractvalue %_Z11LLVMTypeRef %call465, 0
   %handle470 = extractvalue %_Z12LLVMValueRef %call430, 0
-  %call471 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle468, ptr %handle469, ptr %handle470, ptr @.str.2277)
+  %call471 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle468, ptr %handle469, ptr %handle470, ptr @.str.2281)
   store %_Z12LLVMValueRef %call471, ptr %tuple, align 1
   br label %if.end461
 
@@ -276999,7 +277268,7 @@ entry:
   %tuple = alloca %_Z11LLVMTypeRef, align 8
   %field.inplace = getelementptr inbounds %_Z15PlannedVariable, ptr %5, i32 0, i32 1
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2278 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2282 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   %not = xor i1 %call, true
   br i1 %not, label %if.then, label %if.end
@@ -277090,7 +277359,7 @@ choose.when18:                                    ; preds = %choose.when
   %variant.val20 = load %_Z11Unspecified, ptr %"variant.c_data().ptr19", align 1
   %mangled_name = extractvalue %_Z11PlannedCall %variant.val, 2
   store { ptr } %mangled_name, ptr %arg.tmp21, align 1
-  store { ptr } { ptr @.sconst.2279 }, ptr %arg.tmp22, align 1
+  store { ptr } { ptr @.sconst.2283 }, ptr %arg.tmp22, align 1
   %call23 = call i1 @_ZN6String8containsE6String(ptr %arg.tmp21, ptr %arg.tmp22)
   br i1 %call23, label %if.then24, label %if.end25
 
@@ -277116,7 +277385,7 @@ if.end31:                                         ; preds = %choose.end
   %load.struct33 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct33, 4
   %handle34 = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call35 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle34, ptr @.str.2280)
+  %call35 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle34, ptr @.str.2284)
   store %_Z12LLVMValueRef %call35, ptr %page_get_fn, align 1
   %page_get_fn36 = load %_Z12LLVMValueRef, ptr %page_get_fn, align 8
   %handle37 = extractvalue %_Z12LLVMValueRef %page_get_fn36, 0
@@ -277147,7 +277416,7 @@ if.then39:                                        ; preds = %if.end31
   %llvm_module55 = extractvalue %_Z7Emitter %load.struct54, 4
   %handle56 = extractvalue %_Z13LLVMModuleRef %llvm_module55, 0
   %handle57 = extractvalue %_Z11LLVMTypeRef %call53, 0
-  %call58 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle56, ptr @.str.2281, ptr %handle57)
+  %call58 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle56, ptr @.str.2285, ptr %handle57)
   store %_Z12LLVMValueRef %call58, ptr %page_get_fn, align 1
   %page_get_fn59 = load %_Z12LLVMValueRef, ptr %page_get_fn, align 8
   %handle60 = extractvalue %_Z12LLVMValueRef %page_get_fn59, 0
@@ -277189,11 +277458,11 @@ if.end40:                                         ; preds = %if.then39, %if.end3
   %pg_args84 = load ptr, ptr %pg_param_types, align 8
   %load.struct85 = load %_Z6VectorI12LLVMValueRefE, ptr %pg_args84, align 8
   %data86 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct85, 1
-  %call87 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle80, ptr %handle81, ptr %handle83, ptr %data86, i64 1, ptr @.str.2282)
+  %call87 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle80, ptr %handle81, ptr %handle83, ptr %data86, i64 1, ptr @.str.2286)
   %load.struct88 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module89 = extractvalue %_Z7Emitter %load.struct88, 4
   %handle90 = extractvalue %_Z13LLVMModuleRef %llvm_module89, 0
-  %call91 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle90, ptr @.str.2283)
+  %call91 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle90, ptr @.str.2287)
   store %_Z12LLVMValueRef %call91, ptr %alloc_func, align 1
   %alloc_func92 = load %_Z12LLVMValueRef, ptr %alloc_func, align 8
   %handle93 = extractvalue %_Z12LLVMValueRef %alloc_func92, 0
@@ -277238,7 +277507,7 @@ if.then95:                                        ; preds = %if.end40
   %llvm_module126 = extractvalue %_Z7Emitter %load.struct125, 4
   %handle127 = extractvalue %_Z13LLVMModuleRef %llvm_module126, 0
   %handle128 = extractvalue %_Z11LLVMTypeRef %call124, 0
-  %call129 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle127, ptr @.str.2284, ptr %handle128)
+  %call129 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle127, ptr @.str.2288, ptr %handle128)
   store %_Z12LLVMValueRef %call129, ptr %alloc_func, align 1
   %alloc_func130 = load %_Z12LLVMValueRef, ptr %alloc_func, align 8
   %handle131 = extractvalue %_Z12LLVMValueRef %alloc_func130, 0
@@ -277307,11 +277576,11 @@ if.end96:                                         ; preds = %if.then95, %if.end4
   %alloc_args179 = load ptr, ptr %ap_param_types, align 8
   %load.struct180 = load %_Z6VectorI12LLVMValueRefE, ptr %alloc_args179, align 8
   %data181 = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct180, 1
-  %call182 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle175, ptr %handle176, ptr %handle178, ptr %data181, i64 3, ptr @.str.2285)
+  %call182 = call %_Z12LLVMValueRef @LLVMBuildCall2(ptr %handle175, ptr %handle176, ptr %handle178, ptr %data181, i64 3, ptr @.str.2289)
   %load.struct183 = load %_Z7Emitter, ptr %2, align 8
   %llvm_module184 = extractvalue %_Z7Emitter %load.struct183, 4
   %handle185 = extractvalue %_Z13LLVMModuleRef %llvm_module184, 0
-  %call186 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle185, ptr @.str.2286)
+  %call186 = call %_Z12LLVMValueRef @LLVMGetNamedFunction(ptr %handle185, ptr @.str.2290)
   store %_Z12LLVMValueRef %call186, ptr %memcpy_fn, align 1
   %memcpy_fn187 = load %_Z12LLVMValueRef, ptr %memcpy_fn, align 8
   %handle188 = extractvalue %_Z12LLVMValueRef %memcpy_fn187, 0
@@ -277356,7 +277625,7 @@ if.then190:                                       ; preds = %if.end96
   %llvm_module221 = extractvalue %_Z7Emitter %load.struct220, 4
   %handle222 = extractvalue %_Z13LLVMModuleRef %llvm_module221, 0
   %handle223 = extractvalue %_Z11LLVMTypeRef %call219, 0
-  %call224 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle222, ptr @.str.2287, ptr %handle223)
+  %call224 = call %_Z12LLVMValueRef @LLVMAddFunction(ptr %handle222, ptr @.str.2291, ptr %handle223)
   store %_Z12LLVMValueRef %call224, ptr %memcpy_fn, align 1
   %memcpy_fn225 = load %_Z12LLVMValueRef, ptr %memcpy_fn, align 8
   %handle226 = extractvalue %_Z12LLVMValueRef %memcpy_fn225, 0
@@ -277454,7 +277723,7 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } %name, ptr %arg.tmp, align 1
   %arg.tmp1 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2288 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.2292 }, ptr %arg.tmp1, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %arg.tmp1)
   %is_pointer = alloca i1, align 1
   store i1 %call, ptr %is_pointer, align 1
@@ -277464,14 +277733,14 @@ entry:
 
 if.then:                                          ; preds = %entry
   store { ptr } %name, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.2289 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.2293 }, ptr %arg.tmp1, align 1
   %call3 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %arg.tmp1)
   store i1 %call3, ptr %is_pointer, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %field.inplace = getelementptr inbounds %_Z15PlannedVariable, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2290 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.2294 }, ptr %arg.tmp4, align 1
   %call5 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp4)
   %tuple.field = getelementptr inbounds %_Z11LLVMTypeRef, ptr %tuple, i32 0, i32 0
   store ptr null, ptr %tuple.field, align 1
@@ -277525,7 +277794,7 @@ if.then20:                                        ; preds = %if.then15
   %handle27 = extractvalue %_Z11LLVMTypeRef %call24, 0
   %current_ptr28 = load %_Z12LLVMValueRef, ptr %current_ptr, align 8
   %handle29 = extractvalue %_Z12LLVMValueRef %current_ptr28, 0
-  %call30 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle26, ptr %handle27, ptr %handle29, ptr @.str.2291)
+  %call30 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle26, ptr %handle27, ptr %handle29, ptr @.str.2295)
   store %_Z12LLVMValueRef %call30, ptr %current_ptr, align 1
   br label %if.end21
 
@@ -277640,7 +277909,7 @@ if.then88:                                        ; preds = %if.then82
   %handle97 = extractvalue %_Z11LLVMTypeRef %call93, 0
   %current_ptr98 = load %_Z12LLVMValueRef, ptr %current_ptr, align 8
   %handle99 = extractvalue %_Z12LLVMValueRef %current_ptr98, 0
-  %call100 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle96, ptr %handle97, ptr %handle99, ptr @.str.2292)
+  %call100 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle96, ptr %handle97, ptr %handle99, ptr @.str.2296)
   store %_Z12LLVMValueRef %call100, ptr %current_ptr, align 1
   br label %if.end89
 
@@ -277727,7 +277996,7 @@ if.end134:                                        ; preds = %if.end140, %if.then
 if.then139:                                       ; preds = %if.then133
   store %_Z11PlannedType %result_type, ptr %deref.tmp42, align 1
   %field.inplace141 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp42, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2293 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.2297 }, ptr %arg.tmp4, align 1
   %call142 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace141, ptr %arg.tmp4)
   br i1 %call142, label %if.then143, label %if.end144
 
@@ -277742,7 +278011,7 @@ if.then143:                                       ; preds = %if.then139
 
 if.end144:                                        ; preds = %if.end148, %if.then139
   %field.inplace163 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp42, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2294 }, ptr %arg.tmp164, align 1
+  store { ptr } { ptr @.sconst.2298 }, ptr %arg.tmp164, align 1
   %call165 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace163, ptr %arg.tmp164)
   br i1 %call165, label %if.then166, label %if.end167
 
@@ -277783,7 +278052,7 @@ if.then166:                                       ; preds = %if.end144
 
 if.end167:                                        ; preds = %if.end172, %if.end144
   %field.inplace186 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp42, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2295 }, ptr %arg.tmp187, align 1
+  store { ptr } { ptr @.sconst.2299 }, ptr %arg.tmp187, align 1
   %call188 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace186, ptr %arg.tmp187)
   br i1 %call188, label %if.then189, label %if.end190
 
@@ -277900,7 +278169,7 @@ if.then232:                                       ; preds = %if.then224
   %handle241 = extractvalue %_Z11LLVMTypeRef %call237, 0
   %current_ptr242 = load %_Z12LLVMValueRef, ptr %current_ptr, align 8
   %handle243 = extractvalue %_Z12LLVMValueRef %current_ptr242, 0
-  %call244 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle240, ptr %handle241, ptr %handle243, ptr @.str.2296)
+  %call244 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle240, ptr %handle241, ptr %handle243, ptr @.str.2300)
   store %_Z12LLVMValueRef %call244, ptr %current_ptr, align 1
   %inner_struct245 = load ptr, ptr %inner_struct, align 8
   %set.load246 = load %_Z11LLVMTypeRef, ptr %inner_struct245, align 8
@@ -277993,7 +278262,7 @@ if.then22:                                        ; preds = %if.then10
   %handle27 = extractvalue %_Z11LLVMTypeRef %wrapper.load26, 0
   %stored_value28 = load %_Z12LLVMValueRef, ptr %stored_value, align 8
   %handle29 = extractvalue %_Z12LLVMValueRef %stored_value28, 0
-  %call30 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle25, ptr %handle27, ptr %handle29, ptr @.str.2297)
+  %call30 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle25, ptr %handle27, ptr %handle29, ptr @.str.2301)
   store %_Z12LLVMValueRef %call30, ptr %stored_value, align 1
   br label %if.end23
 
@@ -278137,7 +278406,7 @@ if.then37:                                        ; preds = %if.then33
   %handle42 = extractvalue %_Z12LLVMValueRef %value41, 0
   %wrapper.load43 = load %_Z11LLVMTypeRef, ptr %sret.result, align 8
   %handle44 = extractvalue %_Z11LLVMTypeRef %wrapper.load43, 0
-  %call45 = call %_Z12LLVMValueRef @LLVMBuildFPTrunc(ptr %handle40, ptr %handle42, ptr %handle44, ptr @.str.2298)
+  %call45 = call %_Z12LLVMValueRef @LLVMBuildFPTrunc(ptr %handle40, ptr %handle42, ptr %handle44, ptr @.str.2302)
   store %_Z12LLVMValueRef %call45, ptr %value, align 1
   br label %if.end38
 
@@ -278160,7 +278429,7 @@ if.then52:                                        ; preds = %if.then48
   %handle58 = extractvalue %_Z12LLVMValueRef %value57, 0
   %wrapper.load59 = load %_Z11LLVMTypeRef, ptr %sret.result, align 8
   %handle60 = extractvalue %_Z11LLVMTypeRef %wrapper.load59, 0
-  %call61 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle56, ptr %handle58, ptr %handle60, ptr @.str.2299)
+  %call61 = call %_Z12LLVMValueRef @LLVMBuildFPExt(ptr %handle56, ptr %handle58, ptr %handle60, ptr @.str.2303)
   store %_Z12LLVMValueRef %call61, ptr %value, align 1
   br label %if.end53
 
@@ -278186,7 +278455,7 @@ if.then73:                                        ; preds = %if.then65
   %handle76 = extractvalue %_Z12LLVMValueRef %value75, 0
   %call77 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle76)
   %field.inplace78 = getelementptr inbounds %_Z14PlannedBinding, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2300 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2304 }, ptr %arg.tmp, align 1
   %call79 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace78, ptr %arg.tmp)
   br i1 %call79, label %if.then80, label %if.else81
 
@@ -278348,7 +278617,7 @@ if.then147:                                       ; preds = %if.then141
   %handle154 = extractvalue %_Z11LLVMTypeRef %mapped153, 0
   %value155 = load %_Z12LLVMValueRef, ptr %value, align 8
   %handle156 = extractvalue %_Z12LLVMValueRef %value155, 0
-  %call157 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle152, ptr %handle154, ptr %handle156, ptr @.str.2301)
+  %call157 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle152, ptr %handle154, ptr %handle156, ptr @.str.2305)
   store %_Z12LLVMValueRef %call157, ptr %store_val, align 1
   br label %if.end148
 
@@ -278380,7 +278649,7 @@ if.then174:                                       ; preds = %if.then162
   %call178 = call i64 @LLVMGetIntTypeWidth(ptr %handle177)
   store i32 5, ptr %enc, align 1
   store i64 %call178, ptr %dbits, align 1
-  store { ptr } { ptr @.sconst.2302 }, ptr %tyname, align 1
+  store { ptr } { ptr @.sconst.2306 }, ptr %tyname, align 1
   %eq179 = icmp eq i64 %call178, 1
   br i1 %eq179, label %if.then180, label %if.end181
 
@@ -278393,7 +278662,7 @@ if.end175:                                        ; preds = %if.end181, %if.then
 if.then180:                                       ; preds = %if.then174
   store i32 2, ptr %enc, align 1
   store i64 8, ptr %dbits, align 1
-  store { ptr } { ptr @.sconst.2303 }, ptr %tyname, align 1
+  store { ptr } { ptr @.sconst.2307 }, ptr %tyname, align 1
   br label %if.end181
 
 if.end181:                                        ; preds = %if.then180, %if.then174
@@ -278541,7 +278810,7 @@ if.then283:                                       ; preds = %if.else
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp288, ptr align 1 %item_type287, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %dbits, align 1
   %field.inplace289 = getelementptr inbounds %_Z11PlannedType, ptr %deref.tmp288, i32 0, i32 1
-  store { ptr } { ptr @.sconst.2304 }, ptr %tyname, align 1
+  store { ptr } { ptr @.sconst.2308 }, ptr %tyname, align 1
   %call290 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace289, ptr %tyname)
   br i1 %call290, label %if.then291, label %if.end292
 
@@ -278653,7 +278922,7 @@ if.then323:                                       ; preds = %if.end308
   %indices346 = load ptr, ptr %indices, align 8
   %load.struct347 = load %_Z6VectorI12LLVMValueRefE, ptr %indices346, align 8
   %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct347, 1
-  %call348 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle342, ptr %handle343, ptr %handle345, ptr %data, i64 2, ptr @.str.2305)
+  %call348 = call %_Z12LLVMValueRef @LLVMBuildInBoundsGEP2(ptr %handle342, ptr %handle343, ptr %handle345, ptr %data, i64 2, ptr @.str.2309)
   %load.struct349 = load %_Z7Emitter, ptr %0, align 8
   %context350 = extractvalue %_Z7Emitter %load.struct349, 1
   %handle351 = extractvalue %_Z14LLVMContextRef %context350, 0
@@ -278773,7 +279042,7 @@ if.then25:                                        ; preds = %if.then18
   %handle34 = extractvalue %_Z14LLVMBuilderRef %builder, 0
   %handle35 = extractvalue %_Z11LLVMTypeRef %call28, 0
   %handle36 = extractvalue %_Z12LLVMValueRef %call23, 0
-  %call37 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle34, ptr %handle35, ptr %handle36, i64 0, ptr @.str.2306)
+  %call37 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle34, ptr %handle35, ptr %handle36, i64 0, ptr @.str.2310)
   %load.struct38 = load %_Z7Emitter, ptr %0, align 8
   %builder39 = extractvalue %_Z7Emitter %load.struct38, 5
   %handle40 = extractvalue %_Z14LLVMBuilderRef %builder39, 0
@@ -278787,7 +279056,7 @@ if.then25:                                        ; preds = %if.then18
   %handle48 = extractvalue %_Z14LLVMBuilderRef %builder47, 0
   %handle49 = extractvalue %_Z11LLVMTypeRef %call28, 0
   %handle50 = extractvalue %_Z12LLVMValueRef %call23, 0
-  %call51 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle48, ptr %handle49, ptr %handle50, i64 1, ptr @.str.2307)
+  %call51 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle48, ptr %handle49, ptr %handle50, i64 1, ptr @.str.2311)
   %ret_val52 = load %_Z12LLVMValueRef, ptr %ret_val, align 8
   %handle53 = extractvalue %_Z12LLVMValueRef %ret_val52, 0
   %ne54 = icmp ne ptr %handle53, null
@@ -278860,7 +279129,7 @@ if.then85:                                        ; preds = %if.then77
   %handle90 = extractvalue %_Z11LLVMTypeRef %call80, 0
   %ret_val91 = load %_Z12LLVMValueRef, ptr %ret_val, align 8
   %handle92 = extractvalue %_Z12LLVMValueRef %ret_val91, 0
-  %call93 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle89, ptr %handle90, ptr %handle92, ptr @.str.2308)
+  %call93 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle89, ptr %handle90, ptr %handle92, ptr @.str.2312)
   store %_Z12LLVMValueRef %call93, ptr %to_store, align 1
   br label %if.end86
 
@@ -278985,7 +279254,7 @@ if.then169:                                       ; preds = %if.then160
   %handle174 = extractvalue %_Z11LLVMTypeRef %call7, 0
   %ret_val175 = load %_Z12LLVMValueRef, ptr %ret_val, align 8
   %handle176 = extractvalue %_Z12LLVMValueRef %ret_val175, 0
-  %call177 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle173, ptr %handle174, ptr %handle176, ptr @.str.2309)
+  %call177 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle173, ptr %handle174, ptr %handle176, ptr @.str.2313)
   store %_Z12LLVMValueRef %call177, ptr %to_store, align 1
   br label %if.end170
 
@@ -279106,7 +279375,7 @@ if.end36:                                         ; preds = %if.end42, %if.end16
   %handle79 = extractvalue %_Z11LLVMTypeRef %result_ty78, 0
   %result_ptr80 = load %_Z12LLVMValueRef, ptr %result_ptr, align 8
   %handle81 = extractvalue %_Z12LLVMValueRef %result_ptr80, 0
-  %call82 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle77, ptr %handle79, ptr %handle81, i64 0, ptr @.str.2311)
+  %call82 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle77, ptr %handle79, ptr %handle81, i64 0, ptr @.str.2315)
   %handle83 = extractvalue %_Z11LLVMTypeRef %call74, 0
   %call84 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle83, i64 1, i64 0)
   %load.struct85 = load %_Z7Emitter, ptr %0, align 8
@@ -279128,7 +279397,7 @@ if.then41:                                        ; preds = %if.then35
 
 if.end42:                                         ; preds = %if.then35
   store %_Z11LLVMTypeRef %call5, ptr %result_ty, align 1
-  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result, ptr %local_page, ptr %0, ptr %result_ty, ptr @.str.2310)
+  call void @_ZN7Emitter12entry_allocaEPN4scaly6memory4PageE11LLVMTypeRefP10const_char(ptr noalias sret(%_Z12LLVMValueRef) %sret.result, ptr %local_page, ptr %0, ptr %result_ty, ptr @.str.2314)
   %set.load = load %_Z12LLVMValueRef, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result_ptr, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   br label %if.end36
@@ -279242,7 +279511,7 @@ if.then122:                                       ; preds = %if.end117
   %handle128 = extractvalue %_Z11LLVMTypeRef %result_ty127, 0
   %result_ptr129 = load %_Z12LLVMValueRef, ptr %result_ptr, align 8
   %handle130 = extractvalue %_Z12LLVMValueRef %result_ptr129, 0
-  %call131 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle126, ptr %handle128, ptr %handle130, i64 1, ptr @.str.2312)
+  %call131 = call %_Z12LLVMValueRef @LLVMBuildStructGEP2(ptr %handle126, ptr %handle128, ptr %handle130, i64 1, ptr @.str.2316)
   %load.struct132 = load %_Z7Emitter, ptr %0, align 8
   %builder133 = extractvalue %_Z7Emitter %load.struct132, 5
   %handle134 = extractvalue %_Z14LLVMBuilderRef %builder133, 0
@@ -279277,7 +279546,7 @@ if.then148:                                       ; preds = %if.end141
   %handle154 = extractvalue %_Z11LLVMTypeRef %result_ty153, 0
   %result_ptr155 = load %_Z12LLVMValueRef, ptr %result_ptr, align 8
   %handle156 = extractvalue %_Z12LLVMValueRef %result_ptr155, 0
-  %call157 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle152, ptr %handle154, ptr %handle156, ptr @.str.2313)
+  %call157 = call %_Z12LLVMValueRef @LLVMBuildLoad2(ptr %handle152, ptr %handle154, ptr %handle156, ptr @.str.2317)
   %load.struct158 = load %_Z7Emitter, ptr %0, align 8
   %builder159 = extractvalue %_Z7Emitter %load.struct158, 5
   %handle160 = extractvalue %_Z14LLVMBuilderRef %builder159, 0
@@ -279612,7 +279881,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.2314)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.2318)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -280532,7 +280801,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.2315)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.2319)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -280677,7 +280946,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.2316)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.2320)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -281597,7 +281866,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.2317)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.2321)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -282329,7 +282598,7 @@ while.body:                                       ; preds = %while.cond
   call void @_ZN6StringC1EP10const_char(ptr %struct.region27, ptr %deref)
   store ptr %struct.region27, ptr %arg, align 1
   %arg28 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2318 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2322 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String11starts_withE6String(ptr %arg28, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.else
 
@@ -282342,20 +282611,20 @@ while.exit:                                       ; preds = %while.cond
 
 if.then:                                          ; preds = %while.body
   %arg29 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2319 }, ptr %arg.tmp30, align 1
+  store { ptr } { ptr @.sconst.2323 }, ptr %arg.tmp30, align 1
   %call31 = call i1 @_ZN6String6equalsE6String(ptr %arg29, ptr %arg.tmp30)
   %arg32 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2320 }, ptr %arg.tmp33, align 1
+  store { ptr } { ptr @.sconst.2324 }, ptr %arg.tmp33, align 1
   %call34 = call i1 @_ZN6String6equalsE6String(ptr %arg32, ptr %arg.tmp33)
   %or = or i1 %call31, %call34
   br i1 %or, label %if.then35, label %if.else36
 
 if.else:                                          ; preds = %while.body
   %arg258 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2349 }, ptr %arg.tmp259, align 1
+  store { ptr } { ptr @.sconst.2353 }, ptr %arg.tmp259, align 1
   %call260 = call i1 @_ZN6String9ends_withE6String(ptr %arg258, ptr %arg.tmp259)
   %arg261 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2350 }, ptr %arg.tmp262, align 1
+  store { ptr } { ptr @.sconst.2354 }, ptr %arg.tmp262, align 1
   %call263 = call i1 @_ZN6String9ends_withE6String(ptr %arg261, ptr %arg.tmp262)
   %or264 = or i1 %call260, %call263
   br i1 %or264, label %if.then265, label %if.else266
@@ -282374,10 +282643,10 @@ if.then35:                                        ; preds = %if.then
 
 if.else36:                                        ; preds = %if.then
   %arg38 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2321 }, ptr %arg.tmp39, align 1
+  store { ptr } { ptr @.sconst.2325 }, ptr %arg.tmp39, align 1
   %call40 = call i1 @_ZN6String6equalsE6String(ptr %arg38, ptr %arg.tmp39)
   %arg41 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2322 }, ptr %arg.tmp42, align 1
+  store { ptr } { ptr @.sconst.2326 }, ptr %arg.tmp42, align 1
   %call43 = call i1 @_ZN6String6equalsE6String(ptr %arg41, ptr %arg.tmp42)
   %or44 = or i1 %call40, %call43
   br i1 %or44, label %if.then45, label %if.else46
@@ -282393,7 +282662,7 @@ if.then45:                                        ; preds = %if.else36
 
 if.else46:                                        ; preds = %if.else36
   %arg49 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2323 }, ptr %arg.tmp50, align 1
+  store { ptr } { ptr @.sconst.2327 }, ptr %arg.tmp50, align 1
   %call51 = call i1 @_ZN6String6equalsE6String(ptr %arg49, ptr %arg.tmp50)
   br i1 %call51, label %if.then52, label %if.else53
 
@@ -282408,7 +282677,7 @@ if.then52:                                        ; preds = %if.else46
 
 if.else53:                                        ; preds = %if.else46
   %arg56 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2324 }, ptr %arg.tmp57, align 1
+  store { ptr } { ptr @.sconst.2328 }, ptr %arg.tmp57, align 1
   %call58 = call i1 @_ZN6String6equalsE6String(ptr %arg56, ptr %arg.tmp57)
   br i1 %call58, label %if.then59, label %if.else60
 
@@ -282423,7 +282692,7 @@ if.then59:                                        ; preds = %if.else53
 
 if.else60:                                        ; preds = %if.else53
   %arg63 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2325 }, ptr %arg.tmp64, align 1
+  store { ptr } { ptr @.sconst.2329 }, ptr %arg.tmp64, align 1
   %call65 = call i1 @_ZN6String6equalsE6String(ptr %arg63, ptr %arg.tmp64)
   br i1 %call65, label %if.then66, label %if.else67
 
@@ -282438,7 +282707,7 @@ if.then66:                                        ; preds = %if.else60
 
 if.else67:                                        ; preds = %if.else60
   %arg70 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2326 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.2330 }, ptr %arg.tmp71, align 1
   %call72 = call i1 @_ZN6String6equalsE6String(ptr %arg70, ptr %arg.tmp71)
   br i1 %call72, label %if.then73, label %if.else74
 
@@ -282453,7 +282722,7 @@ if.then73:                                        ; preds = %if.else67
 
 if.else74:                                        ; preds = %if.else67
   %arg77 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2327 }, ptr %arg.tmp78, align 1
+  store { ptr } { ptr @.sconst.2331 }, ptr %arg.tmp78, align 1
   %call79 = call i1 @_ZN6String6equalsE6String(ptr %arg77, ptr %arg.tmp78)
   br i1 %call79, label %if.then80, label %if.else81
 
@@ -282468,7 +282737,7 @@ if.then80:                                        ; preds = %if.else74
 
 if.else81:                                        ; preds = %if.else74
   %arg84 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2328 }, ptr %arg.tmp85, align 1
+  store { ptr } { ptr @.sconst.2332 }, ptr %arg.tmp85, align 1
   %call86 = call i1 @_ZN6String6equalsE6String(ptr %arg84, ptr %arg.tmp85)
   br i1 %call86, label %if.then87, label %if.else88
 
@@ -282483,7 +282752,7 @@ if.then87:                                        ; preds = %if.else81
 
 if.else88:                                        ; preds = %if.else81
   %arg91 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2329 }, ptr %arg.tmp92, align 1
+  store { ptr } { ptr @.sconst.2333 }, ptr %arg.tmp92, align 1
   %call93 = call i1 @_ZN6String6equalsE6String(ptr %arg91, ptr %arg.tmp92)
   br i1 %call93, label %if.then94, label %if.else95
 
@@ -282498,7 +282767,7 @@ if.then94:                                        ; preds = %if.else88
 
 if.else95:                                        ; preds = %if.else88
   %arg98 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2330 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.2334 }, ptr %arg.tmp99, align 1
   %call100 = call i1 @_ZN6String6equalsE6String(ptr %arg98, ptr %arg.tmp99)
   br i1 %call100, label %if.then101, label %if.else102
 
@@ -282513,7 +282782,7 @@ if.then101:                                       ; preds = %if.else95
 
 if.else102:                                       ; preds = %if.else95
   %arg105 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2331 }, ptr %arg.tmp106, align 1
+  store { ptr } { ptr @.sconst.2335 }, ptr %arg.tmp106, align 1
   %call107 = call i1 @_ZN6String6equalsE6String(ptr %arg105, ptr %arg.tmp106)
   br i1 %call107, label %if.then108, label %if.else109
 
@@ -282528,7 +282797,7 @@ if.then108:                                       ; preds = %if.else102
 
 if.else109:                                       ; preds = %if.else102
   %arg112 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2332 }, ptr %arg.tmp113, align 1
+  store { ptr } { ptr @.sconst.2336 }, ptr %arg.tmp113, align 1
   %call114 = call i1 @_ZN6String6equalsE6String(ptr %arg112, ptr %arg.tmp113)
   br i1 %call114, label %if.then115, label %if.else116
 
@@ -282543,7 +282812,7 @@ if.then115:                                       ; preds = %if.else109
 
 if.else116:                                       ; preds = %if.else109
   %arg119 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2333 }, ptr %arg.tmp120, align 1
+  store { ptr } { ptr @.sconst.2337 }, ptr %arg.tmp120, align 1
   %call121 = call i1 @_ZN6String6equalsE6String(ptr %arg119, ptr %arg.tmp120)
   br i1 %call121, label %if.then122, label %if.else123
 
@@ -282558,7 +282827,7 @@ if.then122:                                       ; preds = %if.else116
 
 if.else123:                                       ; preds = %if.else116
   %arg126 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2334 }, ptr %arg.tmp127, align 1
+  store { ptr } { ptr @.sconst.2338 }, ptr %arg.tmp127, align 1
   %call128 = call i1 @_ZN6String6equalsE6String(ptr %arg126, ptr %arg.tmp127)
   br i1 %call128, label %if.then129, label %if.else130
 
@@ -282573,7 +282842,7 @@ if.then129:                                       ; preds = %if.else123
 
 if.else130:                                       ; preds = %if.else123
   %arg133 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2335 }, ptr %arg.tmp134, align 1
+  store { ptr } { ptr @.sconst.2339 }, ptr %arg.tmp134, align 1
   %call135 = call i1 @_ZN6String6equalsE6String(ptr %arg133, ptr %arg.tmp134)
   br i1 %call135, label %if.then136, label %if.else137
 
@@ -282588,7 +282857,7 @@ if.then136:                                       ; preds = %if.else130
 
 if.else137:                                       ; preds = %if.else130
   %arg140 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2336 }, ptr %arg.tmp141, align 1
+  store { ptr } { ptr @.sconst.2340 }, ptr %arg.tmp141, align 1
   %call142 = call i1 @_ZN6String6equalsE6String(ptr %arg140, ptr %arg.tmp141)
   br i1 %call142, label %if.then143, label %if.else144
 
@@ -282603,7 +282872,7 @@ if.then143:                                       ; preds = %if.else137
 
 if.else144:                                       ; preds = %if.else137
   %arg148 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2337 }, ptr %arg.tmp149, align 1
+  store { ptr } { ptr @.sconst.2341 }, ptr %arg.tmp149, align 1
   %call150 = call i1 @_ZN6String6equalsE6String(ptr %arg148, ptr %arg.tmp149)
   br i1 %call150, label %if.then151, label %if.else152
 
@@ -282618,7 +282887,7 @@ if.then151:                                       ; preds = %if.else144
 
 if.else152:                                       ; preds = %if.else144
   %arg156 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2338 }, ptr %arg.tmp157, align 1
+  store { ptr } { ptr @.sconst.2342 }, ptr %arg.tmp157, align 1
   %call158 = call i1 @_ZN6String6equalsE6String(ptr %arg156, ptr %arg.tmp157)
   br i1 %call158, label %if.then159, label %if.else160
 
@@ -282633,7 +282902,7 @@ if.then159:                                       ; preds = %if.else152
 
 if.else160:                                       ; preds = %if.else152
   %arg164 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2339 }, ptr %arg.tmp165, align 1
+  store { ptr } { ptr @.sconst.2343 }, ptr %arg.tmp165, align 1
   %call166 = call i1 @_ZN6String6equalsE6String(ptr %arg164, ptr %arg.tmp165)
   br i1 %call166, label %if.then167, label %if.else168
 
@@ -282648,7 +282917,7 @@ if.then167:                                       ; preds = %if.else160
 
 if.else168:                                       ; preds = %if.else160
   %arg171 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2340 }, ptr %arg.tmp172, align 1
+  store { ptr } { ptr @.sconst.2344 }, ptr %arg.tmp172, align 1
   %call173 = call i1 @_ZN6String6equalsE6String(ptr %arg171, ptr %arg.tmp172)
   br i1 %call173, label %if.then174, label %if.else175
 
@@ -282665,7 +282934,7 @@ if.then174:                                       ; preds = %if.else168
 
 if.else175:                                       ; preds = %if.else168
   %arg189 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2342 }, ptr %arg.tmp190, align 1
+  store { ptr } { ptr @.sconst.2346 }, ptr %arg.tmp190, align 1
   %call191 = call i1 @_ZN6String6equalsE6String(ptr %arg189, ptr %arg.tmp190)
   br i1 %call191, label %if.then192, label %if.else193
 
@@ -282687,7 +282956,7 @@ if.then180:                                       ; preds = %if.then174
 if.else181:                                       ; preds = %if.then174
   %ptr.load188 = load ptr, ptr %opts, align 8
   %error_message = getelementptr inbounds %_Z7Options, ptr %ptr.load188, i32 0, i32 19
-  store { ptr } { ptr @.sconst.2341 }, ptr %error_message, align 8
+  store { ptr } { ptr @.sconst.2345 }, ptr %error_message, align 8
   br label %if.end182
 
 if.end182:                                        ; preds = %if.else181, %if.then180
@@ -282703,7 +282972,7 @@ if.then192:                                       ; preds = %if.else175
 
 if.else193:                                       ; preds = %if.else175
   %arg211 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2344 }, ptr %arg.tmp212, align 1
+  store { ptr } { ptr @.sconst.2348 }, ptr %arg.tmp212, align 1
   %call213 = call i1 @_ZN6String6equalsE6String(ptr %arg211, ptr %arg.tmp212)
   br i1 %call213, label %if.then214, label %if.else215
 
@@ -282728,7 +282997,7 @@ if.then199:                                       ; preds = %if.then192
 if.else200:                                       ; preds = %if.then192
   %ptr.load209 = load ptr, ptr %opts, align 8
   %error_message210 = getelementptr inbounds %_Z7Options, ptr %ptr.load209, i32 0, i32 19
-  store { ptr } { ptr @.sconst.2343 }, ptr %error_message210, align 8
+  store { ptr } { ptr @.sconst.2347 }, ptr %error_message210, align 8
   br label %if.end201
 
 if.end201:                                        ; preds = %if.else200, %if.then199
@@ -282744,7 +283013,7 @@ if.then214:                                       ; preds = %if.else193
 
 if.else215:                                       ; preds = %if.else193
   %arg232 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2346 }, ptr %arg.tmp233, align 1
+  store { ptr } { ptr @.sconst.2350 }, ptr %arg.tmp233, align 1
   %call234 = call i1 @_ZN6String11starts_withE6String(ptr %arg232, ptr %arg.tmp233)
   %arg235 = load ptr, ptr %arg, align 8
   %call236 = call i64 @_ZN6String10get_lengthEv(ptr %arg235)
@@ -282770,7 +283039,7 @@ if.then221:                                       ; preds = %if.then214
 if.else222:                                       ; preds = %if.then214
   %ptr.load230 = load ptr, ptr %opts, align 8
   %error_message231 = getelementptr inbounds %_Z7Options, ptr %ptr.load230, i32 0, i32 19
-  store { ptr } { ptr @.sconst.2345 }, ptr %error_message231, align 8
+  store { ptr } { ptr @.sconst.2349 }, ptr %error_message231, align 8
   br label %if.end223
 
 if.end223:                                        ; preds = %if.else222, %if.then221
@@ -282787,7 +283056,7 @@ if.then237:                                       ; preds = %if.else215
 
 if.else238:                                       ; preds = %if.else215
   %arg242 = load ptr, ptr %arg, align 8
-  store { ptr } { ptr @.sconst.2347 }, ptr %arg.tmp243, align 1
+  store { ptr } { ptr @.sconst.2351 }, ptr %arg.tmp243, align 1
   %call244 = call i1 @_ZN6String11starts_withE6String(ptr %arg242, ptr %arg.tmp243)
   %arg245 = load ptr, ptr %arg, align 8
   %call246 = call i64 @_ZN6String10get_lengthEv(ptr %arg245)
@@ -282810,7 +283079,7 @@ if.then249:                                       ; preds = %if.else238
 if.else250:                                       ; preds = %if.else238
   %ptr.load256 = load ptr, ptr %opts, align 8
   %error_message257 = getelementptr inbounds %_Z7Options, ptr %ptr.load256, i32 0, i32 19
-  store { ptr } { ptr @.sconst.2348 }, ptr %error_message257, align 8
+  store { ptr } { ptr @.sconst.2352 }, ptr %error_message257, align 8
   br label %if.end251
 
 if.end251:                                        ; preds = %if.else250, %if.then249
@@ -282835,7 +283104,7 @@ if.end267:                                        ; preds = %if.end275, %if.then
 if.then273:                                       ; preds = %if.else266
   %ptr.load276 = load ptr, ptr %opts, align 8
   %error_message277 = getelementptr inbounds %_Z7Options, ptr %ptr.load276, i32 0, i32 19
-  store { ptr } { ptr @.sconst.2351 }, ptr %error_message277, align 8
+  store { ptr } { ptr @.sconst.2355 }, ptr %error_message277, align 8
   br label %if.end275
 
 if.else274:                                       ; preds = %if.else266
@@ -282853,26 +283122,26 @@ if.end275:                                        ; preds = %if.else274, %if.the
 
 define linkonce_odr void @_ZN3cli11print_usageEv() {
 entry:
-  %call = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2352)
+  %call = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2356)
   %call1 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.scaly.empty.cstr)
-  %call2 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2353)
-  %call3 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2354)
-  %call4 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2355)
-  %call5 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2356)
-  %call6 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2357)
-  %call7 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2358)
-  %call8 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2359)
-  %call9 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2360)
-  %call10 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2361)
-  %call11 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2362)
-  %call12 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2363)
-  %call13 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2364)
-  %call14 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2365)
-  %call15 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2366)
-  %call16 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2367)
-  %call17 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2368)
-  %call18 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2369)
-  %call19 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2370)
+  %call2 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2357)
+  %call3 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2358)
+  %call4 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2359)
+  %call5 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2360)
+  %call6 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2361)
+  %call7 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2362)
+  %call8 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2363)
+  %call9 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2364)
+  %call10 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2365)
+  %call11 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2366)
+  %call12 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2367)
+  %call13 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2368)
+  %call14 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2369)
+  %call15 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2370)
+  %call16 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2371)
+  %call17 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2372)
+  %call18 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2373)
+  %call19 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2374)
   ret void
 }
 
@@ -282883,12 +283152,12 @@ entry:
   %sb = alloca ptr, align 8
   %home_str = alloca ptr, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %call = call ptr @getenv(ptr @.str.2371)
+  %call = call ptr @getenv(ptr @.str.2375)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.2372 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.2376 }, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
@@ -282903,7 +283172,7 @@ if.end:                                           ; preds = %entry
 
 if.then4:                                         ; preds = %if.end
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store { ptr } { ptr @.sconst.2373 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.2377 }, ptr %0, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
@@ -282914,7 +283183,7 @@ if.end5:                                          ; preds = %if.end
   %home_str8 = load ptr, ptr %home_str, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %home_str8)
   %sb9 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.2374 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2378 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb9, ptr %arg.tmp)
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb10)
@@ -282928,7 +283197,7 @@ define linkonce_odr void @_ZN3cli13link_compilerEPN4scaly6memory4PageE(ptr noali
 entry:
   %s = alloca ptr, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %call = call ptr @getenv(ptr @.str.2375)
+  %call = call ptr @getenv(ptr @.str.2379)
   %name = alloca ptr, align 8
   store ptr %call, ptr %name, align 1
   %name1 = load ptr, ptr %name, align 8
@@ -282936,7 +283205,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call2 = call ptr @getenv(ptr @.str.2376)
+  %call2 = call ptr @getenv(ptr @.str.2380)
   store ptr %call2, ptr %name, align 1
   br label %if.end
 
@@ -282946,7 +283215,7 @@ if.end:                                           ; preds = %if.then, %entry
   br i1 %eq4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end
-  store { ptr } { ptr @.sconst.2377 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.2381 }, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
@@ -282962,7 +283231,7 @@ if.end6:                                          ; preds = %if.end
 
 if.then11:                                        ; preds = %if.end6
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store { ptr } { ptr @.sconst.2378 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.2382 }, ptr %0, align 1
   ret void
 
 if.end12:                                         ; preds = %if.end6
@@ -283024,21 +283293,21 @@ while.exit:                                       ; preds = %while.cond
   %msg13 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg13, ptr %0)
   %msg14 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2414 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2418 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg14, ptr %arg.tmp)
   %msg15 = load ptr, ptr %msg, align 8
   %line16 = load i64, ptr %line, align 8
   call void @_ZN3cli11format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, i64 %line16)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg15, ptr %sret.result)
   %msg17 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2415 }, ptr %arg.tmp18, align 1
+  store { ptr } { ptr @.sconst.2419 }, ptr %arg.tmp18, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg17, ptr %arg.tmp18)
   %msg19 = load ptr, ptr %msg, align 8
   %col21 = load i64, ptr %col, align 8
   call void @_ZN3cli11format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, i64 %col21)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg19, ptr %sret.result20)
   %msg22 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2416 }, ptr %arg.tmp23, align 1
+  store { ptr } { ptr @.sconst.2420 }, ptr %arg.tmp23, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg22, ptr %arg.tmp23)
   %msg24 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg24, ptr %3)
@@ -283224,7 +283493,7 @@ entry:
   store ptr %struct.region, ptr %head, align 1
   %head1 = load ptr, ptr %head, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2420 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2424 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head1, ptr %arg.tmp)
   %head2 = load ptr, ptr %head, align 8
   %sret.result = alloca { ptr }, align 8
@@ -283234,7 +283503,7 @@ entry:
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %sret.result)
   %head3 = load ptr, ptr %head, align 8
   %arg.tmp4 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2421 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.2425 }, ptr %arg.tmp4, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %arg.tmp4)
   %head5 = load ptr, ptr %head, align 8
   %sret.result6 = alloca { ptr }, align 8
@@ -283244,7 +283513,7 @@ entry:
   call void @_ZN13StringBuilder6appendE6String(ptr %head5, ptr %sret.result6)
   %head9 = load ptr, ptr %head, align 8
   %arg.tmp10 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2422 }, ptr %arg.tmp10, align 1
+  store { ptr } { ptr @.sconst.2426 }, ptr %arg.tmp10, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head9, ptr %arg.tmp10)
   %head11 = load ptr, ptr %head, align 8
   %sret.result12 = alloca { ptr }, align 8
@@ -283255,7 +283524,7 @@ entry:
   call void @_ZN13StringBuilder6appendE6String(ptr %head11, ptr %sret.result12)
   %head16 = load ptr, ptr %head, align 8
   %arg.tmp17 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2423 }, ptr %arg.tmp17, align 1
+  store { ptr } { ptr @.sconst.2427 }, ptr %arg.tmp17, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head16, ptr %arg.tmp17)
   %sret.result18 = alloca { ptr }, align 8
   %head19 = load ptr, ptr %head, align 8
@@ -283291,7 +283560,7 @@ if.then:                                          ; preds = %while.body
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region24)
   store ptr %struct.region24, ptr %msg, align 1
   %msg25 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2424 }, ptr %arg.tmp26, align 1
+  store { ptr } { ptr @.sconst.2428 }, ptr %arg.tmp26, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg25, ptr %arg.tmp26)
   %field.inplace27 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 81
   %i28 = load i64, ptr %i, align 8
@@ -283312,7 +283581,7 @@ if.then31:                                        ; preds = %if.then
 
 if.end32:                                         ; preds = %if.then31, %if.then
   %msg34 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2425 }, ptr %arg.tmp35, align 1
+  store { ptr } { ptr @.sconst.2429 }, ptr %arg.tmp35, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg34, ptr %arg.tmp35)
   %field.inplace36 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 7
   %call37 = call ptr @_ZN5ArrayI12KeyValuePairI6String7ConceptEE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace36, i64 %deref)
@@ -283327,7 +283596,7 @@ if.then39:                                        ; preds = %if.end32
 
 if.end40:                                         ; preds = %if.then39, %if.end32
   %msg43 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2426 }, ptr %arg.tmp44, align 1
+  store { ptr } { ptr @.sconst.2430 }, ptr %arg.tmp44, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg43, ptr %arg.tmp44)
   %field.inplace45 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 70
   %call46 = call ptr @_ZN5ArrayI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace45, i64 %deref)
@@ -283341,7 +283610,7 @@ if.then48:                                        ; preds = %if.end40
 
 if.end49:                                         ; preds = %if.then48, %if.end40
   %msg51 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2427 }, ptr %arg.tmp52, align 1
+  store { ptr } { ptr @.sconst.2431 }, ptr %arg.tmp52, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg51, ptr %arg.tmp52)
   %field.inplace53 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 82
   %i54 = load i64, ptr %i, align 8
@@ -283363,7 +283632,7 @@ if.end58:                                         ; preds = %if.end61, %if.end49
 
 if.then60:                                        ; preds = %if.then57
   %msg62 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2428 }, ptr %arg.tmp63, align 1
+  store { ptr } { ptr @.sconst.2432 }, ptr %arg.tmp63, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg62, ptr %arg.tmp63)
   br label %if.end61
 
@@ -283475,21 +283744,21 @@ while.exit18:                                     ; preds = %while.cond16
   %msg31 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg31, ptr %dpath)
   %msg32 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2417 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2421 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg32, ptr %arg.tmp)
   %msg33 = load ptr, ptr %msg, align 8
   %line35 = load i64, ptr %line, align 8
   call void @_ZN3cli11format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result34, ptr %local_page, i64 %line35)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg33, ptr %sret.result34)
   %msg36 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2418 }, ptr %arg.tmp37, align 1
+  store { ptr } { ptr @.sconst.2422 }, ptr %arg.tmp37, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg36, ptr %arg.tmp37)
   %msg38 = load ptr, ptr %msg, align 8
   %col40 = load i64, ptr %col, align 8
   call void @_ZN3cli11format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result39, ptr %local_page, i64 %col40)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg38, ptr %sret.result39)
   %msg41 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2419 }, ptr %arg.tmp42, align 1
+  store { ptr } { ptr @.sconst.2423 }, ptr %arg.tmp42, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg41, ptr %arg.tmp42)
   %msg43 = load ptr, ptr %msg, align 8
   %field.inplace44 = getelementptr inbounds %_Z17PlannerDiagnostic, ptr %call, i32 0, i32 1
@@ -283543,7 +283812,7 @@ entry:
   store ptr %struct.region, ptr %head, align 1
   %head1 = load ptr, ptr %head, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2429 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.2433 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head1, ptr %arg.tmp)
   %head2 = load ptr, ptr %head, align 8
   %sret.result = alloca { ptr }, align 8
@@ -283553,7 +283822,7 @@ entry:
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %sret.result)
   %head3 = load ptr, ptr %head, align 8
   %arg.tmp4 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2430 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.2434 }, ptr %arg.tmp4, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %arg.tmp4)
   %head5 = load ptr, ptr %head, align 8
   %sret.result6 = alloca { ptr }, align 8
@@ -283563,7 +283832,7 @@ entry:
   call void @_ZN13StringBuilder6appendE6String(ptr %head5, ptr %sret.result6)
   %head9 = load ptr, ptr %head, align 8
   %arg.tmp10 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.2431 }, ptr %arg.tmp10, align 1
+  store { ptr } { ptr @.sconst.2435 }, ptr %arg.tmp10, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head9, ptr %arg.tmp10)
   %sret.result11 = alloca { ptr }, align 8
   %head12 = load ptr, ptr %head, align 8
@@ -283701,26 +283970,26 @@ while.exit50:                                     ; preds = %while.cond48
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region65)
   store ptr %struct.region65, ptr %msg, align 1
   %msg66 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2432 }, ptr %arg.tmp67, align 1
+  store { ptr } { ptr @.sconst.2436 }, ptr %arg.tmp67, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg66, ptr %arg.tmp67)
   %msg68 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg68, ptr %call19)
   %msg69 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2433 }, ptr %arg.tmp70, align 1
+  store { ptr } { ptr @.sconst.2437 }, ptr %arg.tmp70, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg69, ptr %arg.tmp70)
   %msg71 = load ptr, ptr %msg, align 8
   %line73 = load i64, ptr %line, align 8
   call void @_ZN3cli11format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result72, ptr %local_page, i64 %line73)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg71, ptr %sret.result72)
   %msg74 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2434 }, ptr %arg.tmp75, align 1
+  store { ptr } { ptr @.sconst.2438 }, ptr %arg.tmp75, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg74, ptr %arg.tmp75)
   %msg76 = load ptr, ptr %msg, align 8
   %col78 = load i64, ptr %col, align 8
   call void @_ZN3cli11format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result77, ptr %local_page, i64 %col78)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg76, ptr %sret.result77)
   %msg79 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.2435 }, ptr %arg.tmp80, align 1
+  store { ptr } { ptr @.sconst.2439 }, ptr %arg.tmp80, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg79, ptr %arg.tmp80)
   %ne81 = icmp ne ptr %call25, null
   br i1 %ne81, label %if.then82, label %if.end83
@@ -283809,7 +284078,7 @@ if.end:                                           ; preds = %entry
   br i1 %call, label %if.then1, label %if.end2
 
 if.then1:                                         ; preds = %if.end
-  %call3 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2379)
+  %call3 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2383)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret i64 1
 
@@ -283819,7 +284088,7 @@ if.end2:                                          ; preds = %if.end
   br i1 %eq, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end2
-  %call7 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2380)
+  %call7 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2384)
   call void @_ZN3cli11print_usageEv()
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret i64 1
@@ -283830,7 +284099,7 @@ if.end6:                                          ; preds = %if.end2
   br i1 %verbose, label %if.then9, label %if.end10
 
 if.then9:                                         ; preds = %if.end6
-  %call11 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2381)
+  %call11 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2385)
   br label %if.end10
 
 if.end10:                                         ; preds = %if.then9, %if.end6
@@ -283843,7 +284112,7 @@ if.end10:                                         ; preds = %if.then9, %if.end6
   br i1 %eq14, label %if.then15, label %if.end16
 
 if.then15:                                        ; preds = %if.end10
-  %call17 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2382)
+  %call17 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2386)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 1
 
@@ -283853,7 +284122,7 @@ if.end16:                                         ; preds = %if.end10
   br i1 %verbose19, label %if.then20, label %if.end21
 
 if.then20:                                        ; preds = %if.end16
-  %call22 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2383)
+  %call22 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2387)
   br label %if.end21
 
 if.end21:                                         ; preds = %if.then20, %if.end16
@@ -283866,7 +284135,7 @@ if.end21:                                         ; preds = %if.then20, %if.end1
   br i1 %lex_only, label %if.then25, label %if.end26
 
 if.then25:                                        ; preds = %if.end21
-  %call27 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2384)
+  %call27 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2388)
   %base.deref = load ptr, ptr %p, align 8
   %field.inplace28 = getelementptr inbounds %_Z6Parser, ptr %base.deref, i32 0, i32 0
   call void @_ZN5Lexer7advanceEv(ptr %field.inplace28)
@@ -283890,7 +284159,7 @@ while.cond:                                       ; preds = %while.body, %if.the
   br i1 %eq32, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %call33 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2385)
+  %call33 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2389)
   %base.deref34 = load ptr, ptr %p, align 8
   %field.inplace35 = getelementptr inbounds %_Z6Parser, ptr %base.deref34, i32 0, i32 0
   call void @_ZN5Lexer7advanceEv(ptr %field.inplace35)
@@ -283940,7 +284209,7 @@ choose.when41:                                    ; preds = %choose.when
 choose.when44:                                    ; preds = %choose.when
   %"variant.c_data().ptr45" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
   %variant.val46 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr45", align 1
-  %call47 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2386)
+  %call47 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2390)
   br label %choose.end39
 
 choose.when48:                                    ; preds = %if.end26
@@ -283949,7 +284218,7 @@ choose.when48:                                    ; preds = %if.end26
   br label %choose.end
 
 if.then51:                                        ; preds = %choose.end
-  %call53 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2387)
+  %call53 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2391)
   br label %if.end52
 
 if.end52:                                         ; preds = %if.then51, %choose.end
@@ -283958,7 +284227,7 @@ if.end52:                                         ; preds = %if.then51, %choose.
   br i1 %parse_only, label %if.then55, label %if.end56
 
 if.then55:                                        ; preds = %if.end52
-  %call57 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2388)
+  %call57 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2392)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 0
 
@@ -283985,7 +284254,7 @@ if.end67:                                         ; preds = %if.end56
   br i1 %verbose69, label %if.then70, label %if.end71
 
 if.then70:                                        ; preds = %if.end67
-  %call72 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2389)
+  %call72 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2393)
   br label %if.end71
 
 if.end71:                                         ; preds = %if.then70, %if.end67
@@ -283994,7 +284263,7 @@ if.end71:                                         ; preds = %if.then70, %if.end6
   br i1 %model_only, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end71
-  %call76 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2390)
+  %call76 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2394)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 0
 
@@ -284035,7 +284304,7 @@ if.end85:                                         ; preds = %if.then84, %if.end8
   br i1 %eq89, label %if.then90, label %if.end91
 
 if.then90:                                        ; preds = %if.end85
-  %call92 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2391)
+  %call92 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2395)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 4
 
@@ -284133,7 +284402,7 @@ if.end107:                                        ; preds = %if.then106, %if.end
   br i1 %verbose137, label %if.then138, label %if.end139
 
 if.then138:                                       ; preds = %if.end107
-  %call140 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2392)
+  %call140 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2396)
   br label %if.end139
 
 if.end139:                                        ; preds = %if.then138, %if.end107
@@ -284142,7 +284411,7 @@ if.end139:                                        ; preds = %if.then138, %if.end
   br i1 %plan_only, label %if.then142, label %if.end143
 
 if.then142:                                       ; preds = %if.end139
-  %call144 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2393)
+  %call144 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2397)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 0
 
@@ -284206,7 +284475,7 @@ if.end161:                                        ; preds = %if.then160, %if.the
   br label %if.end157
 
 if.then165:                                       ; preds = %if.end150
-  %call167 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2394)
+  %call167 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2398)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 10
 
@@ -284260,7 +284529,7 @@ if.then180:                                       ; preds = %if.end147
   store ptr %struct.region191, ptr %jit_emitter, align 1
   %prog_emitter = load ptr, ptr %jit_emitter, align 8
   %program_name192 = load ptr, ptr %program_name, align 8
-  store { ptr } { ptr @.sconst.2395 }, ptr %arg.tmp79, align 1
+  store { ptr } { ptr @.sconst.2399 }, ptr %arg.tmp79, align 1
   %call193 = call i64 @_ZN7Emitter7jit_runE4Plan6String6String(ptr %prog_emitter, ptr %call88, ptr %program_name192, ptr %arg.tmp79)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %call193
@@ -284322,7 +284591,7 @@ if.end216:                                        ; preds = %if.then215, %if.end
   br i1 %eq222, label %if.then223, label %if.end224
 
 if.then223:                                       ; preds = %if.end216
-  %call225 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2396)
+  %call225 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2400)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 5
 
@@ -284332,7 +284601,7 @@ if.end224:                                        ; preds = %if.end216
   br i1 %verbose227, label %if.then228, label %if.end229
 
 if.then228:                                       ; preds = %if.end224
-  %call230 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2397)
+  %call230 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2401)
   br label %if.end229
 
 if.end229:                                        ; preds = %if.then228, %if.end224
@@ -284352,7 +284621,7 @@ if.end233:                                        ; preds = %if.end229
   br i1 %compile_only, label %if.then248, label %if.end249
 
 if.then237:                                       ; preds = %if.then232
-  %call239 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2398)
+  %call239 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2402)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 6
 
@@ -284364,7 +284633,7 @@ if.end238:                                        ; preds = %if.then232
   br i1 %eq243, label %if.then244, label %if.end245
 
 if.then244:                                       ; preds = %if.end238
-  %call246 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2399)
+  %call246 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2403)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 6
 
@@ -284385,7 +284654,7 @@ if.end249:                                        ; preds = %if.end233
   br i1 %eq265, label %if.then266, label %if.end267
 
 if.then253:                                       ; preds = %if.then248
-  %call255 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2400)
+  %call255 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2404)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 6
 
@@ -284397,7 +284666,7 @@ if.end254:                                        ; preds = %if.then248
   br i1 %eq259, label %if.then260, label %if.end261
 
 if.then260:                                       ; preds = %if.end254
-  %call262 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2401)
+  %call262 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2405)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 8
 
@@ -284406,19 +284675,19 @@ if.end261:                                        ; preds = %if.end254
   ret i64 0
 
 if.then266:                                       ; preds = %if.end249
-  %call268 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2402)
+  %call268 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2406)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 7
 
 if.end267:                                        ; preds = %if.end249
-  store { ptr } { ptr @.sconst.2403 }, ptr %arg.tmp79, align 1
+  store { ptr } { ptr @.sconst.2407 }, ptr %arg.tmp79, align 1
   %emitter269 = load ptr, ptr %jit_emitter, align 8
   %call270 = call i1 @_ZN7Emitter20write_object_to_fileE6String(ptr %emitter269, ptr %arg.tmp79)
   %eq271 = icmp eq i1 %call270, false
   br i1 %eq271, label %if.then272, label %if.end273
 
 if.then272:                                       ; preds = %if.end267
-  %call274 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2404)
+  %call274 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2408)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 8
 
@@ -284430,7 +284699,7 @@ if.end273:                                        ; preds = %if.end267
   call void @_ZN3cli13link_compilerEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result277, ptr %local_page)
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder276, ptr %sret.result277)
   %cmd_builder278 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.2405 }, ptr %arg.tmp279, align 1
+  store { ptr } { ptr @.sconst.2409 }, ptr %arg.tmp279, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder278, ptr %arg.tmp279)
   %cmd_builder280 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder280, ptr %arg.tmp79)
@@ -284454,7 +284723,7 @@ while.body282:                                    ; preds = %while.cond281
 
 while.exit283:                                    ; preds = %while.cond281
   %cmd_builder296 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.2407 }, ptr %arg.tmp297, align 1
+  store { ptr } { ptr @.sconst.2411 }, ptr %arg.tmp297, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder296, ptr %arg.tmp297)
   %cmd_builder298 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN3cli20runtime_archive_pathEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result299, ptr %local_page)
@@ -284464,7 +284733,7 @@ while.exit283:                                    ; preds = %while.cond281
 
 if.then290:                                       ; preds = %while.body282
   %cmd_builder292 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.2406 }, ptr %arg.tmp293, align 1
+  store { ptr } { ptr @.sconst.2410 }, ptr %arg.tmp293, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder292, ptr %arg.tmp293)
   %cmd_builder294 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder294, ptr %call288)
@@ -284497,7 +284766,7 @@ while.exit302:                                    ; preds = %while.cond300
 
 if.then311:                                       ; preds = %while.body301
   %cmd_builder313 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.2408 }, ptr %arg.tmp314, align 1
+  store { ptr } { ptr @.sconst.2412 }, ptr %arg.tmp314, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder313, ptr %arg.tmp314)
   %cmd_builder315 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder315, ptr %call309)
@@ -284526,7 +284795,7 @@ while.body319:                                    ; preds = %while.cond318
 
 while.exit320:                                    ; preds = %while.cond318
   %cmd_builder336 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.2410 }, ptr %arg.tmp337, align 1
+  store { ptr } { ptr @.sconst.2414 }, ptr %arg.tmp337, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder336, ptr %arg.tmp337)
   %cmd_builder338 = load ptr, ptr %cmd_builder, align 8
   %field.inplace339 = getelementptr inbounds %_Z7Options, ptr %0, i32 0, i32 1
@@ -284541,7 +284810,7 @@ while.exit320:                                    ; preds = %while.cond318
 
 if.then329:                                       ; preds = %while.body319
   %cmd_builder331 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.2409 }, ptr %arg.tmp332, align 1
+  store { ptr } { ptr @.sconst.2413 }, ptr %arg.tmp332, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder331, ptr %arg.tmp332)
   %cmd_builder333 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder333, ptr %call327)
@@ -284568,13 +284837,13 @@ if.then349:                                       ; preds = %if.then346
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region351)
   store ptr %struct.region351, ptr %dsym_builder, align 1
   %dsym_builder352 = load ptr, ptr %dsym_builder, align 8
-  store { ptr } { ptr @.sconst.2411 }, ptr %arg.tmp353, align 1
+  store { ptr } { ptr @.sconst.2415 }, ptr %arg.tmp353, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %dsym_builder352, ptr %arg.tmp353)
   %dsym_builder354 = load ptr, ptr %dsym_builder, align 8
   %field.inplace355 = getelementptr inbounds %_Z7Options, ptr %0, i32 0, i32 1
   call void @_ZN13StringBuilder6appendE6String(ptr %dsym_builder354, ptr %field.inplace355)
   %dsym_builder356 = load ptr, ptr %dsym_builder, align 8
-  store { ptr } { ptr @.sconst.2412 }, ptr %arg.tmp357, align 1
+  store { ptr } { ptr @.sconst.2416 }, ptr %arg.tmp357, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %dsym_builder356, ptr %arg.tmp357)
   %dsym_builder359 = load ptr, ptr %dsym_builder, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result358, ptr %local_page, ptr %dsym_builder359)
@@ -284586,7 +284855,7 @@ if.end350:                                        ; preds = %if.then349, %if.the
   br label %if.end347
 
 if.then365:                                       ; preds = %if.end347
-  %call367 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2413)
+  %call367 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.2417)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 9
 
@@ -284607,7 +284876,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.2436 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.2440 }, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 

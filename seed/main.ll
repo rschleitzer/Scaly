@@ -27,3 +27,8 @@ entry:
   %call = call i64 @_ZN3cli4mainEiPPc(i64 %0, ptr %1)
   ret i64 %call
 }
+
+define i64 @scaly_build_stamp() {
+entry:
+  ret i64 9064645512615118853
+}

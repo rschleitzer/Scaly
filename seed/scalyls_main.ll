@@ -27,3 +27,8 @@ entry:
   call void @_ZN6server3runEv()
   ret i64 0
 }
+
+define i64 @scaly_build_stamp() {
+entry:
+  ret i64 -3769299285105331095
+}
