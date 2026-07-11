@@ -5,6 +5,36 @@ Scaly
 self-hosted compiler with LLVM code generation, region-based memory management,
 and a clean, semicolon-free syntax.
 
+Self-scaling
+------------
+
+_Self-scaling_ means one program scales across execution substrates without
+being rewritten for each: the same `for`-loop and the same region-based memory
+model run unchanged from a single core to a whole cluster. Parallelism is
+compiler inference — a `for` whose body is provably independent is dispatched
+through an adaptive parallel driver, and there is no separate parallel syntax —
+while a memory region is also the unit of distribution, shipped between nodes as
+a self-describing wire image.
+
+That ladder — **fibers → cores → GPU → cluster** — is now complete. The compiler
+bootstraps from a committed LLVM-IR seed, reproduces itself byte-identically, and
+passes native CI on arm64/x86_64 × darwin/linux. The finale is a real workload,
+not a toy: [`demo/mann_dist.scaly`](demo/mann_dist.scaly) trains a 2-layer
+transformer on Thomas Mann's _Der Tod in Venedig_ by synchronous data-parallel
+SGD across N processes that all-reduce their gradient **regions** over TCP — pure
+Scaly, no MPI or NCCL — then generates German text from the trained model. A
+single-node baseline produces bit-for-bit identical loss, so distribution is
+semantically transparent; a killed worker is detected and the run finishes on the
+survivors.
+
+```sh
+demo/run.sh                 # stage 5: char transformer on one node
+demo/run_mann_dist.sh 4     # stage 7: the same model, data-parallel over 4 nodes
+```
+
+See [ROADMAP.md](ROADMAP.md) for the full staged plan and what each milestone
+proved.
+
 Install
 -------
 
