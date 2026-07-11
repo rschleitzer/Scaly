@@ -1,0 +1,5 @@
+; Two adjacent backticks inside a string literal delimit an EMPTY embedded
+; expression — hard modeler error (rc 2), not a silent no-op.
+; xfail: empty embedded expression
+let s "a `` b"
+print("never\n")

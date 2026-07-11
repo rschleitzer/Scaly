@@ -1,0 +1,6 @@
+; A string literal with an ODD number of unescaped backticks has an
+; unterminated embedded expression — hard modeler error (rc 2). A literal
+; backtick must be escaped with a backslash.
+; xfail: unterminated embedded expression
+let s "odd `tick"
+print("never\n")

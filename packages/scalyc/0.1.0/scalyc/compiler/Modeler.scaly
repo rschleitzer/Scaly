@@ -83,6 +83,8 @@ function decode_escapes(raw: String) returns String
                 sb.append(39 as char)
             if e = (92 as u8)
                 sb.append(92 as char)
+            if e = (96 as u8)
+                sb.append(96 as char)
             if e = (117 as u8)
             {
                 ; \uXXXX - four lexer-validated hex digits to a code
@@ -415,6 +417,229 @@ function handle_block(syntax: BlockSyntax) returns Block
 }
 
 ; ============================================================================
+; String interpolation
+; ============================================================================
+
+; True iff a string literal's raw payload contains an unescaped backtick —
+; the marker that embeds an expression ("The answer is `n`!"). Escape-aware:
+; a backslash consumes the following byte, so an escaped backtick never
+; triggers interpolation.
+function string_has_interpolation(raw: String) returns bool
+{
+    let len raw.get_length()
+    let buf raw.get_buffer()
+    var i: size_t 0
+    while i < len
+    {
+        let b *(buf + i)
+        if b = (96 as u8)
+            return true
+        if b = (92 as u8)
+            set i: i + (2 as size_t)
+        else
+            set i: i + (1 as size_t)
+    }
+    false
+}
+
+; Desugar an interpolated string literal into the block callers write by
+; hand today:
+;     {
+;         let 'isb$' StringBuilder()
+;         'isb$'.append("The answer is ")
+;         'isb$'.append((my_answer))
+;         'isb$'.append("!")
+;         'isb$'.to_string()
+;     }
+; The synthesized source re-parses and models like user code, so embedded
+; expressions get full planner treatment and StringBuilder.append overloads
+; pick the conversion by type (String, char, pointer[const_char], int,
+; size_t, bool). Literal segments embed VERBATIM — their escapes decode
+; later when the sub-parsed literal runs through handle_literal. The builder
+; name is a string identifier so an embedded expression can never resolve to
+; it by accident. On a malformed payload the error is reported through
+; modeler_error_count (cli fails the compile) and the literal is returned
+; verbatim so modeling continues.
+function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns Expression
+{
+    let len raw.get_length()
+    let buf raw.get_buffer()
+
+    ; Validation walk: backticks must pair up, no embedded expression is
+    ; empty, and inside an expression only the \" \\ \' escapes (plus an
+    ; escaped backtick) are meaningful — they decode below so embedded
+    ; string literals work; \n and friends have no place in expression
+    ; source.
+    var in_expr false
+    var seg_len: size_t 0
+    var bad_escape false
+    var empty_expr false
+    var i: size_t 0
+    while i < len
+    {
+        let b *(buf + i)
+        if b = (96 as u8)
+        {
+            if in_expr
+            {
+                if seg_len = (0 as size_t)
+                    set empty_expr: true
+                set in_expr: false
+            }
+            else
+                set in_expr: true
+            set seg_len: 0 as size_t
+            set i: i + (1 as size_t)
+        }
+        else
+        {
+            if b = (92 as u8)
+            {
+                if in_expr
+                {
+                    let e *(buf + i + 1)
+                    var ok_escape false
+                    if e = (34 as u8)
+                        set ok_escape: true
+                    if e = (92 as u8)
+                        set ok_escape: true
+                    if e = (39 as u8)
+                        set ok_escape: true
+                    if e = (96 as u8)
+                        set ok_escape: true
+                    if ok_escape = false
+                        set bad_escape: true
+                }
+                set i: i + (2 as size_t)
+            }
+            else
+                set i: i + (1 as size_t)
+            set seg_len: seg_len + (1 as size_t)
+        }
+    }
+    if in_expr
+    {
+        report_load_error(String("string interpolation: unterminated embedded expression (escape a literal backtick with a backslash)"))
+        return Expression.Constant(handle_literal syntax)
+    }
+    if empty_expr
+    {
+        report_load_error(String("string interpolation: empty embedded expression"))
+        return Expression.Constant(handle_literal syntax)
+    }
+    if bad_escape
+    {
+        report_load_error(String("string interpolation: only quote, backslash and backtick escapes are valid inside an embedded expression"))
+        return Expression.Constant(handle_literal syntax)
+    }
+
+    ; Build the block source. Boundaries are unescaped backticks plus the
+    ; end of the payload; segments alternate literal/expression.
+    var src StringBuilder()
+    src.append("{\n")
+    src.append("let 'isb$' StringBuilder()\n")
+
+    var seg_start: size_t 0
+    set in_expr: false
+    set i: 0 as size_t
+    var done false
+    while done = false
+    {
+        var is_end false
+        if i >= len
+            set is_end: true
+        var is_tick false
+        if is_end = false
+        {
+            let b *(buf + i)
+            if b = (96 as u8)
+                set is_tick: true
+            else
+            {
+                if b = (92 as u8)
+                    set i: i + (2 as size_t)
+                else
+                    set i: i + (1 as size_t)
+            }
+        }
+        var boundary is_end
+        if is_tick
+            set boundary: true
+        if boundary
+        {
+            if in_expr
+            {
+                src.append("'isb$'.append((")
+                var k seg_start
+                while k < i
+                {
+                    let eb *(buf + k)
+                    if eb = (92 as u8)
+                    {
+                        ; Validated above: decode so embedded string
+                        ; literals arrive unescaped in the sub-source.
+                        src.append((*(buf + k + 1)) as char)
+                        set k: k + (2 as size_t)
+                    }
+                    else
+                    {
+                        ; A raw newline would split the synthesized
+                        ; statement — expressions are one line anyway.
+                        if eb = (10 as u8)
+                            src.append(32 as char)
+                        else
+                        {
+                            if eb = (13 as u8)
+                                src.append(32 as char)
+                            else
+                                src.append(eb as char)
+                        }
+                        set k: k + (1 as size_t)
+                    }
+                }
+                src.append("))\n")
+                set in_expr: false
+            }
+            else
+            {
+                if i > seg_start
+                {
+                    src.append("'isb$'.append(\"")
+                    var k seg_start
+                    while k < i
+                    {
+                        src.append((*(buf + k)) as char)
+                        set k: k + (1 as size_t)
+                    }
+                    src.append("\")\n")
+                }
+                set in_expr: true
+            }
+            if is_end
+                set done: true
+            else
+            {
+                set i: i + (1 as size_t)
+                set seg_start: i
+            }
+        }
+    }
+    src.append("'isb$'.to_string()\n}\n")
+
+    let src_str src.to_string()
+    var p Parser(src_str)
+    choose p.parse_expression()
+        when err: Error
+        {
+            report_load_error(String("string interpolation: cannot parse embedded expression"))
+            return Expression.Constant(handle_literal syntax)
+        }
+        when node: Success
+            return handle_expression(node)
+    Expression.Constant(handle_literal syntax)
+}
+
+; ============================================================================
 ; Expression handling
 ; ============================================================================
 
@@ -422,7 +647,16 @@ function handle_expression(syntax: ExpressionSyntax) returns Expression
 {
     choose syntax
         when lit: LiteralSyntax
+        {
+            choose lit.literal
+                when strlit: StringLiteral
+                {
+                    if string_has_interpolation(strlit.value)
+                        return handle_interpolated_string(lit, strlit.value)
+                }
+                else {}
             Expression.Constant(handle_literal lit)
+        }
         when name_syntax: NameSyntax
         {
             ; Bare `true` / `false` identifiers (no extensions) map to

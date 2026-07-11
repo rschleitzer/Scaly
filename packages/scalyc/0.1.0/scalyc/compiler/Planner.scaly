@@ -16691,9 +16691,9 @@ define Planner
             if init_ref = null
             {
                 var sb StringBuilder()
-                sb.append "no matching initializer for `new "
+                sb.append "no matching initializer for 'new "
                 sb.append planned_ty.name
-                sb.append "`"
+                sb.append "'"
                 this.add_error(sb.to_string())
             }
 

@@ -368,8 +368,9 @@ define lexer
                         return Token.Invalid(InvalidToken())
 
                     let e *current
-                    ; Valid escapes: " \ ' n r t 0 u
-                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
+                    ; Valid escapes: " \ ' ` n r t 0 u (backtick because an
+                    ; unescaped backtick opens an interpolated expression)
+                    if (e = 34) || (e = 92) || (e = 39) || (e = 96) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
                         continue
 
                     if e = 117  ; 'u' - unicode escape \uXXXX

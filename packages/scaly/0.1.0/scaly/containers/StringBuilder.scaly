@@ -59,6 +59,56 @@ define StringBuilder
         buffer.add(Vector[char](start, length))
     }
 
+    ; Decimal formatting overloads — string interpolation desugars an
+    ; embedded expression to a plain `append`, so the numeric conversions
+    ; live here. Classic divide-by-10 with digit buffer and reversal
+    ; (mirrors the compiler's size_to_string).
+    function append(this: StringBuilder, value: size_t)
+    {
+        if value = 0
+        {
+            append("0" as char)
+            return
+        }
+
+        var v value
+        var digits Array[char]()
+        while v > 0
+        {
+            let digit ((v % 10) as char) + 48 as char
+            digits.add digit
+            set v: v / 10
+        }
+
+        var i digits.length
+        while i > 0
+        {
+            set i: i - 1
+            let d digits.get i
+            if d <> null
+                append(*d)
+        }
+    }
+
+    function append(this: StringBuilder, value: int)
+    {
+        if value < 0
+        {
+            append("-" as char)
+            append((0 - value) as size_t)
+        }
+        else
+            append(value as size_t)
+    }
+
+    function append(this: StringBuilder, value: bool)
+    {
+        if value
+            append("true")
+        else
+            append("false")
+    }
+
     function get_length(this: StringBuilder) returns size_t
         buffer.get_length()
 
