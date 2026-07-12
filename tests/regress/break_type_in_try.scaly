@@ -1,0 +1,35 @@
+; Regression (#13, planner smell audit): a `break v` inside a try's catch
+; (or else) arm must contribute its value type to the enclosing `repeat`'s
+; inferred value. find_break_type_in_expr descended into block/if/choose/match
+; but NOT into a `try` expression, so `let x repeat { try ... when e { break 42 } }`
+; inferred `x` as void — the value was lost and the comparison read garbage.
+; A `try` is not a loop, so a break inside it targets the enclosing repeat.
+; The fix adds a PlannedTry arm mirroring the choose/match descent.
+; NEW: PASS; the old seed compiler prints FAIL (void-typed break value).
+
+define Detail(a: int)
+define TErr union (Bad: Detail)
+
+; Always throws (b = 0), so the catch arm is the only reachable exit.
+function step(b: int) returns int throws TErr
+{
+    if b = 0
+        throw TErr.Bad(Detail(7))
+    return b + 100
+}
+
+function compute() returns int
+{
+    let x repeat
+    {
+        try let q step(0)
+            when e: Bad
+                break 42        ; break-with-value inside the catch arm
+    }
+    x
+}
+
+if compute() = 42
+    print("PASS")
+else
+    print("FAIL")

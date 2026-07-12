@@ -15781,6 +15781,30 @@ define Planner
                     }
                     this.find_break_type_in_stmt_ref(mt.alternative)
                 }
+                when tr: PlannedTry
+                {
+                    ; A `break v` inside a try's catch arm or else arm targets
+                    ; the enclosing repeat (a try is not a loop), so descend
+                    ; like the choose/match arms. The try condition is a
+                    ; binding operation — no break can live there.
+                    if tr.catches <> null
+                    {
+                        let cats (*tr.catches)
+                        var i: size_t 0
+                        while i < cats.length
+                        {
+                            let cp cats.get i
+                            if cp <> null
+                            {
+                                let t this.find_break_type_in_stmt_ref((*cp).consequent)
+                                if t.name <> "void"
+                                    return t
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_break_type_in_stmt_ref(tr.alternative)
+                }
                 else
                     Planner.make_void_type()
         }
@@ -26232,6 +26256,71 @@ define Planner
         ; can resolve unqualified intra-namespace calls. The old
         ; context is restored before returning, giving nested
         ; namespaces correct save/restore semantics.
+        ; record_free_operator: a free operator (top-level OR namespace-level)
+        ; with an Action body is planned here rather than reached by call-site
+        ; member resolution, and the call site (resolve_operator_call#) emits a
+        ; reference to its OPERATOR-mangled name (planned with a null parent),
+        ; so its body must be emitted under that same name. emit() walks
+        ; instantiated_functions only, so record it as a PlannedFunction.
+        ; Extern/Intrinsic/Instruction operators have no Scaly body to emit.
+        ; Operators are registered GLOBALLY by name (register_operator ignores
+        ; the namespace path) and the call site mangles without a namespace, so
+        ; a namespace operator behaves as a free operator — hence plan it with a
+        ; null parent and record it exactly like the top-level case.
+        function record_free_operator(this: Planner, o: Operator, po: PlannedOperator)
+        {
+            var op_has_body: bool false
+            choose o.implementation
+                when oa: Action
+                    set op_has_body: true
+                else
+                    0
+            if op_has_body
+            {
+                let synth_fn Function(
+                    o.span,
+                    o.private_,
+                    true,
+                    o.name,
+                    o.parameters,
+                    null,
+                    o.input,
+                    o.returns_,
+                    o.throws_,
+                    Lifetime.Unspecified(Unspecified()),
+                    o.implementation
+                )
+                var op_page_param: ref[String]? null
+                if Planner.needs_implicit_return_page(synth_fn)
+                {
+                    var pp_holder Vector[String](1)
+                    pp_holder.put(0, "_rp")
+                    set op_page_param: pp_holder.get(0)
+                }
+                var op_can_throw: bool false
+                if po.throws_type <> null
+                    set op_can_throw: true
+                this.record_function(PlannedFunction(
+                    po.loc,
+                    po.is_private,
+                    true,
+                    po.name,
+                    po.mangled_name,
+                    op_page_param,
+                    po.input,
+                    po.return_type,
+                    po.throws_type,
+                    Lifetime.Unspecified(Unspecified()),
+                    po.impl,
+                    null,
+                    false,
+                    op_can_throw,
+                    null,
+                    this.file
+                ))
+            }
+        }
+
         function plan_namespace(this: Planner, ns: Namespace, name: String) returns PlannedNamespace
         {
             ; Build the parent PlannedType that tags every Function /
@@ -26277,7 +26366,15 @@ define Planner
                         }
                         when o: Operator
                         {
-                            operators.add(this.plan_operator(o, parent_ref))
+                            ; Operators register globally by name and the call
+                            ; site mangles without the namespace, so a namespace
+                            ; operator emits under the free-operator name (null
+                            ; parent) and must be recorded like a top-level one —
+                            ; otherwise its body is never emitted (undefined
+                            ; symbol at link).
+                            let po this.plan_operator(o, null)
+                            operators.add po
+                            this.record_free_operator(o, po)
                             0
                         }
                         when c: Concept
@@ -26761,67 +26858,7 @@ define Planner
                         {
                             let po this.plan_operator(o, null)
                             operators.add po
-                            ; A free (top-level) operator needs a real
-                            ; emitted body. emit() walks instantiated_functions
-                            ; only; struct operators reach it via call-site
-                            ; resolution, but a free operator is planned here
-                            ; and would otherwise never be recorded — the call
-                            ; site (resolve_operator_call#) emits a reference to
-                            ; its OPERATOR-mangled name, so the body must be
-                            ; emitted under that same name. Record an
-                            ; Action-bodied free operator as a PlannedFunction
-                            ; carrying po.mangled_name. Extern/Intrinsic/
-                            ; Instruction operators have no Scaly body to emit.
-                            var op_has_body: bool false
-                            choose o.implementation
-                                when oa: Action
-                                    set op_has_body: true
-                                else
-                                    0
-                            if op_has_body
-                            {
-                                let synth_fn Function(
-                                    o.span,
-                                    o.private_,
-                                    true,
-                                    o.name,
-                                    o.parameters,
-                                    null,
-                                    o.input,
-                                    o.returns_,
-                                    o.throws_,
-                                    Lifetime.Unspecified(Unspecified()),
-                                    o.implementation
-                                )
-                                var op_page_param: ref[String]? null
-                                if Planner.needs_implicit_return_page(synth_fn)
-                                {
-                                    var pp_holder Vector[String](1)
-                                    pp_holder.put(0, "_rp")
-                                    set op_page_param: pp_holder.get(0)
-                                }
-                                var op_can_throw: bool false
-                                if po.throws_type <> null
-                                    set op_can_throw: true
-                                this.record_function(PlannedFunction(
-                                    po.loc,
-                                    po.is_private,
-                                    true,
-                                    po.name,
-                                    po.mangled_name,
-                                    op_page_param,
-                                    po.input,
-                                    po.return_type,
-                                    po.throws_type,
-                                    Lifetime.Unspecified(Unspecified()),
-                                    po.impl,
-                                    null,
-                                    false,
-                                    op_can_throw,
-                                    null,
-                                    this.file
-                                ))
-                            }
+                            this.record_free_operator(o, po)
                             0
                         }
                         when c: Concept

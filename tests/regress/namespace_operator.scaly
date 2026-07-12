@@ -1,0 +1,26 @@
+; Regression (#14, planner smell audit): a bodied operator declared inside a
+; namespace (`define NS { operator ... }`) must have its body emitted.
+; Operators register GLOBALLY by name (register_operator ignores the namespace
+; path) and the infix call site mangles without a namespace, so a namespace
+; operator behaves as a free operator. plan_namespace planned it under a
+; namespaced mangled name and never recorded it, so emit() (which walks
+; instantiated_functions only) skipped the body -> undefined symbol at link.
+; The fix plans it with a null parent and records it via record_free_operator,
+; exactly like a top-level free operator.
+; NEW: PASS; the old seed compiler fails to link ("Undefined symbols ... operator").
+
+define NS
+{
+    operator <+>(left: int, right: int) returns int
+        left + right
+
+    operator <*>(left: int, right: int) returns int
+        left * right
+}
+
+let a 3 <+> 4        ; 7
+let b 6 <*> 7        ; 42
+if a = 7 && b = 42
+    print("PASS")
+else
+    print("FAIL")
