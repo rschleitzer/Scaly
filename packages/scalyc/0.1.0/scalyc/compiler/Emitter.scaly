@@ -4485,15 +4485,14 @@ define Emitter
     ; null page and every JIT program that heap-allocates crashed or produced
     ; empty output. We now skip stubbing any symbol dlsym finds in the host,
     ; letting the process generator resolve the real one.
-    ; LIMITATION: this only works when the host binary EXPORTS those symbols —
-    ; the multi-object bootstrap link (/tmp/scalyc_stage2, the canonical
-    ; compiler + selfhosted JIT suite) does. The whole-program `opt -O2`
-    ; build (scalyc/build/scalyc) links one object and macOS ld auto-hides
-    ; the weak_def_can_be_hidden runtime symbols to local, so dlsym misses
-    ; them and they're still stubbed. A build-independent fix (reflect the
-    ; runtime archive into the JITDylib) is blocked on the LLVM-18 C API
-    ; LLVMOrcCreateStaticLibrarySearchGeneratorForPath not being exported by
-    ; the shipped libLLVM; tracked as a follow-up.
+    ; This only works when the host binary EXPORTS those symbols. Both builds
+    ; now do: the multi-object bootstrap link (/tmp/scalyc_stage2) keeps them
+    ; global on its own, and the whole-program `opt -O2` build (scalyc/build/
+    ; scalyc) is made to as well — build-from-seed.sh promotes the runtime
+    ; bodies to weak_odr before opt (else opt DCE's the fully-inlined ones,
+    ; e.g. StringBuilder's ctor) and strips unnamed_addr after opt (else macOS
+    ; ld auto-hides the weak_def_can_be_hidden symbols to local). See the
+    ; comment block around the whole-program opt path in that script.
     procedure emit_jit_stubs(this)
     {
         ; Skip symbols the host process already exports so the ORC process

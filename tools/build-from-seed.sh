@@ -55,14 +55,38 @@ if [ "${SCALYC_NO_OPT:-0}" != "1" ] && [ -n "$OPT" ] && [ -n "$LLVM_LINK" ]; the
 fi
 
 if [ "$use_opt" = "1" ]; then
-    "$LLVM_LINK" "$SEED/main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyc_linked.bc"
-    "$OPT" -O2 "$WORK/scalyc_linked.bc" -o "$WORK/scalyc_opt.bc"
+    # Whole-program opt, but keep the RBMM runtime + stdlib bodies present AND
+    # exported so the in-process ORC JIT (--jit/--run) can resolve them from the
+    # host image. The emitter emits runtime/stdlib calls as declare-only (the
+    # body is expected from libscaly.a at AOT link time); in JIT there is no
+    # link step, so those declarations must resolve to real functions the scalyc
+    # binary exports (emit_jit_stubs dlsym's them and only null-stubs the truly
+    # absent ones). Two textual IR edits bracket opt to guarantee that:
+    #   1. linkonce_odr -> weak_odr BEFORE opt. A linkonce_odr body with no
+    #      surviving external reference is DCE'd by opt (StringBuilder's ctor,
+    #      Page.get/get_capacity/allocate_exclusive_page, ... get fully inlined
+    #      into the compiler and dropped). weak_odr is non-discardable, so every
+    #      runtime body is retained out-of-line even after inlining. Without this
+    #      the JIT crashes on an uninitialized StringBuilder (missing ctor body).
+    #   2. strip (local_)unnamed_addr AFTER opt. A linkonce/weak_odr function
+    #      carrying unnamed_addr is `weak_def_can_be_hidden`, which macOS ld
+    #      collapses to a LOCAL symbol — dlsym and the ORC process generator then
+    #      miss it. Removing the attribute emits a plain `.weak_definition`, kept
+    #      in the export trie. opt already ran with the attribute present, so no
+    #      optimization is lost; only the symbol-table emission changes.
+    # AOT/-c is unaffected (real bodies come from libscaly.a). The bootstrap
+    # multi-object link keeps these symbols global on its own; this is only the
+    # whole-program build's equivalent. ~6% larger binary, emission unchanged.
+    "$LLVM_LINK" -S "$SEED/main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyc_linked.ll"
+    sed 's/^define linkonce_odr /define weak_odr /' "$WORK/scalyc_linked.ll" > "$WORK/scalyc_weak.ll"
+    "$OPT" -O2 -S "$WORK/scalyc_weak.ll" -o "$WORK/scalyc_opt.ll"
+    sed '/^define /s/\(local_\)\?unnamed_addr //g' "$WORK/scalyc_opt.ll" > "$WORK/scalyc_export.ll"
     # -relocation-model=pic: x86-64 Linux links executables as PIE, which rejects
     # llc's default (static) R_X86_64_32 absolute relocations. PIC is the default
     # on Mach-O, so this is a no-op on macOS and harmless on aarch64.
-    "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyc_opt.bc" -o "$WORK/scalyc_all.o"
+    "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyc_export.ll" -o "$WORK/scalyc_all.o"
     SCALYC_OBJS=("$WORK/scalyc_all.o")
-    echo "build-from-seed: whole-program opt -O2 applied"
+    echo "build-from-seed: whole-program opt -O2 applied (runtime kept JIT-visible)"
 else
     for f in main scalyc scaly; do
         "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
@@ -79,6 +103,13 @@ if [ "$(uname -s)" = "Linux" ]; then
         p=$(command -v "$c" 2>/dev/null || true)
         [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
     done
+    # ELF executables put a global symbol in .dynsym (dlsym-visible) only when
+    # explicitly exported. The whole-program build's runtime bodies (weak_odr,
+    # see above) live in .symtab but the in-process JIT resolves them via
+    # dlsym/ORC, which searches .dynsym — so export them. macOS keeps weak defs
+    # in the export trie already (no flag needed there). Harmless on the -O0
+    # fallback path too.
+    LINKARGS+=("-rdynamic")
 fi
 
 # The fiber context-switch primitives (vendored assembly, selected by host

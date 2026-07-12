@@ -9,11 +9,13 @@
 #
 # Each program prints PASS on success. Usage: tests/jit/run.sh [stage-binary]
 #
-# Run against a BOOTSTRAP-linked compiler (the default /tmp/scalyc_stage2, same
-# as the selfhosted suite): JIT region allocation resolves the runtime from the
-# host's exported symbols, which the multi-object bootstrap link keeps global.
-# The whole-program `opt -O2` build (scalyc/build/scalyc) auto-hides those
-# symbols, so it can't yet JIT region-allocating programs (see emit_jit_stubs).
+# JIT region allocation resolves the runtime from the host's exported symbols
+# (emit_jit_stubs dlsym's them; the ORC process generator supplies the bodies).
+# Works on BOTH the multi-object bootstrap link (the default /tmp/scalyc_stage2,
+# which keeps the symbols global) AND the whole-program `opt -O2` build
+# (scalyc/build/scalyc): build-from-seed.sh promotes the runtime bodies to
+# weak_odr (so opt keeps them) and strips unnamed_addr (so macOS ld exports
+# them). Pass either binary; both are validated in the full bar.
 cd "$(dirname "$0")/../.." || exit 1
 STAGE=${1:-/tmp/scalyc_stage2}
 TIMEOUT_SECS=${TIMEOUT_SECS:-30}
