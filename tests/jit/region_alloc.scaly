@@ -1,0 +1,55 @@
+; JIT regression: page/region allocation through the in-process ORC JIT.
+;
+; emit_jit_stubs used to replace EVERY declared-only _Z... symbol with a
+; null-returning stub — including the RBMM runtime + stdlib bodies the host
+; process already exports (scalyc links libscaly.a). Page.allocate then
+; returned null in JIT, so a `#` heap construction stored through a null
+; `this` (SIGSEGV) and StringBuilder/Vector silently produced empty results.
+; AOT was unaffected (real bodies linked from libscaly.a). Fix: dlsym the
+; running image and DON'T stub host-resolvable symbols — the ORC process
+; generator resolves the real function.
+;
+; Every check below region-allocates; any single failure prints FAIL.
+; Expected (JIT): PASS
+
+define Box
+(
+    v: int
+)
+{
+    init(a: int)
+    {
+        set v: a
+    }
+    function twice(this) returns int
+        this.v * 2
+}
+
+; `#` heap construction, field read + method call
+let b Box#(21)
+if b.v <> 21
+    print("FAIL box.v\n")
+if b.twice() <> 42
+    print("FAIL box.twice\n")
+
+; StringBuilder — a stdlib type whose body lives in the host runtime
+let sb StringBuilder()
+sb.append "he"
+sb.append "llo"
+let s sb.to_string()
+if s.get_length() <> 5
+    print("FAIL sb.len\n")
+
+; Vector region allocation + indexed read-back
+var vec Vector[int](3)
+vec.put(0, 10)
+vec.put(1, 20)
+vec.put(2, 30)
+let p vec.get 1
+if p = null
+    print("FAIL vec.null\n")
+if p <> null
+    if (*p) <> 20
+        print("FAIL vec.val\n")
+
+print("PASS\n")

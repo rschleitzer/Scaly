@@ -20,6 +20,19 @@ use scalyc.compiler.parser.*
 use scalyc.compiler.Syntax.*
 use scalyc.compiler.Planner.*
 
+; dlopen/dlsym: used by the JIT stub pass to tell a genuinely-unresolvable
+; declared-only symbol (an uninstantiated generic never reached at runtime,
+; which must be stubbed) apart from one the host process already exports
+; (the whole RBMM runtime + stdlib — scalyc links libscaly.a). Stubbing the
+; latter shadows the real definition with a null-returning body, so every
+; JIT program that region-allocates gets a null page and either crashes
+; (deref) or silently produces empty results. dlopen(null, RTLD_NOW=2)
+; yields the main-program handle on both macOS and Linux (portable, no
+; OS-conditional constant), and dlsym takes the un-prefixed C name — the
+; same name that appears on the LLVM declaration.
+function dlopen(filename: pointer[const_char], flag: i32) returns pointer[void] extern
+function dlsym(handle: pointer[void], symbol: pointer[const_char]) returns pointer[void] extern
+
 define Emitter
 {
 ; ============================================================================
@@ -4465,8 +4478,29 @@ define Emitter
     ; (libc / LLVM-C) keep their declarations — the process symbol generator
     ; resolves them from the host. Mirrors stage-0 jitExecuteIntFunction's stub
     ; pass (Emitter.cpp). Only _Z names (s17 lesson: never stub LLVM*/libc).
+    ;
+    ; A blanket stub, though, ALSO null-stubs the RBMM runtime + stdlib
+    ; (Page.allocate, StringBuilder.*, ...) — declared-only here but real
+    ; functions the host process exports — so region allocation returned a
+    ; null page and every JIT program that heap-allocates crashed or produced
+    ; empty output. We now skip stubbing any symbol dlsym finds in the host,
+    ; letting the process generator resolve the real one.
+    ; LIMITATION: this only works when the host binary EXPORTS those symbols —
+    ; the multi-object bootstrap link (/tmp/scalyc_stage2, the canonical
+    ; compiler + selfhosted JIT suite) does. The whole-program `opt -O2`
+    ; build (scalyc/build/scalyc) links one object and macOS ld auto-hides
+    ; the weak_def_can_be_hidden runtime symbols to local, so dlsym misses
+    ; them and they're still stubbed. A build-independent fix (reflect the
+    ; runtime archive into the JITDylib) is blocked on the LLVM-18 C API
+    ; LLVMOrcCreateStaticLibrarySearchGeneratorForPath not being exported by
+    ; the shipped libLLVM; tracked as a follow-up.
     procedure emit_jit_stubs(this)
     {
+        ; Skip symbols the host process already exports so the ORC process
+        ; generator can resolve the REAL function (see the per-symbol note
+        ; below); stub only the genuinely-absent ones. Handle to the running
+        ; scalyc image (RTLD_NOW = 2).
+        let jit_host_handle dlopen(null as pointer[const_char], 2 as i32)
         var func LLVMGetFirstFunction(llvm_module)
         while func.handle <> null
         {
@@ -4483,6 +4517,24 @@ define Emitter
                         {
                             if (*(name_ptr + 1)) = 90
                                 set is_scaly_mangled: true
+                        }
+                        ; Skip symbols the host process already exports —
+                        ; the RBMM runtime + stdlib (Page.allocate, String/
+                        ; Vector/StringBuilder bodies, ...) are all defined in
+                        ; the scalyc binary (it links libscaly.a). Leaving the
+                        ; declaration lets the ORC process-symbol generator
+                        ; resolve the REAL function; a null-returning stub here
+                        ; would shadow it and break every region allocation.
+                        ; Only genuinely-absent symbols (uninstantiated
+                        ; generics never reached at runtime) fall through to
+                        ; the stub. dlsym gets the un-prefixed C name verbatim.
+                        if is_scaly_mangled
+                        {
+                            if jit_host_handle <> null
+                            {
+                                if dlsym(jit_host_handle, name_ptr as pointer[const_char]) <> null
+                                    set is_scaly_mangled: false
+                            }
                         }
                         if is_scaly_mangled
                         {
