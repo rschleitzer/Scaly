@@ -1,0 +1,48 @@
+; AOT Test: member-operator overload resolution + char literal fold (#11).
+; find_member_operator now matches ALL same-named member operators by argument
+; type (exact -> compatible -> char/float fold) rather than taking the first
+; declared one, and folds a bare char literal into the matched parameter's
+; type at the dispatch site. Before the fix the first `==` always won (so an
+; int argument was driven into the `Cell` slot) and a bare `"A"` char literal
+; was passed as a String pointer into a char slot (silent miscompile).
+; The member operator names are the symbolic `==` (Slice declares the same).
+; Expected: ok
+
+define Cell(v: int)
+{
+    operator ==(other: Cell) returns bool
+        this.v = other.v
+
+    operator ==(scalar: int) returns bool
+        this.v = scalar
+
+    operator ==(ch: char) returns bool
+        this.v = (ch as int)
+}
+
+let a Cell(65)          ; 65 = "A"
+let b Cell(65)
+let d Cell(9)
+
+var ok: bool true
+
+; Facet 1: two overloads picked by argument type.
+if not (a == b)         ; Cell overload -> true
+    set ok: false
+if a == d               ; Cell overload -> false (v differs)
+    set ok: false
+if not (a == 65)        ; int overload -> true
+    set ok: false
+if a == 9               ; int overload -> false
+    set ok: false
+
+; Facet 2: a bare char literal folds into the char overload.
+if not (a == "A")       ; char overload, "A" (65) folded -> true
+    set ok: false
+if a == "B"             ; char overload, "B" (66) -> false
+    set ok: false
+
+if ok
+    print("ok")
+else
+    print("WRONG")

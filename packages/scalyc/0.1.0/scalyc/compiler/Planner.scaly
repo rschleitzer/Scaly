@@ -6450,7 +6450,11 @@ define Planner
                                                                 }
                                                                 var sm_ref: ref[MethodMatch]? null
                                                                 if ptr_fused = false
-                                                                    set sm_ref: this.find_member_operator(recv_op.result_type, String("[]"), sx_op.loc)
+                                                                {
+                                                                    let sub_no_types Vector[PlannedType]()
+                                                                    let sub_no_ops Vector[PlannedOperand]()
+                                                                    set sm_ref: this.find_member_operator(recv_op.result_type, String("[]"), sub_no_types, sub_no_ops, sx_op.loc)
+                                                                }
                                                                 if sm_ref <> null
                                                                 {
                                                                     let m (*sm_ref)
@@ -10505,7 +10509,13 @@ define Planner
                         {
                             if Planner.is_generic_type_param_name(lop_name) = false
                             {
-                                let mop_ref this.find_member_operator(result.result_type, op_name, result.loc)
+                                ; Non-receiver args for overload resolution: the
+                                ; single rhs (the receiver is `this`).
+                                var mop_arg_types Vector[PlannedType](1)
+                                mop_arg_types.put(0, rhs.result_type)
+                                var mop_match_ops Vector[PlannedOperand](1)
+                                mop_match_ops.put(0, rhs)
+                                let mop_ref this.find_member_operator(result.result_type, op_name, mop_arg_types, mop_match_ops, result.loc)
                                 if mop_ref <> null
                                 {
                                     let m (*mop_ref)
@@ -10514,6 +10524,12 @@ define Planner
                                     var mop_args Vector[PlannedOperand](2)
                                     mop_args.put(0, result)
                                     mop_args.put(1, rhs)
+                                    ; Fold a bare char/float literal rhs to the
+                                    ; matched operator's parameter type (mirrors
+                                    ; the top-level fold at resolved_op_fold_params);
+                                    ; empty/String params leave the operands intact.
+                                    if m.parameter_types <> null
+                                        set mop_args: this.fold_string_args_to_char(mop_args, (*m.parameter_types))
                                     let mop_call PlannedCall(
                                         result.loc,
                                         String(op_name),
@@ -12284,6 +12300,8 @@ define Planner
             this: Planner,
             container_type: PlannedType,
             op_name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
             loc: Span
         ) returns ref[MethodMatch]?
         {
@@ -12336,8 +12354,7 @@ define Planner
                                 when o: Operator
                                 {
                                     if o.name = op_name
-                                        if op_holder.length = 0
-                                            op_holder.add o
+                                        op_holder.add o
                                     0
                                 }
                                 else
@@ -12354,7 +12371,7 @@ define Planner
             let op_ptr op_holder.get 0
             if op_ptr = null
                 return null
-            let op (*op_ptr)
+            let op0 (*op_ptr)
 
             ; Cycle guard: planning the operator body below re-enters
             ; collapse; a subscript inside the SAME container's own `[]`
@@ -12455,6 +12472,100 @@ define Planner
                 set rbi: rbi + 1
             }
 
+            ; Overload resolution across all same-named member operators
+            ; (mirror of resolve_operator_call# for top-level operators, run
+            ; here under the active receiver substitution so generic params
+            ; resolve). `arg_types`/`arg_ops` list the NON-receiver arguments:
+            ; the binary-operator dispatch site (A3a) passes [rhs]; the
+            ; []-subscript site passes none. Match exact -> compatible ->
+            ; char/float fold; the winner's planned parameter types are handed
+            ; back so the dispatch site folds a bare String literal into a char
+            ; slot (or an f64 literal into an f32 slot). With no arg types, or
+            ; when nothing matches, fall back to the first declared operator —
+            ; byte-identical to the old first-wins behavior the single-overload
+            ; []-subscript path relies on. Member operators are user
+            ; Action bodies (never intrinsic), so fold params are recorded on
+            ; every match, exactly as #12 requires for the float-widening case.
+            var sel_idx: size_t 0
+            var sel_fold_params Vector[PlannedType]()
+            if arg_types.length > 0
+            {
+                var matched: bool false
+                var pe: size_t 0
+                while pe < op_holder.length
+                {
+                    if matched = false
+                    {
+                        let cand_ptr op_holder.get pe
+                        if cand_ptr <> null
+                        {
+                            let rt this.check_operator_match((*cand_ptr), arg_types, true, false, arg_ops)
+                            if rt <> null
+                            {
+                                set sel_idx: pe
+                                set matched: true
+                            }
+                        }
+                    }
+                    set pe: pe + 1
+                }
+                if matched = false
+                {
+                    var pc: size_t 0
+                    while pc < op_holder.length
+                    {
+                        if matched = false
+                        {
+                            let cand_ptr op_holder.get pc
+                            if cand_ptr <> null
+                            {
+                                let rt this.check_operator_match((*cand_ptr), arg_types, false, false, arg_ops)
+                                if rt <> null
+                                {
+                                    set sel_idx: pc
+                                    set matched: true
+                                }
+                            }
+                        }
+                        set pc: pc + 1
+                    }
+                }
+                if matched = false
+                {
+                    var pf: size_t 0
+                    while pf < op_holder.length
+                    {
+                        if matched = false
+                        {
+                            let cand_ptr op_holder.get pf
+                            if cand_ptr <> null
+                            {
+                                let rt this.check_operator_match((*cand_ptr), arg_types, false, true, arg_ops)
+                                if rt <> null
+                                {
+                                    set sel_idx: pf
+                                    set matched: true
+                                }
+                            }
+                        }
+                        set pf: pf + 1
+                    }
+                }
+                if matched
+                {
+                    let win_ptr op_holder.get sel_idx
+                    if win_ptr <> null
+                        set sel_fold_params: this.operator_planned_param_types((*win_ptr))
+                }
+            }
+            var op: Operator op0
+            if sel_idx <> 0
+            {
+                let win_ptr op_holder.get sel_idx
+                if win_ptr <> null
+                    set op: (*win_ptr)
+            }
+
             ; Parent type for planning/mangling: the concrete receiver.
             var parent_holder Vector[PlannedType](1)
             parent_holder.put(0, lookup_st)
@@ -12539,11 +12650,16 @@ define Planner
             if planned_op.throws_type <> null
                 set can_throw: true
 
+            ; Carry the winner's planned parameter types so the dispatch site
+            ; folds the operands (bare String -> char, f64 literal -> f32). For
+            ; the []-subscript path (no arg types) this is empty and the fold is
+            ; a no-op. Stack holder promoted like the s129 &sparams_holder.
+            var fmop_params_holder Vector[PlannedType](sel_fold_params)
             MethodMatch^this(
                 null,
                 planned_op.mangled_name,
                 return_type,
-                null,
+                &fmop_params_holder,
                 op_has_page,
                 can_throw,
                 planned_op.throws_type,
