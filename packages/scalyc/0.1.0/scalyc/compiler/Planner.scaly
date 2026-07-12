@@ -20195,6 +20195,8 @@ define Planner
                         }
                     }
                 }
+                when rp: Repeat
+                    this.escape_walk_action(rp.body)
                 else
                     0
         }
@@ -21921,6 +21923,50 @@ define Planner
             ; uninitialised → caller reads a garbage variant tag).
             let planned_flat this.plan_operands(t.result)
             var planned_collapsed this.collapse_operand_sequence(planned_flat)
+            ; Top-level escape promotion, mirroring plan_return#: a thrown value
+            ; whose lifetime is the Local page dangles once the frame is freed
+            ; (it travels up via the throws Result sret). Promote a Local-page
+            ; reference/value or a directly-thrown no-sigil construction to the
+            ; caller page (rp); keep the hard diagnostic only when promotion is
+            ; impossible (a bare local Variable). plan_throw# previously did only
+            ; the nested-guts promotion below, leaving a bare-variable throw of a
+            ; Local-life error union with heap guts unpromoted and undiagnosed.
+            var throw_needs_promotion false
+            if this.region_of_operand(planned_collapsed) < Planner.required_region_for_escape()
+                set throw_needs_promotion: true
+            if throw_needs_promotion = false
+                if this.operand_is_local_page_construction(planned_collapsed)
+                    set throw_needs_promotion: true
+            if throw_needs_promotion = false
+                if this.operand_reads_tainted_local_field(planned_collapsed)
+                    set throw_needs_promotion: true
+            if planned_flat.length > 0
+                if throw_needs_promotion
+                {
+                    ; Gap 1 (see plan_return#): `throw x` where x's binding was
+                    ; already promoted to rp — the Variable is just a frame slot
+                    ; holding a caller-page pointer, so it does not dangle.
+                    var already_promoted false
+                    choose planned_collapsed.expr
+                        when v: Variable
+                        {
+                            if this.array_contains_name(promoted_binding_names, v.name)
+                                set already_promoted: true
+                        }
+                        else
+                            0
+                    if this.operand_reads_tainted_local_field(planned_collapsed)
+                        set already_promoted: false
+                    if already_promoted = false
+                    {
+                        let call_life Lifetime.Call(scalyc.compiler.Model.Call(t.span))
+                        let promoted this.restamp_operand_life(planned_collapsed, call_life)
+                        if promoted <> null
+                            set planned_collapsed: (*promoted)
+                        else
+                            this.add_diagnostic(t.span, "reference into a local page escapes via throw - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
+                    }
+                }
             ; A thrown value escapes the frame exactly like a returned one: it
             ; travels up the stack via the throws Result-wrapper sret. A fresh
             ; Local-life heap construction buried in its fields (e.g. the error
@@ -23244,6 +23290,27 @@ define Planner
                 }
                 when rep: Repeat
                     this.collect_returns_action(rep.action)
+                when tr: Try
+                {
+                    ; Escapable/promotable locals inside a try binding, its catch
+                    ; arms, or its else arm must reach caller-page promotion the
+                    ; same as the loop arms above (siblings scan_addr_taken_operand
+                    ; / scan_getref_operand already descend into Try).
+                    this.collect_returns_while_binding(tr.binding)
+                    var i: size_t 0
+                    while i < tr.catches.length
+                    {
+                        let wp tr.catches.get i
+                        if wp <> null
+                            this.collect_returns_stmt((*wp).consequent)
+                        set i: i + 1
+                    }
+                    if tr.alternative <> null
+                    {
+                        let alt tr.alternative
+                        this.collect_returns_stmt((*alt))
+                    }
+                }
                 else
                     0
         }
@@ -31790,61 +31857,6 @@ define Planner
             }
         }
         null
-    }
-
-    ; get_operator_precedence: higher wins. Returns 0 for unknown operators
-    ; so the caller can distinguish "unbound" from explicit parenthesisation.
-    ; Scaly uses `=` / `<>` (equal / not-equal) instead of C's `==` / `!=`.
-    function get_operator_precedence(op: String) returns int
-    {
-        if op = "||"
-            return 1
-        if op = "or"
-            return 1
-        if op = "&&"
-            return 2
-        if op = "and"
-            return 2
-        if op = "|"
-            return 3
-        if op = "^"
-            return 4
-        ; Word synonym for `^` (bitwise XOR) — same precedence.
-        if op = "xor"
-            return 4
-        if op = "&"
-            return 5
-        if op = "="
-            return 6
-        if op = "<>"
-            return 6
-        if op = "<"
-            return 7
-        if op = ">"
-            return 7
-        if op = "<="
-            return 7
-        if op = ">="
-            return 7
-        if op = "<<"
-            return 8
-        if op = ">>"
-            return 8
-        if op = "+"
-            return 9
-        if op = "-"
-            return 9
-        if op = "*"
-            return 10
-        if op = "/"
-            return 10
-        if op = "%"
-            return 10
-        if op = "div"
-            return 10
-        if op = "mod"
-            return 10
-        0
     }
 
     ; size_to_string: decimal representation of a size_t.
