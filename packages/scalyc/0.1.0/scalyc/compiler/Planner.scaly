@@ -382,6 +382,15 @@ define Planner
         ; Mirrors stage-0's OperatorMatch.IsIntrinsic (Planner.cpp:3118/4470).
         resolved_op_is_intrinsic: bool
 
+        ; Set by resolve_operator_call# to the matched operator's planned
+        ; parameter types (excluding `this`) ONLY when the match succeeded via
+        ; the char/float literal-fold pass — empty otherwise. Read by the binary
+        ; operator-call construction in collapse_operand_sequence# so it can fold
+        ; the bare String/f64 literal operands to the char/float parameter types
+        ; (fold_string_args_to_char) and mangle the callee under those types. A
+        ; non-fold match leaves it empty, keeping the construction byte-identical.
+        resolved_op_fold_params: Vector[PlannedType]
+
         ; Loaded-package cache — name → root Module. Populated lazily
         ; once a package is found and parsed.
         loaded_packages: Array[KeyValuePair[String, Module]]
@@ -10463,8 +10472,14 @@ define Planner
                         return result
                     }
 
+                    ; Pass the actual operands (not just their types) so the
+                    ; resolver's literal-fold pass can see whether a mismatched
+                    ; char/float param faces a bare foldable literal.
+                    var op_arg_ops Vector[PlannedOperand](2)
+                    op_arg_ops.put(0, result)
+                    op_arg_ops.put(1, rhs)
                     let resolved this.resolve_operator_call(
-                        op_name, result.result_type, rhs.result_type
+                        op_name, result.result_type, rhs.result_type, op_arg_ops
                     )
 
                     ; Member binary operator dispatch (A3a): a user-defined
@@ -10791,9 +10806,35 @@ define Planner
                         }
                     }
 
+                    ; Char/float literal fold for a user operator: when the
+                    ; resolver matched via the fold pass (resolved_op_fold_params
+                    ; carries the two parameter types) turn the bare String/f64
+                    ; literal operands into char/float so BOTH the arg slots and
+                    ; the mangled callee name use the parameter types. Skipping
+                    ; the fold here (matcher accepted, operands untouched) would
+                    ; pass a String pointer into the char slot — a silent
+                    ; miscompile, which is why the fold is mandatory, not
+                    ; opportunistic. For every non-fold operator the field is
+                    ; empty, so op_left/op_right stay result/rhs and the mangle
+                    ; is byte-identical to before.
+                    var op_left result
+                    var op_right rhs
+                    if this.resolved_op_fold_params.length = 2
+                    {
+                        var pre_args Vector[PlannedOperand](2)
+                        pre_args.put(0, result)
+                        pre_args.put(1, rhs)
+                        let folded_args this.fold_string_args_to_char(pre_args, this.resolved_op_fold_params)
+                        let fl folded_args.get 0
+                        let fr folded_args.get 1
+                        if fl <> null
+                            set op_left: (*fl)
+                        if fr <> null
+                            set op_right: (*fr)
+                    }
                     var two_args Vector[PlannedOperand](2)
-                    two_args.put(0, result)
-                    two_args.put(1, rhs)
+                    two_args.put(0, op_left)
+                    two_args.put(1, op_right)
                     var two_args_holder Vector[PlannedOperand](two_args)
                     ; Built-in binary operators on primitive types are
                     ; intrinsic (Planner.cpp:4378-4379). A user-defined
@@ -10808,7 +10849,7 @@ define Planner
                     let call PlannedCall(
                         result.loc,
                         op_name,
-                        this.mangle_binary_operator(op_name, result.result_type, rhs.result_type),
+                        this.mangle_binary_operator(op_name, op_left.result_type, op_right.result_type),
                         bin_is_intrinsic,
                         true,
                         false,
@@ -10854,7 +10895,9 @@ define Planner
             this: Planner,
             o: Operator,
             arg_types: Vector[PlannedType],
-            exact_only: bool
+            exact_only: bool,
+            char_fold: bool,
+            arg_ops: Vector[PlannedOperand]
         ) returns ref[PlannedType]?
         {
             var param_start: size_t 0
@@ -10895,6 +10938,24 @@ define Planner
                         set ok: Planner.types_equal(planned_p, arg)
                     if exact_only = false
                         set ok: Planner.types_compatible(planned_p, arg)
+                    ; Char/float literal-fold fallback, identical to
+                    ; check_function_match: a bare double-quoted char literal
+                    ; (a chainless String constant) matches a char/u8 operator
+                    ; parameter, and a bare f64 literal matches a float/f32 one.
+                    ; Enabled only on the dedicated fold pass; the actual operand
+                    ; is folded/retyped at the operator-call construction site
+                    ; (collapse_operand_sequence#, resolved_op_fold_params).
+                    if ok = false
+                        if char_fold
+                            if arg.name = "String"
+                                if Planner.type_is_char_like(planned_p)
+                                    if this.arg_is_foldable_char_string(arg_ops, j)
+                                        set ok: true
+                    if ok = false
+                        if char_fold
+                            if Planner.type_is_float_like(planned_p)
+                                if this.arg_is_foldable_float(arg_ops, j)
+                                    set ok: true
                     if ok = false
                         return null
                 }
@@ -10907,6 +10968,44 @@ define Planner
                 return &^this this.plan_type(rt)
             }
             &^this Planner.make_void_type()
+        }
+
+        ; operator_planned_param_types: the operator's parameter types (skipping
+        ; a leading `this`), planned to PlannedType. Used by resolve_operator_
+        ; call#'s fold pass to hand the construction site the char/float types it
+        ; must fold the literal operands to.
+        function operator_planned_param_types(this: Planner, o: Operator) returns Vector[PlannedType]
+        {
+            var param_start: size_t 0
+            if o.input.length > 0
+            {
+                let first_ptr o.input.get 0
+                if first_ptr <> null
+                {
+                    if first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        if fname = "this"
+                            set param_start: 1
+                    }
+                }
+            }
+            var arr Array[PlannedType]()
+            var j: size_t param_start
+            while j < o.input.length
+            {
+                let p_ptr o.input.get j
+                if p_ptr <> null
+                {
+                    if p_ptr.type <> null
+                    {
+                        let p_type (*p_ptr.type)
+                        arr.add(this.plan_type(p_type))
+                    }
+                }
+                set j: j + 1
+            }
+            Vector[PlannedType](arr)
         }
 
         ; resolve_prefix_operator_call: for unary prefix operators like
@@ -10936,6 +11035,12 @@ define Planner
             if candidates.length = 0
                 return null
 
+            ; No prefix literal-fold: `-"a"` against a char-param prefix
+            ; operator is far-fetched and unfolded here (the binary infix case
+            ; is the realistic one). Keep the field clean regardless.
+            set this.resolved_op_fold_params: Vector[PlannedType]()
+            let no_ops Vector[PlannedOperand]()
+
             var arg_types Vector[PlannedType](1)
             arg_types.put(0, operand)
 
@@ -10947,7 +11052,7 @@ define Planner
                 if o_ptr <> null
                 {
                     let o (*o_ptr)
-                    let rt this.check_operator_match(o, arg_types, true)
+                    let rt this.check_operator_match(o, arg_types, true, false, no_ops)
                     if rt <> null
                     {
                         set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
@@ -10965,7 +11070,7 @@ define Planner
                 if o_ptr <> null
                 {
                     let o (*o_ptr)
-                    let rt this.check_operator_match(o, arg_types, false)
+                    let rt this.check_operator_match(o, arg_types, false, false, no_ops)
                     if rt <> null
                     {
                         set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
@@ -10983,9 +11088,17 @@ define Planner
             this: Planner,
             name: String,
             left: PlannedType,
-            right: PlannedType
+            right: PlannedType,
+            arg_ops: Vector[PlannedOperand]
         ) returns ref[PlannedType]?
         {
+            ; No fold matched yet — the construction site reads this after we
+            ; return, so it MUST be reset each call BEFORE any early exit: a
+            ; stale non-empty value from a prior resolve would otherwise mis-fold
+            ; THIS operator's operands (e.g. two string constants beside an
+            ; unregistered operator name).
+            set this.resolved_op_fold_params: Vector[PlannedType]()
+
             let candidates this.lookup_operators(name)
             if candidates.length = 0
                 return null
@@ -11002,10 +11115,20 @@ define Planner
                 if o_ptr <> null
                 {
                     let o (*o_ptr)
-                    let rt this.check_operator_match(o, arg_types, true)
+                    let rt this.check_operator_match(o, arg_types, true, false, arg_ops)
                     if rt <> null
                     {
                         set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
+                        ; A user (non-intrinsic) operator is dispatched as a real
+                        ; call mangled under its DECLARED parameter types. Record
+                        ; them so the construction site mangles (and, where a
+                        ; width/literal differs, folds) the operands to the params
+                        ; rather than to the operand types — e.g. an f64 literal
+                        ; arg into an f32 parameter, which types_compatible admits
+                        ; but which would otherwise mangle the callee as f64.
+                        ; Intrinsic operators keep operand-type mangling (empty).
+                        if this.resolved_op_is_intrinsic = false
+                            set this.resolved_op_fold_params: this.operator_planned_param_types(o)
                         return rt
                     }
                 }
@@ -11020,14 +11143,49 @@ define Planner
                 if o_ptr <> null
                 {
                     let o (*o_ptr)
-                    let rt this.check_operator_match(o, arg_types, false)
+                    let rt this.check_operator_match(o, arg_types, false, false, arg_ops)
                     if rt <> null
                     {
                         set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
+                        if this.resolved_op_is_intrinsic = false
+                            set this.resolved_op_fold_params: this.operator_planned_param_types(o)
                         return rt
                     }
                 }
                 set k: k + 1
+            }
+
+            ; Pass 2b: char/float literal fold. A user operator with a char/u8
+            ; or float/f32 parameter, called with a bare double-quoted char
+            ; literal or f64 literal (`"a" <+> "b"`, `x <+> 1.5`), matches here.
+            ; Record the matched operator's param types so the construction site
+            ; folds the operands and mangles the callee under char/float — a
+            ; match WITHOUT that fold would drive a String pointer into the char
+            ; slot (silent miscompile), so the two are inseparable.
+            ; GATED to NON-intrinsic (user-defined, Action-bodied) operators:
+            ; the built-in primitive operators (=, <, +, ... on u8/int/float)
+            ; lower intrinsically and must keep their exact resolution — this
+            ; guarantees the pass never perturbs primitive-operator emission
+            ; (cycle stays IDENTICAL). Only a real dispatched call folds.
+            var fp: size_t 0
+            while fp < candidates.length
+            {
+                let o_ptr candidates.get fp
+                if o_ptr <> null
+                {
+                    let o (*o_ptr)
+                    if Planner.operator_is_intrinsic(o) = false
+                    {
+                        let rt this.check_operator_match(o, arg_types, false, true, arg_ops)
+                        if rt <> null
+                        {
+                            set this.resolved_op_is_intrinsic: false
+                            set this.resolved_op_fold_params: this.operator_planned_param_types(o)
+                            return rt
+                        }
+                    }
+                }
+                set fp: fp + 1
             }
 
             ; Pass 3: generic operator. Plan parameter types, infer

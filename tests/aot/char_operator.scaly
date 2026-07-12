@@ -1,0 +1,29 @@
+; AOT Test: char / float literal fold into user-operator parameters (#12).
+; A top-level user operator whose parameter is char/u8 or float/f32, called
+; infix with a BARE double-quoted char literal or an f64 literal, is matched by
+; the planner's operator literal-fold pass; the operands are then folded to the
+; parameter type (String -> char, f64 -> f32) so both the argument slots and the
+; mangled callee name use char/float. Before the fix the mismatch left the
+; operator unresolved and it hit the unknown-operator trap (exit 14).
+; The operator names are pure operator-character runs (`<~>`, `</>`) — the only
+; naming forms are symbolic runs or single-quoted text names; letters are never
+; part of an operator identifier. Both operators carry bodies (real dispatch).
+; Expected: ok
+operator <~>(left: char, right: char) returns int
+    (left as int) + (right as int)
+
+operator </>(left: f32, right: f32) returns f32
+    left + right
+
+let ci "A" <~> "B"           ; 65 + 66 = 131
+let fr 1.5 </> 2.25          ; 3.75, both exactly representable in f32
+
+var ok: bool true
+if ci <> 131
+    set ok: false
+if fr <> 3.75
+    set ok: false
+if ok
+    print("ok")
+else
+    print("WRONG")
