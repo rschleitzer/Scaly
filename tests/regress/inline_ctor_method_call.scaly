@@ -1,0 +1,65 @@
+; Regression: a method call on an INLINE (no-sigil) construction —
+; `Ctor(args).method(args)` — was silently dropped. The trailing method
+; hop resolved against the args-tuple type (a void field-0 placeholder),
+; rebind_trailing_chain discarded the correct re-resolution because the
+; chain ends in a method, and the emitter treated `.method` as an
+; extractvalue field read — no call emitted. The bound form
+; `let r Ctor(args); r.method(args)` always worked. Fix: rebind method-
+; terminated chains too, so the s83 method-on-chain dispatch fires with
+; the construction kept as the receiver.
+;
+; Multi-field struct + args so a dropped call (which would yield field 0)
+; cannot coincidentally match the expected value.
+; Self-hosted-only.
+; Expected: PASS
+
+define Adder
+(
+    a: int
+    b: int
+)
+{
+    function total(this, k: int) returns int
+        this.a + this.b + k
+}
+
+define Wrap
+(
+    n: int
+)
+{
+    function inc(this) returns Wrap
+        Wrap(this.n + 1)
+    function get(this) returns int
+        this.n
+}
+
+function check() returns int
+{
+    ; inline construction, method with args
+    let a Adder(3, 4).total(10)
+    if a <> 17
+        return 1
+
+    ; method result inside a larger expression
+    let b Adder(1, 2).total(0) + 100
+    if b <> 103
+        return 2
+
+    ; method-returning-construction chained into another method
+    let c Wrap(7).inc().get()
+    if c <> 8
+        return 3
+
+    ; property read off an inline construction (the pre-existing path)
+    let d Adder(5, 6).a
+    if d <> 5
+        return 4
+
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

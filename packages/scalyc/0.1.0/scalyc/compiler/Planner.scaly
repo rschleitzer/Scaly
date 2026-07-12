@@ -12494,24 +12494,61 @@ define Planner
             var all_props: bool false
             if tail_chain.length > 0
                 set all_props: true
+            ; A property-prefix chain ending in a resolved METHOD hop must
+            ; ALSO rebind so a following args tuple dispatches the method
+            ; against the construction's REAL type. `Ctor(args).method(...)`
+            ; otherwise keeps the trailing method hop resolved against the
+            ; args-tuple type — resolve_member_access there finds no such
+            ; member and records a void field-0 placeholder (is_method=false),
+            ; so the method-on-chain dispatch never fires and the emitter
+            ; treats `.method` as an extractvalue field read, silently
+            ; dropping the call. Rebinding here reshapes the operand exactly
+            ; like a bound receiver (`let r Ctor(args); r.method(...)`): the
+            ; s83 dispatch keys on last_acc.is_method + parent_type, keeping
+            ; result.expr (the construction) as the receiver.
+            var method_tail_ok: bool false
+            if tail_chain.length > 0
+                set method_tail_ok: true
             var tci: size_t 0
             while tci < tail_chain.length
             {
                 let tc_ptr tail_chain.get tci
                 if tc_ptr = null
+                {
                     set all_props: false
+                    set method_tail_ok: false
+                }
                 if tc_ptr <> null
                 {
                     let tc (*tc_ptr)
+                    var is_last: bool false
+                    if tci = tail_chain.length - 1
+                        set is_last: true
                     if tc.is_method
                         set all_props: false
                     if tc.result_type.name = "void"
                         set all_props: false
+                    ; method_tail_ok: every hop before the last must be a
+                    ; resolved non-void property; the last hop must be a
+                    ; method (so the following args tuple can dispatch it).
+                    if is_last
+                    {
+                        if tc.is_method = false
+                            set method_tail_ok: false
+                    }
+                    else
+                    {
+                        if tc.is_method
+                            set method_tail_ok: false
+                        if tc.result_type.name = "void"
+                            set method_tail_ok: false
+                    }
                 }
                 set tci: tci + 1
             }
             if all_props = false
-                return operand
+                if method_tail_ok = false
+                    return operand
             var tail_holder Vector[PlannedMemberAccess](tail_chain)
             var tail_final: PlannedType operand.result_type
             let tl_ptr tail_chain.get(tail_chain.length - 1)
