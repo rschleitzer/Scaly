@@ -3165,10 +3165,15 @@ define Planner
             choose op.expression
                 when ty: Type
                 {
-                    if ty.name.length = 2
+                    ; The Page.get idiom is written either short (`Page.get`)
+                    ; or fully qualified (`scaly.memory.Page.get`), so match on
+                    ; the LAST two name segments rather than an exact 2-segment
+                    ; name — otherwise a qualified call is misclassified and the
+                    ; concept is not flagged page-resident.
+                    if ty.name.length >= 2
                     {
-                        let s0 ty.name.get 0
-                        let s1 ty.name.get 1
+                        let s0 ty.name.get(ty.name.length - 2)
+                        let s1 ty.name.get(ty.name.length - 1)
                         if s0 <> null
                         {
                             if s1 <> null
@@ -5867,6 +5872,7 @@ define Planner
                                                                         set mni: mni + 1
                                                                     }
                                                                     let re_chain this.resolve_member_access(merged_type, ma_names)
+                                                                    var handled_union: bool false
                                                                     if re_chain.length = 1
                                                                     {
                                                                         let rc0_ptr re_chain.get 0
@@ -5875,6 +5881,7 @@ define Planner
                                                                             let rc0 (*rc0_ptr)
                                                                             if rc0.is_union_value
                                                                             {
+                                                                                set handled_union: true
                                                                                 var next_is_tuple: bool false
                                                                                 if ci2 + 2 < ops.length
                                                                                 {
@@ -5915,6 +5922,52 @@ define Planner
                                                                                     )
                                                                                 }
                                                                             }
+                                                                        }
+                                                                    }
+                                                                    ; #17: a general property chain (multi-hop, or a
+                                                                    ; single non-union hop) was left with the STALE
+                                                                    ; pre-merge chain (resolved against the matrix
+                                                                    ; ELEMENT type) and result_type = merged_type. When
+                                                                    ; every hop re-resolves against the merged generic
+                                                                    ; type as a real property, re-point the operand to
+                                                                    ; the resolved chain and the final hop's type — the
+                                                                    ; same repair as the s184 tail-chain fix. Methods /
+                                                                    ; void / unresolved hops are left for the downstream
+                                                                    ; method/construction gates.
+                                                                    if handled_union = false
+                                                                    {
+                                                                        var all_props2: bool false
+                                                                        if re_chain.length > 0
+                                                                            set all_props2: true
+                                                                        var rpi: size_t 0
+                                                                        while rpi < re_chain.length
+                                                                        {
+                                                                            let rp_ptr re_chain.get rpi
+                                                                            if rp_ptr = null
+                                                                                set all_props2: false
+                                                                            if rp_ptr <> null
+                                                                            {
+                                                                                let rc (*rp_ptr)
+                                                                                if rc.is_method
+                                                                                    set all_props2: false
+                                                                                if rc.result_type.name = "void"
+                                                                                    set all_props2: false
+                                                                            }
+                                                                            set rpi: rpi + 1
+                                                                        }
+                                                                        if all_props2
+                                                                        {
+                                                                            var rechain_holder Vector[PlannedMemberAccess](re_chain)
+                                                                            var mfinal: PlannedType merged_type
+                                                                            let ml_ptr re_chain.get(re_chain.length - 1)
+                                                                            if ml_ptr <> null
+                                                                                set mfinal: (*ml_ptr).result_type
+                                                                            set merged_op: PlannedOperand(
+                                                                                cp_op.loc,
+                                                                                PlannedExpression.Type merged_type,
+                                                                                &rechain_holder,
+                                                                                mfinal
+                                                                            )
                                                                         }
                                                                     }
                                                                 }
