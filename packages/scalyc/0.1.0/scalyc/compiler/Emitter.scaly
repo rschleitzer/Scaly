@@ -9242,7 +9242,14 @@ define Emitter
                     set page_var_name: r.location
                 else
                     0
-            let page_val_raw lookup_variable page_var_name
+            var page_val_raw lookup_variable page_var_name
+            ; A `^field` page sigil (host is a receiver member, not a local/param)
+            ; misses the variable table — resolve it as a field of `this`. Keeps
+            ; `return X^host()` (host a pointer[Page] field) on the receiver's page
+            ; instead of a dangling stack alloca. scaly/scalyc never `^field`, so
+            ; this is emission-neutral for the self-compile.
+            if page_val_raw.handle = null
+                set page_val_raw: resolve_reference_page(page_var_name)
             if page_val_raw.handle <> null
             {
                 var page_val page_val_raw
