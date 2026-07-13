@@ -289,6 +289,12 @@ define Emitter
     ; type-level recursion: a walker's shell registers BEFORE its body
     ; is built, so a self-referential type finds its own symbol.
     region_walkers: ref[Array[String]]?
+    ; Name of the concept whose method body is currently being emitted (the
+    ; `this` receiver's type, pointer/ref peeled). Empty for free functions.
+    ; Lets resolve_reference_page lower `^field` (a `^host` sigil naming a
+    ; pointer[Page] FIELD of the receiver, as in opensp's Parser) by loading
+    ; this.<field>. scaly/scalyc never use `^field`, so this stays neutral.
+    current_receiver_concept: String
 )
 {
     init(cfg: EmitterConfig)
@@ -346,6 +352,7 @@ define Emitter
         set weight_stack: Array[String]^this()
         set parfor_checker: TaskPlanner^this()
         set parfor_file: String()
+        set current_receiver_concept: String()
     }
 
     ; ========================================================================
@@ -1156,11 +1163,100 @@ define Emitter
     ; and emit_call so that `x.method^own_page(...)` allocates on own_page —
     ; NOT on the function-local page, which is released on exit (s196: an
     ; escaping allocation on the local page is a use-after-free).
+    ; Peel pointer[T]/ref[T] down to the underlying concept name (else t.name).
+    function peel_concept_name(this, t: PlannedType) returns String
+    {
+        if t.name = "pointer"
+            return this.first_generic_name(t)
+        if t.name = "ref"
+            return this.first_generic_name(t)
+        t.name
+    }
+
+    function first_generic_name(this, t: PlannedType) returns String
+    {
+        if t.generics <> null
+        {
+            let g (*t.generics)
+            if g.length > 0
+            {
+                let g0 g.get 0
+                if g0 <> null
+                    return (*g0).name
+            }
+        }
+        t.name
+    }
+
+    ; Index of the receiver concept's property named `field_name` (-1 if none).
+    ; Used to lower a `^field` page sigil (host is a member, not a local).
+    function receiver_field_index(this, field_name: String) returns int
+    {
+        if current_receiver_concept.get_length() = 0
+            return -1
+        if current_plan = null
+            return -1
+        let plan_ref current_plan
+        let plan (*plan_ref)
+        if plan.structures = null
+            return -1
+        let structures (*plan.structures)
+        var i: size_t 0
+        while i < structures.length
+        {
+            let sp structures.get i
+            if sp <> null
+            {
+                let s (*sp)
+                if s.name = current_receiver_concept
+                {
+                    if s.properties <> null
+                    {
+                        let props (*s.properties)
+                        var pi: size_t 0
+                        while pi < props.length
+                        {
+                            let pp props.get pi
+                            if pp <> null
+                                if (*pp).name = field_name
+                                    return pi as int
+                            set pi: pi + 1
+                        }
+                    }
+                }
+            }
+            set i: i + 1
+        }
+        -1
+    }
+
     function resolve_reference_page(this, ref_name: String) returns LLVMValueRef
     {
         let nv lookup_variable ref_name
         if nv.handle = null
-            return LLVMValueRef null
+        {
+            ; ref_name is not a local/param — it may be a pointer[Page] FIELD of
+            ; the receiver (opensp Parser's `^host` where host is a member). Load
+            ; this.<field> and use it as the page. scaly/scalyc never write
+            ; `^field`, so this fallback is emission-neutral for the self-compile.
+            let this_val lookup_variable("this")
+            if this_val.handle = null
+                return LLVMValueRef null
+            let fidx receiver_field_index(ref_name)
+            if fidx < 0
+                return LLVMValueRef null
+            ; Prefer the cached named struct; fall back to a literal struct
+            ; built from the receiver's plan properties (the cache may not yet
+            ; hold the receiver type when a method body is emitted).
+            var sty lookup_struct_cache(current_receiver_concept)
+            if sty.handle = null
+                set sty: synthesize_literal_struct(current_receiver_concept)
+            if sty.handle = null
+                return LLVMValueRef null
+            let field_ptr LLVMBuildStructGEP2(builder, sty, this_val, fidx as u32, "page.field")
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            return LLVMBuildLoad2(builder, ptr_ty, field_ptr, "page.load")
+        }
         var page_val nv
         if ref_name = "this"
         {
@@ -3462,6 +3558,7 @@ define Emitter
                 }
                 ; Emit the function body
                 set current_function: llvm_func
+                set current_receiver_concept: String()
                 reset_temp_pool()
 
                 ; s149: track Result-wrapper return for emit_return.
@@ -3535,6 +3632,11 @@ define Emitter
                                 let param_name (*item.name.unwrap())
                                 let param_value LLVMGetParam(llvm_func, (i + page_offset + sret_offset) as int)
                                 define_variable(param_name, param_value)
+                                ; Record the receiver concept so resolve_reference_page
+                                ; can lower `^field` page sigils (opensp Parser's `^host`).
+                                if param_name = "this"
+                                    if item.item_type <> null
+                                        set current_receiver_concept: this.peel_concept_name(*item.item_type.unwrap())
                             }
                         }
                         set i: i + 1
