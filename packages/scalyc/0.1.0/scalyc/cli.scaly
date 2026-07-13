@@ -487,6 +487,11 @@ define cli
             set planner.use_vis_measure: true
         if opts.no_use_vis
             set planner.use_vis_enforce: false
+        ; --jit: plan non-prelude dependency-package bodies into the JIT module
+        ; (otherwise their calls resolve to 0-returning stubs — the false-pass
+        ; that hid opensp's unit tests). AOT/seed emission is unaffected.
+        if opts.jit_program
+            set planner.jit_dep_bodies: true
         cli.register_packages(&planner, &model)
         let plan planner.plan_program model
 

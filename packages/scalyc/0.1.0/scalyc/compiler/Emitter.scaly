@@ -2455,6 +2455,32 @@ define Emitter
     }
 
     ; True iff `t` is `Option[ref[X]]` or `Option[pointer[X]]` — the
+    ; True when `name` is a genuine tagged union declared in the current
+    ; plan. Used by the choose emitter to reject the NPO (null-pointer)
+    ; dispatch for a real multi-variant union reached through a pointer
+    ; scrutinee (`choose this` where this: pointer[CodingSystem]) — NPO is
+    ; the Option[ref/pointer] collapse only. Without this, a union whose
+    ; first variant is nullary (variant_index 0, so the has_some heuristic
+    ; misfires) dispatches on `this == null` and always takes variant 0.
+    function type_name_is_plan_union(this, name: String) returns bool
+    {
+        if current_plan = null
+            return false
+        if current_plan.unions = null
+            return false
+        let unions (*current_plan.unions)
+        var i: size_t 0
+        while i < unions.length
+        {
+            let up unions.get i
+            if up <> null
+                if (*up).name = name
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
     ; NPO (null-pointer optimization) Option layout that's represented
     ; as a single nullable pointer rather than a tagged union.
     function is_npo_option(this, t: PlannedType) returns bool
@@ -3709,14 +3735,30 @@ define Emitter
                                         }
                                     }
                                 }
-                                ; Defensive: bail on type mismatch. Same rationale
-                                ; as emit_return — fall back to ConstNull which
-                                ; is always type-correct for the LLVM return
-                                ; type. Real fix is value-side integer promotion.
+                                ; s201: value-side integer promotion (the "real
+                                ; fix" the old bail-to-ConstNull deferred). A
+                                ; wider integer return value (e.g. `-1` (i64)
+                                ; returned as i32 — token_char's eE sentinel)
+                                ; must be TRUNCATED to the return type, not
+                                ; replaced by 0. The old fallback turned every
+                                ; width-mismatched int return into 0, so
+                                ; token_char returned 0 at end-of-entity and the
+                                ; recognizer never emitted tokenEe. scalyc has no
+                                ; wider-than-return int return (else the old bail
+                                ; would have broken its own build), so cycle
+                                ; stays IDENTICAL.
+                                var ret_final ret_val
                                 if LLVMTypeOf(ret_val).handle <> llvm_rt.handle
+                                    if LLVMGetTypeKind(LLVMTypeOf ret_val) = LLVMTypeKind.Integer()
+                                        if LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Integer()
+                                            if LLVMGetIntTypeWidth(LLVMTypeOf ret_val) > LLVMGetIntTypeWidth(llvm_rt)
+                                                set ret_final: LLVMBuildTrunc(builder, ret_val, llvm_rt, "ret.trunc")
+                                ; Defensive: bail on any remaining type mismatch
+                                ; (fall back to ConstNull, always type-correct).
+                                if LLVMTypeOf(ret_final).handle <> llvm_rt.handle
                                     LLVMBuildRet(builder, LLVMConstNull llvm_rt)
                                 else
-                                    LLVMBuildRet(builder, ret_val)
+                                    LLVMBuildRet(builder, ret_final)
                             }
                             else
                                 LLVMBuildRet(builder, LLVMConstNull llvm_rt)
@@ -5979,23 +6021,36 @@ define Emitter
         {
             if call.requires_page_param = false
             {
+                ; Only zero-init a GENERIC instantiation's concrete struct — its
+                ; monomorphized C1 body may not be emitted, so calling it would be
+                ; an undefined symbol (the ~113 List[T]/HashMapBuilder[K,V] refs
+                ; this bypass was built for). A NON-generic concept reaching here
+                ; has a real matched nullary init# with an emitted, linkable C1
+                ; (find_initializer# only routes construction here on a match, and
+                ; a concrete/layout-registered struct is body-planned in THIS
+                ; compilation, so its C1 body exists) — it must CALL that ctor.
+                ; Without the ctor_is_generic gate an in-package `T^page()`/`T()`
+                ; (e.g. ISet^host()) returned zero-inited memory and never ran
+                ; init#; cross-package the SAME construction was already correct
+                ; via the opaque branch below, which gates identically.
                 if LLVMGetTypeKind(struct_ty) = LLVMTypeKind.Struct()
-                {
-                    let n_fields LLVMCountStructElementTypes(struct_ty)
-                    var fi: int 0
-                    while fi < n_fields
+                    if ctor_is_generic
                     {
-                        let field_ty LLVMStructGetTypeAtIndex(struct_ty, fi)
-                        if field_ty.handle <> null
+                        let n_fields LLVMCountStructElementTypes(struct_ty)
+                        var fi: int 0
+                        while fi < n_fields
                         {
-                            let field_ptr LLVMBuildStructGEP2(builder, struct_ty, struct_ptr, fi as u32, "tuple.field")
-                            let zero LLVMConstNull(field_ty)
-                            LLVMBuildStore(builder, zero, field_ptr)
+                            let field_ty LLVMStructGetTypeAtIndex(struct_ty, fi)
+                            if field_ty.handle <> null
+                            {
+                                let field_ptr LLVMBuildStructGEP2(builder, struct_ty, struct_ptr, fi as u32, "tuple.field")
+                                let zero LLVMConstNull(field_ty)
+                                LLVMBuildStore(builder, zero, field_ptr)
+                            }
+                            set fi: fi + 1
                         }
-                        set fi: fi + 1
+                        return struct_ptr
                     }
-                    return struct_ptr
-                }
                 ; s125b: stdlib generic instantiations (HashMapBuilder[K,V],
                 ; List[T], etc.) aren't in struct_cache, so map_type falls
                 ; back to opaque ptr — we can't walk fields. Still skip
@@ -8021,8 +8076,25 @@ define Emitter
                                         {
                                             if LLVMGetTypeKind(alloc_ty) = LLVMTypeKind.Pointer()
                                             {
-                                                let ptr_ty LLVMPointerTypeInContext(context, 0 as u32)
-                                                return LLVMBuildLoad2(builder, ptr_ty, var_ptr, "addr.heap")
+                                                ; s146 loads the handle for a heap-bound var
+                                                ; (var x Foo^p(): declared type = concept,
+                                                ; alloca holds the object ptr, &x = that ptr).
+                                                ; But a GENUINE pointer variable (var p:
+                                                ; pointer[T]) also has a ptr alloca — there &p
+                                                ; must be the slot ADDRESS, not p's value, or
+                                                ; `&newpos` passes null (try_transition). Keep
+                                                ; the load only when the declared type isn't
+                                                ; itself a pointer/ref.
+                                                var is_ptr_var: bool false
+                                                if arg_op.result_type.name = "pointer"
+                                                    set is_ptr_var: true
+                                                if arg_op.result_type.name = "ref"
+                                                    set is_ptr_var: true
+                                                if is_ptr_var = false
+                                                {
+                                                    let ptr_ty LLVMPointerTypeInContext(context, 0 as u32)
+                                                    return LLVMBuildLoad2(builder, ptr_ty, var_ptr, "addr.heap")
+                                                }
                                             }
                                         }
                                     }
@@ -8449,8 +8521,20 @@ define Emitter
                 {
                     if l_width > r_width
                         set r: LLVMBuildZExt(builder, r, LLVMTypeOf l, "zext")
+                    ; s201: widening the narrower LEFT operand must SIGN-extend
+                    ; when it is a signed type — else a negative narrow value
+                    ; (e.g. i32 -1 read from a set_pos/keymap sentinel, or the
+                    ; eE = -1 sentinel in code_of_xchar's `x < 0`) becomes a
+                    ; large positive i64 and the signed compare flips. Unsigned
+                    ; operands keep zext (byte-identical). Right-operand widening
+                    ; keeps zext (right is almost always the i64 literal side).
                     if l_width < r_width
-                        set l: LLVMBuildZExt(builder, l, LLVMTypeOf r, "zext")
+                    {
+                        if is_signed
+                            set l: LLVMBuildSExt(builder, l, LLVMTypeOf r, "sext")
+                        if is_signed = false
+                            set l: LLVMBuildZExt(builder, l, LLVMTypeOf r, "zext")
+                    }
                 }
             }
         }
@@ -10152,6 +10236,17 @@ define Emitter
                         }
                         if has_some = false
                             set is_npo: false
+                        ; A genuine tagged union declared in the plan is never
+                        ; NPO — that collapse is Option[ref/pointer] only. A
+                        ; `choose this` over a pointer to such a union (opensp's
+                        ; CodingSystem, 3 nullary variants) otherwise mis-detects
+                        ; as NPO here (pointer scrutinee + a named variant-0 arm
+                        ; the has_some heuristic can't rule out) and dispatches on
+                        ; `this == null`, always taking variant 0.
+                        if is_npo
+                            if rt.name <> "Option"
+                                if this.type_name_is_plan_union(rt.name)
+                                    set is_npo: false
                     }
                     set union_type: map_type(rt)
                     ; s114: when map_type falls back to opaque ptr (the
@@ -14357,6 +14452,37 @@ define Emitter
                                 }
                             }
                         }
+                        ; s201: integer-width coercion on store. `set c: c + 1`
+                        ; where c is u32 types the RHS as i64 (the untyped literal
+                        ; is i64) and would `store i64` into a 4-byte i32 alloca —
+                        ; 8 bytes into a 4-byte slot, clobbering the adjacent stack
+                        ; (and at -O2 opt exploits the type-punned slot, breaking
+                        ; loop counters — Syntax/Partition hung/mis-refined).
+                        ; Truncate the value to the destination alloca's integer
+                        ; width. scalyc's own counters are size_t/int (i64), so it
+                        ; never widens on store → cycle IDENTICAL; opensp's u32/u16/
+                        ; u8 counters are the beneficiaries.
+                        if is_alloca.handle <> null
+                        {
+                            let iw_alloc_ty LLVMGetAllocatedType(var_ptr)
+                            if iw_alloc_ty.handle <> null
+                            {
+                                if LLVMGetTypeKind(iw_alloc_ty) = LLVMTypeKind.Integer()
+                                {
+                                    let iw_val_ty LLVMTypeOf(store_val)
+                                    if iw_val_ty.handle <> null
+                                    {
+                                        if LLVMGetTypeKind(iw_val_ty) = LLVMTypeKind.Integer()
+                                        {
+                                            let dst_bits LLVMGetIntTypeWidth(iw_alloc_ty)
+                                            let src_bits LLVMGetIntTypeWidth(iw_val_ty)
+                                            if src_bits > dst_bits
+                                                set store_val: LLVMBuildTrunc(builder, store_val, iw_alloc_ty, "set.trunc")
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         ; Store the value to the variable. s178: memcpy
                         ; when store_val is a load — kills the spill slot.
                         let sv_ty LLVMTypeOf(store_val)
@@ -14364,6 +14490,27 @@ define Emitter
                     }
                     when call: Call
                     {
+                        ; `set accessor(args).field: value` — the target's base is
+                        ; a CALL returning a pointer[T] (e.g. ISet.range_at(i) =
+                        ; `ranges.get_buffer()+i`). This first `when call:` arm used
+                        ; to handle ONLY the `*` deref shape; a member-access store
+                        ; through any other call fell to the `else` and was SILENTLY
+                        ; DROPPED (ISet coalescing left ranges [0,0]). Emit the call
+                        ; to get the base pointer, then GEP the field through it
+                        ; (emit_member_address handles a pointer-typed base that is
+                        ; a call-result VALUE, not an alloca — no extra load).
+                        ; Guarded on name <> "*" so the deref path below is byte-
+                        ; identical.
+                        if call.name <> "*"
+                            if target_op.member_access <> null
+                                if target_op.member_access.length > 0
+                                {
+                                    let base emit_call call
+                                    if base.handle = null
+                                        return value
+                                    let cv_pv PlannedVariable(call.loc, call.name, call.result_type, true)
+                                    return emit_member_assignment(base, cv_pv, target_op.member_access, value)
+                                }
                         ; Handle dereference assignment like *ptr = value
                         if call.name = "*"
                         {
@@ -14397,24 +14544,54 @@ define Emitter
                                             ; raw data pointer as the "String") and
                                             ; equals/etc. read garbage.
                                             var store_val value
-                                            if action.source <> null
-                                            {
-                                                let src_vec (*action.source)
-                                                if src_vec.length > 0
-                                                {
-                                                    let src_op_ptr src_vec.get 0
-                                                    if src_op_ptr <> null
+                                            ; The s136 struct-load is correct ONLY when the
+                                            ; slot `*ptr` holds the struct itself (Vector[T].
+                                            ; put: `*(data+i)`, data: pointer[T]). When the
+                                            ; slot holds a POINTER (`sets: pointer[pointer[
+                                            ; ISet]]`, so `*(sets+i)` is a pointer[ISet] slot),
+                                            ; a region-ctor / by-ref source must store its
+                                            ; POINTER value directly — struct-loading it would
+                                            ; write sizeof(struct) bytes into an 8-byte pointer
+                                            ; slot (the in-package `set *(sets+i): ISet^page()`
+                                            ; crash: sets[i] got ranges, sets[i+1] got clobbered).
+                                            ; Detect via the deref arg's PLANNED type (peel one
+                                            ; pointer level) — robust to opaque map_type, which
+                                            ; collapses both a struct and a pointer slot to `ptr`.
+                                            var slot_is_pointer: bool false
+                                            let deref_rt arg_opt.unwrap().result_type
+                                            if deref_rt.name = "pointer"
+                                                if deref_rt.generics <> null
+                                                    if (*deref_rt.generics).length > 0
                                                     {
-                                                        let src_op (*src_op_ptr)
-                                                        let src_ty map_type src_op.result_type
-                                                        if LLVMGetTypeKind(src_ty) = LLVMTypeKind.Struct()
+                                                        let slot_tp (*deref_rt.generics).get 0
+                                                        if slot_tp <> null
                                                         {
-                                                            if LLVMGetTypeKind(LLVMTypeOf value) = LLVMTypeKind.Pointer()
-                                                                set store_val: LLVMBuildLoad2(builder, src_ty, value, "store.load")
+                                                            let slot_t (*slot_tp)
+                                                            if slot_t.name = "pointer"
+                                                                set slot_is_pointer: true
+                                                            if slot_t.name = "ref"
+                                                                set slot_is_pointer: true
+                                                        }
+                                                    }
+                                            if slot_is_pointer = false
+                                                if action.source <> null
+                                                {
+                                                    let src_vec (*action.source)
+                                                    if src_vec.length > 0
+                                                    {
+                                                        let src_op_ptr src_vec.get 0
+                                                        if src_op_ptr <> null
+                                                        {
+                                                            let src_op (*src_op_ptr)
+                                                            let src_ty map_type src_op.result_type
+                                                            if LLVMGetTypeKind(src_ty) = LLVMTypeKind.Struct()
+                                                            {
+                                                                if LLVMGetTypeKind(LLVMTypeOf value) = LLVMTypeKind.Pointer()
+                                                                    set store_val: LLVMBuildLoad2(builder, src_ty, value, "store.load")
+                                                            }
                                                         }
                                                     }
                                                 }
-                                            }
                                             LLVMBuildStore(builder, store_val, ptr)
                                         }
                                     }
@@ -14865,6 +15042,24 @@ define Emitter
                     if fit_kind = LLVMTypeKind.Double()
                         if val_kind = LLVMTypeKind.Float()
                             set value: LLVMBuildFPExt(builder, value, fit_mapped, "bind.fpext")
+                    ; s201: an integer-annotated binding whose initializer
+                    ; evaluated WIDER (`var n: u16 0` — the literal `0` is
+                    ; i64) must truncate the VALUE to the annotated width so
+                    ; the alloca (typed from the value below), every load, and
+                    ; every `set n: ...` store agree. Without it the alloca is
+                    ; i64 while reads are i16 and increments store 8 bytes —
+                    ; Partition.resplit's n_new/n_classes desynced. scaly/
+                    ; scalyc have no narrow-int var with a wider (literal)
+                    ; initializer (their narrow vars init from casts/derefs),
+                    ; so this is cycle-neutral for the self-compile.
+                    if fit_kind = LLVMTypeKind.Integer()
+                        if val_kind = LLVMTypeKind.Integer()
+                        {
+                            let bind_dbits LLVMGetIntTypeWidth(fit_mapped)
+                            let bind_sbits LLVMGetIntTypeWidth(LLVMTypeOf value)
+                            if bind_sbits > bind_dbits
+                                set value: LLVMBuildTrunc(builder, value, fit_mapped, "bind.trunc")
+                        }
                 }
             }
 
@@ -15209,14 +15404,18 @@ define Emitter
                     if LLVMGetTypeKind(LLVMTypeOf ret_val) = LLVMTypeKind.Pointer()
                         set final_val: LLVMBuildLoad2(builder, llvm_rt, ret_val, "ret.load")
                 }
-                ; Defensive: if final_val's type doesn't match the function's
-                ; LLVM return type (e.g. literal i32 in a size_t-returning
-                ; function — exposed by the s55 fix unmasking
-                ; Array.get_capacity et al.), bail without emitting the Ret.
-                ; The block-seal-with-Unreachable in emit_function_body
-                ; covers the resulting unsealed block. Real fix is integer
-                ; promotion in emit_constant / emit_return mirroring s62's
-                ; emit_intrinsic_binary_op widening.
+                ; s201: value-side integer promotion for an explicit `return`
+                ; (mirrors the emit_function_body fix). A wider integer return
+                ; value (a negative literal like `return -1` in an i32 fn) must
+                ; be TRUNCATED to the return type, not dropped — the old bail
+                ; left the block unsealed (→ Unreachable, garbage return).
+                if LLVMTypeOf(final_val).handle <> llvm_rt.handle
+                    if LLVMGetTypeKind(LLVMTypeOf final_val) = LLVMTypeKind.Integer()
+                        if LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Integer()
+                            if LLVMGetIntTypeWidth(LLVMTypeOf final_val) > LLVMGetIntTypeWidth(llvm_rt)
+                                set final_val: LLVMBuildTrunc(builder, final_val, llvm_rt, "ret.trunc")
+                ; Defensive: bail on any remaining mismatch (block-seal-with-
+                ; Unreachable in emit_function_body covers the unsealed block).
                 if LLVMTypeOf(final_val).handle <> llvm_rt.handle
                     return true
                 LLVMBuildRet(builder, final_val)

@@ -435,6 +435,22 @@ define Planner
         current_namespace: ref[Namespace]?
         current_namespace_name: ref[String]?
 
+        ; Currently-active STRUCTURE context. Pushed when plan_structure
+        ; enters a `define Foo ( props ) { … }`-style concept and popped on
+        ; exit. Unlike a namespace, a Structure's this-less (static) member
+        ; functions are NOT registered in the free-function registry
+        ; (register_concept_recursive's Structure arm records only nested
+        ; concepts), so an unqualified sibling STATIC call inside another
+        ; static of the same struct — `bit(m)` from `build_table()` in
+        ; opensp's ModeInfo — has no `this` to drive the s101 dispatch and
+        ; falls through to "function not found". This name lets the bare-call
+        ; resolver retry against the enclosing struct's statics as a last
+        ; resort (resolve_static_method_on#). Structure-shaped concepts with
+        ; only functions and no properties are modeled as a Namespace, which
+        ; already resolves their siblings; this covers the property-bearing
+        ; ones. Null outside a Structure body.
+        current_structure_name: ref[String]?
+
         ; Last-segment names of every `use a.b.c` clause in the
         ; program's main module. Consulted by the dotted-call
         ; namespace override to decide whether a `prefix.suffix(...)`
@@ -629,6 +645,16 @@ define Planner
         use_vis_verdict_file: Array[String]
         use_vis_verdict_ok: Array[size_t]
 
+        ; --jit only: plan the BODIES of non-prelude loaded packages (so a
+        ; program that imports e.g. `package opensp 0.1.0` and calls into it
+        ; actually JIT-compiles and RUNS those bodies, instead of leaving them
+        ; as undefined externals that the ORC JIT resolves to a 0-returning
+        ; stub — the false-pass that hid every opensp unit test). OFF for AOT /
+        ; the seed build, where dependency bodies come from a linked archive and
+        ; planning them here would emit ret-stubs that collide at link time
+        ; (see plan_program's note). Guarded so non-JIT emission is byte-identical.
+        jit_dep_bodies: bool
+
         ; Membership set of names registered by ≥2 concepts from DIFFERENT
         ; origin files — the glob-type-disambiguation fast path. Maintained
         ; incrementally in register_concept (a cross-origin duplicate is the
@@ -728,6 +754,7 @@ define Planner
             set sibling_programs: Array[Program]^this()
             set current_namespace: null
             set current_namespace_name: null
+            set current_structure_name: null
             set program_use_aliases: Array[String]^this()
             set program_use_namespaces: Array[String]^this()
             set next_lambda_id: 0
@@ -771,6 +798,7 @@ define Planner
             set use_vis_enforce: true
             set use_vis_verdict_file: Array[String]^this()
             set use_vis_verdict_ok: Array[size_t]^this()
+            set jit_dep_bodies: false
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -1891,8 +1919,18 @@ define Planner
                 let pk_ptr loaded_packages.get pi
                 if pk_ptr <> null
                 {
-                    let pk_mod (*pk_ptr).value
-                    let planned this.plan_module(pk_mod)
+                    ; Skip the `scaly` prelude/stdlib: under --jit its symbols are
+                    ; already present in the host scalyc binary (the compiler is
+                    ; built from scaly), so the ORC process generator resolves
+                    ; them; planning them here would emit colliding ret-stubs for
+                    ; bodies stage-1 can't fully plan. Only non-host packages
+                    ; (e.g. opensp) need their bodies planned into the JIT module.
+                    let pk_name (*pk_ptr).key
+                    if pk_name.equals("scaly") = false
+                    {
+                        let pk_mod (*pk_ptr).value
+                        let planned this.plan_module(pk_mod)
+                    }
                 }
                 set pi: pi + 1
             }
@@ -4669,6 +4707,89 @@ define Planner
             null
         }
 
+        ; concept_has_static: does `prefix` name a Structure concept declaring a
+        ; this-LESS (static) member function called `suffix`? A qualified call
+        ; `Type.method(...)` on such a concept is a static call that MUST carry
+        ; the concept parent in its mangled name — the s155 concept-static path
+        ; (gated match_ref=null in collapse_operand_sequence#) does exactly that.
+        ; resolve_dotted_call# defers to it (returns null) for these, so the
+        ; bare-suffix resolve below can never mis-match an unrelated same-named
+        ; free function. This is load-bearing for opensp: every module exposes a
+        ; `test()` static and the function-only ones ALSO register `test` in the
+        ; free registry (register_concept_recursive's Namespace arm), so a bare
+        ; `test` resolve returns SOME `test` and `StringC.test()` mis-mangled to
+        ; the enclosing/sibling `test` — the aggregator self-recursed. Gated to
+        ; Structures only: Namespace-member calls (Console.println) keep their
+        ; existing bare-then-namespace resolution untouched.
+        function concept_has_static(this: Planner, prefix: String, suffix: String) returns bool
+        {
+            ; A qualified static may be written with a MODULE-dotted prefix
+            ; (`Message.MessageFormatter.test()` → prefix "Message.Message
+            ; Formatter"). Concepts register under their SIMPLE name, so look up
+            ; the last dotted segment (the concept name itself).
+            var chprefix prefix
+            let chdot prefix.last_index_of(46 as u8)
+            if chdot > 0
+                set chprefix: prefix.substring(chdot as size_t + 1, prefix.get_length() - (chdot as size_t) - 1)
+            ; Gated-first, raw fallback (like lookup_concept_for_layout#): a
+            ; fully-qualified static call `A.B.method()` EXPLICITLY names B, so
+            ; a use-visibility miss (opensp's aggregator doesn't `use` every
+            ; inner concept it tests) must not hide it. The raw fallback fires
+            ; only where lookup_concept already returns null, so the compiler's
+            ; own emission stays byte-identical.
+            var chc_ref this.lookup_concept(chprefix)
+            if chc_ref = null
+                set chc_ref: this.lookup_concept_any(chprefix)
+            if chc_ref = null
+                return false
+            let chc (*chc_ref)
+            var chm_ref: ref[Vector[Member]]? null
+            choose chc.definition
+                when chs: Structure
+                    set chm_ref: &^this chs.members
+                when chu: Union
+                    set chm_ref: &^this chu.members
+                when chn: Namespace
+                    set chm_ref: &^this chn.members
+                else
+                    0
+            if chm_ref = null
+                return false
+            let chm (*chm_ref)
+            var chi: size_t 0
+            while chi < chm.length
+            {
+                let cmp chm.get chi
+                if cmp <> null
+                {
+                    let cm (*cmp)
+                    choose cm
+                        when cf: Function
+                        {
+                            if cf.name = suffix
+                            {
+                                var chstatic: bool true
+                                if cf.input.length > 0
+                                {
+                                    let ci0 cf.input.get 0
+                                    if ci0 <> null
+                                        if ci0.name <> null
+                                            if (*ci0.name) = "this"
+                                                set chstatic: false
+                                }
+                                if chstatic
+                                    return true
+                            }
+                            0
+                        }
+                        else
+                            0
+                }
+                set chi: chi + 1
+            }
+            false
+        }
+
         ; s-LSP: the dotted-call fallback's resolution, as ONE call so the
         ; caller (collapse_operand_sequence#) keeps a single `set match_ref:`
         ; statement — adding a branch there perturbed its s178 alloca pool.
@@ -4681,10 +4802,192 @@ define Planner
             arg_types: Vector[PlannedType]
         ) returns ref[MethodMatch]?
         {
+            ; A qualified static call on a Structure concept — defer to the s155
+            ; concept-static path so the mangled name carries the concept parent
+            ; (see concept_has_static#). Prevents the bare-suffix resolve below
+            ; from stealing a same-named free function.
+            if this.concept_has_static(prefix, suffix)
+                return null
             let m this.resolve_function_call(suffix, arg_types, Vector[PlannedOperand]())
             if m <> null
                 return m
             this.resolve_namespace_this_method(prefix, suffix, arg_types)
+        }
+
+        ; resolve_static_method_on: resolve an UNQUALIFIED bare call `fn_name`
+        ; against the this-less (static) member functions of a named Structure
+        ; concept — the enclosing-struct sibling-static case. A Structure's
+        ; statics are not in the free-function registry (they aren't reachable
+        ; via resolve_function_call#) and, having no `this`, cannot go through
+        ; the s101 implicit-this dispatch, so `bit(m)` inside ModeInfo's static
+        ; `build_table()` would otherwise report "function not found". This is
+        ; the exact resolution the s155 qualified-static path (`Type.method`)
+        ; performs, factored into a helper so the collapse_operand_sequence#
+        ; call site stays a single `set match_ref:` statement (adding an inline
+        ; branch there perturbs its s178 alloca pool — see resolve_dotted_call).
+        ; Returns null when the struct is unknown or declares no matching
+        ; static; the caller then falls through to its remaining fallbacks.
+        ; Overload note: prefer a static whose arity matches the argument count;
+        ; otherwise take the first same-named static (mirrors s155's name-only
+        ; pick for the single-overload common case).
+        function resolve_static_method_on(
+            this: Planner,
+            struct_name: String,
+            fn_name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
+            loc: Span
+        ) returns ref[MethodMatch]?
+        {
+            let smc_ref this.lookup_concept(struct_name)
+            if smc_ref = null
+                return null
+            let smc (*smc_ref)
+            var static_fn: ref[Function]? null
+            choose smc.definition
+                when sst: Structure
+                {
+                    var smi: size_t 0
+                    while smi < sst.members.length
+                    {
+                        let sm_ptr sst.members.get smi
+                        if sm_ptr <> null
+                        {
+                            let sm (*sm_ptr)
+                            choose sm
+                                when sf: Function
+                                {
+                                    if sf.name = fn_name
+                                    {
+                                        var is_static: bool true
+                                        if sf.input.length > 0
+                                        {
+                                            let i0 sf.input.get 0
+                                            if i0 <> null
+                                                if i0.name <> null
+                                                    if (*i0.name) = "this"
+                                                        set is_static: false
+                                        }
+                                        if is_static
+                                        {
+                                            ; First same-named static is the
+                                            ; fallback; an arity match wins.
+                                            if static_fn = null
+                                                set static_fn: &^this sf
+                                            if sf.input.length = arg_types.length
+                                                set static_fn: &^this sf
+                                        }
+                                    }
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        set smi: smi + 1
+                    }
+                }
+                else
+                    0
+
+            if static_fn = null
+                return null
+
+            let sfn (*static_fn)
+            let sparent_ref &^this PlannedType(
+                loc,
+                String(struct_name),
+                Planner.encode_name struct_name,
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                "",
+                null
+            )
+            var sitems_arr Array[PlannedItem]()
+            var sparams_arr Array[PlannedType]()
+            var spi: size_t 0
+            while spi < sfn.input.length
+            {
+                let p_ptr sfn.input.get spi
+                if p_ptr <> null
+                {
+                    if p_ptr.type <> null
+                    {
+                        let pt (*p_ptr.type)
+                        let spt this.plan_type(pt)
+                        sitems_arr.add(PlannedItem(
+                            loc, false, null, &^this spt, null
+                        ))
+                        sparams_arr.add spt
+                    }
+                }
+                set spi: spi + 1
+            }
+            var sitems_holder Vector[PlannedItem](sitems_arr)
+            var sparams_holder Vector[PlannedType](sparams_arr)
+            var s_pp: bool false
+            if sfn.page_parameter <> null
+                set s_pp: true
+            if Planner.function_needs_caller_page(this, sfn)
+                set s_pp: true
+            let smangled Planner.mangle_function(
+                fn_name, &sitems_holder, sparent_ref, s_pp
+            )
+            var s_rt: PlannedType Planner.make_void_type()
+            if sfn.returns_ <> null
+                set s_rt: this.plan_type((*sfn.returns_))
+            var s_throws: ref[PlannedType]? null
+            var s_can_throw: bool false
+            if sfn.throws_ <> null
+            {
+                set s_can_throw: true
+                set s_throws: &^this this.plan_type((*sfn.throws_))
+            }
+            var srt_holder Vector[PlannedType](1)
+            srt_holder.put(0, s_rt)
+            if this.has_recorded_function(smangled) = false
+            {
+                var spp_ref: ref[String]? null
+                if s_pp
+                {
+                    var spph Vector[String](1)
+                    spph.put(0, "_rp")
+                    set spp_ref: spph.get(0)
+                }
+                let sextern PlannedImplementation.Extern(
+                    PlannedExternImpl loc
+                )
+                this.record_function(PlannedFunction(
+                    loc,
+                    false,
+                    false,
+                    fn_name,
+                    smangled,
+                    spp_ref,
+                    &sitems_holder,
+                    srt_holder.get 0,
+                    s_throws,
+                    Lifetime.Unspecified(Unspecified()),
+                    sextern,
+                    null,
+                    false,
+                    s_can_throw,
+                    null,
+                    this.file
+                ))
+            }
+            MethodMatch^this(
+                null,
+                smangled,
+                s_rt,
+                &sparams_holder,
+                s_pp,
+                s_can_throw,
+                s_throws,
+                false,
+                false,
+                false
+            )
         }
 
         ; ================================================================
@@ -4916,7 +5219,8 @@ define Planner
             name: String,
             mangled_name: String,
             result_type: PlannedType,
-            args: Vector[PlannedOperand]
+            args: Vector[PlannedOperand],
+            requires_page: bool
         ) returns PlannedCall
         {
             ; Ensure by-value cross-package struct/union layouts (sret return +
@@ -4932,6 +5236,13 @@ define Planner
                 set at_i: at_i + 1
             }
             var args_holder Vector[PlannedOperand](args)
+            ; requires_page threads the callee's implicit caller-page
+            ; requirement onto the PlannedCall so emit_call prepends `rp`
+            ; as arg0. A chained hop (`a.f().g()`) resolves g via
+            ; lookup_method — whose mangled_name already encodes the page
+            ; (`...PN4scaly6memory4PageE...`) — but without this flag
+            ; emit_call omitted the arg, shifting the real `this` into the
+            ; page slot and reading garbage (empty struct) for the receiver.
             PlannedCall(
                 loc,
                 name,
@@ -4939,7 +5250,7 @@ define Planner
                 false,
                 false,
                 false,
-                false,
+                requires_page,
                 &args_holder,
                 result_type,
                 Lifetime.Unspecified(Unspecified()),
@@ -5234,7 +5545,7 @@ define Planner
                 }
             }
             var lc_call_args Vector[PlannedOperand](lc_full_args)
-            let lc_pc this.make_planned_call(head_loc, lc_name, lc_mangled, lc_ret, lc_call_args)
+            let lc_pc this.make_planned_call(head_loc, lc_name, lc_mangled, lc_ret, lc_call_args, false)
             PlannedOperand(head_loc, PlannedExpression.Call lc_pc, null, lc_ret)
         }
 
@@ -7556,6 +7867,36 @@ define Planner
                                             0
                                     var ctor_args_vec Vector[PlannedOperand](ctor_call_args)
 
+                                    ; Coerce String-literal args bound to a
+                                    ; pointer[const_char]-like init parameter to a
+                                    ; raw c_data pointer (and fold single-char
+                                    ; literals to char) — the SAME lowering regular
+                                    ; calls get (coerce_string_args_to_cstr#). A
+                                    ; constructor call skipped this, so
+                                    ; `StringC("AB")` (whose only 1-arg init takes
+                                    ; pointer[const_char]) passed the String { ptr }
+                                    ; record where the init wanted a NUL-terminated
+                                    ; cstring — strlen/deref then read the pointer
+                                    ; bytes as text (garbage size). param_types come
+                                    ; from the matched init's items; the length-
+                                    ; guard inside makes an implicit page param a
+                                    ; no-op. Neutral for the compiler: a literal
+                                    ; matching a String-param ctor (String's copy
+                                    ; init) is not const_char, so nothing wraps.
+                                    var ctor_ptypes_arr Array[PlannedType]()
+                                    var ctor_cpi: size_t 0
+                                    while ctor_cpi < init_input_items.length
+                                    {
+                                        let ctor_iip init_input_items.get ctor_cpi
+                                        if ctor_iip <> null
+                                            if ctor_iip.item_type <> null
+                                                ctor_ptypes_arr.add((*ctor_iip.item_type))
+                                        set ctor_cpi: ctor_cpi + 1
+                                    }
+                                    var ctor_ptypes Vector[PlannedType](ctor_ptypes_arr)
+                                    set ctor_args_vec: this.coerce_string_args_to_cstr(ctor_args_vec, ctor_ptypes)
+                                    set ctor_args_vec: this.fold_string_args_to_char(ctor_args_vec, ctor_ptypes)
+
                                     ; Page inference, rule 1 (default-to-local
                                     ; construction): a no-sigil construction of
                                     ; a heap-backed type (its init takes a page —
@@ -8856,63 +9197,95 @@ define Planner
                                 ; container .add() bodies that only bump `length`.
                                 if match_ref = null
                                 {
-                                    let smc_ref this.lookup_concept(prefix)
+                                    ; A module-dotted prefix
+                                    ; (`Message.MessageFormatter.test()`) names the
+                                    ; concept in its LAST segment; concepts register
+                                    ; under their simple name, and the def mangles
+                                    ; with the simple name as parent
+                                    ; (`_ZN16MessageFormatter4testEv`). Use the last
+                                    ; segment for the lookup AND the mangled parent.
+                                    var sconcept prefix
+                                    let sc_dot prefix.last_index_of(46 as u8)
+                                    if sc_dot > 0
+                                        set sconcept: prefix.substring(sc_dot as size_t + 1, prefix.get_length() - (sc_dot as size_t) - 1)
+                                    ; Gated-first, raw fallback: a qualified
+                                    ; static call names the concept explicitly, so
+                                    ; a use-visibility miss must not hide it (see
+                                    ; concept_has_static#). Byte-identical for the
+                                    ; compiler (fires only where lookup_concept was
+                                    ; null).
+                                    var smc_ref this.lookup_concept(sconcept)
+                                    if smc_ref = null
+                                        set smc_ref: this.lookup_concept_any(sconcept)
                                     if smc_ref <> null
                                     {
                                         let smc (*smc_ref)
                                         var static_fn: ref[Function]? null
+                                        ; s155 + union: a this-less static can live
+                                        ; on a Structure OR a Union concept (opensp's
+                                        ; CodingSystem is a union with a `test()`
+                                        ; static). Both store members in `members`,
+                                        ; so iterate whichever this concept has.
+                                        var smmembers_ref: ref[Vector[Member]]? null
                                         choose smc.definition
                                             when sst: Structure
-                                            {
-                                                var smi: size_t 0
-                                                while smi < sst.members.length
-                                                {
-                                                    let sm_ptr sst.members.get smi
-                                                    if sm_ptr <> null
-                                                    {
-                                                        let sm (*sm_ptr)
-                                                        choose sm
-                                                            when sf: Function
-                                                            {
-                                                                if static_fn = null
-                                                                {
-                                                                    if sf.name = suffix
-                                                                    {
-                                                                        var is_static: bool true
-                                                                        if sf.input.length > 0
-                                                                        {
-                                                                            let i0 sf.input.get 0
-                                                                            if i0 <> null
-                                                                            {
-                                                                                if i0.name <> null
-                                                                                {
-                                                                                    if (*i0.name) = "this"
-                                                                                        set is_static: false
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        if is_static
-                                                                            set static_fn: &^this sf
-                                                                    }
-                                                                }
-                                                                0
-                                                            }
-                                                            else
-                                                                0
-                                                    }
-                                                    set smi: smi + 1
-                                                }
-                                            }
+                                                set smmembers_ref: &^this sst.members
+                                            when suu: Union
+                                                set smmembers_ref: &^this suu.members
+                                            when snn: Namespace
+                                                set smmembers_ref: &^this snn.members
                                             else
                                                 0
+                                        if smmembers_ref <> null
+                                        {
+                                            let smmembers (*smmembers_ref)
+                                            var smi: size_t 0
+                                            while smi < smmembers.length
+                                            {
+                                                let sm_ptr smmembers.get smi
+                                                if sm_ptr <> null
+                                                {
+                                                    let sm (*sm_ptr)
+                                                    choose sm
+                                                        when sf: Function
+                                                        {
+                                                            if static_fn = null
+                                                            {
+                                                                if sf.name = suffix
+                                                                {
+                                                                    var is_static: bool true
+                                                                    if sf.input.length > 0
+                                                                    {
+                                                                        let i0 sf.input.get 0
+                                                                        if i0 <> null
+                                                                        {
+                                                                            if i0.name <> null
+                                                                            {
+                                                                                if (*i0.name) = "this"
+                                                                                    set is_static: false
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    if is_static
+                                                                        set static_fn: &^this sf
+                                                                }
+                                                            }
+                                                            0
+                                                        }
+                                                        else
+                                                            0
+                                                }
+                                                set smi: smi + 1
+                                            }
+                                        }
 
                                         if static_fn <> null
                                         {
                                             let sfn (*static_fn)
                                             let sparent_ref &^this PlannedType(
                                                 result.loc,
-                                                String(prefix),
-                                                Planner.encode_name prefix,
+                                                String(sconcept),
+                                                Planner.encode_name sconcept,
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
@@ -9086,6 +9459,22 @@ define Planner
                                 }
                             }
                         }
+
+                        ; Enclosing-struct sibling STATIC fallback. When the
+                        ; call is still unresolved and there is no `this` to
+                        ; drive the s101 dispatch — i.e. a this-less static
+                        ; calling a this-less static sibling of the SAME
+                        ; property-bearing Structure (opensp ModeInfo's
+                        ; `bit`/`add`/`build_table`) — resolve it against the
+                        ; enclosing struct's statics. Kept a single
+                        ; `set match_ref:` so the s178 alloca pool is left
+                        ; undisturbed (see resolve_dotted_call). Fires only on
+                        ; code that would otherwise be "function not found", so
+                        ; already-resolving bodies are byte-identical.
+                        if match_ref = null
+                            if has_ns_mangled = false
+                                if current_structure_name <> null
+                                    set match_ref: this.resolve_static_method_on((*current_structure_name), fn_name, arg_types, arg_ops, result.loc)
 
                         var rt: PlannedType this.fresh_type_var("")
                         var mangled: String ""
@@ -9751,7 +10140,8 @@ define Planner
                                                             method_name,
                                                             m.mangled_name,
                                                             m.return_type,
-                                                            new_args
+                                                            new_args,
+                                                            m.requires_page_param
                                                         )
                                                         set result: PlannedOperand(
                                                             next_args.loc,
@@ -12778,7 +13168,8 @@ define Planner
                 "get",
                 "_ZN4scaly6memory4Page3getEPv",
                 result_type,
-                args_vec
+                args_vec,
+                false
             )
 
             PlannedOperand(
@@ -20689,6 +21080,19 @@ define Planner
         ; Post-pass entry: two passes over instantiated_functions.
         function check_interprocedural_escapes(this: Planner)
         {
+            ; --jit dependency-body path (jit_dep_bodies): skip the WHOLE-PROGRAM
+            ; interprocedural escape summary+check. This pass has a latent walk
+            ; bug (escape_walk_operands SIGSEGVs on some large dep-package
+            ; function plans — e.g. opensp's ParserState.make — even though the
+            ; SAME plan emits fine), and dependency packages are independently
+            ; escape-checked when built as their own compilation root. The
+            ; per-statement inline escape checks (plan_action/plan_return) still
+            ; run and still flag direct store/return escapes, so soundness of the
+            ; direct cases is preserved. NEUTRAL on the real build: jit_dep_bodies
+            ; is false for AOT/seed/self-compile, so the pass runs unchanged there
+            ; (cycle stays IDENTICAL). Remove once the walk bug is fixed.
+            if this.jit_dep_bodies
+                return
             ; Pass 0: build the escape summary.
             set escape_checking: false
             set escape_found: false
@@ -21268,6 +21672,11 @@ define Planner
         ; each body once against empty name sets and record nothing.
         function check_channel_moves(this: Planner)
         {
+            ; See check_interprocedural_escapes: skip whole-program plan-walk for
+            ; --jit dependency bodies (same latent walk crash on large dep-package
+            ; plans; emission-neutral, real build unaffected).
+            if this.jit_dep_bodies
+                return
             set move_found: false
             var i: size_t 0
             for func in instantiated_functions
@@ -24559,10 +24968,25 @@ define Planner
                             ; For 'this', the local-scope binding should be
                             ; pointer[T] (struct-by-pointer ABI), so field
                             ; access auto-derefs. Mirrors Planner.cpp:11781-11790.
+                            ; EXCEPTION: when `this` is EXPLICITLY declared as a
+                            ; pointer (`this: pointer[X]`, opensp's method idiom),
+                            ; the function already receives a single pointer — the
+                            ; local binding must stay `pointer[X]`, not be wrapped
+                            ; again into `pointer[pointer[X]]` (double indirection
+                            ; whose inner generic is the opaque `pointer`, which
+                            ; the emitter's struct-GEP then SIGSEGVs on). The
+                            ; stdlib's explicit-`this` idiom passes the concept
+                            ; VALUE (`this: BuilderList[T]`), which correctly needs
+                            ; the wrap; only a pointer-typed `this` skips it.
                             if n = "this"
                             {
-                                let ptr_t Planner.make_pointer_type(t)
-                                this.define_parameter(n, ptr_t)
+                                if t.name = "pointer"
+                                    this.define_parameter(n, t)
+                                else
+                                {
+                                    let ptr_t Planner.make_pointer_type(t)
+                                    this.define_parameter(n, ptr_t)
+                                }
                             }
                             if n <> "this"
                                 this.define_parameter(n, t)
@@ -25735,6 +26159,17 @@ define Planner
             var planned_initializers Array[PlannedInitializer]()
             var deinit_ref: ref[PlannedDeInitializer]? null
 
+            ; Activate this struct as the current-structure context so a bare
+            ; sibling STATIC call inside a method body resolves against this
+            ; struct's statics (resolve_static_method_on#). Saved and restored
+            ; around member planning; a nested struct method restores the outer
+            ; struct on exit. Uses a 1-slot Vector to hold the name box (same
+            ; shape as plan_namespace's current_namespace_name box).
+            let saved_struct_name this.current_structure_name
+            var sname_box Vector[String](1)
+            sname_box.put(0, name)
+            set current_structure_name: sname_box.get(0)
+
             var mi: size_t 0
             while mi < s.members.length
             {
@@ -25776,6 +26211,9 @@ define Planner
                 let di (*s.deinitializer)
                 set deinit_ref: &^this this.plan_deinitializer(di, parent_ref)
             }
+
+            ; Restore the outer struct context (see the save above).
+            set current_structure_name: saved_struct_name
 
             var methods_holder Vector[PlannedFunction](planned_methods)
             var ops_holder Vector[PlannedOperator](planned_operators)
@@ -27351,6 +27789,13 @@ define Planner
 
             let planned_main this.plan_module(prog.module_)
             let planned_stmts this.plan_statements(prog.statements)
+
+            ; --jit only (jit_dep_bodies): plan the bodies of non-prelude loaded
+            ; packages so their functions are emitted into the JIT module and
+            ; actually run (rather than resolving to a 0-returning stub). OFF for
+            ; AOT / the seed, keeping that emission byte-identical.
+            if this.jit_dep_bodies
+                this.plan_loaded_packages()
 
             ; Hard-fail on any glob import collision (two `use a.*`/`use b.*`
             ; supplying the same concept name into one file). Registration
