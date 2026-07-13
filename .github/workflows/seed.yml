@@ -83,6 +83,13 @@ jobs:
       - name: Cross-emit sanity (--target all four object formats)
         run: tests/target/run.sh dist/seed/scalyc_seed
 
+      # OpenSP port REALPASS gate (dazzle epic, Part I). AOT-compiles the opensp
+      # package into an archive and links + runs its unit harness so
+      # opensp.test() genuinely executes (the old --jit route false-passed).
+      # Builds /tmp/libscaly.a itself if absent.
+      - name: OpenSP unit suite (dazzle port REALPASS)
+        run: tests/opensp/run.sh dist/seed/scalyc_seed
+
       - name: Fiber suite (context-switch ping-pong, milestone 1.1)
         run: tests/fiber/run.sh dist/seed/scalyc_seed
 
