@@ -97205,21 +97205,21 @@ declare void @_ZN13StringBuilder6appendE6String(ptr, ptr)
 
 define linkonce_odr void @_ZN7Modeler26handle_interpolated_stringEPN4scaly6memory4PageE13LiteralSyntax6String(ptr noalias sret(%_Z10Expression) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result199 = alloca %_Z8Constant, align 8
-  %arg.tmp197 = alloca %_Z16ExpressionSyntax, align 8
-  %sret.result196 = alloca %_Z10Expression, align 8
-  %sret.result191 = alloca %_Z8Constant, align 8
-  %variant.ptr189 = alloca %_Z10Expression, align 8
-  %arg.tmp188 = alloca { ptr }, align 8
-  %sret.result185 = alloca { i8, [129 x i8] }, align 8
+  %sret.result198 = alloca %_Z8Constant, align 8
+  %arg.tmp196 = alloca %_Z16ExpressionSyntax, align 8
+  %sret.result195 = alloca %_Z10Expression, align 8
+  %sret.result190 = alloca %_Z8Constant, align 8
+  %variant.ptr188 = alloca %_Z10Expression, align 8
+  %arg.tmp187 = alloca { ptr }, align 8
+  %sret.result184 = alloca { i8, [129 x i8] }, align 8
   %p = alloca ptr, align 8
-  %sret.result182 = alloca { ptr }, align 8
-  %arg.tmp181 = alloca { ptr }, align 8
-  %arg.tmp172 = alloca { ptr }, align 8
-  %arg.tmp157 = alloca { ptr }, align 8
-  %arg.tmp151 = alloca { ptr }, align 8
+  %sret.result181 = alloca { ptr }, align 8
+  %arg.tmp180 = alloca { ptr }, align 8
+  %arg.tmp171 = alloca { ptr }, align 8
+  %arg.tmp156 = alloca { ptr }, align 8
+  %arg.tmp150 = alloca { ptr }, align 8
   %k = alloca i64, align 8
-  %arg.tmp115 = alloca { ptr }, align 8
+  %arg.tmp114 = alloca { ptr }, align 8
   %boundary = alloca i1, align 1
   %is_tick = alloca i1, align 1
   %is_end = alloca i1, align 1
@@ -97289,7 +97289,6 @@ if.else6:                                         ; preds = %if.then
   br label %if.end7
 
 if.end7:                                          ; preds = %if.else6, %if.end11
-  %if.value = phi i1 [ true, %if.end11 ], [ true, %if.else6 ]
   store i64 0, ptr %seg_len, align 1
   %i12 = load i64, ptr %i, align 8
   %add = add i64 %i12, 1
@@ -97447,7 +97446,7 @@ if.end62:                                         ; preds = %if.end51
   store i1 false, ptr %ok_escape, align 1
   br label %while.cond76
 
-while.cond76:                                     ; preds = %if.end109, %if.end62
+while.cond76:                                     ; preds = %if.end108, %if.end62
   %done = load i1, ptr %ok_escape, align 1
   %eq79 = icmp eq i1 %done, false
   br i1 %eq79, label %while.body77, label %while.exit78
@@ -97459,21 +97458,21 @@ while.body77:                                     ; preds = %while.cond76
   br i1 %ge, label %if.then81, label %if.end82
 
 while.exit78:                                     ; preds = %while.cond76
-  %src180 = load ptr, ptr %src, align 8
-  store { ptr } { ptr @.sconst.307 }, ptr %arg.tmp181, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %src180, ptr %arg.tmp181)
-  %src183 = load ptr, ptr %src, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result182, ptr %local_page, ptr %src183)
-  %struct.region184 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1E6String(ptr %struct.region184, ptr %sret.result182)
-  store ptr %struct.region184, ptr %p, align 1
-  %p186 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser16parse_expressionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [129 x i8] }) %sret.result185, ptr %1, ptr %p186)
-  %tag = load i8, ptr %sret.result185, align 1
-  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result185, i8 1
+  %src179 = load ptr, ptr %src, align 8
+  store { ptr } { ptr @.sconst.307 }, ptr %arg.tmp180, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %src179, ptr %arg.tmp180)
+  %src182 = load ptr, ptr %src, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result181, ptr %local_page, ptr %src182)
+  %struct.region183 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6ParserC1E6String(ptr %struct.region183, ptr %sret.result181)
+  store ptr %struct.region183, ptr %p, align 1
+  %p185 = load ptr, ptr %p, align 8
+  call void @_ZN6Parser16parse_expressionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [129 x i8] }) %sret.result184, ptr %1, ptr %p185)
+  %tag = load i8, ptr %sret.result184, align 1
+  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result184, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when195
+    i8 0, label %choose.when194
   ]
 
 if.then81:                                        ; preds = %while.body77
@@ -97494,10 +97493,10 @@ if.then85:                                        ; preds = %if.end82
   br i1 %eq90, label %if.then91, label %if.else92
 
 if.end86:                                         ; preds = %if.end93, %if.end82
-  %is_end103 = load i1, ptr %is_end, align 1
-  store i1 %is_end103, ptr %boundary, align 1
-  %is_tick104 = load i1, ptr %is_tick, align 1
-  br i1 %is_tick104, label %if.then105, label %if.end106
+  %is_end102 = load i1, ptr %is_end, align 1
+  store i1 %is_end102, ptr %boundary, align 1
+  %is_tick103 = load i1, ptr %is_tick, align 1
+  br i1 %is_tick103, label %if.then104, label %if.end105
 
 if.then91:                                        ; preds = %if.then85
   store i1 true, ptr %is_tick, align 1
@@ -97523,169 +97522,169 @@ if.else96:                                        ; preds = %if.else92
   br label %if.end97
 
 if.end97:                                         ; preds = %if.else96, %if.then95
-  %if.value102 = phi i64 [ %add99, %if.then95 ], [ %add101, %if.else96 ]
+  %if.value = phi i64 [ %add99, %if.then95 ], [ %add101, %if.else96 ]
   br label %if.end93
 
-if.then105:                                       ; preds = %if.end86
+if.then104:                                       ; preds = %if.end86
   store i1 true, ptr %boundary, align 1
-  br label %if.end106
+  br label %if.end105
 
-if.end106:                                        ; preds = %if.then105, %if.end86
-  %boundary107 = load i1, ptr %boundary, align 1
-  br i1 %boundary107, label %if.then108, label %if.end109
+if.end105:                                        ; preds = %if.then104, %if.end86
+  %boundary106 = load i1, ptr %boundary, align 1
+  br i1 %boundary106, label %if.then107, label %if.end108
 
-if.then108:                                       ; preds = %if.end106
-  %in_expr110 = load i1, ptr %in_expr, align 1
-  br i1 %in_expr110, label %if.then111, label %if.else112
+if.then107:                                       ; preds = %if.end105
+  %in_expr109 = load i1, ptr %in_expr, align 1
+  br i1 %in_expr109, label %if.then110, label %if.else111
 
-if.end109:                                        ; preds = %if.end176, %if.end106
+if.end108:                                        ; preds = %if.end175, %if.end105
   br label %while.cond76
 
-if.then111:                                       ; preds = %if.then108
-  %src114 = load ptr, ptr %src, align 8
-  store { ptr } { ptr @.sconst.303 }, ptr %arg.tmp115, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %src114, ptr %arg.tmp115)
-  %seg_start116 = load i64, ptr %seg_start, align 8
-  store i64 %seg_start116, ptr %k, align 1
-  br label %while.cond117
+if.then110:                                       ; preds = %if.then107
+  %src113 = load ptr, ptr %src, align 8
+  store { ptr } { ptr @.sconst.303 }, ptr %arg.tmp114, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %src113, ptr %arg.tmp114)
+  %seg_start115 = load i64, ptr %seg_start, align 8
+  store i64 %seg_start115, ptr %k, align 1
+  br label %while.cond116
 
-if.else112:                                       ; preds = %if.then108
-  %i152 = load i64, ptr %i, align 8
-  %seg_start153 = load i64, ptr %seg_start, align 8
-  %gt = icmp ugt i64 %i152, %seg_start153
-  br i1 %gt, label %if.then154, label %if.end155
+if.else111:                                       ; preds = %if.then107
+  %i151 = load i64, ptr %i, align 8
+  %seg_start152 = load i64, ptr %seg_start, align 8
+  %gt = icmp ugt i64 %i151, %seg_start152
+  br i1 %gt, label %if.then153, label %if.end154
 
-if.end113:                                        ; preds = %if.end155, %while.exit119
-  %is_end173 = load i1, ptr %is_end, align 1
-  br i1 %is_end173, label %if.then174, label %if.else175
+if.end112:                                        ; preds = %if.end154, %while.exit118
+  %is_end172 = load i1, ptr %is_end, align 1
+  br i1 %is_end172, label %if.then173, label %if.else174
 
-while.cond117:                                    ; preds = %if.end129, %if.then111
-  %k120 = load i64, ptr %k, align 8
-  %i121 = load i64, ptr %i, align 8
-  %lt122 = icmp ult i64 %k120, %i121
-  br i1 %lt122, label %while.body118, label %while.exit119
+while.cond116:                                    ; preds = %if.end128, %if.then110
+  %k119 = load i64, ptr %k, align 8
+  %i120 = load i64, ptr %i, align 8
+  %lt121 = icmp ult i64 %k119, %i120
+  br i1 %lt121, label %while.body117, label %while.exit118
 
-while.body118:                                    ; preds = %while.cond117
-  %k123 = load i64, ptr %k, align 8
-  %ptr.add124 = getelementptr inbounds i8, ptr %call1, i64 %k123
-  %deref125 = load i8, ptr %ptr.add124, align 1
-  %eq126 = icmp eq i8 %deref125, 92
-  br i1 %eq126, label %if.then127, label %if.else128
+while.body117:                                    ; preds = %while.cond116
+  %k122 = load i64, ptr %k, align 8
+  %ptr.add123 = getelementptr inbounds i8, ptr %call1, i64 %k122
+  %deref124 = load i8, ptr %ptr.add123, align 1
+  %eq125 = icmp eq i8 %deref124, 92
+  br i1 %eq125, label %if.then126, label %if.else127
 
-while.exit119:                                    ; preds = %while.cond117
-  %src150 = load ptr, ptr %src, align 8
-  store { ptr } { ptr @.sconst.304 }, ptr %arg.tmp151, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %src150, ptr %arg.tmp151)
+while.exit118:                                    ; preds = %while.cond116
+  %src149 = load ptr, ptr %src, align 8
+  store { ptr } { ptr @.sconst.304 }, ptr %arg.tmp150, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %src149, ptr %arg.tmp150)
   store i1 false, ptr %in_expr, align 1
-  br label %if.end113
+  br label %if.end112
 
-if.then127:                                       ; preds = %while.body118
-  %src130 = load ptr, ptr %src, align 8
-  %k131 = load i64, ptr %k, align 8
-  %ptr.add132 = getelementptr inbounds i8, ptr %call1, i64 %k131
-  %ptr.add133 = getelementptr inbounds i8, ptr %ptr.add132, i64 1
-  %deref134 = load i8, ptr %ptr.add133, align 1
-  call void @_ZN13StringBuilder6appendEc(ptr %src130, i8 %deref134)
-  %k135 = load i64, ptr %k, align 8
-  %add136 = add i64 %k135, 2
-  store i64 %add136, ptr %k, align 1
-  br label %if.end129
+if.then126:                                       ; preds = %while.body117
+  %src129 = load ptr, ptr %src, align 8
+  %k130 = load i64, ptr %k, align 8
+  %ptr.add131 = getelementptr inbounds i8, ptr %call1, i64 %k130
+  %ptr.add132 = getelementptr inbounds i8, ptr %ptr.add131, i64 1
+  %deref133 = load i8, ptr %ptr.add132, align 1
+  call void @_ZN13StringBuilder6appendEc(ptr %src129, i8 %deref133)
+  %k134 = load i64, ptr %k, align 8
+  %add135 = add i64 %k134, 2
+  store i64 %add135, ptr %k, align 1
+  br label %if.end128
 
-if.else128:                                       ; preds = %while.body118
-  %eq137 = icmp eq i8 %deref125, 10
-  br i1 %eq137, label %if.then138, label %if.else139
+if.else127:                                       ; preds = %while.body117
+  %eq136 = icmp eq i8 %deref124, 10
+  br i1 %eq136, label %if.then137, label %if.else138
 
-if.end129:                                        ; preds = %if.end140, %if.then127
-  br label %while.cond117
+if.end128:                                        ; preds = %if.end139, %if.then126
+  br label %while.cond116
 
-if.then138:                                       ; preds = %if.else128
-  %src141 = load ptr, ptr %src, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %src141, i8 32)
-  br label %if.end140
+if.then137:                                       ; preds = %if.else127
+  %src140 = load ptr, ptr %src, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %src140, i8 32)
+  br label %if.end139
 
-if.else139:                                       ; preds = %if.else128
-  %eq142 = icmp eq i8 %deref125, 13
-  br i1 %eq142, label %if.then143, label %if.else144
+if.else138:                                       ; preds = %if.else127
+  %eq141 = icmp eq i8 %deref124, 13
+  br i1 %eq141, label %if.then142, label %if.else143
 
-if.end140:                                        ; preds = %if.end145, %if.then138
-  %k148 = load i64, ptr %k, align 8
-  %add149 = add i64 %k148, 1
-  store i64 %add149, ptr %k, align 1
-  br label %if.end129
+if.end139:                                        ; preds = %if.end144, %if.then137
+  %k147 = load i64, ptr %k, align 8
+  %add148 = add i64 %k147, 1
+  store i64 %add148, ptr %k, align 1
+  br label %if.end128
 
-if.then143:                                       ; preds = %if.else139
+if.then142:                                       ; preds = %if.else138
+  %src145 = load ptr, ptr %src, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %src145, i8 32)
+  br label %if.end144
+
+if.else143:                                       ; preds = %if.else138
   %src146 = load ptr, ptr %src, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %src146, i8 32)
-  br label %if.end145
+  call void @_ZN13StringBuilder6appendEc(ptr %src146, i8 %deref124)
+  br label %if.end144
 
-if.else144:                                       ; preds = %if.else139
-  %src147 = load ptr, ptr %src, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %src147, i8 %deref125)
-  br label %if.end145
+if.end144:                                        ; preds = %if.else143, %if.then142
+  br label %if.end139
 
-if.end145:                                        ; preds = %if.else144, %if.then143
-  br label %if.end140
+if.then153:                                       ; preds = %if.else111
+  %src155 = load ptr, ptr %src, align 8
+  store { ptr } { ptr @.sconst.305 }, ptr %arg.tmp156, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %src155, ptr %arg.tmp156)
+  %seg_start157 = load i64, ptr %seg_start, align 8
+  store i64 %seg_start157, ptr %k, align 1
+  br label %while.cond158
 
-if.then154:                                       ; preds = %if.else112
-  %src156 = load ptr, ptr %src, align 8
-  store { ptr } { ptr @.sconst.305 }, ptr %arg.tmp157, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %src156, ptr %arg.tmp157)
-  %seg_start158 = load i64, ptr %seg_start, align 8
-  store i64 %seg_start158, ptr %k, align 1
-  br label %while.cond159
-
-if.end155:                                        ; preds = %while.exit161, %if.else112
+if.end154:                                        ; preds = %while.exit160, %if.else111
   store i1 true, ptr %in_expr, align 1
-  br label %if.end113
+  br label %if.end112
 
-while.cond159:                                    ; preds = %while.body160, %if.then154
-  %k162 = load i64, ptr %k, align 8
-  %i163 = load i64, ptr %i, align 8
-  %lt164 = icmp ult i64 %k162, %i163
-  br i1 %lt164, label %while.body160, label %while.exit161
+while.cond158:                                    ; preds = %while.body159, %if.then153
+  %k161 = load i64, ptr %k, align 8
+  %i162 = load i64, ptr %i, align 8
+  %lt163 = icmp ult i64 %k161, %i162
+  br i1 %lt163, label %while.body159, label %while.exit160
 
-while.body160:                                    ; preds = %while.cond159
-  %src165 = load ptr, ptr %src, align 8
-  %k166 = load i64, ptr %k, align 8
-  %ptr.add167 = getelementptr inbounds i8, ptr %call1, i64 %k166
-  %deref168 = load i8, ptr %ptr.add167, align 1
-  call void @_ZN13StringBuilder6appendEc(ptr %src165, i8 %deref168)
-  %k169 = load i64, ptr %k, align 8
-  %add170 = add i64 %k169, 1
-  store i64 %add170, ptr %k, align 1
-  br label %while.cond159
+while.body159:                                    ; preds = %while.cond158
+  %src164 = load ptr, ptr %src, align 8
+  %k165 = load i64, ptr %k, align 8
+  %ptr.add166 = getelementptr inbounds i8, ptr %call1, i64 %k165
+  %deref167 = load i8, ptr %ptr.add166, align 1
+  call void @_ZN13StringBuilder6appendEc(ptr %src164, i8 %deref167)
+  %k168 = load i64, ptr %k, align 8
+  %add169 = add i64 %k168, 1
+  store i64 %add169, ptr %k, align 1
+  br label %while.cond158
 
-while.exit161:                                    ; preds = %while.cond159
-  %src171 = load ptr, ptr %src, align 8
-  store { ptr } { ptr @.sconst.306 }, ptr %arg.tmp172, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %src171, ptr %arg.tmp172)
-  br label %if.end155
+while.exit160:                                    ; preds = %while.cond158
+  %src170 = load ptr, ptr %src, align 8
+  store { ptr } { ptr @.sconst.306 }, ptr %arg.tmp171, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %src170, ptr %arg.tmp171)
+  br label %if.end154
 
-if.then174:                                       ; preds = %if.end113
+if.then173:                                       ; preds = %if.end112
   store i1 true, ptr %ok_escape, align 1
-  br label %if.end176
+  br label %if.end175
 
-if.else175:                                       ; preds = %if.end113
-  %i177 = load i64, ptr %i, align 8
-  %add178 = add i64 %i177, 1
-  store i64 %add178, ptr %i, align 1
-  %i179 = load i64, ptr %i, align 8
-  store i64 %i179, ptr %seg_start, align 1
-  br label %if.end176
+if.else174:                                       ; preds = %if.end112
+  %i176 = load i64, ptr %i, align 8
+  %add177 = add i64 %i176, 1
+  store i64 %add177, ptr %i, align 1
+  %i178 = load i64, ptr %i, align 8
+  store i64 %i178, ptr %seg_start, align 1
+  br label %if.end175
 
-if.end176:                                        ; preds = %if.else175, %if.then174
-  br label %if.end109
+if.end175:                                        ; preds = %if.else174, %if.then173
+  br label %if.end108
 
 choose.end:                                       ; preds = %choose.else
-  %variant.tag.ptr198 = getelementptr inbounds %_Z10Expression, ptr %sret.result196, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr198, align 1
-  call void @_ZN7Modeler14handle_literalEPN4scaly6memory4PageE13LiteralSyntax(ptr noalias sret(%_Z8Constant) %sret.result199, ptr %1, ptr %2)
-  %variant.data.ptr200 = getelementptr inbounds %_Z10Expression, ptr %sret.result196, i32 0, i32 1
-  %variant.payload201 = load %_Z8Constant, ptr %sret.result199, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr200, ptr align 1 %sret.result199, i64 ptrtoint (ptr getelementptr (%_Z8Constant, ptr null, i32 1) to i64), i1 false)
-  %variant.val202 = load %_Z10Expression, ptr %sret.result196, align 1
+  %variant.tag.ptr197 = getelementptr inbounds %_Z10Expression, ptr %sret.result195, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr197, align 1
+  call void @_ZN7Modeler14handle_literalEPN4scaly6memory4PageE13LiteralSyntax(ptr noalias sret(%_Z8Constant) %sret.result198, ptr %1, ptr %2)
+  %variant.data.ptr199 = getelementptr inbounds %_Z10Expression, ptr %sret.result195, i32 0, i32 1
+  %variant.payload200 = load %_Z8Constant, ptr %sret.result198, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr199, ptr align 1 %sret.result198, i64 ptrtoint (ptr getelementptr (%_Z8Constant, ptr null, i32 1) to i64), i1 false)
+  %variant.val201 = load %_Z10Expression, ptr %sret.result195, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z10Expression %variant.val202, ptr %0, align 1
+  store %_Z10Expression %variant.val201, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %while.exit78
@@ -97693,28 +97692,28 @@ choose.else:                                      ; preds = %while.exit78
 
 choose.when:                                      ; preds = %while.exit78
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
-  %struct.region187 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.308 }, ptr %arg.tmp188, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region187, ptr %arg.tmp188)
-  call void @_ZN7Modeler17report_load_errorE6String(ptr %struct.region187)
-  %variant.tag.ptr190 = getelementptr inbounds %_Z10Expression, ptr %variant.ptr189, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr190, align 1
-  call void @_ZN7Modeler14handle_literalEPN4scaly6memory4PageE13LiteralSyntax(ptr noalias sret(%_Z8Constant) %sret.result191, ptr %1, ptr %2)
-  %variant.data.ptr192 = getelementptr inbounds %_Z10Expression, ptr %variant.ptr189, i32 0, i32 1
-  %variant.payload193 = load %_Z8Constant, ptr %sret.result191, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr192, ptr align 1 %sret.result191, i64 ptrtoint (ptr getelementptr (%_Z8Constant, ptr null, i32 1) to i64), i1 false)
-  %variant.val194 = load %_Z10Expression, ptr %variant.ptr189, align 1
+  %struct.region186 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } { ptr @.sconst.308 }, ptr %arg.tmp187, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region186, ptr %arg.tmp187)
+  call void @_ZN7Modeler17report_load_errorE6String(ptr %struct.region186)
+  %variant.tag.ptr189 = getelementptr inbounds %_Z10Expression, ptr %variant.ptr188, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr189, align 1
+  call void @_ZN7Modeler14handle_literalEPN4scaly6memory4PageE13LiteralSyntax(ptr noalias sret(%_Z8Constant) %sret.result190, ptr %1, ptr %2)
+  %variant.data.ptr191 = getelementptr inbounds %_Z10Expression, ptr %variant.ptr188, i32 0, i32 1
+  %variant.payload192 = load %_Z8Constant, ptr %sret.result190, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr191, ptr align 1 %sret.result190, i64 ptrtoint (ptr getelementptr (%_Z8Constant, ptr null, i32 1) to i64), i1 false)
+  %variant.val193 = load %_Z10Expression, ptr %variant.ptr188, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z10Expression %variant.val194, ptr %0, align 1
+  store %_Z10Expression %variant.val193, ptr %0, align 1
   ret void
 
-choose.when195:                                   ; preds = %while.exit78
+choose.when194:                                   ; preds = %while.exit78
   %throws.success.val = load %_Z16ExpressionSyntax, ptr %throws.data.ptr, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp197, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z16ExpressionSyntax, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Modeler17handle_expressionEPN4scaly6memory4PageE16ExpressionSyntax(ptr noalias sret(%_Z10Expression) %sret.result196, ptr %1, ptr %arg.tmp197)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp196, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z16ExpressionSyntax, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7Modeler17handle_expressionEPN4scaly6memory4PageE16ExpressionSyntax(ptr noalias sret(%_Z10Expression) %sret.result195, ptr %1, ptr %arg.tmp196)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  %sret.body = load %_Z10Expression, ptr %sret.result196, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result196, i64 ptrtoint (ptr getelementptr (%_Z10Expression, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load %_Z10Expression, ptr %sret.result195, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result195, i64 ptrtoint (ptr getelementptr (%_Z10Expression, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -139471,7 +139470,7 @@ if.end97:                                         ; preds = %if.end212, %if.then
   br label %if.end94
 
 choose.end:                                       ; preds = %choose.else, %if.end108
-  %choose.value = phi i1 [ true, %if.end108 ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end108 ]
   store i1 false, ptr %ic_is_void_ptr, align 1
   %expr115 = extractvalue %_Z14PlannedOperand %grp.deref.val99, 1
   store %_Z17PlannedExpression %expr115, ptr %choose.union, align 1
@@ -139519,7 +139518,7 @@ if.end114:                                        ; preds = %if.then113, %if.the
   br label %if.end108
 
 choose.end118:                                    ; preds = %choose.else119, %if.end126
-  %choose.value149 = phi i1 [ true, %if.end126 ], [ undef, %choose.else119 ]
+  %choose.value149 = phi i64 [ 0, %choose.else119 ], [ undef, %if.end126 ]
   %ic_is_empty_tuple150 = load i1, ptr %ic_is_empty_tuple, align 1
   br i1 %ic_is_empty_tuple150, label %if.then151, label %if.end152
 
@@ -140511,7 +140510,7 @@ if.end629:                                        ; preds = %if.end652, %if.then
   br label %if.end626
 
 choose.end636:                                    ; preds = %choose.else637, %if.end645
-  %choose.value650 = phi i1 [ true, %if.end645 ], [ undef, %choose.else637 ]
+  %choose.value650 = phi i64 [ 0, %choose.else637 ], [ undef, %if.end645 ]
   %cur_is_bare_type = load i1, ptr %ic_is_void_ptr, align 1
   br i1 %cur_is_bare_type, label %if.then651, label %if.end652
 
@@ -142716,7 +142715,7 @@ if.end1790:                                       ; preds = %choose.end1796, %if
   br label %if.end1786
 
 choose.end1796:                                   ; preds = %choose.else1797, %if.end1805
-  %choose.value1806 = phi i1 [ true, %if.end1805 ], [ undef, %choose.else1797 ]
+  %choose.value1806 = phi i64 [ 0, %choose.else1797 ], [ undef, %if.end1805 ]
   br label %if.end1790
 
 choose.else1797:                                  ; preds = %if.then1789
@@ -142825,7 +142824,7 @@ if.end1841:                                       ; preds = %if.end1891, %choose
   br label %if.end1827
 
 choose.end1848:                                   ; preds = %choose.else1849, %if.end1858
-  %choose.value1859 = phi i1 [ true, %if.end1858 ], [ undef, %choose.else1849 ]
+  %choose.value1859 = phi i64 [ 0, %choose.else1849 ], [ undef, %if.end1858 ]
   %cal_callable = load i1, ptr %ptr_fused, align 1
   %eq1860 = icmp eq i1 %cal_callable, false
   br i1 %eq1860, label %if.then1861, label %if.end1862
@@ -143252,7 +143251,7 @@ if.end2058:                                       ; preds = %choose.end2051
   br label %if.end2047
 
 choose.end2067:                                   ; preds = %choose.else2068, %if.end2133, %choose.when2069
-  %choose.value2136 = phi %_Z14PlannedOperand [ %choose.arm.load, %if.end2133 ], [ undef, %choose.when2069 ], [ undef, %choose.else2068 ]
+  %choose.value2136 = phi i64 [ 0, %choose.else2068 ], [ undef, %choose.when2069 ], [ undef, %if.end2133 ]
   %struct.region2137 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI14PlannedOperandEC1Em(ptr %struct.region2137, i64 1)
   store ptr %struct.region2137, ptr %dp_new, align 1
@@ -143403,7 +143402,6 @@ if.then2132:                                      ; preds = %choose.when2118
   br label %if.end2133
 
 if.end2133:                                       ; preds = %if.then2132, %choose.when2118
-  %choose.arm.load = load %_Z14PlannedOperand, ptr %deref.tmp2134, align 8
   br label %choose.end2067
 
 if.then2166:                                      ; preds = %choose.end2067
@@ -143913,7 +143911,7 @@ if.end2421:                                       ; preds = %choose.end2426, %if
   br i1 %ne2444, label %if.then2445, label %if.end2446
 
 choose.end2426:                                   ; preds = %choose.else2427, %if.end2435
-  %choose.value2441 = phi i1 [ true, %if.end2435 ], [ undef, %choose.else2427 ]
+  %choose.value2441 = phi i64 [ 0, %choose.else2427 ], [ undef, %if.end2435 ]
   br label %if.end2421
 
 choose.else2427:                                  ; preds = %if.then2420
@@ -144013,7 +144011,7 @@ if.end2471:                                       ; preds = %if.end2507, %if.the
   br label %if.end2467
 
 choose.end2477:                                   ; preds = %choose.else2478, %choose.when2502, %choose.when2499, %choose.when2496, %choose.when2493, %if.end2492
-  %choose.value2505 = phi i1 [ false, %if.end2492 ], [ false, %choose.when2493 ], [ false, %choose.when2496 ], [ false, %choose.when2499 ], [ false, %choose.when2502 ], [ undef, %choose.else2478 ]
+  %choose.value2505 = phi i1 [ false, %choose.when2493 ], [ false, %choose.when2496 ], [ false, %choose.when2499 ], [ false, %choose.when2502 ], [ undef, %if.end2492 ], [ undef, %choose.else2478 ]
   %arg_is_value = load i1, ptr %next_is_tuple, align 1
   br i1 %arg_is_value, label %if.then2506, label %if.end2507
 
@@ -146322,7 +146320,7 @@ if.end3695:                                       ; preds = %choose.end3700, %if
   br label %if.end3689
 
 choose.end3700:                                   ; preds = %choose.else3701, %if.end3711
-  %choose.value3728 = phi i1 [ true, %if.end3711 ], [ undef, %choose.else3701 ]
+  %choose.value3728 = phi i64 [ 0, %choose.else3701 ], [ undef, %if.end3711 ]
   br label %if.end3695
 
 choose.else3701:                                  ; preds = %if.then3694
@@ -148849,7 +148847,7 @@ if.end5043:                                       ; preds = %if.end5117, %if.end
   br i1 %ne5139, label %if.then5140, label %if.end5141
 
 choose.end5049:                                   ; preds = %choose.else5050, %if.end5077
-  %choose.value5115 = phi i1 [ true, %if.end5077 ], [ undef, %choose.else5050 ]
+  %choose.value5115 = phi i64 [ 0, %choose.else5050 ], [ undef, %if.end5077 ]
   %recv_escapes = load i1, ptr %prefix_is_current_ns, align 1
   br i1 %recv_escapes, label %if.then5116, label %if.end5117
 
@@ -150053,7 +150051,7 @@ if.end5693:                                       ; preds = %choose.end5547
   ]
 
 choose.end5700:                                   ; preds = %choose.else5701, %if.end5719
-  %choose.value5720 = phi i1 [ true, %if.end5719 ], [ undef, %choose.else5701 ]
+  %choose.value5720 = phi i64 [ 0, %choose.else5701 ], [ undef, %if.end5719 ]
   %op_is_operator = load i1, ptr %next_is_tuple, align 1
   %eq5721 = icmp eq i1 %op_is_operator, false
   br i1 %eq5721, label %if.then5722, label %if.end5723
@@ -150243,7 +150241,7 @@ if.end5789:                                       ; preds = %if.end5807, %choose
   br i1 %lt5825, label %if.then5826, label %if.end5827
 
 choose.end5795:                                   ; preds = %choose.else5796, %if.end5804
-  %choose.value5805 = phi i1 [ true, %if.end5804 ], [ undef, %choose.else5796 ]
+  %choose.value5805 = phi i64 [ 0, %choose.else5796 ], [ undef, %if.end5804 ]
   %rhs_is_prefix = load i1, ptr %fref_arity_ok, align 1
   br i1 %rhs_is_prefix, label %if.then5806, label %if.end5807
 
@@ -150317,7 +150315,7 @@ if.end5827:                                       ; preds = %if.end5874, %if.end
   br i1 %eq5905, label %if.then5906, label %if.end5907
 
 choose.end5833:                                   ; preds = %choose.else5834, %if.end5843
-  %choose.value5844 = phi i1 [ true, %if.end5843 ], [ undef, %choose.else5834 ]
+  %choose.value5844 = phi i64 [ 0, %choose.else5834 ], [ undef, %if.end5843 ]
   %rhs_callable = load i1, ptr %fref_arity_ok, align 1
   %eq5845 = icmp eq i1 %rhs_callable, false
   br i1 %eq5845, label %if.then5846, label %if.end5847
@@ -150887,7 +150885,7 @@ if.end6113:                                       ; preds = %choose.end6119, %if
   br i1 %gt6144, label %if.then6145, label %if.end6146
 
 choose.end6119:                                   ; preds = %choose.else6120, %if.end6130
-  %choose.value6142 = phi i64 [ 1, %if.end6130 ], [ 0, %choose.else6120 ]
+  %choose.value6142 = phi i64 [ 0, %choose.else6120 ], [ undef, %if.end6130 ]
   br label %if.end6113
 
 choose.else6120:                                  ; preds = %if.then6112
@@ -154405,7 +154403,7 @@ entry:
   ]
 
 choose.end:                                       ; preds = %choose.else, %if.end
-  %choose.value = phi i1 [ true, %if.end ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end ]
   %found23 = load i1, ptr %found, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 %found23
@@ -154895,7 +154893,7 @@ entry:
   ]
 
 choose.end:                                       ; preds = %choose.else, %if.end
-  %choose.value = phi i1 [ true, %if.end ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end ]
   %found2 = load i1, ptr %found, align 1
   ret i1 %found2
 
@@ -158524,7 +158522,7 @@ if.end20:                                         ; preds = %while.exit
   ]
 
 choose.end:                                       ; preds = %choose.else, %if.end50
-  %choose.value60 = phi i1 [ true, %if.end50 ], [ undef, %choose.else ]
+  %choose.value60 = phi i64 [ 0, %choose.else ], [ undef, %if.end50 ]
   %found61 = load i1, ptr %found, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 %found61
@@ -158568,7 +158566,7 @@ if.end31:                                         ; preds = %choose.end37, %if.t
   br label %if.end25
 
 choose.end37:                                     ; preds = %choose.else38, %if.end46
-  %choose.value = phi i1 [ true, %if.end46 ], [ undef, %choose.else38 ]
+  %choose.value = phi i64 [ 0, %choose.else38 ], [ undef, %if.end46 ]
   br label %if.end31
 
 choose.else38:                                    ; preds = %if.then30
@@ -160632,7 +160630,7 @@ if.end138:                                        ; preds = %choose.end, %while.
   br label %while.cond126
 
 choose.end:                                       ; preds = %choose.else, %if.end145
-  %choose.value = phi i1 [ true, %if.end145 ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end145 ]
   br label %if.end138
 
 choose.else:                                      ; preds = %if.then137
@@ -169943,7 +169941,7 @@ entry:
   ]
 
 choose.end:                                       ; preds = %choose.else, %if.end44, %if.end31, %if.end19, %if.end
-  %choose.value = phi i1 [ true, %if.end19 ], [ true, %if.end31 ], [ true, %if.end44 ], [ undef, %if.end ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end ], [ undef, %if.end19 ], [ undef, %if.end31 ], [ undef, %if.end44 ]
   %result45 = load i1, ptr %result, align 1
   ret i1 %result45
 
@@ -169978,7 +169976,6 @@ if.else:                                          ; preds = %if.then
   br i1 %call6, label %if.then7, label %if.end8
 
 if.end3:                                          ; preds = %if.end8, %if.then2
-  %if.value = phi i1 [ true, %if.then2 ], [ true, %if.end8 ]
   br label %if.end
 
 if.then7:                                         ; preds = %if.else
@@ -170772,7 +170769,6 @@ if.else:                                          ; preds = %if.end60
   br i1 %is_method68, label %if.then69, label %if.end70
 
 if.end63:                                         ; preds = %if.end77, %if.end67
-  %if.value = phi i1 [ false, %if.end67 ], [ false, %if.end77 ]
   br label %if.end45
 
 if.then66:                                        ; preds = %if.then62
@@ -172929,7 +172925,7 @@ if.end:                                           ; preds = %if.end29, %while.bo
   br label %while.cond
 
 choose.end:                                       ; preds = %choose.else, %choose.when18, %if.end6
-  %choose.value = phi i1 [ true, %if.end6 ], [ true, %choose.when18 ], [ undef, %choose.else ]
+  %choose.value = phi i1 [ true, %choose.when18 ], [ undef, %if.end6 ], [ undef, %choose.else ]
   %is_ctor21 = load i1, ptr %is_ctor, align 1
   %eq22 = icmp eq i1 %is_ctor21, false
   br i1 %eq22, label %if.then23, label %if.end24
@@ -187470,7 +187466,7 @@ if.end117:                                        ; preds = %if.then116, %if.the
   br label %if.end109
 
 choose.end123:                                    ; preds = %choose.else124, %choose.when148, %choose.when145, %if.end130
-  %choose.value151 = phi i1 [ true, %if.end130 ], [ true, %choose.when145 ], [ true, %choose.when148 ], [ undef, %choose.else124 ]
+  %choose.value151 = phi i1 [ true, %choose.when145 ], [ true, %choose.when148 ], [ undef, %if.end130 ], [ undef, %choose.else124 ]
   %external152 = load i1, ptr %external, align 1
   br i1 %external152, label %if.then153, label %if.end154
 
@@ -187590,7 +187586,7 @@ if.end171:                                        ; preds = %choose.end178, %if.
   br i1 %eq200, label %if.then201, label %if.end202
 
 choose.end178:                                    ; preds = %choose.else179, %if.end185
-  %choose.value198 = phi i1 [ true, %if.end185 ], [ undef, %choose.else179 ]
+  %choose.value198 = phi i64 [ 0, %choose.else179 ], [ undef, %if.end185 ]
   br label %if.end171
 
 choose.else179:                                   ; preds = %if.then170
@@ -187697,7 +187693,7 @@ if.end231:                                        ; preds = %choose.end237, %if.
   br label %if.end227
 
 choose.end237:                                    ; preds = %choose.else238, %if.end255
-  %choose.value279 = phi %_Z14PlannedOperand [ %choose.arm.load, %if.end255 ], [ undef, %choose.else238 ]
+  %choose.value279 = phi i64 [ 0, %choose.else238 ], [ undef, %if.end255 ]
   br label %if.end231
 
 choose.else238:                                   ; preds = %if.then230
@@ -187749,7 +187745,6 @@ if.then254:                                       ; preds = %if.end253
   br i1 %ne265, label %if.then266, label %if.end267
 
 if.end255:                                        ; preds = %if.end275, %if.end253
-  %choose.arm.load = load %_Z14PlannedOperand, ptr %deref.tmp276, align 8
   br label %choose.end237
 
 if.then266:                                       ; preds = %if.then254
@@ -189656,7 +189651,7 @@ if.end225:                                        ; preds = %if.end285, %if.then
   br label %if.end221
 
 choose.end231:                                    ; preds = %choose.else232, %if.end247, %choose.when236, %choose.when233
-  %choose.value248 = phi i1 [ true, %choose.when233 ], [ true, %choose.when236 ], [ true, %if.end247 ], [ undef, %choose.else232 ]
+  %choose.value248 = phi i1 [ true, %choose.when233 ], [ true, %choose.when236 ], [ undef, %if.end247 ], [ undef, %choose.else232 ]
   store i1 false, ptr %head_is_call, align 1
   %name249 = extractvalue %_Z11PlannedType %variant.val211, 1
   store { ptr } %name249, ptr %arg.tmp250, align 1
@@ -192991,7 +192986,7 @@ if.end12:                                         ; preds = %choose.end, %if.the
   br i1 %eq, label %if.then19, label %if.end20
 
 choose.end:                                       ; preds = %choose.else, %if.end17
-  %choose.value = phi i1 [ true, %if.end17 ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end17 ]
   br label %if.end12
 
 choose.else:                                      ; preds = %if.then11
@@ -193057,7 +193052,7 @@ if.end28:                                         ; preds = %choose.end34, %whil
   br label %while.cond
 
 choose.end34:                                     ; preds = %choose.else35, %if.end65, %choose.when45, %choose.when42, %choose.when39, %choose.when36
-  %choose.value66 = phi i1 [ true, %choose.when36 ], [ true, %choose.when39 ], [ true, %if.end65 ], [ undef, %choose.when42 ], [ undef, %choose.when45 ], [ undef, %choose.else35 ]
+  %choose.value66 = phi i1 [ true, %choose.when36 ], [ true, %choose.when39 ], [ undef, %choose.when42 ], [ undef, %choose.when45 ], [ undef, %if.end65 ], [ undef, %choose.else35 ]
   br label %if.end28
 
 choose.else35:                                    ; preds = %if.then27
@@ -193244,7 +193239,7 @@ if.end122:                                        ; preds = %if.end139, %if.then
   br label %if.end119
 
 choose.end128:                                    ; preds = %choose.else129, %if.end135
-  %choose.value136 = phi i1 [ true, %if.end135 ], [ undef, %choose.else129 ]
+  %choose.value136 = phi i64 [ 0, %choose.else129 ], [ undef, %if.end135 ]
   %g0_bare_type137 = load i1, ptr %g0_bare_type, align 1
   br i1 %g0_bare_type137, label %if.then138, label %if.end139
 
@@ -196571,7 +196566,7 @@ entry:
   ]
 
 choose.end:                                       ; preds = %choose.else, %if.end
-  %choose.value = phi i1 [ true, %if.end ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end ]
   %result13 = load i1, ptr %result, align 1
   ret i1 %result13
 
@@ -197493,7 +197488,7 @@ if.end111:                                        ; preds = %if.end104
   ]
 
 choose.end117:                                    ; preds = %choose.else118, %if.end125
-  %choose.value126 = phi i1 [ true, %if.end125 ], [ undef, %choose.else118 ]
+  %choose.value126 = phi i64 [ 0, %choose.else118 ], [ undef, %if.end125 ]
   %call127 = call i1 @_ZN7Planner33operand_reads_tainted_local_fieldE14PlannedOperand(ptr %0, ptr %1)
   br i1 %call127, label %if.then128, label %if.end129
 
@@ -197675,7 +197670,6 @@ if.else:                                          ; preds = %entry
   br i1 %call2, label %if.then3, label %if.end4
 
 if.end:                                           ; preds = %if.end16, %if.then
-  %if.value = phi i1 [ false, %if.then ], [ false, %if.end16 ]
   %result21 = load i1, ptr %result, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 %result21
@@ -200021,7 +200015,6 @@ if.else:                                          ; preds = %if.end35
   br i1 %lt53, label %if.then54, label %if.end55
 
 if.end39:                                         ; preds = %if.end55, %if.end50
-  %if.value = phi i1 [ true, %if.end50 ], [ true, %if.end55 ]
   %arg_escapes56 = load i1, ptr %arg_escapes, align 1
   br i1 %arg_escapes56, label %if.then57, label %if.end58
 
@@ -202489,7 +202482,6 @@ if.else:                                          ; preds = %choose.when
   br i1 %call13, label %if.then14, label %if.end15
 
 if.end3:                                          ; preds = %if.end15, %if.end6
-  %if.value = phi i1 [ true, %if.end6 ], [ true, %if.end15 ]
   %is_moved16 = load i1, ptr %is_moved, align 1
   br i1 %is_moved16, label %if.then17, label %if.end18
 
@@ -204300,7 +204292,7 @@ if.end184:                                        ; preds = %if.end208, %if.then
   br label %if.end181
 
 choose.end189:                                    ; preds = %choose.else190, %if.end199
-  %choose.value200 = phi i1 [ true, %if.end199 ], [ undef, %choose.else190 ]
+  %choose.value200 = phi i64 [ 0, %choose.else190 ], [ undef, %if.end199 ]
   %planned_collapsed201 = load ptr, ptr %rb_sb, align 8
   %call202 = call i1 @_ZN7Planner33operand_reads_tainted_local_fieldE14PlannedOperand(ptr %2, ptr %planned_collapsed201)
   br i1 %call202, label %if.then203, label %if.end204
@@ -204578,7 +204570,7 @@ if.end23:                                         ; preds = %if.end37, %if.then1
   br label %if.end20
 
 choose.end:                                       ; preds = %choose.else, %if.end29
-  %choose.value = phi i1 [ true, %if.end29 ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end29 ]
   %planned_collapsed30 = load ptr, ptr %planned_collapsed, align 8
   %call31 = call i1 @_ZN7Planner33operand_reads_tainted_local_fieldE14PlannedOperand(ptr %2, ptr %planned_collapsed30)
   br i1 %call31, label %if.then32, label %if.end33
@@ -206269,7 +206261,7 @@ if.end213:                                        ; preds = %choose.end218, %if.
   br i1 %is_deref293, label %if.then294, label %if.end295
 
 choose.end218:                                    ; preds = %choose.else219, %if.end271
-  %choose.value292 = phi i1 [ true, %if.end271 ], [ undef, %choose.else219 ]
+  %choose.value292 = phi i64 [ 0, %choose.else219 ], [ undef, %if.end271 ]
   br label %if.end213
 
 choose.else219:                                   ; preds = %if.then212
@@ -206816,7 +206808,7 @@ if.end14:                                         ; preds = %if.end11
   ]
 
 choose.end:                                       ; preds = %choose.else, %if.end20
-  %choose.value = phi i1 [ true, %if.end20 ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end20 ]
   %star_ok31 = load i1, ptr %star_ok, align 1
   %eq32 = icmp eq i1 %star_ok31, false
   br i1 %eq32, label %if.then33, label %if.end34
@@ -207025,7 +207017,7 @@ if.end29:                                         ; preds = %choose.end, %lor.en
   br label %if.end23
 
 choose.end:                                       ; preds = %choose.else, %if.end32
-  %choose.value = phi i1 [ true, %if.end32 ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end32 ]
   br label %if.end29
 
 choose.else:                                      ; preds = %if.then28
@@ -207089,7 +207081,7 @@ if.end50:                                         ; preds = %choose.end55, %if.e
   br i1 %ne94, label %if.then95, label %if.end96
 
 choose.end55:                                     ; preds = %choose.else56, %if.end64
-  %choose.value92 = phi i1 [ true, %if.end64 ], [ undef, %choose.else56 ]
+  %choose.value92 = phi i64 [ 0, %choose.else56 ], [ undef, %if.end64 ]
   br label %if.end50
 
 choose.else56:                                    ; preds = %if.then49
@@ -207220,7 +207212,7 @@ if.end117:                                        ; preds = %choose.end122, %lor
   br label %if.end109
 
 choose.end122:                                    ; preds = %choose.else123, %if.end130
-  %choose.value139 = phi i1 [ true, %if.end130 ], [ undef, %choose.else123 ]
+  %choose.value139 = phi i64 [ 0, %choose.else123 ], [ undef, %if.end130 ]
   br label %if.end117
 
 choose.else123:                                   ; preds = %if.then116
@@ -208380,7 +208372,7 @@ if.end4:                                          ; preds = %choose.end, %if.the
   br i1 %is_amp21, label %if.then22, label %if.end23
 
 choose.end:                                       ; preds = %choose.else, %if.end7
-  %choose.value = phi i1 [ true, %if.end7 ], [ undef, %choose.else ]
+  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end7 ]
   br label %if.end4
 
 choose.else:                                      ; preds = %if.then3
@@ -227381,7 +227373,6 @@ if.else:                                          ; preds = %if.then31
   br i1 %call43, label %if.then44, label %if.end45
 
 if.end37:                                         ; preds = %if.end52, %if.end42
-  %if.value = phi i1 [ true, %if.end42 ], [ true, %if.end52 ]
   br label %if.end32
 
 if.then41:                                        ; preds = %if.then36
@@ -233330,7 +233321,6 @@ if.end15:                                         ; preds = %choose.end, %while.
   br label %while.cond
 
 choose.end:                                       ; preds = %choose.else, %if.end19
-  %choose.value = phi i1 [ true, %if.end19 ], [ undef, %choose.else ]
   br label %if.end15
 
 choose.else:                                      ; preds = %if.then14
@@ -233497,7 +233487,6 @@ if.end40:                                         ; preds = %choose.end, %for.bo
   br label %for.cond
 
 choose.end:                                       ; preds = %if.end63
-  %choose.value = phi i1 [ true, %if.end63 ]
   br label %if.end40
 
 choose.else:                                      ; preds = %if.then39
@@ -234606,7 +234595,6 @@ if.end9:                                          ; preds = %choose.end, %for.bo
   br label %for.cond
 
 choose.end:                                       ; preds = %if.end35
-  %choose.value = phi i1 [ true, %if.end35 ]
   br label %if.end9
 
 choose.else:                                      ; preds = %if.then8
@@ -260960,7 +260948,7 @@ if.end1036:                                       ; preds = %if.then1035, %if.en
   br label %if.end1006
 
 choose.end1050:                                   ; preds = %choose.else1051, %if.end1060
-  %choose.value1061 = phi i1 [ true, %if.end1060 ], [ undef, %choose.else1051 ]
+  %choose.value1061 = phi i64 [ 0, %choose.else1051 ], [ undef, %if.end1060 ]
   %call1062 = call i64 @_ZN12LLVMTypeKind7PointerEv()
   %eq1063 = icmp eq i64 %call1002, %call1062
   br i1 %eq1063, label %if.then1064, label %if.end1065
@@ -267185,7 +267173,7 @@ for.exit:                                         ; preds = %for.cond
   br label %if.end
 
 choose.end:                                       ; preds = %choose.else, %if.end4
-  %choose.value = phi %_Z12LLVMValueRef [ %choose.arm.load, %if.end4 ], [ undef, %choose.else ]
+  %choose.value = phi i1 [ %call17, %choose.else ], [ undef, %if.end4 ]
   br label %for.cond
 
 choose.else:                                      ; preds = %for.body
@@ -267214,8 +267202,6 @@ if.else:                                          ; preds = %choose.when
   br i1 %eq6, label %if.then7, label %if.end8
 
 if.end4:                                          ; preds = %if.end8, %if.then3
-  %if.value = phi ptr [ %tuple, %if.then3 ], [ %tuple, %if.end8 ]
-  %choose.arm.load = load %_Z12LLVMValueRef, ptr %if.value, align 8
   br label %choose.end
 
 if.then7:                                         ; preds = %if.else
@@ -267243,19 +267229,19 @@ entry:
   %blocks = alloca ptr, align 8
   %values = alloca ptr, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %tuple183 = alloca %_Z12LLVMValueRef, align 8
-  %arg.tmp123 = alloca %_Z13PlannedAction, align 8
-  %choose.union115 = alloca %_Z16PlannedStatement, align 8
-  %deref.tmp113 = alloca %_Z16PlannedStatement, align 8
+  %tuple179 = alloca %_Z12LLVMValueRef, align 8
+  %arg.tmp119 = alloca %_Z13PlannedAction, align 8
+  %choose.union111 = alloca %_Z16PlannedStatement, align 8
+  %deref.tmp109 = alloca %_Z16PlannedStatement, align 8
   %else_end_block = alloca %_Z17LLVMBasicBlockRef, align 8
-  %tuple93 = alloca %_Z17LLVMBasicBlockRef, align 8
+  %tuple89 = alloca %_Z17LLVMBasicBlockRef, align 8
   %else_value = alloca %_Z12LLVMValueRef, align 8
-  %tuple90 = alloca %_Z12LLVMValueRef, align 8
-  %arg.tmp67 = alloca %_Z13PlannedAction, align 8
+  %tuple86 = alloca %_Z12LLVMValueRef, align 8
+  %arg.tmp63 = alloca %_Z13PlannedAction, align 8
   %choose.union = alloca %_Z16PlannedStatement, align 8
   %deref.tmp = alloca %_Z16PlannedStatement, align 8
   %then_value = alloca %_Z12LLVMValueRef, align 8
-  %tuple58 = alloca %_Z12LLVMValueRef, align 8
+  %tuple54 = alloca %_Z12LLVMValueRef, align 8
   %arg.tmp24 = alloca { ptr }, align 8
   %sret.result23 = alloca %_Z17LLVMBasicBlockRef, align 8
   %else_block = alloca %_Z17LLVMBasicBlockRef, align 8
@@ -267327,63 +267313,59 @@ if.then21:                                        ; preds = %if.end5
 if.end22:                                         ; preds = %if.then21, %if.end5
   store { ptr } { ptr @.sconst.1941 }, ptr %arg.tmp24, align 1
   call void @_ZN7Emitter12create_blockEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z17LLVMBasicBlockRef) %sret.result23, ptr %1, ptr %2, ptr %arg.tmp24)
-  %load.struct25 = load %_Z7Emitter, ptr %2, align 8
-  %builder26 = extractvalue %_Z7Emitter %load.struct25, 5
-  %handle27 = extractvalue %_Z14LLVMBuilderRef %builder26, 0
-  %call28 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle27)
-  %else_block29 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
-  %handle30 = extractvalue %_Z17LLVMBasicBlockRef %else_block29, 0
-  %ne31 = icmp ne ptr %handle30, null
-  br i1 %ne31, label %if.then32, label %if.else
+  %else_block25 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
+  %handle26 = extractvalue %_Z17LLVMBasicBlockRef %else_block25, 0
+  %ne27 = icmp ne ptr %handle26, null
+  br i1 %ne27, label %if.then28, label %if.else
 
-if.then32:                                        ; preds = %if.end22
-  %load.struct34 = load %_Z7Emitter, ptr %2, align 8
-  %builder35 = extractvalue %_Z7Emitter %load.struct34, 5
-  %handle36 = extractvalue %_Z14LLVMBuilderRef %builder35, 0
+if.then28:                                        ; preds = %if.end22
+  %load.struct30 = load %_Z7Emitter, ptr %2, align 8
+  %builder31 = extractvalue %_Z7Emitter %load.struct30, 5
+  %handle32 = extractvalue %_Z14LLVMBuilderRef %builder31, 0
   %bool_cond = load %_Z12LLVMValueRef, ptr %tuple, align 8
-  %handle37 = extractvalue %_Z12LLVMValueRef %bool_cond, 0
-  %wrapper.load38 = load %_Z17LLVMBasicBlockRef, ptr %sret.result15, align 8
-  %handle39 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load38, 0
-  %else_block40 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
-  %handle41 = extractvalue %_Z17LLVMBasicBlockRef %else_block40, 0
-  %call42 = call %_Z12LLVMValueRef @LLVMBuildCondBr(ptr %handle36, ptr %handle37, ptr %handle39, ptr %handle41)
-  br label %if.end33
+  %handle33 = extractvalue %_Z12LLVMValueRef %bool_cond, 0
+  %wrapper.load34 = load %_Z17LLVMBasicBlockRef, ptr %sret.result15, align 8
+  %handle35 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load34, 0
+  %else_block36 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
+  %handle37 = extractvalue %_Z17LLVMBasicBlockRef %else_block36, 0
+  %call38 = call %_Z12LLVMValueRef @LLVMBuildCondBr(ptr %handle32, ptr %handle33, ptr %handle35, ptr %handle37)
+  br label %if.end29
 
 if.else:                                          ; preds = %if.end22
-  %load.struct43 = load %_Z7Emitter, ptr %2, align 8
-  %builder44 = extractvalue %_Z7Emitter %load.struct43, 5
-  %handle45 = extractvalue %_Z14LLVMBuilderRef %builder44, 0
-  %bool_cond46 = load %_Z12LLVMValueRef, ptr %tuple, align 8
-  %handle47 = extractvalue %_Z12LLVMValueRef %bool_cond46, 0
-  %wrapper.load48 = load %_Z17LLVMBasicBlockRef, ptr %sret.result15, align 8
-  %handle49 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load48, 0
-  %wrapper.load50 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
-  %handle51 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load50, 0
-  %call52 = call %_Z12LLVMValueRef @LLVMBuildCondBr(ptr %handle45, ptr %handle47, ptr %handle49, ptr %handle51)
-  br label %if.end33
+  %load.struct39 = load %_Z7Emitter, ptr %2, align 8
+  %builder40 = extractvalue %_Z7Emitter %load.struct39, 5
+  %handle41 = extractvalue %_Z14LLVMBuilderRef %builder40, 0
+  %bool_cond42 = load %_Z12LLVMValueRef, ptr %tuple, align 8
+  %handle43 = extractvalue %_Z12LLVMValueRef %bool_cond42, 0
+  %wrapper.load44 = load %_Z17LLVMBasicBlockRef, ptr %sret.result15, align 8
+  %handle45 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load44, 0
+  %wrapper.load46 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
+  %handle47 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load46, 0
+  %call48 = call %_Z12LLVMValueRef @LLVMBuildCondBr(ptr %handle41, ptr %handle43, ptr %handle45, ptr %handle47)
+  br label %if.end29
 
-if.end33:                                         ; preds = %if.else, %if.then32
-  %if.value = phi %_Z12LLVMValueRef [ %call42, %if.then32 ], [ %call52, %if.else ]
-  %load.struct53 = load %_Z7Emitter, ptr %2, align 8
-  %builder54 = extractvalue %_Z7Emitter %load.struct53, 5
-  %handle55 = extractvalue %_Z14LLVMBuilderRef %builder54, 0
-  %wrapper.load56 = load %_Z17LLVMBasicBlockRef, ptr %sret.result15, align 8
-  %handle57 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load56, 0
-  call void @LLVMPositionBuilderAtEnd(ptr %handle55, ptr %handle57)
+if.end29:                                         ; preds = %if.else, %if.then28
+  %if.value = phi %_Z12LLVMValueRef [ %call38, %if.then28 ], [ %call48, %if.else ]
+  %load.struct49 = load %_Z7Emitter, ptr %2, align 8
+  %builder50 = extractvalue %_Z7Emitter %load.struct49, 5
+  %handle51 = extractvalue %_Z14LLVMBuilderRef %builder50, 0
+  %wrapper.load52 = load %_Z17LLVMBasicBlockRef, ptr %sret.result15, align 8
+  %handle53 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load52, 0
+  call void @LLVMPositionBuilderAtEnd(ptr %handle51, ptr %handle53)
   call void @_ZN7Emitter11enter_scopeEv(ptr %2)
-  %tuple.field59 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple58, i32 0, i32 0
-  store ptr null, ptr %tuple.field59, align 1
-  %tuple.val60 = load %_Z12LLVMValueRef, ptr %tuple58, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %then_value, ptr align 1 %tuple58, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
-  %load.struct61 = load %_Z9PlannedIf, ptr %3, align 8
-  %consequent = extractvalue %_Z9PlannedIf %load.struct61, 3
-  %ne62 = icmp ne ptr %consequent, null
-  br i1 %ne62, label %if.then63, label %if.end64
+  %tuple.field55 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple54, i32 0, i32 0
+  store ptr null, ptr %tuple.field55, align 1
+  %tuple.val56 = load %_Z12LLVMValueRef, ptr %tuple54, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %then_value, ptr align 1 %tuple54, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+  %load.struct57 = load %_Z9PlannedIf, ptr %3, align 8
+  %consequent = extractvalue %_Z9PlannedIf %load.struct57, 3
+  %ne58 = icmp ne ptr %consequent, null
+  br i1 %ne58, label %if.then59, label %if.end60
 
-if.then63:                                        ; preds = %if.end33
-  %load.struct65 = load %_Z9PlannedIf, ptr %3, align 8
-  %consequent66 = extractvalue %_Z9PlannedIf %load.struct65, 3
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %consequent66, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
+if.then59:                                        ; preds = %if.end29
+  %load.struct61 = load %_Z9PlannedIf, ptr %3, align 8
+  %consequent62 = extractvalue %_Z9PlannedIf %load.struct61, 3
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %consequent62, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z16PlannedStatement, ptr %deref.tmp, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %deref.tmp, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z16PlannedStatement, ptr %choose.union, i32 0, i32 0
@@ -267392,286 +267374,265 @@ if.then63:                                        ; preds = %if.end33
     i8 0, label %choose.when
   ]
 
-if.end64:                                         ; preds = %choose.end, %if.end33
-  %load.struct70 = load %_Z7Emitter, ptr %2, align 8
-  %builder71 = extractvalue %_Z7Emitter %load.struct70, 5
-  %handle72 = extractvalue %_Z14LLVMBuilderRef %builder71, 0
-  %call73 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle72)
-  %handle74 = extractvalue %_Z17LLVMBasicBlockRef %call73, 0
-  %call75 = call %_Z12LLVMValueRef @LLVMGetBasicBlockTerminator(ptr %handle74)
-  %handle76 = extractvalue %_Z12LLVMValueRef %call75, 0
-  %eq77 = icmp eq ptr %handle76, null
-  br i1 %eq77, label %if.then78, label %if.end79
+if.end60:                                         ; preds = %choose.end, %if.end29
+  %load.struct66 = load %_Z7Emitter, ptr %2, align 8
+  %builder67 = extractvalue %_Z7Emitter %load.struct66, 5
+  %handle68 = extractvalue %_Z14LLVMBuilderRef %builder67, 0
+  %call69 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle68)
+  %handle70 = extractvalue %_Z17LLVMBasicBlockRef %call69, 0
+  %call71 = call %_Z12LLVMValueRef @LLVMGetBasicBlockTerminator(ptr %handle70)
+  %handle72 = extractvalue %_Z12LLVMValueRef %call71, 0
+  %eq73 = icmp eq ptr %handle72, null
+  br i1 %eq73, label %if.then74, label %if.end75
 
 choose.end:                                       ; preds = %choose.else, %choose.when
   %choose.value = phi %_Z12LLVMValueRef [ %choose.arm.load, %choose.when ], [ undef, %choose.else ]
-  br label %if.end64
+  br label %if.end60
 
-choose.else:                                      ; preds = %if.then63
-  %call69 = call i1 @_ZN7Emitter14emit_statementE16PlannedStatement(ptr %2, ptr %consequent66)
+choose.else:                                      ; preds = %if.then59
+  %call65 = call i1 @_ZN7Emitter14emit_statementE16PlannedStatement(ptr %2, ptr %consequent62)
   br label %choose.end
 
-choose.when:                                      ; preds = %if.then63
+choose.when:                                      ; preds = %if.then59
   %"variant.c_data().ptr" = getelementptr inbounds %_Z16PlannedStatement, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z13PlannedAction, ptr %"variant.c_data().ptr", align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp67, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Emitter11emit_actionEPN4scaly6memory4PageE13PlannedAction(ptr noalias sret(%_Z12LLVMValueRef) %tuple58, ptr %1, ptr %2, ptr %arg.tmp67)
-  %set.load68 = load %_Z12LLVMValueRef, ptr %tuple58, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %then_value, ptr align 1 %tuple58, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
-  %choose.arm.load = load %_Z12LLVMValueRef, ptr %tuple58, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp63, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7Emitter11emit_actionEPN4scaly6memory4PageE13PlannedAction(ptr noalias sret(%_Z12LLVMValueRef) %tuple54, ptr %1, ptr %2, ptr %arg.tmp63)
+  %set.load64 = load %_Z12LLVMValueRef, ptr %tuple54, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %then_value, ptr align 1 %tuple54, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+  %choose.arm.load = load %_Z12LLVMValueRef, ptr %tuple54, align 8
   br label %choose.end
 
-if.then78:                                        ; preds = %if.end64
-  %load.struct80 = load %_Z7Emitter, ptr %2, align 8
-  %builder81 = extractvalue %_Z7Emitter %load.struct80, 5
-  %handle82 = extractvalue %_Z14LLVMBuilderRef %builder81, 0
-  %wrapper.load83 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
-  %handle84 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load83, 0
-  %call85 = call %_Z12LLVMValueRef @LLVMBuildBr(ptr %handle82, ptr %handle84)
-  br label %if.end79
+if.then74:                                        ; preds = %if.end60
+  %load.struct76 = load %_Z7Emitter, ptr %2, align 8
+  %builder77 = extractvalue %_Z7Emitter %load.struct76, 5
+  %handle78 = extractvalue %_Z14LLVMBuilderRef %builder77, 0
+  %wrapper.load79 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
+  %handle80 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load79, 0
+  %call81 = call %_Z12LLVMValueRef @LLVMBuildBr(ptr %handle78, ptr %handle80)
+  br label %if.end75
 
-if.end79:                                         ; preds = %if.then78, %if.end64
-  %load.struct86 = load %_Z7Emitter, ptr %2, align 8
-  %builder87 = extractvalue %_Z7Emitter %load.struct86, 5
-  %handle88 = extractvalue %_Z14LLVMBuilderRef %builder87, 0
-  %call89 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle88)
+if.end75:                                         ; preds = %if.then74, %if.end60
+  %load.struct82 = load %_Z7Emitter, ptr %2, align 8
+  %builder83 = extractvalue %_Z7Emitter %load.struct82, 5
+  %handle84 = extractvalue %_Z14LLVMBuilderRef %builder83, 0
+  %call85 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle84)
   call void @_ZN7Emitter14pin_temp_valueE12LLVMValueRef(ptr %2, ptr %then_value)
   call void @_ZN7Emitter10exit_scopeEv(ptr %2)
-  %tuple.field91 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple90, i32 0, i32 0
-  store ptr null, ptr %tuple.field91, align 1
-  %tuple.val92 = load %_Z12LLVMValueRef, ptr %tuple90, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %else_value, ptr align 1 %tuple90, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
-  %tuple.field94 = getelementptr inbounds %_Z17LLVMBasicBlockRef, ptr %tuple93, i32 0, i32 0
-  store ptr null, ptr %tuple.field94, align 1
-  %tuple.val95 = load %_Z17LLVMBasicBlockRef, ptr %tuple93, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %else_end_block, ptr align 1 %tuple93, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
-  %else_block96 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
-  %handle97 = extractvalue %_Z17LLVMBasicBlockRef %else_block96, 0
-  %ne98 = icmp ne ptr %handle97, null
-  br i1 %ne98, label %if.then99, label %if.end100
+  %tuple.field87 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple86, i32 0, i32 0
+  store ptr null, ptr %tuple.field87, align 1
+  %tuple.val88 = load %_Z12LLVMValueRef, ptr %tuple86, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %else_value, ptr align 1 %tuple86, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+  %tuple.field90 = getelementptr inbounds %_Z17LLVMBasicBlockRef, ptr %tuple89, i32 0, i32 0
+  store ptr null, ptr %tuple.field90, align 1
+  %tuple.val91 = load %_Z17LLVMBasicBlockRef, ptr %tuple89, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %else_end_block, ptr align 1 %tuple89, i64 ptrtoint (ptr getelementptr (%_Z17LLVMBasicBlockRef, ptr null, i32 1) to i64), i1 false)
+  %else_block92 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
+  %handle93 = extractvalue %_Z17LLVMBasicBlockRef %else_block92, 0
+  %ne94 = icmp ne ptr %handle93, null
+  br i1 %ne94, label %if.then95, label %if.end96
 
-if.then99:                                        ; preds = %if.end79
-  %load.struct101 = load %_Z7Emitter, ptr %2, align 8
-  %builder102 = extractvalue %_Z7Emitter %load.struct101, 5
-  %handle103 = extractvalue %_Z14LLVMBuilderRef %builder102, 0
-  %else_block104 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
-  %handle105 = extractvalue %_Z17LLVMBasicBlockRef %else_block104, 0
-  call void @LLVMPositionBuilderAtEnd(ptr %handle103, ptr %handle105)
+if.then95:                                        ; preds = %if.end75
+  %load.struct97 = load %_Z7Emitter, ptr %2, align 8
+  %builder98 = extractvalue %_Z7Emitter %load.struct97, 5
+  %handle99 = extractvalue %_Z14LLVMBuilderRef %builder98, 0
+  %else_block100 = load %_Z17LLVMBasicBlockRef, ptr %else_block, align 8
+  %handle101 = extractvalue %_Z17LLVMBasicBlockRef %else_block100, 0
+  call void @LLVMPositionBuilderAtEnd(ptr %handle99, ptr %handle101)
   call void @_ZN7Emitter11enter_scopeEv(ptr %2)
-  %load.struct106 = load %_Z9PlannedIf, ptr %3, align 8
-  %alternative107 = extractvalue %_Z9PlannedIf %load.struct106, 4
-  %ne108 = icmp ne ptr %alternative107, null
-  br i1 %ne108, label %if.then109, label %if.end110
+  %load.struct102 = load %_Z9PlannedIf, ptr %3, align 8
+  %alternative103 = extractvalue %_Z9PlannedIf %load.struct102, 4
+  %ne104 = icmp ne ptr %alternative103, null
+  br i1 %ne104, label %if.then105, label %if.end106
 
-if.end100:                                        ; preds = %if.end137, %if.end79
-  %load.struct148 = load %_Z7Emitter, ptr %2, align 8
-  %builder149 = extractvalue %_Z7Emitter %load.struct148, 5
-  %handle150 = extractvalue %_Z14LLVMBuilderRef %builder149, 0
-  %wrapper.load151 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
-  %handle152 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load151, 0
-  call void @LLVMPositionBuilderAtEnd(ptr %handle150, ptr %handle152)
-  %then_value153 = load %_Z12LLVMValueRef, ptr %then_value, align 8
-  %handle154 = extractvalue %_Z12LLVMValueRef %then_value153, 0
-  %ne155 = icmp ne ptr %handle154, null
-  br i1 %ne155, label %if.then156, label %if.end157
-
-if.then109:                                       ; preds = %if.then99
-  %load.struct111 = load %_Z9PlannedIf, ptr %3, align 8
-  %alternative112 = extractvalue %_Z9PlannedIf %load.struct111, 4
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp113, ptr align 1 %alternative112, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
-  %grp.deref.val114 = load %_Z16PlannedStatement, ptr %deref.tmp113, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union115, ptr align 1 %deref.tmp113, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr116 = getelementptr inbounds %_Z16PlannedStatement, ptr %choose.union115, i32 0, i32 0
-  %tag117 = load i8, ptr %tag.ptr116, align 1
-  switch i8 %tag117, label %choose.else119 [
-    i8 0, label %choose.when120
-  ]
-
-if.end110:                                        ; preds = %choose.end118, %if.then99
-  %load.struct128 = load %_Z7Emitter, ptr %2, align 8
-  %builder129 = extractvalue %_Z7Emitter %load.struct128, 5
-  %handle130 = extractvalue %_Z14LLVMBuilderRef %builder129, 0
-  %call131 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle130)
-  %handle132 = extractvalue %_Z17LLVMBasicBlockRef %call131, 0
-  %call133 = call %_Z12LLVMValueRef @LLVMGetBasicBlockTerminator(ptr %handle132)
-  %handle134 = extractvalue %_Z12LLVMValueRef %call133, 0
-  %eq135 = icmp eq ptr %handle134, null
-  br i1 %eq135, label %if.then136, label %if.end137
-
-choose.end118:                                    ; preds = %choose.else119, %choose.when120
-  %choose.value127 = phi %_Z12LLVMValueRef [ %choose.arm.load125, %choose.when120 ], [ undef, %choose.else119 ]
-  br label %if.end110
-
-choose.else119:                                   ; preds = %if.then109
-  %call126 = call i1 @_ZN7Emitter14emit_statementE16PlannedStatement(ptr %2, ptr %alternative112)
-  br label %choose.end118
-
-choose.when120:                                   ; preds = %if.then109
-  %"variant.c_data().ptr121" = getelementptr inbounds %_Z16PlannedStatement, ptr %choose.union115, i32 0, i32 1
-  %variant.val122 = load %_Z13PlannedAction, ptr %"variant.c_data().ptr121", align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp123, ptr align 1 %"variant.c_data().ptr121", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Emitter11emit_actionEPN4scaly6memory4PageE13PlannedAction(ptr noalias sret(%_Z12LLVMValueRef) %tuple90, ptr %1, ptr %2, ptr %arg.tmp123)
-  %set.load124 = load %_Z12LLVMValueRef, ptr %tuple90, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %else_value, ptr align 1 %tuple90, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
-  %choose.arm.load125 = load %_Z12LLVMValueRef, ptr %tuple90, align 8
-  br label %choose.end118
-
-if.then136:                                       ; preds = %if.end110
-  %load.struct138 = load %_Z7Emitter, ptr %2, align 8
-  %builder139 = extractvalue %_Z7Emitter %load.struct138, 5
-  %handle140 = extractvalue %_Z14LLVMBuilderRef %builder139, 0
-  %wrapper.load141 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
-  %handle142 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load141, 0
-  %call143 = call %_Z12LLVMValueRef @LLVMBuildBr(ptr %handle140, ptr %handle142)
-  br label %if.end137
-
-if.end137:                                        ; preds = %if.then136, %if.end110
+if.end96:                                         ; preds = %if.end133, %if.end75
   %load.struct144 = load %_Z7Emitter, ptr %2, align 8
   %builder145 = extractvalue %_Z7Emitter %load.struct144, 5
   %handle146 = extractvalue %_Z14LLVMBuilderRef %builder145, 0
-  %call147 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle146)
-  store %_Z17LLVMBasicBlockRef %call147, ptr %else_end_block, align 1
+  %wrapper.load147 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
+  %handle148 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load147, 0
+  call void @LLVMPositionBuilderAtEnd(ptr %handle146, ptr %handle148)
+  %then_value149 = load %_Z12LLVMValueRef, ptr %then_value, align 8
+  %handle150 = extractvalue %_Z12LLVMValueRef %then_value149, 0
+  %ne151 = icmp ne ptr %handle150, null
+  br i1 %ne151, label %if.then152, label %if.end153
+
+if.then105:                                       ; preds = %if.then95
+  %load.struct107 = load %_Z9PlannedIf, ptr %3, align 8
+  %alternative108 = extractvalue %_Z9PlannedIf %load.struct107, 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp109, ptr align 1 %alternative108, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val110 = load %_Z16PlannedStatement, ptr %deref.tmp109, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union111, ptr align 1 %deref.tmp109, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr112 = getelementptr inbounds %_Z16PlannedStatement, ptr %choose.union111, i32 0, i32 0
+  %tag113 = load i8, ptr %tag.ptr112, align 1
+  switch i8 %tag113, label %choose.else115 [
+    i8 0, label %choose.when116
+  ]
+
+if.end106:                                        ; preds = %choose.end114, %if.then95
+  %load.struct124 = load %_Z7Emitter, ptr %2, align 8
+  %builder125 = extractvalue %_Z7Emitter %load.struct124, 5
+  %handle126 = extractvalue %_Z14LLVMBuilderRef %builder125, 0
+  %call127 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle126)
+  %handle128 = extractvalue %_Z17LLVMBasicBlockRef %call127, 0
+  %call129 = call %_Z12LLVMValueRef @LLVMGetBasicBlockTerminator(ptr %handle128)
+  %handle130 = extractvalue %_Z12LLVMValueRef %call129, 0
+  %eq131 = icmp eq ptr %handle130, null
+  br i1 %eq131, label %if.then132, label %if.end133
+
+choose.end114:                                    ; preds = %choose.else115, %choose.when116
+  %choose.value123 = phi %_Z12LLVMValueRef [ %choose.arm.load121, %choose.when116 ], [ undef, %choose.else115 ]
+  br label %if.end106
+
+choose.else115:                                   ; preds = %if.then105
+  %call122 = call i1 @_ZN7Emitter14emit_statementE16PlannedStatement(ptr %2, ptr %alternative108)
+  br label %choose.end114
+
+choose.when116:                                   ; preds = %if.then105
+  %"variant.c_data().ptr117" = getelementptr inbounds %_Z16PlannedStatement, ptr %choose.union111, i32 0, i32 1
+  %variant.val118 = load %_Z13PlannedAction, ptr %"variant.c_data().ptr117", align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp119, ptr align 1 %"variant.c_data().ptr117", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7Emitter11emit_actionEPN4scaly6memory4PageE13PlannedAction(ptr noalias sret(%_Z12LLVMValueRef) %tuple86, ptr %1, ptr %2, ptr %arg.tmp119)
+  %set.load120 = load %_Z12LLVMValueRef, ptr %tuple86, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %else_value, ptr align 1 %tuple86, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+  %choose.arm.load121 = load %_Z12LLVMValueRef, ptr %tuple86, align 8
+  br label %choose.end114
+
+if.then132:                                       ; preds = %if.end106
+  %load.struct134 = load %_Z7Emitter, ptr %2, align 8
+  %builder135 = extractvalue %_Z7Emitter %load.struct134, 5
+  %handle136 = extractvalue %_Z14LLVMBuilderRef %builder135, 0
+  %wrapper.load137 = load %_Z17LLVMBasicBlockRef, ptr %sret.result23, align 8
+  %handle138 = extractvalue %_Z17LLVMBasicBlockRef %wrapper.load137, 0
+  %call139 = call %_Z12LLVMValueRef @LLVMBuildBr(ptr %handle136, ptr %handle138)
+  br label %if.end133
+
+if.end133:                                        ; preds = %if.then132, %if.end106
+  %load.struct140 = load %_Z7Emitter, ptr %2, align 8
+  %builder141 = extractvalue %_Z7Emitter %load.struct140, 5
+  %handle142 = extractvalue %_Z14LLVMBuilderRef %builder141, 0
+  %call143 = call %_Z17LLVMBasicBlockRef @LLVMGetInsertBlock(ptr %handle142)
+  store %_Z17LLVMBasicBlockRef %call143, ptr %else_end_block, align 1
   call void @_ZN7Emitter14pin_temp_valueE12LLVMValueRef(ptr %2, ptr %else_value)
   call void @_ZN7Emitter10exit_scopeEv(ptr %2)
-  br label %if.end100
+  br label %if.end96
 
-if.then156:                                       ; preds = %if.end100
-  %else_value158 = load %_Z12LLVMValueRef, ptr %else_value, align 8
-  %handle159 = extractvalue %_Z12LLVMValueRef %else_value158, 0
+if.then152:                                       ; preds = %if.end96
+  %else_value154 = load %_Z12LLVMValueRef, ptr %else_value, align 8
+  %handle155 = extractvalue %_Z12LLVMValueRef %else_value154, 0
+  %ne156 = icmp ne ptr %handle155, null
+  br i1 %ne156, label %if.then157, label %if.end158
+
+if.end153:                                        ; preds = %if.end158, %if.end96
+  %tuple.field214 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple179, i32 0, i32 0
+  store ptr null, ptr %tuple.field214, align 1
+  %tuple.val215 = load %_Z12LLVMValueRef, ptr %tuple179, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  store %_Z12LLVMValueRef %tuple.val215, ptr %0, align 1
+  ret void
+
+if.then157:                                       ; preds = %if.then152
+  %handle159 = extractvalue %_Z17LLVMBasicBlockRef %call85, 0
   %ne160 = icmp ne ptr %handle159, null
   br i1 %ne160, label %if.then161, label %if.end162
 
-if.end157:                                        ; preds = %if.end162, %if.end100
-  %then_value218 = load %_Z12LLVMValueRef, ptr %then_value, align 8
-  %handle219 = extractvalue %_Z12LLVMValueRef %then_value218, 0
-  %ne220 = icmp ne ptr %handle219, null
-  br i1 %ne220, label %if.then221, label %if.end222
+if.end158:                                        ; preds = %if.end162, %if.then152
+  br label %if.end153
 
-if.then161:                                       ; preds = %if.then156
-  %handle163 = extractvalue %_Z17LLVMBasicBlockRef %call89, 0
-  %ne164 = icmp ne ptr %handle163, null
-  br i1 %ne164, label %if.then165, label %if.end166
+if.then161:                                       ; preds = %if.then157
+  %else_end_block163 = load %_Z17LLVMBasicBlockRef, ptr %else_end_block, align 8
+  %handle164 = extractvalue %_Z17LLVMBasicBlockRef %else_end_block163, 0
+  %ne165 = icmp ne ptr %handle164, null
+  br i1 %ne165, label %if.then166, label %if.end167
 
-if.end162:                                        ; preds = %if.end166, %if.then156
-  br label %if.end157
+if.end162:                                        ; preds = %if.end167, %if.then157
+  br label %if.end158
 
-if.then165:                                       ; preds = %if.then161
-  %else_end_block167 = load %_Z17LLVMBasicBlockRef, ptr %else_end_block, align 8
-  %handle168 = extractvalue %_Z17LLVMBasicBlockRef %else_end_block167, 0
-  %ne169 = icmp ne ptr %handle168, null
-  br i1 %ne169, label %if.then170, label %if.end171
+if.then166:                                       ; preds = %if.then161
+  %then_value168 = load %_Z12LLVMValueRef, ptr %then_value, align 8
+  %handle169 = extractvalue %_Z12LLVMValueRef %then_value168, 0
+  %call170 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle169)
+  %else_value171 = load %_Z12LLVMValueRef, ptr %else_value, align 8
+  %handle172 = extractvalue %_Z12LLVMValueRef %else_value171, 0
+  %call173 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle172)
+  %handle174 = extractvalue %_Z11LLVMTypeRef %call170, 0
+  %handle175 = extractvalue %_Z11LLVMTypeRef %call173, 0
+  %ne176 = icmp ne ptr %handle174, %handle175
+  br i1 %ne176, label %if.then177, label %if.end178
 
-if.end166:                                        ; preds = %if.end171, %if.then161
+if.end167:                                        ; preds = %if.then161
   br label %if.end162
 
-if.then170:                                       ; preds = %if.then165
-  %then_value172 = load %_Z12LLVMValueRef, ptr %then_value, align 8
-  %handle173 = extractvalue %_Z12LLVMValueRef %then_value172, 0
-  %call174 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle173)
-  %else_value175 = load %_Z12LLVMValueRef, ptr %else_value, align 8
-  %handle176 = extractvalue %_Z12LLVMValueRef %else_value175, 0
-  %call177 = call %_Z11LLVMTypeRef @LLVMTypeOf(ptr %handle176)
-  %handle178 = extractvalue %_Z11LLVMTypeRef %call174, 0
-  %handle179 = extractvalue %_Z11LLVMTypeRef %call177, 0
-  %ne180 = icmp ne ptr %handle178, %handle179
-  br i1 %ne180, label %if.then181, label %if.end182
-
-if.end171:                                        ; preds = %if.then165
-  br label %if.end166
-
-if.then181:                                       ; preds = %if.then170
-  %tuple.field184 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple183, i32 0, i32 0
-  store ptr null, ptr %tuple.field184, align 1
-  %tuple.val185 = load %_Z12LLVMValueRef, ptr %tuple183, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple183, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+if.then177:                                       ; preds = %if.then166
+  %tuple.field180 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple179, i32 0, i32 0
+  store ptr null, ptr %tuple.field180, align 1
+  %tuple.val181 = load %_Z12LLVMValueRef, ptr %tuple179, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple179, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
-if.end182:                                        ; preds = %if.then170
-  %handle186 = extractvalue %_Z11LLVMTypeRef %call174, 0
-  %call187 = call i64 @LLVMGetTypeKind(ptr %handle186)
-  %call188 = call i64 @_ZN12LLVMTypeKind4VoidEv()
-  %eq189 = icmp eq i64 %call187, %call188
-  br i1 %eq189, label %if.then190, label %if.end191
+if.end178:                                        ; preds = %if.then166
+  %handle182 = extractvalue %_Z11LLVMTypeRef %call170, 0
+  %call183 = call i64 @LLVMGetTypeKind(ptr %handle182)
+  %call184 = call i64 @_ZN12LLVMTypeKind4VoidEv()
+  %eq185 = icmp eq i64 %call183, %call184
+  br i1 %eq185, label %if.then186, label %if.end187
 
-if.then190:                                       ; preds = %if.end182
-  %tuple.field192 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple183, i32 0, i32 0
-  store ptr null, ptr %tuple.field192, align 1
-  %tuple.val193 = load %_Z12LLVMValueRef, ptr %tuple183, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple183, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+if.then186:                                       ; preds = %if.end178
+  %tuple.field188 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple179, i32 0, i32 0
+  store ptr null, ptr %tuple.field188, align 1
+  %tuple.val189 = load %_Z12LLVMValueRef, ptr %tuple179, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple179, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
-if.end191:                                        ; preds = %if.end182
-  %handle194 = extractvalue %_Z11LLVMTypeRef %call177, 0
-  %call195 = call i64 @LLVMGetTypeKind(ptr %handle194)
-  %call196 = call i64 @_ZN12LLVMTypeKind4VoidEv()
-  %eq197 = icmp eq i64 %call195, %call196
-  br i1 %eq197, label %if.then198, label %if.end199
+if.end187:                                        ; preds = %if.end178
+  %handle190 = extractvalue %_Z11LLVMTypeRef %call173, 0
+  %call191 = call i64 @LLVMGetTypeKind(ptr %handle190)
+  %call192 = call i64 @_ZN12LLVMTypeKind4VoidEv()
+  %eq193 = icmp eq i64 %call191, %call192
+  br i1 %eq193, label %if.then194, label %if.end195
 
-if.then198:                                       ; preds = %if.end191
-  %tuple.field200 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple183, i32 0, i32 0
-  store ptr null, ptr %tuple.field200, align 1
-  %tuple.val201 = load %_Z12LLVMValueRef, ptr %tuple183, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple183, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+if.then194:                                       ; preds = %if.end187
+  %tuple.field196 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple179, i32 0, i32 0
+  store ptr null, ptr %tuple.field196, align 1
+  %tuple.val197 = load %_Z12LLVMValueRef, ptr %tuple179, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple179, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
-if.end199:                                        ; preds = %if.end191
-  %load.struct202 = load %_Z7Emitter, ptr %2, align 8
-  %builder203 = extractvalue %_Z7Emitter %load.struct202, 5
-  %handle204 = extractvalue %_Z14LLVMBuilderRef %builder203, 0
-  %handle205 = extractvalue %_Z11LLVMTypeRef %call174, 0
-  %call206 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle204, ptr %handle205, ptr @.str.1942)
+if.end195:                                        ; preds = %if.end187
+  %load.struct198 = load %_Z7Emitter, ptr %2, align 8
+  %builder199 = extractvalue %_Z7Emitter %load.struct198, 5
+  %handle200 = extractvalue %_Z14LLVMBuilderRef %builder199, 0
+  %handle201 = extractvalue %_Z11LLVMTypeRef %call170, 0
+  %call202 = call %_Z12LLVMValueRef @LLVMBuildPhi(ptr %handle200, ptr %handle201, ptr @.str.1942)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6VectorI12LLVMValueRefEC1Em(ptr %struct.region, i64 2)
   store ptr %struct.region, ptr %values, align 1
-  %struct.region207 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17LLVMBasicBlockRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17LLVMBasicBlockRefE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI17LLVMBasicBlockRefEC1Em(ptr %struct.region207, i64 2)
-  store ptr %struct.region207, ptr %blocks, align 1
-  %values208 = load ptr, ptr %values, align 8
-  call void @_ZN6VectorI12LLVMValueRefE3putEm12LLVMValueRef(ptr %values208, i64 0, ptr %then_value)
+  %struct.region203 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17LLVMBasicBlockRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17LLVMBasicBlockRefE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI17LLVMBasicBlockRefEC1Em(ptr %struct.region203, i64 2)
+  store ptr %struct.region203, ptr %blocks, align 1
+  %values204 = load ptr, ptr %values, align 8
+  call void @_ZN6VectorI12LLVMValueRefE3putEm12LLVMValueRef(ptr %values204, i64 0, ptr %then_value)
+  %values205 = load ptr, ptr %values, align 8
+  call void @_ZN6VectorI12LLVMValueRefE3putEm12LLVMValueRef(ptr %values205, i64 1, ptr %else_value)
+  %blocks206 = load ptr, ptr %blocks, align 8
+  store %_Z17LLVMBasicBlockRef %call85, ptr %tuple89, align 1
+  call void @_ZN6VectorI17LLVMBasicBlockRefE3putEm17LLVMBasicBlockRef(ptr %blocks206, i64 0, ptr %tuple89)
+  %blocks207 = load ptr, ptr %blocks, align 8
+  call void @_ZN6VectorI17LLVMBasicBlockRefE3putEm17LLVMBasicBlockRef(ptr %blocks207, i64 1, ptr %else_end_block)
+  %handle208 = extractvalue %_Z12LLVMValueRef %call202, 0
   %values209 = load ptr, ptr %values, align 8
-  call void @_ZN6VectorI12LLVMValueRefE3putEm12LLVMValueRef(ptr %values209, i64 1, ptr %else_value)
-  %blocks210 = load ptr, ptr %blocks, align 8
-  store %_Z17LLVMBasicBlockRef %call89, ptr %tuple93, align 1
-  call void @_ZN6VectorI17LLVMBasicBlockRefE3putEm17LLVMBasicBlockRef(ptr %blocks210, i64 0, ptr %tuple93)
+  %load.struct210 = load %_Z6VectorI12LLVMValueRefE, ptr %values209, align 8
+  %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct210, 1
   %blocks211 = load ptr, ptr %blocks, align 8
-  call void @_ZN6VectorI17LLVMBasicBlockRefE3putEm17LLVMBasicBlockRef(ptr %blocks211, i64 1, ptr %else_end_block)
-  %handle212 = extractvalue %_Z12LLVMValueRef %call206, 0
-  %values213 = load ptr, ptr %values, align 8
-  %load.struct214 = load %_Z6VectorI12LLVMValueRefE, ptr %values213, align 8
-  %data = extractvalue %_Z6VectorI12LLVMValueRefE %load.struct214, 1
-  %blocks215 = load ptr, ptr %blocks, align 8
-  %load.struct216 = load %_Z6VectorI17LLVMBasicBlockRefE, ptr %blocks215, align 8
-  %data217 = extractvalue %_Z6VectorI17LLVMBasicBlockRefE %load.struct216, 1
-  call void @LLVMAddIncoming(ptr %handle212, ptr %data, ptr %data217, i64 2)
+  %load.struct212 = load %_Z6VectorI17LLVMBasicBlockRefE, ptr %blocks211, align 8
+  %data213 = extractvalue %_Z6VectorI17LLVMBasicBlockRefE %load.struct212, 1
+  call void @LLVMAddIncoming(ptr %handle208, ptr %data, ptr %data213, i64 2)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z12LLVMValueRef %call206, ptr %0, align 1
+  store %_Z12LLVMValueRef %call202, ptr %0, align 1
   ret void
-
-if.then221:                                       ; preds = %if.end157
-  %load.struct223 = load %_Z9PlannedIf, ptr %3, align 8
-  %alternative224 = extractvalue %_Z9PlannedIf %load.struct223, 4
-  %eq225 = icmp eq ptr %alternative224, null
-  br i1 %eq225, label %if.then226, label %if.end227
-
-if.end222:                                        ; preds = %if.end227, %if.end157
-  %tuple.field229 = getelementptr inbounds %_Z12LLVMValueRef, ptr %tuple183, i32 0, i32 0
-  store ptr null, ptr %tuple.field229, align 1
-  %tuple.val230 = load %_Z12LLVMValueRef, ptr %tuple183, align 8
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z12LLVMValueRef %tuple.val230, ptr %0, align 1
-  ret void
-
-if.then226:                                       ; preds = %if.then221
-  %then_value228 = load %_Z12LLVMValueRef, ptr %then_value, align 8
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z12LLVMValueRef %then_value228, ptr %0, align 1
-  ret void
-
-if.end227:                                        ; preds = %if.then221
-  br label %if.end222
 }
 
 define linkonce_odr void @_ZN7Emitter10emit_matchEPN4scaly6memory4PageE12PlannedMatch(ptr noalias sret(%_Z12LLVMValueRef) %0, ptr %1, ptr %2, ptr %3) {
@@ -279782,7 +279743,7 @@ if.end58:                                         ; preds = %if.end56
   ]
 
 choose.end62:                                     ; preds = %choose.else63, %if.end74, %choose.when64
-  %choose.value = phi i1 [ true, %choose.when64 ], [ true, %if.end74 ], [ undef, %choose.else63 ]
+  %choose.value = phi i1 [ true, %choose.when64 ], [ undef, %if.end74 ], [ undef, %choose.else63 ]
   %life_ok75 = load i1, ptr %life_ok, align 1
   %eq76 = icmp eq i1 %life_ok75, false
   br i1 %eq76, label %if.then77, label %if.end78
@@ -281136,7 +281097,7 @@ if.end10:                                         ; preds = %if.end5
   ]
 
 choose.end:                                       ; preds = %choose.else, %choose.end16
-  %choose.value27 = phi %_Z11LLVMTypeRef [ %choose.value, %choose.end16 ], [ undef, %choose.else ]
+  %choose.value27 = phi i64 [ %choose.value, %choose.end16 ], [ 0, %choose.else ]
   %struct_ty28 = load %_Z11LLVMTypeRef, ptr %struct_ty, align 8
   %handle = extractvalue %_Z11LLVMTypeRef %struct_ty28, 0
   %eq29 = icmp eq ptr %handle, null
@@ -281157,7 +281118,7 @@ choose.when:                                      ; preds = %if.end10
   ]
 
 choose.end16:                                     ; preds = %choose.else17, %if.end25
-  %choose.value = phi %_Z11LLVMTypeRef [ %choose.arm.load, %if.end25 ], [ undef, %choose.else17 ]
+  %choose.value = phi i64 [ 0, %choose.else17 ], [ undef, %if.end25 ]
   br label %choose.end
 
 choose.else17:                                    ; preds = %choose.when
@@ -281181,7 +281142,6 @@ if.then24:                                        ; preds = %choose.when18
   br label %if.end25
 
 if.end25:                                         ; preds = %if.then24, %choose.when18
-  %choose.arm.load = load %_Z11LLVMTypeRef, ptr %tuple, align 8
   br label %choose.end16
 
 if.then30:                                        ; preds = %choose.end

@@ -65,6 +65,45 @@ if x &gt; 3 : x * 2 else x</programlisting></entry>
 let b 3
 if a &gt; b : a else b</programlisting></entry>
               <entry><literal>7
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-IF-ELSE-IF-STATEMENT'>
+      <title>Else-If Chains without a Final Else</title>
+      <para>An if statement may chain an else if without a final else. Such a
+        chain yields no value; when no condition holds, the statement falls
+        through and any bindings keep their prior values. (Regression: the
+        emitter used to merge the arms' values into a dead phi node that
+        failed LLVM verification when the inner arm's value was computed
+        inside its own branch.)</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>function clamp(dmin: int) returns int
+{
+    var adj 7
+    if dmin &gt; 100
+        set adj: 0
+    else if dmin &gt; 50
+        set adj: dmin + 1
+    adj
+}
+clamp(200) * 10000 + clamp(60) * 100 + clamp(10)</programlisting></entry>
+              <entry><literal>6107
 </literal></entry>
             </row>
           </tbody>

@@ -9766,11 +9766,6 @@ define Emitter
             set else_block: create_block("if.else")
         let merge_block create_block("if.end")
 
-        ; s128: capture the cond block (current insert point right before
-        ; the CondBr) so the no-else PHI fixup below can use it as the
-        ; false-path predecessor for the undef incoming.
-        let cond_block LLVMGetInsertBlock(builder)
-
         ; Branch based on condition
         if else_block.handle <> null
             LLVMBuildCondBr(builder, bool_cond, then_block, else_block)
@@ -9905,14 +9900,12 @@ define Emitter
             }
         }
 
-        ; Return the then value if only then branch has a value
-        if then_value.handle <> null
-        {
-            if if_expr.alternative = null
-                return then_value
-
-        }
-
+        ; A no-else if yields NO value: on the false path control reaches
+        ; merge without producing one, so the then-value is not defined on
+        ; every predecessor. Returning it here fed enclosing merge PHIs an
+        ; operand that doesn't dominate its incoming edge (an `if set-stmt
+        ; else if set-stmt` chain built a dead, non-dominating if.value phi
+        ; that llc's verifier rejects).
         LLVMValueRef null
     }
 

@@ -20,6 +20,24 @@ if x > 3 : x * 2 else x<expect>10
 let b 3
 if a > b : a else b<expect>7
 
+    <tests id = if-else-if-statement title = "Else-If Chains without a Final Else">
+        <prose>An if statement may chain an else if without a final else. Such a
+        chain yields no value; when no condition holds, the statement falls
+        through and any bindings keep their prior values. (Regression: the
+        emitter used to merge the arms' values into a dead phi node that
+        failed LLVM verification when the inner arm's value was computed
+        inside its own branch.)
+        <test id = if-else-if-no-else program = program><input>function clamp(dmin: int) returns int
+{
+    var adj 7
+    if dmin > 100
+        set adj: 0
+    else if dmin > 50
+        set adj: dmin + 1
+    adj
+}
+clamp(200) * 10000 + clamp(60) * 100 + clamp(10)<expect>6107
+
 </category>
 
 <category id = while-loops title = "While Loops">

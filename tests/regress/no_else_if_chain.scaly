@@ -1,0 +1,36 @@
+; Regression: a statement-position `if <set> else if <set>` chain with NO
+; final else mis-emitted a DEAD `if.value` phi at the outer merge block.
+; emit_if returned the no-else inner if's then-branch value as "the if's
+; value"; that value (computed INSIDE the inner then-block) does not
+; dominate the inner merge block, so the outer phi's incoming operand
+; failed LLVM verification ("Instruction does not dominate all uses!").
+; The in-process -o path at -O0 ran no verifier and executed correctly
+; (the phi was dead), but --jit (ORC verifies) aborted and the external
+; -S -> opt/llc archive path rejected the module. Fix: a no-else if
+; yields NO value (emit_if returns null), so no merge phi is built.
+; This test pins the SEMANTICS on the -o path (both arms + fall-through);
+; the verifier regression is pinned by the literate JIT test
+; controlflow.sgm if-else-if-no-else (tests/selfhosted).
+
+function clamp(dmin: int) returns int
+{
+    var adj 7
+    if dmin > 100
+        set adj: 0
+    else if dmin > 50
+        set adj: dmin + 1
+    adj
+}
+
+var ok true
+if clamp(200) <> 0
+    set ok: false
+if clamp(60) <> 61
+    set ok: false
+if clamp(10) <> 7
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")
