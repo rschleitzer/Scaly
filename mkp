@@ -30,6 +30,20 @@ openjade -G -t sgml -d codegen/test-definitions.dsl tests/definitions.sgm
 openjade -G -t sgml -d codegen/test-choose.dsl tests/choose.sgm
 openjade -G -t sgml -d codegen/test-controlflow.dsl tests/controlflow.sgm
 
+# Generate opensp message tables from the OpenSP .msg catalogs (single source of
+# truth: James Clark's OpenSP, ~/repos/openjade-net/upstream/opensp/lib). Skipped
+# when that checkout is absent — the checked-in *Messages.scaly stay valid; a
+# contributor with the checkout re-runs and diffs (output is byte-exact).
+MSGDIR="${OPENSP_MSG_DIR:-$HOME/repos/openjade-net/upstream/opensp/lib}"
+if [ -d "$MSGDIR" ]; then
+    for m in "$MSGDIR"/*.msg; do
+        base=$(basename "$m" .msg)
+        python3 tools/msggen.py "$m" > "packages/opensp/0.1.0/opensp/$base.scaly"
+    done
+else
+    echo "mkp: skipping opensp message tables ($MSGDIR not found)"
+fi
+
 # Restore byte-identical files to their pre-generation mtime so ninja skips
 # them; leave genuinely-changed files (new content + new mtime) in place.
 for f in "${GENERATED[@]}"; do
