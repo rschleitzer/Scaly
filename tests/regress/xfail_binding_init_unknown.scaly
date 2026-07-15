@@ -1,0 +1,19 @@
+; xfail: unknown identifier: TBL
+; A bare unresolvable identifier as the WHOLE initializer of a binding
+; (`let p TBL` with TBL planned later) used to bind null silently.
+; Must be a hard diagnostic; the stack-array decl shape
+; (`var buffer u8[64]`) stays exempt.
+
+define User
+{
+    procedure via_let() returns pointer[u32]
+    {
+        let p TBL
+        p
+    }
+}
+
+define TBL: u32[] [11, 22, 33]
+
+let p1 User.via_let()
+exit 0

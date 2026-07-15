@@ -14500,6 +14500,18 @@ define Emitter
                                                 if rp_val.handle <> null
                                                     set copy_page: rp_val
                                             }
+                                            ; current_region.local_page is a never-set null
+                                            ; (see the s196 field comment); in a non-rp
+                                            ; function the _rp lookup fails too, and the
+                                            ; heap-copy was silently SKIPPED — the raw
+                                            ; fall-through stored a struct VALUE into the
+                                            ; ptr slot (`var t SC()` + `set t: p.field`
+                                            ; then read t as a pointer built from the
+                                            ; struct's first field). Fall back to the
+                                            ; function-local page like every other
+                                            ; rp-fallback site.
+                                            if copy_page.handle = null
+                                                set copy_page: get_or_create_local_page()
                                             if copy_page.handle <> null
                                             {
                                                 var alloc_func LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")

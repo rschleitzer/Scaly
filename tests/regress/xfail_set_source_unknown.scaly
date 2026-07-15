@@ -1,0 +1,22 @@
+; xfail: unknown identifier: TBL
+; A bare unresolvable identifier as the WHOLE source of a `set` (no
+; binary operator whose collapse check would catch it) used to emit
+; null and drop the statement silently — the S30 opensp bare-const-
+; array-as-RHS null (TBL defined AFTER the concept planning its
+; reader). Must be the same hard diagnostic as the binary-position
+; and assignment-target checks.
+
+define User
+{
+    procedure via_set() returns pointer[u32]
+    {
+        var p: pointer[u32] null
+        set p: TBL
+        p
+    }
+}
+
+define TBL: u32[] [11, 22, 33]
+
+let p1 User.via_set()
+exit 0

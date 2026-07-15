@@ -18433,6 +18433,30 @@ define Planner
                 }
             }
 
+            ; Unknown identifier as the WHOLE initializer (`let p TBL`
+            ; where TBL names nothing planned yet — the later-planned
+            ; global trap): the operand emits as null downstream and the
+            ; binding silently held null. Same loud diagnostic as the
+            ; binary-operator and set checks; the stack-array decl shape
+            ; (a legitimate lone PlannedType) is exempt above.
+            if rest_arr.length > 0
+            {
+                if is_stack_array_decl = false
+                {
+                    let init_unknown this.unknown_identifier_name(collapsed)
+                    if init_unknown.get_length() > 0
+                    {
+                        var bsb StringBuilder()
+                        bsb.append "unknown identifier: "
+                        bsb.append init_unknown
+                        let bvis this.use_vis_hint(init_unknown)
+                        if bvis.get_length() > 0
+                            bsb.append bvis
+                        this.add_diagnostic(collapsed.loc, bsb.to_string())
+                    }
+                }
+            }
+
             ; Rebuild PlannedItem with the peeled type if any.
             var planned_item: PlannedItem orig_item
             if has_peeled_type
@@ -18637,6 +18661,27 @@ define Planner
                     }
                     else
                         0
+
+            ; Unknown identifier as the WHOLE source of a `set`: a bare
+            ; single-operand RHS has no binary operator whose collapse
+            ; check would catch it — `set p: TBL` with TBL naming a
+            ; later-planned global emitted null and the whole statement
+            ; dropped SILENTLY (the S30 opensp bare-const-array-as-RHS
+            ; null). Same loud diagnostic + use hint as the binary check.
+            if a.target.length > 0
+            {
+                let src_unknown this.unknown_identifier_name(planned_source_collapsed)
+                if src_unknown.get_length() > 0
+                {
+                    var ssb StringBuilder()
+                    ssb.append "unknown identifier: "
+                    ssb.append src_unknown
+                    let svis this.use_vis_hint(src_unknown)
+                    if svis.get_length() > 0
+                        ssb.append svis
+                    this.add_diagnostic(planned_source_collapsed.loc, ssb.to_string())
+                }
+            }
 
             ; Double-quoted char literal as the IMPLICIT return (tail) of a
             ; char/u8-returning function (`function CHAR_X() returns char "]"`).

@@ -1,0 +1,94 @@
+; Regression: `set t: p.field` where t is an UNANNOTATED `var t SC()` —
+; the binding keeps a ptr slot (region-allocated zero-arg ctor), and the
+; assignment's RHS is a struct VALUE (member read through a pointer or a
+; by-value param). The emitter's s172 layout-mismatch path (ptr slot +
+; struct value -> heap-copy + store the new pointer) silently SKIPPED
+; when the function had neither a `_rp` param nor a set
+; current_region.local_page (a never-set null field): the raw
+; fall-through stored the 16-byte struct into the 8-byte ptr slot, so
+; the variable's pointer became the struct's first field and reads
+; walked garbage (opensp S30: StringC size field read from behind the
+; data buffer). Fixed by falling back to get_or_create_local_page()
+; like every other rp-fallback site.
+; Expected: PASS
+
+define SC (data: pointer[u32](null), size: size_t(0))
+{
+    init()
+    {
+        set data: null
+        set size: 0
+    }
+
+    init(n: size_t)
+    {
+        set size: n
+        let own_page Page.get(this as pointer[void])
+        set data: own_page.allocate(n * (4 as size_t), 4) as pointer[u32]
+        var i: size_t 0
+        while i < n
+        {
+            set *(data + i): (65 + i) as u32
+            set i: i + 1
+        }
+    }
+
+    function get_size(this: SC) returns size_t
+        size
+}
+
+define Parm (token: SC, kind: int)
+
+define Checker
+{
+    ; struct field read through a POINTER param as set-RHS
+    procedure via_ptr_member(pp: pointer[Parm]) returns size_t
+    {
+        var t SC()
+        set t: pp.token
+        t.get_size()
+    }
+
+    ; struct field read from a BY-VALUE param as set-RHS
+    procedure via_value_member(parm: Parm) returns size_t
+    {
+        var t SC()
+        set t: parm.token
+        t.get_size()
+    }
+
+    ; annotated variant stayed correct all along (struct slot)
+    procedure via_annotated(pp: pointer[Parm]) returns size_t
+    {
+        var t: SC SC()
+        set t: pp.token
+        t.get_size()
+    }
+}
+
+use scaly.memory.Page
+
+var ok true
+
+let parm Parm(SC(3 as size_t), 1)
+let pp &parm
+
+if Checker.via_ptr_member(pp) <> 3
+{
+    print "FAIL ptr member\n"
+    set ok: false
+}
+if Checker.via_value_member(parm) <> 3
+{
+    print "FAIL value member\n"
+    set ok: false
+}
+if Checker.via_annotated(pp) <> 3
+{
+    print "FAIL annotated\n"
+    set ok: false
+}
+
+if ok
+    print "PASS"
+0
