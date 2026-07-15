@@ -251183,15 +251183,16 @@ while.exit47:                                     ; preds = %while.cond45
 
 define linkonce_odr void @_ZN7Emitter13emit_constantEPN4scaly6memory4PageE15PlannedConstant11PlannedType(ptr noalias sret(%_Z12LLVMValueRef) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %arg.tmp118 = alloca { ptr }, align 8
-  %arg.tmp103 = alloca { ptr }, align 8
-  %arg.tmp98 = alloca { ptr }, align 8
-  %arg.tmp84 = alloca { ptr }, align 8
-  %sret.result82 = alloca %_Z12LLVMValueRef, align 8
-  %arg.tmp78 = alloca { ptr }, align 8
-  %arg.tmp62 = alloca { ptr }, align 8
+  %arg.tmp142 = alloca { ptr }, align 8
+  %arg.tmp127 = alloca { ptr }, align 8
+  %arg.tmp122 = alloca { ptr }, align 8
+  %arg.tmp108 = alloca { ptr }, align 8
+  %sret.result106 = alloca %_Z12LLVMValueRef, align 8
+  %arg.tmp102 = alloca { ptr }, align 8
+  %arg.tmp86 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  %llvm_type52 = alloca %_Z11LLVMTypeRef, align 8
+  %llvm_type76 = alloca %_Z11LLVMTypeRef, align 8
+  %sret.result38 = alloca %_Z11LLVMTypeRef, align 8
   %llvm_type = alloca ptr, align 8
   %sret.result = alloca %_Z11LLVMTypeRef, align 8
   %load.struct = load %_Z15PlannedConstant, ptr %3, align 1
@@ -251204,11 +251205,11 @@ entry:
     i8 0, label %choose.when
     i8 1, label %choose.when7
     i8 2, label %choose.when35
-    i8 3, label %choose.when45
-    i8 4, label %choose.when74
-    i8 5, label %choose.when90
-    i8 6, label %choose.when109
-    i8 7, label %choose.when121
+    i8 3, label %choose.when69
+    i8 4, label %choose.when98
+    i8 5, label %choose.when114
+    i8 6, label %choose.when133
+    i8 7, label %choose.when145
   ]
 
 choose.end:                                       ; preds = %choose.else, %if.end
@@ -251295,141 +251296,178 @@ if.end24:                                         ; preds = %if.then23, %if.end1
 choose.when35:                                    ; preds = %entry
   %"variant.c_data().ptr36" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
   %variant.val37 = load %_Z11HexConstant, ptr %"variant.c_data().ptr36", align 8
-  %load.struct38 = load %_Z7Emitter, ptr %2, align 8
-  %context39 = extractvalue %_Z7Emitter %load.struct38, 1
-  %handle40 = extractvalue %_Z14LLVMContextRef %context39, 0
-  %call41 = call %_Z11LLVMTypeRef @LLVMInt64TypeInContext(ptr %handle40)
-  %handle42 = extractvalue %_Z11LLVMTypeRef %call41, 0
-  %value43 = extractvalue %_Z11HexConstant %variant.val37, 1
-  %call44 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle42, i64 %value43, i64 0)
-  store %_Z12LLVMValueRef %call44, ptr %0, align 1
+  %field.inplace39 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
+  call void @_ZN7Emitter26map_intrinsic_type_by_nameEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result38, ptr %1, ptr %2, ptr %field.inplace39)
+  store ptr %sret.result38, ptr %llvm_type, align 1
+  %llvm_type40 = load ptr, ptr %llvm_type, align 8
+  %load.struct41 = load %_Z11LLVMTypeRef, ptr %llvm_type40, align 8
+  %handle42 = extractvalue %_Z11LLVMTypeRef %load.struct41, 0
+  %eq43 = icmp eq ptr %handle42, null
+  br i1 %eq43, label %if.then44, label %if.end45
+
+if.then44:                                        ; preds = %choose.when35
+  %load.struct46 = load %_Z7Emitter, ptr %2, align 8
+  %context47 = extractvalue %_Z7Emitter %load.struct46, 1
+  %handle48 = extractvalue %_Z14LLVMContextRef %context47, 0
+  %call49 = call %_Z11LLVMTypeRef @LLVMInt64TypeInContext(ptr %handle48)
+  %set.heap50 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z11LLVMTypeRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11LLVMTypeRef }, ptr null, i64 0, i32 1) to i64))
+  store %_Z11LLVMTypeRef %call49, ptr %set.heap50, align 1
+  store ptr %set.heap50, ptr %llvm_type, align 1
+  br label %if.end45
+
+if.end45:                                         ; preds = %if.then44, %choose.when35
+  %llvm_type51 = load ptr, ptr %llvm_type, align 8
+  %wrapper.load52 = load %_Z11LLVMTypeRef, ptr %llvm_type51, align 8
+  %handle53 = extractvalue %_Z11LLVMTypeRef %wrapper.load52, 0
+  %call54 = call i64 @LLVMGetTypeKind(ptr %handle53)
+  %call55 = call i64 @_ZN12LLVMTypeKind7IntegerEv()
+  %ne56 = icmp ne i64 %call54, %call55
+  br i1 %ne56, label %if.then57, label %if.end58
+
+if.then57:                                        ; preds = %if.end45
+  %load.struct59 = load %_Z7Emitter, ptr %2, align 8
+  %context60 = extractvalue %_Z7Emitter %load.struct59, 1
+  %handle61 = extractvalue %_Z14LLVMContextRef %context60, 0
+  %call62 = call %_Z11LLVMTypeRef @LLVMInt64TypeInContext(ptr %handle61)
+  %set.heap63 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z11LLVMTypeRef, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11LLVMTypeRef }, ptr null, i64 0, i32 1) to i64))
+  store %_Z11LLVMTypeRef %call62, ptr %set.heap63, align 1
+  store ptr %set.heap63, ptr %llvm_type, align 1
+  br label %if.end58
+
+if.end58:                                         ; preds = %if.then57, %if.end45
+  %llvm_type64 = load ptr, ptr %llvm_type, align 8
+  %wrapper.load65 = load %_Z11LLVMTypeRef, ptr %llvm_type64, align 8
+  %handle66 = extractvalue %_Z11LLVMTypeRef %wrapper.load65, 0
+  %value67 = extractvalue %_Z11HexConstant %variant.val37, 1
+  %call68 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle66, i64 %value67, i64 0)
+  store %_Z12LLVMValueRef %call68, ptr %0, align 1
   ret void
 
-choose.when45:                                    ; preds = %entry
-  %"variant.c_data().ptr46" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
-  %variant.val47 = load %_Z21FloatingPointConstant, ptr %"variant.c_data().ptr46", align 8
-  %load.struct48 = load %_Z7Emitter, ptr %2, align 8
-  %context49 = extractvalue %_Z7Emitter %load.struct48, 1
-  %handle50 = extractvalue %_Z14LLVMContextRef %context49, 0
-  %call51 = call %_Z11LLVMTypeRef @LLVMDoubleTypeInContext(ptr %handle50)
-  store %_Z11LLVMTypeRef %call51, ptr %llvm_type52, align 1
-  %field.inplace53 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1544 }, ptr %arg.tmp, align 1
-  %call54 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace53, ptr %arg.tmp)
-  br i1 %call54, label %if.then55, label %if.end56
-
-if.then55:                                        ; preds = %choose.when45
-  %load.struct57 = load %_Z7Emitter, ptr %2, align 8
-  %context58 = extractvalue %_Z7Emitter %load.struct57, 1
-  %handle59 = extractvalue %_Z14LLVMContextRef %context58, 0
-  %call60 = call %_Z11LLVMTypeRef @LLVMFloatTypeInContext(ptr %handle59)
-  store %_Z11LLVMTypeRef %call60, ptr %llvm_type52, align 1
-  br label %if.end56
-
-if.end56:                                         ; preds = %if.then55, %choose.when45
-  %field.inplace61 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1545 }, ptr %arg.tmp62, align 1
-  %call63 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace61, ptr %arg.tmp62)
-  br i1 %call63, label %if.then64, label %if.end65
-
-if.then64:                                        ; preds = %if.end56
-  %load.struct66 = load %_Z7Emitter, ptr %2, align 8
-  %context67 = extractvalue %_Z7Emitter %load.struct66, 1
-  %handle68 = extractvalue %_Z14LLVMContextRef %context67, 0
-  %call69 = call %_Z11LLVMTypeRef @LLVMFloatTypeInContext(ptr %handle68)
-  store %_Z11LLVMTypeRef %call69, ptr %llvm_type52, align 1
-  br label %if.end65
-
-if.end65:                                         ; preds = %if.then64, %if.end56
-  %llvm_type70 = load %_Z11LLVMTypeRef, ptr %llvm_type52, align 8
-  %handle71 = extractvalue %_Z11LLVMTypeRef %llvm_type70, 0
-  %value72 = extractvalue %_Z21FloatingPointConstant %variant.val47, 1
-  %call73 = call %_Z12LLVMValueRef @LLVMConstReal(ptr %handle71, double %value72)
-  store %_Z12LLVMValueRef %call73, ptr %0, align 1
-  ret void
-
-choose.when74:                                    ; preds = %entry
-  %"variant.c_data().ptr75" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
-  %variant.val76 = load %_Z14StringConstant, ptr %"variant.c_data().ptr75", align 8
+choose.when69:                                    ; preds = %entry
+  %"variant.c_data().ptr70" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
+  %variant.val71 = load %_Z21FloatingPointConstant, ptr %"variant.c_data().ptr70", align 8
+  %load.struct72 = load %_Z7Emitter, ptr %2, align 8
+  %context73 = extractvalue %_Z7Emitter %load.struct72, 1
+  %handle74 = extractvalue %_Z14LLVMContextRef %context73, 0
+  %call75 = call %_Z11LLVMTypeRef @LLVMDoubleTypeInContext(ptr %handle74)
+  store %_Z11LLVMTypeRef %call75, ptr %llvm_type76, align 1
   %field.inplace77 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
-  store { ptr } { ptr @.sconst.1546 }, ptr %arg.tmp78, align 1
-  %call79 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace77, ptr %arg.tmp78)
-  br i1 %call79, label %if.then80, label %if.end81
+  store { ptr } { ptr @.sconst.1544 }, ptr %arg.tmp, align 1
+  %call78 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace77, ptr %arg.tmp)
+  br i1 %call78, label %if.then79, label %if.end80
 
-if.then80:                                        ; preds = %choose.when74
-  %value83 = extractvalue %_Z14StringConstant %variant.val76, 1
-  store { ptr } %value83, ptr %arg.tmp84, align 1
-  call void @_ZN7Emitter20emit_string_constantEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result82, ptr %1, ptr %2, ptr %arg.tmp84)
-  %sret.body = load %_Z12LLVMValueRef, ptr %sret.result82, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result82, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
+if.then79:                                        ; preds = %choose.when69
+  %load.struct81 = load %_Z7Emitter, ptr %2, align 8
+  %context82 = extractvalue %_Z7Emitter %load.struct81, 1
+  %handle83 = extractvalue %_Z14LLVMContextRef %context82, 0
+  %call84 = call %_Z11LLVMTypeRef @LLVMFloatTypeInContext(ptr %handle83)
+  store %_Z11LLVMTypeRef %call84, ptr %llvm_type76, align 1
+  br label %if.end80
+
+if.end80:                                         ; preds = %if.then79, %choose.when69
+  %field.inplace85 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
+  store { ptr } { ptr @.sconst.1545 }, ptr %arg.tmp86, align 1
+  %call87 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace85, ptr %arg.tmp86)
+  br i1 %call87, label %if.then88, label %if.end89
+
+if.then88:                                        ; preds = %if.end80
+  %load.struct90 = load %_Z7Emitter, ptr %2, align 8
+  %context91 = extractvalue %_Z7Emitter %load.struct90, 1
+  %handle92 = extractvalue %_Z14LLVMContextRef %context91, 0
+  %call93 = call %_Z11LLVMTypeRef @LLVMFloatTypeInContext(ptr %handle92)
+  store %_Z11LLVMTypeRef %call93, ptr %llvm_type76, align 1
+  br label %if.end89
+
+if.end89:                                         ; preds = %if.then88, %if.end80
+  %llvm_type94 = load %_Z11LLVMTypeRef, ptr %llvm_type76, align 8
+  %handle95 = extractvalue %_Z11LLVMTypeRef %llvm_type94, 0
+  %value96 = extractvalue %_Z21FloatingPointConstant %variant.val71, 1
+  %call97 = call %_Z12LLVMValueRef @LLVMConstReal(ptr %handle95, double %value96)
+  store %_Z12LLVMValueRef %call97, ptr %0, align 1
   ret void
 
-if.end81:                                         ; preds = %choose.when74
-  %load.struct85 = load %_Z7Emitter, ptr %2, align 8
-  %builder = extractvalue %_Z7Emitter %load.struct85, 5
-  %handle86 = extractvalue %_Z14LLVMBuilderRef %builder, 0
-  %value87 = extractvalue %_Z14StringConstant %variant.val76, 1
-  store { ptr } %value87, ptr %arg.tmp84, align 1
-  %call88 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp84)
-  %call89 = call %_Z12LLVMValueRef @LLVMBuildGlobalStringPtr(ptr %handle86, ptr %call88, ptr @.str.1547)
-  store %_Z12LLVMValueRef %call89, ptr %0, align 1
+choose.when98:                                    ; preds = %entry
+  %"variant.c_data().ptr99" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
+  %variant.val100 = load %_Z14StringConstant, ptr %"variant.c_data().ptr99", align 8
+  %field.inplace101 = getelementptr inbounds %_Z11PlannedType, ptr %4, i32 0, i32 1
+  store { ptr } { ptr @.sconst.1546 }, ptr %arg.tmp102, align 1
+  %call103 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace101, ptr %arg.tmp102)
+  br i1 %call103, label %if.then104, label %if.end105
+
+if.then104:                                       ; preds = %choose.when98
+  %value107 = extractvalue %_Z14StringConstant %variant.val100, 1
+  store { ptr } %value107, ptr %arg.tmp108, align 1
+  call void @_ZN7Emitter20emit_string_constantEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z12LLVMValueRef) %sret.result106, ptr %1, ptr %2, ptr %arg.tmp108)
+  %sret.body = load %_Z12LLVMValueRef, ptr %sret.result106, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result106, i64 ptrtoint (ptr getelementptr (%_Z12LLVMValueRef, ptr null, i32 1) to i64), i1 false)
   ret void
 
-choose.when90:                                    ; preds = %entry
-  %"variant.c_data().ptr91" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
-  %variant.val92 = load %_Z17CharacterConstant, ptr %"variant.c_data().ptr91", align 8
-  %load.struct93 = load %_Z7Emitter, ptr %2, align 8
-  %context94 = extractvalue %_Z7Emitter %load.struct93, 1
-  %handle95 = extractvalue %_Z14LLVMContextRef %context94, 0
-  %call96 = call %_Z11LLVMTypeRef @LLVMInt8TypeInContext(ptr %handle95)
-  %value97 = extractvalue %_Z17CharacterConstant %variant.val92, 1
-  store { ptr } %value97, ptr %arg.tmp98, align 1
-  %call99 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp98)
-  %gt = icmp ugt i64 %call99, 0
-  br i1 %gt, label %if.then100, label %if.end101
-
-if.then100:                                       ; preds = %choose.when90
-  %value102 = extractvalue %_Z17CharacterConstant %variant.val92, 1
-  store { ptr } %value102, ptr %arg.tmp103, align 1
-  %call104 = call i8 @_ZN6String3getEm(ptr %arg.tmp103, i64 0)
-  %handle105 = extractvalue %_Z11LLVMTypeRef %call96, 0
-  %as.zext = zext i8 %call104 to i64
-  %call106 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle105, i64 %as.zext, i64 0)
-  store %_Z12LLVMValueRef %call106, ptr %0, align 1
+if.end105:                                        ; preds = %choose.when98
+  %load.struct109 = load %_Z7Emitter, ptr %2, align 8
+  %builder = extractvalue %_Z7Emitter %load.struct109, 5
+  %handle110 = extractvalue %_Z14LLVMBuilderRef %builder, 0
+  %value111 = extractvalue %_Z14StringConstant %variant.val100, 1
+  store { ptr } %value111, ptr %arg.tmp108, align 1
+  %call112 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp108)
+  %call113 = call %_Z12LLVMValueRef @LLVMBuildGlobalStringPtr(ptr %handle110, ptr %call112, ptr @.str.1547)
+  store %_Z12LLVMValueRef %call113, ptr %0, align 1
   ret void
 
-if.end101:                                        ; preds = %choose.when90
-  %handle107 = extractvalue %_Z11LLVMTypeRef %call96, 0
-  %call108 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle107, i64 0, i64 0)
-  store %_Z12LLVMValueRef %call108, ptr %0, align 1
+choose.when114:                                   ; preds = %entry
+  %"variant.c_data().ptr115" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
+  %variant.val116 = load %_Z17CharacterConstant, ptr %"variant.c_data().ptr115", align 8
+  %load.struct117 = load %_Z7Emitter, ptr %2, align 8
+  %context118 = extractvalue %_Z7Emitter %load.struct117, 1
+  %handle119 = extractvalue %_Z14LLVMContextRef %context118, 0
+  %call120 = call %_Z11LLVMTypeRef @LLVMInt8TypeInContext(ptr %handle119)
+  %value121 = extractvalue %_Z17CharacterConstant %variant.val116, 1
+  store { ptr } %value121, ptr %arg.tmp122, align 1
+  %call123 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp122)
+  %gt = icmp ugt i64 %call123, 0
+  br i1 %gt, label %if.then124, label %if.end125
+
+if.then124:                                       ; preds = %choose.when114
+  %value126 = extractvalue %_Z17CharacterConstant %variant.val116, 1
+  store { ptr } %value126, ptr %arg.tmp127, align 1
+  %call128 = call i8 @_ZN6String3getEm(ptr %arg.tmp127, i64 0)
+  %handle129 = extractvalue %_Z11LLVMTypeRef %call120, 0
+  %as.zext = zext i8 %call128 to i64
+  %call130 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle129, i64 %as.zext, i64 0)
+  store %_Z12LLVMValueRef %call130, ptr %0, align 1
   ret void
 
-choose.when109:                                   ; preds = %entry
-  %"variant.c_data().ptr110" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
-  %variant.val111 = load %_Z16FragmentConstant, ptr %"variant.c_data().ptr110", align 8
-  %load.struct112 = load %_Z7Emitter, ptr %2, align 8
-  %context113 = extractvalue %_Z7Emitter %load.struct112, 1
-  %handle114 = extractvalue %_Z14LLVMContextRef %context113, 0
-  %value115 = extractvalue %_Z16FragmentConstant %variant.val111, 1
-  store { ptr } %value115, ptr %arg.tmp103, align 1
-  %call116 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp103)
-  %value117 = extractvalue %_Z16FragmentConstant %variant.val111, 1
-  store { ptr } %value117, ptr %arg.tmp118, align 1
-  %call119 = call i64 @_ZN6String6lengthEv(ptr %arg.tmp118)
-  %call120 = call %_Z12LLVMValueRef @LLVMConstStringInContext(ptr %handle114, ptr %call116, i64 %call119, i64 0)
-  store %_Z12LLVMValueRef %call120, ptr %0, align 1
+if.end125:                                        ; preds = %choose.when114
+  %handle131 = extractvalue %_Z11LLVMTypeRef %call120, 0
+  %call132 = call %_Z12LLVMValueRef @LLVMConstInt(ptr %handle131, i64 0, i64 0)
+  store %_Z12LLVMValueRef %call132, ptr %0, align 1
   ret void
 
-choose.when121:                                   ; preds = %entry
-  %"variant.c_data().ptr122" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
-  %variant.val123 = load %_Z12NullConstant, ptr %"variant.c_data().ptr122", align 8
-  %load.struct124 = load %_Z7Emitter, ptr %2, align 8
-  %context125 = extractvalue %_Z7Emitter %load.struct124, 1
-  %handle126 = extractvalue %_Z14LLVMContextRef %context125, 0
-  %call127 = call %_Z11LLVMTypeRef @LLVMPointerTypeInContext(ptr %handle126, i64 0)
-  %handle128 = extractvalue %_Z11LLVMTypeRef %call127, 0
-  %call129 = call %_Z12LLVMValueRef @LLVMConstPointerNull(ptr %handle128)
-  store %_Z12LLVMValueRef %call129, ptr %0, align 1
+choose.when133:                                   ; preds = %entry
+  %"variant.c_data().ptr134" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
+  %variant.val135 = load %_Z16FragmentConstant, ptr %"variant.c_data().ptr134", align 8
+  %load.struct136 = load %_Z7Emitter, ptr %2, align 8
+  %context137 = extractvalue %_Z7Emitter %load.struct136, 1
+  %handle138 = extractvalue %_Z14LLVMContextRef %context137, 0
+  %value139 = extractvalue %_Z16FragmentConstant %variant.val135, 1
+  store { ptr } %value139, ptr %arg.tmp127, align 1
+  %call140 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp127)
+  %value141 = extractvalue %_Z16FragmentConstant %variant.val135, 1
+  store { ptr } %value141, ptr %arg.tmp142, align 1
+  %call143 = call i64 @_ZN6String6lengthEv(ptr %arg.tmp142)
+  %call144 = call %_Z12LLVMValueRef @LLVMConstStringInContext(ptr %handle138, ptr %call140, i64 %call143, i64 0)
+  store %_Z12LLVMValueRef %call144, ptr %0, align 1
+  ret void
+
+choose.when145:                                   ; preds = %entry
+  %"variant.c_data().ptr146" = getelementptr inbounds %_Z8Constant, ptr %choose.union, i32 0, i32 1
+  %variant.val147 = load %_Z12NullConstant, ptr %"variant.c_data().ptr146", align 8
+  %load.struct148 = load %_Z7Emitter, ptr %2, align 8
+  %context149 = extractvalue %_Z7Emitter %load.struct148, 1
+  %handle150 = extractvalue %_Z14LLVMContextRef %context149, 0
+  %call151 = call %_Z11LLVMTypeRef @LLVMPointerTypeInContext(ptr %handle150, i64 0)
+  %handle152 = extractvalue %_Z11LLVMTypeRef %call151, 0
+  %call153 = call %_Z12LLVMValueRef @LLVMConstPointerNull(ptr %handle152)
+  store %_Z12LLVMValueRef %call153, ptr %0, align 1
   ret void
 }
 

@@ -1,0 +1,21 @@
+; Regression: a HEX-literal constant read in a narrower typed position must
+; emit at the position's integer width. emit_constant's Hex arm always
+; emitted i64 (the Integer arm honored result_type since s105) — so reading
+; a `define X: u32 0xFFFFFFFF` module global and storing it through a
+; pointer[u32] emitted `store i64`, an 8-byte store into a 4-byte slot that
+; ZEROED the 4 bytes after it. Found in the wild via opensp's INVALID_U32
+; reset (ContentToken.reset_u32): the spill zeroed the low half of the
+; PageNode allocated right after elem_buf, and the region teardown chased
+; the mangled page pointer into a SIGBUS. Also fixes stdlib extern ABI:
+; mmap's i32 flags param now receives i32 4130 instead of i64.
+; Expected: PASS
+
+define ALL_ONES: u32 0xFFFFFFFF
+
+var cell: u64 0x1122334455667788
+let p (&cell) as pointer[u32]
+set *p: ALL_ONES
+if cell = (0x11223344FFFFFFFF as u64)
+    print "PASS\n"
+else
+    print "FAIL: hex u32 global store widened\n"

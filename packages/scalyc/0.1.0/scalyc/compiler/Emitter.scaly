@@ -4002,7 +4002,16 @@ define Emitter
             }
             when h: Hex
             {
-                let llvm_type LLVMInt64TypeInContext(context)
+                ; Honor a typed position's integer width, like the Integer
+                ; arm (s105) — an always-i64 hex constant read from a u32
+                ; module global (`define X: u32 0xFFFFFFFF`) makes a deref
+                ; store 8 bytes wide, zeroing the 4 bytes AFTER the slot.
+                ; Default stays i64 (stage-0 emitConstant hex behavior).
+                var llvm_type map_intrinsic_type_by_name result_type.name
+                if llvm_type.handle = null
+                    set llvm_type: LLVMInt64TypeInContext(context)
+                if LLVMGetTypeKind(llvm_type) <> LLVMTypeKind.Integer()
+                    set llvm_type: LLVMInt64TypeInContext(context)
                 return LLVMConstInt(llvm_type, h.value, 0)
             }
             when fp: FloatingPoint

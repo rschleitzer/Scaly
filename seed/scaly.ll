@@ -22414,7 +22414,7 @@ if.end:                                           ; preds = %if.then, %entry
   br i1 %eq, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end
-  %call7 = call ptr @mmap(ptr null, i64 %2, i32 3, i64 4130, i32 -1, i64 0)
+  %call7 = call ptr @mmap(ptr null, i64 %2, i32 3, i32 4130, i32 -1, i64 0)
   store ptr %call7, ptr %base, align 1
   %base8 = load ptr, ptr %base, align 8
   %as.ptrtoint = ptrtoint ptr %base8 to i64
