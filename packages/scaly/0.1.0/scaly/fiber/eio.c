@@ -293,6 +293,14 @@ long scaly_eio_read(int fd, void* buf, unsigned long count)
     return r;
 }
 
+/* (c) errno accessor: errno is a thread-local macro backed by a per-OS
+ * accessor symbol, unreadable through a direct Scaly extern. Callers must
+ * read it on the same thread, immediately after the failing libc call. */
+int scaly_eio_errno(void)
+{
+    return errno;
+}
+
 long scaly_eio_write(int fd, const void* buf, unsigned long count)
 {
     long r;
