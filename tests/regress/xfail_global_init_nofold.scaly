@@ -1,0 +1,13 @@
+; xfail: does not fold to a constant
+;
+; A module-level define initializer that cannot be folded to a single
+; integer constant must HARD-FAIL the compile (planner diagnostic,
+; rc 4) instead of the old silent mis-emission (@X = first constant,
+; reads returning the global's address). Mixed-precedence operator
+; sequences are rejected because the fold evaluates strictly left to
+; right — folding `1 + 2 * 3` as 9 would be silently wrong.
+
+define BAD: int 1 + 2 * 3
+
+let x BAD
+print "should not compile\n"

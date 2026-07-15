@@ -26704,9 +26704,10 @@ define Planner
             ; pointer[T] so *(X + i) indexes by element, not by byte.
             ; Mirrors stage-0 Emitter.cpp:1115-1204 + Planner.cpp:7021-7042.
             var global_type planned_type
+            var arr_count: size_t 0
             if g.is_mutable = false
             {
-                let arr_count Planner.global_array_count(value_holder)
+                set arr_count: Planner.global_array_count(value_holder)
                 if arr_count > 0
                 {
                     let ptr_ty Planner.make_pointer_type(planned_type)
@@ -26720,6 +26721,222 @@ define Planner
                         Planner.size_to_string(arr_count),
                         null
                     )
+                }
+            }
+            ; Scalar global initializer. The reference path (s88) inlines
+            ; ONLY a single PlannedConstant value and the Emitter takes
+            ; the initializer straight off it — every other shape used to
+            ; MIS-COMPILE SILENTLY: `define X: int 0 - 1` emitted
+            ; @X = constant 0 and reads yielded the global's ADDRESS
+            ; (store ptr @X); `define X: int -1` (two planned operands)
+            ; emitted an initializer-less external constant that fails at
+            ; link when referenced. Fold integer expressions whose
+            ; operators all sit on ONE precedence level — left-assoc
+            ; strict L2R is then exact (`0 - 1`, `-1`, `3 * 4`,
+            ; `MI_SET + N_SET` with inlined sibling constants) — into a
+            ; single Integer constant carrying the DECLARED type (so
+            ; emit_constant picks the global's width). Anything else is a
+            ; hard diagnostic instead of the old silent mis-emission.
+            if arr_count = 0
+            {
+                if value_holder.length > 0
+                {
+                    var is_plain_const: bool false
+                    if value_holder.length = 1
+                    {
+                        let single_ptr value_holder.get 0
+                        if single_ptr <> null
+                        {
+                            if (*single_ptr).member_access = null
+                            {
+                                choose (*single_ptr).expr
+                                    when sc: scalyc.compiler.Plan.PlannedConstant
+                                        set is_plain_const: true
+                                    else
+                                        0
+                            }
+                        }
+                    }
+                    if is_plain_const = false
+                    {
+                        ; pending op codes: 1 + | 2 - | 3 * | 4 / | 5 % |
+                        ; 6 << | 7 >> | 8 & | 9 '|' | 10 xor
+                        var folded: size_t 0
+                        var pending: int 0
+                        var seq_prec: int 0
+                        var neg: bool false
+                        var expect_value: bool true
+                        var fold_ok: bool true
+                        var fi: size_t 0
+                        while fi < value_holder.length
+                        {
+                            if fold_ok
+                            {
+                                let f_ptr value_holder.get fi
+                                var f_handled: bool false
+                                if f_ptr <> null
+                                {
+                                    let f_op (*f_ptr)
+                                    if f_op.member_access = null
+                                    {
+                                        choose f_op.expr
+                                            when fc: scalyc.compiler.Plan.PlannedConstant
+                                            {
+                                                if expect_value
+                                                {
+                                                    var fv: size_t 0
+                                                    var have_fv: bool false
+                                                    choose fc.value
+                                                        when fiv: Integer
+                                                        {
+                                                            set fv: fiv.value
+                                                            set have_fv: true
+                                                        }
+                                                        when fhv: Hex
+                                                        {
+                                                            set fv: fhv.value
+                                                            set have_fv: true
+                                                        }
+                                                        else
+                                                            0
+                                                    if have_fv
+                                                    {
+                                                        if neg
+                                                            set fv: 0 - fv
+                                                        var applied: bool true
+                                                        if pending = 0
+                                                            set folded: fv
+                                                        if pending = 1
+                                                            set folded: folded + fv
+                                                        if pending = 2
+                                                            set folded: folded - fv
+                                                        if pending = 3
+                                                            set folded: folded * fv
+                                                        if pending = 4
+                                                        {
+                                                            ; division by a folded zero can't
+                                                            ; constant-fold — diagnose, never trap
+                                                            if fv = 0
+                                                                set applied: false
+                                                            if fv <> 0
+                                                                set folded: folded / fv
+                                                        }
+                                                        if pending = 5
+                                                        {
+                                                            if fv = 0
+                                                                set applied: false
+                                                            if fv <> 0
+                                                                set folded: folded % fv
+                                                        }
+                                                        if pending = 6
+                                                            set folded: folded << fv
+                                                        if pending = 7
+                                                            set folded: folded >> fv
+                                                        if pending = 8
+                                                            set folded: folded & fv
+                                                        if pending = 9
+                                                            set folded: folded | fv
+                                                        if pending = 10
+                                                            set folded: folded xor fv
+                                                        if applied
+                                                        {
+                                                            set neg: false
+                                                            set expect_value: false
+                                                            set f_handled: true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            when ft: PlannedType
+                                            {
+                                                let opn ft.name
+                                                if expect_value
+                                                {
+                                                    ; exactly one unary minus may open a value slot
+                                                    if neg = false
+                                                    {
+                                                        if opn = "-"
+                                                        {
+                                                            set neg: true
+                                                            set f_handled: true
+                                                        }
+                                                    }
+                                                }
+                                                if expect_value = false
+                                                {
+                                                    var opc: int 0
+                                                    if opn = "+"
+                                                        set opc: 1
+                                                    if opn = "-"
+                                                        set opc: 2
+                                                    if opn = "*"
+                                                        set opc: 3
+                                                    if opn = "/"
+                                                        set opc: 4
+                                                    if opn = "%"
+                                                        set opc: 5
+                                                    if opn = "<<"
+                                                        set opc: 6
+                                                    if opn = ">>"
+                                                        set opc: 7
+                                                    if opn = "&"
+                                                        set opc: 8
+                                                    if opn = "|"
+                                                        set opc: 9
+                                                    if opn = "xor"
+                                                        set opc: 10
+                                                    if opc > 0
+                                                    {
+                                                        let p Planner.get_operator_precedence(opn)
+                                                        var prec_ok: bool true
+                                                        if seq_prec > 0
+                                                        {
+                                                            if p <> seq_prec
+                                                                set prec_ok: false
+                                                        }
+                                                        if prec_ok
+                                                        {
+                                                            set seq_prec: p
+                                                            set pending: opc
+                                                            set expect_value: true
+                                                            set f_handled: true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                                0
+                                    }
+                                }
+                                if f_handled = false
+                                    set fold_ok: false
+                            }
+                            set fi: fi + 1
+                        }
+                        if expect_value
+                            set fold_ok: false
+                        if fold_ok
+                        {
+                            let fold_const Constant.Integer(IntegerConstant(g.span, folded))
+                            let fold_operand PlannedOperand(
+                                g.span,
+                                PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant(fold_const)),
+                                null,
+                                planned_type
+                            )
+                            var fold_arr Array[PlannedOperand]()
+                            fold_arr.add fold_operand
+                            set value_holder: Vector[PlannedOperand](fold_arr)
+                        }
+                        if fold_ok = false
+                        {
+                            var gsb StringBuilder()
+                            gsb.append "module global initializer does not fold to a constant: "
+                            gsb.append name
+                            gsb.append " (use integer literals, optionally combined with operators of a single precedence level)"
+                            this.add_diagnostic(g.span, gsb.to_string())
+                        }
+                    }
                 }
             }
             let result PlannedGlobal(

@@ -1,0 +1,47 @@
+; Module-level define initializers fold constant integer expressions.
+; Before the fix, `define X: int 0 - 1` SILENTLY emitted @X = constant 0
+; (the `- 1` dropped) while reads returned the global's ADDRESS
+; (`store ptr @X` into an int field), and `define X: int -1` (two
+; planned operands) emitted an initializer-less external constant that
+; failed at link when referenced. Both now fold at plan time to a
+; single Integer constant carrying the declared type; reads inline it
+; (s88 path). Non-foldable initializers are a hard planner diagnostic
+; (see xfail_global_init_nofold.scaly).
+
+define NEG_LIT: int -1
+define NEG_EXPR: int 0 - 1
+define SUM: int 40 + 1 + 1
+define PROD: size_t 6 * 7
+define SHIFTED: u32 1 << 4
+define MASKED: i32 0xFF & 0x0F
+define NARROW: i32 -1
+
+define Holder(f: int)
+
+procedure field_roundtrip() returns int
+{
+    var h Holder(5)
+    set h.f: NEG_EXPR
+    h.f
+}
+
+let ok_lit NEG_LIT = 0 - 1
+let ok_expr NEG_EXPR = 0 - 1
+let ok_sum SUM = 42
+let ok_prod PROD = 42
+let ok_shift SHIFTED = 16
+let ok_mask MASKED = 15
+let fr field_roundtrip()
+let ok_field fr = 0 - 1
+
+var all_ok true
+if ok_lit = false: set all_ok: false
+if ok_expr = false: set all_ok: false
+if ok_sum = false: set all_ok: false
+if ok_prod = false: set all_ok: false
+if ok_shift = false: set all_ok: false
+if ok_mask = false: set all_ok: false
+if ok_field = false: set all_ok: false
+
+if all_ok: print "PASS\n"
+if all_ok = false: print "FAIL\n"
