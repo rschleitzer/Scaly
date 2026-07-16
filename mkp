@@ -40,6 +40,10 @@ if [ -d "$MSGDIR" ]; then
         base=$(basename "$m" .msg)
         python3 tools/msggen.py "$m" > "packages/opensp/0.1.0/opensp/$base.scaly"
     done
+    # nsgmls's own app-level table (unknownOutputOption + the -h help texts).
+    # RastEventHandlerMessages.msg joins when the -t RAST axis lands.
+    python3 tools/msggen.py "$MSGDIR/../nsgmls/NsgmlsMessages.msg" \
+        > "packages/opensp/0.1.0/opensp/NsgmlsMessages.scaly"
 else
     echo "mkp: skipping opensp message tables ($MSGDIR not found)"
 fi
