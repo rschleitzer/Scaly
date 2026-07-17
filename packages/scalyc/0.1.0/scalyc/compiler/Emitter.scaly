@@ -2699,6 +2699,18 @@ define Emitter
             return LLVMFloatTypeInContext context
         if name = "double"
             return LLVMDoubleTypeInContext context
+        ; f32/f64 — the planner's own names for float-literal results
+        ; (plan_constant_type stamps a bare `3.0` as "f64"). Without these
+        ; entries a float-literal-typed binding fell through to map_type's
+        ; opaque-ptr fallback and every read emitted `load ptr` against the
+        ; `alloca double` slot — passed as a ctor/call argument the ABI skews
+        ; (the double lands in a GPR, every later arg shifts) and the callee
+        ; reads garbage. The DWARF basic-type table (llvm_di_basic_type)
+        ; already carried both names; this table must agree.
+        if name = "f32"
+            return LLVMFloatTypeInContext context
+        if name = "f64"
+            return LLVMDoubleTypeInContext context
         LLVMTypeRef null
     }
 

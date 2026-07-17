@@ -1,0 +1,56 @@
+; A float-literal-typed binding (`var cv 3.0` — planned as "f64") read as a
+; call/ctor ARGUMENT must load `double`, not fall through map_type to the
+; opaque-ptr fallback. The bad `load ptr` skewed the call ABI: the double
+; landed in a GPR, every later argument shifted one slot, and the callee
+; read garbage (found by the dazzle ELObj port: QuantityValue's field after
+; the double came back as a pointer value). Fixed by teaching
+; map_intrinsic_type_by_name the planner's own "f64"/"f32" names.
+
+define QV (a: int, b: int, c: double, d: int)
+{
+    init(a: int, b: int, c: double, d: int)
+    {
+        set this.a: a
+        set this.b: b
+        set this.c: c
+        set this.d: d
+    }
+
+    function make_qv() returns QV
+    {
+        var a 1
+        var b 2
+        var c 3.0
+        var d 4
+        QV(a, b, c, d)
+    }
+
+    function halve(x: double) returns double
+        x / 2.0
+}
+
+; ctor with a float-literal-typed variable argument, in main
+var cv 3.0
+let qv QV(1, 2, cv, 4)
+if qv.a <> 1
+    exit(1)
+if qv.b <> 2
+    exit(2)
+if qv.d <> 4
+    exit(3)
+
+; the same shape inside a concept function returning the struct by value
+let qv2 QV.make_qv()
+if qv2.a <> 1
+    exit(4)
+if qv2.b <> 2
+    exit(5)
+if qv2.d <> 4
+    exit(6)
+
+; plain function call with a float-literal-typed variable argument
+let h QV.halve(cv)
+if h = 1.5
+    print("PASS")
+else
+    exit(7)
