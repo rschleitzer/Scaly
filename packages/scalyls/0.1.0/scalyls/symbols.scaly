@@ -7898,6 +7898,23 @@ define symbols
             if name.get_length() > (0 as size_t)
             {
                 let active symbols.count_active_param(source, paren, offset)
+                ; Method call `recv.name(`? Scope overload resolution to the
+                ; receiver's concept first, so a same-named routine in an
+                ; unrelated package can't shadow it (the unscoped searches below
+                ; return the first file's `name`, whichever concept it belongs
+                ; to). Falls through when the receiver / its type can't be
+                ; resolved lexically (reassigned or call-bound receivers).
+                let receiver symbols.receiver_before_method(source, paren)
+                if receiver.get_length() > (0 as size_t)
+                {
+                    let concept symbols.resolve_variable_type(source, receiver)
+                    if concept.get_length() > (0 as size_t)
+                    {
+                        let scoped symbols.find_signature_in_concept_ws(uri, concept, name, active)
+                        if scoped.get_length() > (0 as size_t)
+                            return scoped
+                    }
+                }
                 let here symbols.find_signature(source, name, active)
                 if here.get_length() > (0 as size_t)
                     return here
@@ -7985,6 +8002,54 @@ define symbols
             set s: s - (1 as size_t)
         }
         symbols.substring(source, s, e)
+    }
+
+    ; The receiver identifier of a method call `recv.NAME(` whose `(` is at
+    ; `paren_pos` — the token before the `.` that precedes the method name. ""
+    ; when the call is not a simple `ident.NAME(` (a free function `NAME(`, or a
+    ; chained/parenthesised receiver like `).NAME(`). Used to scope signatureHelp
+    ; overload resolution to the receiver's concept.
+    function receiver_before_method(rp, source: String, paren_pos: size_t) returns String
+    {
+        var e paren_pos
+        while e > (0 as size_t)
+        {
+            let c source.get(e - (1 as size_t))
+            if c <> (0x20 as u8)
+                if c <> (0x09 as u8)
+                    if c <> (0x0A as u8)
+                        if c <> (0x0D as u8)
+                            break
+            set e: e - (1 as size_t)
+        }
+        if e = (0 as size_t)
+            return ""
+        if symbols.is_ident_byte(source.get(e - (1 as size_t))) = false
+            return ""
+        var s e
+        while s > (0 as size_t)
+        {
+            if symbols.is_ident_byte(source.get(s - (1 as size_t))) = false
+                break
+            set s: s - (1 as size_t)
+        }
+        if s = (0 as size_t)
+            return ""
+        if source.get(s - (1 as size_t)) <> (0x2E as u8)      ; '.'
+            return ""
+        var re s - (1 as size_t)
+        if re = (0 as size_t)
+            return ""
+        if symbols.is_ident_byte(source.get(re - (1 as size_t))) = false
+            return ""
+        var rs re
+        while rs > (0 as size_t)
+        {
+            if symbols.is_ident_byte(source.get(rs - (1 as size_t))) = false
+                break
+            set rs: rs - (1 as size_t)
+        }
+        symbols.substring(source, rs, re)
     }
 
     ; Count depth-0 commas between `paren_pos` and `offset` — the 0-based index
@@ -9719,6 +9784,75 @@ define symbols
                                     symindex.put(fpath, chash, blob)
                                 }
                                 set result: symbols.sig_from_ws_blob(blob, name, active)
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        result
+    }
+
+    ; Concept-scoped cross-file signatureHelp: the signature of routine `name`
+    ; as declared by the concept `concept` (the receiver's resolved type), so a
+    ; method call `recv.name(` picks the RIGHT overload even when an unrelated
+    ; package declares a same-named routine (e.g. StringBuilder.append vs
+    ; dazzle's BoundVarList.append). Directory tree first, then the package tree
+    ; (matching find_signature_in_workspace#). "" when not found -> the caller
+    ; falls back to the unscoped, name-only search.
+    function find_signature_in_concept_ws(rp, uri: String, concept: String, name: String, active: size_t) returns String
+    {
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
+        let here symbols.find_signature_in_concept_dir(dir, path, concept, name, active)
+        if here.get_length() > (0 as size_t)
+            return here
+        let pkg symbols.package_search_dir path
+        if pkg.get_length() > (0 as size_t)
+            if pkg <> dir
+                return symbols.find_signature_in_concept_dir(pkg, path, concept, name, active)
+        ""
+    }
+
+    ; Enumerate the .scaly files under `dir` (recursively); on the first whose
+    ; cached blob DEFINES `concept` (carries an "M" member record for it), return
+    ; that same blob's signature for routine `name`. Mirrors find_signature_in_dir#
+    ; but gates on the concept, so the signature is read from the receiver's own
+    ; type's file — not the first file that happens to declare `name`. "" if none.
+    function find_signature_in_concept_dir(rp, dir: String, self_path: String, concept: String, name: String, active: size_t) returns String
+    {
+        if dir.get_length() = (0 as size_t)
+            return ""
+        let listing symbols.list_scaly_files dir
+
+        var result ""
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            if listing.get(i) = (10 as char)
+            {
+                if result.get_length() = (0 as size_t)
+                {
+                    let fpath symbols.substring(listing, line_start, i)
+                    if fpath.get_length() > (0 as size_t)
+                        if fpath <> self_path
+                            if File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string(fpath)
+                                let chash fsrc.hash()
+                                var blob ""
+                                if symindex.valid(fpath, chash)
+                                    set blob: symindex.get_blob fpath
+                                if symindex.valid(fpath, chash) = false
+                                {
+                                    let furi symbols.path_to_uri fpath
+                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
+                                    symindex.put(fpath, chash, blob)
+                                }
+                                if symbols.members_from_ws_blob(blob, concept).get_length() > (0 as size_t)
+                                    set result: symbols.sig_from_ws_blob(blob, name, active)
                             }
                 }
                 set line_start: i + (1 as size_t)
