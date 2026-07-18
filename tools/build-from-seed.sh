@@ -62,12 +62,20 @@ if [ "$use_opt" = "1" ]; then
     # link step, so those declarations must resolve to real functions the scalyc
     # binary exports (emit_jit_stubs dlsym's them and only null-stubs the truly
     # absent ones). Two textual IR edits bracket opt to guarantee that:
-    #   1. linkonce_odr -> weak_odr BEFORE opt. A linkonce_odr body with no
-    #      surviving external reference is DCE'd by opt (StringBuilder's ctor,
-    #      Page.get/get_capacity/allocate_exclusive_page, ... get fully inlined
-    #      into the compiler and dropped). weak_odr is non-discardable, so every
-    #      runtime body is retained out-of-line even after inlining. Without this
-    #      the JIT crashes on an uninitialized StringBuilder (missing ctor body).
+    #   1. linkonce_odr -> weak_odr BEFORE llvm-link. A linkonce_odr body with
+    #      no surviving external reference is DCE'd — first by llvm-link itself
+    #      (it discards unreferenced linkonce_odr on merge), then by opt's inliner
+    #      + GlobalDCE (StringBuilder's ctor, Page.get/get_capacity, ... get fully
+    #      inlined into the compiler and dropped). weak_odr is non-discardable, so
+    #      every runtime body is retained out-of-line even after inlining. The
+    #      conversion MUST happen on each input BEFORE llvm-link, not on the linked
+    #      module after: stdlib functions the COMPILER never calls but a JIT'd
+    #      dependency package does (e.g. File.write_from_string — dazzle uses it,
+    #      scalyc doesn't) are unreferenced in the linked set and llvm-link drops
+    #      them before a post-link sed could protect them, so --jit then can't
+    #      resolve them ("failed to materialize"). Converting first keeps the whole
+    #      stdlib JIT-visible. Without this the JIT crashes on an uninitialized
+    #      StringBuilder (missing ctor body) or a missing dep-only stdlib symbol.
     #   2. strip (local_)unnamed_addr AFTER opt. A linkonce/weak_odr function
     #      carrying unnamed_addr is `weak_def_can_be_hidden`, which macOS ld
     #      collapses to a LOCAL symbol — dlsym and the ORC process generator then
@@ -77,9 +85,11 @@ if [ "$use_opt" = "1" ]; then
     # AOT/-c is unaffected (real bodies come from libscaly.a). The bootstrap
     # multi-object link keeps these symbols global on its own; this is only the
     # whole-program build's equivalent. ~6% larger binary, emission unchanged.
-    "$LLVM_LINK" -S "$SEED/main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyc_linked.ll"
-    sed 's/^define linkonce_odr /define weak_odr /' "$WORK/scalyc_linked.ll" > "$WORK/scalyc_weak.ll"
-    "$OPT" -O2 -S "$WORK/scalyc_weak.ll" -o "$WORK/scalyc_opt.ll"
+    for f in main scalyc scaly; do
+        sed 's/^define linkonce_odr /define weak_odr /' "$SEED/$f.ll" > "$WORK/${f}_weak.ll"
+    done
+    "$LLVM_LINK" -S "$WORK/main_weak.ll" "$WORK/scalyc_weak.ll" "$WORK/scaly_weak.ll" -o "$WORK/scalyc_linked.ll"
+    "$OPT" -O2 -S "$WORK/scalyc_linked.ll" -o "$WORK/scalyc_opt.ll"
     sed '/^define /s/\(local_\)\?unnamed_addr //g' "$WORK/scalyc_opt.ll" > "$WORK/scalyc_export.ll"
     # -relocation-model=pic: x86-64 Linux links executables as PIE, which rejects
     # llc's default (static) R_X86_64_32 absolute relocations. PIC is the default
