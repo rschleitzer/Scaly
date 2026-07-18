@@ -871,9 +871,22 @@ define cli
         let obj_ok dep_emitter.write_object_to_file out_obj
         if obj_ok = false
             return false
+        ; f.mangled_name lives on dep_plan's region, which is freed when this
+        ; procedure returns — a shallow (*syms).add would leave a String handle
+        ; dangling into freed memory (later overwritten; get_length then reads a
+        ; corrupt varint length prefix and exit 11s during emit_jit_stubs). The
+        ; caller's Array `syms` is page-hosted on the caller region that outlives
+        ; jit_run, so deep-copy each name onto THAT page (Page.get(syms)) — the
+        ; same page-anchoring idiom Array.add uses for its own storage.
         if dep_plan.functions <> null
+        {
+            let sym_page Page.get(syms as pointer[void])
             for f in dep_plan.functions
-                (*syms).add f.mangled_name
+            {
+                let durable_name String^sym_page(f.mangled_name)
+                (*syms).add durable_name
+            }
+        }
         true
     }
 

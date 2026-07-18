@@ -289828,6 +289828,7 @@ if.end325:                                        ; preds = %if.end307
 
 define linkonce_odr i1 @_ZN3cli29compile_dep_package_to_objectE6String6StringP5ArrayI6StringE(ptr %0, ptr %1, ptr %2) {
 entry:
+  %arg.tmp = alloca { ptr }, align 8
   %iter.alloca = alloca %_Z14VectorIteratorI15PlannedFunctionE, align 8
   %dep_emitter = alloca ptr, align 8
   %dep_config = alloca ptr, align 8
@@ -289951,9 +289952,10 @@ if.end32:                                         ; preds = %if.end27
   br i1 %ne, label %if.then33, label %if.end34
 
 if.then33:                                        ; preds = %if.end32
-  %load.struct35 = load %_Z4Plan, ptr %call13, align 8
-  %functions36 = extractvalue %_Z4Plan %load.struct35, 4
-  call void @_ZN6VectorI15PlannedFunctionE12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca, ptr %local_page, ptr %functions36)
+  %call35 = call ptr @_ZN4Page3getEPv(ptr %2)
+  %load.struct36 = load %_Z4Plan, ptr %call13, align 8
+  %functions37 = extractvalue %_Z4Plan %load.struct36, 4
+  call void @_ZN6VectorI15PlannedFunctionE12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca, ptr %local_page, ptr %functions37)
   br label %for.cond
 
 if.end34:                                         ; preds = %for.exit, %if.end32
@@ -289966,8 +289968,12 @@ for.cond:                                         ; preds = %for.body, %if.then3
   br i1 %is.done, label %for.exit, label %for.body
 
 for.body:                                         ; preds = %for.cond
-  %field.inplace = getelementptr inbounds %_Z15PlannedFunction, ptr %next, i32 0, i32 4
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %2, ptr %field.inplace)
+  %struct.region38 = call ptr @_ZN4Page8allocateEmm(ptr %call35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %load.struct39 = load %_Z15PlannedFunction, ptr %next, align 8
+  %mangled_name = extractvalue %_Z15PlannedFunction %load.struct39, 4
+  store { ptr } %mangled_name, ptr %arg.tmp, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region38, ptr %arg.tmp)
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %2, ptr %struct.region38)
   br label %for.cond
 
 for.exit:                                         ; preds = %for.cond
