@@ -487,11 +487,14 @@ define cli
             set planner.use_vis_measure: true
         if opts.no_use_vis
             set planner.use_vis_enforce: false
-        ; --jit: plan non-prelude dependency-package bodies into the JIT module
-        ; (otherwise their calls resolve to 0-returning stubs — the false-pass
-        ; that hid opensp's unit tests). AOT/seed emission is unaffected.
-        if opts.jit_program
-            set planner.jit_dep_bodies: true
+        ; --jit / --run: dependency-package bodies are NOT planned into the
+        ; program module (the old jit_dep_bodies path mis-planned large
+        ; dependency bodies into corrupt plans — both the escape walker and the
+        ; emitter crashed on them). Instead each non-scaly dependency package is
+        ; AOT-compiled through the known-good ROOT path into an object and added
+        ; to the JITDylib (cli.compile_jit_dependencies + Emitter.jit_run), so
+        ; the program's extern declarations link against the real bodies. The
+        ; program itself plans identically to the AOT (-c) build.
         cli.register_packages(&planner, &model)
         let plan planner.plan_program model
 
@@ -569,7 +572,11 @@ define cli
             var jit_config EmitterConfig()
             set jit_config.emit_debug_info: false
             var jit_emitter Emitter.Emitter(jit_config)
-            let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled)
+            var run_dep_objs Array[String]()
+            var run_dep_syms Array[String]()
+            if cli.compile_jit_dependencies(&model, &run_dep_objs, &run_dep_syms) = false
+                return 4
+            let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled, &run_dep_objs, &run_dep_syms)
             return jit_rc as int
         }
 
@@ -584,7 +591,11 @@ define cli
             var prog_config EmitterConfig()
             set prog_config.emit_debug_info: false
             var prog_emitter Emitter.Emitter(prog_config)
-            let prog_rc prog_emitter.jit_run(plan, program_name, "main")
+            var prog_dep_objs Array[String]()
+            var prog_dep_syms Array[String]()
+            if cli.compile_jit_dependencies(&model, &prog_dep_objs, &prog_dep_syms) = false
+                return 4
+            let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms)
             return prog_rc as int
         }
 
@@ -782,6 +793,88 @@ define cli
             }
             set i: i + 1
         }
+    }
+
+    ; --jit/--run: AOT-compile every non-scaly dependency package to an object
+    ; and collect the mangled names each defines. jit_run adds these objects to
+    ; the JITDylib so the program module's extern declarations of dependency
+    ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
+    ; stdlib is skipped — its symbols are already in the host scalyc image and
+    ; resolve via the ORC process generator. Returns false on any dep failure.
+    procedure compile_jit_dependencies(model: ref[Program], dep_objs: pointer[Array[String]], dep_syms: pointer[Array[String]]) returns bool
+    {
+        var i: size_t 0
+        while i < model.packages.length
+        {
+            let pkg_ptr model.packages.get i
+            if pkg_ptr <> null
+            {
+                let pkg (*pkg_ptr)
+                if pkg.name.equals("scaly") = false
+                {
+                    var objsb StringBuilder()
+                    objsb.append "/tmp/scalyc_jitdep_"
+                    objsb.append pkg.name
+                    objsb.append ".o"
+                    let obj_path objsb.to_string()
+                    if cli.compile_dep_package_to_object(pkg.file, obj_path, dep_syms) = false
+                    {
+                        Console.println "Error: could not compile dependency package for JIT"
+                        return false
+                    }
+                    (*dep_objs).add obj_path
+                }
+            }
+            set i: i + 1
+        }
+        true
+    }
+
+    ; Compile a dependency package (its entry .scaly file) through the same
+    ; ROOT compilation path that builds libopensp.a/libdazzle.a — prelude OFF
+    ; (its scaly-stdlib calls resolve from the host process at JIT link) — into
+    ; an object at out_obj, and append the mangled names it defines to `syms`.
+    ; This ROOT path plans the package's bodies correctly (unlike the retired
+    ; jit_dep_bodies dependency path). Returns false on any failure.
+    procedure compile_dep_package_to_object(entry_file: String, out_obj: String, syms: pointer[Array[String]]) returns bool
+    {
+        var source File.read_to_string(entry_file)
+        if source.get_length() = 0
+        {
+            Console.println "Error: could not read dependency package source"
+            return false
+        }
+        var p parser.Parser(source)
+        var syntax: parser.ProgramSyntax
+        choose p.parse_program()
+            when err: Error
+                return false
+            when program: Success
+                set syntax: program
+        let dep_name cli.extract_program_name(entry_file)
+        let dep_model Modeler.build_program(entry_file, dep_name, syntax, false)
+        if Modeler.had_errors()
+            return false
+        var dep_planner Planner.Planner(entry_file)
+        cli.register_packages(&dep_planner, &dep_model)
+        let dep_plan dep_planner.plan_program dep_model
+        if dep_plan = null
+            return false
+        if dep_planner.has_diagnostics()
+            return false
+        var dep_config EmitterConfig()
+        set dep_config.emit_debug_info: false
+        var dep_emitter Emitter.Emitter(dep_config)
+        let dep_emit_ok dep_emitter.emit(dep_plan, dep_name)
+        if dep_emit_ok = false
+            return false
+        let obj_ok dep_emitter.write_object_to_file out_obj
+        if obj_ok = false
+            return false
+        if dep_plan.functions <> null
+            for f in dep_plan.functions
+                (*syms).add f.mangled_name
+        true
     }
 
     ; Print hard planner diagnostics in stage-0's error format:

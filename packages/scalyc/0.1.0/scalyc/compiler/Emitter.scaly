@@ -4658,7 +4658,51 @@ define Emitter
     ; e.g. StringBuilder's ctor) and strips unnamed_addr after opt (else macOS
     ; ld auto-hides the weak_def_can_be_hidden symbols to local). See the
     ; comment block around the whole-program opt path in that script.
-    procedure emit_jit_stubs(this)
+    ; True when the cstring [name_ptr, name_len) equals one of the mangled
+    ; names in `set` (a dependency-package's provided symbols). Linear scan —
+    ; the set is small (one entry per dep-package top-level function) and this
+    ; runs once per module declaration at JIT setup.
+    function jit_symbol_in_set(this, sym_set: pointer[Array[String]], name_ptr: pointer[const_char], name_len: size_t) returns bool
+    {
+        if sym_set = null
+            return false
+        let arr (*sym_set)
+        var i: size_t 0
+        while i < arr.length
+        {
+            let sp arr.get i
+            if sp <> null
+            {
+                let s (*sp)
+                if s.get_length() = name_len
+                {
+                    let sd s.c_data()
+                    var j: size_t 0
+                    var eq: bool true
+                    while j < name_len
+                    {
+                        if (*(sd + j)) <> (*(name_ptr + j))
+                        {
+                            set eq: false
+                            set j: name_len
+                        }
+                        set j: j + 1
+                    }
+                    if eq
+                        return true
+                }
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; dep_symbols: mangled names DEFINED by dependency-package objects that
+    ; jit_run adds to the JITDylib (null when there are none). A declared-only
+    ; symbol in that set must NOT be stubbed — the ORC object linker resolves
+    ; it to the real dependency body; a null-returning stub here would shadow
+    ; it (the old jit_dep_bodies false-pass). Everything else is unchanged.
+    procedure emit_jit_stubs(this, dep_symbols: pointer[Array[String]])
     {
         ; Skip symbols the host process already exports so the ORC process
         ; generator can resolve the REAL function (see the per-symbol note
@@ -4682,6 +4726,11 @@ define Emitter
                             if (*(name_ptr + 1)) = 90
                                 set is_scaly_mangled: true
                         }
+                        ; A dependency-package object provides the real body —
+                        ; leave the declaration for the ORC object linker.
+                        if is_scaly_mangled
+                            if this.jit_symbol_in_set(dep_symbols, name_ptr, name_len)
+                                set is_scaly_mangled: false
                         ; Skip symbols the host process already exports —
                         ; the RBMM runtime + stdlib (Page.allocate, String/
                         ; Vector/StringBuilder bodies, ...) are all defined in
@@ -4748,7 +4797,16 @@ define Emitter
     ; the s34 single-ptr-struct param ABI bug (the callee binds the param to
     ; the caller's stack slot, not the handle), giving the ThreadSafeModule a
     ; garbage context whose recursive_mutex traps EINVAL in addIRModule.
-    function jit_run(this, plan: Plan, module_name: String, fn_mangled: String) returns i64
+    ; dep_object_files: temp object paths for non-host dependency packages,
+    ; each AOT-compiled through the known-good root path (see cli.run). They
+    ; are added to the JIT's main JITDylib so the program module's extern
+    ; declarations of dependency functions link against the real bodies —
+    ; replacing the fragile jit_dep_bodies planner path (which mis-planned
+    ; large dependency bodies into corrupt plans; both the escape walker and
+    ; the emitter crashed on them). dep_object_symbols: the mangled names those
+    ; objects define, so emit_jit_stubs leaves them as declarations. Both null
+    ; when the program has no non-scaly dependencies (behavior unchanged).
+    function jit_run(this, plan: Plan, module_name: String, fn_mangled: String, dep_object_files: pointer[Array[String]], dep_object_symbols: pointer[Array[String]]) returns i64
     {
         let tsc LLVMOrcCreateNewThreadSafeContext()
         let jit_ctx LLVMOrcThreadSafeContextGetContext(tsc)
@@ -4774,8 +4832,9 @@ define Emitter
         LLVMInitializeX86TargetMC()
         LLVMInitializeX86AsmPrinter()
 
-        ; Stub declared-only Scaly symbols so JIT linking can't fail on them.
-        emit_jit_stubs()
+        ; Stub declared-only Scaly symbols so JIT linking can't fail on them —
+        ; except the ones a dependency-package object will supply.
+        emit_jit_stubs(dep_object_symbols)
 
         let valid verify_module()
         if valid = false
@@ -4832,6 +4891,38 @@ define Emitter
             return 127
         }
         LLVMOrcJITDylibAddGenerator(jd, gen)
+
+        ; Add dependency-package objects (AOT-compiled via the root path) to
+        ; the JITDylib BEFORE the program module, so the module's extern decls
+        ; of dependency functions resolve to the real bodies. Each file is
+        ; loaded into a MemoryBuffer that AddObjectFile consumes.
+        if dep_object_files <> null
+        {
+            let objs (*dep_object_files)
+            var oi: size_t 0
+            while oi < objs.length
+            {
+                let op objs.get oi
+                if op <> null
+                {
+                    let obj_path (*op)
+                    var objbuf LLVMMemoryBufferRef(null)
+                    let mb_err LLVMCreateMemoryBufferWithContentsOfFile(obj_path.to_c_string(), &objbuf, null as pointer[pointer[char]])
+                    if mb_err <> 0
+                    {
+                        Console.println "JIT: could not read dependency object"
+                        return 127
+                    }
+                    let obj_err LLVMOrcLLJITAddObjectFile(jit, jd, objbuf)
+                    if obj_err.handle <> null
+                    {
+                        report_jit_error(obj_err, "JIT: could not add dependency object")
+                        return 127
+                    }
+                }
+                set oi: oi + 1
+            }
+        }
 
         ; Add the module to the JIT.
         let add_err LLVMOrcLLJITAddLLVMIRModule(jit, jd, tsm)

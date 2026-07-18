@@ -742,6 +742,15 @@ procedure LLVMOrcJITDylibAddGenerator(jd: LLVMOrcJITDylibRef, g: LLVMOrcDefiniti
 ; writes the resolved address into *result; pass the IR symbol name WITHOUT a
 ; leading global prefix (ORC applies the prefix itself). Returns LLVMErrorRef.
 function LLVMOrcLLJITAddLLVMIRModule(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, tsm: LLVMOrcThreadSafeModuleRef) returns LLVMErrorRef extern
+; Add a relocatable object file (dependency package, AOT-compiled through the
+; known-good root path) to a JITDylib. CONSUMES the memory buffer. The object's
+; linkonce_odr/weak symbols become resolvable across the dylib, so the program
+; module's extern declarations of dependency-package functions link against the
+; real bodies instead of the null-returning jit stub. Returns LLVMErrorRef.
+function LLVMOrcLLJITAddObjectFile(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, objbuf: LLVMMemoryBufferRef) returns LLVMErrorRef extern
+; Load a file into a MemoryBuffer (used to hand a dep-package object to the
+; JIT). Returns an LLVMBool (0 = success); writes the buffer to *out.
+function LLVMCreateMemoryBufferWithContentsOfFile(path: pointer[const_char], out: pointer[LLVMMemoryBufferRef], msg: pointer[pointer[char]]) returns int extern
 ; LLVMOrcExecutorAddress is a bare u64 (a runtime code address), so the
 ; result is pointer[u64], NOT a wrapper-struct pointer.
 function LLVMOrcLLJITLookup(j: LLVMOrcLLJITRef, result: pointer[u64], name: pointer[const_char]) returns LLVMErrorRef extern
