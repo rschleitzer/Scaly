@@ -23,6 +23,44 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z4ListI9JsonValueE = type { ptr }
 %_Z4NodeI10JsonMemberE = type { %_Z10JsonMember, ptr }
 %_Z4NodeI9JsonValueE = type { %_Z9JsonValue, ptr }
+%_Z6VectorI6StringE = type { i64, ptr }
+%_Z14VectorIteratorI6StringE = type { ptr, i64 }
+%_Z5SliceI6StringE = type { ptr, i64 }
+%_Z13SliceIteratorI6StringE = type { %_Z5SliceI6StringE, i64 }
+%_Z5ArrayI6StringE = type { i64, ptr }
+%_Z13ArrayIteratorI6StringE = type { ptr, i64 }
+%_Z4ListI6StringE = type { ptr }
+%_Z4NodeI6StringE = type { { ptr }, ptr }
+%_Z12ListIteratorI6StringE = type { ptr }
+%_Z6VectorI6VectorI6StringEE = type { i64, ptr }
+%_Z14VectorIteratorI6VectorI6StringEE = type { ptr, i64 }
+%_Z5SliceI6VectorI6StringEE = type { ptr, i64 }
+%_Z13SliceIteratorI6VectorI6StringEE = type { %_Z5SliceI6VectorI6StringEE, i64 }
+%_Z5ArrayI6VectorI6StringEE = type { i64, ptr }
+%_Z13ArrayIteratorI6VectorI6StringEE = type { ptr, i64 }
+%_Z4ListI6VectorI6StringEE = type { ptr }
+%_Z4NodeI6VectorI6StringEE = type { %_Z6VectorI6StringE, ptr }
+%_Z12ListIteratorI6VectorI6StringEE = type { ptr }
+%_Z7HashSetI6StringE = type { ptr }
+%_Z11BuilderListI6StringE = type { ptr }
+%_Z19BuilderListIteratorI6StringE = type { ptr }
+%_Z6VectorI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
+%_Z11BuilderListI4SlotI6StringEE = type { ptr }
+%_Z11BuilderListI11BuilderListI4SlotI6StringEEE = type { ptr }
+%_Z4NodeI11BuilderListI4SlotI6StringEEE = type { %_Z11BuilderListI4SlotI6StringEE, ptr }
+%_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE = type { ptr }
+%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
+%_Z5SliceI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
+%_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE = type { %_Z5SliceI11BuilderListI4SlotI6StringEEE, i64 }
+%_Z5ArrayI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
+%_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
+%_Z4ListI11BuilderListI4SlotI6StringEEE = type { ptr }
+%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE = type { ptr }
+%_Z19BuilderListIteratorI4SlotI6StringEE = type { ptr }
+%_Z4NodeI4SlotI6StringEE = type { %_Z4SlotI6StringE, ptr }
+%_Z4SlotI6StringE = type { { ptr }, i64 }
+%_Z14HashSetBuilderI6StringE = type { i64, ptr }
+%_Z12ListIteratorI4SlotI6StringEE = type { ptr }
 %_Z7Program = type { %_Z6VectorI6ModuleE, %_Z6Module, %_Z6VectorI9StatementE }
 %_Z6VectorI6ModuleE = type { i64, ptr }
 %_Z6Module = type { i1, { ptr }, { ptr }, %_Z6VectorI6ModuleE, %_Z6VectorI3UseE, %_Z6VectorI6MemberE, %_Z7HashMapI6String8NameableE }
@@ -83,15 +121,6 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z4NodeI12KeyValuePairIm11PlannedTypeEE = type { %_Z12KeyValuePairIm11PlannedTypeE, ptr }
 %_Z12ListIteratorI12KeyValuePairIm11PlannedTypeEE = type { ptr }
 %_Z13ArrayIteratorI12KeyValuePairIm11PlannedTypeEE = type { ptr, i64 }
-%_Z6VectorI6StringE = type { i64, ptr }
-%_Z14VectorIteratorI6StringE = type { ptr, i64 }
-%_Z5SliceI6StringE = type { ptr, i64 }
-%_Z13SliceIteratorI6StringE = type { %_Z5SliceI6StringE, i64 }
-%_Z5ArrayI6StringE = type { i64, ptr }
-%_Z13ArrayIteratorI6StringE = type { ptr, i64 }
-%_Z4ListI6StringE = type { ptr }
-%_Z4NodeI6StringE = type { { ptr }, ptr }
-%_Z12ListIteratorI6StringE = type { ptr }
 %_Z6VectorI6VectorI7OperandEE = type { i64, ptr }
 %_Z6VectorI7OperandE = type { i64, ptr }
 %_Z14VectorIteratorI6VectorI7OperandEE = type { ptr, i64 }
@@ -292,8 +321,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z4ListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr }
 %_Z12ListIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr }
 %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE = type { ptr }
-%_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE = type { %_Z4SlotI8FunctionE, ptr }
-%_Z4SlotI8FunctionE = type { %_Z8Function, i64 }
+%_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE = type { %_Z4SlotI6StringE, ptr }
 %_Z14HashMapBuilderI6String8NameableE = type { i64, ptr }
 %_Z12ListIteratorI4SlotI12KeyValuePairI6String8NameableEEE = type { ptr }
 %_Z6VectorI12KeyValuePairI6String7ConceptEE = type { i64, ptr }
@@ -441,6 +469,9 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z13ProgramSyntax = type { i64, i64, %_Z10FileSyntax, ptr }
 %_Z10FileSyntax = type { i64, i64, ptr }
 %_Z11ParserError = type { i8, [24 x i8] }
+%_Z6Parser = type { %_Z5Lexer, %_Z6VectorI6StringE, %_Z7HashSetI6StringE }
+%_Z5Lexer = type { { ptr }, ptr, ptr, i64, i64, %_Z5Token }
+%_Z5Token = type { i8, [9 x i8] }
 %_Z13InvalidSyntax = type { i64, i64, { ptr } }
 %_Z15DifferentSyntax = type {}
 %_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, i1, i1, i64, i1, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64 }
@@ -786,263 +817,263 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @.str.87 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.88 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.89 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.90 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.91 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.92 = private unnamed_addr constant [7 x i8] c"method\00", align 1
-@.str.93 = private unnamed_addr constant [32 x i8] c"textDocument/publishDiagnostics\00", align 1
-@.str.94 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.95 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.96 = private unnamed_addr constant [12 x i8] c"diagnostics\00", align 1
-@.sconst.97 = private constant [32 x i8] c"\1Eunexpected top-level construct\00"
-@.sconst.98 = private constant [10 x i8] c"\08document\00"
-@.str.99 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.100 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.101 = private unnamed_addr constant [7 x i8] c"method\00", align 1
-@.str.102 = private unnamed_addr constant [32 x i8] c"textDocument/publishDiagnostics\00", align 1
-@.str.103 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.104 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.105 = private unnamed_addr constant [12 x i8] c"diagnostics\00", align 1
-@.str.106 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.107 = private unnamed_addr constant [6 x i8] c"start\00", align 1
-@.str.108 = private unnamed_addr constant [4 x i8] c"end\00", align 1
-@.str.109 = private unnamed_addr constant [9 x i8] c"severity\00", align 1
-@.str.110 = private unnamed_addr constant [8 x i8] c"message\00", align 1
-@.str.111 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.112 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.sconst.113 = private constant [9 x i8] c"\07file://\00"
-@.sconst.114 = private constant [9 x i8] c"\07alignof\00"
-@.sconst.115 = private constant [4 x i8] c"\02as\00"
-@.sconst.116 = private constant [7 x i8] c"\05break\00"
-@.sconst.117 = private constant [6 x i8] c"\04case\00"
-@.sconst.118 = private constant [8 x i8] c"\06choose\00"
-@.sconst.119 = private constant [10 x i8] c"\08continue\00"
-@.sconst.120 = private constant [8 x i8] c"\06define\00"
-@.sconst.121 = private constant [8 x i8] c"\06deinit\00"
-@.sconst.122 = private constant [10 x i8] c"\08delegate\00"
-@.sconst.123 = private constant [6 x i8] c"\04else\00"
-@.sconst.124 = private constant [9 x i8] c"\07extends\00"
-@.sconst.125 = private constant [8 x i8] c"\06extern\00"
-@.sconst.126 = private constant [5 x i8] c"\03for\00"
-@.sconst.127 = private constant [10 x i8] c"\08function\00"
-@.sconst.128 = private constant [4 x i8] c"\02if\00"
-@.sconst.129 = private constant [11 x i8] c"\09implement\00"
-@.sconst.130 = private constant [4 x i8] c"\02in\00"
-@.sconst.131 = private constant [6 x i8] c"\04init\00"
-@.sconst.132 = private constant [13 x i8] c"\0Binstruction\00"
-@.sconst.133 = private constant [11 x i8] c"\09intrinsic\00"
-@.sconst.134 = private constant [4 x i8] c"\02is\00"
-@.sconst.135 = private constant [7 x i8] c"\05label\00"
-@.sconst.136 = private constant [5 x i8] c"\03let\00"
-@.sconst.137 = private constant [6 x i8] c"\04loop\00"
-@.sconst.138 = private constant [7 x i8] c"\05macro\00"
-@.sconst.139 = private constant [7 x i8] c"\05match\00"
-@.sconst.140 = private constant [8 x i8] c"\06module\00"
-@.sconst.141 = private constant [9 x i8] c"\07mutable\00"
-@.sconst.142 = private constant [10 x i8] c"\08operator\00"
-@.sconst.143 = private constant [9 x i8] c"\07private\00"
-@.sconst.144 = private constant [11 x i8] c"\09procedure\00"
-@.sconst.145 = private constant [8 x i8] c"\06repeat\00"
-@.sconst.146 = private constant [8 x i8] c"\06return\00"
-@.sconst.147 = private constant [9 x i8] c"\07returns\00"
-@.sconst.148 = private constant [5 x i8] c"\03set\00"
-@.sconst.149 = private constant [8 x i8] c"\06sizeof\00"
-@.sconst.150 = private constant [7 x i8] c"\05throw\00"
-@.sconst.151 = private constant [8 x i8] c"\06throws\00"
-@.sconst.152 = private constant [7 x i8] c"\05trait\00"
-@.sconst.153 = private constant [5 x i8] c"\03try\00"
-@.sconst.154 = private constant [7 x i8] c"\05union\00"
-@.sconst.155 = private constant [5 x i8] c"\03use\00"
-@.sconst.156 = private constant [5 x i8] c"\03var\00"
-@.sconst.157 = private constant [6 x i8] c"\04when\00"
-@.sconst.158 = private constant [7 x i8] c"\05while\00"
-@.sconst.159 = private constant [9 x i8] c"\07package\00"
-@.sconst.160 = private constant [8 x i8] c"\06shared\00"
-@.str.161 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.162 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.163 = private constant [4 x i8] c"\02[]\00"
-@.sconst.164 = private constant [4 x i8] c"\02[]\00"
-@.sconst.165 = private constant [4 x i8] c"\02[]\00"
-@.sconst.166 = private constant [4 x i8] c"\02[]\00"
+@.str.90 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.91 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.92 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.93 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.94 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.95 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.96 = private unnamed_addr constant [7 x i8] c"method\00", align 1
+@.str.97 = private unnamed_addr constant [32 x i8] c"textDocument/publishDiagnostics\00", align 1
+@.str.98 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.99 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.100 = private unnamed_addr constant [12 x i8] c"diagnostics\00", align 1
+@.sconst.101 = private constant [32 x i8] c"\1Eunexpected top-level construct\00"
+@.sconst.102 = private constant [10 x i8] c"\08document\00"
+@.str.103 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.104 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.105 = private unnamed_addr constant [7 x i8] c"method\00", align 1
+@.str.106 = private unnamed_addr constant [32 x i8] c"textDocument/publishDiagnostics\00", align 1
+@.str.107 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.108 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.109 = private unnamed_addr constant [12 x i8] c"diagnostics\00", align 1
+@.str.110 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.111 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.112 = private unnamed_addr constant [4 x i8] c"end\00", align 1
+@.str.113 = private unnamed_addr constant [9 x i8] c"severity\00", align 1
+@.str.114 = private unnamed_addr constant [8 x i8] c"message\00", align 1
+@.str.115 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.116 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.sconst.117 = private constant [9 x i8] c"\07file://\00"
+@.sconst.118 = private constant [9 x i8] c"\07alignof\00"
+@.sconst.119 = private constant [4 x i8] c"\02as\00"
+@.sconst.120 = private constant [7 x i8] c"\05break\00"
+@.sconst.121 = private constant [6 x i8] c"\04case\00"
+@.sconst.122 = private constant [8 x i8] c"\06choose\00"
+@.sconst.123 = private constant [10 x i8] c"\08continue\00"
+@.sconst.124 = private constant [8 x i8] c"\06define\00"
+@.sconst.125 = private constant [8 x i8] c"\06deinit\00"
+@.sconst.126 = private constant [10 x i8] c"\08delegate\00"
+@.sconst.127 = private constant [6 x i8] c"\04else\00"
+@.sconst.128 = private constant [9 x i8] c"\07extends\00"
+@.sconst.129 = private constant [8 x i8] c"\06extern\00"
+@.sconst.130 = private constant [5 x i8] c"\03for\00"
+@.sconst.131 = private constant [10 x i8] c"\08function\00"
+@.sconst.132 = private constant [4 x i8] c"\02if\00"
+@.sconst.133 = private constant [11 x i8] c"\09implement\00"
+@.sconst.134 = private constant [4 x i8] c"\02in\00"
+@.sconst.135 = private constant [6 x i8] c"\04init\00"
+@.sconst.136 = private constant [13 x i8] c"\0Binstruction\00"
+@.sconst.137 = private constant [11 x i8] c"\09intrinsic\00"
+@.sconst.138 = private constant [4 x i8] c"\02is\00"
+@.sconst.139 = private constant [7 x i8] c"\05label\00"
+@.sconst.140 = private constant [5 x i8] c"\03let\00"
+@.sconst.141 = private constant [6 x i8] c"\04loop\00"
+@.sconst.142 = private constant [7 x i8] c"\05macro\00"
+@.sconst.143 = private constant [7 x i8] c"\05match\00"
+@.sconst.144 = private constant [8 x i8] c"\06module\00"
+@.sconst.145 = private constant [9 x i8] c"\07mutable\00"
+@.sconst.146 = private constant [10 x i8] c"\08operator\00"
+@.sconst.147 = private constant [9 x i8] c"\07private\00"
+@.sconst.148 = private constant [11 x i8] c"\09procedure\00"
+@.sconst.149 = private constant [8 x i8] c"\06repeat\00"
+@.sconst.150 = private constant [8 x i8] c"\06return\00"
+@.sconst.151 = private constant [9 x i8] c"\07returns\00"
+@.sconst.152 = private constant [5 x i8] c"\03set\00"
+@.sconst.153 = private constant [8 x i8] c"\06sizeof\00"
+@.sconst.154 = private constant [7 x i8] c"\05throw\00"
+@.sconst.155 = private constant [8 x i8] c"\06throws\00"
+@.sconst.156 = private constant [7 x i8] c"\05trait\00"
+@.sconst.157 = private constant [5 x i8] c"\03try\00"
+@.sconst.158 = private constant [7 x i8] c"\05union\00"
+@.sconst.159 = private constant [5 x i8] c"\03use\00"
+@.sconst.160 = private constant [5 x i8] c"\03var\00"
+@.sconst.161 = private constant [6 x i8] c"\04when\00"
+@.sconst.162 = private constant [7 x i8] c"\05while\00"
+@.sconst.163 = private constant [9 x i8] c"\07package\00"
+@.sconst.164 = private constant [8 x i8] c"\06shared\00"
+@.str.165 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.166 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.sconst.167 = private constant [4 x i8] c"\02[]\00"
 @.sconst.168 = private constant [4 x i8] c"\02[]\00"
 @.sconst.169 = private constant [4 x i8] c"\02[]\00"
-@.str.170 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.171 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.172 = private constant [6 x i8] c"\04init\00"
+@.sconst.170 = private constant [4 x i8] c"\02[]\00"
+@.sconst.171 = private constant [4 x i8] c"\02[]\00"
+@.sconst.172 = private constant [4 x i8] c"\02[]\00"
 @.sconst.173 = private constant [4 x i8] c"\02[]\00"
-@.sconst.174 = private constant [8 x i8] c"\06deinit\00"
-@.sconst.175 = private constant [4 x i8] c"\02[]\00"
-@.sconst.176 = private constant [4 x i8] c"\02[]\00"
-@.str.177 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.178 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.174 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.175 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.176 = private constant [6 x i8] c"\04init\00"
+@.sconst.177 = private constant [4 x i8] c"\02[]\00"
+@.sconst.178 = private constant [8 x i8] c"\06deinit\00"
 @.sconst.179 = private constant [4 x i8] c"\02[]\00"
-@.str.180 = private unnamed_addr constant [5 x i8] c"name\00", align 1
-@.str.181 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.str.182 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.183 = private unnamed_addr constant [15 x i8] c"selectionRange\00", align 1
-@.str.184 = private unnamed_addr constant [9 x i8] c"children\00", align 1
-@.str.185 = private unnamed_addr constant [6 x i8] c"start\00", align 1
-@.str.186 = private unnamed_addr constant [4 x i8] c"end\00", align 1
-@.str.187 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.188 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.189 = private unnamed_addr constant [10 x i8] c"startLine\00", align 1
-@.str.190 = private unnamed_addr constant [8 x i8] c"endLine\00", align 1
-@.str.191 = private unnamed_addr constant [5 x i8] c"data\00", align 1
-@.sconst.192 = private constant [10 x i8] c"\08function\00"
-@.sconst.193 = private constant [11 x i8] c"\09procedure\00"
-@.sconst.194 = private constant [8 x i8] c"\06define\00"
-@.sconst.195 = private constant [7 x i8] c"\05union\00"
-@.sconst.196 = private constant [7 x i8] c"\05trait\00"
-@.sconst.197 = private constant [8 x i8] c"\06module\00"
-@.str.198 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.str.199 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.200 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.sconst.201 = private constant [5 x i8] c"\03int\00"
-@.sconst.202 = private constant [6 x i8] c"\04bool\00"
-@.sconst.203 = private constant [6 x i8] c"\04char\00"
-@.sconst.204 = private constant [6 x i8] c"\04void\00"
-@.sconst.205 = private constant [7 x i8] c"\05float\00"
-@.sconst.206 = private constant [8 x i8] c"\06double\00"
-@.sconst.207 = private constant [8 x i8] c"\06size_t\00"
-@.sconst.208 = private constant [4 x i8] c"\02u8\00"
-@.sconst.209 = private constant [5 x i8] c"\03u16\00"
-@.sconst.210 = private constant [5 x i8] c"\03u32\00"
-@.sconst.211 = private constant [5 x i8] c"\03u64\00"
-@.sconst.212 = private constant [4 x i8] c"\02i8\00"
-@.sconst.213 = private constant [5 x i8] c"\03i16\00"
-@.sconst.214 = private constant [5 x i8] c"\03i32\00"
-@.sconst.215 = private constant [5 x i8] c"\03i64\00"
-@.sconst.216 = private constant [9 x i8] c"\07pointer\00"
-@.sconst.217 = private constant [5 x i8] c"\03ref\00"
-@.str.218 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.219 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.220 = private constant [6 x i8] c"\04this\00"
-@.str.221 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.222 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.223 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.224 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.sconst.225 = private constant [6 x i8] c"\04init\00"
-@.sconst.226 = private constant [8 x i8] c"\06deinit\00"
-@.sconst.227 = private constant [5 x i8] c"\03var\00"
-@.sconst.228 = private constant [5 x i8] c"\03let\00"
-@.str.229 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
-@.str.230 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.sconst.231 = private constant [10 x i8] c"\08markdown\00"
-@.str.232 = private unnamed_addr constant [6 x i8] c"value\00", align 1
-@.str.233 = private unnamed_addr constant [9 x i8] c"function\00", align 1
-@.str.234 = private unnamed_addr constant [10 x i8] c"procedure\00", align 1
-@.str.235 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
-@.str.236 = private unnamed_addr constant [7 x i8] c"module\00", align 1
-@.str.237 = private unnamed_addr constant [8 x i8] c"mutable\00", align 1
-@.str.238 = private unnamed_addr constant [7 x i8] c"shared\00", align 1
-@.str.239 = private unnamed_addr constant [9 x i8] c"function\00", align 1
-@.str.240 = private unnamed_addr constant [10 x i8] c"procedure\00", align 1
-@.str.241 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
-@.str.242 = private unnamed_addr constant [7 x i8] c"module\00", align 1
-@.sconst.243 = private constant [8 x i8] c"\06struct\00"
-@.sconst.244 = private constant [8 x i8] c"\06struct\00"
-@.sconst.245 = private constant [11 x i8] c"\09namespace\00"
-@.sconst.246 = private constant [7 x i8] c"\05union\00"
-@.sconst.247 = private constant [10 x i8] c"\08constant\00"
-@.sconst.248 = private constant [10 x i8] c"\08function\00"
-@.sconst.249 = private constant [8 x i8] c"\06struct\00"
-@.str.250 = private unnamed_addr constant [7 x i8] c"method\00", align 1
-@.str.251 = private unnamed_addr constant [7 x i8] c"method\00", align 1
-@.str.252 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
-@.str.253 = private unnamed_addr constant [5 x i8] c"init\00", align 1
-@.sconst.254 = private constant [6 x i8] c"\04init\00"
-@.str.255 = private unnamed_addr constant [7 x i8] c"deinit\00", align 1
-@.sconst.256 = private constant [8 x i8] c"\06deinit\00"
-@.str.257 = private unnamed_addr constant [7 x i8] c"module\00", align 1
-@.str.258 = private unnamed_addr constant [5 x i8] c"case\00", align 1
-@.str.259 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.260 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.sconst.261 = private constant [10 x i8] c"\08location\00"
-@.sconst.262 = private constant [6 x i8] c"\04kind\00"
-@.sconst.263 = private constant [6 x i8] c"\04kind\00"
-@.sconst.264 = private constant [10 x i8] c"\08function\00"
-@.sconst.265 = private constant [11 x i8] c"\09procedure\00"
-@.sconst.266 = private constant [8 x i8] c"\06define\00"
-@.sconst.267 = private constant [7 x i8] c"\05union\00"
-@.sconst.268 = private constant [11 x i8] c"\09intrinsic\00"
-@.sconst.269 = private constant [10 x i8] c"\08delegate\00"
-@.str.270 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
-@.sconst.271 = private constant [10 x i8] c"\08packages\00"
-@.sconst.272 = private constant [12 x i8] c"\0A/packages/\00"
-@.sconst.273 = private constant [7 x i8] c"\05find \00"
-@.sconst.274 = private constant [9 x i8] c"\07 -name \00"
-@.sconst.275 = private constant [9 x i8] c"\07*.scaly\00"
-@.sconst.276 = private constant [14 x i8] c"\0C 2>/dev/null\00"
-@.str.277 = private unnamed_addr constant [2 x i8] c"r\00", align 1
-@.sconst.278 = private constant [9 x i8] c"\07file://\00"
-@.sconst.279 = private constant [9 x i8] c"\07file://\00"
-@.sconst.280 = private constant [4 x i8] c"\02[]\00"
-@.sconst.281 = private constant [6 x i8] c"\04init\00"
-@.sconst.282 = private constant [8 x i8] c"\06deinit\00"
-@.str.283 = private unnamed_addr constant [5 x i8] c"name\00", align 1
-@.str.284 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.str.285 = private unnamed_addr constant [9 x i8] c"location\00", align 1
-@.sconst.286 = private constant [4 x i8] c"\02[]\00"
-@.sconst.287 = private constant [10 x i8] c"\08function\00"
-@.sconst.288 = private constant [11 x i8] c"\09procedure\00"
-@.sconst.289 = private constant [10 x i8] c"\08operator\00"
-@.sconst.290 = private constant [6 x i8] c"\04init\00"
-@.sconst.291 = private constant [8 x i8] c"\06deinit\00"
-@.sconst.292 = private constant [12 x i8] c"\0A/packages/\00"
-@.sconst.293 = private constant [11 x i8] c"\09/retired/\00"
-@.sconst.294 = private constant [12 x i8] c"\0A/packages/\00"
-@.str.295 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.296 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.297 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.sconst.298 = private constant [4 x i8] c"\02[]\00"
-@.str.299 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.300 = private unnamed_addr constant [8 x i8] c"changes\00", align 1
-@.str.301 = private unnamed_addr constant [8 x i8] c"changes\00", align 1
-@.str.302 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.303 = private unnamed_addr constant [8 x i8] c"newText\00", align 1
-@.sconst.304 = private constant [5 x i8] c"\03let\00"
-@.sconst.305 = private constant [5 x i8] c"\03var\00"
-@.sconst.306 = private constant [10 x i8] c"\08function\00"
-@.sconst.307 = private constant [11 x i8] c"\09procedure\00"
-@.sconst.308 = private constant [10 x i8] c"\08operator\00"
-@.sconst.309 = private constant [8 x i8] c"\06define\00"
-@.str.310 = private unnamed_addr constant [11 x i8] c"signatures\00", align 1
-@.str.311 = private unnamed_addr constant [11 x i8] c"parameters\00", align 1
-@.str.312 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.313 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.314 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.315 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.sconst.316 = private constant [3 x i8] c"\012\00"
-@.str.317 = private unnamed_addr constant [13 x i8] c"paddingRight\00", align 1
-@.sconst.318 = private constant [6 x i8] c"\04true\00"
-@.str.319 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.320 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.321 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.sconst.322 = private constant [3 x i8] c"\011\00"
-@.str.323 = private unnamed_addr constant [12 x i8] c"paddingLeft\00", align 1
-@.sconst.324 = private constant [6 x i8] c"\04true\00"
-@.sconst.325 = private constant [6 x i8] c"\04this\00"
-@.str.326 = private unnamed_addr constant [11 x i8] c"signatures\00", align 1
-@.str.327 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.328 = private unnamed_addr constant [11 x i8] c"parameters\00", align 1
-@.str.329 = private unnamed_addr constant [16 x i8] c"activeSignature\00", align 1
-@.str.330 = private unnamed_addr constant [16 x i8] c"activeParameter\00", align 1
-@.sconst.331 = private constant [6 x i8] c"\04this\00"
-@.str.332 = private unnamed_addr constant [11 x i8] c"signatures\00", align 1
-@.str.333 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.334 = private unnamed_addr constant [11 x i8] c"parameters\00", align 1
-@.str.335 = private unnamed_addr constant [16 x i8] c"activeSignature\00", align 1
-@.str.336 = private unnamed_addr constant [16 x i8] c"activeParameter\00", align 1
-@.str.337 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.338 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.339 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.340 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.341 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.sconst.342 = private constant [10 x i8] c"\08document\00"
+@.sconst.180 = private constant [4 x i8] c"\02[]\00"
+@.str.181 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.182 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.183 = private constant [4 x i8] c"\02[]\00"
+@.str.184 = private unnamed_addr constant [5 x i8] c"name\00", align 1
+@.str.185 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.str.186 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.187 = private unnamed_addr constant [15 x i8] c"selectionRange\00", align 1
+@.str.188 = private unnamed_addr constant [9 x i8] c"children\00", align 1
+@.str.189 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.190 = private unnamed_addr constant [4 x i8] c"end\00", align 1
+@.str.191 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.192 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.193 = private unnamed_addr constant [10 x i8] c"startLine\00", align 1
+@.str.194 = private unnamed_addr constant [8 x i8] c"endLine\00", align 1
+@.str.195 = private unnamed_addr constant [5 x i8] c"data\00", align 1
+@.sconst.196 = private constant [10 x i8] c"\08function\00"
+@.sconst.197 = private constant [11 x i8] c"\09procedure\00"
+@.sconst.198 = private constant [8 x i8] c"\06define\00"
+@.sconst.199 = private constant [7 x i8] c"\05union\00"
+@.sconst.200 = private constant [7 x i8] c"\05trait\00"
+@.sconst.201 = private constant [8 x i8] c"\06module\00"
+@.str.202 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.str.203 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.204 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.sconst.205 = private constant [5 x i8] c"\03int\00"
+@.sconst.206 = private constant [6 x i8] c"\04bool\00"
+@.sconst.207 = private constant [6 x i8] c"\04char\00"
+@.sconst.208 = private constant [6 x i8] c"\04void\00"
+@.sconst.209 = private constant [7 x i8] c"\05float\00"
+@.sconst.210 = private constant [8 x i8] c"\06double\00"
+@.sconst.211 = private constant [8 x i8] c"\06size_t\00"
+@.sconst.212 = private constant [4 x i8] c"\02u8\00"
+@.sconst.213 = private constant [5 x i8] c"\03u16\00"
+@.sconst.214 = private constant [5 x i8] c"\03u32\00"
+@.sconst.215 = private constant [5 x i8] c"\03u64\00"
+@.sconst.216 = private constant [4 x i8] c"\02i8\00"
+@.sconst.217 = private constant [5 x i8] c"\03i16\00"
+@.sconst.218 = private constant [5 x i8] c"\03i32\00"
+@.sconst.219 = private constant [5 x i8] c"\03i64\00"
+@.sconst.220 = private constant [9 x i8] c"\07pointer\00"
+@.sconst.221 = private constant [5 x i8] c"\03ref\00"
+@.str.222 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.223 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.224 = private constant [6 x i8] c"\04this\00"
+@.str.225 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.226 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.227 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.228 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.sconst.229 = private constant [6 x i8] c"\04init\00"
+@.sconst.230 = private constant [8 x i8] c"\06deinit\00"
+@.sconst.231 = private constant [5 x i8] c"\03var\00"
+@.sconst.232 = private constant [5 x i8] c"\03let\00"
+@.str.233 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
+@.str.234 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.sconst.235 = private constant [10 x i8] c"\08markdown\00"
+@.str.236 = private unnamed_addr constant [6 x i8] c"value\00", align 1
+@.str.237 = private unnamed_addr constant [9 x i8] c"function\00", align 1
+@.str.238 = private unnamed_addr constant [10 x i8] c"procedure\00", align 1
+@.str.239 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
+@.str.240 = private unnamed_addr constant [7 x i8] c"module\00", align 1
+@.str.241 = private unnamed_addr constant [8 x i8] c"mutable\00", align 1
+@.str.242 = private unnamed_addr constant [7 x i8] c"shared\00", align 1
+@.str.243 = private unnamed_addr constant [9 x i8] c"function\00", align 1
+@.str.244 = private unnamed_addr constant [10 x i8] c"procedure\00", align 1
+@.str.245 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
+@.str.246 = private unnamed_addr constant [7 x i8] c"module\00", align 1
+@.sconst.247 = private constant [8 x i8] c"\06struct\00"
+@.sconst.248 = private constant [8 x i8] c"\06struct\00"
+@.sconst.249 = private constant [11 x i8] c"\09namespace\00"
+@.sconst.250 = private constant [7 x i8] c"\05union\00"
+@.sconst.251 = private constant [10 x i8] c"\08constant\00"
+@.sconst.252 = private constant [10 x i8] c"\08function\00"
+@.sconst.253 = private constant [8 x i8] c"\06struct\00"
+@.str.254 = private unnamed_addr constant [7 x i8] c"method\00", align 1
+@.str.255 = private unnamed_addr constant [7 x i8] c"method\00", align 1
+@.str.256 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
+@.str.257 = private unnamed_addr constant [5 x i8] c"init\00", align 1
+@.sconst.258 = private constant [6 x i8] c"\04init\00"
+@.str.259 = private unnamed_addr constant [7 x i8] c"deinit\00", align 1
+@.sconst.260 = private constant [8 x i8] c"\06deinit\00"
+@.str.261 = private unnamed_addr constant [7 x i8] c"module\00", align 1
+@.str.262 = private unnamed_addr constant [5 x i8] c"case\00", align 1
+@.str.263 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.264 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.sconst.265 = private constant [10 x i8] c"\08location\00"
+@.sconst.266 = private constant [6 x i8] c"\04kind\00"
+@.sconst.267 = private constant [6 x i8] c"\04kind\00"
+@.sconst.268 = private constant [10 x i8] c"\08function\00"
+@.sconst.269 = private constant [11 x i8] c"\09procedure\00"
+@.sconst.270 = private constant [8 x i8] c"\06define\00"
+@.sconst.271 = private constant [7 x i8] c"\05union\00"
+@.sconst.272 = private constant [11 x i8] c"\09intrinsic\00"
+@.sconst.273 = private constant [10 x i8] c"\08delegate\00"
+@.str.274 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
+@.sconst.275 = private constant [10 x i8] c"\08packages\00"
+@.sconst.276 = private constant [12 x i8] c"\0A/packages/\00"
+@.sconst.277 = private constant [7 x i8] c"\05find \00"
+@.sconst.278 = private constant [9 x i8] c"\07 -name \00"
+@.sconst.279 = private constant [9 x i8] c"\07*.scaly\00"
+@.sconst.280 = private constant [14 x i8] c"\0C 2>/dev/null\00"
+@.str.281 = private unnamed_addr constant [2 x i8] c"r\00", align 1
+@.sconst.282 = private constant [9 x i8] c"\07file://\00"
+@.sconst.283 = private constant [9 x i8] c"\07file://\00"
+@.sconst.284 = private constant [4 x i8] c"\02[]\00"
+@.sconst.285 = private constant [6 x i8] c"\04init\00"
+@.sconst.286 = private constant [8 x i8] c"\06deinit\00"
+@.str.287 = private unnamed_addr constant [5 x i8] c"name\00", align 1
+@.str.288 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.str.289 = private unnamed_addr constant [9 x i8] c"location\00", align 1
+@.sconst.290 = private constant [4 x i8] c"\02[]\00"
+@.sconst.291 = private constant [10 x i8] c"\08function\00"
+@.sconst.292 = private constant [11 x i8] c"\09procedure\00"
+@.sconst.293 = private constant [10 x i8] c"\08operator\00"
+@.sconst.294 = private constant [6 x i8] c"\04init\00"
+@.sconst.295 = private constant [8 x i8] c"\06deinit\00"
+@.sconst.296 = private constant [12 x i8] c"\0A/packages/\00"
+@.sconst.297 = private constant [11 x i8] c"\09/retired/\00"
+@.sconst.298 = private constant [12 x i8] c"\0A/packages/\00"
+@.str.299 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.300 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.301 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.sconst.302 = private constant [4 x i8] c"\02[]\00"
+@.str.303 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.304 = private unnamed_addr constant [8 x i8] c"changes\00", align 1
+@.str.305 = private unnamed_addr constant [8 x i8] c"changes\00", align 1
+@.str.306 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.307 = private unnamed_addr constant [8 x i8] c"newText\00", align 1
+@.sconst.308 = private constant [5 x i8] c"\03let\00"
+@.sconst.309 = private constant [5 x i8] c"\03var\00"
+@.sconst.310 = private constant [10 x i8] c"\08function\00"
+@.sconst.311 = private constant [11 x i8] c"\09procedure\00"
+@.sconst.312 = private constant [10 x i8] c"\08operator\00"
+@.sconst.313 = private constant [8 x i8] c"\06define\00"
+@.str.314 = private unnamed_addr constant [11 x i8] c"signatures\00", align 1
+@.str.315 = private unnamed_addr constant [11 x i8] c"parameters\00", align 1
+@.str.316 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.317 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.318 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.319 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.sconst.320 = private constant [3 x i8] c"\012\00"
+@.str.321 = private unnamed_addr constant [13 x i8] c"paddingRight\00", align 1
+@.sconst.322 = private constant [6 x i8] c"\04true\00"
+@.str.323 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.324 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.325 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.sconst.326 = private constant [3 x i8] c"\011\00"
+@.str.327 = private unnamed_addr constant [12 x i8] c"paddingLeft\00", align 1
+@.sconst.328 = private constant [6 x i8] c"\04true\00"
+@.sconst.329 = private constant [6 x i8] c"\04this\00"
+@.str.330 = private unnamed_addr constant [11 x i8] c"signatures\00", align 1
+@.str.331 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.332 = private unnamed_addr constant [11 x i8] c"parameters\00", align 1
+@.str.333 = private unnamed_addr constant [16 x i8] c"activeSignature\00", align 1
+@.str.334 = private unnamed_addr constant [16 x i8] c"activeParameter\00", align 1
+@.sconst.335 = private constant [6 x i8] c"\04this\00"
+@.str.336 = private unnamed_addr constant [11 x i8] c"signatures\00", align 1
+@.str.337 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.338 = private unnamed_addr constant [11 x i8] c"parameters\00", align 1
+@.str.339 = private unnamed_addr constant [16 x i8] c"activeSignature\00", align 1
+@.str.340 = private unnamed_addr constant [16 x i8] c"activeParameter\00", align 1
+@.str.341 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.342 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.343 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.344 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.345 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.346 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.345 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.sconst.346 = private constant [10 x i8] c"\08document\00"
 @.str.347 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.348 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.349 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
@@ -1055,231 +1086,235 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @.str.356 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.357 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.358 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.359 = private constant [6 x i8] c"\04void\00"
-@.sconst.360 = private constant [3 x i8] c"\01w\00"
-@.sconst.361 = private constant [3 x i8] c"\01s\00"
-@.sconst.362 = private constant [3 x i8] c"\01c\00"
-@.sconst.363 = private constant [3 x i8] c"\01h\00"
-@.sconst.364 = private constant [3 x i8] c"\01g\00"
-@.sconst.365 = private constant [3 x i8] c"\01r\00"
-@.sconst.366 = private constant [3 x i8] c"\01l\00"
-@.sconst.367 = private constant [3 x i8] c"\01n\00"
-@.sconst.368 = private constant [3 x i8] c"\01p\00"
-@.sconst.369 = private constant [3 x i8] c"\01f\00"
-@.sconst.370 = private constant [3 x i8] c"\01y\00"
-@.sconst.371 = private constant [3 x i8] c"\01o\00"
-@.sconst.372 = private constant [3 x i8] c"\01t\00"
-@.sconst.373 = private constant [3 x i8] c"\01x\00"
-@.str.374 = private unnamed_addr constant [2 x i8] c"d\00", align 1
-@.str.375 = private unnamed_addr constant [2 x i8] c"s\00", align 1
-@.sconst.376 = private constant [4 x i8] c"\02[]\00"
-@.str.377 = private unnamed_addr constant [2 x i8] c"h\00", align 1
-@.str.378 = private unnamed_addr constant [2 x i8] c"g\00", align 1
-@.str.379 = private unnamed_addr constant [2 x i8] c"r\00", align 1
+@.str.359 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.360 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.361 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.362 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.363 = private constant [6 x i8] c"\04void\00"
+@.sconst.364 = private constant [3 x i8] c"\01w\00"
+@.sconst.365 = private constant [3 x i8] c"\01s\00"
+@.sconst.366 = private constant [3 x i8] c"\01c\00"
+@.sconst.367 = private constant [3 x i8] c"\01h\00"
+@.sconst.368 = private constant [3 x i8] c"\01g\00"
+@.sconst.369 = private constant [3 x i8] c"\01r\00"
+@.sconst.370 = private constant [3 x i8] c"\01l\00"
+@.sconst.371 = private constant [3 x i8] c"\01n\00"
+@.sconst.372 = private constant [3 x i8] c"\01p\00"
+@.sconst.373 = private constant [3 x i8] c"\01f\00"
+@.sconst.374 = private constant [3 x i8] c"\01y\00"
+@.sconst.375 = private constant [3 x i8] c"\01o\00"
+@.sconst.376 = private constant [3 x i8] c"\01t\00"
+@.sconst.377 = private constant [3 x i8] c"\01x\00"
+@.str.378 = private unnamed_addr constant [2 x i8] c"d\00", align 1
+@.str.379 = private unnamed_addr constant [2 x i8] c"s\00", align 1
 @.sconst.380 = private constant [4 x i8] c"\02[]\00"
-@.str.381 = private unnamed_addr constant [2 x i8] c"l\00", align 1
-@.sconst.382 = private constant [4 x i8] c"\02[]\00"
-@.str.383 = private unnamed_addr constant [2 x i8] c"c\00", align 1
+@.str.381 = private unnamed_addr constant [2 x i8] c"h\00", align 1
+@.str.382 = private unnamed_addr constant [2 x i8] c"g\00", align 1
+@.str.383 = private unnamed_addr constant [2 x i8] c"r\00", align 1
 @.sconst.384 = private constant [4 x i8] c"\02[]\00"
-@.str.385 = private unnamed_addr constant [2 x i8] c"n\00", align 1
-@.str.386 = private unnamed_addr constant [2 x i8] c"p\00", align 1
-@.str.387 = private unnamed_addr constant [2 x i8] c"f\00", align 1
-@.str.388 = private unnamed_addr constant [2 x i8] c"y\00", align 1
-@.sconst.389 = private constant [4 x i8] c"\02[]\00"
-@.str.390 = private unnamed_addr constant [2 x i8] c"o\00", align 1
-@.sconst.391 = private constant [4 x i8] c"\02[]\00"
-@.str.392 = private unnamed_addr constant [2 x i8] c"x\00", align 1
-@.sconst.393 = private constant [6 x i8] c"\04data\00"
-@.str.394 = private unnamed_addr constant [2 x i8] c"t\00", align 1
-@.str.395 = private unnamed_addr constant [2 x i8] c"w\00", align 1
-@.sconst.396 = private constant [4 x i8] c"\02[]\00"
-@.str.397 = private unnamed_addr constant [7 x i8] c"method\00", align 1
-@.str.398 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.sconst.399 = private constant [12 x i8] c"\0Ainitialize\00"
-@.sconst.400 = private constant [10 x i8] c"\08shutdown\00"
-@.sconst.401 = private constant [6 x i8] c"\04exit\00"
-@.sconst.402 = private constant [22 x i8] c"\14textDocument/didOpen\00"
-@.sconst.403 = private constant [24 x i8] c"\16textDocument/didChange\00"
-@.sconst.404 = private constant [23 x i8] c"\15textDocument/didClose\00"
-@.sconst.405 = private constant [29 x i8] c"\1BtextDocument/documentSymbol\00"
-@.sconst.406 = private constant [20 x i8] c"\12textDocument/hover\00"
-@.sconst.407 = private constant [25 x i8] c"\17textDocument/definition\00"
-@.sconst.408 = private constant [25 x i8] c"\17textDocument/references\00"
-@.sconst.409 = private constant [32 x i8] c"\1EtextDocument/documentHighlight\00"
-@.sconst.410 = private constant [25 x i8] c"\17textDocument/completion\00"
-@.sconst.411 = private constant [28 x i8] c"\1AtextDocument/prepareRename\00"
-@.sconst.412 = private constant [21 x i8] c"\13textDocument/rename\00"
-@.sconst.413 = private constant [28 x i8] c"\1AtextDocument/signatureHelp\00"
-@.sconst.414 = private constant [27 x i8] c"\19textDocument/foldingRange\00"
-@.sconst.415 = private constant [34 x i8] c" textDocument/semanticTokens/full\00"
-@.sconst.416 = private constant [24 x i8] c"\16textDocument/inlayHint\00"
-@.sconst.417 = private constant [18 x i8] c"\10workspace/symbol\00"
-@.str.418 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.419 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.420 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.421 = private unnamed_addr constant [5 x i8] c"text\00", align 1
+@.str.385 = private unnamed_addr constant [2 x i8] c"l\00", align 1
+@.sconst.386 = private constant [4 x i8] c"\02[]\00"
+@.str.387 = private unnamed_addr constant [2 x i8] c"c\00", align 1
+@.sconst.388 = private constant [4 x i8] c"\02[]\00"
+@.str.389 = private unnamed_addr constant [2 x i8] c"n\00", align 1
+@.str.390 = private unnamed_addr constant [2 x i8] c"p\00", align 1
+@.str.391 = private unnamed_addr constant [2 x i8] c"f\00", align 1
+@.str.392 = private unnamed_addr constant [2 x i8] c"y\00", align 1
+@.sconst.393 = private constant [4 x i8] c"\02[]\00"
+@.str.394 = private unnamed_addr constant [2 x i8] c"o\00", align 1
+@.sconst.395 = private constant [4 x i8] c"\02[]\00"
+@.str.396 = private unnamed_addr constant [2 x i8] c"x\00", align 1
+@.sconst.397 = private constant [6 x i8] c"\04data\00"
+@.str.398 = private unnamed_addr constant [2 x i8] c"t\00", align 1
+@.str.399 = private unnamed_addr constant [2 x i8] c"w\00", align 1
+@.sconst.400 = private constant [4 x i8] c"\02[]\00"
+@.str.401 = private unnamed_addr constant [7 x i8] c"method\00", align 1
+@.str.402 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.sconst.403 = private constant [12 x i8] c"\0Ainitialize\00"
+@.sconst.404 = private constant [10 x i8] c"\08shutdown\00"
+@.sconst.405 = private constant [6 x i8] c"\04exit\00"
+@.sconst.406 = private constant [22 x i8] c"\14textDocument/didOpen\00"
+@.sconst.407 = private constant [24 x i8] c"\16textDocument/didChange\00"
+@.sconst.408 = private constant [23 x i8] c"\15textDocument/didClose\00"
+@.sconst.409 = private constant [29 x i8] c"\1BtextDocument/documentSymbol\00"
+@.sconst.410 = private constant [20 x i8] c"\12textDocument/hover\00"
+@.sconst.411 = private constant [25 x i8] c"\17textDocument/definition\00"
+@.sconst.412 = private constant [25 x i8] c"\17textDocument/references\00"
+@.sconst.413 = private constant [32 x i8] c"\1EtextDocument/documentHighlight\00"
+@.sconst.414 = private constant [25 x i8] c"\17textDocument/completion\00"
+@.sconst.415 = private constant [28 x i8] c"\1AtextDocument/prepareRename\00"
+@.sconst.416 = private constant [21 x i8] c"\13textDocument/rename\00"
+@.sconst.417 = private constant [28 x i8] c"\1AtextDocument/signatureHelp\00"
+@.sconst.418 = private constant [27 x i8] c"\19textDocument/foldingRange\00"
+@.sconst.419 = private constant [34 x i8] c" textDocument/semanticTokens/full\00"
+@.sconst.420 = private constant [24 x i8] c"\16textDocument/inlayHint\00"
+@.sconst.421 = private constant [18 x i8] c"\10workspace/symbol\00"
 @.str.422 = private unnamed_addr constant [7 x i8] c"params\00", align 1
 @.str.423 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
 @.str.424 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.425 = private unnamed_addr constant [15 x i8] c"contentChanges\00", align 1
-@.str.426 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.427 = private unnamed_addr constant [5 x i8] c"text\00", align 1
-@.str.428 = private unnamed_addr constant [6 x i8] c"start\00", align 1
-@.str.429 = private unnamed_addr constant [4 x i8] c"end\00", align 1
-@.str.430 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.431 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.432 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.433 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.434 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.435 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.436 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.437 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.438 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.439 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.440 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.441 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.442 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.443 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.444 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.445 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.446 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.447 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.448 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.449 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
-@.str.450 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.sconst.451 = private constant [10 x i8] c"\08markdown\00"
-@.str.452 = private unnamed_addr constant [6 x i8] c"value\00", align 1
-@.str.453 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.454 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.455 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.456 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.457 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.458 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.459 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.460 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.461 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.462 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.463 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.464 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.465 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.466 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.467 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.468 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.469 = private unnamed_addr constant [6 x i8] c"start\00", align 1
-@.str.470 = private unnamed_addr constant [4 x i8] c"end\00", align 1
-@.str.471 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.472 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.473 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.474 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.475 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.476 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.477 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.478 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.479 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.480 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.481 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.482 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.483 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.484 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.485 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.486 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.487 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.488 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.489 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.490 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.491 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.492 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.493 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.494 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.495 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.496 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.497 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.498 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.499 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.500 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.501 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.502 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.503 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.504 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.505 = private unnamed_addr constant [8 x i8] c"newName\00", align 1
-@.str.506 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.507 = private unnamed_addr constant [6 x i8] c"query\00", align 1
-@.str.508 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.509 = private unnamed_addr constant [8 x i8] c"rootUri\00", align 1
-@.str.510 = private unnamed_addr constant [9 x i8] c"rootPath\00", align 1
-@.str.511 = private unnamed_addr constant [17 x i8] c"workspaceFolders\00", align 1
-@.str.512 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.513 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.514 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.515 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.516 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.517 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.518 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.519 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.str.520 = private unnamed_addr constant [13 x i8] c"capabilities\00", align 1
-@.str.521 = private unnamed_addr constant [17 x i8] c"textDocumentSync\00", align 1
-@.str.522 = private unnamed_addr constant [23 x i8] c"documentSymbolProvider\00", align 1
-@.sconst.523 = private constant [6 x i8] c"\04true\00"
-@.str.524 = private unnamed_addr constant [14 x i8] c"hoverProvider\00", align 1
-@.sconst.525 = private constant [6 x i8] c"\04true\00"
-@.str.526 = private unnamed_addr constant [19 x i8] c"definitionProvider\00", align 1
+@.str.425 = private unnamed_addr constant [5 x i8] c"text\00", align 1
+@.str.426 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.427 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.428 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.429 = private unnamed_addr constant [15 x i8] c"contentChanges\00", align 1
+@.str.430 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.431 = private unnamed_addr constant [5 x i8] c"text\00", align 1
+@.str.432 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.433 = private unnamed_addr constant [4 x i8] c"end\00", align 1
+@.str.434 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.435 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.436 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.437 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.438 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.439 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.440 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.441 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.442 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.443 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.444 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.445 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.446 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.447 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.448 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.449 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.450 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.451 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.452 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.453 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
+@.str.454 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.sconst.455 = private constant [10 x i8] c"\08markdown\00"
+@.str.456 = private unnamed_addr constant [6 x i8] c"value\00", align 1
+@.str.457 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.458 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.459 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.460 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.461 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.462 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.463 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.464 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.465 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.466 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.467 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.468 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.469 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.470 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.471 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.472 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.473 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.474 = private unnamed_addr constant [4 x i8] c"end\00", align 1
+@.str.475 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.476 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.477 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.478 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.479 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.480 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.481 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.482 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.483 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.484 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.485 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.486 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.487 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.488 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.489 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.490 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.491 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.492 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.493 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.494 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.495 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.496 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.497 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.498 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.499 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.500 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.501 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.502 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.503 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.504 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.505 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.506 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.507 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.508 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.509 = private unnamed_addr constant [8 x i8] c"newName\00", align 1
+@.str.510 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.511 = private unnamed_addr constant [6 x i8] c"query\00", align 1
+@.str.512 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.513 = private unnamed_addr constant [8 x i8] c"rootUri\00", align 1
+@.str.514 = private unnamed_addr constant [9 x i8] c"rootPath\00", align 1
+@.str.515 = private unnamed_addr constant [17 x i8] c"workspaceFolders\00", align 1
+@.str.516 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.517 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.518 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.519 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.520 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.521 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.522 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.523 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.str.524 = private unnamed_addr constant [13 x i8] c"capabilities\00", align 1
+@.str.525 = private unnamed_addr constant [17 x i8] c"textDocumentSync\00", align 1
+@.str.526 = private unnamed_addr constant [23 x i8] c"documentSymbolProvider\00", align 1
 @.sconst.527 = private constant [6 x i8] c"\04true\00"
-@.str.528 = private unnamed_addr constant [19 x i8] c"referencesProvider\00", align 1
+@.str.528 = private unnamed_addr constant [14 x i8] c"hoverProvider\00", align 1
 @.sconst.529 = private constant [6 x i8] c"\04true\00"
-@.str.530 = private unnamed_addr constant [26 x i8] c"documentHighlightProvider\00", align 1
+@.str.530 = private unnamed_addr constant [19 x i8] c"definitionProvider\00", align 1
 @.sconst.531 = private constant [6 x i8] c"\04true\00"
-@.str.532 = private unnamed_addr constant [19 x i8] c"completionProvider\00", align 1
-@.str.533 = private unnamed_addr constant [15 x i8] c"renameProvider\00", align 1
-@.str.534 = private unnamed_addr constant [16 x i8] c"prepareProvider\00", align 1
+@.str.532 = private unnamed_addr constant [19 x i8] c"referencesProvider\00", align 1
+@.sconst.533 = private constant [6 x i8] c"\04true\00"
+@.str.534 = private unnamed_addr constant [26 x i8] c"documentHighlightProvider\00", align 1
 @.sconst.535 = private constant [6 x i8] c"\04true\00"
-@.str.536 = private unnamed_addr constant [22 x i8] c"signatureHelpProvider\00", align 1
-@.str.537 = private unnamed_addr constant [18 x i8] c"triggerCharacters\00", align 1
-@.str.538 = private unnamed_addr constant [21 x i8] c"foldingRangeProvider\00", align 1
+@.str.536 = private unnamed_addr constant [19 x i8] c"completionProvider\00", align 1
+@.str.537 = private unnamed_addr constant [15 x i8] c"renameProvider\00", align 1
+@.str.538 = private unnamed_addr constant [16 x i8] c"prepareProvider\00", align 1
 @.sconst.539 = private constant [6 x i8] c"\04true\00"
-@.str.540 = private unnamed_addr constant [23 x i8] c"semanticTokensProvider\00", align 1
-@.str.541 = private unnamed_addr constant [7 x i8] c"legend\00", align 1
-@.str.542 = private unnamed_addr constant [11 x i8] c"tokenTypes\00", align 1
-@.str.543 = private unnamed_addr constant [8 x i8] c"keyword\00", align 1
-@.str.544 = private unnamed_addr constant [5 x i8] c"type\00", align 1
-@.str.545 = private unnamed_addr constant [9 x i8] c"function\00", align 1
-@.str.546 = private unnamed_addr constant [9 x i8] c"variable\00", align 1
-@.str.547 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
-@.str.548 = private unnamed_addr constant [7 x i8] c"string\00", align 1
-@.str.549 = private unnamed_addr constant [7 x i8] c"number\00", align 1
-@.str.550 = private unnamed_addr constant [8 x i8] c"comment\00", align 1
-@.str.551 = private unnamed_addr constant [10 x i8] c"parameter\00", align 1
-@.str.552 = private unnamed_addr constant [9 x i8] c"property\00", align 1
-@.str.553 = private unnamed_addr constant [15 x i8] c"tokenModifiers\00", align 1
-@.str.554 = private unnamed_addr constant [5 x i8] c"full\00", align 1
-@.sconst.555 = private constant [6 x i8] c"\04true\00"
-@.str.556 = private unnamed_addr constant [24 x i8] c"workspaceSymbolProvider\00", align 1
-@.sconst.557 = private constant [6 x i8] c"\04true\00"
-@.str.558 = private unnamed_addr constant [18 x i8] c"inlayHintProvider\00", align 1
+@.str.540 = private unnamed_addr constant [22 x i8] c"signatureHelpProvider\00", align 1
+@.str.541 = private unnamed_addr constant [18 x i8] c"triggerCharacters\00", align 1
+@.str.542 = private unnamed_addr constant [21 x i8] c"foldingRangeProvider\00", align 1
+@.sconst.543 = private constant [6 x i8] c"\04true\00"
+@.str.544 = private unnamed_addr constant [23 x i8] c"semanticTokensProvider\00", align 1
+@.str.545 = private unnamed_addr constant [7 x i8] c"legend\00", align 1
+@.str.546 = private unnamed_addr constant [11 x i8] c"tokenTypes\00", align 1
+@.str.547 = private unnamed_addr constant [8 x i8] c"keyword\00", align 1
+@.str.548 = private unnamed_addr constant [5 x i8] c"type\00", align 1
+@.str.549 = private unnamed_addr constant [9 x i8] c"function\00", align 1
+@.str.550 = private unnamed_addr constant [9 x i8] c"variable\00", align 1
+@.str.551 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
+@.str.552 = private unnamed_addr constant [7 x i8] c"string\00", align 1
+@.str.553 = private unnamed_addr constant [7 x i8] c"number\00", align 1
+@.str.554 = private unnamed_addr constant [8 x i8] c"comment\00", align 1
+@.str.555 = private unnamed_addr constant [10 x i8] c"parameter\00", align 1
+@.str.556 = private unnamed_addr constant [9 x i8] c"property\00", align 1
+@.str.557 = private unnamed_addr constant [15 x i8] c"tokenModifiers\00", align 1
+@.str.558 = private unnamed_addr constant [5 x i8] c"full\00", align 1
 @.sconst.559 = private constant [6 x i8] c"\04true\00"
-@.str.560 = private unnamed_addr constant [11 x i8] c"serverInfo\00", align 1
-@.str.561 = private unnamed_addr constant [5 x i8] c"name\00", align 1
-@.str.562 = private unnamed_addr constant [8 x i8] c"scalyls\00", align 1
-@.str.563 = private unnamed_addr constant [8 x i8] c"version\00", align 1
-@.str.564 = private unnamed_addr constant [6 x i8] c"0.1.0\00", align 1
-@.str.565 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.566 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.567 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.568 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.sconst.569 = private constant [6 x i8] c"\04null\00"
-@.str.570 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.571 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.572 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.573 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.str.560 = private unnamed_addr constant [24 x i8] c"workspaceSymbolProvider\00", align 1
+@.sconst.561 = private constant [6 x i8] c"\04true\00"
+@.str.562 = private unnamed_addr constant [18 x i8] c"inlayHintProvider\00", align 1
+@.sconst.563 = private constant [6 x i8] c"\04true\00"
+@.str.564 = private unnamed_addr constant [11 x i8] c"serverInfo\00", align 1
+@.str.565 = private unnamed_addr constant [5 x i8] c"name\00", align 1
+@.str.566 = private unnamed_addr constant [8 x i8] c"scalyls\00", align 1
+@.str.567 = private unnamed_addr constant [8 x i8] c"version\00", align 1
+@.str.568 = private unnamed_addr constant [6 x i8] c"0.1.0\00", align 1
+@.str.569 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.570 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.571 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.572 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.sconst.573 = private constant [6 x i8] c"\04null\00"
 @.str.574 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
 @.str.575 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
 @.str.576 = private unnamed_addr constant [3 x i8] c"id\00", align 1
 @.str.577 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.sconst.578 = private constant [6 x i8] c"\04null\00"
-@.str.579 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.580 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.581 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.582 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.sconst.583 = private constant [6 x i8] c"\04null\00"
+@.str.578 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.579 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.580 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.581 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.sconst.582 = private constant [6 x i8] c"\04null\00"
+@.str.583 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.584 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.585 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.586 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.sconst.587 = private constant [6 x i8] c"\04null\00"
 
 declare ptr @memcpy(...)
 
@@ -5053,7 +5088,7 @@ define linkonce_odr void @_ZN11diagnostics9strip_uriEPN4scaly6memory4PageE6Strin
 entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.113 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.117 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String11starts_withE6String(ptr %2, ptr %arg.tmp)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
@@ -5069,6 +5104,4358 @@ if.end:                                           ; preds = %entry
   call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 7, i64 %sub)
   %sret.body2 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI6StringE, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI6StringE %load.struct1, 1
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr ptr @_ZN6VectorI6StringE7get_ptrEm(ptr %0, i64 %1) {
+entry:
+  %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI6StringE %load.struct1, 1
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN6VectorI6StringE3putEm6String(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.14)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI6StringE %load.struct1, 1
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %1
+  %store.load = load { ptr }, ptr %2, align 8
+  store { ptr } %store.load, ptr %ptr.add, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN14VectorIteratorI6StringE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI6StringE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI6StringE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI6StringE %load.struct2, 0
+  %deref = load %_Z6VectorI6StringE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI6StringE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI6StringE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI6StringE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI6StringE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI6StringEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6StringE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z14VectorIteratorI6StringE, align 8
+  call void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z14VectorIteratorI6StringE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5SliceI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5SliceI6StringE, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI6StringE %load.struct1, 0
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr i1 @_ZN5SliceI6StringE8is_emptyEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %eq = icmp eq i64 %length, 0
+  ret i1 %eq
+}
+
+define linkonce_odr void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
+entry:
+  %tuple = alloca %_Z5SliceI6StringE, align 8
+  %from = alloca i64, align 8
+  store i64 %3, ptr %from, align 1
+  %to = alloca i64, align 8
+  store i64 %4, ptr %to, align 1
+  %from1 = load i64, ptr %from, align 8
+  %load.struct = load %_Z5SliceI6StringE, ptr %2, align 8
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %gt = icmp ugt i64 %from1, %length
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %load.struct2 = load %_Z5SliceI6StringE, ptr %2, align 8
+  %length3 = extractvalue %_Z5SliceI6StringE %load.struct2, 1
+  store i64 %length3, ptr %from, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %to4 = load i64, ptr %to, align 8
+  %load.struct5 = load %_Z5SliceI6StringE, ptr %2, align 8
+  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 1
+  %gt7 = icmp ugt i64 %to4, %length6
+  br i1 %gt7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end
+  %load.struct10 = load %_Z5SliceI6StringE, ptr %2, align 8
+  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 1
+  store i64 %length11, ptr %to, align 1
+  br label %if.end9
+
+if.end9:                                          ; preds = %if.then8, %if.end
+  %from12 = load i64, ptr %from, align 8
+  %to13 = load i64, ptr %to, align 8
+  %gt14 = icmp ugt i64 %from12, %to13
+  br i1 %gt14, label %if.then15, label %if.end16
+
+if.then15:                                        ; preds = %if.end9
+  %to17 = load i64, ptr %to, align 8
+  store i64 %to17, ptr %from, align 1
+  br label %if.end16
+
+if.end16:                                         ; preds = %if.then15, %if.end9
+  %load.struct18 = load %_Z5SliceI6StringE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI6StringE %load.struct18, 0
+  %from19 = load i64, ptr %from, align 8
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %from19
+  %to20 = load i64, ptr %to, align 8
+  %from21 = load i64, ptr %from, align 8
+  %sub = sub i64 %to20, %from21
+  %tuple.field = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
+  store ptr %ptr.add, ptr %tuple.field, align 1
+  %tuple.field22 = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
+  store i64 %sub, ptr %tuple.field22, align 1
+  %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6StringE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6StringE, align 8
+  %field.inplace = getelementptr inbounds %_Z5SliceI6StringE, ptr %2, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %2, i64 %3, i64 %field.val)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  %sret.body = load %_Z5SliceI6StringE, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6StringE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6StringE, align 8
+  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %2, i64 0, i64 %3)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  %sret.body = load %_Z5SliceI6StringE, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI6StringE, ptr %1, align 8
+  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
+  %ne = icmp ne i64 %length, %length2
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct3 = load %_Z5SliceI6StringE, ptr %0, align 8
+  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 1
+  %eq = icmp eq i64 %length4, 0
+  br i1 %eq, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret i1 true
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z5SliceI6StringE, ptr %0, align 8
+  %data = extractvalue %_Z5SliceI6StringE %load.struct7, 0
+  %load.struct8 = load %_Z5SliceI6StringE, ptr %1, align 8
+  %data9 = extractvalue %_Z5SliceI6StringE %load.struct8, 0
+  %load.struct10 = load %_Z5SliceI6StringE, ptr %0, align 8
+  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 1
+  %mul = mul i64 %length11, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
+  %sext = sext i32 %call to i64
+  %eq12 = icmp eq i64 %sext, 0
+  ret i1 %eq12
+}
+
+define linkonce_odr i1 @_ZN5SliceI6StringE11starts_withE5SliceI6StringE(ptr %0, ptr %1) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6StringE, align 8
+  %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
+  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
+  %gt = icmp ugt i64 %length, %length2
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %field.inplace = getelementptr inbounds %_Z5SliceI6StringE, ptr %1, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %0, i64 0, i64 %field.val)
+  %call = call i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 %call
+}
+
+define linkonce_odr i1 @_ZN5SliceI6StringE9ends_withE5SliceI6StringE(ptr %0, ptr %1) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6StringE, align 8
+  %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
+  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
+  %gt = icmp ugt i64 %length, %length2
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct3 = load %_Z5SliceI6StringE, ptr %0, align 8
+  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 1
+  %load.struct5 = load %_Z5SliceI6StringE, ptr %1, align 8
+  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 1
+  %sub = sub i64 %length4, %length6
+  %field.inplace = getelementptr inbounds %_Z5SliceI6StringE, ptr %0, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %0, i64 %sub, i64 %field.val)
+  %call = call i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 %call
+}
+
+define linkonce_odr ptr @_ZN13SliceIteratorI6StringE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
+  %position = extractvalue %_Z13SliceIteratorI6StringE %load.struct, 1
+  %load.struct1 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
+  %slice = extractvalue %_Z13SliceIteratorI6StringE %load.struct1, 0
+  %length = extractvalue %_Z5SliceI6StringE %slice, 1
+  %ge = icmp uge i64 %position, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct2 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
+  %slice3 = extractvalue %_Z13SliceIteratorI6StringE %load.struct2, 0
+  %data = extractvalue %_Z5SliceI6StringE %slice3, 0
+  %load.struct4 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
+  %position5 = extractvalue %_Z13SliceIteratorI6StringE %load.struct4, 1
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %position5
+  %load.struct6 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
+  %position7 = extractvalue %_Z13SliceIteratorI6StringE %load.struct6, 1
+  %add = add i64 %position7, 1
+  %position8 = getelementptr inbounds %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position8, align 8
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13SliceIteratorI6StringEC1E5SliceI6StringE(ptr %0, ptr %1) {
+entry:
+  %slice = getelementptr inbounds %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 0
+  %field.load = load %_Z5SliceI6StringE, ptr %1, align 8
+  store %_Z5SliceI6StringE %field.load, ptr %slice, align 8
+  %position = getelementptr inbounds %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN13SliceIteratorI6StringEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI6StringE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13SliceIteratorI6StringE, align 8
+  call void @_ZN13SliceIteratorI6StringEC1E5SliceI6StringE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13SliceIteratorI6StringE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13SliceIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6StringEC1Ev(ptr %0) {
+entry:
+  %data = getelementptr inbounds %_Z5SliceI6StringE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %data, align 8
+  %length = getelementptr inbounds %_Z5SliceI6StringE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorI6StringE, ptr %2, align 8
+  %data = extractvalue %_Z6VectorI6StringE %load.struct, 1
+  %load.struct1 = load %_Z6VectorI6StringE, ptr %2, align 8
+  %length = extractvalue %_Z6VectorI6StringE %load.struct1, 0
+  %tuple = alloca %_Z5SliceI6StringE, align 8
+  %tuple.field = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
+  store ptr %data, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringEC1EP6Stringm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
+  store i64 %2, ptr %length, align 8
+  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr %1, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringEC1Em(ptr %0, i64 %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
+  store i64 %1, ptr %length, align 8
+  %gt = icmp ugt i64 %1, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %1, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr %call1, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul2 = mul i64 %1, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data4 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data4, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call3, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringEC1E6VectorI6StringE(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI6StringE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI6StringE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace7 = getelementptr inbounds %_Z6VectorI6StringE, ptr %1, i32 0, i32 1
+  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
+  %load.struct9 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length10 = extractvalue %_Z6VectorI6StringE %load.struct9, 0
+  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data13 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data13, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayI6StringE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
+  %deref = load %_Z6VectorI6StringE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI6StringE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI6StringE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
+  %deref = load %_Z6VectorI6StringE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI6StringE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI6StringE10reallocateEv(ptr %0) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = alloca i64, align 8
+  store i64 0, ptr %length, align 1
+  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call2 = call i64 @_ZN4Page12get_capacityEm(ptr %call1, i64 8)
+  %sub = sub i64 %call2, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %udiv = udiv i64 %sub, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %length, align 1
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %length3 = load i64, ptr %length, align 8
+  call void @_ZN6VectorI6StringEC1Em(ptr %struct.region, i64 %length3)
+  %vector4 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector4, align 8
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %load.struct5 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector6 = extractvalue %_Z5ArrayI6StringE %load.struct5, 1
+  %deref = load %_Z6VectorI6StringE, ptr %vector6, align 8
+  %length7 = extractvalue %_Z6VectorI6StringE %deref, 0
+  %mul = mul i64 %length7, 2
+  store i64 %mul, ptr %length, align 1
+  %call8 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %call8, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %length10 = load i64, ptr %length, align 8
+  call void @_ZN6VectorI6StringEC1Em(ptr %struct.region9, i64 %length10)
+  %load.struct11 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector12 = extractvalue %_Z5ArrayI6StringE %load.struct11, 1
+  %deref13 = load %_Z6VectorI6StringE, ptr %vector12, align 8
+  %length14 = extractvalue %_Z6VectorI6StringE %deref13, 0
+  %mul15 = mul i64 %length14, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %struct.region9, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace16 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  %load.struct17 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI6StringE %load.struct17, 1
+  %deref19 = load %_Z6VectorI6StringE, ptr %vector18, align 8
+  %data = extractvalue %_Z6VectorI6StringE %deref19, 1
+  %call20 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul15)
+  %load.struct21 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI6StringE %load.struct21, 1
+  %call23 = call ptr @_ZN4Page3getEPv(ptr %vector22)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call, ptr %call23)
+  %vector24 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region9, ptr %vector24, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6StringE3addE6String(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI6StringE %load.struct2, 1
+  %deref = load %_Z6VectorI6StringE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI6StringE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI6StringE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI6StringE %load.struct6, 1
+  %deref8 = load %_Z6VectorI6StringE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI6StringE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI6StringE %load.struct9, 0
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %length10
+  %store.load = load { ptr }, ptr %1, align 8
+  store { ptr } %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI6StringE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6StringE3addE6VectorI6StringE(ptr %0, ptr %1) {
+entry:
+  %own_page = alloca ptr, align 8
+  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
+  %load.struct1 = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length2 = extractvalue %_Z6VectorI6StringE %load.struct1, 0
+  %add = add i64 %length, %length2
+  %new_length = alloca i64, align 8
+  store i64 %add, ptr %new_length, align 1
+  %new_length3 = load i64, ptr %new_length, align 8
+  %load.struct4 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length5 = extractvalue %_Z5ArrayI6StringE %load.struct4, 0
+  %lt = icmp ult i64 %new_length3, %length5
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 14)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct6 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct6, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %if.end
+  %new_length7 = load i64, ptr %new_length, align 8
+  %load.struct8 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector9 = extractvalue %_Z5ArrayI6StringE %load.struct8, 1
+  %deref = load %_Z6VectorI6StringE, ptr %vector9, align 8
+  %length10 = extractvalue %_Z6VectorI6StringE %deref, 0
+  %gt = icmp ugt i64 %new_length7, %length10
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %if.end
+  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
+  br i1 %lor.result, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %lor.end
+  call void @_ZN5ArrayI6StringE10reallocateEv(ptr %0)
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %lor.end
+  %new_length13 = load i64, ptr %new_length, align 8
+  %load.struct14 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector15 = extractvalue %_Z5ArrayI6StringE %load.struct14, 1
+  %deref16 = load %_Z6VectorI6StringE, ptr %vector15, align 8
+  %length17 = extractvalue %_Z6VectorI6StringE %deref16, 0
+  %gt18 = icmp ugt i64 %new_length13, %length17
+  br i1 %gt18, label %if.then19, label %if.end20
+
+if.then19:                                        ; preds = %if.end12
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  store ptr %call, ptr %own_page, align 1
+  %own_page21 = load ptr, ptr %own_page, align 8
+  %new_length22 = load i64, ptr %new_length, align 8
+  %mul = mul i64 %new_length22, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call23 = call ptr @_ZN4Page8allocateEmm(ptr %own_page21, i64 %mul, i64 8)
+  %load.struct24 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length25 = extractvalue %_Z5ArrayI6StringE %load.struct24, 0
+  %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %load.struct27 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length28 = extractvalue %_Z5ArrayI6StringE %load.struct27, 0
+  %gt29 = icmp ugt i64 %length28, 0
+  br i1 %gt29, label %if.then30, label %if.end31
+
+if.end20:                                         ; preds = %if.end31, %if.end12
+  %load.struct48 = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length49 = extractvalue %_Z6VectorI6StringE %load.struct48, 0
+  %gt50 = icmp ugt i64 %length49, 0
+  br i1 %gt50, label %if.then51, label %if.end52
+
+if.then30:                                        ; preds = %if.then19
+  %field.inplace = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  %load.struct32 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector33 = extractvalue %_Z5ArrayI6StringE %load.struct32, 1
+  %deref34 = load %_Z6VectorI6StringE, ptr %vector33, align 8
+  %data = extractvalue %_Z6VectorI6StringE %deref34, 1
+  %call35 = call ptr @memcpy(ptr %call23, ptr %data, i64 %mul26)
+  br label %if.end31
+
+if.end31:                                         ; preds = %if.then30, %if.then19
+  %load.struct36 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI6StringE %load.struct36, 1
+  %deref38 = load %_Z6VectorI6StringE, ptr %vector37, align 8
+  %data39 = extractvalue %_Z6VectorI6StringE %deref38, 1
+  %call40 = call ptr @_ZN4Page3getEPv(ptr %data39)
+  %own_page41 = load ptr, ptr %own_page, align 8
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %own_page41, ptr %call40)
+  %vector42 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  %field.deref = load ptr, ptr %vector42, align 8
+  %data43 = getelementptr inbounds %_Z6VectorI6StringE, ptr %field.deref, i32 0, i32 1
+  store ptr %call23, ptr %data43, align 8
+  %new_length44 = load i64, ptr %new_length, align 8
+  %vector45 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  %field.deref46 = load ptr, ptr %vector45, align 8
+  %length47 = getelementptr inbounds %_Z6VectorI6StringE, ptr %field.deref46, i32 0, i32 0
+  store i64 %new_length44, ptr %length47, align 8
+  br label %if.end20
+
+if.then51:                                        ; preds = %if.end20
+  %load.struct53 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector54 = extractvalue %_Z5ArrayI6StringE %load.struct53, 1
+  %deref55 = load %_Z6VectorI6StringE, ptr %vector54, align 8
+  %data56 = extractvalue %_Z6VectorI6StringE %deref55, 1
+  %load.struct57 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length58 = extractvalue %_Z5ArrayI6StringE %load.struct57, 0
+  %mul59 = mul i64 %length58, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data56, i64 %mul59
+  %field.inplace60 = getelementptr inbounds %_Z6VectorI6StringE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace60, align 8
+  %load.struct61 = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length62 = extractvalue %_Z6VectorI6StringE %load.struct61, 0
+  %mul63 = mul i64 %length62, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call64 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv, i64 %mul63)
+  br label %if.end52
+
+if.end52:                                         ; preds = %if.then51, %if.end20
+  %load.struct65 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length66 = extractvalue %_Z5ArrayI6StringE %load.struct65, 0
+  %load.struct67 = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length68 = extractvalue %_Z6VectorI6StringE %load.struct67, 0
+  %add69 = add i64 %length66, %length68
+  %length70 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
+  store i64 %add69, ptr %length70, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z5ArrayI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6StringE, ptr %1, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
+  %deref = load %_Z6VectorI6StringE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorI6StringE %deref, 1
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI6StringE3putEm6String(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.15)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
+  %deref = load %_Z6VectorI6StringE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorI6StringE %deref, 1
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %1
+  %store.load = load { ptr }, ptr %2, align 8
+  store { ptr } %store.load, ptr %ptr.add, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN13ArrayIteratorI6StringE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
+  %array = extractvalue %_Z13ArrayIteratorI6StringE %load.struct, 0
+  %eq = icmp eq ptr %array, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
+  %position = extractvalue %_Z13ArrayIteratorI6StringE %load.struct1, 1
+  %load.struct2 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
+  %array3 = extractvalue %_Z13ArrayIteratorI6StringE %load.struct2, 0
+  %deref = load %_Z5ArrayI6StringE, ptr %array3, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
+  %position8 = extractvalue %_Z13ArrayIteratorI6StringE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @_ZN5ArrayI6StringE10get_bufferEv(ptr %deref.recv)
+  %load.struct10 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
+  %position11 = extractvalue %_Z13ArrayIteratorI6StringE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %ptr.add = getelementptr inbounds { ptr }, ptr %call, i64 %sub
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorI6StringEC1EP5ArrayI6StringE(ptr %0, ptr %1) {
+entry:
+  %array = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %array, align 8
+  %position = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorI6StringEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6StringE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13ArrayIteratorI6StringE, align 8
+  call void @_ZN13ArrayIteratorI6StringEC1EP5ArrayI6StringE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13ArrayIteratorI6StringE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6StringEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %vector = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6StringEC1Em(ptr %0, i64 %1) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %vector = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %deref = load ptr, ptr %call, align 8
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %deref)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI6StringEC1Em(ptr %struct.region, i64 %1)
+  %vector2 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringEC1E5ArrayI6StringE(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI6StringE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI6StringE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %load.struct7 = load %_Z5ArrayI6StringE, ptr %1, align 8
+  %vector = extractvalue %_Z5ArrayI6StringE %load.struct7, 1
+  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace8 = getelementptr inbounds %_Z6VectorI6StringE, ptr %vector, i32 0, i32 1
+  %deref.recv9 = load ptr, ptr %field.inplace8, align 8
+  %load.struct10 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length11 = extractvalue %_Z6VectorI6StringE %load.struct10, 0
+  %mul12 = mul i64 %length11, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call13 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv9, i64 %mul12)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data14 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data14, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call13, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN4ListI6StringE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI6StringE, ptr %1, align 8
+  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z4ListI6StringE, ptr %1, i32 0, i32 0
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %addr.gep, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr ptr @_ZN12ListIteratorI6StringE4nextEv(ptr %0) {
+entry:
+  %old_current = alloca ptr, align 8
+  %load.struct = load %_Z12ListIteratorI6StringE, ptr %0, align 8
+  %current = extractvalue %_Z12ListIteratorI6StringE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z12ListIteratorI6StringE, ptr %0, align 8
+  %current2 = extractvalue %_Z12ListIteratorI6StringE %load.struct1, 0
+  store ptr %current2, ptr %old_current, align 1
+  %load.struct3 = load %_Z12ListIteratorI6StringE, ptr %0, align 8
+  %current4 = extractvalue %_Z12ListIteratorI6StringE %load.struct3, 0
+  %deref = load %_Z4NodeI6StringE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI6StringE %deref, 1
+  %current5 = getelementptr inbounds %_Z12ListIteratorI6StringE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %old_current6 = load ptr, ptr %old_current, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeI6StringE, ptr %old_current6, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN12ListIteratorI6StringEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr i64 @_ZN4ListI6StringE5countEv(ptr %0) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z12ListIteratorI6StringE, align 8
+  call void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %sret.result, ptr %local_page, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN12ListIteratorI6StringE4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i64 %i3
+}
+
+define linkonce_odr i1 @_ZN4ListI6StringE6removeE6String(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI6StringE, ptr %0, align 8
+  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
+  %node = alloca ptr, align 8
+  store ptr %head, ptr %node, align 1
+  %previous_node = alloca ptr, align 8
+  store ptr null, ptr %previous_node, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %base.deref = load ptr, ptr %node, align 8
+  %field.inplace = getelementptr inbounds %_Z4NodeI6StringE, ptr %base.deref, i32 0, i32 0
+  %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %1)
+  br i1 %call, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then:                                          ; preds = %while.body
+  %previous_node2 = load ptr, ptr %previous_node, align 8
+  %ne3 = icmp ne ptr %previous_node2, null
+  br i1 %ne3, label %if.then4, label %if.end5
+
+if.end:                                           ; preds = %while.body
+  %node18 = load ptr, ptr %node, align 8
+  store ptr %node18, ptr %previous_node, align 1
+  %node19 = load ptr, ptr %node, align 8
+  %load.struct20 = load %_Z4NodeI6StringE, ptr %node19, align 8
+  %next21 = extractvalue %_Z4NodeI6StringE %load.struct20, 1
+  store ptr %next21, ptr %node, align 1
+  br label %while.cond
+
+if.then4:                                         ; preds = %if.then
+  %node6 = load ptr, ptr %node, align 8
+  %load.struct7 = load %_Z4NodeI6StringE, ptr %node6, align 8
+  %next = extractvalue %_Z4NodeI6StringE %load.struct7, 1
+  %ptr.load = load ptr, ptr %previous_node, align 8
+  %next8 = getelementptr inbounds %_Z4NodeI6StringE, ptr %ptr.load, i32 0, i32 1
+  store ptr %next, ptr %next8, align 8
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.then
+  %node9 = load ptr, ptr %node, align 8
+  %load.struct10 = load %_Z4ListI6StringE, ptr %0, align 8
+  %head11 = extractvalue %_Z4ListI6StringE %load.struct10, 0
+  %eq = icmp eq ptr %node9, %head11
+  br i1 %eq, label %if.then12, label %if.end13
+
+if.then12:                                        ; preds = %if.end5
+  %node14 = load ptr, ptr %node, align 8
+  %load.struct15 = load %_Z4NodeI6StringE, ptr %node14, align 8
+  %next16 = extractvalue %_Z4NodeI6StringE %load.struct15, 1
+  %head17 = getelementptr inbounds %_Z4ListI6StringE, ptr %0, i32 0, i32 0
+  store ptr %next16, ptr %head17, align 8
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %if.end5
+  ret i1 true
+}
+
+define linkonce_odr void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z4ListI6StringE, ptr %2, align 8
+  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
+  %tuple = alloca %_Z12ListIteratorI6StringE, align 8
+  %tuple.field = getelementptr inbounds %_Z12ListIteratorI6StringE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z12ListIteratorI6StringE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI6StringE3addE6String(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI6StringE, ptr %0, align 8
+  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load { ptr }, ptr %1, align 8
+  %tuple.field = getelementptr inbounds %_Z4NodeI6StringE, ptr %tuple.region, i32 0, i32 0
+  store { ptr } %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %tuple.region, i32 0, i32 1
+  store ptr %head, ptr %tuple.field1, align 1
+  %head2 = getelementptr inbounds %_Z4ListI6StringE, ptr %0, i32 0, i32 0
+  store ptr %tuple.region, ptr %head2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI6StringEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6StringEC1E4ListI6StringE(ptr %0, ptr %1) {
+entry:
+  %deref.tmp = alloca { ptr }, align 8
+  %i = alloca i64, align 8
+  %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z12ListIteratorI6StringE, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %call1 = call i64 @_ZN4ListI6StringE5countEv(ptr %1)
+  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
+  store i64 %call1, ptr %length, align 8
+  %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length2 = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %gt = icmp ugt i64 %length2, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct3 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length4 = extractvalue %_Z6VectorI6StringE %load.struct3, 0
+  %mul = mul i64 %length4, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr %call5, ptr %data, align 8
+  call void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %sret.result, ptr %local_page, ptr %1)
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %load.struct6 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %length7 = extractvalue %_Z6VectorI6StringE %load.struct6, 0
+  store i64 %length7, ptr %i, align 1
+  br label %while.cond
+
+if.else:                                          ; preds = %entry
+  %data14 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data14, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret void
+
+while.cond:                                       ; preds = %while.body, %if.then
+  %list_iterator8 = load ptr, ptr %list_iterator, align 8
+  %call9 = call ptr @_ZN12ListIteratorI6StringE4nextEv(ptr %list_iterator8)
+  %while.tobool = icmp ne ptr %call9, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i10 = load i64, ptr %i, align 8
+  %sub = sub i64 %i10, 1
+  store i64 %sub, ptr %i, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %load.struct11 = load %_Z6VectorI6StringE, ptr %0, align 8
+  %data12 = extractvalue %_Z6VectorI6StringE %load.struct11, 1
+  %i13 = load i64, ptr %i, align 8
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data12, i64 %i13
+  %store.load = load { ptr }, ptr %deref.tmp, align 8
+  store { ptr } %store.load, ptr %ptr.add, align 8
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  br label %if.end
+}
+
+declare i64 @_ZN6String4hashEv(ptr)
+
+define linkonce_odr ptr @_ZN6VectorI6VectorI6StringEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr ptr @_ZN6VectorI6VectorI6StringEE7get_ptrEm(ptr %0, i64 %1) {
+entry:
+  %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEE3putEm6VectorI6StringE(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.16)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %1
+  %store.load = load %_Z6VectorI6StringE, ptr %2, align 8
+  store %_Z6VectorI6StringE %store.load, ptr %ptr.add, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN14VectorIteratorI6VectorI6StringEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI6VectorI6StringEE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI6VectorI6StringEE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI6VectorI6StringEE %load.struct2, 0
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI6VectorI6StringEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI6VectorI6StringEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI6VectorI6StringEE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI6VectorI6StringEEC1EP6VectorI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6VectorI6StringEE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z14VectorIteratorI6VectorI6StringEE, align 8
+  call void @_ZN14VectorIteratorI6VectorI6StringEEC1EP6VectorI6VectorI6StringEE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z14VectorIteratorI6VectorI6StringEE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5SliceI6VectorI6StringEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 0
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE8is_emptyEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %eq = icmp eq i64 %length, 0
+  ret i1 %eq
+}
+
+define linkonce_odr void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
+entry:
+  %tuple = alloca %_Z5SliceI6VectorI6StringEE, align 8
+  %from = alloca i64, align 8
+  store i64 %3, ptr %from, align 1
+  %to = alloca i64, align 8
+  store i64 %4, ptr %to, align 1
+  %from1 = load i64, ptr %from, align 8
+  %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %gt = icmp ugt i64 %from1, %length
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %load.struct2 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
+  %length3 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct2, 1
+  store i64 %length3, ptr %from, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %to4 = load i64, ptr %to, align 8
+  %load.struct5 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
+  %length6 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct5, 1
+  %gt7 = icmp ugt i64 %to4, %length6
+  br i1 %gt7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end
+  %load.struct10 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
+  %length11 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct10, 1
+  store i64 %length11, ptr %to, align 1
+  br label %if.end9
+
+if.end9:                                          ; preds = %if.then8, %if.end
+  %from12 = load i64, ptr %from, align 8
+  %to13 = load i64, ptr %to, align 8
+  %gt14 = icmp ugt i64 %from12, %to13
+  br i1 %gt14, label %if.then15, label %if.end16
+
+if.then15:                                        ; preds = %if.end9
+  %to17 = load i64, ptr %to, align 8
+  store i64 %to17, ptr %from, align 1
+  br label %if.end16
+
+if.end16:                                         ; preds = %if.then15, %if.end9
+  %load.struct18 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct18, 0
+  %from19 = load i64, ptr %from, align 8
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %from19
+  %to20 = load i64, ptr %to, align 8
+  %from21 = load i64, ptr %from, align 8
+  %sub = sub i64 %to20, %from21
+  %tuple.field = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %ptr.add, ptr %tuple.field, align 1
+  %tuple.field22 = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 1
+  store i64 %sub, ptr %tuple.field22, align 1
+  %tuple.val = load %_Z5SliceI6VectorI6StringEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6VectorI6StringEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6VectorI6StringEE, align 8
+  %field.inplace = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %2, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %sret.result, ptr %local_page, ptr %2, i64 %3, i64 %field.val)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  %sret.body = load %_Z5SliceI6VectorI6StringEE, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6VectorI6StringEE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6VectorI6StringEE, align 8
+  call void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %sret.result, ptr %local_page, ptr %2, i64 0, i64 %3)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  %sret.body = load %_Z5SliceI6VectorI6StringEE, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE6equalsE5SliceI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
+  %ne = icmp ne i64 %length, %length2
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct3 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %length4 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct3, 1
+  %eq = icmp eq i64 %length4, 0
+  br i1 %eq, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret i1 true
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct7, 0
+  %load.struct8 = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  %data9 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct8, 0
+  %load.struct10 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %length11 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct10, 1
+  %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
+  %sext = sext i32 %call to i64
+  %eq12 = icmp eq i64 %sext, 0
+  ret i1 %eq12
+}
+
+define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE11starts_withE5SliceI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6VectorI6StringEE, align 8
+  %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
+  %gt = icmp ugt i64 %length, %length2
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %field.inplace = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %1, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %sret.result, ptr %local_page, ptr %0, i64 0, i64 %field.val)
+  %call = call i1 @_ZN5SliceI6VectorI6StringEE6equalsE5SliceI6VectorI6StringEE(ptr %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 %call
+}
+
+define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE9ends_withE5SliceI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI6VectorI6StringEE, align 8
+  %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
+  %gt = icmp ugt i64 %length, %length2
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct3 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
+  %length4 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct3, 1
+  %load.struct5 = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  %length6 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct5, 1
+  %sub = sub i64 %length4, %length6
+  %field.inplace = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %sret.result, ptr %local_page, ptr %0, i64 %sub, i64 %field.val)
+  %call = call i1 @_ZN5SliceI6VectorI6StringEE6equalsE5SliceI6VectorI6StringEE(ptr %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 %call
+}
+
+define linkonce_odr ptr @_ZN13SliceIteratorI6VectorI6StringEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct, 1
+  %load.struct1 = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
+  %slice = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct1, 0
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %slice, 1
+  %ge = icmp uge i64 %position, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct2 = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
+  %slice3 = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct2, 0
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %slice3, 0
+  %load.struct4 = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position5 = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct4, 1
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %position5
+  %load.struct6 = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position7 = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct6, 1
+  %add = add i64 %position7, 1
+  %position8 = getelementptr inbounds %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position8, align 8
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13SliceIteratorI6VectorI6StringEEC1E5SliceI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %slice = getelementptr inbounds %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  %field.load = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
+  store %_Z5SliceI6VectorI6StringEE %field.load, ptr %slice, align 8
+  %position = getelementptr inbounds %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN13SliceIteratorI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI6VectorI6StringEE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13SliceIteratorI6VectorI6StringEE, align 8
+  call void @_ZN13SliceIteratorI6VectorI6StringEEC1E5SliceI6VectorI6StringEE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13SliceIteratorI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  %data = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %data, align 8
+  %length = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %2, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 1
+  %load.struct1 = load %_Z6VectorI6VectorI6StringEE, ptr %2, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct1, 0
+  %tuple = alloca %_Z5SliceI6VectorI6StringEE, align 8
+  %tuple.field = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %data, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI6VectorI6StringEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %data = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1EP6VectorI6StringEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %2, ptr %length, align 8
+  %data = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %1, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1Em(ptr %0, i64 %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %1, ptr %length, align 8
+  %gt = icmp ugt i64 %1, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %call1, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data4 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data4, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call3, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1E6VectorI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace7 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %1, i32 0, i32 1
+  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
+  %load.struct9 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length10 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct9, 0
+  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data13 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data13, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayI6VectorI6StringEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct1, 1
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI6VectorI6StringEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI6VectorI6StringEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct1, 1
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE10reallocateEv(ptr %0) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = alloca i64, align 8
+  store i64 0, ptr %length, align 1
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call2 = call i64 @_ZN4Page12get_capacityEm(ptr %call1, i64 8)
+  %sub = sub i64 %call2, ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64)
+  %udiv = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %length, align 1
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  %length3 = load i64, ptr %length, align 8
+  call void @_ZN6VectorI6VectorI6StringEEC1Em(ptr %struct.region, i64 %length3)
+  %vector4 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector4, align 8
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %load.struct5 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector6 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct5, 1
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector6, align 8
+  %length7 = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 0
+  %mul = mul i64 %length7, 2
+  store i64 %mul, ptr %length, align 1
+  %call8 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %call8, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  %length10 = load i64, ptr %length, align 8
+  call void @_ZN6VectorI6VectorI6StringEEC1Em(ptr %struct.region9, i64 %length10)
+  %load.struct11 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector12 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct11, 1
+  %deref13 = load %_Z6VectorI6VectorI6StringEE, ptr %vector12, align 8
+  %length14 = extractvalue %_Z6VectorI6VectorI6StringEE %deref13, 0
+  %mul15 = mul i64 %length14, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %struct.region9, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace16 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %load.struct17 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct17, 1
+  %deref19 = load %_Z6VectorI6VectorI6StringEE, ptr %vector18, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %deref19, 1
+  %call20 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul15)
+  %load.struct21 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct21, 1
+  %call23 = call ptr @_ZN4Page3getEPv(ptr %vector22)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call, ptr %call23)
+  %vector24 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region9, ptr %vector24, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE3addE6VectorI6StringE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct2, 1
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI6VectorI6StringEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI6VectorI6StringEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %length10
+  %store.load = load %_Z6VectorI6StringE, ptr %1, align 8
+  store %_Z6VectorI6StringE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE3addE6VectorI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %own_page = alloca ptr, align 8
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
+  %load.struct1 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length2 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct1, 0
+  %add = add i64 %length, %length2
+  %new_length = alloca i64, align 8
+  store i64 %add, ptr %new_length, align 1
+  %new_length3 = load i64, ptr %new_length, align 8
+  %load.struct4 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length5 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct4, 0
+  %lt = icmp ult i64 %new_length3, %length5
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 14)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct6 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct6, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %if.end
+  %new_length7 = load i64, ptr %new_length, align 8
+  %load.struct8 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector9 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct8, 1
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector9, align 8
+  %length10 = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 0
+  %gt = icmp ugt i64 %new_length7, %length10
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %if.end
+  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
+  br i1 %lor.result, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %lor.end
+  call void @_ZN5ArrayI6VectorI6StringEE10reallocateEv(ptr %0)
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %lor.end
+  %new_length13 = load i64, ptr %new_length, align 8
+  %load.struct14 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector15 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct14, 1
+  %deref16 = load %_Z6VectorI6VectorI6StringEE, ptr %vector15, align 8
+  %length17 = extractvalue %_Z6VectorI6VectorI6StringEE %deref16, 0
+  %gt18 = icmp ugt i64 %new_length13, %length17
+  br i1 %gt18, label %if.then19, label %if.end20
+
+if.then19:                                        ; preds = %if.end12
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  store ptr %call, ptr %own_page, align 1
+  %own_page21 = load ptr, ptr %own_page, align 8
+  %new_length22 = load i64, ptr %new_length, align 8
+  %mul = mul i64 %new_length22, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call23 = call ptr @_ZN4Page8allocateEmm(ptr %own_page21, i64 %mul, i64 8)
+  %load.struct24 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length25 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct24, 0
+  %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %load.struct27 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length28 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct27, 0
+  %gt29 = icmp ugt i64 %length28, 0
+  br i1 %gt29, label %if.then30, label %if.end31
+
+if.end20:                                         ; preds = %if.end31, %if.end12
+  %load.struct48 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length49 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct48, 0
+  %gt50 = icmp ugt i64 %length49, 0
+  br i1 %gt50, label %if.then51, label %if.end52
+
+if.then30:                                        ; preds = %if.then19
+  %field.inplace = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %load.struct32 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector33 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct32, 1
+  %deref34 = load %_Z6VectorI6VectorI6StringEE, ptr %vector33, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %deref34, 1
+  %call35 = call ptr @memcpy(ptr %call23, ptr %data, i64 %mul26)
+  br label %if.end31
+
+if.end31:                                         ; preds = %if.then30, %if.then19
+  %load.struct36 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI6VectorI6StringEE, ptr %vector37, align 8
+  %data39 = extractvalue %_Z6VectorI6VectorI6StringEE %deref38, 1
+  %call40 = call ptr @_ZN4Page3getEPv(ptr %data39)
+  %own_page41 = load ptr, ptr %own_page, align 8
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %own_page41, ptr %call40)
+  %vector42 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %field.deref = load ptr, ptr %vector42, align 8
+  %data43 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %field.deref, i32 0, i32 1
+  store ptr %call23, ptr %data43, align 8
+  %new_length44 = load i64, ptr %new_length, align 8
+  %vector45 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %field.deref46 = load ptr, ptr %vector45, align 8
+  %length47 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %field.deref46, i32 0, i32 0
+  store i64 %new_length44, ptr %length47, align 8
+  br label %if.end20
+
+if.then51:                                        ; preds = %if.end20
+  %load.struct53 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector54 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct53, 1
+  %deref55 = load %_Z6VectorI6VectorI6StringEE, ptr %vector54, align 8
+  %data56 = extractvalue %_Z6VectorI6VectorI6StringEE %deref55, 1
+  %load.struct57 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length58 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct57, 0
+  %mul59 = mul i64 %length58, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data56, i64 %mul59
+  %field.inplace60 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace60, align 8
+  %load.struct61 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length62 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct61, 0
+  %mul63 = mul i64 %length62, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call64 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv, i64 %mul63)
+  br label %if.end52
+
+if.end52:                                         ; preds = %if.then51, %if.end20
+  %load.struct65 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length66 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct65, 0
+  %load.struct67 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length68 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct67, 0
+  %add69 = add i64 %length66, %length68
+  %length70 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %add69, ptr %length70, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayI6VectorI6StringEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6VectorI6StringEE, ptr %1, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct1, 1
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 1
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE3putEm6VectorI6StringE(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.17)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct1, 1
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 1
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %1
+  %store.load = load %_Z6VectorI6StringE, ptr %2, align 8
+  store %_Z6VectorI6StringE %store.load, ptr %ptr.add, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN13ArrayIteratorI6VectorI6StringEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, align 8
+  %array = extractvalue %_Z13ArrayIteratorI6VectorI6StringEE %load.struct, 0
+  %eq = icmp eq ptr %array, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position = extractvalue %_Z13ArrayIteratorI6VectorI6StringEE %load.struct1, 1
+  %load.struct2 = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, align 8
+  %array3 = extractvalue %_Z13ArrayIteratorI6VectorI6StringEE %load.struct2, 0
+  %deref = load %_Z5ArrayI6VectorI6StringEE, ptr %array3, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position8 = extractvalue %_Z13ArrayIteratorI6VectorI6StringEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @_ZN5ArrayI6VectorI6StringEE10get_bufferEv(ptr %deref.recv)
+  %load.struct10 = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, align 8
+  %position11 = extractvalue %_Z13ArrayIteratorI6VectorI6StringEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %call, i64 %sub
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorI6VectorI6StringEEC1EP5ArrayI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %array = getelementptr inbounds %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %array, align 8
+  %position = getelementptr inbounds %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6VectorI6StringEE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13ArrayIteratorI6VectorI6StringEE, align 8
+  call void @_ZN13ArrayIteratorI6VectorI6StringEEC1EP5ArrayI6VectorI6StringEE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %vector = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEEC1Em(ptr %0, i64 %1) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %vector = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %deref = load ptr, ptr %call, align 8
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %deref)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI6VectorI6StringEEC1Em(ptr %struct.region, i64 %1)
+  %vector2 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1E5ArrayI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %load.struct7 = load %_Z5ArrayI6VectorI6StringEE, ptr %1, align 8
+  %vector = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct7, 1
+  %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace8 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %vector, i32 0, i32 1
+  %deref.recv9 = load ptr, ptr %field.inplace8, align 8
+  %load.struct10 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length11 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct10, 0
+  %mul12 = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call13 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv9, i64 %mul12)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data14 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data14, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call13, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN4ListI6VectorI6StringEE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI6VectorI6StringEE, ptr %1, align 8
+  %head = extractvalue %_Z4ListI6VectorI6StringEE %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z4ListI6VectorI6StringEE, ptr %1, i32 0, i32 0
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI6StringEE, ptr %addr.gep, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr ptr @_ZN12ListIteratorI6VectorI6StringEE4nextEv(ptr %0) {
+entry:
+  %old_current = alloca ptr, align 8
+  %load.struct = load %_Z12ListIteratorI6VectorI6StringEE, ptr %0, align 8
+  %current = extractvalue %_Z12ListIteratorI6VectorI6StringEE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z12ListIteratorI6VectorI6StringEE, ptr %0, align 8
+  %current2 = extractvalue %_Z12ListIteratorI6VectorI6StringEE %load.struct1, 0
+  store ptr %current2, ptr %old_current, align 1
+  %load.struct3 = load %_Z12ListIteratorI6VectorI6StringEE, ptr %0, align 8
+  %current4 = extractvalue %_Z12ListIteratorI6VectorI6StringEE %load.struct3, 0
+  %deref = load %_Z4NodeI6VectorI6StringEE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI6VectorI6StringEE %deref, 1
+  %current5 = getelementptr inbounds %_Z12ListIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %old_current6 = load ptr, ptr %old_current, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeI6VectorI6StringEE, ptr %old_current6, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN12ListIteratorI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr i64 @_ZN4ListI6VectorI6StringEE5countEv(ptr %0) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z12ListIteratorI6VectorI6StringEE, align 8
+  call void @_ZN4ListI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI6StringEE) %sret.result, ptr %local_page, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN12ListIteratorI6VectorI6StringEE4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i64 %i3
+}
+
+define linkonce_odr i1 @_ZN4ListI6VectorI6StringEE6removeE6VectorI6StringE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI6VectorI6StringEE, ptr %0, align 8
+  %head = extractvalue %_Z4ListI6VectorI6StringEE %load.struct, 0
+  %node = alloca ptr, align 8
+  store ptr %head, ptr %node, align 1
+  %previous_node = alloca ptr, align 8
+  store ptr null, ptr %previous_node, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %node2 = load ptr, ptr %node, align 8
+  %load.struct3 = load %_Z4NodeI6VectorI6StringEE, ptr %node2, align 8
+  %element = extractvalue %_Z4NodeI6VectorI6StringEE %load.struct3, 0
+  %node4 = load ptr, ptr %node, align 8
+  store ptr %node4, ptr %previous_node, align 1
+  %node5 = load ptr, ptr %node, align 8
+  %load.struct6 = load %_Z4NodeI6VectorI6StringEE, ptr %node5, align 8
+  %next = extractvalue %_Z4NodeI6VectorI6StringEE %load.struct6, 1
+  store ptr %next, ptr %node, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+}
+
+define linkonce_odr void @_ZN4ListI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI6StringEE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z4ListI6VectorI6StringEE, ptr %2, align 8
+  %head = extractvalue %_Z4ListI6VectorI6StringEE %load.struct, 0
+  %tuple = alloca %_Z12ListIteratorI6VectorI6StringEE, align 8
+  %tuple.field = getelementptr inbounds %_Z12ListIteratorI6VectorI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z12ListIteratorI6VectorI6StringEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI6VectorI6StringEE3addE6VectorI6StringE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI6VectorI6StringEE, ptr %0, align 8
+  %head = extractvalue %_Z4ListI6VectorI6StringEE %load.struct, 0
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load %_Z6VectorI6StringE, ptr %1, align 8
+  %tuple.field = getelementptr inbounds %_Z4NodeI6VectorI6StringEE, ptr %tuple.region, i32 0, i32 0
+  store %_Z6VectorI6StringE %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z4NodeI6VectorI6StringEE, ptr %tuple.region, i32 0, i32 1
+  store ptr %head, ptr %tuple.field1, align 1
+  %head2 = getelementptr inbounds %_Z4ListI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %tuple.region, ptr %head2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI6VectorI6StringEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1E4ListI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %deref.tmp = alloca %_Z6VectorI6StringE, align 8
+  %i = alloca i64, align 8
+  %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z12ListIteratorI6VectorI6StringEE, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %call1 = call i64 @_ZN4ListI6VectorI6StringEE5countEv(ptr %1)
+  %length = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %call1, ptr %length, align 8
+  %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length2 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
+  %gt = icmp ugt i64 %length2, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct3 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length4 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct3, 0
+  %mul = mul i64 %length4, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr %call5, ptr %data, align 8
+  call void @_ZN4ListI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI6StringEE) %sret.result, ptr %local_page, ptr %1)
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %load.struct6 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %length7 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct6, 0
+  store i64 %length7, ptr %i, align 1
+  br label %while.cond
+
+if.else:                                          ; preds = %entry
+  %data14 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data14, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret void
+
+while.cond:                                       ; preds = %while.body, %if.then
+  %list_iterator8 = load ptr, ptr %list_iterator, align 8
+  %call9 = call ptr @_ZN12ListIteratorI6VectorI6StringEE4nextEv(ptr %list_iterator8)
+  %while.tobool = icmp ne ptr %call9, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i10 = load i64, ptr %i, align 8
+  %sub = sub i64 %i10, 1
+  store i64 %sub, ptr %i, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call9, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
+  %load.struct11 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
+  %data12 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct11, 1
+  %i13 = load i64, ptr %i, align 8
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data12, i64 %i13
+  %store.load = load %_Z6VectorI6StringE, ptr %deref.tmp, align 8
+  store %_Z6VectorI6StringE %store.load, ptr %ptr.add, align 8
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  br label %if.end
+}
+
+define linkonce_odr i1 @_ZN7HashSetI6StringE8containsE6String(ptr %0, ptr %1) {
+entry:
+  %i = alloca i64, align 8
+  %deref.tmp = alloca %_Z6VectorI6StringE, align 8
+  %load.struct = load %_Z7HashSetI6StringE, ptr %0, align 8
+  %slots = extractvalue %_Z7HashSetI6StringE %load.struct, 0
+  %eq = icmp eq ptr %slots, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %call = call i64 @_ZN6String4hashEv(ptr %1)
+  %load.struct1 = load %_Z7HashSetI6StringE, ptr %0, align 8
+  %slots2 = extractvalue %_Z7HashSetI6StringE %load.struct1, 0
+  %deref = load %_Z6VectorI6VectorI6StringEE, ptr %slots2, align 8
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 0
+  %urem = urem i64 %call, %length
+  %field.inplace = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call3 = call ptr @_ZN6VectorI6VectorI6StringEE7get_ptrEm(ptr %deref.recv, i64 %urem)
+  %eq4 = icmp eq ptr %call3, null
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret i1 false
+
+if.end6:                                          ; preds = %if.end
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call3, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
+  %load.struct7 = load %_Z6VectorI6StringE, ptr %deref.tmp, align 8
+  %length8 = extractvalue %_Z6VectorI6StringE %load.struct7, 0
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end13, %if.end6
+  %i9 = load i64, ptr %i, align 8
+  %lt = icmp ult i64 %i9, %length8
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i10 = load i64, ptr %i, align 8
+  %call11 = call ptr @_ZN6VectorI6StringE7get_ptrEm(ptr %deref.tmp, i64 %i10)
+  %ne = icmp ne ptr %call11, null
+  br i1 %ne, label %if.then12, label %if.end13
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then12:                                        ; preds = %while.body
+  %call14 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %call11)
+  br i1 %call14, label %if.then15, label %if.end16
+
+if.end13:                                         ; preds = %if.end16, %while.body
+  %i17 = load i64, ptr %i, align 8
+  %add = add i64 %i17, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+if.then15:                                        ; preds = %if.then12
+  ret i1 true
+
+if.end16:                                         ; preds = %if.then12
+  br label %if.end13
+}
+
+define linkonce_odr void @_ZN11BuilderListI6StringE3addEP4Page6String(ptr %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z11BuilderListI6StringE, ptr %0, align 8
+  %head = extractvalue %_Z11BuilderListI6StringE %load.struct, 0
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4NodeI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load { ptr }, ptr %2, align 8
+  %tuple.field = getelementptr inbounds %_Z4NodeI6StringE, ptr %tuple.region, i32 0, i32 0
+  store { ptr } %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %tuple.region, i32 0, i32 1
+  store ptr %head, ptr %tuple.field1, align 1
+  %head2 = getelementptr inbounds %_Z11BuilderListI6StringE, ptr %0, i32 0, i32 0
+  store ptr %tuple.region, ptr %head2, align 8
+  ret void
+}
+
+define linkonce_odr i1 @_ZN11BuilderListI6StringE6removeE6String(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z11BuilderListI6StringE, ptr %0, align 8
+  %head = extractvalue %_Z11BuilderListI6StringE %load.struct, 0
+  %node = alloca ptr, align 8
+  store ptr %head, ptr %node, align 1
+  %previous_node = alloca ptr, align 8
+  store ptr null, ptr %previous_node, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %base.deref = load ptr, ptr %node, align 8
+  %field.inplace = getelementptr inbounds %_Z4NodeI6StringE, ptr %base.deref, i32 0, i32 0
+  %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %1)
+  br i1 %call, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then:                                          ; preds = %while.body
+  %previous_node2 = load ptr, ptr %previous_node, align 8
+  %ne3 = icmp ne ptr %previous_node2, null
+  br i1 %ne3, label %if.then4, label %if.end5
+
+if.end:                                           ; preds = %while.body
+  %node18 = load ptr, ptr %node, align 8
+  store ptr %node18, ptr %previous_node, align 1
+  %node19 = load ptr, ptr %node, align 8
+  %load.struct20 = load %_Z4NodeI6StringE, ptr %node19, align 8
+  %next21 = extractvalue %_Z4NodeI6StringE %load.struct20, 1
+  store ptr %next21, ptr %node, align 1
+  br label %while.cond
+
+if.then4:                                         ; preds = %if.then
+  %node6 = load ptr, ptr %node, align 8
+  %load.struct7 = load %_Z4NodeI6StringE, ptr %node6, align 8
+  %next = extractvalue %_Z4NodeI6StringE %load.struct7, 1
+  %ptr.load = load ptr, ptr %previous_node, align 8
+  %next8 = getelementptr inbounds %_Z4NodeI6StringE, ptr %ptr.load, i32 0, i32 1
+  store ptr %next, ptr %next8, align 8
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.then
+  %node9 = load ptr, ptr %node, align 8
+  %load.struct10 = load %_Z11BuilderListI6StringE, ptr %0, align 8
+  %head11 = extractvalue %_Z11BuilderListI6StringE %load.struct10, 0
+  %eq = icmp eq ptr %node9, %head11
+  br i1 %eq, label %if.then12, label %if.end13
+
+if.then12:                                        ; preds = %if.end5
+  %node14 = load ptr, ptr %node, align 8
+  %load.struct15 = load %_Z4NodeI6StringE, ptr %node14, align 8
+  %next16 = extractvalue %_Z4NodeI6StringE %load.struct15, 1
+  %head17 = getelementptr inbounds %_Z11BuilderListI6StringE, ptr %0, i32 0, i32 0
+  store ptr %next16, ptr %head17, align 8
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %if.end5
+  ret i1 true
+}
+
+define linkonce_odr ptr @_ZN11BuilderListI6StringE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z11BuilderListI6StringE, ptr %1, align 8
+  %head = extractvalue %_Z11BuilderListI6StringE %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z11BuilderListI6StringE, ptr %1, i32 0, i32 0
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %addr.gep, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr ptr @_ZN19BuilderListIteratorI6StringE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z19BuilderListIteratorI6StringE, ptr %0, align 8
+  %current = extractvalue %_Z19BuilderListIteratorI6StringE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z19BuilderListIteratorI6StringE, ptr %0, align 8
+  %current2 = extractvalue %_Z19BuilderListIteratorI6StringE %load.struct1, 0
+  %load.struct3 = load %_Z19BuilderListIteratorI6StringE, ptr %0, align 8
+  %current4 = extractvalue %_Z19BuilderListIteratorI6StringE %load.struct3, 0
+  %deref = load %_Z4NodeI6StringE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI6StringE %deref, 1
+  %current5 = getelementptr inbounds %_Z19BuilderListIteratorI6StringE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeI6StringE, ptr %current2, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN19BuilderListIteratorI6StringEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr i64 @_ZN11BuilderListI6StringE5countEv(ptr %0) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z19BuilderListIteratorI6StringE, align 8
+  call void @_ZN11BuilderListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI6StringE) %sret.result, ptr %local_page, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN19BuilderListIteratorI6StringE4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i64 %i3
+}
+
+define linkonce_odr void @_ZN11BuilderListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI6StringE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z11BuilderListI6StringE, ptr %2, align 8
+  %head = extractvalue %_Z11BuilderListI6StringE %load.struct, 0
+  %tuple = alloca %_Z19BuilderListIteratorI6StringE, align 8
+  %tuple.field = getelementptr inbounds %_Z19BuilderListIteratorI6StringE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z19BuilderListIteratorI6StringE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z19BuilderListIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN11BuilderListI6StringEC1Ev(ptr %0) {
+entry:
+  %head = getelementptr inbounds %_Z11BuilderListI6StringE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %head, align 8
+  ret void
+}
+
+declare i64 @_ZN7hashing9get_primeEm(i64)
+
+define linkonce_odr ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %0, i64 %1) {
+entry:
+  %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEE3putEm11BuilderListI4SlotI6StringEE(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.18)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %1
+  %store.load = load %_Z11BuilderListI4SlotI6StringEE, ptr %2, align 8
+  store %_Z11BuilderListI4SlotI6StringEE %store.load, ptr %ptr.add, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE3addEP4Page11BuilderListI4SlotI6StringEE(ptr %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %head = extractvalue %_Z11BuilderListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load %_Z11BuilderListI4SlotI6StringEE, ptr %2, align 8
+  %tuple.field = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %tuple.region, i32 0, i32 0
+  store %_Z11BuilderListI4SlotI6StringEE %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %tuple.region, i32 0, i32 1
+  store ptr %head, ptr %tuple.field1, align 1
+  %head2 = getelementptr inbounds %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %tuple.region, ptr %head2, align 8
+  ret void
+}
+
+define linkonce_odr i1 @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE6removeE11BuilderListI4SlotI6StringEE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %head = extractvalue %_Z11BuilderListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %node = alloca ptr, align 8
+  store ptr %head, ptr %node, align 1
+  %previous_node = alloca ptr, align 8
+  store ptr null, ptr %previous_node, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %node2 = load ptr, ptr %node, align 8
+  %load.struct3 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node2, align 8
+  %element = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct3, 0
+  %node4 = load ptr, ptr %node, align 8
+  store ptr %node4, ptr %previous_node, align 1
+  %node5 = load ptr, ptr %node, align 8
+  %load.struct6 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node5, align 8
+  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct6, 1
+  store ptr %next, ptr %node, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+}
+
+define linkonce_odr ptr @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %head = extractvalue %_Z11BuilderListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 0
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %addr.gep, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr ptr @_ZN19BuilderListIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %current = extractvalue %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %current2 = extractvalue %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %load.struct3 = load %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %current4 = extractvalue %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE %load.struct3, 0
+  %deref = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %deref, 1
+  %current5 = getelementptr inbounds %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %current2, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN19BuilderListIteratorI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr i64 @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE5countEv(ptr %0) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  call void @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN19BuilderListIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i64 %i3
+}
+
+define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %head = extractvalue %_Z11BuilderListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %tuple = alloca %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  %tuple.field = getelementptr inbounds %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  %head = getelementptr inbounds %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %head, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  call void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1EP6VectorI11BuilderListI4SlotI6StringEEE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5SliceI11BuilderListI4SlotI6StringEEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE8is_emptyEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %eq = icmp eq i64 %length, 0
+  ret i1 %eq
+}
+
+define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
+entry:
+  %tuple = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
+  %from = alloca i64, align 8
+  store i64 %3, ptr %from, align 1
+  %to = alloca i64, align 8
+  store i64 %4, ptr %to, align 1
+  %from1 = load i64, ptr %from, align 8
+  %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %gt = icmp ugt i64 %from1, %length
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %load.struct2 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %length3 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct2, 1
+  store i64 %length3, ptr %from, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %to4 = load i64, ptr %to, align 8
+  %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct5, 1
+  %gt7 = icmp ugt i64 %to4, %length6
+  br i1 %gt7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end
+  %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  store i64 %length11, ptr %to, align 1
+  br label %if.end9
+
+if.end9:                                          ; preds = %if.then8, %if.end
+  %from12 = load i64, ptr %from, align 8
+  %to13 = load i64, ptr %to, align 8
+  %gt14 = icmp ugt i64 %from12, %to13
+  br i1 %gt14, label %if.then15, label %if.end16
+
+if.then15:                                        ; preds = %if.end9
+  %to17 = load i64, ptr %to, align 8
+  store i64 %to17, ptr %from, align 1
+  br label %if.end16
+
+if.end16:                                         ; preds = %if.then15, %if.end9
+  %load.struct18 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct18, 0
+  %from19 = load i64, ptr %from, align 8
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %from19
+  %to20 = load i64, ptr %to, align 8
+  %from21 = load i64, ptr %from, align 8
+  %sub = sub i64 %to20, %from21
+  %tuple.field = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
+  store ptr %ptr.add, ptr %tuple.field, align 1
+  %tuple.field22 = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
+  store i64 %sub, ptr %tuple.field22, align 1
+  %tuple.val = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
+  %field.inplace = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %2, i64 %3, i64 %field.val)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  %sret.body = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
+  call void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %2, i64 0, i64 %3)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  %sret.body = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE6equalsE5SliceI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %ne = icmp ne i64 %length, %length2
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct3, 1
+  %eq = icmp eq i64 %length4, 0
+  br i1 %eq, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret i1 true
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct7, 0
+  %load.struct8 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %data9 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct8, 0
+  %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
+  %sext = sext i32 %call to i64
+  %eq12 = icmp eq i64 %sext, 0
+  ret i1 %eq12
+}
+
+define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE11starts_withE5SliceI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
+  %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %gt = icmp ugt i64 %length, %length2
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %field.inplace = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %0, i64 0, i64 %field.val)
+  %call = call i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE6equalsE5SliceI11BuilderListI4SlotI6StringEEE(ptr %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 %call
+}
+
+define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE9ends_withE5SliceI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
+  %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %gt = icmp ugt i64 %length, %length2
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct3, 1
+  %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct5, 1
+  %sub = sub i64 %length4, %length6
+  %field.inplace = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %0, i64 %sub, i64 %field.val)
+  %call = call i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE6equalsE5SliceI11BuilderListI4SlotI6StringEEE(ptr %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 %call
+}
+
+define linkonce_odr ptr @_ZN13SliceIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %load.struct1 = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %slice = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %slice, 1
+  %ge = icmp uge i64 %position, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct2 = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %slice3 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %slice3, 0
+  %load.struct4 = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position5 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct4, 1
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %position5
+  %load.struct6 = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position7 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct6, 1
+  %add = add i64 %position7, 1
+  %position8 = getelementptr inbounds %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position8, align 8
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13SliceIteratorI11BuilderListI4SlotI6StringEEEC1E5SliceI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %slice = getelementptr inbounds %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  %field.load = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  store %_Z5SliceI11BuilderListI4SlotI6StringEEE %field.load, ptr %slice, align 8
+  %position = getelementptr inbounds %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN13SliceIteratorI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  call void @_ZN13SliceIteratorI11BuilderListI4SlotI6StringEEEC1E5SliceI11BuilderListI4SlotI6StringEEE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  %data = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %data, align 8
+  %length = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %tuple = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
+  %tuple.field = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
+  store ptr %data, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %data = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1EP11BuilderListI4SlotI6StringEEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %2, ptr %length, align 8
+  %data = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %1, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1Em(ptr %0, i64 %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %1, ptr %length, align 8
+  %gt = icmp ugt i64 %1, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %call1, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data4 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data4, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call3, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1E6VectorI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace7 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 1
+  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
+  %load.struct9 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length10 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct9, 0
+  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data13 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data13, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI11BuilderListI4SlotI6StringEEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10reallocateEv(ptr %0) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = alloca i64, align 8
+  store i64 0, ptr %length, align 1
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call2 = call i64 @_ZN4Page12get_capacityEm(ptr %call1, i64 8)
+  %sub = sub i64 %call2, ptrtoint (ptr getelementptr (%_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64)
+  %udiv = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %length, align 1
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  %length3 = load i64, ptr %length, align 8
+  call void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1Em(ptr %struct.region, i64 %length3)
+  %vector4 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector4, align 8
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %load.struct5 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector6 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct5, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector6, align 8
+  %length7 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %mul = mul i64 %length7, 2
+  store i64 %mul, ptr %length, align 1
+  %call8 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %call8, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  %length10 = load i64, ptr %length, align 8
+  call void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1Em(ptr %struct.region9, i64 %length10)
+  %load.struct11 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector12 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct11, 1
+  %deref13 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector12, align 8
+  %length14 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref13, 0
+  %mul15 = mul i64 %length14, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region9, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace16 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %load.struct17 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct17, 1
+  %deref19 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector18, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref19, 1
+  %call20 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul15)
+  %load.struct21 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct21, 1
+  %call23 = call ptr @_ZN4Page3getEPv(ptr %vector22)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call, ptr %call23)
+  %vector24 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region9, ptr %vector24, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE3addE11BuilderListI4SlotI6StringEE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct2, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %length10
+  %store.load = load %_Z11BuilderListI4SlotI6StringEE, ptr %1, align 8
+  store %_Z11BuilderListI4SlotI6StringEE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE3addE6VectorI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %own_page = alloca ptr, align 8
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length2 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %add = add i64 %length, %length2
+  %new_length = alloca i64, align 8
+  store i64 %add, ptr %new_length, align 1
+  %new_length3 = load i64, ptr %new_length, align 8
+  %load.struct4 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length5 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct4, 0
+  %lt = icmp ult i64 %new_length3, %length5
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 14)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct6 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct6, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %if.end
+  %new_length7 = load i64, ptr %new_length, align 8
+  %load.struct8 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector9 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct8, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector9, align 8
+  %length10 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %gt = icmp ugt i64 %new_length7, %length10
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %if.end
+  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
+  br i1 %lor.result, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %lor.end
+  call void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10reallocateEv(ptr %0)
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %lor.end
+  %new_length13 = load i64, ptr %new_length, align 8
+  %load.struct14 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector15 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct14, 1
+  %deref16 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector15, align 8
+  %length17 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref16, 0
+  %gt18 = icmp ugt i64 %new_length13, %length17
+  br i1 %gt18, label %if.then19, label %if.end20
+
+if.then19:                                        ; preds = %if.end12
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  store ptr %call, ptr %own_page, align 1
+  %own_page21 = load ptr, ptr %own_page, align 8
+  %new_length22 = load i64, ptr %new_length, align 8
+  %mul = mul i64 %new_length22, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call23 = call ptr @_ZN4Page8allocateEmm(ptr %own_page21, i64 %mul, i64 8)
+  %load.struct24 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length25 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct24, 0
+  %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %load.struct27 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length28 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct27, 0
+  %gt29 = icmp ugt i64 %length28, 0
+  br i1 %gt29, label %if.then30, label %if.end31
+
+if.end20:                                         ; preds = %if.end31, %if.end12
+  %load.struct48 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length49 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct48, 0
+  %gt50 = icmp ugt i64 %length49, 0
+  br i1 %gt50, label %if.then51, label %if.end52
+
+if.then30:                                        ; preds = %if.then19
+  %field.inplace = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %load.struct32 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector33 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct32, 1
+  %deref34 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector33, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref34, 1
+  %call35 = call ptr @memcpy(ptr %call23, ptr %data, i64 %mul26)
+  br label %if.end31
+
+if.end31:                                         ; preds = %if.then30, %if.then19
+  %load.struct36 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector37, align 8
+  %data39 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref38, 1
+  %call40 = call ptr @_ZN4Page3getEPv(ptr %data39)
+  %own_page41 = load ptr, ptr %own_page, align 8
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %own_page41, ptr %call40)
+  %vector42 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %field.deref = load ptr, ptr %vector42, align 8
+  %data43 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %field.deref, i32 0, i32 1
+  store ptr %call23, ptr %data43, align 8
+  %new_length44 = load i64, ptr %new_length, align 8
+  %vector45 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %field.deref46 = load ptr, ptr %vector45, align 8
+  %length47 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %field.deref46, i32 0, i32 0
+  store i64 %new_length44, ptr %length47, align 8
+  br label %if.end20
+
+if.then51:                                        ; preds = %if.end20
+  %load.struct53 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector54 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct53, 1
+  %deref55 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector54, align 8
+  %data56 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref55, 1
+  %load.struct57 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length58 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct57, 0
+  %mul59 = mul i64 %length58, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data56, i64 %mul59
+  %field.inplace60 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace60, align 8
+  %load.struct61 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length62 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct61, 0
+  %mul63 = mul i64 %length62, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call64 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv, i64 %mul63)
+  br label %if.end52
+
+if.end52:                                         ; preds = %if.then51, %if.end20
+  %load.struct65 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length66 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct65, 0
+  %load.struct67 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length68 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct67, 0
+  %add69 = add i64 %length66, %length68
+  %length70 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %add69, ptr %length70, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayI11BuilderListI4SlotI6StringEEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 1
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE3putEm11BuilderListI4SlotI6StringEE(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.19)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 1
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %1
+  %store.load = load %_Z11BuilderListI4SlotI6StringEE, ptr %2, align 8
+  store %_Z11BuilderListI4SlotI6StringEE %store.load, ptr %ptr.add, align 8
+  ret void
+}
+
+define linkonce_odr ptr @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %array = extractvalue %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %eq = icmp eq ptr %array, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position = extractvalue %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %load.struct2 = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %array3 = extractvalue %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
+  %deref = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %array3, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position8 = extractvalue %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10get_bufferEv(ptr %deref.recv)
+  %load.struct10 = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position11 = extractvalue %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %call, i64 %sub
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1EP5ArrayI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %array = getelementptr inbounds %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %array, align 8
+  %position = getelementptr inbounds %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  call void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1EP5ArrayI11BuilderListI4SlotI6StringEEE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %vector = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEEC1Em(ptr %0, i64 %1) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %vector = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %deref = load ptr, ptr %call, align 8
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %deref)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1Em(ptr %struct.region, i64 %1)
+  %vector2 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1E5ArrayI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %load.struct7 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %vector = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct7, 1
+  %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace8 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector, i32 0, i32 1
+  %deref.recv9 = load ptr, ptr %field.inplace8, align 8
+  %load.struct10 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length11 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct10, 0
+  %mul12 = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call13 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv9, i64 %mul12)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data14 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data14, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call13, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN4ListI11BuilderListI4SlotI6StringEEE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %head = extractvalue %_Z4ListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 0
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %addr.gep, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr ptr @_ZN12ListIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
+entry:
+  %old_current = alloca ptr, align 8
+  %load.struct = load %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %current = extractvalue %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %current2 = extractvalue %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  store ptr %current2, ptr %old_current, align 1
+  %load.struct3 = load %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %current4 = extractvalue %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE %load.struct3, 0
+  %deref = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %deref, 1
+  %current5 = getelementptr inbounds %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %old_current6 = load ptr, ptr %old_current, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %old_current6, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN12ListIteratorI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr i64 @_ZN4ListI11BuilderListI4SlotI6StringEEE5countEv(ptr %0) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  call void @_ZN4ListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN12ListIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i64 %i3
+}
+
+define linkonce_odr i1 @_ZN4ListI11BuilderListI4SlotI6StringEEE6removeE11BuilderListI4SlotI6StringEE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %head = extractvalue %_Z4ListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %node = alloca ptr, align 8
+  store ptr %head, ptr %node, align 1
+  %previous_node = alloca ptr, align 8
+  store ptr null, ptr %previous_node, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %node2 = load ptr, ptr %node, align 8
+  %load.struct3 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node2, align 8
+  %element = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct3, 0
+  %node4 = load ptr, ptr %node, align 8
+  store ptr %node4, ptr %previous_node, align 1
+  %node5 = load ptr, ptr %node, align 8
+  %load.struct6 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node5, align 8
+  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct6, 1
+  store ptr %next, ptr %node, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+}
+
+define linkonce_odr void @_ZN4ListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %head = extractvalue %_Z4ListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %tuple = alloca %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  %tuple.field = getelementptr inbounds %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI11BuilderListI4SlotI6StringEEE3addE11BuilderListI4SlotI6StringEE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %head = extractvalue %_Z4ListI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load %_Z11BuilderListI4SlotI6StringEE, ptr %1, align 8
+  %tuple.field = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %tuple.region, i32 0, i32 0
+  store %_Z11BuilderListI4SlotI6StringEE %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %tuple.region, i32 0, i32 1
+  store ptr %head, ptr %tuple.field1, align 1
+  %head2 = getelementptr inbounds %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %tuple.region, ptr %head2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1E4ListI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %deref.tmp = alloca %_Z11BuilderListI4SlotI6StringEE, align 8
+  %i = alloca i64, align 8
+  %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %call1 = call i64 @_ZN4ListI11BuilderListI4SlotI6StringEEE5countEv(ptr %1)
+  %length = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %call1, ptr %length, align 8
+  %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length2 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %gt = icmp ugt i64 %length2, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct3 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length4 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct3, 0
+  %mul = mul i64 %length4, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr %call5, ptr %data, align 8
+  call void @_ZN4ListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %1)
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %load.struct6 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length7 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct6, 0
+  store i64 %length7, ptr %i, align 1
+  br label %while.cond
+
+if.else:                                          ; preds = %entry
+  %data14 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data14, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret void
+
+while.cond:                                       ; preds = %while.body, %if.then
+  %list_iterator8 = load ptr, ptr %list_iterator, align 8
+  %call9 = call ptr @_ZN12ListIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %list_iterator8)
+  %while.tobool = icmp ne ptr %call9, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i10 = load i64, ptr %i, align 8
+  %sub = sub i64 %i10, 1
+  store i64 %sub, ptr %i, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call9, i64 ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64), i1 false)
+  %load.struct11 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %data12 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct11, 1
+  %i13 = load i64, ptr %i, align 8
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data12, i64 %i13
+  %store.load = load %_Z11BuilderListI4SlotI6StringEE, ptr %deref.tmp, align 8
+  store %_Z11BuilderListI4SlotI6StringEE %store.load, ptr %ptr.add, align 8
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  br label %if.end
+}
+
+define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1EP6VectorI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %0, align 8
+  %current = extractvalue %_Z19BuilderListIteratorI4SlotI6StringEE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %0, align 8
+  %current2 = extractvalue %_Z19BuilderListIteratorI4SlotI6StringEE %load.struct1, 0
+  %load.struct3 = load %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %0, align 8
+  %current4 = extractvalue %_Z19BuilderListIteratorI4SlotI6StringEE %load.struct3, 0
+  %deref = load %_Z4NodeI4SlotI6StringEE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI4SlotI6StringEE %deref, 1
+  %current5 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeI4SlotI6StringEE, ptr %current2, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN19BuilderListIteratorI4SlotI6StringEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN11BuilderListI4SlotI6StringEE3addEP4Page4SlotI6StringE(ptr %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z11BuilderListI4SlotI6StringEE, ptr %0, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct, 0
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4NodeI4SlotI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI4SlotI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load %_Z4SlotI6StringE, ptr %2, align 8
+  %tuple.field = getelementptr inbounds %_Z4NodeI4SlotI6StringEE, ptr %tuple.region, i32 0, i32 0
+  store %_Z4SlotI6StringE %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z4NodeI4SlotI6StringEE, ptr %tuple.region, i32 0, i32 1
+  store ptr %head, ptr %tuple.field1, align 1
+  %head2 = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %tuple.region, ptr %head2, align 8
+  ret void
+}
+
+define linkonce_odr i1 @_ZN11BuilderListI4SlotI6StringEE6removeE4SlotI6StringE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z11BuilderListI4SlotI6StringEE, ptr %0, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct, 0
+  %node = alloca ptr, align 8
+  store ptr %head, ptr %node, align 1
+  %previous_node = alloca ptr, align 8
+  store ptr null, ptr %previous_node, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %node2 = load ptr, ptr %node, align 8
+  %load.struct3 = load %_Z4NodeI4SlotI6StringEE, ptr %node2, align 8
+  %element = extractvalue %_Z4NodeI4SlotI6StringEE %load.struct3, 0
+  %node4 = load ptr, ptr %node, align 8
+  store ptr %node4, ptr %previous_node, align 1
+  %node5 = load ptr, ptr %node, align 8
+  %load.struct6 = load %_Z4NodeI4SlotI6StringEE, ptr %node5, align 8
+  %next = extractvalue %_Z4NodeI4SlotI6StringEE %load.struct6, 1
+  store ptr %next, ptr %node, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+}
+
+define linkonce_odr ptr @_ZN11BuilderListI4SlotI6StringEE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z11BuilderListI4SlotI6StringEE, ptr %1, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %1, i32 0, i32 0
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI4SlotI6StringEE, ptr %addr.gep, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr i64 @_ZN11BuilderListI4SlotI6StringEE5countEv(ptr %0) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  call void @_ZN11BuilderListI4SlotI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI4SlotI6StringEE) %sret.result, ptr %local_page, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i64 %i3
+}
+
+define linkonce_odr void @_ZN11BuilderListI4SlotI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI4SlotI6StringEE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z11BuilderListI4SlotI6StringEE, ptr %2, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct, 0
+  %tuple = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  %tuple.field = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z19BuilderListIteratorI4SlotI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN11BuilderListI4SlotI6StringEEC1Ev(ptr %0) {
+entry:
+  %head = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %head, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %1) {
+entry:
+  %list_iterator = alloca ptr, align 8
+  %tuple8 = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  %vector_iterator = alloca ptr, align 8
+  %tuple = alloca %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  %call = call i64 @_ZN7hashing9get_primeEm(i64 %1)
+  %call1 = call ptr @_ZN4Page3getEPv(ptr %0)
+  %call2 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call2, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1Em(ptr %struct.region, i64 %call)
+  %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots = extractvalue %_Z14HashSetBuilderI6StringE %load.struct, 1
+  %ne = icmp ne ptr %slots, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %load.struct3 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots4 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct3, 1
+  %tuple.field = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
+  store ptr %slots4, ptr %tuple.field, align 1
+  store ptr %tuple, ptr %vector_iterator, align 1
+  br label %while.cond
+
+if.end:                                           ; preds = %while.exit, %entry
+  %slots22 = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots22, align 8
+  ret void
+
+while.cond:                                       ; preds = %while.exit12, %if.then
+  %vector_iterator5 = load ptr, ptr %vector_iterator, align 8
+  %call6 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %vector_iterator5)
+  %while.tobool = icmp ne ptr %call6, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %load.struct7 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call6, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct7, 0
+  %tuple.field9 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple8, i32 0, i32 0
+  store ptr %head, ptr %tuple.field9, align 1
+  store ptr %tuple8, ptr %list_iterator, align 1
+  br label %while.cond10
+
+while.exit:                                       ; preds = %while.cond
+  %load.struct19 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots20 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct19, 1
+  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call21)
+  br label %if.end
+
+while.cond10:                                     ; preds = %while.body11, %while.body
+  %list_iterator13 = load ptr, ptr %list_iterator, align 8
+  %call14 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator13)
+  %while.tobool15 = icmp ne ptr %call14, null
+  br i1 %while.tobool15, label %while.body11, label %while.exit12
+
+while.body11:                                     ; preds = %while.cond10
+  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
+  %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct17, 0
+  %urem = urem i64 %hash_code, %length
+  %call18 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %struct.region, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI6StringEE3addEP4Page4SlotI6StringE(ptr %call18, ptr %call2, ptr %call14)
+  br label %while.cond10
+
+while.exit12:                                     ; preds = %while.cond10
+  br label %while.cond
+}
+
+define linkonce_odr i1 @_ZN14HashSetBuilderI6StringE3addE6String(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z14HashSetBuilderI6StringE %load.struct, 0
+  %add = add i64 %length, 1
+  %call = call i64 @_ZN7hashing9get_primeEm(i64 %add)
+  %load.struct1 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots = extractvalue %_Z14HashSetBuilderI6StringE %load.struct1, 1
+  %eq = icmp eq ptr %slots, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct2 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots3 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct2, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots3, align 8
+  %length4 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %gt = icmp ugt i64 %call, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %gt, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %length6 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct5, 0
+  %add7 = add i64 %length6, 1
+  call void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %add7)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %call8 = call i1 @_ZN14HashSetBuilderI6StringE12add_internalE6String(ptr %0, ptr %1)
+  ret i1 %call8
+}
+
+define linkonce_odr i1 @_ZN14HashSetBuilderI6StringE12add_internalE6String(ptr %0, ptr %1) {
+entry:
+  %arg.tmp = alloca %_Z4SlotI6StringE, align 8
+  %tuple = alloca %_Z4SlotI6StringE, align 8
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %call = call i64 @_ZN6String4hashEv(ptr %1)
+  %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots = extractvalue %_Z14HashSetBuilderI6StringE %load.struct, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %urem = urem i64 %call, %length
+  %field.inplace = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call1 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %urem)
+  %sret.result = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  call void @_ZN11BuilderListI4SlotI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI4SlotI6StringEE) %sret.result, ptr %local_page, ptr %call1)
+  %iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %iterator, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %iterator2 = load ptr, ptr %iterator, align 8
+  %call3 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %iterator2)
+  %while.tobool = icmp ne ptr %call3, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %field.inplace4 = getelementptr inbounds %_Z4SlotI6StringE, ptr %call3, i32 0, i32 0
+  %call5 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %field.inplace4)
+  br i1 %call5, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  %load.struct6 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots7 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct6, 1
+  %call8 = call ptr @_ZN4Page3getEPv(ptr %slots7)
+  %field.load = load { ptr }, ptr %1, align 8
+  %tuple.field = getelementptr inbounds %_Z4SlotI6StringE, ptr %tuple, i32 0, i32 0
+  store { ptr } %field.load, ptr %tuple.field, align 1
+  %tuple.field9 = getelementptr inbounds %_Z4SlotI6StringE, ptr %tuple, i32 0, i32 1
+  store i64 %call, ptr %tuple.field9, align 1
+  %tuple.val = load %_Z4SlotI6StringE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z4SlotI6StringE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN11BuilderListI4SlotI6StringEE3addEP4Page4SlotI6StringE(ptr %call1, ptr %call8, ptr %arg.tmp)
+  %load.struct10 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %length11 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct10, 0
+  %add = add i64 %length11, 1
+  %length12 = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length12, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 true
+
+if.then:                                          ; preds = %while.body
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %while.body
+  br label %while.cond
+}
+
+define linkonce_odr i1 @_ZN14HashSetBuilderI6StringE8containsE6String(ptr %0, ptr %1) {
+entry:
+  %iterator = alloca ptr, align 8
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %sret.result = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots = extractvalue %_Z14HashSetBuilderI6StringE %load.struct, 1
+  %eq = icmp eq ptr %slots, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %call = call i64 @_ZN6String4hashEv(ptr %1)
+  %load.struct1 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots2 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct1, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots2, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %urem = urem i64 %call, %length
+  %field.inplace = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call3 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z19BuilderListIteratorI4SlotI6StringEE) %sret.result, ptr %local_page, ptr %call3)
+  store ptr %sret.result, ptr %iterator, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end9, %if.end
+  %iterator4 = load ptr, ptr %iterator, align 8
+  %call5 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %iterator4)
+  %while.tobool = icmp ne ptr %call5, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %field.inplace6 = getelementptr inbounds %_Z4SlotI6StringE, ptr %call5, i32 0, i32 0
+  %call7 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %field.inplace6)
+  br i1 %call7, label %if.then8, label %if.end9
+
+while.exit:                                       ; preds = %while.cond
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 false
+
+if.then8:                                         ; preds = %while.body
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i1 true
+
+if.end9:                                          ; preds = %while.body
+  br label %while.cond
+}
+
+define linkonce_odr void @_ZN14HashSetBuilderI6StringEC1E6VectorI6StringE(ptr %0, ptr %1) {
+entry:
+  %vector_iterator = alloca ptr, align 8
+  %struct.init = alloca %_Z14VectorIteratorI6StringE, align 8
+  %length = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %slots = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %slots, align 8
+  %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length1 = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %gt = icmp ugt i64 %length1, 0
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %field.val)
+  call void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %struct.init, ptr %1)
+  store ptr %struct.init, ptr %vector_iterator, align 1
+  br label %while.cond
+
+if.end:                                           ; preds = %while.exit, %entry
+  ret void
+
+while.cond:                                       ; preds = %while.body, %if.then
+  %vector_iterator2 = load ptr, ptr %vector_iterator, align 8
+  %call = call ptr @_ZN14VectorIteratorI6StringE4nextEv(ptr %vector_iterator2)
+  %while.tobool = icmp ne ptr %call, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %call3 = call i1 @_ZN14HashSetBuilderI6StringE12add_internalE6String(ptr %0, ptr %call)
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  br label %if.end
+}
+
+define linkonce_odr void @_ZN14HashSetBuilderI6StringEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr ptr @_ZN12ListIteratorI4SlotI6StringEE4nextEv(ptr %0) {
+entry:
+  %old_current = alloca ptr, align 8
+  %load.struct = load %_Z12ListIteratorI4SlotI6StringEE, ptr %0, align 8
+  %current = extractvalue %_Z12ListIteratorI4SlotI6StringEE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z12ListIteratorI4SlotI6StringEE, ptr %0, align 8
+  %current2 = extractvalue %_Z12ListIteratorI4SlotI6StringEE %load.struct1, 0
+  store ptr %current2, ptr %old_current, align 1
+  %load.struct3 = load %_Z12ListIteratorI4SlotI6StringEE, ptr %0, align 8
+  %current4 = extractvalue %_Z12ListIteratorI4SlotI6StringEE %load.struct3, 0
+  %deref = load %_Z4NodeI4SlotI6StringEE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI4SlotI6StringEE %deref, 1
+  %current5 = getelementptr inbounds %_Z12ListIteratorI4SlotI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %old_current6 = load ptr, ptr %old_current, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeI4SlotI6StringEE, ptr %old_current6, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN12ListIteratorI4SlotI6StringEEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN7HashSetI6StringEC1E14HashSetBuilderI6StringE(ptr %0, ptr %1) {
+entry:
+  %deref.tmp = alloca %_Z5ArrayI6StringE, align 8
+  %list_iterator = alloca %_Z12ListIteratorI4SlotI6StringEE, align 8
+  %tuple = alloca %_Z12ListIteratorI4SlotI6StringEE, align 8
+  %array = alloca ptr, align 8
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %i = alloca i64, align 8
+  %length9 = alloca i64, align 8
+  %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
+  %length = extractvalue %_Z14HashSetBuilderI6StringE %load.struct, 0
+  %eq = icmp eq i64 %length, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %slots = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %slots, align 8
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  ret void
+
+if.end:                                           ; preds = %entry
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  %load.struct1 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
+  %slots2 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct1, 1
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots2, align 8
+  %length3 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  call void @_ZN6VectorI6VectorI6StringEEC1Em(ptr %struct.region, i64 %length3)
+  %slots4 = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  store ptr %struct.region, ptr %slots4, align 8
+  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
+  %slots6 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct5, 1
+  %deref7 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots6, align 8
+  %length8 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref7, 0
+  store i64 %length8, ptr %length9, align 1
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end14, %if.end
+  %i10 = load i64, ptr %i, align 8
+  %length11 = load i64, ptr %length9, align 8
+  %lt = icmp ult i64 %i10, %length11
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %field.inplace = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %i12 = load i64, ptr %i, align 8
+  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %i12)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then13, label %if.end14
+
+while.exit:                                       ; preds = %while.cond
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret void
+
+if.then13:                                        ; preds = %while.body
+  %struct.region15 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds %_Z5ArrayI6StringE, ptr %struct.region15, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 8
+  %tuple.field16 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %struct.region15, i32 0, i32 1
+  store ptr null, ptr %tuple.field16, align 8
+  store ptr %struct.region15, ptr %array, align 1
+  %load.struct17 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct17, 0
+  %tuple.field18 = getelementptr inbounds %_Z12ListIteratorI4SlotI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field18, align 1
+  %tuple.val = load %_Z12ListIteratorI4SlotI6StringEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %list_iterator, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI4SlotI6StringEE, ptr null, i32 1) to i64), i1 false)
+  br label %while.cond19
+
+if.end14:                                         ; preds = %if.end29, %while.body
+  %i36 = load i64, ptr %i, align 8
+  %add = add i64 %i36, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.cond19:                                     ; preds = %while.body20, %if.then13
+  %call22 = call ptr @_ZN12ListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator)
+  %while.tobool = icmp ne ptr %call22, null
+  br i1 %while.tobool, label %while.body20, label %while.exit21
+
+while.body20:                                     ; preds = %while.cond19
+  %array23 = load ptr, ptr %array, align 8
+  %field.inplace24 = getelementptr inbounds %_Z4SlotI6StringE, ptr %call22, i32 0, i32 0
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %array23, ptr %field.inplace24)
+  br label %while.cond19
+
+while.exit21:                                     ; preds = %while.cond19
+  %array25 = load ptr, ptr %array, align 8
+  %load.struct26 = load %_Z5ArrayI6StringE, ptr %array25, align 8
+  %length27 = extractvalue %_Z5ArrayI6StringE %load.struct26, 0
+  %gt = icmp ugt i64 %length27, 0
+  br i1 %gt, label %if.then28, label %if.end29
+
+if.then28:                                        ; preds = %while.exit21
+  %field.inplace30 = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  %deref.recv31 = load ptr, ptr %field.inplace30, align 8
+  %i32 = load i64, ptr %i, align 8
+  %own_page33 = call ptr @_Z3getPv(ptr %0)
+  %struct.region34 = call ptr @_ZN4Page8allocateEmm(ptr %own_page33, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %array35 = load ptr, ptr %array, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array35, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI6StringEC1E5ArrayI6StringE(ptr %struct.region34, ptr %deref.tmp)
+  call void @_ZN6VectorI6VectorI6StringEE3putEm6VectorI6StringE(ptr %deref.recv31, i64 %i32, ptr %struct.region34)
+  br label %if.end29
+
+if.end29:                                         ; preds = %if.then28, %while.exit21
+  br label %if.end14
+}
+
+define linkonce_odr void @_ZN7HashSetI6StringEC1Ev(ptr %0) {
+entry:
   ret void
 }
 
@@ -5126,12 +9513,12 @@ while.exit:                                       ; preds = %while.cond
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb13, i8 123)
   %sb14 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.106)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.110)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %sret.result)
   %sb15 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 123)
   %sb16 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result17, ptr %local_page, ptr @.str.107)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result17, ptr %local_page, ptr @.str.111)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb16, ptr %sret.result17)
   %sb18 = load ptr, ptr %sb, align 8
   %line20 = load i64, ptr %line, align 8
@@ -5141,7 +9528,7 @@ while.exit:                                       ; preds = %while.cond
   %sb22 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb22, i8 44)
   %sb23 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result24, ptr %local_page, ptr @.str.108)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result24, ptr %local_page, ptr @.str.112)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb23, ptr %sret.result24)
   %sb25 = load ptr, ptr %sb, align 8
   %line27 = load i64, ptr %line, align 8
@@ -5154,14 +9541,14 @@ while.exit:                                       ; preds = %while.cond
   %sb31 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb31, i8 44)
   %sb32 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result33, ptr %local_page, ptr @.str.109)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result33, ptr %local_page, ptr @.str.113)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb32, ptr %sret.result33)
   %sb34 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb34, i8 49)
   %sb35 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb35, i8 44)
   %sb36 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result37, ptr %local_page, ptr @.str.110)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result37, ptr %local_page, ptr @.str.114)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb36, ptr %sret.result37)
   %sb38 = load ptr, ptr %sb, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result39, ptr %local_page, ptr %4)
@@ -5196,47 +9583,6 @@ if.end7:                                          ; preds = %if.else, %if.then6
 }
 
 declare void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program), ptr, ptr, ptr, ptr, i1)
-
-define linkonce_odr void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %0, ptr %1) {
-entry:
-  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %i = alloca i64, align 8
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z7Program, ptr %1, align 8
-  %packages = extractvalue %_Z7Program %load.struct, 0
-  %length = extractvalue %_Z6VectorI6ModuleE %packages, 0
-  %lt = icmp ult i64 %i1, %length
-  br i1 %lt, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %field.inplace = getelementptr inbounds %_Z7Program, ptr %1, i32 0, i32 0
-  %i2 = load i64, ptr %i, align 8
-  %call = call ptr @_ZN6VectorI6ModuleE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace, i64 %i2)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret void
-
-if.then:                                          ; preds = %while.body
-  %field.inplace3 = getelementptr inbounds %_Z6Module, ptr %call, i32 0, i32 2
-  call void @_ZN7Planner23register_loaded_packageE6String6Module(ptr %0, ptr %field.inplace3, ptr %call)
-  call void @_ZN7Planner24register_module_conceptsE6Module(ptr %0, ptr %call)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %while.body
-  %i4 = load i64, ptr %i, align 8
-  %add = add i64 %i4, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-}
-
-declare ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr, ptr, ptr)
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String12LocalBindingEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
@@ -5280,7 +9626,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.14)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.20)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -6262,7 +10608,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.15)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.21)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -6407,7 +10753,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.16)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.22)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -7420,7 +11766,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.17)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.23)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -7564,7 +11910,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.18)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.24)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -8546,7 +12892,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.19)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.25)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -8691,7 +13037,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.20)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.26)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -9673,7 +14019,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.21)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.27)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -9818,7 +14164,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.22)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.28)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -10800,7 +15146,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.23)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.29)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -10903,1168 +15249,6 @@ entry:
   ret void
 }
 
-define linkonce_odr ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %ge = icmp uge i64 %2, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z6VectorI6StringE, ptr %1, align 8
-  %data = extractvalue %_Z6VectorI6StringE %load.struct1, 1
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %2
-  ret ptr %ptr.add
-}
-
-define linkonce_odr ptr @_ZN6VectorI6StringE7get_ptrEm(ptr %0, i64 %1) {
-entry:
-  %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %data = extractvalue %_Z6VectorI6StringE %load.struct1, 1
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %1
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN6VectorI6StringE3putEm6String(ptr %0, i64 %1, ptr %2) {
-entry:
-  %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.24)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 15)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %data = extractvalue %_Z6VectorI6StringE %load.struct1, 1
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %1
-  %store.load = load { ptr }, ptr %2, align 8
-  store { ptr } %store.load, ptr %ptr.add, align 8
-  ret void
-}
-
-define linkonce_odr ptr @_ZN14VectorIteratorI6StringE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
-  %vector = extractvalue %_Z14VectorIteratorI6StringE %load.struct, 0
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
-  %position = extractvalue %_Z14VectorIteratorI6StringE %load.struct1, 1
-  %load.struct2 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
-  %vector3 = extractvalue %_Z14VectorIteratorI6StringE %load.struct2, 0
-  %deref = load %_Z6VectorI6StringE, ptr %vector3, align 8
-  %length = extractvalue %_Z6VectorI6StringE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
-  %position8 = extractvalue %_Z14VectorIteratorI6StringE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct10 = load %_Z14VectorIteratorI6StringE, ptr %0, align 8
-  %position11 = extractvalue %_Z14VectorIteratorI6StringE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %call = call ptr @_ZN6VectorI6StringE7get_ptrEm(ptr %deref.recv, i64 %sub)
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %0, ptr %1) {
-entry:
-  %vector = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
-  %position = getelementptr inbounds %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI6StringEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6StringE) %0, ptr %1, ptr %2) {
-entry:
-  %struct.init = alloca %_Z14VectorIteratorI6StringE, align 8
-  call void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %struct.init, ptr %2)
-  %sret.body = load %_Z14VectorIteratorI6StringE, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr ptr @_ZN5SliceI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
-  %ge = icmp uge i64 %2, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5SliceI6StringE, ptr %1, align 8
-  %data = extractvalue %_Z5SliceI6StringE %load.struct1, 0
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %2
-  ret ptr %ptr.add
-}
-
-define linkonce_odr i1 @_ZN5SliceI6StringE8is_emptyEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
-  %eq = icmp eq i64 %length, 0
-  ret i1 %eq
-}
-
-define linkonce_odr void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
-entry:
-  %tuple = alloca %_Z5SliceI6StringE, align 8
-  %from = alloca i64, align 8
-  store i64 %3, ptr %from, align 1
-  %to = alloca i64, align 8
-  store i64 %4, ptr %to, align 1
-  %from1 = load i64, ptr %from, align 8
-  %load.struct = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
-  %gt = icmp ugt i64 %from1, %length
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %load.struct2 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI6StringE %load.struct2, 1
-  store i64 %length3, ptr %from, align 1
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %to4 = load i64, ptr %to, align 8
-  %load.struct5 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 1
-  %gt7 = icmp ugt i64 %to4, %length6
-  br i1 %gt7, label %if.then8, label %if.end9
-
-if.then8:                                         ; preds = %if.end
-  %load.struct10 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 1
-  store i64 %length11, ptr %to, align 1
-  br label %if.end9
-
-if.end9:                                          ; preds = %if.then8, %if.end
-  %from12 = load i64, ptr %from, align 8
-  %to13 = load i64, ptr %to, align 8
-  %gt14 = icmp ugt i64 %from12, %to13
-  br i1 %gt14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end9
-  %to17 = load i64, ptr %to, align 8
-  store i64 %to17, ptr %from, align 1
-  br label %if.end16
-
-if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI6StringE %load.struct18, 0
-  %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
-  %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
-  %tuple.field = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
-  %tuple.field22 = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
-  %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN5SliceI6StringE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
-  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %sret.result = alloca %_Z5SliceI6StringE, align 8
-  %field.inplace = getelementptr inbounds %_Z5SliceI6StringE, ptr %2, i32 0, i32 1
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %2, i64 %3, i64 %field.val)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  %sret.body = load %_Z5SliceI6StringE, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN5SliceI6StringE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
-  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %sret.result = alloca %_Z5SliceI6StringE, align 8
-  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %2, i64 0, i64 %3)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  %sret.body = load %_Z5SliceI6StringE, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
-  %load.struct1 = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
-  %ne = icmp ne i64 %length, %length2
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i1 false
-
-if.end:                                           ; preds = %entry
-  %load.struct3 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 1
-  %eq = icmp eq i64 %length4, 0
-  br i1 %eq, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6StringE %load.struct7, 0
-  %load.struct8 = load %_Z5SliceI6StringE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI6StringE %load.struct8, 0
-  %load.struct10 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 1
-  %mul = mul i64 %length11, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
-  ret i1 %eq12
-}
-
-define linkonce_odr i1 @_ZN5SliceI6StringE11starts_withE5SliceI6StringE(ptr %0, ptr %1) {
-entry:
-  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %sret.result = alloca %_Z5SliceI6StringE, align 8
-  %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
-  %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
-  %gt = icmp ugt i64 %length, %length2
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
-  ret i1 false
-
-if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds %_Z5SliceI6StringE, ptr %1, i32 0, i32 1
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %0, i64 0, i64 %field.val)
-  %call = call i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %sret.result, ptr %1)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret i1 %call
-}
-
-define linkonce_odr i1 @_ZN5SliceI6StringE9ends_withE5SliceI6StringE(ptr %0, ptr %1) {
-entry:
-  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %sret.result = alloca %_Z5SliceI6StringE, align 8
-  %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
-  %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
-  %gt = icmp ugt i64 %length, %length2
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
-  ret i1 false
-
-if.end:                                           ; preds = %entry
-  %load.struct3 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 1
-  %load.struct5 = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 1
-  %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds %_Z5SliceI6StringE, ptr %0, i32 0, i32 1
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr %local_page, ptr %0, i64 %sub, i64 %field.val)
-  %call = call i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %sret.result, ptr %1)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret i1 %call
-}
-
-define linkonce_odr ptr @_ZN13SliceIteratorI6StringE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
-  %position = extractvalue %_Z13SliceIteratorI6StringE %load.struct, 1
-  %load.struct1 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
-  %slice = extractvalue %_Z13SliceIteratorI6StringE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI6StringE %slice, 1
-  %ge = icmp uge i64 %position, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct2 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
-  %slice3 = extractvalue %_Z13SliceIteratorI6StringE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI6StringE %slice3, 0
-  %load.struct4 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
-  %position5 = extractvalue %_Z13SliceIteratorI6StringE %load.struct4, 1
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %position5
-  %load.struct6 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
-  %position7 = extractvalue %_Z13SliceIteratorI6StringE %load.struct6, 1
-  %add = add i64 %position7, 1
-  %position8 = getelementptr inbounds %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position8, align 8
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN13SliceIteratorI6StringEC1E5SliceI6StringE(ptr %0, ptr %1) {
-entry:
-  %slice = getelementptr inbounds %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 0
-  %field.load = load %_Z5SliceI6StringE, ptr %1, align 8
-  store %_Z5SliceI6StringE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN13SliceIteratorI6StringEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN5SliceI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI6StringE) %0, ptr %1, ptr %2) {
-entry:
-  %struct.init = alloca %_Z13SliceIteratorI6StringE, align 8
-  call void @_ZN13SliceIteratorI6StringEC1E5SliceI6StringE(ptr %struct.init, ptr %2)
-  %sret.body = load %_Z13SliceIteratorI6StringE, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13SliceIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN5SliceI6StringEC1Ev(ptr %0) {
-entry:
-  %data = getelementptr inbounds %_Z5SliceI6StringE, ptr %0, i32 0, i32 0
-  store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds %_Z5SliceI6StringE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %length, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2) {
-entry:
-  %load.struct = load %_Z6VectorI6StringE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI6StringE %load.struct, 1
-  %load.struct1 = load %_Z6VectorI6StringE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI6StringE %load.struct1, 0
-  %tuple = alloca %_Z5SliceI6StringE, align 8
-  %tuple.field = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
-  %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringEC1Ev(ptr %0) {
-entry:
-  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 8
-  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringEC1EP6Stringm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringEC1Em(ptr %0, i64 %1) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
-  store i64 %1, ptr %length, align 8
-  %gt = icmp ugt i64 %1, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %mul = mul i64 %1, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr %call1, ptr %data, align 8
-  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul2 = mul i64 %1, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data4 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data4, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call3, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringEC1E6VectorI6StringE(ptr %0, ptr %1) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %length1 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
-  store i64 %length, ptr %length1, align 8
-  %load.struct2 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length3 = extractvalue %_Z6VectorI6StringE %load.struct2, 0
-  %gt = icmp ugt i64 %length3, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct4 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length5 = extractvalue %_Z6VectorI6StringE %load.struct4, 0
-  %mul = mul i64 %length5, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr %call6, ptr %data, align 8
-  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace7 = getelementptr inbounds %_Z6VectorI6StringE, ptr %1, i32 0, i32 1
-  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
-  %load.struct9 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length10 = extractvalue %_Z6VectorI6StringE %load.struct9, 0
-  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data13 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data13, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr ptr @_ZN5ArrayI6StringE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
-  %deref = load %_Z6VectorI6StringE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI6StringE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI6StringE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
-  %deref = load %_Z6VectorI6StringE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI6StringE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringE10reallocateEv(ptr %0) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %length = alloca i64, align 8
-  store i64 0, ptr %length, align 1
-  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call2 = call i64 @_ZN4Page12get_capacityEm(ptr %call1, i64 8)
-  %sub = sub i64 %call2, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
-  %udiv = udiv i64 %sub, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %length, align 1
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %length3 = load i64, ptr %length, align 8
-  call void @_ZN6VectorI6StringEC1Em(ptr %struct.region, i64 %length3)
-  %vector4 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector4, align 8
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %load.struct5 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector6 = extractvalue %_Z5ArrayI6StringE %load.struct5, 1
-  %deref = load %_Z6VectorI6StringE, ptr %vector6, align 8
-  %length7 = extractvalue %_Z6VectorI6StringE %deref, 0
-  %mul = mul i64 %length7, 2
-  store i64 %mul, ptr %length, align 1
-  %call8 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %call8, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %length10 = load i64, ptr %length, align 8
-  call void @_ZN6VectorI6StringEC1Em(ptr %struct.region9, i64 %length10)
-  %load.struct11 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector12 = extractvalue %_Z5ArrayI6StringE %load.struct11, 1
-  %deref13 = load %_Z6VectorI6StringE, ptr %vector12, align 8
-  %length14 = extractvalue %_Z6VectorI6StringE %deref13, 0
-  %mul15 = mul i64 %length14, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %struct.region9, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace16 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  %load.struct17 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI6StringE %load.struct17, 1
-  %deref19 = load %_Z6VectorI6StringE, ptr %vector18, align 8
-  %data = extractvalue %_Z6VectorI6StringE %deref19, 1
-  %call20 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul15)
-  %load.struct21 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI6StringE %load.struct21, 1
-  %call23 = call ptr @_ZN4Page3getEPv(ptr %vector22)
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call, ptr %call23)
-  %vector24 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region9, ptr %vector24, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringE3addE6String(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI6StringE %load.struct2, 1
-  %deref = load %_Z6VectorI6StringE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI6StringE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI6StringE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI6StringE %load.struct6, 1
-  %deref8 = load %_Z6VectorI6StringE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI6StringE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI6StringE %load.struct9, 0
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %length10
-  %store.load = load { ptr }, ptr %1, align 8
-  store { ptr } %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI6StringE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringE3addE6VectorI6StringE(ptr %0, ptr %1) {
-entry:
-  %own_page = alloca ptr, align 8
-  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
-  %load.struct1 = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length2 = extractvalue %_Z6VectorI6StringE %load.struct1, 0
-  %add = add i64 %length, %length2
-  %new_length = alloca i64, align 8
-  store i64 %add, ptr %new_length, align 1
-  %new_length3 = load i64, ptr %new_length, align 8
-  %load.struct4 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length5 = extractvalue %_Z5ArrayI6StringE %load.struct4, 0
-  %lt = icmp ult i64 %new_length3, %length5
-  br i1 %lt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @exit(i64 14)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct6 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct6, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length7 = load i64, ptr %new_length, align 8
-  %load.struct8 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector9 = extractvalue %_Z5ArrayI6StringE %load.struct8, 1
-  %deref = load %_Z6VectorI6StringE, ptr %vector9, align 8
-  %length10 = extractvalue %_Z6VectorI6StringE %deref, 0
-  %gt = icmp ugt i64 %new_length7, %length10
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
-  call void @_ZN5ArrayI6StringE10reallocateEv(ptr %0)
-  br label %if.end12
-
-if.end12:                                         ; preds = %if.then11, %lor.end
-  %new_length13 = load i64, ptr %new_length, align 8
-  %load.struct14 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector15 = extractvalue %_Z5ArrayI6StringE %load.struct14, 1
-  %deref16 = load %_Z6VectorI6StringE, ptr %vector15, align 8
-  %length17 = extractvalue %_Z6VectorI6StringE %deref16, 0
-  %gt18 = icmp ugt i64 %new_length13, %length17
-  br i1 %gt18, label %if.then19, label %if.end20
-
-if.then19:                                        ; preds = %if.end12
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  store ptr %call, ptr %own_page, align 1
-  %own_page21 = load ptr, ptr %own_page, align 8
-  %new_length22 = load i64, ptr %new_length, align 8
-  %mul = mul i64 %new_length22, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call23 = call ptr @_ZN4Page8allocateEmm(ptr %own_page21, i64 %mul, i64 8)
-  %load.struct24 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length25 = extractvalue %_Z5ArrayI6StringE %load.struct24, 0
-  %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %load.struct27 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length28 = extractvalue %_Z5ArrayI6StringE %load.struct27, 0
-  %gt29 = icmp ugt i64 %length28, 0
-  br i1 %gt29, label %if.then30, label %if.end31
-
-if.end20:                                         ; preds = %if.end31, %if.end12
-  %load.struct48 = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length49 = extractvalue %_Z6VectorI6StringE %load.struct48, 0
-  %gt50 = icmp ugt i64 %length49, 0
-  br i1 %gt50, label %if.then51, label %if.end52
-
-if.then30:                                        ; preds = %if.then19
-  %field.inplace = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  %load.struct32 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector33 = extractvalue %_Z5ArrayI6StringE %load.struct32, 1
-  %deref34 = load %_Z6VectorI6StringE, ptr %vector33, align 8
-  %data = extractvalue %_Z6VectorI6StringE %deref34, 1
-  %call35 = call ptr @memcpy(ptr %call23, ptr %data, i64 %mul26)
-  br label %if.end31
-
-if.end31:                                         ; preds = %if.then30, %if.then19
-  %load.struct36 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI6StringE %load.struct36, 1
-  %deref38 = load %_Z6VectorI6StringE, ptr %vector37, align 8
-  %data39 = extractvalue %_Z6VectorI6StringE %deref38, 1
-  %call40 = call ptr @_ZN4Page3getEPv(ptr %data39)
-  %own_page41 = load ptr, ptr %own_page, align 8
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %own_page41, ptr %call40)
-  %vector42 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  %field.deref = load ptr, ptr %vector42, align 8
-  %data43 = getelementptr inbounds %_Z6VectorI6StringE, ptr %field.deref, i32 0, i32 1
-  store ptr %call23, ptr %data43, align 8
-  %new_length44 = load i64, ptr %new_length, align 8
-  %vector45 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  %field.deref46 = load ptr, ptr %vector45, align 8
-  %length47 = getelementptr inbounds %_Z6VectorI6StringE, ptr %field.deref46, i32 0, i32 0
-  store i64 %new_length44, ptr %length47, align 8
-  br label %if.end20
-
-if.then51:                                        ; preds = %if.end20
-  %load.struct53 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector54 = extractvalue %_Z5ArrayI6StringE %load.struct53, 1
-  %deref55 = load %_Z6VectorI6StringE, ptr %vector54, align 8
-  %data56 = extractvalue %_Z6VectorI6StringE %deref55, 1
-  %load.struct57 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length58 = extractvalue %_Z5ArrayI6StringE %load.struct57, 0
-  %mul59 = mul i64 %length58, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data56, i64 %mul59
-  %field.inplace60 = getelementptr inbounds %_Z6VectorI6StringE, ptr %1, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace60, align 8
-  %load.struct61 = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length62 = extractvalue %_Z6VectorI6StringE %load.struct61, 0
-  %mul63 = mul i64 %length62, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call64 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv, i64 %mul63)
-  br label %if.end52
-
-if.end52:                                         ; preds = %if.then51, %if.end20
-  %load.struct65 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length66 = extractvalue %_Z5ArrayI6StringE %load.struct65, 0
-  %load.struct67 = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length68 = extractvalue %_Z6VectorI6StringE %load.struct67, 0
-  %add69 = add i64 %length66, %length68
-  %length70 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
-  store i64 %add69, ptr %length70, align 8
-  ret void
-}
-
-define linkonce_odr ptr @_ZN5ArrayI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %load.struct = load %_Z5ArrayI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
-  %ge = icmp uge i64 %2, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI6StringE, ptr %1, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
-  %deref = load %_Z6VectorI6StringE, ptr %vector, align 8
-  %data = extractvalue %_Z6VectorI6StringE %deref, 1
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %2
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringE3putEm6String(ptr %0, i64 %1, ptr %2) {
-entry:
-  %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.25)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 15)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct1, 1
-  %deref = load %_Z6VectorI6StringE, ptr %vector, align 8
-  %data = extractvalue %_Z6VectorI6StringE %deref, 1
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data, i64 %1
-  %store.load = load { ptr }, ptr %2, align 8
-  store { ptr } %store.load, ptr %ptr.add, align 8
-  ret void
-}
-
-define linkonce_odr ptr @_ZN13ArrayIteratorI6StringE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
-  %array = extractvalue %_Z13ArrayIteratorI6StringE %load.struct, 0
-  %eq = icmp eq ptr %array, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
-  %position = extractvalue %_Z13ArrayIteratorI6StringE %load.struct1, 1
-  %load.struct2 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
-  %array3 = extractvalue %_Z13ArrayIteratorI6StringE %load.struct2, 0
-  %deref = load %_Z5ArrayI6StringE, ptr %array3, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
-  %position8 = extractvalue %_Z13ArrayIteratorI6StringE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call ptr @_ZN5ArrayI6StringE10get_bufferEv(ptr %deref.recv)
-  %load.struct10 = load %_Z13ArrayIteratorI6StringE, ptr %0, align 8
-  %position11 = extractvalue %_Z13ArrayIteratorI6StringE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %ptr.add = getelementptr inbounds { ptr }, ptr %call, i64 %sub
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN13ArrayIteratorI6StringEC1EP5ArrayI6StringE(ptr %0, ptr %1) {
-entry:
-  %array = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %array, align 8
-  %position = getelementptr inbounds %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN13ArrayIteratorI6StringEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6StringE) %0, ptr %1, ptr %2) {
-entry:
-  %struct.init = alloca %_Z13ArrayIteratorI6StringE, align 8
-  call void @_ZN13ArrayIteratorI6StringEC1EP5ArrayI6StringE(ptr %struct.init, ptr %2)
-  %sret.body = load %_Z13ArrayIteratorI6StringE, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringEC1Ev(ptr %0) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 8
-  %vector = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringEC1Em(ptr %0, i64 %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 8
-  %vector = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %deref = load ptr, ptr %call, align 8
-  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %deref)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6StringEC1Em(ptr %struct.region, i64 %1)
-  %vector2 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringEC1E5ArrayI6StringE(ptr %0, ptr %1) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
-  %length1 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
-  store i64 %length, ptr %length1, align 8
-  %load.struct2 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length3 = extractvalue %_Z6VectorI6StringE %load.struct2, 0
-  %gt = icmp ugt i64 %length3, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct4 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length5 = extractvalue %_Z6VectorI6StringE %load.struct4, 0
-  %mul = mul i64 %length5, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr %call6, ptr %data, align 8
-  %load.struct7 = load %_Z5ArrayI6StringE, ptr %1, align 8
-  %vector = extractvalue %_Z5ArrayI6StringE %load.struct7, 1
-  %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace8 = getelementptr inbounds %_Z6VectorI6StringE, ptr %vector, i32 0, i32 1
-  %deref.recv9 = load ptr, ptr %field.inplace8, align 8
-  %load.struct10 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length11 = extractvalue %_Z6VectorI6StringE %load.struct10, 0
-  %mul12 = mul i64 %length11, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call13 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv9, i64 %mul12)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data14 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data14, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call13, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr ptr @_ZN4ListI6StringE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6StringE, ptr %1, align 8
-  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
-  %eq = icmp eq ptr %head, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %addr.gep = getelementptr inbounds %_Z4ListI6StringE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %addr.gep, i32 0, i32 0
-  ret ptr %addr.gep1
-}
-
-define linkonce_odr ptr @_ZN12ListIteratorI6StringE4nextEv(ptr %0) {
-entry:
-  %old_current = alloca ptr, align 8
-  %load.struct = load %_Z12ListIteratorI6StringE, ptr %0, align 8
-  %current = extractvalue %_Z12ListIteratorI6StringE %load.struct, 0
-  %ne = icmp ne ptr %current, null
-  br i1 %ne, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct1 = load %_Z12ListIteratorI6StringE, ptr %0, align 8
-  %current2 = extractvalue %_Z12ListIteratorI6StringE %load.struct1, 0
-  store ptr %current2, ptr %old_current, align 1
-  %load.struct3 = load %_Z12ListIteratorI6StringE, ptr %0, align 8
-  %current4 = extractvalue %_Z12ListIteratorI6StringE %load.struct3, 0
-  %deref = load %_Z4NodeI6StringE, ptr %current4, align 8
-  %next = extractvalue %_Z4NodeI6StringE %deref, 1
-  %current5 = getelementptr inbounds %_Z12ListIteratorI6StringE, ptr %0, i32 0, i32 0
-  store ptr %next, ptr %current5, align 8
-  %old_current6 = load ptr, ptr %old_current, align 8
-  %addr.gep = getelementptr inbounds %_Z4NodeI6StringE, ptr %old_current6, i32 0, i32 0
-  ret ptr %addr.gep
-
-if.else:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; No predecessors!
-  ret ptr null
-}
-
-define linkonce_odr void @_ZN12ListIteratorI6StringEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr i64 @_ZN4ListI6StringE5countEv(ptr %0) {
-entry:
-  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %sret.result = alloca %_Z12ListIteratorI6StringE, align 8
-  call void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %sret.result, ptr %local_page, ptr %0)
-  %list_iterator = alloca ptr, align 8
-  store ptr %sret.result, ptr %list_iterator, align 1
-  %i = alloca i64, align 8
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %list_iterator1 = load ptr, ptr %list_iterator, align 8
-  %call = call ptr @_ZN12ListIteratorI6StringE4nextEv(ptr %list_iterator1)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %i2 = load i64, ptr %i, align 8
-  %add = add i64 %i2, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  %i3 = load i64, ptr %i, align 8
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI6StringE6removeE6String(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6StringE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %base.deref = load ptr, ptr %node, align 8
-  %field.inplace = getelementptr inbounds %_Z4NodeI6StringE, ptr %base.deref, i32 0, i32 0
-  %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %1)
-  br i1 %call, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-
-if.then:                                          ; preds = %while.body
-  %previous_node2 = load ptr, ptr %previous_node, align 8
-  %ne3 = icmp ne ptr %previous_node2, null
-  br i1 %ne3, label %if.then4, label %if.end5
-
-if.end:                                           ; preds = %while.body
-  %node18 = load ptr, ptr %node, align 8
-  store ptr %node18, ptr %previous_node, align 1
-  %node19 = load ptr, ptr %node, align 8
-  %load.struct20 = load %_Z4NodeI6StringE, ptr %node19, align 8
-  %next21 = extractvalue %_Z4NodeI6StringE %load.struct20, 1
-  store ptr %next21, ptr %node, align 1
-  br label %while.cond
-
-if.then4:                                         ; preds = %if.then
-  %node6 = load ptr, ptr %node, align 8
-  %load.struct7 = load %_Z4NodeI6StringE, ptr %node6, align 8
-  %next = extractvalue %_Z4NodeI6StringE %load.struct7, 1
-  %ptr.load = load ptr, ptr %previous_node, align 8
-  %next8 = getelementptr inbounds %_Z4NodeI6StringE, ptr %ptr.load, i32 0, i32 1
-  store ptr %next, ptr %next8, align 8
-  br label %if.end5
-
-if.end5:                                          ; preds = %if.then4, %if.then
-  %node9 = load ptr, ptr %node, align 8
-  %load.struct10 = load %_Z4ListI6StringE, ptr %0, align 8
-  %head11 = extractvalue %_Z4ListI6StringE %load.struct10, 0
-  %eq = icmp eq ptr %node9, %head11
-  br i1 %eq, label %if.then12, label %if.end13
-
-if.then12:                                        ; preds = %if.end5
-  %node14 = load ptr, ptr %node, align 8
-  %load.struct15 = load %_Z4NodeI6StringE, ptr %node14, align 8
-  %next16 = extractvalue %_Z4NodeI6StringE %load.struct15, 1
-  %head17 = getelementptr inbounds %_Z4ListI6StringE, ptr %0, i32 0, i32 0
-  store ptr %next16, ptr %head17, align 8
-  br label %if.end13
-
-if.end13:                                         ; preds = %if.then12, %if.end5
-  ret i1 true
-}
-
-define linkonce_odr void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %0, ptr %1, ptr %2) {
-entry:
-  %load.struct = load %_Z4ListI6StringE, ptr %2, align 8
-  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
-  %tuple = alloca %_Z12ListIteratorI6StringE, align 8
-  %tuple.field = getelementptr inbounds %_Z12ListIteratorI6StringE, ptr %tuple, i32 0, i32 0
-  store ptr %head, ptr %tuple.field, align 1
-  %tuple.val = load %_Z12ListIteratorI6StringE, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN4ListI6StringE3addE6String(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6StringE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %field.load = load { ptr }, ptr %1, align 8
-  %tuple.field = getelementptr inbounds %_Z4NodeI6StringE, ptr %tuple.region, i32 0, i32 0
-  store { ptr } %field.load, ptr %tuple.field, align 1
-  %tuple.field1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %tuple.region, i32 0, i32 1
-  store ptr %head, ptr %tuple.field1, align 1
-  %head2 = getelementptr inbounds %_Z4ListI6StringE, ptr %0, i32 0, i32 0
-  store ptr %tuple.region, ptr %head2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN4ListI6StringEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringEC1E4ListI6StringE(ptr %0, ptr %1) {
-entry:
-  %deref.tmp = alloca { ptr }, align 8
-  %i = alloca i64, align 8
-  %list_iterator = alloca ptr, align 8
-  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %sret.result = alloca %_Z12ListIteratorI6StringE, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %call1 = call i64 @_ZN4ListI6StringE5countEv(ptr %1)
-  %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
-  store i64 %call1, ptr %length, align 8
-  %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length2 = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %gt = icmp ugt i64 %length2, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct3 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length4 = extractvalue %_Z6VectorI6StringE %load.struct3, 0
-  %mul = mul i64 %length4, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr %call5, ptr %data, align 8
-  call void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %sret.result, ptr %local_page, ptr %1)
-  store ptr %sret.result, ptr %list_iterator, align 1
-  %load.struct6 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %length7 = extractvalue %_Z6VectorI6StringE %load.struct6, 0
-  store i64 %length7, ptr %i, align 1
-  br label %while.cond
-
-if.else:                                          ; preds = %entry
-  %data14 = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data14, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %while.exit
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret void
-
-while.cond:                                       ; preds = %while.body, %if.then
-  %list_iterator8 = load ptr, ptr %list_iterator, align 8
-  %call9 = call ptr @_ZN12ListIteratorI6StringE4nextEv(ptr %list_iterator8)
-  %while.tobool = icmp ne ptr %call9, null
-  br i1 %while.tobool, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %i10 = load i64, ptr %i, align 8
-  %sub = sub i64 %i10, 1
-  store i64 %sub, ptr %i, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %load.struct11 = load %_Z6VectorI6StringE, ptr %0, align 8
-  %data12 = extractvalue %_Z6VectorI6StringE %load.struct11, 1
-  %i13 = load i64, ptr %i, align 8
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data12, i64 %i13
-  %store.load = load { ptr }, ptr %deref.tmp, align 8
-  store { ptr } %store.load, ptr %ptr.add, align 8
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  br label %if.end
-}
-
 define linkonce_odr ptr @_ZN6VectorI6VectorI7OperandEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI6VectorI7OperandEE, ptr %1, align 8
@@ -12107,7 +15291,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.26)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.30)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -12843,7 +16027,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.27)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.31)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -13234,7 +16418,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.28)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.32)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -13970,7 +17154,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.29)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.33)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -14361,7 +17545,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.30)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.34)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -15097,7 +18281,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.31)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.35)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -15488,7 +18672,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.32)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.36)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -16224,7 +19408,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.33)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.37)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -16615,7 +19799,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.34)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.38)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -17351,7 +20535,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.35)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.39)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -17742,7 +20926,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.36)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.40)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -18478,7 +21662,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.37)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.41)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -18869,7 +22053,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.38)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.42)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -19605,7 +22789,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.39)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.43)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -19996,7 +23180,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.40)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.44)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -20732,7 +23916,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.41)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.45)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -21123,7 +24307,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.42)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.46)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -21859,7 +25043,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.43)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.47)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -22250,7 +25434,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.44)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.48)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -22986,7 +26170,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.45)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.49)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -23377,7 +26561,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.46)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.50)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -24113,7 +27297,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.47)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.51)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -24504,7 +27688,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.48)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.52)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -25240,7 +28424,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.49)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.53)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -25631,7 +28815,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.50)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.54)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -26367,7 +29551,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.51)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.55)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -27357,8 +30541,6 @@ entry:
   ret void
 }
 
-declare i64 @_ZN7hashing9get_primeEm(i64)
-
 define linkonce_odr ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret ptr null
@@ -27786,7 +30968,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.52)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.56)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -28522,7 +31704,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.53)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.57)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -28913,7 +32095,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.54)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.58)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -29649,7 +32831,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.55)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.59)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -30013,8 +33195,6 @@ entry:
   ret void
 }
 
-declare i64 @_ZN6String4hashEv(ptr)
-
 define linkonce_odr ptr @_ZN6VectorI6VectorI12KeyValuePairI6String8NameableEEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, align 8
@@ -30057,7 +33237,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.56)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.60)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -30793,7 +33973,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.57)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.61)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -31184,7 +34364,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.58)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.62)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -31920,7 +35100,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.59)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.63)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -32446,7 +35626,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.60)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.64)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -33271,7 +36451,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.61)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.65)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -33708,9 +36888,9 @@ entry:
   %load.struct = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
   %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct, 0
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE }, ptr null, i64 0, i32 1) to i64))
-  %field.load = load %_Z4SlotI8FunctionE, ptr %2, align 8
+  %field.load = load %_Z4SlotI6StringE, ptr %2, align 8
   %tuple.field = getelementptr inbounds %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple.region, i32 0, i32 0
-  store %_Z4SlotI8FunctionE %field.load, ptr %tuple.field, align 1
+  store %_Z4SlotI6StringE %field.load, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple.region, i32 0, i32 1
   store ptr %head, ptr %tuple.field1, align 1
   %head2 = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
@@ -33870,8 +37050,8 @@ while.cond10:                                     ; preds = %while.body11, %whil
   br i1 %while.tobool15, label %while.body11, label %while.exit12
 
 while.body11:                                     ; preds = %while.cond10
-  %load.struct16 = load %_Z4SlotI8FunctionE, ptr %call14, align 8
-  %hash_code = extractvalue %_Z4SlotI8FunctionE %load.struct16, 1
+  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
   %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.region, align 8
   %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct17, 0
   %urem = urem i64 %hash_code, %length
@@ -33946,7 +37126,7 @@ while.cond:                                       ; preds = %if.end, %entry
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace4 = getelementptr inbounds %_Z4SlotI8FunctionE, ptr %call3, i32 0, i32 0
+  %field.inplace4 = getelementptr inbounds %_Z4SlotI6StringE, ptr %call3, i32 0, i32 0
   %field.inplace5 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %field.inplace4, i32 0, i32 0
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %field.inplace5)
   br i1 %call6, label %if.then, label %if.end
@@ -34020,7 +37200,7 @@ while.cond:                                       ; preds = %if.end10, %if.end
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace6 = getelementptr inbounds %_Z4SlotI8FunctionE, ptr %call5, i32 0, i32 0
+  %field.inplace6 = getelementptr inbounds %_Z4SlotI6StringE, ptr %call5, i32 0, i32 0
   %field.inplace7 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %field.inplace6, i32 0, i32 0
   %call8 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %field.inplace7)
   br i1 %call8, label %if.then9, label %if.end10
@@ -34072,7 +37252,7 @@ while.cond:                                       ; preds = %if.end10, %if.end
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace6 = getelementptr inbounds %_Z4SlotI8FunctionE, ptr %call5, i32 0, i32 0
+  %field.inplace6 = getelementptr inbounds %_Z4SlotI6StringE, ptr %call5, i32 0, i32 0
   %field.inplace7 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %field.inplace6, i32 0, i32 0
   %call8 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %field.inplace7)
   br i1 %call8, label %if.then9, label %if.end10
@@ -34082,7 +37262,7 @@ while.exit:                                       ; preds = %while.cond
   ret ptr null
 
 if.then9:                                         ; preds = %while.body
-  %addr.gep = getelementptr inbounds %_Z4SlotI8FunctionE, ptr %call5, i32 0, i32 0
+  %addr.gep = getelementptr inbounds %_Z4SlotI6StringE, ptr %call5, i32 0, i32 0
   %addr.gep11 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %addr.gep, i32 0, i32 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret ptr %addr.gep11
@@ -34253,7 +37433,7 @@ while.cond17:                                     ; preds = %while.body18, %if.t
 
 while.body18:                                     ; preds = %while.cond17
   %array21 = load ptr, ptr %array, align 8
-  %field.inplace22 = getelementptr inbounds %_Z4SlotI8FunctionE, ptr %call20, i32 0, i32 0
+  %field.inplace22 = getelementptr inbounds %_Z4SlotI6StringE, ptr %call20, i32 0, i32 0
   call void @_ZN5ArrayI12KeyValuePairI6String8NameableEE3addE12KeyValuePairI6String8NameableE(ptr %array21, ptr %field.inplace22)
   br label %while.cond17
 
@@ -34326,7 +37506,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.62)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.66)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -35308,7 +38488,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.63)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.67)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -35453,7 +38633,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.64)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.68)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -36435,7 +39615,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.65)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.69)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -36580,7 +39760,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.66)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.70)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -37562,7 +40742,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.67)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.71)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -37707,7 +40887,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.68)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.72)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -38689,7 +41869,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.69)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.73)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -38834,7 +42014,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.70)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.74)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -39816,7 +42996,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.71)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.75)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -39961,7 +43141,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.72)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.76)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -40943,7 +44123,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.73)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.77)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -41088,7 +44268,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.74)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.78)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -42070,7 +45250,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.75)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.79)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -42215,7 +45395,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.76)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.80)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -43197,7 +46377,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.77)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.81)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -43342,7 +46522,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.78)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.82)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -44078,7 +47258,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.79)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.83)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -44469,7 +47649,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.80)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.84)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -45451,7 +48631,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.81)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.85)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -45596,7 +48776,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.82)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.86)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -46578,7 +49758,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.83)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.87)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -46723,7 +49903,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.84)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.88)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -47459,7 +50639,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.85)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.89)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -47850,7 +51030,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.86)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.90)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -48832,7 +52012,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.87)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.91)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -48977,7 +52157,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.88)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.92)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -49959,7 +53139,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.89)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.93)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -50062,6 +53242,47 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %0, ptr %1) {
+entry:
+  %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %i1 = load i64, ptr %i, align 8
+  %load.struct = load %_Z7Program, ptr %1, align 8
+  %packages = extractvalue %_Z7Program %load.struct, 0
+  %length = extractvalue %_Z6VectorI6ModuleE %packages, 0
+  %lt = icmp ult i64 %i1, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %field.inplace = getelementptr inbounds %_Z7Program, ptr %1, i32 0, i32 0
+  %i2 = load i64, ptr %i, align 8
+  %call = call ptr @_ZN6VectorI6ModuleE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace, i64 %i2)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret void
+
+if.then:                                          ; preds = %while.body
+  %field.inplace3 = getelementptr inbounds %_Z6Module, ptr %call, i32 0, i32 2
+  call void @_ZN7Planner23register_loaded_packageE6String6Module(ptr %0, ptr %field.inplace3, ptr %call)
+  call void @_ZN7Planner24register_module_conceptsE6Module(ptr %0, ptr %call)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.body
+  %i4 = load i64, ptr %i, align 8
+  %add = add i64 %i4, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+}
+
+declare ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr, ptr, ptr)
+
 define linkonce_odr void @_ZN11diagnostics19publish_diagnosticsEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %sret.result59 = alloca { ptr }, align 8
@@ -50084,33 +53305,33 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.90)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.94)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.91)
+  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.95)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.92)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.96)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result9, ptr %local_page, ptr @.str.93)
+  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result9, ptr %local_page, ptr @.str.97)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb8, ptr %sret.result9)
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.94)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.98)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb13, i8 123)
   %sb14 = load ptr, ptr %sb, align 8
   %sret.result15 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.95)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.99)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %sret.result15)
   %sb16 = load ptr, ptr %sb, align 8
   %sret.result17 = alloca { ptr }, align 8
@@ -50120,7 +53341,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb18, i8 44)
   %sb19 = load ptr, ptr %sb, align 8
   %sret.result20 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr @.str.96)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr @.str.100)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb19, ptr %sret.result20)
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb21, i8 91)
@@ -50128,7 +53349,7 @@ entry:
   store i1 true, ptr %first, align 1
   %sret.result22 = alloca { ptr }, align 8
   call void @_ZN11diagnostics9strip_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr %2)
-  %struct.region23 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region23 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region23, ptr %3)
   %p = alloca ptr, align 8
   store ptr %struct.region23, ptr %p, align 1
@@ -50191,7 +53412,7 @@ choose.when32:                                    ; preds = %choose.when
   %"variant.c_data().ptr33" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
   %variant.val34 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr33", align 1
   %sb35 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.97 }, ptr %arg.tmp37, align 1
+  store { ptr } { ptr @.sconst.101 }, ptr %arg.tmp37, align 1
   call void @_ZN11diagnostics11diag_objectEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result36, ptr %local_page, ptr %3, i64 0, ptr %arg.tmp37)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb35, ptr %sret.result36)
   store i1 false, ptr %first, align 1
@@ -50199,7 +53420,7 @@ choose.when32:                                    ; preds = %choose.when
 
 choose.when38:                                    ; preds = %entry
   %throws.success.val = load %_Z13ProgramSyntax, ptr %throws.data.ptr, align 1
-  store { ptr } { ptr @.sconst.98 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.102 }, ptr %arg.tmp40, align 1
   store %_Z13ProgramSyntax %throws.success.val, ptr %arg.tmp41, align 1
   call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result39, ptr %local_page, ptr %sret.result22, ptr %arg.tmp40, ptr %arg.tmp41, i1 true)
   %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
@@ -50270,33 +53491,33 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.99)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.103)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.100)
+  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.104)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.101)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.105)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result9, ptr %local_page, ptr @.str.102)
+  call void @_ZN11diagnostics6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result9, ptr %local_page, ptr @.str.106)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb8, ptr %sret.result9)
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.103)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.107)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb13, i8 123)
   %sb14 = load ptr, ptr %sb, align 8
   %sret.result15 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.104)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.108)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %sret.result15)
   %sb16 = load ptr, ptr %sb, align 8
   %sret.result17 = alloca { ptr }, align 8
@@ -50306,7 +53527,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb18, i8 44)
   %sb19 = load ptr, ptr %sb, align 8
   %sret.result20 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr @.str.105)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr @.str.109)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb19, ptr %sret.result20)
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb21, i8 91)
@@ -50340,7 +53561,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.111)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.115)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -50350,7 +53571,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.112)
+  call void @_ZN11diagnostics3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.116)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -50737,7 +53958,7 @@ entry:
   %arg.tmp5 = alloca { ptr }, align 8
   %arg.tmp1 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.114 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.118 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -50745,7 +53966,7 @@ if.then:                                          ; preds = %entry
   ret i1 true
 
 if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.115 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.119 }, ptr %arg.tmp1, align 1
   %call2 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp1)
   br i1 %call2, label %if.then3, label %if.end4
 
@@ -50753,7 +53974,7 @@ if.then3:                                         ; preds = %if.end
   ret i1 true
 
 if.end4:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.116 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.120 }, ptr %arg.tmp5, align 1
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp5)
   br i1 %call6, label %if.then7, label %if.end8
 
@@ -50761,7 +53982,7 @@ if.then7:                                         ; preds = %if.end4
   ret i1 true
 
 if.end8:                                          ; preds = %if.end4
-  store { ptr } { ptr @.sconst.117 }, ptr %arg.tmp9, align 1
+  store { ptr } { ptr @.sconst.121 }, ptr %arg.tmp9, align 1
   %call10 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp9)
   br i1 %call10, label %if.then11, label %if.end12
 
@@ -50769,7 +53990,7 @@ if.then11:                                        ; preds = %if.end8
   ret i1 true
 
 if.end12:                                         ; preds = %if.end8
-  store { ptr } { ptr @.sconst.118 }, ptr %arg.tmp13, align 1
+  store { ptr } { ptr @.sconst.122 }, ptr %arg.tmp13, align 1
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp13)
   br i1 %call14, label %if.then15, label %if.end16
 
@@ -50777,7 +53998,7 @@ if.then15:                                        ; preds = %if.end12
   ret i1 true
 
 if.end16:                                         ; preds = %if.end12
-  store { ptr } { ptr @.sconst.119 }, ptr %arg.tmp17, align 1
+  store { ptr } { ptr @.sconst.123 }, ptr %arg.tmp17, align 1
   %call18 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp17)
   br i1 %call18, label %if.then19, label %if.end20
 
@@ -50785,7 +54006,7 @@ if.then19:                                        ; preds = %if.end16
   ret i1 true
 
 if.end20:                                         ; preds = %if.end16
-  store { ptr } { ptr @.sconst.120 }, ptr %arg.tmp21, align 1
+  store { ptr } { ptr @.sconst.124 }, ptr %arg.tmp21, align 1
   %call22 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp21)
   br i1 %call22, label %if.then23, label %if.end24
 
@@ -50793,7 +54014,7 @@ if.then23:                                        ; preds = %if.end20
   ret i1 true
 
 if.end24:                                         ; preds = %if.end20
-  store { ptr } { ptr @.sconst.121 }, ptr %arg.tmp25, align 1
+  store { ptr } { ptr @.sconst.125 }, ptr %arg.tmp25, align 1
   %call26 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp25)
   br i1 %call26, label %if.then27, label %if.end28
 
@@ -50801,7 +54022,7 @@ if.then27:                                        ; preds = %if.end24
   ret i1 true
 
 if.end28:                                         ; preds = %if.end24
-  store { ptr } { ptr @.sconst.122 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.126 }, ptr %arg.tmp29, align 1
   %call30 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp29)
   br i1 %call30, label %if.then31, label %if.end32
 
@@ -50809,7 +54030,7 @@ if.then31:                                        ; preds = %if.end28
   ret i1 true
 
 if.end32:                                         ; preds = %if.end28
-  store { ptr } { ptr @.sconst.123 }, ptr %arg.tmp33, align 1
+  store { ptr } { ptr @.sconst.127 }, ptr %arg.tmp33, align 1
   %call34 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp33)
   br i1 %call34, label %if.then35, label %if.end36
 
@@ -50817,7 +54038,7 @@ if.then35:                                        ; preds = %if.end32
   ret i1 true
 
 if.end36:                                         ; preds = %if.end32
-  store { ptr } { ptr @.sconst.124 }, ptr %arg.tmp37, align 1
+  store { ptr } { ptr @.sconst.128 }, ptr %arg.tmp37, align 1
   %call38 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp37)
   br i1 %call38, label %if.then39, label %if.end40
 
@@ -50825,7 +54046,7 @@ if.then39:                                        ; preds = %if.end36
   ret i1 true
 
 if.end40:                                         ; preds = %if.end36
-  store { ptr } { ptr @.sconst.125 }, ptr %arg.tmp41, align 1
+  store { ptr } { ptr @.sconst.129 }, ptr %arg.tmp41, align 1
   %call42 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp41)
   br i1 %call42, label %if.then43, label %if.end44
 
@@ -50833,7 +54054,7 @@ if.then43:                                        ; preds = %if.end40
   ret i1 true
 
 if.end44:                                         ; preds = %if.end40
-  store { ptr } { ptr @.sconst.126 }, ptr %arg.tmp45, align 1
+  store { ptr } { ptr @.sconst.130 }, ptr %arg.tmp45, align 1
   %call46 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp45)
   br i1 %call46, label %if.then47, label %if.end48
 
@@ -50841,7 +54062,7 @@ if.then47:                                        ; preds = %if.end44
   ret i1 true
 
 if.end48:                                         ; preds = %if.end44
-  store { ptr } { ptr @.sconst.127 }, ptr %arg.tmp49, align 1
+  store { ptr } { ptr @.sconst.131 }, ptr %arg.tmp49, align 1
   %call50 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp49)
   br i1 %call50, label %if.then51, label %if.end52
 
@@ -50849,7 +54070,7 @@ if.then51:                                        ; preds = %if.end48
   ret i1 true
 
 if.end52:                                         ; preds = %if.end48
-  store { ptr } { ptr @.sconst.128 }, ptr %arg.tmp53, align 1
+  store { ptr } { ptr @.sconst.132 }, ptr %arg.tmp53, align 1
   %call54 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp53)
   br i1 %call54, label %if.then55, label %if.end56
 
@@ -50857,7 +54078,7 @@ if.then55:                                        ; preds = %if.end52
   ret i1 true
 
 if.end56:                                         ; preds = %if.end52
-  store { ptr } { ptr @.sconst.129 }, ptr %arg.tmp57, align 1
+  store { ptr } { ptr @.sconst.133 }, ptr %arg.tmp57, align 1
   %call58 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp57)
   br i1 %call58, label %if.then59, label %if.end60
 
@@ -50865,7 +54086,7 @@ if.then59:                                        ; preds = %if.end56
   ret i1 true
 
 if.end60:                                         ; preds = %if.end56
-  store { ptr } { ptr @.sconst.130 }, ptr %arg.tmp61, align 1
+  store { ptr } { ptr @.sconst.134 }, ptr %arg.tmp61, align 1
   %call62 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp61)
   br i1 %call62, label %if.then63, label %if.end64
 
@@ -50873,7 +54094,7 @@ if.then63:                                        ; preds = %if.end60
   ret i1 true
 
 if.end64:                                         ; preds = %if.end60
-  store { ptr } { ptr @.sconst.131 }, ptr %arg.tmp65, align 1
+  store { ptr } { ptr @.sconst.135 }, ptr %arg.tmp65, align 1
   %call66 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp65)
   br i1 %call66, label %if.then67, label %if.end68
 
@@ -50881,7 +54102,7 @@ if.then67:                                        ; preds = %if.end64
   ret i1 true
 
 if.end68:                                         ; preds = %if.end64
-  store { ptr } { ptr @.sconst.132 }, ptr %arg.tmp69, align 1
+  store { ptr } { ptr @.sconst.136 }, ptr %arg.tmp69, align 1
   %call70 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp69)
   br i1 %call70, label %if.then71, label %if.end72
 
@@ -50889,7 +54110,7 @@ if.then71:                                        ; preds = %if.end68
   ret i1 true
 
 if.end72:                                         ; preds = %if.end68
-  store { ptr } { ptr @.sconst.133 }, ptr %arg.tmp73, align 1
+  store { ptr } { ptr @.sconst.137 }, ptr %arg.tmp73, align 1
   %call74 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp73)
   br i1 %call74, label %if.then75, label %if.end76
 
@@ -50897,7 +54118,7 @@ if.then75:                                        ; preds = %if.end72
   ret i1 true
 
 if.end76:                                         ; preds = %if.end72
-  store { ptr } { ptr @.sconst.134 }, ptr %arg.tmp77, align 1
+  store { ptr } { ptr @.sconst.138 }, ptr %arg.tmp77, align 1
   %call78 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp77)
   br i1 %call78, label %if.then79, label %if.end80
 
@@ -50905,7 +54126,7 @@ if.then79:                                        ; preds = %if.end76
   ret i1 true
 
 if.end80:                                         ; preds = %if.end76
-  store { ptr } { ptr @.sconst.135 }, ptr %arg.tmp81, align 1
+  store { ptr } { ptr @.sconst.139 }, ptr %arg.tmp81, align 1
   %call82 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp81)
   br i1 %call82, label %if.then83, label %if.end84
 
@@ -50913,7 +54134,7 @@ if.then83:                                        ; preds = %if.end80
   ret i1 true
 
 if.end84:                                         ; preds = %if.end80
-  store { ptr } { ptr @.sconst.136 }, ptr %arg.tmp85, align 1
+  store { ptr } { ptr @.sconst.140 }, ptr %arg.tmp85, align 1
   %call86 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp85)
   br i1 %call86, label %if.then87, label %if.end88
 
@@ -50921,7 +54142,7 @@ if.then87:                                        ; preds = %if.end84
   ret i1 true
 
 if.end88:                                         ; preds = %if.end84
-  store { ptr } { ptr @.sconst.137 }, ptr %arg.tmp89, align 1
+  store { ptr } { ptr @.sconst.141 }, ptr %arg.tmp89, align 1
   %call90 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp89)
   br i1 %call90, label %if.then91, label %if.end92
 
@@ -50929,7 +54150,7 @@ if.then91:                                        ; preds = %if.end88
   ret i1 true
 
 if.end92:                                         ; preds = %if.end88
-  store { ptr } { ptr @.sconst.138 }, ptr %arg.tmp93, align 1
+  store { ptr } { ptr @.sconst.142 }, ptr %arg.tmp93, align 1
   %call94 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp93)
   br i1 %call94, label %if.then95, label %if.end96
 
@@ -50937,7 +54158,7 @@ if.then95:                                        ; preds = %if.end92
   ret i1 true
 
 if.end96:                                         ; preds = %if.end92
-  store { ptr } { ptr @.sconst.139 }, ptr %arg.tmp97, align 1
+  store { ptr } { ptr @.sconst.143 }, ptr %arg.tmp97, align 1
   %call98 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp97)
   br i1 %call98, label %if.then99, label %if.end100
 
@@ -50945,7 +54166,7 @@ if.then99:                                        ; preds = %if.end96
   ret i1 true
 
 if.end100:                                        ; preds = %if.end96
-  store { ptr } { ptr @.sconst.140 }, ptr %arg.tmp101, align 1
+  store { ptr } { ptr @.sconst.144 }, ptr %arg.tmp101, align 1
   %call102 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp101)
   br i1 %call102, label %if.then103, label %if.end104
 
@@ -50953,7 +54174,7 @@ if.then103:                                       ; preds = %if.end100
   ret i1 true
 
 if.end104:                                        ; preds = %if.end100
-  store { ptr } { ptr @.sconst.141 }, ptr %arg.tmp105, align 1
+  store { ptr } { ptr @.sconst.145 }, ptr %arg.tmp105, align 1
   %call106 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp105)
   br i1 %call106, label %if.then107, label %if.end108
 
@@ -50961,7 +54182,7 @@ if.then107:                                       ; preds = %if.end104
   ret i1 true
 
 if.end108:                                        ; preds = %if.end104
-  store { ptr } { ptr @.sconst.142 }, ptr %arg.tmp109, align 1
+  store { ptr } { ptr @.sconst.146 }, ptr %arg.tmp109, align 1
   %call110 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp109)
   br i1 %call110, label %if.then111, label %if.end112
 
@@ -50969,7 +54190,7 @@ if.then111:                                       ; preds = %if.end108
   ret i1 true
 
 if.end112:                                        ; preds = %if.end108
-  store { ptr } { ptr @.sconst.143 }, ptr %arg.tmp113, align 1
+  store { ptr } { ptr @.sconst.147 }, ptr %arg.tmp113, align 1
   %call114 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp113)
   br i1 %call114, label %if.then115, label %if.end116
 
@@ -50977,7 +54198,7 @@ if.then115:                                       ; preds = %if.end112
   ret i1 true
 
 if.end116:                                        ; preds = %if.end112
-  store { ptr } { ptr @.sconst.144 }, ptr %arg.tmp117, align 1
+  store { ptr } { ptr @.sconst.148 }, ptr %arg.tmp117, align 1
   %call118 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp117)
   br i1 %call118, label %if.then119, label %if.end120
 
@@ -50985,7 +54206,7 @@ if.then119:                                       ; preds = %if.end116
   ret i1 true
 
 if.end120:                                        ; preds = %if.end116
-  store { ptr } { ptr @.sconst.145 }, ptr %arg.tmp121, align 1
+  store { ptr } { ptr @.sconst.149 }, ptr %arg.tmp121, align 1
   %call122 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp121)
   br i1 %call122, label %if.then123, label %if.end124
 
@@ -50993,7 +54214,7 @@ if.then123:                                       ; preds = %if.end120
   ret i1 true
 
 if.end124:                                        ; preds = %if.end120
-  store { ptr } { ptr @.sconst.146 }, ptr %arg.tmp125, align 1
+  store { ptr } { ptr @.sconst.150 }, ptr %arg.tmp125, align 1
   %call126 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp125)
   br i1 %call126, label %if.then127, label %if.end128
 
@@ -51001,7 +54222,7 @@ if.then127:                                       ; preds = %if.end124
   ret i1 true
 
 if.end128:                                        ; preds = %if.end124
-  store { ptr } { ptr @.sconst.147 }, ptr %arg.tmp129, align 1
+  store { ptr } { ptr @.sconst.151 }, ptr %arg.tmp129, align 1
   %call130 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp129)
   br i1 %call130, label %if.then131, label %if.end132
 
@@ -51009,7 +54230,7 @@ if.then131:                                       ; preds = %if.end128
   ret i1 true
 
 if.end132:                                        ; preds = %if.end128
-  store { ptr } { ptr @.sconst.148 }, ptr %arg.tmp133, align 1
+  store { ptr } { ptr @.sconst.152 }, ptr %arg.tmp133, align 1
   %call134 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp133)
   br i1 %call134, label %if.then135, label %if.end136
 
@@ -51017,7 +54238,7 @@ if.then135:                                       ; preds = %if.end132
   ret i1 true
 
 if.end136:                                        ; preds = %if.end132
-  store { ptr } { ptr @.sconst.149 }, ptr %arg.tmp137, align 1
+  store { ptr } { ptr @.sconst.153 }, ptr %arg.tmp137, align 1
   %call138 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp137)
   br i1 %call138, label %if.then139, label %if.end140
 
@@ -51025,7 +54246,7 @@ if.then139:                                       ; preds = %if.end136
   ret i1 true
 
 if.end140:                                        ; preds = %if.end136
-  store { ptr } { ptr @.sconst.150 }, ptr %arg.tmp141, align 1
+  store { ptr } { ptr @.sconst.154 }, ptr %arg.tmp141, align 1
   %call142 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp141)
   br i1 %call142, label %if.then143, label %if.end144
 
@@ -51033,7 +54254,7 @@ if.then143:                                       ; preds = %if.end140
   ret i1 true
 
 if.end144:                                        ; preds = %if.end140
-  store { ptr } { ptr @.sconst.151 }, ptr %arg.tmp145, align 1
+  store { ptr } { ptr @.sconst.155 }, ptr %arg.tmp145, align 1
   %call146 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp145)
   br i1 %call146, label %if.then147, label %if.end148
 
@@ -51041,7 +54262,7 @@ if.then147:                                       ; preds = %if.end144
   ret i1 true
 
 if.end148:                                        ; preds = %if.end144
-  store { ptr } { ptr @.sconst.152 }, ptr %arg.tmp149, align 1
+  store { ptr } { ptr @.sconst.156 }, ptr %arg.tmp149, align 1
   %call150 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp149)
   br i1 %call150, label %if.then151, label %if.end152
 
@@ -51049,7 +54270,7 @@ if.then151:                                       ; preds = %if.end148
   ret i1 true
 
 if.end152:                                        ; preds = %if.end148
-  store { ptr } { ptr @.sconst.153 }, ptr %arg.tmp153, align 1
+  store { ptr } { ptr @.sconst.157 }, ptr %arg.tmp153, align 1
   %call154 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp153)
   br i1 %call154, label %if.then155, label %if.end156
 
@@ -51057,7 +54278,7 @@ if.then155:                                       ; preds = %if.end152
   ret i1 true
 
 if.end156:                                        ; preds = %if.end152
-  store { ptr } { ptr @.sconst.154 }, ptr %arg.tmp157, align 1
+  store { ptr } { ptr @.sconst.158 }, ptr %arg.tmp157, align 1
   %call158 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp157)
   br i1 %call158, label %if.then159, label %if.end160
 
@@ -51065,7 +54286,7 @@ if.then159:                                       ; preds = %if.end156
   ret i1 true
 
 if.end160:                                        ; preds = %if.end156
-  store { ptr } { ptr @.sconst.155 }, ptr %arg.tmp161, align 1
+  store { ptr } { ptr @.sconst.159 }, ptr %arg.tmp161, align 1
   %call162 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp161)
   br i1 %call162, label %if.then163, label %if.end164
 
@@ -51073,7 +54294,7 @@ if.then163:                                       ; preds = %if.end160
   ret i1 true
 
 if.end164:                                        ; preds = %if.end160
-  store { ptr } { ptr @.sconst.156 }, ptr %arg.tmp165, align 1
+  store { ptr } { ptr @.sconst.160 }, ptr %arg.tmp165, align 1
   %call166 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp165)
   br i1 %call166, label %if.then167, label %if.end168
 
@@ -51081,7 +54302,7 @@ if.then167:                                       ; preds = %if.end164
   ret i1 true
 
 if.end168:                                        ; preds = %if.end164
-  store { ptr } { ptr @.sconst.157 }, ptr %arg.tmp169, align 1
+  store { ptr } { ptr @.sconst.161 }, ptr %arg.tmp169, align 1
   %call170 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp169)
   br i1 %call170, label %if.then171, label %if.end172
 
@@ -51089,7 +54310,7 @@ if.then171:                                       ; preds = %if.end168
   ret i1 true
 
 if.end172:                                        ; preds = %if.end168
-  store { ptr } { ptr @.sconst.158 }, ptr %arg.tmp173, align 1
+  store { ptr } { ptr @.sconst.162 }, ptr %arg.tmp173, align 1
   %call174 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp173)
   br i1 %call174, label %if.then175, label %if.end176
 
@@ -51097,7 +54318,7 @@ if.then175:                                       ; preds = %if.end172
   ret i1 true
 
 if.end176:                                        ; preds = %if.end172
-  store { ptr } { ptr @.sconst.159 }, ptr %arg.tmp177, align 1
+  store { ptr } { ptr @.sconst.163 }, ptr %arg.tmp177, align 1
   %call178 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp177)
   br i1 %call178, label %if.then179, label %if.end180
 
@@ -51105,7 +54326,7 @@ if.then179:                                       ; preds = %if.end176
   ret i1 true
 
 if.end180:                                        ; preds = %if.end176
-  store { ptr } { ptr @.sconst.160 }, ptr %arg.tmp181, align 1
+  store { ptr } { ptr @.sconst.164 }, ptr %arg.tmp181, align 1
   %call182 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp181)
   br i1 %call182, label %if.then183, label %if.end184
 
@@ -51561,7 +54782,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.161)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.165)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -52297,7 +55518,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.162)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.166)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -52730,7 +55951,7 @@ choose.when20:                                    ; preds = %entry
   store { ptr } %name, ptr %arg.tmp23, align 1
   %start24 = extractvalue %_Z12ModuleSyntax %variant.val22, 0
   %end25 = extractvalue %_Z12ModuleSyntax %variant.val22, 1
-  store { ptr } { ptr @.sconst.163 }, ptr %arg.tmp26, align 1
+  store { ptr } { ptr @.sconst.167 }, ptr %arg.tmp26, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp23, i64 2, i64 %start24, i64 %end25, ptr %arg.tmp26)
   %sret.body27 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -52744,7 +55965,7 @@ choose.when28:                                    ; preds = %entry
   store { ptr } %name31, ptr %arg.tmp23, align 1
   %start32 = extractvalue %_Z13MutableSyntax %variant.val30, 0
   %end33 = extractvalue %_Z13MutableSyntax %variant.val30, 1
-  store { ptr } { ptr @.sconst.164 }, ptr %arg.tmp26, align 1
+  store { ptr } { ptr @.sconst.168 }, ptr %arg.tmp26, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp23, i64 13, i64 %start32, i64 %end33, ptr %arg.tmp26)
   %sret.body34 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -52758,7 +55979,7 @@ choose.when35:                                    ; preds = %entry
   store { ptr } %name39, ptr %arg.tmp23, align 1
   %start40 = extractvalue %_Z12SharedSyntax %variant.val37, 0
   %end41 = extractvalue %_Z12SharedSyntax %variant.val37, 1
-  store { ptr } { ptr @.sconst.165 }, ptr %arg.tmp26, align 1
+  store { ptr } { ptr @.sconst.169 }, ptr %arg.tmp26, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp23, i64 13, i64 %start40, i64 %end41, ptr %arg.tmp26)
   %sret.body42 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -52820,7 +56041,7 @@ entry:
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 91)
-  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region2, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region2, ptr %p, align 1
@@ -52942,7 +56163,7 @@ entry:
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %3)
   %sret.result1 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.167 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.171 }, ptr %arg.tmp, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %2, ptr %sret.result, i64 %6, i64 %4, i64 %5, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result1, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -52960,7 +56181,7 @@ entry:
   %kind = alloca i64, align 8
   store i64 23, ptr %kind, align 1
   %children = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.169 }, ptr %children, align 1
+  store { ptr } { ptr @.sconst.173 }, ptr %children, align 1
   %load.struct = load %_Z16DefinitionSyntax, ptr %3, align 8
   %concept_ = extractvalue %_Z16DefinitionSyntax %load.struct, 5
   %choose.union = alloca %_Z13ConceptSyntax, align 8
@@ -53053,7 +56274,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.180)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.184)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -53063,7 +56284,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.181)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.185)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -53073,7 +56294,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.182)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.186)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb13 = load ptr, ptr %sb, align 8
   %sret.result14 = alloca { ptr }, align 8
@@ -53083,7 +56304,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 44)
   %sb16 = load ptr, ptr %sb, align 8
   %sret.result17 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result17, ptr %local_page, ptr @.str.183)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result17, ptr %local_page, ptr @.str.187)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb16, ptr %sret.result17)
   %sb18 = load ptr, ptr %sb, align 8
   %sret.result19 = alloca { ptr }, align 8
@@ -53093,7 +56314,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb20, i8 44)
   %sb21 = load ptr, ptr %sb, align 8
   %sret.result22 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr @.str.184)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr @.str.188)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb21, ptr %sret.result22)
   %ci = alloca i64, align 8
   store i64 0, ptr %ci, align 1
@@ -53208,7 +56429,7 @@ choose.when23:                                    ; preds = %entry
   store { ptr } %name, ptr %arg.tmp26, align 1
   %start27 = extractvalue %_Z12ModuleSyntax %variant.val25, 0
   %end28 = extractvalue %_Z12ModuleSyntax %variant.val25, 1
-  store { ptr } { ptr @.sconst.166 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.170 }, ptr %arg.tmp29, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp26, i64 2, i64 %start27, i64 %end28, ptr %arg.tmp29)
   %sret.body30 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -53245,7 +56466,7 @@ choose.when:                                      ; preds = %entry
 choose.when1:                                     ; preds = %entry
   %"variant.c_data().ptr2" = getelementptr inbounds %_Z12TargetSyntax, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z13RoutineSyntax, ptr %"variant.c_data().ptr2", align 8
-  store { ptr } { ptr @.sconst.168 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.172 }, ptr %0, align 1
   ret void
 }
 
@@ -53544,7 +56765,7 @@ if.end12:                                         ; preds = %if.then11, %if.then
   %field.val = load i64, ptr %field.inplace14, align 8
   %field.inplace15 = getelementptr inbounds %_Z13VariantSyntax, ptr %call, i32 0, i32 1
   %field.val16 = load i64, ptr %field.inplace15, align 8
-  store { ptr } { ptr @.sconst.179 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.183 }, ptr %arg.tmp, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %field.inplace, i64 22, i64 %field.val, i64 %field.val16, ptr %arg.tmp)
   store i64 0, ptr %ci, align 1
   %call17 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -53708,7 +56929,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.170)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.174)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -54444,7 +57665,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.171)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.175)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -54861,10 +58082,10 @@ choose.when8:                                     ; preds = %entry
 choose.when15:                                    ; preds = %entry
   %"variant.c_data().ptr16" = getelementptr inbounds %_Z12MemberSyntax, ptr %3, i32 0, i32 1
   %variant.val17 = load %_Z10InitSyntax, ptr %"variant.c_data().ptr16", align 8
-  store { ptr } { ptr @.sconst.172 }, ptr %arg.tmp18, align 1
+  store { ptr } { ptr @.sconst.176 }, ptr %arg.tmp18, align 1
   %start19 = extractvalue %_Z10InitSyntax %variant.val17, 0
   %end20 = extractvalue %_Z10InitSyntax %variant.val17, 1
-  store { ptr } { ptr @.sconst.173 }, ptr %arg.tmp21, align 1
+  store { ptr } { ptr @.sconst.177 }, ptr %arg.tmp21, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp18, i64 9, i64 %start19, i64 %end20, ptr %arg.tmp21)
   %sret.body22 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -54873,10 +58094,10 @@ choose.when15:                                    ; preds = %entry
 choose.when23:                                    ; preds = %entry
   %"variant.c_data().ptr24" = getelementptr inbounds %_Z12MemberSyntax, ptr %3, i32 0, i32 1
   %variant.val25 = load %_Z12DeInitSyntax, ptr %"variant.c_data().ptr24", align 8
-  store { ptr } { ptr @.sconst.174 }, ptr %arg.tmp18, align 1
+  store { ptr } { ptr @.sconst.178 }, ptr %arg.tmp18, align 1
   %start26 = extractvalue %_Z12DeInitSyntax %variant.val25, 0
   %end27 = extractvalue %_Z12DeInitSyntax %variant.val25, 1
-  store { ptr } { ptr @.sconst.175 }, ptr %arg.tmp21, align 1
+  store { ptr } { ptr @.sconst.179 }, ptr %arg.tmp21, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp18, i64 9, i64 %start26, i64 %end27, ptr %arg.tmp21)
   %sret.body28 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -54922,7 +58143,7 @@ choose.when46:                                    ; preds = %entry
   store { ptr } %name, ptr %arg.tmp18, align 1
   %start49 = extractvalue %_Z12ModuleSyntax %variant.val48, 0
   %end50 = extractvalue %_Z12ModuleSyntax %variant.val48, 1
-  store { ptr } { ptr @.sconst.176 }, ptr %arg.tmp21, align 1
+  store { ptr } { ptr @.sconst.180 }, ptr %arg.tmp21, align 1
   call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp18, i64 2, i64 %start49, i64 %end50, ptr %arg.tmp21)
   %sret.body51 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -54971,7 +58192,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.177)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.181)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -55707,7 +58928,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.178)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.182)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -56091,7 +59312,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.185)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.189)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -56101,7 +59322,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.186)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.190)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -56166,7 +59387,7 @@ while.exit:                                       ; preds = %while.cond
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb13, i8 123)
   %sb14 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.187)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.191)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %sret.result)
   %sb15 = load ptr, ptr %sb, align 8
   %line17 = load i64, ptr %line, align 8
@@ -56175,7 +59396,7 @@ while.exit:                                       ; preds = %while.cond
   %sb18 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb18, i8 44)
   %sb19 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr @.str.188)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr @.str.192)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb19, ptr %sret.result20)
   %sb21 = load ptr, ptr %sb, align 8
   %col23 = load i64, ptr %col, align 8
@@ -56356,7 +59577,7 @@ entry:
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 91)
-  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region2, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region2, ptr %p, align 1
@@ -56499,7 +59720,7 @@ if.end:                                           ; preds = %entry
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 123)
   %sb4 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.189)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.193)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %sret.result)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result6, ptr %local_page, i64 %call)
@@ -56507,7 +59728,7 @@ if.end:                                           ; preds = %entry
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb7, i8 44)
   %sb8 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result9, ptr %local_page, ptr @.str.190)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result9, ptr %local_page, ptr @.str.194)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb8, ptr %sret.result9)
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result11, ptr %local_page, i64 %call2)
@@ -57357,7 +60578,7 @@ entry:
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 91)
-  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region2, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region2, ptr %p, align 1
@@ -57503,7 +60724,7 @@ while.cond:                                       ; preds = %if.end12, %entry
 while.body:                                       ; preds = %while.cond
   %i4 = load i64, ptr %i, align 8
   call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, i64 %i4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result3, ptr @.str.198)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result3, ptr @.str.202)
   %call6 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result5)
   %eq = icmp eq i64 %call6, %3
   br i1 %eq, label %if.then, label %if.end
@@ -57518,7 +60739,7 @@ while.exit:                                       ; preds = %while.cond
 
 if.then:                                          ; preds = %while.body
   %sb7 = load ptr, ptr %sb, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result3, ptr @.str.199)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result3, ptr @.str.203)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %local_page, ptr %sret.result5)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %sret.result8)
   %sb9 = load ptr, ptr %sb, align 8
@@ -57531,7 +60752,7 @@ if.end:                                           ; preds = %if.then, %while.bod
 
 if.then11:                                        ; preds = %if.end
   %sb13 = load ptr, ptr %sb, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result15, ptr %local_page, ptr %sret.result3, ptr @.str.200)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result15, ptr %local_page, ptr %sret.result3, ptr @.str.204)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result14, ptr %local_page, ptr %sret.result15)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb13, ptr %sret.result14)
   %sb16 = load ptr, ptr %sb, align 8
@@ -57556,103 +60777,103 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 10)
   %sb2 = load ptr, ptr %sb, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.201 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.205 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %arg.tmp)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 10)
   %sb4 = load ptr, ptr %sb, align 8
   %arg.tmp5 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.202 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.206 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %arg.tmp5)
   %sb6 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb6, i8 10)
   %sb7 = load ptr, ptr %sb, align 8
   %arg.tmp8 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.203 }, ptr %arg.tmp8, align 1
+  store { ptr } { ptr @.sconst.207 }, ptr %arg.tmp8, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %arg.tmp8)
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb9, i8 10)
   %sb10 = load ptr, ptr %sb, align 8
   %arg.tmp11 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.204 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.208 }, ptr %arg.tmp11, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb10, ptr %arg.tmp11)
   %sb12 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb12, i8 10)
   %sb13 = load ptr, ptr %sb, align 8
   %arg.tmp14 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.205 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.209 }, ptr %arg.tmp14, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb13, ptr %arg.tmp14)
   %sb15 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 10)
   %sb16 = load ptr, ptr %sb, align 8
   %arg.tmp17 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.206 }, ptr %arg.tmp17, align 1
+  store { ptr } { ptr @.sconst.210 }, ptr %arg.tmp17, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb16, ptr %arg.tmp17)
   %sb18 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb18, i8 10)
   %sb19 = load ptr, ptr %sb, align 8
   %arg.tmp20 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.207 }, ptr %arg.tmp20, align 1
+  store { ptr } { ptr @.sconst.211 }, ptr %arg.tmp20, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb19, ptr %arg.tmp20)
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb21, i8 10)
   %sb22 = load ptr, ptr %sb, align 8
   %arg.tmp23 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.208 }, ptr %arg.tmp23, align 1
+  store { ptr } { ptr @.sconst.212 }, ptr %arg.tmp23, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb22, ptr %arg.tmp23)
   %sb24 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb24, i8 10)
   %sb25 = load ptr, ptr %sb, align 8
   %arg.tmp26 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.209 }, ptr %arg.tmp26, align 1
+  store { ptr } { ptr @.sconst.213 }, ptr %arg.tmp26, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb25, ptr %arg.tmp26)
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb27, i8 10)
   %sb28 = load ptr, ptr %sb, align 8
   %arg.tmp29 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.210 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.214 }, ptr %arg.tmp29, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb28, ptr %arg.tmp29)
   %sb30 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb30, i8 10)
   %sb31 = load ptr, ptr %sb, align 8
   %arg.tmp32 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.211 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.215 }, ptr %arg.tmp32, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb31, ptr %arg.tmp32)
   %sb33 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb33, i8 10)
   %sb34 = load ptr, ptr %sb, align 8
   %arg.tmp35 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.212 }, ptr %arg.tmp35, align 1
+  store { ptr } { ptr @.sconst.216 }, ptr %arg.tmp35, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb34, ptr %arg.tmp35)
   %sb36 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb36, i8 10)
   %sb37 = load ptr, ptr %sb, align 8
   %arg.tmp38 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.213 }, ptr %arg.tmp38, align 1
+  store { ptr } { ptr @.sconst.217 }, ptr %arg.tmp38, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb37, ptr %arg.tmp38)
   %sb39 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb39, i8 10)
   %sb40 = load ptr, ptr %sb, align 8
   %arg.tmp41 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.214 }, ptr %arg.tmp41, align 1
+  store { ptr } { ptr @.sconst.218 }, ptr %arg.tmp41, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb40, ptr %arg.tmp41)
   %sb42 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb42, i8 10)
   %sb43 = load ptr, ptr %sb, align 8
   %arg.tmp44 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.215 }, ptr %arg.tmp44, align 1
+  store { ptr } { ptr @.sconst.219 }, ptr %arg.tmp44, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb43, ptr %arg.tmp44)
   %sb45 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb45, i8 10)
   %sb46 = load ptr, ptr %sb, align 8
   %arg.tmp47 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.216 }, ptr %arg.tmp47, align 1
+  store { ptr } { ptr @.sconst.220 }, ptr %arg.tmp47, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb46, ptr %arg.tmp47)
   %sb48 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb48, i8 10)
   %sb49 = load ptr, ptr %sb, align 8
   %arg.tmp50 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.217 }, ptr %arg.tmp50, align 1
+  store { ptr } { ptr @.sconst.221 }, ptr %arg.tmp50, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb49, ptr %arg.tmp50)
   %sb51 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb51, i8 10)
@@ -57873,7 +61094,7 @@ entry:
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
-  %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region1, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region1, ptr %p, align 1
@@ -58791,7 +62012,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.191)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.195)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 91)
@@ -59378,7 +62599,7 @@ if.end272:                                        ; preds = %if.then271, %if.end
 
 if.then276:                                       ; preds = %if.end272
   store i64 -1, ptr %np, align 1
-  store { ptr } { ptr @.sconst.192 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.196 }, ptr %arg.tmp, align 1
   %call278 = call i1 @_ZN6String6equalsE6String(ptr %sret.result231, ptr %arg.tmp)
   br i1 %call278, label %if.then279, label %if.end280
 
@@ -59392,7 +62613,7 @@ if.then279:                                       ; preds = %if.then276
   br label %if.end280
 
 if.end280:                                        ; preds = %if.then279, %if.then276
-  store { ptr } { ptr @.sconst.193 }, ptr %arg.tmp281, align 1
+  store { ptr } { ptr @.sconst.197 }, ptr %arg.tmp281, align 1
   %call282 = call i1 @_ZN6String6equalsE6String(ptr %sret.result231, ptr %arg.tmp281)
   br i1 %call282, label %if.then283, label %if.end284
 
@@ -59401,7 +62622,7 @@ if.then283:                                       ; preds = %if.end280
   br label %if.end284
 
 if.end284:                                        ; preds = %if.then283, %if.end280
-  store { ptr } { ptr @.sconst.194 }, ptr %arg.tmp285, align 1
+  store { ptr } { ptr @.sconst.198 }, ptr %arg.tmp285, align 1
   %call286 = call i1 @_ZN6String6equalsE6String(ptr %sret.result231, ptr %arg.tmp285)
   br i1 %call286, label %if.then287, label %if.end288
 
@@ -59410,7 +62631,7 @@ if.then287:                                       ; preds = %if.end284
   br label %if.end288
 
 if.end288:                                        ; preds = %if.then287, %if.end284
-  store { ptr } { ptr @.sconst.195 }, ptr %arg.tmp289, align 1
+  store { ptr } { ptr @.sconst.199 }, ptr %arg.tmp289, align 1
   %call290 = call i1 @_ZN6String6equalsE6String(ptr %sret.result231, ptr %arg.tmp289)
   br i1 %call290, label %if.then291, label %if.end292
 
@@ -59419,7 +62640,7 @@ if.then291:                                       ; preds = %if.end288
   br label %if.end292
 
 if.end292:                                        ; preds = %if.then291, %if.end288
-  store { ptr } { ptr @.sconst.196 }, ptr %arg.tmp293, align 1
+  store { ptr } { ptr @.sconst.200 }, ptr %arg.tmp293, align 1
   %call294 = call i1 @_ZN6String6equalsE6String(ptr %sret.result231, ptr %arg.tmp293)
   br i1 %call294, label %if.then295, label %if.end296
 
@@ -59428,7 +62649,7 @@ if.then295:                                       ; preds = %if.end292
   br label %if.end296
 
 if.end296:                                        ; preds = %if.then295, %if.end292
-  store { ptr } { ptr @.sconst.197 }, ptr %arg.tmp297, align 1
+  store { ptr } { ptr @.sconst.201 }, ptr %arg.tmp297, align 1
   %call298 = call i1 @_ZN6String6equalsE6String(ptr %sret.result231, ptr %arg.tmp297)
   br i1 %call298, label %if.then299, label %if.end300
 
@@ -59653,7 +62874,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.218)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.222)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -60389,7 +63610,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.219)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.223)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -60809,7 +64030,7 @@ if.end7:                                          ; preds = %if.end10, %if.then2
 if.then9:                                         ; preds = %if.then6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds %_Z10ItemSyntax, ptr %deref.tmp11, i32 0, i32 2
-  store { ptr } { ptr @.sconst.220 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.224 }, ptr %arg.tmp, align 1
   %call12 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call12, label %if.then13, label %if.end14
 
@@ -61707,7 +64928,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.221)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.225)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -62443,7 +65664,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.222)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.226)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -63371,7 +66592,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.223)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.227)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -63381,7 +66602,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.224)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.228)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -64092,7 +67313,7 @@ choose.when7:                                     ; preds = %entry
 choose.when12:                                    ; preds = %entry
   %"variant.c_data().ptr13" = getelementptr inbounds %_Z12MemberSyntax, ptr %3, i32 0, i32 1
   %variant.val14 = load %_Z10InitSyntax, ptr %"variant.c_data().ptr13", align 8
-  store { ptr } { ptr @.sconst.225 }, ptr %sret.result1, align 1
+  store { ptr } { ptr @.sconst.229 }, ptr %sret.result1, align 1
   call void @_ZN7symbols15completion_itemEPN4scaly6memory4PageE6String3i64(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sret.result1, i64 4)
   %sret.body15 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -64101,7 +67322,7 @@ choose.when12:                                    ; preds = %entry
 choose.when16:                                    ; preds = %entry
   %"variant.c_data().ptr17" = getelementptr inbounds %_Z12MemberSyntax, ptr %3, i32 0, i32 1
   %variant.val18 = load %_Z12DeInitSyntax, ptr %"variant.c_data().ptr17", align 8
-  store { ptr } { ptr @.sconst.226 }, ptr %sret.result1, align 1
+  store { ptr } { ptr @.sconst.230 }, ptr %sret.result1, align 1
   call void @_ZN7symbols15completion_itemEPN4scaly6memory4PageE6String3i64(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sret.result1, i64 4)
   %sret.body19 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -64716,7 +67937,7 @@ entry:
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -65461,7 +68682,7 @@ define linkonce_odr void @_ZN7symbols11uri_to_pathEPN4scaly6memory4PageE6String(
 entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.278 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.282 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String11starts_withE6String(ptr %2, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -65703,7 +68924,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %sb7 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.271 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.275 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %arg.tmp)
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb9)
@@ -65729,7 +68950,7 @@ entry:
   store ptr %struct.region, ptr %cmd, align 1
   %cmd1 = load ptr, ptr %cmd, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.273 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.277 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd1, ptr %arg.tmp)
   %cmd2 = load ptr, ptr %cmd, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %cmd2, i8 39)
@@ -65757,22 +68978,22 @@ while.exit:                                       ; preds = %while.cond
   %cmd8 = load ptr, ptr %cmd, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %cmd8, i8 39)
   %cmd9 = load ptr, ptr %cmd, align 8
-  store { ptr } { ptr @.sconst.274 }, ptr %arg.tmp10, align 1
+  store { ptr } { ptr @.sconst.278 }, ptr %arg.tmp10, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd9, ptr %arg.tmp10)
   %cmd11 = load ptr, ptr %cmd, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %cmd11, i8 39)
   %cmd12 = load ptr, ptr %cmd, align 8
-  store { ptr } { ptr @.sconst.275 }, ptr %arg.tmp13, align 1
+  store { ptr } { ptr @.sconst.279 }, ptr %arg.tmp13, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd12, ptr %arg.tmp13)
   %cmd14 = load ptr, ptr %cmd, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %cmd14, i8 39)
   %cmd15 = load ptr, ptr %cmd, align 8
-  store { ptr } { ptr @.sconst.276 }, ptr %arg.tmp16, align 1
+  store { ptr } { ptr @.sconst.280 }, ptr %arg.tmp16, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd15, ptr %arg.tmp16)
   %cmd17 = load ptr, ptr %cmd, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %cmd17)
   %call18 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %sret.result)
-  %call19 = call ptr @popen(ptr %call18, ptr @.str.277)
+  %call19 = call ptr @popen(ptr %call18, ptr @.str.281)
   %eq = icmp eq ptr %call19, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -65840,7 +69061,7 @@ entry:
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.279 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.283 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb1, ptr %arg.tmp)
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -65879,7 +69100,7 @@ entry:
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -66091,7 +69312,7 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.227 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.231 }, ptr %arg.tmp, align 1
   %call1 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %5, i64 %6, ptr %arg.tmp)
   br i1 %call1, label %if.then2, label %if.end3
 
@@ -66105,7 +69326,7 @@ if.then2:                                         ; preds = %if.then
   br label %if.end3
 
 if.end3:                                          ; preds = %if.then2, %if.then
-  store { ptr } { ptr @.sconst.228 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.232 }, ptr %arg.tmp4, align 1
   %call5 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %5, i64 %6, ptr %arg.tmp4)
   br i1 %call5, label %if.then6, label %if.end7
 
@@ -66504,7 +69725,7 @@ entry:
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -67485,7 +70706,7 @@ entry:
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -68177,7 +71398,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %call = call i64 @_ZN7symbols18position_to_offsetEPN4scaly6memory4PageE6Stringmm(ptr %1, ptr %2, i64 %3, i64 %4)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -68290,21 +71511,21 @@ if.end:                                           ; preds = %entry
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.229)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.233)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 123)
   %sb4 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result5, ptr %local_page, ptr @.str.230)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result5, ptr %local_page, ptr @.str.234)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %sret.result5)
   %sb6 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.231 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.235 }, ptr %arg.tmp, align 1
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb8, i8 44)
   %sb9 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result10, ptr %local_page, ptr @.str.232)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result10, ptr %local_page, ptr @.str.236)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb9, ptr %sret.result10)
   %sb11 = load ptr, ptr %sb, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr %2)
@@ -68438,7 +71659,7 @@ choose.when:                                      ; preds = %entry
   %target = extractvalue %_Z14FunctionSyntax %variant.val, 2
   store %_Z12TargetSyntax %target, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start, i64 %end, i64 %4, ptr @.str.233, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start, i64 %end, i64 %4, ptr @.str.237, ptr %sret.result1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68451,7 +71672,7 @@ choose.when2:                                     ; preds = %entry
   %target7 = extractvalue %_Z15ProcedureSyntax %variant.val4, 2
   store %_Z12TargetSyntax %target7, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start5, i64 %end6, i64 %4, ptr @.str.234, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start5, i64 %end6, i64 %4, ptr @.str.238, ptr %sret.result1)
   %sret.body8 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68464,7 +71685,7 @@ choose.when9:                                     ; preds = %entry
   %target14 = extractvalue %_Z14OperatorSyntax %variant.val11, 2
   store %_Z12TargetSyntax %target14, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start12, i64 %end13, i64 %4, ptr @.str.235, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start12, i64 %end13, i64 %4, ptr @.str.239, ptr %sret.result1)
   %sret.body15 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68487,7 +71708,7 @@ choose.when21:                                    ; preds = %entry
   %name = extractvalue %_Z12ModuleSyntax %variant.val23, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %sret.result1)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start24, i64 %end25, i64 %4, ptr @.str.236, ptr %struct.region)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start24, i64 %end25, i64 %4, ptr @.str.240, ptr %struct.region)
   %sret.body26 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68502,7 +71723,7 @@ choose.when27:                                    ; preds = %entry
   %name33 = extractvalue %_Z13BindingSyntax %binding, 2
   store { ptr } %name33, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region32, ptr %sret.result1)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start30, i64 %end31, i64 %4, ptr @.str.237, ptr %struct.region32)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start30, i64 %end31, i64 %4, ptr @.str.241, ptr %struct.region32)
   %sret.body34 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68517,7 +71738,7 @@ choose.when35:                                    ; preds = %entry
   %name42 = extractvalue %_Z13BindingSyntax %binding41, 2
   store { ptr } %name42, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region40, ptr %sret.result1)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start38, i64 %end39, i64 %4, ptr @.str.238, ptr %struct.region40)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start38, i64 %end39, i64 %4, ptr @.str.242, ptr %struct.region40)
   %sret.body43 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68693,7 +71914,7 @@ if.then18:                                        ; preds = %choose.end
   ret void
 
 if.end19:                                         ; preds = %choose.end
-  store { ptr } { ptr @.sconst.243 }, ptr %kind, align 1
+  store { ptr } { ptr @.sconst.247 }, ptr %kind, align 1
   %load.struct21 = load %_Z16DefinitionSyntax, ptr %3, align 8
   %concept_22 = extractvalue %_Z16DefinitionSyntax %load.struct21, 5
   store %_Z13ConceptSyntax %concept_22, ptr %choose.union23, align 1
@@ -68709,7 +71930,7 @@ if.end19:                                         ; preds = %choose.end
   ]
 
 choose.end26:                                     ; preds = %choose.else27, %choose.when43, %choose.when40, %choose.when37, %choose.when34, %choose.when31, %choose.when28
-  %choose.value46 = phi { ptr } [ { ptr @.sconst.244 }, %choose.when28 ], [ { ptr @.sconst.245 }, %choose.when31 ], [ { ptr @.sconst.246 }, %choose.when34 ], [ { ptr @.sconst.247 }, %choose.when37 ], [ { ptr @.sconst.248 }, %choose.when40 ], [ { ptr @.sconst.249 }, %choose.when43 ], [ undef, %choose.else27 ]
+  %choose.value46 = phi { ptr } [ { ptr @.sconst.248 }, %choose.when28 ], [ { ptr @.sconst.249 }, %choose.when31 ], [ { ptr @.sconst.250 }, %choose.when34 ], [ { ptr @.sconst.251 }, %choose.when37 ], [ { ptr @.sconst.252 }, %choose.when40 ], [ { ptr @.sconst.253 }, %choose.when43 ], [ undef, %choose.else27 ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
@@ -68733,37 +71954,37 @@ choose.else27:                                    ; preds = %if.end19
 choose.when28:                                    ; preds = %if.end19
   %"variant.c_data().ptr29" = getelementptr inbounds %_Z13ConceptSyntax, ptr %choose.union23, i32 0, i32 1
   %variant.val30 = load %_Z11ClassSyntax, ptr %"variant.c_data().ptr29", align 8
-  store { ptr } { ptr @.sconst.244 }, ptr %kind, align 1
+  store { ptr } { ptr @.sconst.248 }, ptr %kind, align 1
   br label %choose.end26
 
 choose.when31:                                    ; preds = %if.end19
   %"variant.c_data().ptr32" = getelementptr inbounds %_Z13ConceptSyntax, ptr %choose.union23, i32 0, i32 1
   %variant.val33 = load %_Z15NamespaceSyntax, ptr %"variant.c_data().ptr32", align 8
-  store { ptr } { ptr @.sconst.245 }, ptr %kind, align 1
+  store { ptr } { ptr @.sconst.249 }, ptr %kind, align 1
   br label %choose.end26
 
 choose.when34:                                    ; preds = %if.end19
   %"variant.c_data().ptr35" = getelementptr inbounds %_Z13ConceptSyntax, ptr %choose.union23, i32 0, i32 1
   %variant.val36 = load %_Z11UnionSyntax, ptr %"variant.c_data().ptr35", align 8
-  store { ptr } { ptr @.sconst.246 }, ptr %kind, align 1
+  store { ptr } { ptr @.sconst.250 }, ptr %kind, align 1
   br label %choose.end26
 
 choose.when37:                                    ; preds = %if.end19
   %"variant.c_data().ptr38" = getelementptr inbounds %_Z13ConceptSyntax, ptr %choose.union23, i32 0, i32 1
   %variant.val39 = load %_Z14ConstantSyntax, ptr %"variant.c_data().ptr38", align 8
-  store { ptr } { ptr @.sconst.247 }, ptr %kind, align 1
+  store { ptr } { ptr @.sconst.251 }, ptr %kind, align 1
   br label %choose.end26
 
 choose.when40:                                    ; preds = %if.end19
   %"variant.c_data().ptr41" = getelementptr inbounds %_Z13ConceptSyntax, ptr %choose.union23, i32 0, i32 1
   %variant.val42 = load %_Z14DelegateSyntax, ptr %"variant.c_data().ptr41", align 8
-  store { ptr } { ptr @.sconst.248 }, ptr %kind, align 1
+  store { ptr } { ptr @.sconst.252 }, ptr %kind, align 1
   br label %choose.end26
 
 choose.when43:                                    ; preds = %if.end19
   %"variant.c_data().ptr44" = getelementptr inbounds %_Z13ConceptSyntax, ptr %choose.union23, i32 0, i32 1
   %variant.val45 = load %_Z15IntrinsicSyntax, ptr %"variant.c_data().ptr44", align 8
-  store { ptr } { ptr @.sconst.249 }, ptr %kind, align 1
+  store { ptr } { ptr @.sconst.253 }, ptr %kind, align 1
   br label %choose.end26
 }
 
@@ -68798,7 +72019,7 @@ choose.when:                                      ; preds = %entry
   %target = extractvalue %_Z14FunctionSyntax %variant.val, 2
   store %_Z12TargetSyntax %target, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start, i64 %end, i64 %4, ptr @.str.239, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start, i64 %end, i64 %4, ptr @.str.243, ptr %sret.result1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68811,7 +72032,7 @@ choose.when2:                                     ; preds = %entry
   %target7 = extractvalue %_Z15ProcedureSyntax %variant.val4, 2
   store %_Z12TargetSyntax %target7, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start5, i64 %end6, i64 %4, ptr @.str.240, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start5, i64 %end6, i64 %4, ptr @.str.244, ptr %sret.result1)
   %sret.body8 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68824,7 +72045,7 @@ choose.when9:                                     ; preds = %entry
   %target14 = extractvalue %_Z14OperatorSyntax %variant.val11, 2
   store %_Z12TargetSyntax %target14, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start12, i64 %end13, i64 %4, ptr @.str.241, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start12, i64 %end13, i64 %4, ptr @.str.245, ptr %sret.result1)
   %sret.body15 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -68853,7 +72074,7 @@ choose.when24:                                    ; preds = %entry
   %name = extractvalue %_Z12ModuleSyntax %variant.val26, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %sret.result1)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start27, i64 %end28, i64 %4, ptr @.str.242, ptr %struct.region)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start27, i64 %end28, i64 %4, ptr @.str.246, ptr %struct.region)
   %sret.body29 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -69059,7 +72280,7 @@ if.then10:                                        ; preds = %if.then5
   %name = extractvalue %_Z13VariantSyntax %load.struct14, 2
   store { ptr } %name, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %field.val, i64 %field.val13, i64 %4, ptr @.str.258, ptr %struct.region)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %field.val, i64 %field.val13, i64 %4, ptr @.str.262, ptr %struct.region)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   br label %if.end11
@@ -69126,7 +72347,7 @@ choose.when:                                      ; preds = %entry
   %target = extractvalue %_Z14FunctionSyntax %variant.val, 2
   store %_Z12TargetSyntax %target, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start, i64 %end, i64 %4, ptr @.str.250, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start, i64 %end, i64 %4, ptr @.str.254, ptr %sret.result1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -69139,7 +72360,7 @@ choose.when2:                                     ; preds = %entry
   %target7 = extractvalue %_Z15ProcedureSyntax %variant.val4, 2
   store %_Z12TargetSyntax %target7, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start5, i64 %end6, i64 %4, ptr @.str.251, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start5, i64 %end6, i64 %4, ptr @.str.255, ptr %sret.result1)
   %sret.body8 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -69152,7 +72373,7 @@ choose.when9:                                     ; preds = %entry
   %target14 = extractvalue %_Z14OperatorSyntax %variant.val11, 2
   store %_Z12TargetSyntax %target14, ptr %arg.tmp, align 1
   call void @_ZN7symbols11target_nameEPN4scaly6memory4PageE12TargetSyntax(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %arg.tmp)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start12, i64 %end13, i64 %4, ptr @.str.252, ptr %sret.result1)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start12, i64 %end13, i64 %4, ptr @.str.256, ptr %sret.result1)
   %sret.body15 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -69162,8 +72383,8 @@ choose.when16:                                    ; preds = %entry
   %variant.val18 = load %_Z10InitSyntax, ptr %"variant.c_data().ptr17", align 8
   %start19 = extractvalue %_Z10InitSyntax %variant.val18, 0
   %end20 = extractvalue %_Z10InitSyntax %variant.val18, 1
-  store { ptr } { ptr @.sconst.254 }, ptr %sret.result1, align 1
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start19, i64 %end20, i64 %4, ptr @.str.253, ptr %sret.result1)
+  store { ptr } { ptr @.sconst.258 }, ptr %sret.result1, align 1
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start19, i64 %end20, i64 %4, ptr @.str.257, ptr %sret.result1)
   %sret.body21 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -69173,8 +72394,8 @@ choose.when22:                                    ; preds = %entry
   %variant.val24 = load %_Z12DeInitSyntax, ptr %"variant.c_data().ptr23", align 8
   %start25 = extractvalue %_Z12DeInitSyntax %variant.val24, 0
   %end26 = extractvalue %_Z12DeInitSyntax %variant.val24, 1
-  store { ptr } { ptr @.sconst.256 }, ptr %sret.result1, align 1
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start25, i64 %end26, i64 %4, ptr @.str.255, ptr %sret.result1)
+  store { ptr } { ptr @.sconst.260 }, ptr %sret.result1, align 1
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start25, i64 %end26, i64 %4, ptr @.str.259, ptr %sret.result1)
   %sret.body27 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -69221,7 +72442,7 @@ choose.when45:                                    ; preds = %entry
   %name = extractvalue %_Z12ModuleSyntax %variant.val47, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %sret.result1)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start48, i64 %end49, i64 %4, ptr @.str.257, ptr %struct.region)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageEmmmP10const_char6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %start48, i64 %end49, i64 %4, ptr @.str.261, ptr %struct.region)
   %sret.body50 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -69389,7 +72610,7 @@ entry:
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -70265,7 +73486,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.259)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.263)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -70275,7 +73496,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.260)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.264)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -70575,7 +73796,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %needle1, i8 34)
   %needle2 = load ptr, ptr %needle, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.261 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.265 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %needle2, ptr %arg.tmp)
   %needle3 = load ptr, ptr %needle, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %needle3, i8 34)
@@ -71256,14 +74477,14 @@ if.end83:                                         ; preds = %if.then82, %if.end7
   %sb = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb, i8 123)
   %sb87 = load ptr, ptr %work, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result53, ptr %local_page, ptr @.str.332)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result53, ptr %local_page, ptr @.str.336)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb87, ptr %sret.result53)
   %sb88 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb88, i8 91)
   %sb89 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb89, i8 123)
   %sb90 = load ptr, ptr %work, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result91, ptr %local_page, ptr @.str.333)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result91, ptr %local_page, ptr @.str.337)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb90, ptr %sret.result91)
   %sb92 = load ptr, ptr %work, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result93, ptr %local_page, ptr %sret.result)
@@ -71271,7 +74492,7 @@ if.end83:                                         ; preds = %if.then82, %if.end7
   %sb94 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb94, i8 44)
   %sb95 = load ptr, ptr %work, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result96, ptr %local_page, ptr @.str.334)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result96, ptr %local_page, ptr @.str.338)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb95, ptr %sret.result96)
   %sb97 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb97, i8 91)
@@ -71304,14 +74525,14 @@ while.exit101:                                    ; preds = %while.cond99
   %sb111 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb111, i8 44)
   %sb112 = load ptr, ptr %work, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result113, ptr %local_page, ptr @.str.335)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result113, ptr %local_page, ptr @.str.339)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb112, ptr %sret.result113)
   %sb114 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb114, i8 48)
   %sb115 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb115, i8 44)
   %sb116 = load ptr, ptr %work, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result117, ptr %local_page, ptr @.str.336)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result117, ptr %local_page, ptr @.str.340)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb116, ptr %sret.result117)
   %sb118 = load ptr, ptr %work, align 8
   %act120 = load i64, ptr %wi, align 8
@@ -71508,7 +74729,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %needle1, i8 34)
   %needle2 = load ptr, ptr %needle, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.262 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.266 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %needle2, ptr %arg.tmp)
   %needle3 = load ptr, ptr %needle, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %needle3, i8 34)
@@ -72149,7 +75370,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %needle2, i8 34)
   %needle3 = load ptr, ptr %needle, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.263 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.267 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %needle3, ptr %arg.tmp)
   %needle4 = load ptr, ptr %needle, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %needle4, i8 34)
@@ -72940,7 +76161,7 @@ while.exit14:                                     ; preds = %if.then21, %while.c
   %i25 = load i64, ptr %i, align 8
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, i64 %i11, i64 %i25)
   store i1 false, ptr %is_fn, align 1
-  store { ptr } { ptr @.sconst.264 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.268 }, ptr %arg.tmp, align 1
   %call26 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp)
   br i1 %call26, label %if.then27, label %if.end28
 
@@ -72958,7 +76179,7 @@ if.then27:                                        ; preds = %while.exit14
   br label %if.end28
 
 if.end28:                                         ; preds = %if.then27, %while.exit14
-  store { ptr } { ptr @.sconst.265 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.269 }, ptr %arg.tmp29, align 1
   %call30 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp29)
   br i1 %call30, label %if.then31, label %if.end32
 
@@ -72979,7 +76200,7 @@ if.then34:                                        ; preds = %if.end32
   br i1 %gt, label %if.then40, label %if.end41
 
 if.end35:                                         ; preds = %if.end32
-  store { ptr } { ptr @.sconst.266 }, ptr %sret.result38, align 1
+  store { ptr } { ptr @.sconst.270 }, ptr %sret.result38, align 1
   %call46 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %sret.result38)
   br i1 %call46, label %if.then47, label %if.end48
 
@@ -73071,7 +76292,7 @@ if.end83:                                         ; preds = %if.then82, %if.then
 if.then85:                                        ; preds = %if.end83
   %k88 = load i64, ptr %k, align 8
   call void @_ZN7symbols14lex_read_identEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result87, ptr %local_page, ptr %2, i64 %k88, i64 %call)
-  store { ptr } { ptr @.sconst.267 }, ptr %arg.tmp89, align 1
+  store { ptr } { ptr @.sconst.271 }, ptr %arg.tmp89, align 1
   %call90 = call i1 @_ZN6String6equalsE6String(ptr %sret.result87, ptr %arg.tmp89)
   br i1 %call90, label %if.then91, label %if.end92
 
@@ -73083,7 +76304,7 @@ if.then91:                                        ; preds = %if.then85
   br label %if.end92
 
 if.end92:                                         ; preds = %if.then91, %if.then85
-  store { ptr } { ptr @.sconst.268 }, ptr %arg.tmp93, align 1
+  store { ptr } { ptr @.sconst.272 }, ptr %arg.tmp93, align 1
   %call94 = call i1 @_ZN6String6equalsE6String(ptr %sret.result87, ptr %arg.tmp93)
   br i1 %call94, label %if.then95, label %if.end96
 
@@ -73092,7 +76313,7 @@ if.then95:                                        ; preds = %if.end92
   br label %if.end96
 
 if.end96:                                         ; preds = %if.then95, %if.end92
-  store { ptr } { ptr @.sconst.269 }, ptr %arg.tmp97, align 1
+  store { ptr } { ptr @.sconst.273 }, ptr %arg.tmp97, align 1
   %call98 = call i1 @_ZN6String6equalsE6String(ptr %sret.result87, ptr %arg.tmp97)
   br i1 %call98, label %if.then99, label %if.end100
 
@@ -73127,7 +76348,7 @@ entry:
   %sb = alloca ptr, align 8
   %home_str = alloca ptr, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %call = call ptr @getenv(ptr @.str.270)
+  %call = call ptr @getenv(ptr @.str.274)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -73194,7 +76415,7 @@ entry:
   %last_found = alloca i64, align 8
   %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.272 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.276 }, ptr %arg.tmp, align 1
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp)
   %ge = icmp uge i64 %call, %call1
   br i1 %ge, label %if.then, label %if.end
@@ -73217,7 +76438,7 @@ while.cond:                                       ; preds = %if.end6, %if.then
 
 while.body:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
-  store { ptr } { ptr @.sconst.272 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.276 }, ptr %arg.tmp, align 1
   %call4 = call i1 @_ZN7symbols10matches_atE6Stringm6String(ptr %2, i64 %i3, ptr %arg.tmp)
   br i1 %call4, label %if.then5, label %if.end6
 
@@ -73434,7 +76655,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.280 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.284 }, ptr %0, align 1
   call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
@@ -73959,7 +77180,7 @@ while.exit:                                       ; preds = %while.cond
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb7, i8 123)
   %sb8 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.283)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.287)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb8, ptr %sret.result)
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result10, ptr %local_page, ptr %4)
@@ -73967,7 +77188,7 @@ while.exit:                                       ; preds = %while.cond
   %sb11 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb11, i8 44)
   %sb12 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result13, ptr %local_page, ptr @.str.284)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result13, ptr %local_page, ptr @.str.288)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb12, ptr %sret.result13)
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, i64 %5)
@@ -73975,7 +77196,7 @@ while.exit:                                       ; preds = %while.cond
   %sb16 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb16, i8 44)
   %sb17 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result18, ptr %local_page, ptr @.str.285)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result18, ptr %local_page, ptr @.str.289)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb17, ptr %sret.result18)
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN7symbols20location_span_objectEPN4scaly6memory4PageE6String6Stringmm(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr %2, ptr %3, i64 %6, i64 %7)
@@ -75061,7 +78282,7 @@ choose.when18:                                    ; preds = %entry
 choose.when27:                                    ; preds = %entry
   %"variant.c_data().ptr28" = getelementptr inbounds %_Z12MemberSyntax, ptr %4, i32 0, i32 1
   %variant.val29 = load %_Z10InitSyntax, ptr %"variant.c_data().ptr28", align 8
-  store { ptr } { ptr @.sconst.281 }, ptr %sret.result1, align 1
+  store { ptr } { ptr @.sconst.285 }, ptr %sret.result1, align 1
   %start30 = extractvalue %_Z10InitSyntax %variant.val29, 0
   %end31 = extractvalue %_Z10InitSyntax %variant.val29, 1
   store { ptr } zeroinitializer, ptr %sret.result2, align 1
@@ -75075,7 +78296,7 @@ choose.when27:                                    ; preds = %entry
 choose.when33:                                    ; preds = %entry
   %"variant.c_data().ptr34" = getelementptr inbounds %_Z12MemberSyntax, ptr %4, i32 0, i32 1
   %variant.val35 = load %_Z12DeInitSyntax, ptr %"variant.c_data().ptr34", align 8
-  store { ptr } { ptr @.sconst.282 }, ptr %sret.result1, align 1
+  store { ptr } { ptr @.sconst.286 }, ptr %sret.result1, align 1
   %start36 = extractvalue %_Z12DeInitSyntax %variant.val35, 0
   %end37 = extractvalue %_Z12DeInitSyntax %variant.val35, 1
   store { ptr } zeroinitializer, ptr %sret.result2, align 1
@@ -75215,7 +78436,7 @@ if.end10:                                         ; preds = %if.end13, %if.then4
 if.then12:                                        ; preds = %if.then9
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds %_Z10ItemSyntax, ptr %deref.tmp14, i32 0, i32 2
-  store { ptr } { ptr @.sconst.331 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.335 }, ptr %arg.tmp, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call15, label %if.then16, label %if.end17
 
@@ -75518,7 +78739,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.296)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.300)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -75528,7 +78749,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.297)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.301)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -76024,7 +79245,7 @@ if.end14:                                         ; preds = %if.then13, %if.end1
 
 if.then26:                                        ; preds = %while.exit
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store { ptr } { ptr @.sconst.286 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.290 }, ptr %0, align 1
   ret void
 
 if.end27:                                         ; preds = %while.exit
@@ -76830,7 +80051,7 @@ while.exit18:                                     ; preds = %if.then25, %while.c
   store i1 false, ptr %is_kw, align 1
   %k29 = load i64, ptr %k, align 8
   %j30 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.287 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.291 }, ptr %arg.tmp, align 1
   %call31 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k29, i64 %j30, ptr %arg.tmp)
   br i1 %call31, label %if.then32, label %if.end33
 
@@ -76855,7 +80076,7 @@ if.end33:                                         ; preds = %if.then32, %while.e
 if.then36:                                        ; preds = %if.end33
   %k38 = load i64, ptr %k, align 8
   %j39 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.288 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.292 }, ptr %arg.tmp40, align 1
   %call41 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k38, i64 %j39, ptr %arg.tmp40)
   br i1 %call41, label %if.then42, label %if.end43
 
@@ -76874,7 +80095,7 @@ if.end43:                                         ; preds = %if.then42, %if.then
 if.then46:                                        ; preds = %if.end37
   %k48 = load i64, ptr %k, align 8
   %j49 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.289 }, ptr %arg.tmp50, align 1
+  store { ptr } { ptr @.sconst.293 }, ptr %arg.tmp50, align 1
   %call51 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k48, i64 %j49, ptr %arg.tmp50)
   br i1 %call51, label %if.then52, label %if.end53
 
@@ -76893,7 +80114,7 @@ if.end53:                                         ; preds = %if.then52, %if.then
 if.then56:                                        ; preds = %if.end47
   %k58 = load i64, ptr %k, align 8
   %j59 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.290 }, ptr %arg.tmp60, align 1
+  store { ptr } { ptr @.sconst.294 }, ptr %arg.tmp60, align 1
   %call61 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k58, i64 %j59, ptr %arg.tmp60)
   br i1 %call61, label %if.then62, label %if.end63
 
@@ -76912,7 +80133,7 @@ if.end63:                                         ; preds = %if.then62, %if.then
 if.then66:                                        ; preds = %if.end57
   %k68 = load i64, ptr %k, align 8
   %j69 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.291 }, ptr %arg.tmp70, align 1
+  store { ptr } { ptr @.sconst.295 }, ptr %arg.tmp70, align 1
   %call71 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k68, i64 %j69, ptr %arg.tmp70)
   br i1 %call71, label %if.then72, label %if.end73
 
@@ -77087,7 +80308,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.299)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.303)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -77470,7 +80691,7 @@ entry:
   %i = alloca i64, align 8
   %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.292 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.296 }, ptr %arg.tmp, align 1
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp)
   %ge = icmp uge i64 %call, %call1
   br i1 %ge, label %if.then, label %if.end
@@ -77491,7 +80712,7 @@ while.cond:                                       ; preds = %if.end6, %if.then
 
 while.body:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
-  store { ptr } { ptr @.sconst.292 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.296 }, ptr %arg.tmp, align 1
   %call4 = call i1 @_ZN7symbols10matches_atE6Stringm6String(ptr %2, i64 %i3, ptr %arg.tmp)
   br i1 %call4, label %if.then5, label %if.end6
 
@@ -77542,7 +80763,7 @@ define linkonce_odr i1 @_ZN7symbols23excluded_from_root_walkEPN4scaly6memory4Pag
 entry:
   %arg.tmp1 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.293 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.297 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN7symbols13path_containsE6String6String(ptr %1, ptr %arg.tmp)
   br i1 %call, label %if.then, label %if.end
 
@@ -77550,7 +80771,7 @@ if.then:                                          ; preds = %entry
   ret i1 true
 
 if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.294 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.298 }, ptr %arg.tmp1, align 1
   %call2 = call i1 @_ZN7symbols13path_containsE6String6String(ptr %1, ptr %arg.tmp1)
   br i1 %call2, label %if.then3, label %if.end4
 
@@ -77597,7 +80818,7 @@ while.cond:                                       ; preds = %if.end, %entry
 while.body:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %local_page, ptr %sret.result, i64 %i3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result2, ptr @.str.295)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result2, ptr @.str.299)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr %sret.result5)
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %sret.result4, ptr %2)
   br i1 %call6, label %if.then, label %if.end
@@ -77987,7 +81208,7 @@ if.end13:                                         ; preds = %if.then12, %if.end9
   br label %if.end5
 
 if.then24:                                        ; preds = %while.exit
-  store { ptr } { ptr @.sconst.298 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.302 }, ptr %0, align 1
   ret void
 
 if.end25:                                         ; preds = %while.exit
@@ -78017,7 +81238,7 @@ entry:
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %arg.tmp, ptr %local_page, ptr @.str.300)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %arg.tmp, ptr %local_page, ptr @.str.304)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %arg.tmp)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 123)
@@ -78091,7 +81312,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.301)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.305)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 123)
@@ -78493,7 +81714,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.302)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.306)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -78503,7 +81724,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.303)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.307)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -79364,7 +82585,7 @@ entry:
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -80279,7 +83500,7 @@ entry:
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
-  %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region1, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region1, ptr %p, align 1
@@ -81187,7 +84408,7 @@ while.exit:                                       ; preds = %while.cond
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 123)
   %sb11 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.319)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.323)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN7symbols13offset_to_posEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result14, ptr %local_page, ptr %2, i64 %3)
@@ -81195,7 +84416,7 @@ while.exit:                                       ; preds = %while.cond
   %sb15 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 44)
   %sb16 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result17, ptr %local_page, ptr @.str.320)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result17, ptr %local_page, ptr @.str.324)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb16, ptr %sret.result17)
   %sb18 = load ptr, ptr %sb, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result19, ptr %local_page, ptr %sret.result)
@@ -81203,18 +84424,18 @@ while.exit:                                       ; preds = %while.cond
   %sb20 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb20, i8 44)
   %sb21 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr @.str.321)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr @.str.325)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb21, ptr %sret.result22)
   %sb23 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.322 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.326 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb23, ptr %arg.tmp)
   %sb24 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb24, i8 44)
   %sb25 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result26, ptr %local_page, ptr @.str.323)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result26, ptr %local_page, ptr @.str.327)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb25, ptr %sret.result26)
   %sb27 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.324 }, ptr %arg.tmp28, align 1
+  store { ptr } { ptr @.sconst.328 }, ptr %arg.tmp28, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb27, ptr %arg.tmp28)
   %sb29 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb29, i8 125)
@@ -81299,7 +84520,7 @@ while.body19:                                     ; preds = %while.cond18
 while.exit20:                                     ; preds = %if.then28, %while.cond18
   %s32 = load i64, ptr %s, align 8
   %e33 = load i64, ptr %e, align 8
-  store { ptr } { ptr @.sconst.306 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.310 }, ptr %arg.tmp, align 1
   %call34 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %1, i64 %s32, i64 %e33, ptr %arg.tmp)
   br i1 %call34, label %if.then35, label %if.end36
 
@@ -81318,7 +84539,7 @@ if.then35:                                        ; preds = %while.exit20
 if.end36:                                         ; preds = %while.exit20
   %s37 = load i64, ptr %s, align 8
   %e38 = load i64, ptr %e, align 8
-  store { ptr } { ptr @.sconst.307 }, ptr %arg.tmp39, align 1
+  store { ptr } { ptr @.sconst.311 }, ptr %arg.tmp39, align 1
   %call40 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %1, i64 %s37, i64 %e38, ptr %arg.tmp39)
   br i1 %call40, label %if.then41, label %if.end42
 
@@ -81328,7 +84549,7 @@ if.then41:                                        ; preds = %if.end36
 if.end42:                                         ; preds = %if.end36
   %s43 = load i64, ptr %s, align 8
   %e44 = load i64, ptr %e, align 8
-  store { ptr } { ptr @.sconst.308 }, ptr %arg.tmp45, align 1
+  store { ptr } { ptr @.sconst.312 }, ptr %arg.tmp45, align 1
   %call46 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %1, i64 %s43, i64 %e44, ptr %arg.tmp45)
   br i1 %call46, label %if.then47, label %if.end48
 
@@ -81338,7 +84559,7 @@ if.then47:                                        ; preds = %if.end42
 if.end48:                                         ; preds = %if.end42
   %s49 = load i64, ptr %s, align 8
   %e50 = load i64, ptr %e, align 8
-  store { ptr } { ptr @.sconst.309 }, ptr %arg.tmp51, align 1
+  store { ptr } { ptr @.sconst.313 }, ptr %arg.tmp51, align 1
   %call52 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %1, i64 %s49, i64 %e50, ptr %arg.tmp51)
   br i1 %call52, label %if.then53, label %if.end54
 
@@ -81395,9 +84616,9 @@ if.then4:                                         ; preds = %if.end
 if.end5:                                          ; preds = %if.end
   %sig7 = load ptr, ptr %sig, align 8
   call void @_ZN4json5parseEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sig7)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result8, ptr %local_page, ptr %sret.result6, ptr @.str.310)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result8, ptr %local_page, ptr %sret.result6, ptr @.str.314)
   call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result9, ptr %local_page, ptr %sret.result8, i64 0)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result10, ptr %local_page, ptr %sret.result9, ptr @.str.311)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result10, ptr %local_page, ptr %sret.result9, ptr @.str.315)
   %call11 = call i64 @_ZN4json12array_lengthEv(ptr %sret.result10)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -81413,7 +84634,7 @@ while.cond:                                       ; preds = %while.exit37, %if.e
 while.body:                                       ; preds = %while.cond
   %i14 = load i64, ptr %i, align 8
   call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result13, ptr %local_page, ptr %sret.result10, i64 %i14)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result16, ptr %local_page, ptr %sret.result13, ptr @.str.312)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result16, ptr %local_page, ptr %sret.result13, ptr @.str.316)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr %sret.result16)
   store i64 0, ptr %nlen, align 1
   %call17 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result15)
@@ -81912,7 +85133,7 @@ if.then72:                                        ; preds = %while.exit60
 if.end73:                                         ; preds = %while.exit60
   %k104 = load i64, ptr %k, align 8
   %j105 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.304 }, ptr %sret.result80, align 1
+  store { ptr } { ptr @.sconst.308 }, ptr %sret.result80, align 1
   %call106 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k104, i64 %j105, ptr %sret.result80)
   br i1 %call106, label %if.then107, label %if.end108
 
@@ -81982,7 +85203,7 @@ if.then107:                                       ; preds = %if.end73
 if.end108:                                        ; preds = %if.then107, %if.end73
   %k109 = load i64, ptr %k, align 8
   %j110 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.305 }, ptr %sret.result90, align 1
+  store { ptr } { ptr @.sconst.309 }, ptr %sret.result90, align 1
   %call111 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k109, i64 %j110, ptr %sret.result90)
   br i1 %call111, label %if.then112, label %if.end113
 
@@ -82216,7 +85437,7 @@ while.exit:                                       ; preds = %while.cond
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb9, i8 123)
   %sb10 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result11, ptr %local_page, ptr @.str.313)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result11, ptr %local_page, ptr @.str.317)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb10, ptr %sret.result11)
   %sb12 = load ptr, ptr %sb, align 8
   call void @_ZN7symbols13offset_to_posEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result13, ptr %local_page, ptr %2, i64 %3)
@@ -82224,7 +85445,7 @@ while.exit:                                       ; preds = %while.cond
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb14, i8 44)
   %sb15 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result16, ptr %local_page, ptr @.str.314)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result16, ptr %local_page, ptr @.str.318)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb15, ptr %sret.result16)
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result18, ptr %local_page, ptr %sret.result)
@@ -82232,18 +85453,18 @@ while.exit:                                       ; preds = %while.cond
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb19, i8 44)
   %sb20 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result21, ptr %local_page, ptr @.str.315)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result21, ptr %local_page, ptr @.str.319)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb20, ptr %sret.result21)
   %sb22 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.316 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.320 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb22, ptr %arg.tmp)
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb23, i8 44)
   %sb24 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result25, ptr %local_page, ptr @.str.317)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result25, ptr %local_page, ptr @.str.321)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb24, ptr %sret.result25)
   %sb26 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.318 }, ptr %arg.tmp27, align 1
+  store { ptr } { ptr @.sconst.322 }, ptr %arg.tmp27, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb26, ptr %arg.tmp27)
   %sb28 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb28, i8 125)
@@ -83120,7 +86341,7 @@ if.end17:                                         ; preds = %if.end21, %if.then1
 if.then20:                                        ; preds = %if.then16
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp22, ptr align 1 %call18, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds %_Z10ItemSyntax, ptr %deref.tmp22, i32 0, i32 2
-  store { ptr } { ptr @.sconst.325 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.329 }, ptr %arg.tmp, align 1
   %call23 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call23, label %if.then24, label %if.end25
 
@@ -83322,14 +86543,14 @@ if.end119:                                        ; preds = %if.then118, %if.end
   %sb123 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb123, i8 123)
   %sb124 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result125, ptr %local_page, ptr @.str.326)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result125, ptr %local_page, ptr @.str.330)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb124, ptr %sret.result125)
   %sb126 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb126, i8 91)
   %sb127 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb127, i8 123)
   %sb128 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result129, ptr %local_page, ptr @.str.327)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result129, ptr %local_page, ptr @.str.331)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb128, ptr %sret.result129)
   %sb130 = load ptr, ptr %sb, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result131, ptr %local_page, ptr %sret.result)
@@ -83337,7 +86558,7 @@ if.end119:                                        ; preds = %if.then118, %if.end
   %sb132 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb132, i8 44)
   %sb133 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result134, ptr %local_page, ptr @.str.328)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result134, ptr %local_page, ptr @.str.332)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb133, ptr %sret.result134)
   %sb135 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb135, i8 91)
@@ -83370,14 +86591,14 @@ while.exit139:                                    ; preds = %while.cond137
   %sb149 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb149, i8 44)
   %sb150 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result151, ptr %local_page, ptr @.str.329)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result151, ptr %local_page, ptr @.str.333)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb150, ptr %sret.result151)
   %sb152 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb152, i8 48)
   %sb153 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb153, i8 44)
   %sb154 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result155, ptr %local_page, ptr @.str.330)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result155, ptr %local_page, ptr @.str.334)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb154, ptr %sret.result155)
   %sb156 = load ptr, ptr %sb, align 8
   %act158 = load i64, ptr %i, align 8
@@ -83494,7 +86715,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.341)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.345)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
@@ -83769,7 +86990,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.337)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.341)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -84505,7 +87726,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.338)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.342)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -84896,7 +88117,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.339)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.343)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -85632,7 +88853,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.340)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.344)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -86194,7 +89415,7 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z7Program, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
@@ -86227,7 +89448,7 @@ choose.when:                                      ; preds = %entry
 
 choose.when2:                                     ; preds = %entry
   %throws.success.val = load %_Z13ProgramSyntax, ptr %throws.data.ptr, align 1
-  store { ptr } { ptr @.sconst.342 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.346 }, ptr %arg.tmp, align 1
   store %_Z13ProgramSyntax %throws.success.val, ptr %arg.tmp4, align 1
   call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result3, ptr %1, ptr %3, ptr %arg.tmp, ptr %arg.tmp4, i1 true)
   %struct.region5 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
@@ -86780,7 +90001,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.343)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.347)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -87516,7 +90737,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.344)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.348)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -88399,7 +91620,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.345)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.349)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -89135,7 +92356,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.346)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.350)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -89580,7 +92801,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.347)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.351)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -90316,7 +93537,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.348)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.352)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -90707,7 +93928,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.349)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.353)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -91443,7 +94664,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.350)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.354)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -92069,7 +95290,7 @@ if.then1:                                         ; preds = %if.end
 
 if.end2:                                          ; preds = %if.end
   %field.inplace3 = getelementptr inbounds %_Z11PlannedType, ptr %2, i32 0, i32 1
-  store { ptr } { ptr @.sconst.359 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.363 }, ptr %arg.tmp, align 1
   %call4 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace3, ptr %arg.tmp)
   br i1 %call4, label %if.then5, label %if.end6
 
@@ -93304,7 +96525,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.351)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.355)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -94040,7 +97261,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.352)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.356)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -94431,7 +97652,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.353)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.357)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -95167,7 +98388,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.354)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.358)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -95558,7 +98779,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.355)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.359)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -96294,7 +99515,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.356)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.360)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -96685,7 +99906,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.357)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.361)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -97421,7 +100642,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.358)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.362)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -98227,7 +101448,7 @@ if.end:                                           ; preds = %entry
   call void @_ZN3rpc15read_message_fdEPN4scaly6memory4PageEi(ptr noalias sret({ ptr }) %sret.result1, ptr %local_page, i64 %0)
   call void @_ZN3rpc15read_message_fdEPN4scaly6memory4PageEi(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, i64 %0)
   call void @_ZN3rpc15read_message_fdEPN4scaly6memory4PageEi(ptr noalias sret({ ptr }) %sret.result3, ptr %local_page, i64 %0)
-  store { ptr } { ptr @.sconst.360 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.364 }, ptr %arg.tmp, align 1
   %call4 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp)
   br i1 %call4, label %if.then5, label %if.end6
 
@@ -98252,7 +101473,7 @@ if.then11:                                        ; preds = %if.end6
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.end6
-  store { ptr } { ptr @.sconst.361 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.365 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp14)
   br i1 %call15, label %if.then16, label %if.end17
 
@@ -98263,7 +101484,7 @@ if.then16:                                        ; preds = %if.end12
   ret i1 true
 
 if.end17:                                         ; preds = %if.end12
-  store { ptr } { ptr @.sconst.362 }, ptr %arg.tmp19, align 1
+  store { ptr } { ptr @.sconst.366 }, ptr %arg.tmp19, align 1
   %call20 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp19)
   br i1 %call20, label %if.then21, label %if.end22
 
@@ -98274,7 +101495,7 @@ if.then21:                                        ; preds = %if.end17
   ret i1 true
 
 if.end22:                                         ; preds = %if.end17
-  store { ptr } { ptr @.sconst.363 }, ptr %arg.tmp24, align 1
+  store { ptr } { ptr @.sconst.367 }, ptr %arg.tmp24, align 1
   %call25 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp24)
   br i1 %call25, label %if.then26, label %if.end27
 
@@ -98285,7 +101506,7 @@ if.then26:                                        ; preds = %if.end22
   ret i1 true
 
 if.end27:                                         ; preds = %if.end22
-  store { ptr } { ptr @.sconst.364 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.368 }, ptr %arg.tmp29, align 1
   %call30 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp29)
   br i1 %call30, label %if.then31, label %if.end32
 
@@ -98296,7 +101517,7 @@ if.then31:                                        ; preds = %if.end27
   ret i1 true
 
 if.end32:                                         ; preds = %if.end27
-  store { ptr } { ptr @.sconst.365 }, ptr %arg.tmp34, align 1
+  store { ptr } { ptr @.sconst.369 }, ptr %arg.tmp34, align 1
   %call35 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp34)
   br i1 %call35, label %if.then36, label %if.end37
 
@@ -98307,7 +101528,7 @@ if.then36:                                        ; preds = %if.end32
   ret i1 true
 
 if.end37:                                         ; preds = %if.end32
-  store { ptr } { ptr @.sconst.366 }, ptr %arg.tmp39, align 1
+  store { ptr } { ptr @.sconst.370 }, ptr %arg.tmp39, align 1
   %call40 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp39)
   br i1 %call40, label %if.then41, label %if.end42
 
@@ -98318,7 +101539,7 @@ if.then41:                                        ; preds = %if.end37
   ret i1 true
 
 if.end42:                                         ; preds = %if.end37
-  store { ptr } { ptr @.sconst.367 }, ptr %arg.tmp44, align 1
+  store { ptr } { ptr @.sconst.371 }, ptr %arg.tmp44, align 1
   %call45 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp44)
   br i1 %call45, label %if.then46, label %if.end47
 
@@ -98329,7 +101550,7 @@ if.then46:                                        ; preds = %if.end42
   ret i1 true
 
 if.end47:                                         ; preds = %if.end42
-  store { ptr } { ptr @.sconst.368 }, ptr %arg.tmp49, align 1
+  store { ptr } { ptr @.sconst.372 }, ptr %arg.tmp49, align 1
   %call50 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp49)
   br i1 %call50, label %if.then51, label %if.end52
 
@@ -98340,7 +101561,7 @@ if.then51:                                        ; preds = %if.end47
   ret i1 true
 
 if.end52:                                         ; preds = %if.end47
-  store { ptr } { ptr @.sconst.369 }, ptr %arg.tmp54, align 1
+  store { ptr } { ptr @.sconst.373 }, ptr %arg.tmp54, align 1
   %call55 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp54)
   br i1 %call55, label %if.then56, label %if.end57
 
@@ -98351,7 +101572,7 @@ if.then56:                                        ; preds = %if.end52
   ret i1 true
 
 if.end57:                                         ; preds = %if.end52
-  store { ptr } { ptr @.sconst.370 }, ptr %arg.tmp59, align 1
+  store { ptr } { ptr @.sconst.374 }, ptr %arg.tmp59, align 1
   %call60 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp59)
   br i1 %call60, label %if.then61, label %if.end62
 
@@ -98362,7 +101583,7 @@ if.then61:                                        ; preds = %if.end57
   ret i1 true
 
 if.end62:                                         ; preds = %if.end57
-  store { ptr } { ptr @.sconst.371 }, ptr %arg.tmp64, align 1
+  store { ptr } { ptr @.sconst.375 }, ptr %arg.tmp64, align 1
   %call65 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp64)
   br i1 %call65, label %if.then66, label %if.end67
 
@@ -98373,7 +101594,7 @@ if.then66:                                        ; preds = %if.end62
   ret i1 true
 
 if.end67:                                         ; preds = %if.end62
-  store { ptr } { ptr @.sconst.372 }, ptr %arg.tmp69, align 1
+  store { ptr } { ptr @.sconst.376 }, ptr %arg.tmp69, align 1
   %call70 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp69)
   br i1 %call70, label %if.then71, label %if.end72
 
@@ -98384,7 +101605,7 @@ if.then71:                                        ; preds = %if.end67
   ret i1 true
 
 if.end72:                                         ; preds = %if.end67
-  store { ptr } { ptr @.sconst.373 }, ptr %arg.tmp74, align 1
+  store { ptr } { ptr @.sconst.377 }, ptr %arg.tmp74, align 1
   %call75 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp74)
   br i1 %call75, label %if.then76, label %if.end77
 
@@ -98669,7 +101890,7 @@ entry:
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   %sret.result1 = alloca { ptr }, align 8
   call void @_ZN11diagnostics17clear_diagnosticsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %2)
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.374, ptr %2, ptr %3, ptr %arg.tmp, ptr %sret.result1)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.378, ptr %2, ptr %3, ptr %arg.tmp, ptr %sret.result1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98681,8 +101902,8 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   %arg.tmp1 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.376 }, ptr %arg.tmp1, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.375, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp1)
+  store { ptr } { ptr @.sconst.380 }, ptr %arg.tmp1, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.379, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98693,7 +101914,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.377, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.381, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98704,35 +101925,13 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.378, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.382, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
 define linkonce_odr void @_ZN6worker10referencesEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %sret.result = alloca { ptr }, align 8
-  %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.380 }, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.379, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker10highlightsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %sret.result = alloca { ptr }, align 8
-  %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.382 }, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.381, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker10completionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
@@ -98743,12 +101942,34 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN6worker10highlightsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %sret.result = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.386 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.385, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker10completionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %sret.result = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.388 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.387, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN6worker6renameEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.385, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.389, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98759,7 +101980,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.386, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.390, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98770,7 +101991,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.387, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.391, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98780,8 +102001,8 @@ define linkonce_odr void @_ZN6worker11inlay_hintsEPN4scaly6memory4PageE6String6S
 entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.389 }, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.388, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  store { ptr } { ptr @.sconst.393 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.392, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98793,8 +102014,8 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   %arg.tmp1 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.391 }, ptr %arg.tmp1, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.390, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp1)
+  store { ptr } { ptr @.sconst.395 }, ptr %arg.tmp1, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.394, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98805,7 +102026,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.392, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.396, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98824,7 +102045,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %fb2, i8 34)
   %fb3 = load ptr, ptr %fb, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.393 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.397 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %fb3, ptr %arg.tmp)
   %fb4 = load ptr, ptr %fb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %fb4, i8 34)
@@ -98842,7 +102063,7 @@ entry:
   %sret.result10 = alloca { ptr }, align 8
   %fb11 = load ptr, ptr %fb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %fb11)
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.394, ptr %2, ptr %3, ptr %arg.tmp9, ptr %sret.result10)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.398, ptr %2, ptr %3, ptr %arg.tmp9, ptr %sret.result10)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -98855,8 +102076,8 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   %arg.tmp1 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.396 }, ptr %arg.tmp1, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.395, ptr %2, ptr %arg.tmp, ptr %3, ptr %arg.tmp1)
+  store { ptr } { ptr @.sconst.400 }, ptr %arg.tmp1, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageEP10const_char6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr @.str.399, ptr %2, ptr %arg.tmp, ptr %3, ptr %arg.tmp1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -98923,11 +102144,11 @@ entry:
   %sret.result = alloca %_Z9JsonValue, align 8
   call void @_ZN4json5parseEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.397)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.401)
   %sret.result2 = alloca { ptr }, align 8
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result1)
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.398)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.402)
   %has_id = alloca i1, align 1
   store i1 true, ptr %has_id, align 1
   %call = call i1 @_ZN4json7is_nullEv(ptr %sret.result3)
@@ -98939,7 +102160,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %call4 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result3)
-  store { ptr } { ptr @.sconst.399 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.403 }, ptr %arg.tmp, align 1
   %call5 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp)
   br i1 %call5, label %if.then6, label %if.end7
 
@@ -98949,7 +102170,7 @@ if.then6:                                         ; preds = %if.end
   br i1 %has_id8, label %if.then9, label %if.end10
 
 if.end7:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.400 }, ptr %arg.tmp12, align 1
+  store { ptr } { ptr @.sconst.404 }, ptr %arg.tmp12, align 1
   %call13 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp12)
   br i1 %call13, label %if.then14, label %if.end15
 
@@ -98967,7 +102188,7 @@ if.then14:                                        ; preds = %if.end7
   br i1 %has_id16, label %if.then17, label %if.end18
 
 if.end15:                                         ; preds = %if.end7
-  store { ptr } { ptr @.sconst.401 }, ptr %arg.tmp20, align 1
+  store { ptr } { ptr @.sconst.405 }, ptr %arg.tmp20, align 1
   %call21 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp20)
   br i1 %call21, label %if.then22, label %if.end23
 
@@ -98986,7 +102207,7 @@ if.then22:                                        ; preds = %if.end15
   ret void
 
 if.end23:                                         ; preds = %if.end15
-  store { ptr } { ptr @.sconst.402 }, ptr %arg.tmp24, align 1
+  store { ptr } { ptr @.sconst.406 }, ptr %arg.tmp24, align 1
   %call25 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp24)
   br i1 %call25, label %if.then26, label %if.end27
 
@@ -98996,7 +102217,7 @@ if.then26:                                        ; preds = %if.end23
   ret void
 
 if.end27:                                         ; preds = %if.end23
-  store { ptr } { ptr @.sconst.403 }, ptr %arg.tmp28, align 1
+  store { ptr } { ptr @.sconst.407 }, ptr %arg.tmp28, align 1
   %call29 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp28)
   br i1 %call29, label %if.then30, label %if.end31
 
@@ -99006,7 +102227,7 @@ if.then30:                                        ; preds = %if.end27
   ret void
 
 if.end31:                                         ; preds = %if.end27
-  store { ptr } { ptr @.sconst.404 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.408 }, ptr %arg.tmp32, align 1
   %call33 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp32)
   br i1 %call33, label %if.then34, label %if.end35
 
@@ -99016,7 +102237,7 @@ if.then34:                                        ; preds = %if.end31
   ret void
 
 if.end35:                                         ; preds = %if.end31
-  store { ptr } { ptr @.sconst.405 }, ptr %arg.tmp36, align 1
+  store { ptr } { ptr @.sconst.409 }, ptr %arg.tmp36, align 1
   %call37 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp36)
   br i1 %call37, label %if.then38, label %if.end39
 
@@ -99025,7 +102246,7 @@ if.then38:                                        ; preds = %if.end35
   br i1 %has_id40, label %if.then41, label %if.end42
 
 if.end39:                                         ; preds = %if.end35
-  store { ptr } { ptr @.sconst.406 }, ptr %arg.tmp43, align 1
+  store { ptr } { ptr @.sconst.410 }, ptr %arg.tmp43, align 1
   %call44 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp43)
   br i1 %call44, label %if.then45, label %if.end46
 
@@ -99042,7 +102263,7 @@ if.then45:                                        ; preds = %if.end39
   br i1 %has_id47, label %if.then48, label %if.end49
 
 if.end46:                                         ; preds = %if.end39
-  store { ptr } { ptr @.sconst.407 }, ptr %arg.tmp50, align 1
+  store { ptr } { ptr @.sconst.411 }, ptr %arg.tmp50, align 1
   %call51 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp50)
   br i1 %call51, label %if.then52, label %if.end53
 
@@ -99059,7 +102280,7 @@ if.then52:                                        ; preds = %if.end46
   br i1 %has_id54, label %if.then55, label %if.end56
 
 if.end53:                                         ; preds = %if.end46
-  store { ptr } { ptr @.sconst.408 }, ptr %arg.tmp57, align 1
+  store { ptr } { ptr @.sconst.412 }, ptr %arg.tmp57, align 1
   %call58 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp57)
   br i1 %call58, label %if.then59, label %if.end60
 
@@ -99076,7 +102297,7 @@ if.then59:                                        ; preds = %if.end53
   br i1 %has_id61, label %if.then62, label %if.end63
 
 if.end60:                                         ; preds = %if.end53
-  store { ptr } { ptr @.sconst.409 }, ptr %arg.tmp64, align 1
+  store { ptr } { ptr @.sconst.413 }, ptr %arg.tmp64, align 1
   %call65 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp64)
   br i1 %call65, label %if.then66, label %if.end67
 
@@ -99093,7 +102314,7 @@ if.then66:                                        ; preds = %if.end60
   br i1 %has_id68, label %if.then69, label %if.end70
 
 if.end67:                                         ; preds = %if.end60
-  store { ptr } { ptr @.sconst.410 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.414 }, ptr %arg.tmp71, align 1
   %call72 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp71)
   br i1 %call72, label %if.then73, label %if.end74
 
@@ -99110,7 +102331,7 @@ if.then73:                                        ; preds = %if.end67
   br i1 %has_id75, label %if.then76, label %if.end77
 
 if.end74:                                         ; preds = %if.end67
-  store { ptr } { ptr @.sconst.411 }, ptr %arg.tmp78, align 1
+  store { ptr } { ptr @.sconst.415 }, ptr %arg.tmp78, align 1
   %call79 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp78)
   br i1 %call79, label %if.then80, label %if.end81
 
@@ -99127,7 +102348,7 @@ if.then80:                                        ; preds = %if.end74
   br i1 %has_id82, label %if.then83, label %if.end84
 
 if.end81:                                         ; preds = %if.end74
-  store { ptr } { ptr @.sconst.412 }, ptr %arg.tmp85, align 1
+  store { ptr } { ptr @.sconst.416 }, ptr %arg.tmp85, align 1
   %call86 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp85)
   br i1 %call86, label %if.then87, label %if.end88
 
@@ -99144,7 +102365,7 @@ if.then87:                                        ; preds = %if.end81
   br i1 %has_id89, label %if.then90, label %if.end91
 
 if.end88:                                         ; preds = %if.end81
-  store { ptr } { ptr @.sconst.413 }, ptr %arg.tmp92, align 1
+  store { ptr } { ptr @.sconst.417 }, ptr %arg.tmp92, align 1
   %call93 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp92)
   br i1 %call93, label %if.then94, label %if.end95
 
@@ -99161,7 +102382,7 @@ if.then94:                                        ; preds = %if.end88
   br i1 %has_id96, label %if.then97, label %if.end98
 
 if.end95:                                         ; preds = %if.end88
-  store { ptr } { ptr @.sconst.414 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.418 }, ptr %arg.tmp99, align 1
   %call100 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp99)
   br i1 %call100, label %if.then101, label %if.end102
 
@@ -99178,7 +102399,7 @@ if.then101:                                       ; preds = %if.end95
   br i1 %has_id103, label %if.then104, label %if.end105
 
 if.end102:                                        ; preds = %if.end95
-  store { ptr } { ptr @.sconst.415 }, ptr %arg.tmp106, align 1
+  store { ptr } { ptr @.sconst.419 }, ptr %arg.tmp106, align 1
   %call107 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp106)
   br i1 %call107, label %if.then108, label %if.end109
 
@@ -99195,7 +102416,7 @@ if.then108:                                       ; preds = %if.end102
   br i1 %has_id110, label %if.then111, label %if.end112
 
 if.end109:                                        ; preds = %if.end102
-  store { ptr } { ptr @.sconst.416 }, ptr %arg.tmp113, align 1
+  store { ptr } { ptr @.sconst.420 }, ptr %arg.tmp113, align 1
   %call114 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp113)
   br i1 %call114, label %if.then115, label %if.end116
 
@@ -99212,7 +102433,7 @@ if.then115:                                       ; preds = %if.end109
   br i1 %has_id117, label %if.then118, label %if.end119
 
 if.end116:                                        ; preds = %if.end109
-  store { ptr } { ptr @.sconst.417 }, ptr %arg.tmp120, align 1
+  store { ptr } { ptr @.sconst.421 }, ptr %arg.tmp120, align 1
   %call121 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %arg.tmp120)
   br i1 %call121, label %if.then122, label %if.end123
 
@@ -99254,9 +102475,9 @@ entry:
   %sret.result2 = alloca { ptr }, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.508)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.512)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.509)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.513)
   %call = call i1 @_ZN4json7is_nullEv(ptr %sret.result1)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
@@ -99269,7 +102490,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result, ptr @.str.510)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result, ptr @.str.514)
   %call5 = call i1 @_ZN4json7is_nullEv(ptr %sret.result4)
   %eq6 = icmp eq i1 %call5, false
   br i1 %eq6, label %if.then7, label %if.end8
@@ -99281,7 +102502,7 @@ if.then7:                                         ; preds = %if.end
   ret void
 
 if.end8:                                          ; preds = %if.end
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result10, ptr %local_page, ptr %sret.result, ptr @.str.511)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result10, ptr %local_page, ptr %sret.result, ptr @.str.515)
   %call11 = call i1 @_ZN4json7is_nullEv(ptr %sret.result10)
   %eq12 = icmp eq i1 %call11, false
   br i1 %eq12, label %if.then13, label %if.end14
@@ -99297,7 +102518,7 @@ if.end14:                                         ; preds = %if.end17, %if.end8
 
 if.then16:                                        ; preds = %if.then13
   call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result18, ptr %local_page, ptr %sret.result10, i64 0)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result21, ptr %local_page, ptr %sret.result18, ptr @.str.512)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result21, ptr %local_page, ptr %sret.result18, ptr @.str.516)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result20, ptr %local_page, ptr %sret.result21)
   call void @_ZN7symbols11uri_to_pathEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result19, ptr %local_page, ptr %sret.result20)
   call void @_ZN8docstore18set_workspace_rootE6String(ptr %sret.result19)
@@ -99318,17 +102539,17 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.516)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.520)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.517)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.521)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.518)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.522)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -99338,19 +102559,19 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.519)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.523)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb13, i8 123)
   %sb14 = load ptr, ptr %sb, align 8
   %sret.result15 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.520)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.524)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %sret.result15)
   %sb16 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb16, i8 123)
   %sb17 = load ptr, ptr %sb, align 8
   %sret.result18 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result18, ptr %local_page, ptr @.str.521)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result18, ptr %local_page, ptr @.str.525)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb17, ptr %sret.result18)
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb19, i8 50)
@@ -99358,57 +102579,57 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb20, i8 44)
   %sb21 = load ptr, ptr %sb, align 8
   %sret.result22 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr @.str.522)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr @.str.526)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb21, ptr %sret.result22)
   %sb23 = load ptr, ptr %sb, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.523 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.527 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb23, ptr %arg.tmp)
   %sb24 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb24, i8 44)
   %sb25 = load ptr, ptr %sb, align 8
   %sret.result26 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result26, ptr %local_page, ptr @.str.524)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result26, ptr %local_page, ptr @.str.528)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb25, ptr %sret.result26)
   %sb27 = load ptr, ptr %sb, align 8
   %arg.tmp28 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.525 }, ptr %arg.tmp28, align 1
+  store { ptr } { ptr @.sconst.529 }, ptr %arg.tmp28, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb27, ptr %arg.tmp28)
   %sb29 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb29, i8 44)
   %sb30 = load ptr, ptr %sb, align 8
   %sret.result31 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result31, ptr %local_page, ptr @.str.526)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result31, ptr %local_page, ptr @.str.530)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb30, ptr %sret.result31)
   %sb32 = load ptr, ptr %sb, align 8
   %arg.tmp33 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.527 }, ptr %arg.tmp33, align 1
+  store { ptr } { ptr @.sconst.531 }, ptr %arg.tmp33, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb32, ptr %arg.tmp33)
   %sb34 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb34, i8 44)
   %sb35 = load ptr, ptr %sb, align 8
   %sret.result36 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result36, ptr %local_page, ptr @.str.528)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result36, ptr %local_page, ptr @.str.532)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb35, ptr %sret.result36)
   %sb37 = load ptr, ptr %sb, align 8
   %arg.tmp38 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.529 }, ptr %arg.tmp38, align 1
+  store { ptr } { ptr @.sconst.533 }, ptr %arg.tmp38, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb37, ptr %arg.tmp38)
   %sb39 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb39, i8 44)
   %sb40 = load ptr, ptr %sb, align 8
   %sret.result41 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result41, ptr %local_page, ptr @.str.530)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result41, ptr %local_page, ptr @.str.534)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb40, ptr %sret.result41)
   %sb42 = load ptr, ptr %sb, align 8
   %arg.tmp43 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.531 }, ptr %arg.tmp43, align 1
+  store { ptr } { ptr @.sconst.535 }, ptr %arg.tmp43, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb42, ptr %arg.tmp43)
   %sb44 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb44, i8 44)
   %sb45 = load ptr, ptr %sb, align 8
   %sret.result46 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result46, ptr %local_page, ptr @.str.532)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result46, ptr %local_page, ptr @.str.536)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb45, ptr %sret.result46)
   %sb47 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb47, i8 123)
@@ -99418,17 +102639,17 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb49, i8 44)
   %sb50 = load ptr, ptr %sb, align 8
   %sret.result51 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result51, ptr %local_page, ptr @.str.533)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result51, ptr %local_page, ptr @.str.537)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb50, ptr %sret.result51)
   %sb52 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb52, i8 123)
   %sb53 = load ptr, ptr %sb, align 8
   %sret.result54 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result54, ptr %local_page, ptr @.str.534)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result54, ptr %local_page, ptr @.str.538)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb53, ptr %sret.result54)
   %sb55 = load ptr, ptr %sb, align 8
   %arg.tmp56 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.535 }, ptr %arg.tmp56, align 1
+  store { ptr } { ptr @.sconst.539 }, ptr %arg.tmp56, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb55, ptr %arg.tmp56)
   %sb57 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb57, i8 125)
@@ -99436,13 +102657,13 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb58, i8 44)
   %sb59 = load ptr, ptr %sb, align 8
   %sret.result60 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result60, ptr %local_page, ptr @.str.536)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result60, ptr %local_page, ptr @.str.540)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb59, ptr %sret.result60)
   %sb61 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb61, i8 123)
   %sb62 = load ptr, ptr %sb, align 8
   %sret.result63 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result63, ptr %local_page, ptr @.str.537)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result63, ptr %local_page, ptr @.str.541)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb62, ptr %sret.result63)
   %sb64 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb64, i8 91)
@@ -99468,89 +102689,89 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb74, i8 44)
   %sb75 = load ptr, ptr %sb, align 8
   %sret.result76 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result76, ptr %local_page, ptr @.str.538)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result76, ptr %local_page, ptr @.str.542)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb75, ptr %sret.result76)
   %sb77 = load ptr, ptr %sb, align 8
   %arg.tmp78 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.539 }, ptr %arg.tmp78, align 1
+  store { ptr } { ptr @.sconst.543 }, ptr %arg.tmp78, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb77, ptr %arg.tmp78)
   %sb79 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb79, i8 44)
   %sb80 = load ptr, ptr %sb, align 8
   %sret.result81 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result81, ptr %local_page, ptr @.str.540)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result81, ptr %local_page, ptr @.str.544)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb80, ptr %sret.result81)
   %sb82 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb82, i8 123)
   %sb83 = load ptr, ptr %sb, align 8
   %sret.result84 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result84, ptr %local_page, ptr @.str.541)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result84, ptr %local_page, ptr @.str.545)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb83, ptr %sret.result84)
   %sb85 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb85, i8 123)
   %sb86 = load ptr, ptr %sb, align 8
   %sret.result87 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result87, ptr %local_page, ptr @.str.542)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result87, ptr %local_page, ptr @.str.546)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb86, ptr %sret.result87)
   %sb88 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb88, i8 91)
   %sb89 = load ptr, ptr %sb, align 8
   %sret.result90 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result90, ptr %local_page, ptr @.str.543)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result90, ptr %local_page, ptr @.str.547)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb89, ptr %sret.result90)
   %sb91 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb91, i8 44)
   %sb92 = load ptr, ptr %sb, align 8
   %sret.result93 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result93, ptr %local_page, ptr @.str.544)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result93, ptr %local_page, ptr @.str.548)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb92, ptr %sret.result93)
   %sb94 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb94, i8 44)
   %sb95 = load ptr, ptr %sb, align 8
   %sret.result96 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result96, ptr %local_page, ptr @.str.545)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result96, ptr %local_page, ptr @.str.549)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb95, ptr %sret.result96)
   %sb97 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb97, i8 44)
   %sb98 = load ptr, ptr %sb, align 8
   %sret.result99 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result99, ptr %local_page, ptr @.str.546)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result99, ptr %local_page, ptr @.str.550)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb98, ptr %sret.result99)
   %sb100 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb100, i8 44)
   %sb101 = load ptr, ptr %sb, align 8
   %sret.result102 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result102, ptr %local_page, ptr @.str.547)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result102, ptr %local_page, ptr @.str.551)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb101, ptr %sret.result102)
   %sb103 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb103, i8 44)
   %sb104 = load ptr, ptr %sb, align 8
   %sret.result105 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result105, ptr %local_page, ptr @.str.548)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result105, ptr %local_page, ptr @.str.552)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb104, ptr %sret.result105)
   %sb106 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb106, i8 44)
   %sb107 = load ptr, ptr %sb, align 8
   %sret.result108 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result108, ptr %local_page, ptr @.str.549)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result108, ptr %local_page, ptr @.str.553)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb107, ptr %sret.result108)
   %sb109 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb109, i8 44)
   %sb110 = load ptr, ptr %sb, align 8
   %sret.result111 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result111, ptr %local_page, ptr @.str.550)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result111, ptr %local_page, ptr @.str.554)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb110, ptr %sret.result111)
   %sb112 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb112, i8 44)
   %sb113 = load ptr, ptr %sb, align 8
   %sret.result114 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result114, ptr %local_page, ptr @.str.551)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result114, ptr %local_page, ptr @.str.555)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb113, ptr %sret.result114)
   %sb115 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb115, i8 44)
   %sb116 = load ptr, ptr %sb, align 8
   %sret.result117 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result117, ptr %local_page, ptr @.str.552)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result117, ptr %local_page, ptr @.str.556)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb116, ptr %sret.result117)
   %sb118 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb118, i8 93)
@@ -99558,7 +102779,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb119, i8 44)
   %sb120 = load ptr, ptr %sb, align 8
   %sret.result121 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result121, ptr %local_page, ptr @.str.553)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result121, ptr %local_page, ptr @.str.557)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb120, ptr %sret.result121)
   %sb122 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb122, i8 91)
@@ -99570,11 +102791,11 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb125, i8 44)
   %sb126 = load ptr, ptr %sb, align 8
   %sret.result127 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result127, ptr %local_page, ptr @.str.554)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result127, ptr %local_page, ptr @.str.558)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb126, ptr %sret.result127)
   %sb128 = load ptr, ptr %sb, align 8
   %arg.tmp129 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.555 }, ptr %arg.tmp129, align 1
+  store { ptr } { ptr @.sconst.559 }, ptr %arg.tmp129, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb128, ptr %arg.tmp129)
   %sb130 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb130, i8 125)
@@ -99582,21 +102803,21 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb131, i8 44)
   %sb132 = load ptr, ptr %sb, align 8
   %sret.result133 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result133, ptr %local_page, ptr @.str.556)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result133, ptr %local_page, ptr @.str.560)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb132, ptr %sret.result133)
   %sb134 = load ptr, ptr %sb, align 8
   %arg.tmp135 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.557 }, ptr %arg.tmp135, align 1
+  store { ptr } { ptr @.sconst.561 }, ptr %arg.tmp135, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb134, ptr %arg.tmp135)
   %sb136 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb136, i8 44)
   %sb137 = load ptr, ptr %sb, align 8
   %sret.result138 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result138, ptr %local_page, ptr @.str.558)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result138, ptr %local_page, ptr @.str.562)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb137, ptr %sret.result138)
   %sb139 = load ptr, ptr %sb, align 8
   %arg.tmp140 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.559 }, ptr %arg.tmp140, align 1
+  store { ptr } { ptr @.sconst.563 }, ptr %arg.tmp140, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb139, ptr %arg.tmp140)
   %sb141 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb141, i8 125)
@@ -99604,27 +102825,27 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb142, i8 44)
   %sb143 = load ptr, ptr %sb, align 8
   %sret.result144 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result144, ptr %local_page, ptr @.str.560)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result144, ptr %local_page, ptr @.str.564)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb143, ptr %sret.result144)
   %sb145 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb145, i8 123)
   %sb146 = load ptr, ptr %sb, align 8
   %sret.result147 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result147, ptr %local_page, ptr @.str.561)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result147, ptr %local_page, ptr @.str.565)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb146, ptr %sret.result147)
   %sb148 = load ptr, ptr %sb, align 8
   %sret.result149 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result149, ptr %local_page, ptr @.str.562)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result149, ptr %local_page, ptr @.str.566)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb148, ptr %sret.result149)
   %sb150 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb150, i8 44)
   %sb151 = load ptr, ptr %sb, align 8
   %sret.result152 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result152, ptr %local_page, ptr @.str.563)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result152, ptr %local_page, ptr @.str.567)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb151, ptr %sret.result152)
   %sb153 = load ptr, ptr %sb, align 8
   %sret.result154 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result154, ptr %local_page, ptr @.str.564)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result154, ptr %local_page, ptr @.str.568)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb153, ptr %sret.result154)
   %sb155 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb155, i8 125)
@@ -99652,17 +102873,17 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.565)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.569)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.566)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.570)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.567)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.571)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -99672,11 +102893,11 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.568)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.572)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb13 = load ptr, ptr %sb, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.569 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.573 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb13, ptr %arg.tmp)
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb14, i8 125)
@@ -99693,15 +102914,15 @@ define linkonce_odr void @_ZN6server15handle_did_openE9JsonValue(ptr %0) {
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.418)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.422)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.419)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.423)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.420)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.424)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.421)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.425)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr %sret.result3)
   call void @_ZN8docstore3putE6String6String(ptr %sret.result2, ptr %sret.result4)
   call void @_ZN6server11publish_forE6String6String(ptr %sret.result2, ptr %sret.result4)
@@ -99718,14 +102939,14 @@ entry:
   %sret.result4 = alloca { ptr }, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.422)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.426)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.423)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.427)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.424)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.428)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.425)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.429)
   %call = call i64 @_ZN4json12array_lengthEv(ptr %sret.result3)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
@@ -99771,12 +102992,12 @@ define linkonce_odr void @_ZN6server16handle_did_closeE9JsonValue(ptr %0) {
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.513)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.517)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.514)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.518)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.515)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.519)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
   call void @_ZN8docstore6removeE6String(ptr %sret.result2)
   %sret.result4 = alloca { ptr }, align 8
@@ -99790,12 +103011,12 @@ define linkonce_odr void @_ZN6server22handle_document_symbolE9JsonValue3i64(ptr 
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.434)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.438)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.435)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.439)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.436)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.440)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
   %sret.result4 = alloca { ptr }, align 8
   call void @_ZN8docstore3getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr %sret.result2)
@@ -99814,18 +103035,18 @@ entry:
   %sret.result18 = alloca { ptr }, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.443)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.447)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.444)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.448)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.445)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.449)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.446)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.450)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.447)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.451)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.448)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.452)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -99876,18 +103097,18 @@ define linkonce_odr void @_ZN6server17handle_definitionE9JsonValue3i64(ptr %0, i
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.453)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.457)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.454)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.458)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.455)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.459)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.456)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.460)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.457)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.461)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.458)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.462)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -99927,18 +103148,18 @@ entry:
   %sret.result15 = alloca { ptr }, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.475)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.479)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.476)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.480)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.477)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.481)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.478)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.482)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.479)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.483)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.480)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.484)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %sret.result6 = alloca { ptr }, align 8
   call void @_ZN8docstore14workspace_rootEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %local_page)
@@ -99991,18 +103212,18 @@ define linkonce_odr void @_ZN6server25handle_document_highlightE9JsonValue3i64(p
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.481)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.485)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.482)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.486)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.483)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.487)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.484)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.488)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.485)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.489)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.486)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.490)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -100036,18 +103257,18 @@ define linkonce_odr void @_ZN6server17handle_completionE9JsonValue3i64(ptr %0, i
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.487)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.491)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.488)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.492)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.489)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.493)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.490)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.494)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.491)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.495)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.492)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.496)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -100081,18 +103302,18 @@ define linkonce_odr void @_ZN6server21handle_prepare_renameE9JsonValue3i64(ptr %
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.493)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.497)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.494)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.498)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.495)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.499)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.496)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.500)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.497)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.501)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.498)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.502)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -100134,21 +103355,21 @@ entry:
   %sret.result16 = alloca { ptr }, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.499)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.503)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.500)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.504)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.501)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.505)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.502)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.506)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.503)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.507)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.504)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.508)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %sret.result6 = alloca { ptr }, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result, ptr @.str.505)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result, ptr @.str.509)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %local_page, ptr %sret.result4)
   %sret.result7 = alloca { ptr }, align 8
   call void @_ZN8docstore14workspace_rootEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page)
@@ -100241,18 +103462,18 @@ define linkonce_odr void @_ZN6server21handle_signature_helpE9JsonValue3i64(ptr %
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.459)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.463)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.460)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.464)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.461)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.465)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.462)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.466)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.463)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.467)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.464)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.468)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -100286,12 +103507,12 @@ define linkonce_odr void @_ZN6server20handle_folding_rangeE9JsonValue3i64(ptr %0
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.437)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.441)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.438)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.442)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.439)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.443)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
   %sret.result4 = alloca { ptr }, align 8
   call void @_ZN8docstore3getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr %sret.result2)
@@ -100308,12 +103529,12 @@ define linkonce_odr void @_ZN6server22handle_semantic_tokensE9JsonValue3i64(ptr 
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.440)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.444)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.441)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.445)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.442)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.446)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
   %sret.result4 = alloca { ptr }, align 8
   call void @_ZN8docstore3getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr %sret.result2)
@@ -100330,26 +103551,26 @@ define linkonce_odr void @_ZN6server17handle_inlay_hintE9JsonValue3i64(ptr %0, i
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.465)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.469)
   %sret.result1 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.466)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %local_page, ptr %sret.result, ptr @.str.470)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.467)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result1, ptr @.str.471)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %local_page, ptr %sret.result3)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.468)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.472)
   %sret.result4 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.469)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.473)
   %sret.result5 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result3, ptr @.str.470)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result3, ptr @.str.474)
   %sret.result6 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result4, ptr @.str.471)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result4, ptr @.str.475)
   %call = call i64 @_ZN4json6as_i64Ev(ptr %sret.result6)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result4, ptr @.str.472)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result4, ptr @.str.476)
   %call7 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result6)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result5, ptr @.str.473)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result5, ptr @.str.477)
   %call8 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result6)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result5, ptr @.str.474)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result5, ptr @.str.478)
   %call9 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result6)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
@@ -100395,10 +103616,10 @@ define linkonce_odr void @_ZN6server23handle_workspace_symbolE9JsonValue3i64(ptr
 entry:
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.506)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %0, ptr @.str.510)
   %sret.result1 = alloca { ptr }, align 8
   %sret.result2 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %local_page, ptr %sret.result, ptr @.str.507)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %local_page, ptr %sret.result, ptr @.str.511)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1, ptr %local_page, ptr %sret.result2)
   %sret.result3 = alloca { ptr }, align 8
   call void @_ZN8docstore14workspace_rootEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result3, ptr %local_page)
@@ -100432,10 +103653,10 @@ entry:
   %sret.result3 = alloca %_Z9JsonValue, align 8
   %local_page = call ptr @_ZN4Page18allocate_root_pageEv()
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %3, ptr @.str.426)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %local_page, ptr %3, ptr @.str.430)
   %sret.result1 = alloca { ptr }, align 8
   %sret.result2 = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %1, ptr %3, ptr @.str.427)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %1, ptr %3, ptr @.str.431)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %sret.result2)
   %call = call i1 @_ZN4json7is_nullEv(ptr %sret.result)
   br i1 %call, label %if.then, label %if.end
@@ -100447,15 +103668,15 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %local_page, ptr %sret.result, ptr @.str.428)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.429)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result2, ptr @.str.430)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %local_page, ptr %sret.result, ptr @.str.432)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %local_page, ptr %sret.result, ptr @.str.433)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result2, ptr @.str.434)
   %call5 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result2, ptr @.str.431)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result2, ptr @.str.435)
   %call6 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.432)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.436)
   %call7 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.433)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %local_page, ptr %sret.result3, ptr @.str.437)
   %call8 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
   %call9 = call i64 @_ZN7symbols18position_to_offsetEPN4scaly6memory4PageE6Stringmm(ptr %local_page, ptr %2, i64 %call5, i64 %call6)
   %call10 = call i64 @_ZN7symbols18position_to_offsetEPN4scaly6memory4PageE6Stringmm(ptr %local_page, ptr %2, i64 %call7, i64 %call8)
@@ -100541,17 +103762,17 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.570)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.574)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.571)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.575)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.572)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.576)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -100561,7 +103782,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.573)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.577)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %ci = alloca i64, align 8
   store i64 0, ptr %ci, align 1
@@ -100635,21 +103856,21 @@ if.end3:                                          ; preds = %if.end
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 123)
   %sb6 = load ptr, ptr %sb, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.449)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.453)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb8, i8 123)
   %sb9 = load ptr, ptr %sb, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result10, ptr %local_page, ptr @.str.450)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result10, ptr %local_page, ptr @.str.454)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb9, ptr %sret.result10)
   %sb11 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.451 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.455 }, ptr %arg.tmp, align 1
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb13, i8 44)
   %sb14 = load ptr, ptr %sb, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.452)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result15, ptr %local_page, ptr @.str.456)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %sret.result15)
   %sb16 = load ptr, ptr %sb, align 8
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result17, ptr %local_page, ptr %sret.result)
@@ -100679,17 +103900,17 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.574)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.578)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.575)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.579)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.576)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.580)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -100699,7 +103920,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.577)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.581)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %3)
   %eq = icmp eq i64 %call, 0
@@ -100707,7 +103928,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %sb13 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.578 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.582 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb13, ptr %arg.tmp)
   br label %if.end
 
@@ -100769,17 +103990,17 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 123)
   %sb2 = load ptr, ptr %sb, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.579)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr @.str.583)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb3 = load ptr, ptr %sb, align 8
   %sret.result4 = alloca { ptr }, align 8
-  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.580)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result4, ptr %local_page, ptr @.str.584)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 44)
   %sb6 = load ptr, ptr %sb, align 8
   %sret.result7 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.581)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result7, ptr %local_page, ptr @.str.585)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result7)
   %sb8 = load ptr, ptr %sb, align 8
   %sret.result9 = alloca { ptr }, align 8
@@ -100789,7 +104010,7 @@ entry:
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 44)
   %sb11 = load ptr, ptr %sb, align 8
   %sret.result12 = alloca { ptr }, align 8
-  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.582)
+  call void @_ZN6server3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result12, ptr %local_page, ptr @.str.586)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %3)
   %eq = icmp eq i64 %call, 0
@@ -100797,7 +104018,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %sb13 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.583 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.587 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb13, ptr %arg.tmp)
   br label %if.end
 

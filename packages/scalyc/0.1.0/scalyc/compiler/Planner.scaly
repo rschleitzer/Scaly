@@ -7772,6 +7772,20 @@ define Planner
 
                         if is_struct_ctor
                         {
+                            ; A CROSS-PACKAGE struct constructed here (e.g. the
+                            ; dazzle package building an opensp MessageType) is
+                            ; never reached by the module walk that lays out
+                            ; in-package structs; lay it out on demand — the
+                            ; same treatment the is_variant_ctor branch below
+                            ; gives generic union ctors. Without it, map_type
+                            ; falls to the s114 { ptr } placeholder and the
+                            ; construction (plus every dependent statement)
+                            ; drops silently. ensure_member_layout recurses
+                            ; into by-value field types, so nested structs and
+                            ; union fields (MessageFragment, Severity)
+                            ; materialize too. No-op for in-package/planned/
+                            ; opaque-stdlib/generic concepts.
+                            this.ensure_layout_by_name(fn_name)
                             ; s81: ctor-call diversion. When find_initializer#
                             ; matches an init# overload (page_parameter set),
                             ; build a PlannedCall with C1 mangling and divert
@@ -13619,6 +13633,13 @@ define Planner
                         if tag >= 0
                         {
                             set matched: true
+                            ; A bare cross-package variant construction
+                            ; (`Severity.Error` as an argument) needs the
+                            ; union's layout planned or emit_variant_
+                            ; construction silently returns null and drops
+                            ; the enclosing expression (the 8158 ensure only
+                            ; covers the Union[T].Variant(x) CALL form).
+                            this.ensure_union_layout(lookup_type.name)
                             ; s173: parent = unwrapped lookup_type
                             ; (stage-0 Planner.cpp:5159).
                             result.add(PlannedMemberAccess(
