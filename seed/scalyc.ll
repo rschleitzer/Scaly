@@ -167907,6 +167907,7 @@ if.then381:                                       ; preds = %if.then374
   call void @_ZN7Planner9plan_typeEPN4scaly6memory4PageE4Type(ptr noalias sret(%_Z11PlannedType) %prop_type, ptr %1, ptr %2, ptr %deref.tmp161)
   %set.load384 = load %_Z11PlannedType, ptr %prop_type, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %return_ty, ptr align 1 %prop_type, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7Planner18ensure_type_layoutE11PlannedType(ptr %2, ptr %return_ty)
   br label %if.end382
 
 if.end382:                                        ; preds = %if.then381, %if.then374

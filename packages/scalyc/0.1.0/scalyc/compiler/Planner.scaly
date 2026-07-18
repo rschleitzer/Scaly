@@ -13612,6 +13612,17 @@ define Planner
                                 {
                                     let rt (*f.returns_)
                                     set return_ty: this.plan_type(rt)
+                                    ; A CROSS-PACKAGE method returning a struct
+                                    ; BY VALUE (dazzle calling opensp's
+                                    ; Notation.get_external_id → ExternalId) needs
+                                    ; the return type's layout registered in THIS
+                                    ; root, or the emitter sizes the sret buffer
+                                    ; from the { ptr } placeholder (8 bytes) and
+                                    ; the callee's real ~150-byte write smashes the
+                                    ; caller's stack. The callee's own package
+                                    ; ensured it at its decl (4474); a cross-package
+                                    ; caller must ensure it at the call site.
+                                    this.ensure_type_layout(return_ty)
                                 }
                                 ; s173: parent = unwrapped lookup_type
                                 ; (stage-0 Planner.cpp:5142).
