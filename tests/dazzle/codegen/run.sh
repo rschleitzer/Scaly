@@ -53,6 +53,12 @@ run_case codegen/scaly.dsl scaly.sgm \
   packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly \
   packages/scalyc/0.1.0/scalyc/compiler/parser.scaly \
   packages/scalyls/0.1.0/scalyls/grammar.scaly || fail=1
+run_case codegen/test-expressions.dsl tests/expressions.sgm \
+  docs/scaly/generated-expressions.xml tests/selfhosted/expressions__*.scaly || fail=1
+run_case codegen/test-definitions.dsl tests/definitions.sgm \
+  docs/scaly/generated-definitions.xml tests/selfhosted/definitions__*.scaly || fail=1
+run_case codegen/test-controlflow.dsl tests/controlflow.sgm \
+  docs/scaly/generated-controlflow.xml tests/selfhosted/controlflow__*.scaly || fail=1
 
 if [ "$fail" -ne 0 ]; then exit 1; fi
 echo "dazzle-codegen: PASS"
