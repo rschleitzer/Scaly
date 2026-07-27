@@ -1,5 +1,17 @@
 use scaly.memory.runtime
 
+; Small-array policy: an Array's first buffers are bump-hosted on the region
+; page (header + data via Vector[T]^own_page) and grow by doubling; only past
+; 0x400 data bytes does a buffer move to its own exclusive page (the
+; historical behavior — an exclusive 4-KB page per non-empty Array made
+; small-array-heavy code pay ~4 KB per element). An abandoned small buffer is
+; region garbage: it was never an exclusive page, so there is nothing to
+; release. The class of a live buffer is DERIVED from its capacity
+; (capacity * sizeof T <= 0x400  ⇔  bump-hosted) — every allocation site
+; below must stay consistent with that predicate. The thresholds appear as
+; LITERALS (0x20 start / 0x400 max) in the generic bodies: module-level
+; defines do not resolve inside bodies monomorphized into other packages.
+
 define ArrayIterator[T]
 (
     array: pointer[Array[T]]
@@ -41,8 +53,17 @@ define Array[T]
     {
         set length: 0
         set vector: null
-        let exclusive_page (*Page.get(this as pointer[void])).allocate_exclusive_page()
-        set vector: Vector[T]^exclusive_page(size)
+        if size > 0
+        {
+            let own_page Page.get(this as pointer[void])
+            if size * sizeof T <= (0x400 as size_t)
+                set vector: Vector[T]^own_page(size)
+            else
+            {
+                let exclusive_page own_page.allocate_exclusive_page()
+                set vector: Vector[T]^exclusive_page(size)
+            }
+        }
     }
 
     function get_buffer(this: Array[T]) returns pointer[T]
@@ -90,20 +111,35 @@ define Array[T]
 
         if new_length > vector.length
         {
-            ; Manual grow when one reallocate() doubling wasn't enough.
-            ; Allocate for new_length items, copy the live `length`
-            ; items (NOT capacity), and record new_length as the new
-            ; capacity.
-            var own_page Page.get(this as pointer[void])
-            let data own_page.allocate(new_length * size, alignof T) as pointer[T]
-            let bytes_to_copy length * size
-            if length > 0
-                memcpy(data, vector.data, bytes_to_copy)
-
-            let old_exclusive_page Page.get(vector.data as pointer[void])
-            own_page.deallocate_exclusive_page old_exclusive_page
-            set vector.data: data
-            set vector.length: new_length
+            ; Manual grow when one reallocate() doubling wasn't enough:
+            ; a whole new vector for new_length items under the same
+            ; small/exclusive policy as reallocate (the old buffer's
+            ; class derives from its capacity; a small one is abandoned
+            ; to the region). NB `^page` constructions take LET-bound
+            ; page names — a var binding mis-places the construction.
+            let own_page Page.get(this as pointer[void])
+            let old_vector vector
+            let old_small (vector.length * size) <= (0x400 as size_t)
+            if new_length * size <= (0x400 as size_t)
+            {
+                let new_vector Vector[T]^own_page(new_length)
+                if length > 0
+                    memcpy(new_vector.data, vector.data, length * size)
+                set vector: new_vector
+            }
+            else
+            {
+                let new_exclusive_page own_page.allocate_exclusive_page()
+                let new_vector Vector[T]^new_exclusive_page(new_length)
+                if length > 0
+                    memcpy(new_vector.data, vector.data, length * size)
+                set vector: new_vector
+            }
+            if old_small = false
+            {
+                let old_exclusive_page Page.get(old_vector as pointer[void])
+                own_page.deallocate_exclusive_page old_exclusive_page
+            }
         }
 
         if items.length > 0
@@ -151,24 +187,46 @@ define Array[T]
     {
         let own_page Page.get(this as pointer[void])
         let size sizeof T
-        var length: size_t 0
         if vector = null
         {
+            ; first buffer: small and bump-hosted (see the policy note above)
+            var capacity (0x20 as size_t) / size
+            if capacity < (1 as size_t)
+                set capacity: 1
+            if capacity * size <= (0x400 as size_t)
+            {
+                set vector: Vector[T]^own_page(capacity)
+                return
+            }
             let exclusive_page own_page.allocate_exclusive_page()
-            let capacity exclusive_page.get_capacity(alignof T) - sizeof Vector[T]
-            set length: capacity / size
-            set vector: Vector[T]^exclusive_page(length)
+            let page_room exclusive_page.get_capacity(alignof T) - sizeof Vector[T]
+            set vector: Vector[T]^exclusive_page(page_room / size)
+            return
         }
-        else
+        let old_small (vector.length * size) <= (0x400 as size_t)
+        var new_capacity vector.length * 2
+        if new_capacity * size <= (0x400 as size_t)
         {
-            set length: vector.length * 2
-            let new_exclusive_page own_page.allocate_exclusive_page()
-            let new_vector Vector[T]^new_exclusive_page(length)
-            let bytes_to_copy vector.length * size
-            memcpy(new_vector.data, vector.data, bytes_to_copy)
+            ; still small: a fresh bump-hosted buffer; the old one is
+            ; abandoned to the region (never an exclusive page).
+            let new_vector Vector[T]^own_page(new_capacity)
+            memcpy(new_vector.data, vector.data, vector.length * size)
+            set vector: new_vector
+            return
+        }
+        ; big destination: an exclusive page — never carrying less than a
+        ; full page's worth (the small→big crossing jumps to page capacity).
+        let new_exclusive_page own_page.allocate_exclusive_page()
+        let page_room new_exclusive_page.get_capacity(alignof T) - sizeof Vector[T]
+        if new_capacity < page_room / size
+            set new_capacity: page_room / size
+        let new_vector Vector[T]^new_exclusive_page(new_capacity)
+        memcpy(new_vector.data, vector.data, vector.length * size)
+        if old_small = false
+        {
             let old_exclusive_page Page.get(vector as pointer[void])
             own_page.deallocate_exclusive_page old_exclusive_page
-            set vector: new_vector
         }
+        set vector: new_vector
     }
 }    
