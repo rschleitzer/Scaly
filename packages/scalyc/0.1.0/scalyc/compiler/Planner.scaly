@@ -6613,6 +6613,16 @@ define Planner
                                 set sc_is_value: true
                             when st: PlannedTuple
                                 set sc_is_value: true
+                            when sg: GlobalRef
+                                ; A module global is a value receiver: a const
+                                ; ARRAY global's reference decays to pointer[T]
+                                ; (plan_type_operand), so `TBL[i]` must fuse to
+                                ; the same `*(TBL + i)` the explicit idiom
+                                ; emits. Without this arm the pair fell through
+                                ; to the binary machinery, which dropped the
+                                ; Matrix silently (raw array ADDRESS passed as
+                                ; method arg / whole binding dropped).
+                                set sc_is_value: true
                             when sty: PlannedType
                             {
                                 ; A bare name that resolves to a LOCAL is a
@@ -6671,6 +6681,11 @@ define Planner
                                 when sc2: PlannedCall
                                     set base_is_value: true
                                 when st2: PlannedTuple
+                                    set base_is_value: true
+                                when sg2: GlobalRef
+                                    ; Module-global receiver (see the detection
+                                    ; arm above) — recv_holder already carries
+                                    ; the planned GlobalRef operand.
                                     set base_is_value: true
                                 when sty2: PlannedType
                                 {
@@ -18734,6 +18749,22 @@ define Planner
                         if trt_is_charlike
                             if this.operand_is_string_constant(planned_source_collapsed)
                                 set planned_source_collapsed: this.fold_string_operand_to_char(planned_source_collapsed, trt)
+                        ; String literal as the IMPLICIT return of a
+                        ; pointer[const_char]-like returning function: wrap in
+                        ; PlannedAs (the argument-side coercion shape) so
+                        ; emit_as lowers to the .str global pointer instead of
+                        ; emitting null (mirrors the plan_return# cstr wrap).
+                        if Planner.type_is_cstr_pointer(trt)
+                            if this.operand_is_string_constant(planned_source_collapsed)
+                            {
+                                let tcast PlannedAs(planned_source_collapsed.loc, trt, &^this planned_source_collapsed)
+                                set planned_source_collapsed: PlannedOperand(
+                                    planned_source_collapsed.loc,
+                                    PlannedExpression.As tcast,
+                                    null,
+                                    trt
+                                )
+                            }
                         ; Float literal as the implicit return of a float-
                         ; returning function: retype to the declared width
                         ; (mirrors the plan_return# float retype).
@@ -22663,6 +22694,23 @@ define Planner
                 if rt_is_charlike
                     if this.operand_is_string_constant(planned_collapsed)
                         set planned_collapsed: this.fold_string_operand_to_char(planned_collapsed, rrt)
+                ; String literal in return position of a pointer[const_char]-
+                ; like returning function (`return " CE"`): wrap in PlannedAs
+                ; so emit_as lowers the constant to the plain .str global
+                ; pointer — the argument-side coerce_string_args_to_cstr
+                ; shape. Without the wrap the operand emitted null and every
+                ; such function returned `ret ptr null` (caller SIGSEGV).
+                if Planner.type_is_cstr_pointer(rrt)
+                    if this.operand_is_string_constant(planned_collapsed)
+                    {
+                        let rcast PlannedAs(planned_collapsed.loc, rrt, &^this planned_collapsed)
+                        set planned_collapsed: PlannedOperand(
+                            planned_collapsed.loc,
+                            PlannedExpression.As rcast,
+                            null,
+                            rrt
+                        )
+                    }
                 ; Float literal in return position of a float-returning
                 ; function: retype to the declared width (see the plan_
                 ; binding# float retype for the failure mode).

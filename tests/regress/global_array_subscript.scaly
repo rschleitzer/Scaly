@@ -1,0 +1,79 @@
+; Regression: SUBSCRIPT on a module-level const ARRAY global (S80
+; finding, fixed 2026-07-29). The subscript pre-pass did not recognize
+; a GlobalRef as a value receiver, so `TBL[i]` never fused to the
+; `*(TBL + i)` deref: as a method argument the raw array ADDRESS was
+; passed (silent wrong code — the S80 fcharset garbage), as a binding
+; init the whole statement dropped silently, and followed by a binary
+; operator the collapse died with exit 14 ("unknown binary operator").
+; Only the explicit `*(TBL + i)` idiom read correctly. The fix adds
+; GlobalRef arms to the pre-pass detection and fuse loops; the const
+; array's decayed pointer[T] result type then takes the existing
+; pointer-subscript desugar. Expected: PASS
+
+define TBL: int[] [3, 5, 11, 23]
+
+define Box
+(
+    total: int
+)
+{
+    init() { set total: 0 }
+
+    procedure add_val(this: pointer[Box], v: int)
+    {
+        set this.total: this.total + v
+    }
+}
+
+define nums
+{
+
+define NTBL: size_t[] [7, 9]
+
+function pick(i: int) returns size_t
+    NTBL[i]
+
+}
+
+function take(v: int) returns int
+    v
+
+function check() returns int
+{
+    var i: int 2
+    ; constant index, let-bound
+    let a TBL[2]
+    if a <> 11
+        return 1
+    ; computed index, let-bound
+    let b TBL[i]
+    if b <> 11
+        return 2
+    ; free-function argument
+    if take(TBL[3]) <> 23
+        return 3
+    ; concept-method argument (the S80 shape: this.raw_int(CODES[cs]))
+    let box Box()
+    box.add_val(TBL[i])
+    if box.total <> 11
+        return 4
+    ; followed by a binary operator (used to exit 14)
+    let c TBL[i] + 1
+    if c <> 12
+        return 5
+    ; compared directly
+    if TBL[i] <> 11
+        return 6
+    ; namespace-internal table read via subscript
+    if nums.pick(1) <> 9
+        return 7
+    ; parity with the explicit idiom
+    if TBL[i] <> *(TBL + i)
+        return 8
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")
