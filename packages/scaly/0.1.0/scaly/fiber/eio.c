@@ -552,3 +552,30 @@ long scaly_eio_now_ns(void)
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ts.tv_sec * 1000000000L + ts.tv_nsec;
 }
+
+/* Filesystem block size of a file — OpenSP's
+ * PosixBaseStorageObject::getBlockSize (SP_STAT_BLKSIZE): st_blksize for
+ * regular files, the 8192 default otherwise. The parser's read-block
+ * boundary replication (data-token splits observable through the DSSSL
+ * grove) needs the exact per-file value. Shim rule (a): struct stat's
+ * layout is OS-specific. */
+#include <sys/stat.h>
+long scaly_eio_blksize_path(const char *path)
+{
+    struct stat sb;
+    if (stat(path, &sb) < 0)
+        return 8192;
+    if (!S_ISREG(sb.st_mode))
+        return 8192;
+    return (long)sb.st_blksize;
+}
+
+long scaly_eio_blksize_fd(int fd)
+{
+    struct stat sb;
+    if (fstat(fd, &sb) < 0)
+        return 8192;
+    if (!S_ISREG(sb.st_mode))
+        return 8192;
+    return (long)sb.st_blksize;
+}
