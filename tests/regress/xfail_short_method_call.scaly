@@ -1,0 +1,30 @@
+; xfail: wrong number of arguments for Sink.emit: got 0, expected 1
+;
+; A method call that passes FEWER arguments than the method declares must be
+; a hard planner diagnostic. It used to plan clean: lookup_method# only
+; consults method_params_match# (the one place that compares argument COUNT)
+; when a receiver has SEVERAL same-named methods; a single by-name candidate
+; was taken unconditionally. The emitter then builds the call type from the
+; argument VALUES, so llc accepted it too, and the callee read whatever the
+; ABI register still held.
+;
+; That is not a theoretical hole. dazzle's FotSink called
+; TeXFOTBuilder.start_line_field() one argument short and produced CORRECT
+; output at -O0 — the caller's own `nic` happened to still sit in x1 — then
+; silently dropped a line-field break priority once `opt -O2` reallocated the
+; register (2026-08-01). tools/arity-audit.py catches the same class in
+; already-emitted IR; this catches it at plan time.
+
+define Sink()
+{
+    function emit(this: pointer[Sink], value: int) returns int
+    {
+        value
+    }
+}
+
+function main() returns int
+{
+    var s Sink()
+    return s.emit()
+}

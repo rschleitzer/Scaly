@@ -12445,6 +12445,88 @@ define Planner
                 return null
             let f (*f_ptr)
 
+            ; ── Arity gate (2026-08-01). Everything above selects an overload
+            ; only when `candidates.length > 1`; a SINGLE by-name candidate is
+            ; taken unconditionally, and method_params_match# — the one place
+            ; that compares argument COUNT — never runs. A short call therefore
+            ; planned clean, and the emitter builds the call type from the
+            ; argument VALUES, so llc never objects either: the callee simply
+            ; read an undefined ABI register. Found via FotSink calling
+            ; TeXFOTBuilder.start_line_field() one argument short — correct at
+            ; -O0 because the caller's own `nic` still happened to sit in x1,
+            ; garbage once `opt` reallocated the register (tools/arity-audit.py
+            ; detects the same class in emitted IR). Same convention as
+            ; method_params_match#/check_function_match#: a leading `this` is
+            ; the receiver, not an argument.
+            ;
+            ; ★Only a `this`-method can be checked EXACTLY. lookup_method#
+            ; serves two call shapes it cannot tell apart once it is here:
+            ;   `Page.get(p)`       qualified static — nothing is prepended
+            ;   `old.is_equal(gid)` this-LESS static reached through a VALUE
+            ;                       receiver, which fills its first parameter
+            ;                       (verified in the emitted IR)
+            ; So for a this-less member both counts are legitimate; flag only
+            ; what is neither. The exact arm still covers the bug this gate was
+            ; built for — start_line_field declares `this`.
+            var arity_has_this: bool false
+            if f.input.length > 0
+            {
+                let arity_first f.input.get 0
+                if arity_first <> null
+                    if arity_first.name <> null
+                        if (*arity_first.name) = "this"
+                            set arity_has_this: true
+            }
+            var arity_bad: bool false
+            var arity_expected f.input.length
+            if arity_has_this
+            {
+                set arity_expected: f.input.length - 1
+                if arity_expected <> arg_types.length
+                    set arity_bad: true
+            }
+            else
+            {
+                var arity_ok: bool false
+                if f.input.length = arg_types.length
+                    set arity_ok: true
+                if f.input.length > 0
+                    if f.input.length - 1 = arg_types.length
+                        set arity_ok: true
+                if arity_ok = false
+                    set arity_bad: true
+            }
+            ; KNOWN WART: the anchor is `struct_type.loc` — the RECEIVER TYPE's
+            ; location, not the call's. lookup_method# is not handed a
+            ; call-site Span, and four of its seven callers sit inside
+            ; collapse_operand_sequence#, whose alloca pool is documented as
+            ; perturbable by edits there (see resolve_dotted_call#), so
+            ; widening the signature was not worth the emission risk for a
+            ; line number. The message names concept + method + both counts,
+            ; which is enough to find the call; the file is always right.
+            ;
+            ; Record and CONTINUE — do not `return null`. add_diagnostic is
+            ; fatal at the cli.scaly gate (planning finishes, then rc 4 before
+            ; any emission), so resolution can proceed exactly as it did
+            ; before this gate existed. Returning null instead makes the
+            ; caller fall through its remaining paths, which both buries the
+            ; precise message under a misleading "function not found: <m>" and
+            ; SIGSEGVs on the real dazzle tree — the resolution chain does not
+            ; expect a miss for a method it just found by name.
+            if arity_bad
+            {
+                var asb StringBuilder()
+                asb.append "wrong number of arguments for "
+                asb.append lookup_st.name
+                asb.append "."
+                asb.append method_name
+                asb.append ": got "
+                asb.append arg_types.length
+                asb.append ", expected "
+                asb.append arity_expected
+                this.add_diagnostic(struct_type.loc, asb.to_string())
+            }
+
             ; ── s188: lazy full instantiation of a HashSet-machinery generic
             ; concept reached via a method CALL rather than a type annotation.
             ; plan_type#'s instantiate_generic# only fires for generic types
