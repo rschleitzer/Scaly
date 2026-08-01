@@ -489,6 +489,52 @@ procedure scaly_release_root_page_full(p: pointer[Page])
 }
 
 ; --------------------------------------------------------------------------
+; Lazy region frames (2026-08-01)
+; --------------------------------------------------------------------------
+;
+; The emitter no longer opens a function's local region in the prologue. It
+; reserves a null-initialized SLOT in the frame and calls scaly_get_root_page
+; at each point where the region is actually demanded; the epilogue calls
+; scaly_release_root_page_slot, which is a no-op when nothing ever demanded
+; one. A frame that allocates nothing therefore costs a load and a compare
+; instead of a push/pop pair (~100 instructions — measured on the dazzle
+; DSSSL engine, tests/dazzle/PERFORMANCE.md, where 79 of 94 million frames
+; never saw a single allocation).
+;
+; STRICT LIFO IS PRESERVED. Every materialisation happens inside the frame
+; that owns the slot, and that frame releases before returning: a callee's
+; push/pop pair nests entirely inside the caller's not-yet-materialised
+; extent, so the push order still mirrors the call order. The slot is never
+; handed to a callee — a callee materialising its CALLER's page could push an
+; outer region on top of an inner one, which is exactly what the LIFO
+; assertion in scaly_release_root_page catches.
+;
+; Both are allocation-free (no $/#/for-in), like every function on the
+; allocator path: the emitter would otherwise recurse into them while
+; emitting them (see the module header).
+procedure scaly_get_root_page(slot: pointer[pointer[Page]]) returns pointer[Page]
+{
+    let p *slot
+    if p <> null
+        return p
+    let fresh Page.allocate_root_page()
+    set *slot: fresh
+    fresh
+}
+
+procedure scaly_release_root_page_slot(slot: pointer[pointer[Page]])
+{
+    let p *slot
+    if p = null
+        return
+    ; Clear before releasing: a slot in a frame that runs its epilogue twice
+    ; (throw path followed by the normal return on the same page) must not
+    ; release the same root slot twice — that would trip the LIFO assertion.
+    set *slot: null as pointer[Page]
+    scaly_release_root_page_full p
+}
+
+; --------------------------------------------------------------------------
 ; SCALY_TRACE_ROOT diagnostic: per-function push/pop counters. Off by
 ; default; armed on the first push/pop if $SCALY_TRACE_ROOT is set at
 ; that moment. The atexit dump reports any function whose push/pop

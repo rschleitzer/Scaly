@@ -176,6 +176,9 @@ function LLVMGetInsertBlock(builder: LLVMBuilderRef) returns LLVMBasicBlockRef e
 
 ; Get the first instruction in a basic block
 function LLVMGetFirstInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
+; The instruction after `inst` in its block (null at the end). Lazy frames use
+; it to pin an entry-block materialisation AFTER the slot's initialising store.
+function LLVMGetNextInstruction(inst: LLVMValueRef) returns LLVMValueRef extern
 function LLVMGetLastInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
 
 ; Cast a value to an instruction (returns null if not an instruction)

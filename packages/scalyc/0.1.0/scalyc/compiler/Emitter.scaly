@@ -223,13 +223,31 @@ define Emitter
     current_function: LLVMValueRef
     current_block: LLVMBasicBlockRef
     current_function_can_throw: bool
-    ; s196: the current function's lazily-allocated root page for transient
-    ; #/$/for allocations in a non-rp function. Mirrors stage-0's
+    ; s196: the current function's local root page for transient #/$/for
+    ; allocations in a non-rp function. Mirrors stage-0's
     ; CurrentRegion.LocalPage but kept SEPARATE from current_region.local_page
     ; (which stays a never-set null read only by emit_action's rp fallback).
-    ; Allocated once at entry-block start by get_or_create_local_page and
-    ; released (scaly_release_root_page) on every function exit path.
+    ;
+    ; LAZY FRAMES (2026-08-01): what the entry block holds is no longer the
+    ; page but a null-initialised SLOT; the page itself is materialised by
+    ; scaly_get_root_page at each demand site and released through
+    ; scaly_release_root_page_slot on every exit path (a no-op when no demand
+    ; site ran). See get_or_create_local_page for the reasoning and the
+    ; strict-LIFO argument.
+    ;
+    ; function_local_page_slot: the alloca, created on first demand.
+    ; function_local_page / _block: the materialised value cached for ONE
+    ;   basic block, so several demands in one block share a single call.
+    function_local_page_slot: LLVMValueRef
     function_local_page: LLVMValueRef
+    function_local_page_block: LLVMBasicBlockRef
+    ; The `store null` that initialises the slot — the anchor the pinned
+    ; materialisation below must be inserted AFTER (see LAZY_PAGE_MAX_SITES).
+    function_local_page_init: LLVMValueRef
+    ; Demand sites emitted so far, and the one entry-block materialisation
+    ; that replaces them once the count runs away.
+    function_local_page_sites: int
+    function_local_page_pinned: LLVMValueRef
     ; Local variables: name -> LLVM value. Flat tables; per-scope
     ; visibility maintained by scope_marks below.
     local_var_names: ref[Array[String]]?
@@ -339,7 +357,12 @@ define Emitter
         set current_function: LLVMValueRef(null)
         set current_block: LLVMBasicBlockRef(null)
         set current_function_can_throw: false
+        set function_local_page_slot: LLVMValueRef(null)
         set function_local_page: LLVMValueRef(null)
+        set function_local_page_block: LLVMBasicBlockRef(null)
+        set function_local_page_init: LLVMValueRef(null)
+        set function_local_page_sites: 0
+        set function_local_page_pinned: LLVMValueRef(null)
         set local_var_names: Array[String]^this()
         set local_var_values: Array[LLVMValueRef]^this()
         set scope_marks: Array[size_t]^this()
@@ -1164,6 +1187,48 @@ define Emitter
         rel_fn
     }
 
+    ; Look up or declare scaly_get_root_page(ptr slot) -> ptr — the lazy
+    ; materialiser (root_pages.scaly): returns the slot's page, allocating
+    ; and storing one on the first demand.
+    function get_get_root_page_fn(this) returns LLVMValueRef
+    {
+        var fn lookup_function_cache("_Z19scaly_get_root_pagePP4Page")
+        if fn.handle = null
+            set fn: LLVMGetNamedFunction(llvm_module, "_Z19scaly_get_root_pagePP4Page")
+        if fn.handle = null
+        {
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var ptys Vector[LLVMTypeRef](1)
+            ptys.put(0, ptr_ty)
+            let fty LLVMFunctionType(ptr_ty, ptys.data, 1, 0)
+            set fn: LLVMAddFunction(llvm_module, "_Z19scaly_get_root_pagePP4Page", fty)
+            LLVMSetLinkage(fn, LLVMLinkage.External())
+            cache_function("_Z19scaly_get_root_pagePP4Page", fn)
+        }
+        fn
+    }
+
+    ; Look up or declare scaly_release_root_page_slot(ptr slot) -> void — the
+    ; epilogue counterpart, a no-op on a slot no demand site ever filled.
+    function get_release_root_page_slot_fn(this) returns LLVMValueRef
+    {
+        var fn lookup_function_cache("_Z28scaly_release_root_page_slotPP4Page")
+        if fn.handle = null
+            set fn: LLVMGetNamedFunction(llvm_module, "_Z28scaly_release_root_page_slotPP4Page")
+        if fn.handle = null
+        {
+            let void_ty LLVMVoidTypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var ptys Vector[LLVMTypeRef](1)
+            ptys.put(0, ptr_ty)
+            let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+            set fn: LLVMAddFunction(llvm_module, "_Z28scaly_release_root_page_slotPP4Page", fty)
+            LLVMSetLinkage(fn, LLVMLinkage.External())
+            cache_function("_Z28scaly_release_root_page_slotPP4Page", fn)
+        }
+        fn
+    }
+
     ; Resolve the page for a `^name` reference lifetime: the named local
     ; variable's value, wrapped in Page.get(...) when the name is `this`
     ; (the receiver is an object pointer, not a pointer[Page]). Returns null
@@ -1290,50 +1355,141 @@ define Emitter
         page_val
     }
 
-    ; Return this function's local root page, allocating it once (at the
-    ; start of the entry block, so it dominates every use and every return)
-    ; on first demand. Mirrors stage-0's getOrCreateLocalPage.
+    ; Return this function's local root page AT THE CURRENT BUILDER POSITION.
+    ;
+    ; LAZY FRAMES (2026-08-01). Until this change the page was allocated once
+    ; at entry-block start, so every call of a function that merely MIGHT need
+    ; a region paid a push/pop pair — measured on the dazzle DSSSL engine
+    ; (tests/dazzle/PERFORMANCE.md): 94 million frames for one 977 KB
+    ; document, 79 million of which never saw a single allocation, at ~100
+    ; instructions each. What the entry block gets now is a null-initialised
+    ; SLOT; the page is materialised by scaly_get_root_page at the demand site
+    ; and released through scaly_release_root_page_slot on every exit. A path
+    ; that never reaches a demand site costs a load and a compare.
+    ;
+    ; ★The materialisation is a plain CALL, not an inline null-check, on
+    ; purpose: this runs in the middle of expression emission (emit_call,
+    ; emit_constructor_call, emit_for), where splitting the current block
+    ; would invalidate every insert block those walkers captured before
+    ; asking for a page. The runtime helper is small enough that opt/LTO
+    ; inlines it and SROA then promotes the slot to a phi, which is where the
+    ; redundant checks disappear; an -O0 build keeps one call per demand.
+    ;
+    ; ★Strict LIFO is preserved because the slot NEVER leaves its frame: every
+    ; materialisation happens in the function that owns the slot, and that
+    ; function releases before returning, so a callee's push/pop pair still
+    ; nests inside the caller's extent. Handing the slot to a callee (so it
+    ; could materialise the CALLER's page on demand — the fix for a page that
+    ; is only ever passed on) would let an outer region be pushed on top of an
+    ; inner one; that needs a parent-linked frame chain, not this change.
     function get_or_create_local_page(this) returns LLVMValueRef
     {
-        if function_local_page.handle <> null
-            return function_local_page
         if current_function.handle = null
             return LLVMValueRef null
         let entry_block LLVMGetFirstBasicBlock(current_function)
         if entry_block.handle = null
             return LLVMValueRef null
 
-        let alloc_fn get_alloc_root_page_fn()
-        let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
-        let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+        ; Past the site cap this function materialises ONCE, in the entry
+        ; block, and every later demand reuses that value — see the
+        ; LAZY_PAGE_MAX_SITES note below.
+        if function_local_page_pinned.handle <> null
+            return function_local_page_pinned
 
-        ; Insert at entry-block start (mirror entry_alloca's placement).
-        let saved_block LLVMGetInsertBlock(builder)
-        let first_instr LLVMGetFirstInstruction(entry_block)
-        if first_instr.handle <> null
-            LLVMPositionBuilderBefore(builder, first_instr)
-        if first_instr.handle = null
-            LLVMPositionBuilderAtEnd(builder, entry_block)
-        set function_local_page: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
-        if saved_block.handle <> null
-            LLVMPositionBuilderAtEnd(builder, saved_block)
+        let cur_block LLVMGetInsertBlock(builder)
 
-        ; Patch returns emitted before this allocation (early-return guards).
-        patch_prior_returns function_local_page
+        ; Reuse the page already materialised in THIS block. The terminator
+        ; test keeps the cache honest: it holds only while the block is still
+        ; being appended to, never when the builder was repositioned INTO a
+        ; finished block (patch_prior_returns, entry_alloca), where the cached
+        ; call would not yet dominate the insert point.
+        if function_local_page.handle <> null
+            if cur_block.handle = function_local_page_block.handle
+                if LLVMGetBasicBlockTerminator(cur_block).handle = null
+                    return function_local_page
+
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+
+        ; First demand in this function: reserve the slot at entry-block
+        ; start (where it dominates every demand site and every exit) and
+        ; null it, then give the returns emitted before this point their
+        ; release call.
+        if function_local_page_slot.handle = null
+        {
+            let saved_block LLVMGetInsertBlock(builder)
+            let first_instr LLVMGetFirstInstruction(entry_block)
+            if first_instr.handle <> null
+                LLVMPositionBuilderBefore(builder, first_instr)
+            if first_instr.handle = null
+                LLVMPositionBuilderAtEnd(builder, entry_block)
+            set function_local_page_slot: LLVMBuildAlloca(builder, ptr_ty, "local_page_slot")
+            set function_local_page_init: LLVMBuildStore(builder, LLVMConstNull(ptr_ty), function_local_page_slot)
+            if saved_block.handle <> null
+                LLVMPositionBuilderAtEnd(builder, saved_block)
+
+            patch_prior_returns function_local_page_slot
+        }
+
+        let get_fn get_get_root_page_fn()
+        var gtys Vector[LLVMTypeRef](1)
+        gtys.put(0, ptr_ty)
+        let get_fty LLVMFunctionType(ptr_ty, gtys.data, 1, 0)
+        var gargs Vector[LLVMValueRef](1)
+        gargs.put(0, function_local_page_slot)
+
+        ; ★LAZY_PAGE_MAX_SITES — why the laziness is CAPPED at 8 demand sites.
+        ; A demand site is a call, and a call is a barrier for the register
+        ; allocator: every value live across it that cannot stay in a
+        ; callee-saved register gets a spill slot. Measured on an optimised
+        ; build that costs +8 bytes of frame per site (40-site synthetic),
+        ; which is nothing — but the compiler's own walkers hold BIG
+        ; aggregates by value (see the copy_struct_value note on
+        ; spill-dominated frames), and an unbounded number of barriers
+        ; through one of those is a cost with no upside: a function with
+        ; dozens of demand sites opens a region on nearly every path anyway.
+        ;
+        ; Past the cap the function materialises ONCE at entry-block start,
+        ; exactly like the eager version did, and every later demand reuses
+        ; that value. Mixing is sound because scaly_get_root_page is
+        ; idempotent — the sites already emitted simply find the slot filled.
+        ; The functions that hit the cap are big ones that would open a
+        ; region on nearly every path anyway; the win lives in the small hot
+        ; leaves (getters, matchers), which have one or two sites.
+        set function_local_page_sites: function_local_page_sites + 1
+        if function_local_page_sites > 8
+        {
+            let saved2 LLVMGetInsertBlock(builder)
+            ; AFTER the initialising store, never before it: the pinned call
+            ; reads the slot.
+            let after LLVMGetNextInstruction(function_local_page_init)
+            if after.handle <> null
+                LLVMPositionBuilderBefore(builder, after)
+            if after.handle = null
+                LLVMPositionBuilderAtEnd(builder, entry_block)
+            set function_local_page_pinned: LLVMBuildCall2(builder, get_fty, get_fn, gargs.data, 1, "local_page")
+            if saved2.handle <> null
+                LLVMPositionBuilderAtEnd(builder, saved2)
+            return function_local_page_pinned
+        }
+
+        set function_local_page: LLVMBuildCall2(builder, get_fty, get_fn, gargs.data, 1, "local_page")
+        set function_local_page_block: cur_block
         function_local_page
     }
 
-    ; Release the local page before every return already emitted into the
-    ; current function (before the lazy allocation above). Those paths
-    ; reached the return WITHOUT touching the page, so it is fresh and a
-    ; bare scaly_release_root_page is correct — no deallocate_extensions
-    ; (which would otherwise risk self-recursion when the scaly package's
-    ; own deallocate_extensions is compiled).
-    procedure patch_prior_returns(this, page: LLVMValueRef)
+    ; Give the returns already emitted into the current function (before the
+    ; slot existed) their release call.
+    ;
+    ; ★These paths are NOT necessarily page-free at runtime, which is why the
+    ; call is the slot-releasing, null-tolerant one rather than the bare
+    ; scaly_release_root_page the eager version could use here: a return
+    ; inside a LOOP body is emitted before a demand site further down, yet the
+    ; second iteration reaches it with the page long since materialised.
+    procedure patch_prior_returns(this, slot: LLVMValueRef)
     {
-        if page.handle = null
+        if slot.handle = null
             return
-        let rel_fn get_release_root_page_fn()
+        let rel_fn get_release_root_page_slot_fn()
         let void_ty LLVMVoidTypeInContext(context)
         let ptr_ty LLVMPointerTypeInContext(context, 0)
         var ptys Vector[LLVMTypeRef](1)
@@ -1352,7 +1508,7 @@ define Emitter
                 {
                     LLVMPositionBuilderBefore(builder, term)
                     var args Vector[LLVMValueRef](1)
-                    args.put(0, page)
+                    args.put(0, slot)
                     LLVMBuildCall2(builder, rel_fty, rel_fn, args.data, 1, "")
                 }
             }
@@ -1404,21 +1560,24 @@ define Emitter
     ; (Emitter.cpp CleanupLocalPage) — same runtime behaviour either way.
     procedure emit_release_local_page(this)
     {
-        ; Nothing to release when this function never allocated a local page.
+        ; Nothing to release when this function never reserved a page slot.
         ; (Scaly `if cond STMT` runs STMT when cond is TRUE, so this
-        ; returns exactly when the page IS null.)
-        if function_local_page.handle = null
+        ; returns exactly when the slot IS null.)
+        if function_local_page_slot.handle = null
             return
-        let page function_local_page
+        let slot function_local_page_slot
         let ptr_ty LLVMPointerTypeInContext(context, 0)
         let void_ty LLVMVoidTypeInContext(context)
 
-        let rel_fn get_release_root_page_full_fn()
+        ; The slot form, not the page: on an exit reached without passing a
+        ; demand site there is no page value at all, and the helper's null
+        ; test is what makes such a frame free.
+        let rel_fn get_release_root_page_slot_fn()
         var r_ptys Vector[LLVMTypeRef](1)
         r_ptys.put(0, ptr_ty)
         let r_fty LLVMFunctionType(void_ty, r_ptys.data, 1, 0)
         var r_args Vector[LLVMValueRef](1)
-        r_args.put(0, page)
+        r_args.put(0, slot)
         LLVMBuildCall2(builder, r_fty, rel_fn, r_args.data, 1, "")
     }
 
@@ -1476,9 +1635,10 @@ define Emitter
     ; 1.34 s → 1.15 s CPU, output byte-identical.
     procedure elide_unused_pages(this)
     {
-        let alloc_fn LLVMGetNamedFunction(llvm_module, "_ZN4Page18allocate_root_pageEv")
-        if alloc_fn.handle = null
-            return
+        ; ★No early return on the allocator symbol: since lazy frames
+        ; (2026-08-01) an emitted body names scaly_get_root_page, not
+        ; Page.allocate_root_page, so keying the whole pass on the latter
+        ; would silently switch step 1 off in every module but the runtime's.
 
         ; --- 1a. SNAPSHOT which functions never read their caller page ----
         ; Driven off the function cache, not LLVMGetFirstFunction: the cache
@@ -1545,15 +1705,24 @@ define Emitter
             set cj: cj + 1
         }
 
-        ; --- 2. erase every local page nothing allocates on ---------------
-        let rel_fn LLVMGetNamedFunction(llvm_module, "_Z23scaly_release_root_pageP4Page")
-        let rel_full LLVMGetNamedFunction(llvm_module, "_Z28scaly_release_root_page_fullP4Page")
+        ; --- 2. erase every demand site nothing allocates on ---------------
+        ;
+        ; With lazy frames a demand site is `call scaly_get_root_page(slot)`,
+        ; and the teardown takes the SLOT, not the page — so a page nothing
+        ; uses is simply a get call whose RESULT has no uses left once step 1b
+        ; has nulled the arguments that were its only consumers. Erasing it
+        ; leaves the slot null forever, which makes the release a no-op; the
+        ; slot itself is cleaned up below so an -O0 build carries nothing.
+        let get_fn LLVMGetNamedFunction(llvm_module, "_Z19scaly_get_root_pagePP4Page")
+        if get_fn.handle = null
+            return
+        let rel_slot LLVMGetNamedFunction(llvm_module, "_Z28scaly_release_root_page_slotPP4Page")
 
-        ; Collect the allocation sites FIRST: erasing rewrites the use list
-        ; that is being walked.
+        ; Collect the demand sites FIRST: erasing rewrites the use list that
+        ; is being walked.
         var sites Array[LLVMValueRef]()
-        let alloc_handle alloc_fn.handle
-        var u LLVMGetFirstUse(alloc_fn)
+        let get_handle get_fn.handle
+        var u LLVMGetFirstUse(get_fn)
         while u.handle <> null
         {
             let user LLVMGetUser(u)
@@ -1561,12 +1730,14 @@ define Emitter
             if is_call.handle <> null
             {
                 let callee LLVMGetCalledValue(user)
-                if callee.handle = alloc_handle
+                if callee.handle = get_handle
                     sites.add user
             }
             set u: LLVMGetNextUse(u)
         }
 
+        ; Slots whose demand sites all went away — candidates for step 2b.
+        var slots Array[LLVMValueRef]()
         var i: size_t 0
         while i < sites.length
         {
@@ -1574,50 +1745,81 @@ define Emitter
             if site_ptr <> null
             {
                 let site (*site_ptr)
-                var teardowns Array[LLVMValueRef]()
-                var only_teardown true
-                var uu LLVMGetFirstUse(site)
-                while uu.handle <> null
+                if LLVMGetFirstUse(site).handle = null
                 {
-                    let usr LLVMGetUser(uu)
-                    var is_teardown false
-                    let uc LLVMIsACallInst(usr)
-                    if uc.handle <> null
-                    {
-                        let callee LLVMGetCalledValue(usr)
-                        let ch callee.handle
-                        let rh rel_fn.handle
-                        let fh rel_full.handle
-                        if rh <> null
-                            if ch = rh
-                                set is_teardown: true
-                        if fh <> null
-                            if ch = fh
-                                set is_teardown: true
-                    }
-                    if is_teardown
-                        teardowns.add usr
-                    if is_teardown = false
-                        set only_teardown: false
-                    set uu: LLVMGetNextUse(uu)
-                }
-                if only_teardown
-                {
-                    var t: size_t 0
-                    while t < teardowns.length
-                    {
-                        let tp teardowns.get t
-                        if tp <> null
-                        {
-                            let tv (*tp)
-                            LLVMInstructionEraseFromParent(tv)
-                        }
-                        set t: t + 1
-                    }
+                    let slot LLVMGetOperand(site, 0)
                     LLVMInstructionEraseFromParent(site)
+                    ; One entry per SLOT, not per site: a function with two
+                    ; demand sites on one slot would otherwise reach 2b twice
+                    ; and erase the same alloca a second time.
+                    if slot.handle <> null
+                    {
+                        var seen false
+                        var k: size_t 0
+                        while k < slots.length
+                        {
+                            let kp slots.get k
+                            if kp <> null
+                                if (*kp).handle = slot.handle
+                                    set seen: true
+                            set k: k + 1
+                        }
+                        if seen = false
+                            slots.add slot
+                    }
                 }
             }
             set i: i + 1
+        }
+
+        ; --- 2b. drop a slot no demand site fills any more -----------------
+        ; What may remain on it is its own `store null` and the release calls;
+        ; both are dead once no get call writes the slot. A slot that still
+        ; has a live demand site on another path keeps everything.
+        var s: size_t 0
+        while s < slots.length
+        {
+            let slot_ptr slots.get s
+            if slot_ptr <> null
+            {
+                let slot (*slot_ptr)
+                var dead_users Array[LLVMValueRef]()
+                var all_dead true
+                var su LLVMGetFirstUse(slot)
+                while su.handle <> null
+                {
+                    let usr LLVMGetUser(su)
+                    var is_dead false
+                    if LLVMIsAStoreInst(usr).handle <> null
+                        set is_dead: true
+                    let uc LLVMIsACallInst(usr)
+                    if uc.handle <> null
+                        if rel_slot.handle <> null
+                            if LLVMGetCalledValue(usr).handle = rel_slot.handle
+                                set is_dead: true
+                    if is_dead
+                        dead_users.add usr
+                    if is_dead = false
+                        set all_dead: false
+                    set su: LLVMGetNextUse(su)
+                }
+                if all_dead
+                {
+                    var d: size_t 0
+                    while d < dead_users.length
+                    {
+                        let dp dead_users.get d
+                        if dp <> null
+                        {
+                            let dv (*dp)
+                            LLVMInstructionEraseFromParent(dv)
+                        }
+                        set d: d + 1
+                    }
+                    LLVMInstructionEraseFromParent(slot)
+                }
+            }
+            set s: s + 1
         }
     }
 
@@ -3832,9 +4034,15 @@ define Emitter
         if llvm_func.handle = null
             return false
 
-        ; s196: a fresh function starts with no local root page; it is
-        ; allocated lazily by get_or_create_local_page and released on exit.
+        ; s196: a fresh function starts with no local root page; its slot is
+        ; reserved lazily by get_or_create_local_page, the page itself is
+        ; materialised at the demand site and released on every exit.
+        set function_local_page_slot: LLVMValueRef(null)
         set function_local_page: LLVMValueRef(null)
+        set function_local_page_block: LLVMBasicBlockRef(null)
+        set function_local_page_init: LLVMValueRef(null)
+        set function_local_page_sites: 0
+        set function_local_page_pinned: LLVMValueRef(null)
 
         ; 4.4: the promotion classifier keys its foundation-containment
         ; rule on the owning source file.
@@ -4581,7 +4789,12 @@ define Emitter
                     set current_function: new_main
                     reset_temp_pool()
                     ; s196: synthetic main starts with no local root page.
+                    set function_local_page_slot: LLVMValueRef(null)
                     set function_local_page: LLVMValueRef(null)
+                    set function_local_page_block: LLVMBasicBlockRef(null)
+                    set function_local_page_init: LLVMValueRef(null)
+                    set function_local_page_sites: 0
+                    set function_local_page_pinned: LLVMValueRef(null)
 
                     let entry_name "entry"
                     let entry_block LLVMAppendBasicBlockInContext(context, new_main, entry_name.c_data())
@@ -12680,6 +12893,11 @@ define Emitter
         let saved_block LLVMGetInsertBlock(builder)
         let saved_function current_function
         let saved_local_page function_local_page
+        let saved_local_page_slot function_local_page_slot
+        let saved_local_page_block function_local_page_block
+        let saved_local_page_init function_local_page_init
+        let saved_local_page_sites function_local_page_sites
+        let saved_local_page_pinned function_local_page_pinned
         let saved_can_throw current_function_can_throw
         let saved_di_scope current_di_scope
         let saved_pool_start temp_pool_start
@@ -12689,7 +12907,12 @@ define Emitter
         let saved_pinned_len temp_pinned.length
 
         set current_function: task_fn
+        set function_local_page_slot: LLVMValueRef(null)
         set function_local_page: LLVMValueRef(null)
+        set function_local_page_block: LLVMBasicBlockRef(null)
+        set function_local_page_init: LLVMValueRef(null)
+        set function_local_page_sites: 0
+        set function_local_page_pinned: LLVMValueRef(null)
         set current_function_can_throw: false
         clear_debug_location()
         set temp_pool_start: temp_pool_slots.length
@@ -12829,6 +13052,11 @@ define Emitter
         set temp_pinned.length: saved_pinned_len
         set current_function: saved_function
         set function_local_page: saved_local_page
+        set function_local_page_slot: saved_local_page_slot
+        set function_local_page_block: saved_local_page_block
+        set function_local_page_init: saved_local_page_init
+        set function_local_page_sites: saved_local_page_sites
+        set function_local_page_pinned: saved_local_page_pinned
         set current_function_can_throw: saved_can_throw
         set current_di_scope: saved_di_scope
         LLVMPositionBuilderAtEnd(builder, saved_block)

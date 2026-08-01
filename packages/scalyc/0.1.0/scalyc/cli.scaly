@@ -822,7 +822,20 @@ define cli
                         Console.println "Error: could not compile dependency package for JIT"
                         return false
                     }
-                    (*dep_objs).add obj_path
+                    ; Deep-copy onto the CALLER's page before handing the path
+                    ; over — the same anchoring the `syms` loop below documents.
+                    ; obj_path lives on this procedure's own region, which dies
+                    ; at `return`, so a shallow add leaves jit_run reading a
+                    ; freed buffer: it then opens a garbage path, LLVM takes its
+                    ; error branch, and because the call site passes null for
+                    ; LLVMCreateMemoryBufferWithContentsOfFile's OutMessage, the
+                    ; failure arrives as a SIGSEGV inside libLLVM rather than as
+                    ; a diagnostic. Latent for as long as nothing reused the
+                    ; freed page; the lazy region frames (2026-08-01) changed the
+                    ; arena layout and made it fire every run.
+                    let obj_page Page.get(dep_objs as pointer[void])
+                    let durable_obj String^obj_page(obj_path)
+                    (*dep_objs).add durable_obj
                 }
             }
             set i: i + 1
