@@ -125,12 +125,16 @@ fi
 # The fiber context-switch primitives (vendored assembly, selected by host
 # arch) and the evented-I/O backend shim (kqueue/epoll, selected by cpp) —
 # scaly's Fiber/Io procedures reference them, so every link that includes
-# the scaly package needs both objects.
+# the scaly package needs both objects. The civil-time shim rides along: the
+# compiler calls none of it, but a dazzle stylesheet run through --jit
+# resolves the time primitives out of the compiler process, so the symbols
+# must be in the binary (see packages/scaly/0.1.0/scaly/time/ctime.c).
 tools/fcontext.sh "$WORK/fcontext.o"
 tools/eio.sh "$WORK/eio.o"
+tools/ctime.sh "$WORK/ctime.o"
 
 mkdir -p "$(dirname "$OUT")"
-${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" \
+${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT"
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"
@@ -161,7 +165,8 @@ else
 fi
 cp "$WORK/fcontext.o" /tmp/fcontext.o
 cp "$WORK/eio.o" /tmp/eio.o
-rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o
+cp "$WORK/ctime.o" /tmp/ctime.o
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 
 # Build the scalyls language server from its seed, when committed. scalyls is
@@ -195,7 +200,7 @@ if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -
         fi
         SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
-    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" \
+    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" \
         -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 fi

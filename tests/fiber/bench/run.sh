@@ -36,6 +36,9 @@ fi
 if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
   tools/eio.sh /tmp/eio.o && ar rcs /tmp/libscaly.a /tmp/eio.o
 fi
+if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
+  tools/ctime.sh /tmp/ctime.o && ar rcs /tmp/libscaly.a /tmp/ctime.o
+fi
 
 f=tests/fiber/bench/http10k.scaly
 expected=$(sed -n 's/^; Expected: //p' "$f")

@@ -9,7 +9,7 @@
 cd "$(dirname "$0")/../.." || exit 1
 STAGE=${1:-/tmp/scalyc_stage2}
 
-# The archive normally gains fcontext.o + eio.o when it is built
+# The archive normally gains fcontext.o + eio.o + ctime.o when it is built
 # (bootstrap.sh / build-from-seed.sh / install.sh). Top it up when an older
 # archive predates the fiber/eio modules — both objects are self-contained,
 # so adding them is always safe; a missing archive is left alone (the
@@ -19,6 +19,9 @@ if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^fcon
 fi
 if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
   tools/eio.sh /tmp/eio.o && ar rcs /tmp/libscaly.a /tmp/eio.o
+fi
+if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
+  tools/ctime.sh /tmp/ctime.o && ar rcs /tmp/libscaly.a /tmp/ctime.o
 fi
 
 # Per-test comment lines: "; Expected:" = exact stdout, optional

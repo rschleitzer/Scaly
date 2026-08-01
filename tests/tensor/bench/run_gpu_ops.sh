@@ -30,7 +30,8 @@ if [ ! -f /tmp/libscaly.a ] || find packages/scaly -name '*.scaly' -newer /tmp/l
   llc -relocation-model=pic -O2 -filetype=obj /tmp/libscaly_opt.bc -o /tmp/libscaly.o
   tools/fcontext.sh /tmp/fcontext.o
   tools/eio.sh /tmp/eio.o
-  ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o
+  tools/ctime.sh /tmp/ctime.o
+  ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o
 fi
 
 # scalygpu package object (same recipe: non-generic package bodies come
