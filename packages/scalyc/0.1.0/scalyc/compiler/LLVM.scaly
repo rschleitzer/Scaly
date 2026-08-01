@@ -529,6 +529,26 @@ function LLVMIsACallInst(val: LLVMValueRef) returns LLVMValueRef extern
 function LLVMIsAICmpInst(val: LLVMValueRef) returns LLVMValueRef extern
 function LLVMIsAGetElementPtrInst(val: LLVMValueRef) returns LLVMValueRef extern
 
+; Operand rewriting + instruction removal, for Emitter.elide_unused_pages
+; (the dead-region-frame peephole). A call's operands are its arguments
+; 0..n-1 followed by the callee, so the argument count is
+; LLVMGetNumOperands - 1 and LLVMGetCalledValue names the callee.
+; ★The `index: int` (i64) spelling matches LLVMGetParam/LLVMGetOperand
+; above rather than the i32 extern rule: all four take at most three
+; arguments, so every one is register-passed and the Apple-arm64
+; stack-argument corruption the rule guards against cannot arise.
+; Parameter-attribute count, index 1-based over the params (0 is the return
+; value). elide_unused_pages uses it as a blanket veto: a page parameter is a
+; bare `ptr`, while sret/byval/noalias parameters carry attributes — and an
+; unused SRET parameter (a template stub's `ret null` body never writes it) is
+; exactly the one that must NOT be handed a null, since the attribute promises
+; the callee a dereferenceable slot.
+function LLVMGetAttributeCountAtIndex(f: LLVMValueRef, index: int) returns int extern
+function LLVMGetNumOperands(val: LLVMValueRef) returns int extern
+function LLVMSetOperand(user: LLVMValueRef, index: int, val: LLVMValueRef) extern
+function LLVMGetCalledValue(instr: LLVMValueRef) returns LLVMValueRef extern
+function LLVMInstructionEraseFromParent(inst: LLVMValueRef) extern
+
 ; s178: struct copies through memcpy instead of load+store pairs. A
 ; big-aggregate load materializes the whole struct as an SSA value and
 ; the backend allocates a spill slot for it; memcpy moves the bytes

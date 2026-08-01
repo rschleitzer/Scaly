@@ -184,6 +184,13 @@ define Emitter
     ; Function cache: mangled name -> LLVM function
     function_cache_names: ref[Array[String]]?
     function_cache_funcs: ref[Array[LLVMValueRef]]?
+    ; Parallel to function_cache_funcs: the LLVM-argument index of the
+    ; function's caller-page parameter, or -1 when it takes none. Written by
+    ; emit_function_decl (the ONE place that decides the layout) and read only
+    ; by elide_unused_pages, which must never guess the position — see the
+    ; note there on why a call site's argument j is not generally the callee's
+    ; parameter j.
+    function_cache_page_param: ref[Array[int]]?
     ; O(1) name -> cache-array-index maps shadowing the three hot caches
     ; above. The caches' linear scans were ~87% of self-compile time (the
     ; time analog of the Planner's lookup_concept, fixed by ConceptIndex).
@@ -320,6 +327,7 @@ define Emitter
         set di_type_cache_types: Array[LLVMMetadataRef]^this()
         set function_cache_names: Array[String]^this()
         set function_cache_funcs: Array[LLVMValueRef]^this()
+        set function_cache_page_param: Array[int]^this()
         set type_index: ConceptIndex.create(131072 as size_t)
         set struct_index: ConceptIndex.create(131072 as size_t)
         set function_index: ConceptIndex.create(262144 as size_t)
@@ -1414,6 +1422,299 @@ define Emitter
         LLVMBuildCall2(builder, r_fty, rel_fn, r_args.data, 1, "")
     }
 
+    ; ========================================================================
+    ; Dead-region-frame elision
+    ; ========================================================================
+    ;
+    ; get_or_create_local_page above hands a function a local page as soon as
+    ; ANYTHING in its body might need one — and a struct-returning callee
+    ; always "might", because the planner gives every such function a
+    ; caller-page parameter (function_needs_caller_page → needs_implicit_
+    ; return_page). A plain field getter is the extreme case:
+    ;
+    ;     function get_gi(this: GroveNode) returns StringC { gi }
+    ;
+    ; emits as @get_gi(ptr sret, ptr page, ptr this) and never touches `page`
+    ; — but every caller must build a region frame to pass it. Measured on
+    ; the dazzle DSSSL engine (tests/dazzle/PERFORMANCE.md): 133.7 M region
+    ; frames for one 977 KB document, 118.9 M of them (89 %) opened and
+    ; released without a single object ever allocated on them.
+    ;
+    ; This pass removes the ones that are provably pointless, as a peephole
+    ; over the finished module (it CANNOT run while emitting: at the point
+    ; gi_matches is emitted, get_gi may not exist yet).
+    ;
+    ; Two steps, the first iterated to a fixed point:
+    ;
+    ;   1. When a DEFINED function never uses its pointer parameter j, every
+    ;      direct call to it may pass null instead. This is what makes the
+    ;      analysis transitive without a call graph: a function that only
+    ;      FORWARDS its own page to such a callee loses that use, so on the
+    ;      next round its own parameter is unused and its callers stop
+    ;      passing a page in turn.
+    ;   2. A local page whose only remaining uses are its own release calls
+    ;      is dead: erase the releases and the allocation. Removing a matched
+    ;      push/pop pair keeps the StackBucket's strict-LIFO invariant
+    ;      (scaly_release_root_page asserts it) — nothing was allocated on
+    ;      the page, so there is also nothing to tear down.
+    ;
+    ; ★Soundness against linkonce_odr interposition: step 1 reads the callee's
+    ; parameter uses out of a DEFINITION in this module, while the linker may
+    ; pick a different module's copy of the same linkonce_odr symbol. That is
+    ; safe because both copies are generated from the same source by the same
+    ; compiler — mangled names carry the instantiated types and the package
+    ; version, so two definitions of one symbol cannot disagree about which
+    ; parameters they read. Declarations are skipped outright (a cross-package
+    ; callee's body is not visible here, so it stays conservative).
+    ;
+    ; ★Restricted to POINTER parameters. Not required for soundness (an
+    ; unused parameter of any type could be nulled) — it keeps the rewrite in
+    ; the region-plumbing shape this exists for, and every page parameter is
+    ; a pointer.
+    ;
+    ; Measured on `dazzledoc -t fot`: 26.86 G → 22.84 G instructions,
+    ; 1.34 s → 1.15 s CPU, output byte-identical.
+    procedure elide_unused_pages(this)
+    {
+        let alloc_fn LLVMGetNamedFunction(llvm_module, "_ZN4Page18allocate_root_pageEv")
+        if alloc_fn.handle = null
+            return
+
+        ; --- 1a. SNAPSHOT which functions never read their caller page ----
+        ; Driven off the function cache, not LLVMGetFirstFunction: the cache
+        ; is what carries the recorded page-parameter index.
+        ;
+        ; ★★This snapshot is the whole reason the pass is sound, and it MUST
+        ; be taken before a single argument is rewritten. "Function F never
+        ; reads its page parameter" is then a property of F's own emitted
+        ; body — identical in every module that instantiates F, because the
+        ; body comes from the same source. Any predicate that also depends on
+        ; what ELSE the module contains is not: F's page use may be a call to
+        ; G, so a module that can see G's body would elide F while a module
+        ; holding only a declaration of G would not. Both emit F as
+        ; linkonce_odr, the linker keeps one — and the callers of the copy it
+        ; dropped pass null to a body that dereferences it.
+        ;
+        ; That is exactly what a fixed-point version of this loop did: it
+        ; passed every suite, then blew the planner's stack on the first
+        ; self-compile (measured: 199 of 1325 rewritten call sites named a
+        ; page the callee's own body reads). One round, snapshot predicate.
+        var ci: size_t 0
+        while ci < function_cache_funcs.length
+        {
+            let f_ptr function_cache_funcs.get ci
+            let idx_ptr function_cache_page_param.get ci
+            if f_ptr <> null
+            {
+                if idx_ptr <> null
+                {
+                    let page_index (*idx_ptr)
+                    if page_index >= 0
+                    {
+                        let f (*f_ptr)
+                        let keep page_param_is_unused(f, page_index)
+                        if keep = false
+                        {
+                            let no_page 0 - 1
+                            function_cache_page_param.put(ci, no_page)
+                        }
+                    }
+                }
+            }
+            set ci: ci + 1
+        }
+
+        ; --- 1b. drop the page argument at their direct call sites --------
+        var cj: size_t 0
+        while cj < function_cache_funcs.length
+        {
+            let f_ptr function_cache_funcs.get cj
+            let idx_ptr function_cache_page_param.get cj
+            if f_ptr <> null
+            {
+                if idx_ptr <> null
+                {
+                    let page_index (*idx_ptr)
+                    if page_index >= 0
+                    {
+                        let f (*f_ptr)
+                        null_page_arguments(f, page_index)
+                    }
+                }
+            }
+            set cj: cj + 1
+        }
+
+        ; --- 2. erase every local page nothing allocates on ---------------
+        let rel_fn LLVMGetNamedFunction(llvm_module, "_Z23scaly_release_root_pageP4Page")
+        let rel_full LLVMGetNamedFunction(llvm_module, "_Z28scaly_release_root_page_fullP4Page")
+
+        ; Collect the allocation sites FIRST: erasing rewrites the use list
+        ; that is being walked.
+        var sites Array[LLVMValueRef]()
+        let alloc_handle alloc_fn.handle
+        var u LLVMGetFirstUse(alloc_fn)
+        while u.handle <> null
+        {
+            let user LLVMGetUser(u)
+            let is_call LLVMIsACallInst(user)
+            if is_call.handle <> null
+            {
+                let callee LLVMGetCalledValue(user)
+                if callee.handle = alloc_handle
+                    sites.add user
+            }
+            set u: LLVMGetNextUse(u)
+        }
+
+        var i: size_t 0
+        while i < sites.length
+        {
+            let site_ptr sites.get i
+            if site_ptr <> null
+            {
+                let site (*site_ptr)
+                var teardowns Array[LLVMValueRef]()
+                var only_teardown true
+                var uu LLVMGetFirstUse(site)
+                while uu.handle <> null
+                {
+                    let usr LLVMGetUser(uu)
+                    var is_teardown false
+                    let uc LLVMIsACallInst(usr)
+                    if uc.handle <> null
+                    {
+                        let callee LLVMGetCalledValue(usr)
+                        let ch callee.handle
+                        let rh rel_fn.handle
+                        let fh rel_full.handle
+                        if rh <> null
+                            if ch = rh
+                                set is_teardown: true
+                        if fh <> null
+                            if ch = fh
+                                set is_teardown: true
+                    }
+                    if is_teardown
+                        teardowns.add usr
+                    if is_teardown = false
+                        set only_teardown: false
+                    set uu: LLVMGetNextUse(uu)
+                }
+                if only_teardown
+                {
+                    var t: size_t 0
+                    while t < teardowns.length
+                    {
+                        let tp teardowns.get t
+                        if tp <> null
+                        {
+                            let tv (*tp)
+                            LLVMInstructionEraseFromParent(tv)
+                        }
+                        set t: t + 1
+                    }
+                    LLVMInstructionEraseFromParent(site)
+                }
+            }
+            set i: i + 1
+        }
+    }
+
+    ; elide_unused_pages step 1a: does `f` have a body that never reads its
+    ; caller-page parameter (LLVM-argument index `page_index`, as recorded by
+    ; emit_function_decl)? Read before any rewriting — see the ODR note there.
+    function page_param_is_unused(this, f: LLVMValueRef, page_index: int) returns bool
+    {
+        if f.handle = null
+            return false
+        ; A declaration's body lives in another module; assume it reads.
+        let is_decl LLVMIsDeclaration(f)
+        if is_decl <> 0
+            return false
+        let n LLVMCountParams(f)
+        if page_index >= n
+            return false
+        let p LLVMGetParam(f, page_index)
+        let p_use LLVMGetFirstUse(p)
+        if p_use.handle <> null
+            return false
+        ; A caller-page parameter is a bare `ptr` and carries no attributes;
+        ; anything else is not the slot we recorded. In particular an UNUSED
+        ; sret parameter (a template stub's `ret null` body never writes it)
+        ; must never be handed a null — the attribute promises the callee a
+        ; dereferenceable slot.
+        let p_ty LLVMTypeOf(p)
+        let kind LLVMGetTypeKind(p_ty)
+        if kind <> LLVMTypeKind.Pointer()
+            return false
+        let attrs LLVMGetAttributeCountAtIndex(f, page_index + 1)
+        attrs = 0
+    }
+
+    ; elide_unused_pages step 1b: pass null for f's caller page at every
+    ; DIRECT call to f.
+    ;
+    ; ★Only the caller-page argument is ever rewritten, never an arbitrary
+    ; unused parameter. Nulling any unused parameter would be sound in plain
+    ; LLVM semantics, but not here: emit_call builds its OWN func_type per
+    ; call site rather than reusing the declaration's, so "argument j at the
+    ; call" is not generally "parameter j of the callee". The page position is
+    ; the one both sides derive from the same sret/page layout, so it is the
+    ; one that can be matched up safely.
+    ;
+    ; ★Every intermediate is bound to a `let` before use. A parenless chained
+    ; call as an argument (`LLVMGetTypeKind(LLVMTypeOf p)`) and `.handle` read
+    ; straight off a call result are both silent-mis-parse shapes in this
+    ; compiler — the first version of this function had them and the pass came
+    ; out INERT under the seed compiler.
+    procedure null_page_arguments(this, f: LLVMValueRef, page_index: int)
+    {
+        let f_handle f.handle
+        let j page_index
+        var u LLVMGetFirstUse(f)
+        while u.handle <> null
+        {
+            ; Take the successor BEFORE rewriting: LLVMSetOperand moves the
+            ; argument's use off its old value, and when a call passes f BOTH
+            ; as callee and as a function-pointer argument that use sits in
+            ; this very list.
+            let next LLVMGetNextUse(u)
+            let user LLVMGetUser(u)
+            let is_call LLVMIsACallInst(user)
+            if is_call.handle <> null
+            {
+                let callee LLVMGetCalledValue(user)
+                if callee.handle = f_handle
+                {
+                    ; A call's operands are its arguments followed by the
+                    ; callee, so the argument count is one less than the
+                    ; operand count. The guard also covers the arity mismatch
+                    ; scalyc still does not diagnose (a call site passing
+                    ; fewer arguments than the callee declares).
+                    let nops LLVMGetNumOperands(user)
+                    let argc nops - 1
+                    if j < argc
+                    {
+                        let a LLVMGetOperand(user, j)
+                        let already LLVMIsNull(a)
+                        let a_is_f a.handle = f_handle
+                        ; Never rewrite f's own address into null: it would
+                        ; invalidate the `next` taken above.
+                        if already = 0
+                            if a_is_f = false
+                            {
+                                let a_ty LLVMTypeOf(a)
+                                let nullv LLVMConstNull(a_ty)
+                                LLVMSetOperand(user, j, nullv)
+                            }
+                    }
+                }
+            }
+            set u: next
+        }
+    }
+
     ; parse_array_size: numeric String → size_t, or 0 for empty / any
     ; non-digit (the s192 fixed-array stack alloca only fires on a numeric
     ; array_size; named-constant sizes return 0 and fall back to a plain
@@ -1915,8 +2216,23 @@ define Emitter
         let entry_idx function_cache_names.length
         function_cache_names.add mangled_name
         function_cache_funcs.add llvm_func
+        ; -1 until emit_function_decl records a caller-page parameter; the
+        ; runtime helpers cached from get_alloc_root_page_fn & co. never get
+        ; one, and neither do declarations built at call sites.
+        let no_page 0 - 1
+        function_cache_page_param.add no_page
         if llvm_func.handle <> null
             function_index.insert_if_absent(mangled_name, entry_idx)
+    }
+
+    ; Record where emit_function_decl put the caller-page parameter of the
+    ; function it has just cached (the most recent entry).
+    procedure note_page_param_index(this, index: size_t)
+    {
+        let n function_cache_page_param.length
+        if n = 0
+            return
+        function_cache_page_param.put(n - 1, index as int)
     }
 
     ; ========================================================================
@@ -3451,6 +3767,11 @@ define Emitter
 
         ; Cache the function
         cache_function(func.mangled_name, llvm_func)
+        ; …and where its caller-page parameter sits, for elide_unused_pages.
+        ; This is the only place that decides the layout (sret first, page
+        ; next, user params after), so it is the only honest source for it.
+        if has_page_param
+            note_page_param_index(sret_offset)
 
         llvm_func
     }
@@ -4341,6 +4662,11 @@ define Emitter
         if stamp_main.handle <> null
             if LLVMIsDeclaration(stamp_main) = 0
                 emit_build_stamp()
+
+        ; Last: drop the region frames nothing allocates on. Runs over the
+        ; FINISHED module — every body, stub and template instantiation has
+        ; to exist before a callee's parameter uses can be read.
+        elide_unused_pages()
 
         true
     }
