@@ -1740,36 +1740,6 @@ if.end13:                                         ; preds = %if.then12, %if.end1
   ret void
 }
 
-define linkonce_odr ptr @_Z19scaly_get_root_pagePP4Page(ptr %0) {
-entry:
-  %deref = load ptr, ptr %0, align 8
-  %ne = icmp ne ptr %deref, null
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr %deref
-
-if.end:                                           ; preds = %entry
-  %call = call ptr @_ZN4Page18allocate_root_pageEv()
-  store ptr %call, ptr %0, align 8
-  ret ptr %call
-}
-
-define linkonce_odr void @_Z28scaly_release_root_page_slotPP4Page(ptr %0) {
-entry:
-  %deref = load ptr, ptr %0, align 8
-  %eq = icmp eq ptr %deref, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret void
-
-if.end:                                           ; preds = %entry
-  store ptr null, ptr %0, align 8
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %deref)
-  ret void
-}
-
 define linkonce_odr ptr @_Z17scaly_force_frameP5Frame(ptr %0) {
 entry:
   %load.struct = load %_Z5Frame, ptr %0, align 8
