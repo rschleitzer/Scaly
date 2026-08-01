@@ -1,0 +1,93 @@
+; Regression: the parent-linked frame chain keeps the StackBucket's strict
+; LIFO discipline (2026-08-02). A caller-page argument is a {page, parent}
+; FRAME, materialised only where something really allocates — so a callee can
+; be the one that opens its CALLER's region, long after opening its own. That
+; is the interleaving the parent rule in scaly_force_frame exists for: without
+; forcing the parent chain first, the caller's page gets pushed ON TOP of the
+; callee's and released after it, and scaly_release_root_page aborts.
+;
+; Both orders are exercised, because only the first one crashes without the
+; rule and a test that covers just it would pass on a half-fix:
+;
+;   own_then_caller  — open the callee's own region, THEN allocate on the
+;                      caller's. The caller's page is demanded while the
+;                      callee's sits on top of the stack.
+;   caller_then_own  — the reverse: the caller's region first, then the
+;                      callee's on top of it.
+;
+; Each is driven through TWO levels of unmaterialised frames (drive_* never
+; allocates anything itself), so the forcing really has to walk a chain rather
+; than a single parent. A LIFO violation aborts the process, so reaching the
+; print at all is most of the assertion; the lengths are checked so the pages
+; cannot merely be unused.
+; Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+
+; Allocates on its OWN region first (the StringBuilder and its buffer), and
+; only afterwards on the caller's — the returned String. Returning it is what
+; puts the allocation on the caller's page.
+function own_then_caller(n: size_t) returns String
+{
+    let sb StringBuilder()
+    var i: size_t 0
+    while i < n
+    {
+        sb.append "ab"
+        set i: i + 1
+    }
+    sb.to_string()
+}
+
+; The other order: the caller's page is demanded FIRST (the String returned by
+; own_then_caller lands there), and this function's own region opens after it.
+function caller_then_own(n: size_t) returns String
+{
+    let head own_then_caller(n)
+    let sb StringBuilder()
+    sb.append head
+    sb.append "|tail"
+    sb.to_string()
+}
+
+; Two levels that allocate NOTHING themselves. Their frames stay unforced
+; until something underneath demands a page, so the chain walk has more than
+; one link to climb.
+function drive_inner(n: size_t) returns String
+    caller_then_own(n)
+
+function drive_outer(n: size_t) returns String
+    drive_inner(n)
+
+function check() returns int
+{
+    ; 3 x "ab" = 6, then "|tail" = 5 more.
+    let s drive_outer(3)
+    if s.get_length() <> (11 as size_t)
+        return 1
+
+    ; Repeat under churn: the released root pages get reused, so a page
+    ; pushed in the wrong order shows up as corruption rather than only as
+    ; the release-time abort.
+    var i: size_t 0
+    var total: size_t 0
+    while i < (200 as size_t)
+    {
+        let t drive_outer(i)
+        set total: total + t.get_length()
+        set i: i + 1
+    }
+    if total <> (40800 as size_t)
+        return 2
+
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

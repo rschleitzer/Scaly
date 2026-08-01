@@ -535,6 +535,94 @@ procedure scaly_release_root_page_slot(slot: pointer[pointer[Page]])
 }
 
 ; --------------------------------------------------------------------------
+; Parent-linked frame chain
+; --------------------------------------------------------------------------
+;
+; The lazy slot above only reaches materialisations a function makes for
+; ITSELF. It cannot reach the larger half: a caller that materialises its page
+; ONLY to hand it to a callee which then allocates nothing (String.append that
+; does not have to grow, and its kind). Measured on the dazzle DSSSL engine
+; after the slot change: 13.79 of the remaining 28.59 million frames per
+; 977 KB document were still empty, 13.57 million of them with no allocation
+; anywhere in their dynamic subtree (tests/dazzle/PERFORMANCE.md).
+;
+; So the caller-page argument stops being a materialised page and becomes a
+; pointer to this two-word record, which every function with a region holds as
+; an alloca in its entry block, initialised to {null, <incoming frame>}. The
+; callee materialises the caller's page only when it really allocates into it.
+define Frame
+(
+    page: pointer[Page]           ; null until forced
+    parent: pointer[Frame]        ; the frame this function received, or null
+)
+
+; Materialise this frame's page, PARENTS FIRST, and return it.
+;
+; ★The parent recursion is the correctness of the whole scheme, not a
+; refinement. Root pages come off the StackBucket, which demands strict LIFO —
+; scaly_release_root_page aborts on a mismatch. Without it, the very first
+; interleaving breaks: callee G materialises its own page, then allocates on
+; its caller F's page, so F's region is pushed ON TOP of G's but has to be
+; released after it.
+;
+; THE ORDERING ARGUMENT. Two properties give strict LIFO back:
+;
+;   (1) A frame is materialised only after all its chain ancestors are —
+;       immediately, because that is what this function does before pushing.
+;       A frame is pushed at most once (the field stays set until release).
+;
+;   (2) While an activation X is live, the only frames anyone below X can
+;       force are X's own and the ones X was HANDED. A frame pointer is only
+;       ever passed as the caller-page argument; it is never stored, returned
+;       or captured. So a frame X never received is unreachable from below X.
+;
+; Now take a frame B at its release. Suppose some page P sat above B's. P's
+; frame C was pushed after B and is still live, so C's activation began after
+; B's push — hence C is a descendant of B's activation (on one thread the live
+; activations form a chain, and the later ones are the deeper ones). By (1)
+; C's whole chain was materialised before C. If B is on C's chain we have a
+; contradiction, since B was pushed BEFORE C. If it is not, then the chain was
+; cut at some activation that received no frame — and by (2) nothing below
+; that cut can reach B either, so C's subtree could not have forced B at all,
+; contradicting that B is materialised and live. Hence B is on top. ∎
+;
+; ★The cut in that last step is real and deliberate: elide_unused_pages passes
+; null instead of a frame to callees that never use theirs. That stays sound
+; exactly because "use" counts PASSING IT ON — a function that cannot force
+; its caller's frame cannot hand it to anyone who could.
+;
+; Allocation-free (no $/#/for-in), like every function on the allocator path:
+; the emitter would otherwise recurse into it while emitting it (module
+; header). The recursion is bounded by the chain depth (measured maximum 49 on
+; the DSSSL engine, 12 on a 13.7 MB parse) and unwinds to a plain loop under
+; opt/LTO.
+procedure scaly_force_frame(f: pointer[Frame]) returns pointer[Page]
+{
+    let p f.page
+    if p <> null
+        return p
+    let parent f.parent
+    if parent <> null
+        scaly_force_frame parent
+    let fresh Page.allocate_root_page()
+    set f.page: fresh
+    fresh
+}
+
+; Release this frame's page if it was ever forced. A no-op otherwise — a
+; function whose region nobody demanded pays a load and a compare on the way
+; out. Clears before releasing for the same reason the slot version does: an
+; epilogue that runs twice must not release the same root page twice.
+procedure scaly_release_frame(f: pointer[Frame])
+{
+    let p f.page
+    if p = null
+        return
+    set f.page: null as pointer[Page]
+    scaly_release_root_page_full p
+}
+
+; --------------------------------------------------------------------------
 ; SCALY_TRACE_ROOT diagnostic: per-function push/pop counters. Off by
 ; default; armed on the first push/pop if $SCALY_TRACE_ROOT is set at
 ; that moment. The atexit dump reports any function whose push/pop

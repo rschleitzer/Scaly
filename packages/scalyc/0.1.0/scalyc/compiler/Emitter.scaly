@@ -228,26 +228,37 @@ define Emitter
     ; CurrentRegion.LocalPage but kept SEPARATE from current_region.local_page
     ; (which stays a never-set null read only by emit_action's rp fallback).
     ;
-    ; LAZY FRAMES (2026-08-01): what the entry block holds is no longer the
-    ; page but a null-initialised SLOT; the page itself is materialised by
-    ; scaly_get_root_page at each demand site and released through
-    ; scaly_release_root_page_slot on every exit path (a no-op when no demand
-    ; site ran). See get_or_create_local_page for the reasoning and the
-    ; strict-LIFO argument.
+    ; PARENT-LINKED FRAME CHAIN (2026-08-02, after the lazy slots of
+    ; 2026-08-01): what the entry block holds is a two-word {page, parent}
+    ; RECORD. The page is materialised by scaly_force_frame — parents first —
+    ; only where something really allocates, and released through
+    ; scaly_release_frame on every exit path (a no-op when nothing forced it).
+    ; A caller-page argument is the record's ADDRESS and costs no call at all,
+    ; which is what lets a callee that allocates nothing leave the caller's
+    ; region unopened. See get_local_frame here and the ordering proof at
+    ; scaly_force_frame (root_pages.scaly).
     ;
-    ; function_local_page_slot: the alloca, created on first demand.
-    ; function_local_page / _block: the materialised value cached for ONE
-    ;   basic block, so several demands in one block share a single call.
-    function_local_page_slot: LLVMValueRef
+    ; function_local_frame: the record's alloca, created on first demand.
+    ; function_local_page / _block: the FORCED page cached for ONE basic
+    ;   block, so several allocations in one block share a single call.
+    function_local_frame: LLVMValueRef
     function_local_page: LLVMValueRef
     function_local_page_block: LLVMBasicBlockRef
-    ; The `store null` that initialises the slot — the anchor the pinned
-    ; materialisation below must be inserted AFTER (see LAZY_PAGE_MAX_SITES).
+    ; The `store null` that initialises the page word.
     function_local_page_init: LLVMValueRef
-    ; Demand sites emitted so far, and the one entry-block materialisation
-    ; that replaces them once the count runs away.
-    function_local_page_sites: int
-    function_local_page_pinned: LLVMValueRef
+    ; The `store <incoming frame>` into the parent word. elide_unused_pages
+    ; must not count it as a use of the caller-page parameter — see
+    ; page_param_is_unused.
+    function_local_frame_parent_store: LLVMValueRef
+    ; The incoming caller frame this function chains its own onto, bound where
+    ; the page parameter is bound. Deliberately NOT a lookup_variable("_rp")
+    ; at frame-creation time: the outlined parfor task function still sees the
+    ; enclosing function's variable table, and chaining a worker thread's frame
+    ; onto a frame owned by another thread's StackBucket would both reference a
+    ; value from another function and cross an allocator boundary. It stays
+    ; null there, which roots the task's chain — exactly what a fresh thread
+    ; needs (the same reason Fiber.create takes an explicit host page).
+    current_frame_parent: LLVMValueRef
     ; Local variables: name -> LLVM value. Flat tables; per-scope
     ; visibility maintained by scope_marks below.
     local_var_names: ref[Array[String]]?
@@ -357,12 +368,12 @@ define Emitter
         set current_function: LLVMValueRef(null)
         set current_block: LLVMBasicBlockRef(null)
         set current_function_can_throw: false
-        set function_local_page_slot: LLVMValueRef(null)
+        set function_local_frame: LLVMValueRef(null)
         set function_local_page: LLVMValueRef(null)
         set function_local_page_block: LLVMBasicBlockRef(null)
         set function_local_page_init: LLVMValueRef(null)
-        set function_local_page_sites: 0
-        set function_local_page_pinned: LLVMValueRef(null)
+        set function_local_frame_parent_store: LLVMValueRef(null)
+        set current_frame_parent: LLVMValueRef(null)
         set local_var_names: Array[String]^this()
         set local_var_values: Array[LLVMValueRef]^this()
         set scope_marks: Array[size_t]^this()
@@ -1187,34 +1198,35 @@ define Emitter
         rel_fn
     }
 
-    ; Look up or declare scaly_get_root_page(ptr slot) -> ptr — the lazy
-    ; materialiser (root_pages.scaly): returns the slot's page, allocating
-    ; and storing one on the first demand.
-    function get_get_root_page_fn(this) returns LLVMValueRef
+    ; Look up or declare scaly_force_frame(ptr frame) -> ptr — materialise a
+    ; frame's page, PARENTS FIRST (root_pages.scaly, where the LIFO ordering
+    ; argument lives). Called wherever a REAL page is needed: the Page.allocate
+    ; sites, and nowhere else. Handing a frame to a callee needs no call at all.
+    function get_force_frame_fn(this) returns LLVMValueRef
     {
-        var fn lookup_function_cache("_Z19scaly_get_root_pagePP4Page")
+        var fn lookup_function_cache("_Z17scaly_force_frameP5Frame")
         if fn.handle = null
-            set fn: LLVMGetNamedFunction(llvm_module, "_Z19scaly_get_root_pagePP4Page")
+            set fn: LLVMGetNamedFunction(llvm_module, "_Z17scaly_force_frameP5Frame")
         if fn.handle = null
         {
             let ptr_ty LLVMPointerTypeInContext(context, 0)
             var ptys Vector[LLVMTypeRef](1)
             ptys.put(0, ptr_ty)
             let fty LLVMFunctionType(ptr_ty, ptys.data, 1, 0)
-            set fn: LLVMAddFunction(llvm_module, "_Z19scaly_get_root_pagePP4Page", fty)
+            set fn: LLVMAddFunction(llvm_module, "_Z17scaly_force_frameP5Frame", fty)
             LLVMSetLinkage(fn, LLVMLinkage.External())
-            cache_function("_Z19scaly_get_root_pagePP4Page", fn)
+            cache_function("_Z17scaly_force_frameP5Frame", fn)
         }
         fn
     }
 
-    ; Look up or declare scaly_release_root_page_slot(ptr slot) -> void — the
-    ; epilogue counterpart, a no-op on a slot no demand site ever filled.
-    function get_release_root_page_slot_fn(this) returns LLVMValueRef
+    ; Look up or declare scaly_release_frame(ptr frame) -> void — the epilogue
+    ; counterpart, a no-op on a frame nothing ever forced.
+    function get_release_frame_fn(this) returns LLVMValueRef
     {
-        var fn lookup_function_cache("_Z28scaly_release_root_page_slotPP4Page")
+        var fn lookup_function_cache("_Z19scaly_release_frameP5Frame")
         if fn.handle = null
-            set fn: LLVMGetNamedFunction(llvm_module, "_Z28scaly_release_root_page_slotPP4Page")
+            set fn: LLVMGetNamedFunction(llvm_module, "_Z19scaly_release_frameP5Frame")
         if fn.handle = null
         {
             let void_ty LLVMVoidTypeInContext(context)
@@ -1222,11 +1234,65 @@ define Emitter
             var ptys Vector[LLVMTypeRef](1)
             ptys.put(0, ptr_ty)
             let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
-            set fn: LLVMAddFunction(llvm_module, "_Z28scaly_release_root_page_slotPP4Page", fty)
+            set fn: LLVMAddFunction(llvm_module, "_Z19scaly_release_frameP5Frame", fty)
             LLVMSetLinkage(fn, LLVMLinkage.External())
-            cache_function("_Z28scaly_release_root_page_slotPP4Page", fn)
+            cache_function("_Z19scaly_release_frameP5Frame", fn)
         }
         fn
+    }
+
+    ; The two-word frame record {page, parent} the caller-page argument points
+    ; at. Built as a named struct so the GEPs below read as field accesses.
+    function frame_struct_type(this) returns LLVMTypeRef
+    {
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var ftys Vector[LLVMTypeRef](2)
+        ftys.put(0, ptr_ty)
+        ftys.put(1, ptr_ty)
+        LLVMStructTypeInContext(context, ftys.data, 2, 0)
+    }
+
+    ; Emit `scaly_force_frame(frame)` at the current position.
+    function force_frame(this, frame_val: LLVMValueRef) returns LLVMValueRef
+    {
+        if frame_val.handle = null
+            return LLVMValueRef null
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        let fn get_force_frame_fn()
+        var tys Vector[LLVMTypeRef](1)
+        tys.put(0, ptr_ty)
+        let fty LLVMFunctionType(ptr_ty, tys.data, 1, 0)
+        var args Vector[LLVMValueRef](1)
+        args.put(0, frame_val)
+        LLVMBuildCall2(builder, fty, fn, args.data, 1, "forced_page")
+    }
+
+    ; Wrap an ALREADY REAL page in a throw-away frame so it can travel as a
+    ; caller-page argument: {page, null}. scaly_force_frame returns it without
+    ; touching the StackBucket, and nobody releases it — the page is not this
+    ; frame's to own. Needed wherever a genuine page reaches a call site: the
+    ; `^this` / `^name` / `^field` sigils, and the region a fiber is handed.
+    ;
+    ; ★One alloca PER SITE, never a reusable scratch frame. A call whose
+    ; argument list contains another such call would otherwise overwrite the
+    ; outer frame before the outer call reads it (store outer, store inner,
+    ; call inner, call outer) and the outer callee would allocate on the inner
+    ; page. The alloca costs stack space only.
+    function wrap_page_in_frame(this, page_val: LLVMValueRef) returns LLVMValueRef
+    {
+        if page_val.handle = null
+            return LLVMValueRef null
+        let frame_ty frame_struct_type()
+        let frame entry_alloca(frame_ty, "wrapped_frame")
+        if frame.handle = null
+            return LLVMValueRef null
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        ; The stores stay at the CURRENT position: page_val need not dominate
+        ; the entry block (it is commonly a Page.get call in this very block).
+        LLVMBuildStore(builder, page_val, frame)
+        let parent_ptr LLVMBuildStructGEP2(builder, frame_ty, frame, 1, "wrapped.parent")
+        LLVMBuildStore(builder, LLVMConstNull(ptr_ty), parent_ptr)
+        frame
     }
 
     ; Resolve the page for a `^name` reference lifetime: the named local
@@ -1352,37 +1418,58 @@ define Emitter
             get_args.put(0, page_val)
             set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
         }
+        ; `^rp` / `^page` name the caller-page slot, which since the frame
+        ; chain (2026-08-02) holds a FRAME, not a page. Everything else here
+        ; — `^this`, a pointer[Page] binding, a pointer[Page] field — is a
+        ; genuine page and stays one.
+        if current_frame_parent.handle <> null
+            if page_val.handle = current_frame_parent.handle
+                return force_frame(page_val)
         page_val
     }
 
-    ; Return this function's local root page AT THE CURRENT BUILDER POSITION.
+    ; The same `^name` resolution, but yielding a FRAME for use as a
+    ; caller-page argument: a genuine page gets wrapped, the caller-page slot
+    ; travels as it is. Keeps the two currencies apart at every call site —
+    ; passing a raw page where a callee expects a frame is the one mistake this
+    ; ABI cannot diagnose (both are a bare `ptr`).
+    function resolve_reference_frame(this, ref_name: String) returns LLVMValueRef
+    {
+        ; The caller-page slot is already a frame — hand it on unforced, or
+        ; the `^rp` sigil alone would open the caller's region.
+        let nv lookup_variable ref_name
+        if nv.handle <> null
+            if current_frame_parent.handle <> null
+                if nv.handle = current_frame_parent.handle
+                    return nv
+        let page_val resolve_reference_page(ref_name)
+        if page_val.handle = null
+            return LLVMValueRef null
+        wrap_page_in_frame page_val
+    }
+
+    ; Return this function's own FRAME — the {page, parent} record that IS the
+    ; caller-page currency. Creating it emits no call: the entry block gets a
+    ; two-word alloca initialised to {null, <incoming frame>}, and handing it
+    ; to a callee is just passing its address.
     ;
-    ; LAZY FRAMES (2026-08-01). Until this change the page was allocated once
-    ; at entry-block start, so every call of a function that merely MIGHT need
-    ; a region paid a push/pop pair — measured on the dazzle DSSSL engine
-    ; (tests/dazzle/PERFORMANCE.md): 94 million frames for one 977 KB
-    ; document, 79 million of which never saw a single allocation, at ~100
-    ; instructions each. What the entry block gets now is a null-initialised
-    ; SLOT; the page is materialised by scaly_get_root_page at the demand site
-    ; and released through scaly_release_root_page_slot on every exit. A path
-    ; that never reaches a demand site costs a load and a compare.
+    ; PARENT-LINKED FRAME CHAIN (2026-08-02). Lazy slots (2026-08-01) took the
+    ; region out of the prologue but could only reach materialisations a
+    ; function made for ITSELF: a caller that opened its page ONLY to pass it
+    ; to a callee which then allocated nothing still paid the full push/pop.
+    ; Measured on the dazzle DSSSL engine (tests/dazzle/PERFORMANCE.md), that
+    ; was 13.79 of the remaining 28.59 million frames per 977 KB document.
+    ; Passing the RECORD instead of a materialised page lets the callee decide,
+    ; and 13.57 million of those frames stop existing.
     ;
-    ; ★The materialisation is a plain CALL, not an inline null-check, on
-    ; purpose: this runs in the middle of expression emission (emit_call,
-    ; emit_constructor_call, emit_for), where splitting the current block
-    ; would invalidate every insert block those walkers captured before
-    ; asking for a page. The runtime helper is small enough that opt/LTO
-    ; inlines it and SROA then promotes the slot to a phi, which is where the
-    ; redundant checks disappear; an -O0 build keeps one call per demand.
+    ; ★The ordering rule that makes it sound — every materialisation forces the
+    ; parent chain first — lives in scaly_force_frame (root_pages.scaly),
+    ; together with the proof that strict LIFO survives it. Read that before
+    ; touching either side.
     ;
-    ; ★Strict LIFO is preserved because the slot NEVER leaves its frame: every
-    ; materialisation happens in the function that owns the slot, and that
-    ; function releases before returning, so a callee's push/pop pair still
-    ; nests inside the caller's extent. Handing the slot to a callee (so it
-    ; could materialise the CALLER's page on demand — the fix for a page that
-    ; is only ever passed on) would let an outer region be pushed on top of an
-    ; inner one; that needs a parent-linked frame chain, not this change.
-    function get_or_create_local_page(this) returns LLVMValueRef
+    ; ★The frame is created on FIRST DEMAND, not at entry: a function that
+    ; never needs a region at all should not pay two stores for one.
+    function get_local_frame(this) returns LLVMValueRef
     {
         if current_function.handle = null
             return LLVMValueRef null
@@ -1390,98 +1477,93 @@ define Emitter
         if entry_block.handle = null
             return LLVMValueRef null
 
-        ; Past the site cap this function materialises ONCE, in the entry
-        ; block, and every later demand reuses that value — see the
-        ; LAZY_PAGE_MAX_SITES note below.
-        if function_local_page_pinned.handle <> null
-            return function_local_page_pinned
+        if function_local_frame.handle <> null
+            return function_local_frame
+
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        let frame_ty frame_struct_type()
+
+        ; Reserve the record at entry-block start, where it dominates every
+        ; demand site and every exit.
+        let saved_block LLVMGetInsertBlock(builder)
+        let first_instr LLVMGetFirstInstruction(entry_block)
+        if first_instr.handle <> null
+            LLVMPositionBuilderBefore(builder, first_instr)
+        if first_instr.handle = null
+            LLVMPositionBuilderAtEnd(builder, entry_block)
+
+        let frame LLVMBuildAlloca(builder, frame_ty, "frame")
+        set function_local_frame: frame
+        set function_local_page_init: LLVMBuildStore(builder, LLVMConstNull(ptr_ty), frame)
+
+        ; parent = the frame this function was handed, or null when it has
+        ; none. A null parent CUTS the chain, which is sound precisely because
+        ; a function that cannot force its caller's frame also cannot hand it
+        ; to anyone who could (the argument at scaly_force_frame).
+        let parent_ptr LLVMBuildStructGEP2(builder, frame_ty, frame, 1, "frame.parent")
+        var parent_val LLVMConstNull(ptr_ty)
+        if current_frame_parent.handle <> null
+            set parent_val: current_frame_parent
+        set function_local_frame_parent_store: LLVMBuildStore(builder, parent_val, parent_ptr)
+
+        if saved_block.handle <> null
+            LLVMPositionBuilderAtEnd(builder, saved_block)
+
+        patch_prior_returns frame
+        frame
+    }
+
+    ; Materialise an arbitrary frame's page. Routed through the block cache
+    ; when the frame is this function's own, so several allocations in one
+    ; block still share a single call.
+    function materialise_frame(this, frame_val: LLVMValueRef) returns LLVMValueRef
+    {
+        if frame_val.handle = null
+            return LLVMValueRef null
+        if function_local_frame.handle <> null
+            if frame_val.handle = function_local_frame.handle
+                return get_or_create_local_page()
+        force_frame frame_val
+    }
+
+    ; Return this function's local root PAGE at the current builder position,
+    ; materialising it through scaly_force_frame. Only the sites that really
+    ; allocate need this; a caller-page argument takes get_local_frame instead.
+    ;
+    ; ★The materialisation is a plain CALL, not an inline null-check, on
+    ; purpose: this runs in the middle of expression emission (emit_call,
+    ; emit_constructor_call, emit_for), where splitting the current block
+    ; would invalidate every insert block those walkers captured before
+    ; asking for a page. The runtime helper is small enough that opt/LTO
+    ; inlines its fast path; an -O0 build keeps one call per demand.
+    function get_or_create_local_page(this) returns LLVMValueRef
+    {
+        let frame get_local_frame()
+        if frame.handle = null
+            return LLVMValueRef null
 
         let cur_block LLVMGetInsertBlock(builder)
 
-        ; Reuse the page already materialised in THIS block. The terminator
-        ; test keeps the cache honest: it holds only while the block is still
-        ; being appended to, never when the builder was repositioned INTO a
-        ; finished block (patch_prior_returns, entry_alloca), where the cached
-        ; call would not yet dominate the insert point.
+        ; Reuse the page already forced in THIS block. The terminator test
+        ; keeps the cache honest: it holds only while the block is still being
+        ; appended to, never when the builder was repositioned INTO a finished
+        ; block (patch_prior_returns, entry_alloca), where the cached call
+        ; would not yet dominate the insert point.
         if function_local_page.handle <> null
             if cur_block.handle = function_local_page_block.handle
                 if LLVMGetBasicBlockTerminator(cur_block).handle = null
                     return function_local_page
 
-        let ptr_ty LLVMPointerTypeInContext(context, 0)
-
-        ; First demand in this function: reserve the slot at entry-block
-        ; start (where it dominates every demand site and every exit) and
-        ; null it, then give the returns emitted before this point their
-        ; release call.
-        if function_local_page_slot.handle = null
-        {
-            let saved_block LLVMGetInsertBlock(builder)
-            let first_instr LLVMGetFirstInstruction(entry_block)
-            if first_instr.handle <> null
-                LLVMPositionBuilderBefore(builder, first_instr)
-            if first_instr.handle = null
-                LLVMPositionBuilderAtEnd(builder, entry_block)
-            set function_local_page_slot: LLVMBuildAlloca(builder, ptr_ty, "local_page_slot")
-            set function_local_page_init: LLVMBuildStore(builder, LLVMConstNull(ptr_ty), function_local_page_slot)
-            if saved_block.handle <> null
-                LLVMPositionBuilderAtEnd(builder, saved_block)
-
-            patch_prior_returns function_local_page_slot
-        }
-
-        let get_fn get_get_root_page_fn()
-        var gtys Vector[LLVMTypeRef](1)
-        gtys.put(0, ptr_ty)
-        let get_fty LLVMFunctionType(ptr_ty, gtys.data, 1, 0)
-        var gargs Vector[LLVMValueRef](1)
-        gargs.put(0, function_local_page_slot)
-
-        ; ★LAZY_PAGE_MAX_SITES — why the laziness is CAPPED at 8 demand sites.
-        ; A demand site is a call, and a call is a barrier for the register
-        ; allocator: every value live across it that cannot stay in a
-        ; callee-saved register gets a spill slot. Measured on an optimised
-        ; build that costs +8 bytes of frame per site (40-site synthetic),
-        ; which is nothing — but the compiler's own walkers hold BIG
-        ; aggregates by value (see the copy_struct_value note on
-        ; spill-dominated frames), and an unbounded number of barriers
-        ; through one of those is a cost with no upside: a function with
-        ; dozens of demand sites opens a region on nearly every path anyway.
-        ;
-        ; Past the cap the function materialises ONCE at entry-block start,
-        ; exactly like the eager version did, and every later demand reuses
-        ; that value. Mixing is sound because scaly_get_root_page is
-        ; idempotent — the sites already emitted simply find the slot filled.
-        ; The functions that hit the cap are big ones that would open a
-        ; region on nearly every path anyway; the win lives in the small hot
-        ; leaves (getters, matchers), which have one or two sites.
-        set function_local_page_sites: function_local_page_sites + 1
-        if function_local_page_sites > 8
-        {
-            let saved2 LLVMGetInsertBlock(builder)
-            ; AFTER the initialising store, never before it: the pinned call
-            ; reads the slot.
-            let after LLVMGetNextInstruction(function_local_page_init)
-            if after.handle <> null
-                LLVMPositionBuilderBefore(builder, after)
-            if after.handle = null
-                LLVMPositionBuilderAtEnd(builder, entry_block)
-            set function_local_page_pinned: LLVMBuildCall2(builder, get_fty, get_fn, gargs.data, 1, "local_page")
-            if saved2.handle <> null
-                LLVMPositionBuilderAtEnd(builder, saved2)
-            return function_local_page_pinned
-        }
-
-        set function_local_page: LLVMBuildCall2(builder, get_fty, get_fn, gargs.data, 1, "local_page")
+        set function_local_page: force_frame(frame)
         set function_local_page_block: cur_block
         function_local_page
     }
 
     ; Give the returns already emitted into the current function (before the
-    ; slot existed) their release call.
+    ; frame existed) their release call.
     ;
     ; ★These paths are NOT necessarily page-free at runtime, which is why the
-    ; call is the slot-releasing, null-tolerant one rather than the bare
+    ; call is the frame-releasing, null-tolerant one rather than the bare
     ; scaly_release_root_page the eager version could use here: a return
     ; inside a LOOP body is emitted before a demand site further down, yet the
     ; second iteration reaches it with the page long since materialised.
@@ -1489,7 +1571,7 @@ define Emitter
     {
         if slot.handle = null
             return
-        let rel_fn get_release_root_page_slot_fn()
+        let rel_fn get_release_frame_fn()
         let void_ty LLVMVoidTypeInContext(context)
         let ptr_ty LLVMPointerTypeInContext(context, 0)
         var ptys Vector[LLVMTypeRef](1)
@@ -1560,19 +1642,19 @@ define Emitter
     ; (Emitter.cpp CleanupLocalPage) — same runtime behaviour either way.
     procedure emit_release_local_page(this)
     {
-        ; Nothing to release when this function never reserved a page slot.
+        ; Nothing to release when this function never reserved a frame.
         ; (Scaly `if cond STMT` runs STMT when cond is TRUE, so this
-        ; returns exactly when the slot IS null.)
-        if function_local_page_slot.handle = null
+        ; returns exactly when the frame IS null.)
+        if function_local_frame.handle = null
             return
-        let slot function_local_page_slot
+        let slot function_local_frame
         let ptr_ty LLVMPointerTypeInContext(context, 0)
         let void_ty LLVMVoidTypeInContext(context)
 
-        ; The slot form, not the page: on an exit reached without passing a
-        ; demand site there is no page value at all, and the helper's null
-        ; test is what makes such a frame free.
-        let rel_fn get_release_root_page_slot_fn()
+        ; The frame, not the page: on an exit reached without ever forcing it
+        ; there is no page value at all, and the helper's null test is what
+        ; makes such a frame free.
+        let rel_fn get_release_frame_fn()
         var r_ptys Vector[LLVMTypeRef](1)
         r_ptys.put(0, ptr_ty)
         let r_fty LLVMFunctionType(void_ty, r_ptys.data, 1, 0)
@@ -1608,14 +1690,14 @@ define Emitter
     ;   1. When a DEFINED function never uses its pointer parameter j, every
     ;      direct call to it may pass null instead. This is what makes the
     ;      analysis transitive without a call graph: a function that only
-    ;      FORWARDS its own page to such a callee loses that use, so on the
+    ;      FORWARDS its own frame to such a callee loses that use, so on the
     ;      next round its own parameter is unused and its callers stop
-    ;      passing a page in turn.
-    ;   2. A local page whose only remaining uses are its own release calls
-    ;      is dead: erase the releases and the allocation. Removing a matched
-    ;      push/pop pair keeps the StackBucket's strict-LIFO invariant
-    ;      (scaly_release_root_page asserts it) — nothing was allocated on
-    ;      the page, so there is also nothing to tear down.
+    ;      passing a frame in turn.
+    ;   2. A frame whose only remaining uses are its own initialising stores
+    ;      and its release calls is dead: erase them and the record. Removing
+    ;      a matched push/pop pair keeps the StackBucket's strict-LIFO
+    ;      invariant (scaly_release_root_page asserts it) — nothing was
+    ;      allocated on the page, so there is also nothing to tear down.
     ;
     ; ★Soundness against linkonce_odr interposition: step 1 reads the callee's
     ; parameter uses out of a DEFINITION in this module, while the linker may
@@ -1635,8 +1717,8 @@ define Emitter
     ; 1.34 s → 1.15 s CPU, output byte-identical.
     procedure elide_unused_pages(this)
     {
-        ; ★No early return on the allocator symbol: since lazy frames
-        ; (2026-08-01) an emitted body names scaly_get_root_page, not
+        ; ★No early return on the allocator symbol: since the frame chain
+        ; (2026-08-02) an emitted body names scaly_force_frame, not
         ; Page.allocate_root_page, so keying the whole pass on the latter
         ; would silently switch step 1 off in every module but the runtime's.
 
@@ -1705,24 +1787,26 @@ define Emitter
             set cj: cj + 1
         }
 
-        ; --- 2. erase every demand site nothing allocates on ---------------
+        ; --- 2. erase every frame nothing allocates on ---------------------
         ;
-        ; With lazy frames a demand site is `call scaly_get_root_page(slot)`,
-        ; and the teardown takes the SLOT, not the page — so a page nothing
-        ; uses is simply a get call whose RESULT has no uses left once step 1b
-        ; has nulled the arguments that were its only consumers. Erasing it
-        ; leaves the slot null forever, which makes the release a no-op; the
-        ; slot itself is cleaned up below so an -O0 build carries nothing.
-        let get_fn LLVMGetNamedFunction(llvm_module, "_Z19scaly_get_root_pagePP4Page")
-        if get_fn.handle = null
+        ; With the parent-linked chain a frame is a two-word alloca; the page
+        ; is materialised by scaly_force_frame and torn down by
+        ; scaly_release_frame, which takes the FRAME, not the page. So a
+        ; region nothing uses is a frame whose remaining uses — once step 1b
+        ; has nulled the arguments that were its only consumers — are just its
+        ; own initialising stores and its releases. Erasing all of that leaves
+        ; the region unopened for good; a frame that still has a force call on
+        ; any path keeps everything.
+        let rel_fn LLVMGetNamedFunction(llvm_module, "_Z19scaly_release_frameP5Frame")
+        if rel_fn.handle = null
             return
-        let rel_slot LLVMGetNamedFunction(llvm_module, "_Z28scaly_release_root_page_slotPP4Page")
 
-        ; Collect the demand sites FIRST: erasing rewrites the use list that
-        ; is being walked.
-        var sites Array[LLVMValueRef]()
-        let get_handle get_fn.handle
-        var u LLVMGetFirstUse(get_fn)
+        ; Collect the candidate frames FIRST: erasing rewrites the use list
+        ; that is being walked. Every frame has at least one release call, so
+        ; the release users enumerate them all.
+        var frames Array[LLVMValueRef]()
+        let rel_handle rel_fn.handle
+        var u LLVMGetFirstUse(rel_fn)
         while u.handle <> null
         {
             let user LLVMGetUser(u)
@@ -1730,85 +1814,93 @@ define Emitter
             if is_call.handle <> null
             {
                 let callee LLVMGetCalledValue(user)
-                if callee.handle = get_handle
-                    sites.add user
-            }
-            set u: LLVMGetNextUse(u)
-        }
-
-        ; Slots whose demand sites all went away — candidates for step 2b.
-        var slots Array[LLVMValueRef]()
-        var i: size_t 0
-        while i < sites.length
-        {
-            let site_ptr sites.get i
-            if site_ptr <> null
-            {
-                let site (*site_ptr)
-                if LLVMGetFirstUse(site).handle = null
+                if callee.handle = rel_handle
                 {
-                    let slot LLVMGetOperand(site, 0)
-                    LLVMInstructionEraseFromParent(site)
-                    ; One entry per SLOT, not per site: a function with two
-                    ; demand sites on one slot would otherwise reach 2b twice
-                    ; and erase the same alloca a second time.
-                    if slot.handle <> null
+                    let fr LLVMGetOperand(user, 0)
+                    if fr.handle <> null
                     {
+                        ; One entry per FRAME: a function with several exit
+                        ; paths releases the same frame more than once and
+                        ; would otherwise reach the erase below repeatedly.
                         var seen false
                         var k: size_t 0
-                        while k < slots.length
+                        while k < frames.length
                         {
-                            let kp slots.get k
+                            let kp frames.get k
                             if kp <> null
-                                if (*kp).handle = slot.handle
+                                if (*kp).handle = fr.handle
                                     set seen: true
                             set k: k + 1
                         }
                         if seen = false
-                            slots.add slot
+                            frames.add fr
                     }
                 }
             }
-            set i: i + 1
+            set u: LLVMGetNextUse(u)
         }
 
-        ; --- 2b. drop a slot no demand site fills any more -----------------
-        ; What may remain on it is its own `store null` and the release calls;
-        ; both are dead once no get call writes the slot. A slot that still
-        ; has a live demand site on another path keeps everything.
-        var s: size_t 0
-        while s < slots.length
+        var fi: size_t 0
+        while fi < frames.length
         {
-            let slot_ptr slots.get s
-            if slot_ptr <> null
+            let frame_ptr frames.get fi
+            if frame_ptr <> null
             {
-                let slot (*slot_ptr)
-                var dead_users Array[LLVMValueRef]()
+                let frame (*frame_ptr)
+                ; Two erase lists, because a GEP can only go once the store
+                ; through it is gone.
+                var dead_stores Array[LLVMValueRef]()
+                var dead_rest Array[LLVMValueRef]()
                 var all_dead true
-                var su LLVMGetFirstUse(slot)
-                while su.handle <> null
+                var fu LLVMGetFirstUse(frame)
+                while fu.handle <> null
                 {
-                    let usr LLVMGetUser(su)
+                    let usr LLVMGetUser(fu)
                     var is_dead false
                     if LLVMIsAStoreInst(usr).handle <> null
+                    {
                         set is_dead: true
+                        dead_stores.add usr
+                    }
                     let uc LLVMIsACallInst(usr)
                     if uc.handle <> null
-                        if rel_slot.handle <> null
-                            if LLVMGetCalledValue(usr).handle = rel_slot.handle
-                                set is_dead: true
-                    if is_dead
-                        dead_users.add usr
+                        if LLVMGetCalledValue(usr).handle = rel_handle
+                        {
+                            set is_dead: true
+                            dead_rest.add usr
+                        }
+                    ; The parent word is written through a GEP; it is dead
+                    ; when everything reached through it is a store.
+                    let ug LLVMIsAGetElementPtrInst(usr)
+                    if ug.handle <> null
+                    {
+                        var gep_dead true
+                        var gu LLVMGetFirstUse(usr)
+                        while gu.handle <> null
+                        {
+                            let guser LLVMGetUser(gu)
+                            if LLVMIsAStoreInst(guser).handle = null
+                                set gep_dead: false
+                            if LLVMIsAStoreInst(guser).handle <> null
+                                dead_stores.add guser
+                            set gu: LLVMGetNextUse(gu)
+                        }
+                        if gep_dead
+                        {
+                            set is_dead: true
+                            dead_rest.add usr
+                        }
+                    }
                     if is_dead = false
                         set all_dead: false
-                    set su: LLVMGetNextUse(su)
+                    set fu: LLVMGetNextUse(fu)
                 }
                 if all_dead
                 {
                     var d: size_t 0
-                    while d < dead_users.length
+                    while d < dead_stores.length
                     {
-                        let dp dead_users.get d
+                        let dp dead_stores.get d
                         if dp <> null
                         {
                             let dv (*dp)
@@ -1816,16 +1908,39 @@ define Emitter
                         }
                         set d: d + 1
                     }
-                    LLVMInstructionEraseFromParent(slot)
+                    var d2: size_t 0
+                    while d2 < dead_rest.length
+                    {
+                        let dp2 dead_rest.get d2
+                        if dp2 <> null
+                        {
+                            let dv2 (*dp2)
+                            LLVMInstructionEraseFromParent(dv2)
+                        }
+                        set d2: d2 + 1
+                    }
+                    LLVMInstructionEraseFromParent(frame)
                 }
             }
-            set s: s + 1
+            set fi: fi + 1
         }
     }
 
-    ; elide_unused_pages step 1a: does `f` have a body that never reads its
-    ; caller-page parameter (LLVM-argument index `page_index`, as recorded by
+    ; elide_unused_pages step 1a: does `f` have a body that never uses its
+    ; caller-frame parameter (LLVM-argument index `page_index`, as recorded by
     ; emit_function_decl)? Read before any rewriting — see the ODR note there.
+    ;
+    ; ★"Uses" deliberately counts PASSING IT ON, not just forcing it. That is
+    ; what makes nulling the argument safe for the chain: a function that
+    ; cannot force its caller's frame also cannot hand it to anyone who could,
+    ; so cutting the chain there leaves nobody below able to materialise an
+    ; outer region out of order (the ordering argument at scaly_force_frame).
+    ;
+    ; ★The ONE use that does not count is the store of the incoming frame into
+    ; this function's own frame record — the parent link. Without this
+    ; exception the predicate would be false for every function that opens a
+    ; region at all, and the pass would go inert: a cut chain is exactly what
+    ; a nulled argument produces, and it is sound for the same reason.
     function page_param_is_unused(this, f: LLVMValueRef, page_index: int) returns bool
     {
         if f.handle = null
@@ -1838,9 +1953,14 @@ define Emitter
         if page_index >= n
             return false
         let p LLVMGetParam(f, page_index)
-        let p_use LLVMGetFirstUse(p)
-        if p_use.handle <> null
-            return false
+        var p_use LLVMGetFirstUse(p)
+        while p_use.handle <> null
+        {
+            let usr LLVMGetUser(p_use)
+            if parent_link_store(usr, p) = false
+                return false
+            set p_use: LLVMGetNextUse(p_use)
+        }
         ; A caller-page parameter is a bare `ptr` and carries no attributes;
         ; anything else is not the slot we recorded. In particular an UNUSED
         ; sret parameter (a template stub's `ret null` body never writes it)
@@ -1852,6 +1972,36 @@ define Emitter
             return false
         let attrs LLVMGetAttributeCountAtIndex(f, page_index + 1)
         attrs = 0
+    }
+
+    ; Is `usr` the store that links THIS function's frame onto the incoming
+    ; one — `store %page_param, ptr getelementptr(%frame, 0, 1)`? Recognised
+    ; structurally rather than through a recorded handle, because the pass runs
+    ; over the finished module long after the per-function emitter state was
+    ; reset. The shape is unambiguous: the value stored is the caller-frame
+    ; parameter itself, and the destination is the second word of an alloca.
+    function parent_link_store(this, usr: LLVMValueRef, p: LLVMValueRef) returns bool
+    {
+        let st LLVMIsAStoreInst(usr)
+        if st.handle = null
+            return false
+        ; Operand 0 is the stored value, operand 1 the destination.
+        let stored LLVMGetOperand(usr, 0)
+        if stored.handle <> p.handle
+            return false
+        let dest LLVMGetOperand(usr, 1)
+        if dest.handle = null
+            return false
+        let gep LLVMIsAGetElementPtrInst(dest)
+        if gep.handle = null
+            return false
+        let base LLVMGetOperand(dest, 0)
+        if base.handle = null
+            return false
+        let alloca_inst LLVMIsAAllocaInst(base)
+        if alloca_inst.handle = null
+            return false
+        true
     }
 
     ; elide_unused_pages step 1b: pass null for f's caller page at every
@@ -2317,13 +2467,15 @@ define Emitter
         }
 
         ; Resolve the destination page from the Reference location
-        ; (^this → Page.get(this), ^rp / ^name → that variable).
+        ; (^this → Page.get(this), ^rp / ^name → that variable). This one
+        ; feeds Page::allocate, so it must be a REAL page: the caller-page
+        ; slot holds a frame and gets forced here.
         var page_arg: LLVMValueRef resolve_reference_page(bx.target_page)
         if page_arg.handle = null
         {
             let rp_val lookup_variable("_rp")
             if rp_val.handle <> null
-                set page_arg: rp_val
+                set page_arg: force_frame(rp_val)
             if page_arg.handle = null
                 set page_arg: get_or_create_local_page()
         }
@@ -4037,12 +4189,12 @@ define Emitter
         ; s196: a fresh function starts with no local root page; its slot is
         ; reserved lazily by get_or_create_local_page, the page itself is
         ; materialised at the demand site and released on every exit.
-        set function_local_page_slot: LLVMValueRef(null)
+        set function_local_frame: LLVMValueRef(null)
         set function_local_page: LLVMValueRef(null)
         set function_local_page_block: LLVMBasicBlockRef(null)
         set function_local_page_init: LLVMValueRef(null)
-        set function_local_page_sites: 0
-        set function_local_page_pinned: LLVMValueRef(null)
+        set function_local_frame_parent_store: LLVMValueRef(null)
+        set current_frame_parent: LLVMValueRef(null)
 
         ; 4.4: the promotion classifier keys its foundation-containment
         ; rule on the owning source file.
@@ -4147,12 +4299,33 @@ define Emitter
                     set page_offset: 1
                     let page_name (*func.page_parameter.unwrap())
                     let page_value LLVMGetParam(llvm_func, sret_offset as int)
-                    define_variable(page_name, page_value)
+
+                    ; ★A peel parameter the SOURCE named (`page`, `rp`, the
+                    ; Modeler's first-parameter peel) is a pointer[Page] to
+                    ; user code: it gets passed to Page.allocate, threaded into
+                    ; `String^page(...)`, handed to Page.get. Those must see a
+                    ; REAL page, so the frame is forced here, once, at entry.
+                    ; The implicit slot (`_rp`) stays a frame — that is the
+                    ; whole point of the chain, and it is where the laziness
+                    ; lives: the hot conditional allocators (StringBuilder.
+                    ; append, List.add, Array.add) all take the implicit one.
+                    ; A function that names its page does so because it
+                    ; allocates on it, so forcing at entry costs it nothing.
+                    var bound_page page_value
+                    if page_name <> "_rp"
+                        set bound_page: force_frame(page_value)
+                    define_variable(page_name, bound_page)
                     ; An explicit peel-param named `rp` IS the caller-page
-                    ; slot: alias the internal `_rp` name to the same value
-                    ; so lookup_variable("_rp") fallbacks keep finding it.
+                    ; slot: alias the internal `_rp` name to the FRAME (never
+                    ; the forced page) so the call sites that forward a caller
+                    ; page keep forwarding a frame.
                     if page_name = "rp"
                         define_variable("_rp", page_value)
+                    ; This function's own frame chains onto the one it was
+                    ; handed. Recorded here rather than looked up later: the
+                    ; outlined parfor task function still sees this variable
+                    ; table and must NOT inherit it (see current_frame_parent).
+                    set current_frame_parent: page_value
                 }
 
                 ; Bind user parameters as local variables, offset by
@@ -4342,7 +4515,10 @@ define Emitter
                                     if LLVMGetTypeKind(LLVMTypeOf ret_val) = LLVMTypeKind.Struct()
                                     {
                                         let result_ty LLVMTypeOf(ret_val)
-                                        let rp_val lookup_variable("_rp")
+                                        let rp_frame lookup_variable("_rp")
+                                        var rp_val: LLVMValueRef LLVMValueRef(null)
+                                        if rp_frame.handle <> null
+                                            set rp_val: force_frame(rp_frame)
                                         if rp_val.handle <> null
                                         {
                                             var alloc_func lookup_function_cache("_ZN4Page8allocateEmm")
@@ -4789,12 +4965,12 @@ define Emitter
                     set current_function: new_main
                     reset_temp_pool()
                     ; s196: synthetic main starts with no local root page.
-                    set function_local_page_slot: LLVMValueRef(null)
+                    set function_local_frame: LLVMValueRef(null)
                     set function_local_page: LLVMValueRef(null)
                     set function_local_page_block: LLVMBasicBlockRef(null)
                     set function_local_page_init: LLVMValueRef(null)
-                    set function_local_page_sites: 0
-                    set function_local_page_pinned: LLVMValueRef(null)
+                    set function_local_frame_parent_store: LLVMValueRef(null)
+                    set current_frame_parent: LLVMValueRef(null)
 
                     let entry_name "entry"
                     let entry_block LLVMAppendBasicBlockInContext(context, new_main, entry_name.c_data())
@@ -6183,7 +6359,7 @@ define Emitter
         {
             let rp_val lookup_variable("_rp")
             if rp_val.handle <> null
-                return rp_val
+                return force_frame(rp_val)
         }
         get_or_create_local_page()
     }
@@ -6634,7 +6810,11 @@ define Emitter
         if dest.handle <> null
             set in_place: true
 
-        ; Resolve the page argument.
+        ; Resolve the page argument. TWO currencies since the frame chain
+        ; (2026-08-02): the constructor takes the FRAME as its caller-page
+        ; argument, while the Page::allocate below needs the materialised
+        ; page. Forcing here is right — this site really is allocating.
+        var page_frame: LLVMValueRef LLVMValueRef(null)
         var page_arg: LLVMValueRef LLVMValueRef(null)
         if in_place = false
         {
@@ -6652,22 +6832,25 @@ define Emitter
                 ; safe. (Item-2's LEVER fixed the analogous CALL path at ~line 5140;
                 ; constructions were missed.)
                 if is_local_alloc
-                    set page_arg: get_or_create_local_page()
+                    set page_frame: get_local_frame()
                 if is_local_alloc = false
                 {
                     if has_ref_name
-                        set page_arg: resolve_reference_page(ref_name)
+                        set page_frame: resolve_reference_frame(ref_name)
                     if has_ref_name = false
                     {
                         let rp_val lookup_variable("_rp")
                         if rp_val.handle <> null
-                            set page_arg: rp_val
+                            set page_frame: rp_val
                         ; s196: non-# caller — reuse this function's single local
                         ; root page (released on exit) instead of leaking a fresh one.
-                        if page_arg.handle = null
-                            set page_arg: get_or_create_local_page()
+                        if page_frame.handle = null
+                            set page_frame: get_local_frame()
                     }
                 }
+                if page_frame.handle = null
+                    return LLVMValueRef null
+                set page_arg: materialise_frame(page_frame)
                 if page_arg.handle = null
                     return LLVMValueRef null
             }
@@ -6835,7 +7018,7 @@ define Emitter
         var slot: size_t 1
         if call.requires_page_param
         {
-            ctor_args.put(1, page_arg)
+            ctor_args.put(1, page_frame)
             ctor_param_types.put(1, LLVMPointerTypeInContext(context, 0))
             set slot: 2
         }
@@ -8140,8 +8323,13 @@ define Emitter
                     set has_local2: true
                 else
                     0
+            ; ★This is the site the frame chain exists for. The argument is a
+            ; FRAME, never a materialised page: forming it costs an address,
+            ; and the callee opens the region only if it really allocates.
+            ; Measured on the DSSSL engine, 13.57 million regions per document
+            ; are never opened again because of exactly this.
             if has_ref2
-                set page_arg: resolve_reference_page(ref_name2)
+                set page_arg: resolve_reference_frame(ref_name2)
             ; design-B item 2 (THE LEVER): a `$` on a plain call routes the result
             ; to THIS function's local page (force-created on demand), not the
             ; caller's rp. The local page is fully torn down at function exit
@@ -8149,7 +8337,7 @@ define Emitter
             ; escape checker (item 3) rejects any $-call whose result escapes.
             ; Mirrors stage-0 Emitter.cpp FuncPageArg LocalLifetime arm.
             if has_local2
-                set page_arg: get_or_create_local_page()
+                set page_arg: get_local_frame()
             ; Otherwise (or if the named var wasn't in scope): the caller's rp,
             ; else this function's single local root page (released on exit).
             if page_arg.handle = null
@@ -8158,7 +8346,7 @@ define Emitter
                 if rp_val.handle <> null
                     set page_arg: rp_val
                 if page_arg.handle = null
-                    set page_arg: get_or_create_local_page()
+                    set page_arg: get_local_frame()
             }
         }
 
@@ -9926,6 +10114,13 @@ define Emitter
                     get_args.put(0, page_val)
                     set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
                 }
+                ; `_rp` / `^rp` name the caller-page slot, which holds a FRAME
+                ; since 2026-08-02; Page::allocate below needs the page.
+                ; (resolve_reference_page has already forced its own result, so
+                ; a value coming from there never matches here.)
+                if current_frame_parent.handle <> null
+                    if page_val.handle = current_frame_parent.handle
+                        set page_val: force_frame(page_val)
                 var alloc_func lookup_function_cache("_ZN4Page8allocateEmm")
                 if alloc_func.handle = null
                     set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
@@ -11907,9 +12102,10 @@ define Emitter
         var page_arg: LLVMValueRef rp_val
         ; s196: non-# caller — reuse this function's single local root page
         ; (released on exit) for the iterator instead of leaking a fresh one
-        ; per for-loop.
+        ; per for-loop. get_iterator is an ordinary Scaly call, so what
+        ; travels is the FRAME.
         if page_arg.handle = null
-            set page_arg: get_or_create_local_page()
+            set page_arg: get_local_frame()
         if page_arg.handle = null
             return LLVMValueRef null
 
@@ -12893,11 +13089,11 @@ define Emitter
         let saved_block LLVMGetInsertBlock(builder)
         let saved_function current_function
         let saved_local_page function_local_page
-        let saved_local_page_slot function_local_page_slot
+        let saved_local_frame function_local_frame
         let saved_local_page_block function_local_page_block
         let saved_local_page_init function_local_page_init
-        let saved_local_page_sites function_local_page_sites
-        let saved_local_page_pinned function_local_page_pinned
+        let saved_local_frame_parent function_local_frame_parent_store
+        let saved_frame_parent current_frame_parent
         let saved_can_throw current_function_can_throw
         let saved_di_scope current_di_scope
         let saved_pool_start temp_pool_start
@@ -12907,12 +13103,12 @@ define Emitter
         let saved_pinned_len temp_pinned.length
 
         set current_function: task_fn
-        set function_local_page_slot: LLVMValueRef(null)
+        set function_local_frame: LLVMValueRef(null)
         set function_local_page: LLVMValueRef(null)
         set function_local_page_block: LLVMBasicBlockRef(null)
         set function_local_page_init: LLVMValueRef(null)
-        set function_local_page_sites: 0
-        set function_local_page_pinned: LLVMValueRef(null)
+        set function_local_frame_parent_store: LLVMValueRef(null)
+        set current_frame_parent: LLVMValueRef(null)
         set current_function_can_throw: false
         clear_debug_location()
         set temp_pool_start: temp_pool_slots.length
@@ -13052,11 +13248,11 @@ define Emitter
         set temp_pinned.length: saved_pinned_len
         set current_function: saved_function
         set function_local_page: saved_local_page
-        set function_local_page_slot: saved_local_page_slot
+        set function_local_frame: saved_local_frame
         set function_local_page_block: saved_local_page_block
         set function_local_page_init: saved_local_page_init
-        set function_local_page_sites: saved_local_page_sites
-        set function_local_page_pinned: saved_local_page_pinned
+        set function_local_frame_parent_store: saved_local_frame_parent
+        set current_frame_parent: saved_frame_parent
         set current_function_can_throw: saved_can_throw
         set current_di_scope: saved_di_scope
         LLVMPositionBuilderAtEnd(builder, saved_block)
@@ -13415,7 +13611,7 @@ define Emitter
             let rp_val lookup_variable("_rp")
             var page_arg: LLVMValueRef rp_val
             if page_arg.handle = null
-                set page_arg: get_or_create_local_page()
+                set page_arg: get_local_frame()
             if page_arg.handle = null
                 return LLVMValueRef null
             var gi_args Vector[LLVMValueRef](3)
@@ -15155,7 +15351,7 @@ define Emitter
                                             {
                                                 let rp_val lookup_variable("_rp")
                                                 if rp_val.handle <> null
-                                                    set copy_page: rp_val
+                                                    set copy_page: force_frame(rp_val)
                                             }
                                             ; current_region.local_page is a never-set null
                                             ; (see the s196 field comment); in a non-rp
