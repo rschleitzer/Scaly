@@ -10074,14 +10074,36 @@ define Emitter
         if tuple.is_region_alloc
         {
             var page_var_name: String "_rp"
+            var life_is_local: bool false
             choose tuple.life
                 when l: Local
-                    set page_var_name: "local_page"
+                    set life_is_local: true
                 when r: Reference
                     set page_var_name: r.location
                 else
                     0
-            var page_val_raw lookup_variable page_var_name
+            var page_val_raw: LLVMValueRef LLVMValueRef(null)
+            ; Local life = the FUNCTION'S OWN region: materialise this
+            ; function's frame, exactly as emit_constructor_call does.
+            ; ★This used to `lookup_variable "local_page"` — a name nothing
+            ; has defined since the frame ABI landed (the emitter's local page
+            ; lives in `function_local_frame`, not in the variable table). The
+            ; lookup failed, `resolve_reference_page` found nothing either, and
+            ; the construction fell through to a STACK alloca at the bottom of
+            ; this function — for a type whose own bodies call
+            ; `Page.get(this)`, i.e. exactly the types that must NOT be stack
+            ; instances. It stayed invisible because every construction that
+            ; matched no init was diverted to a SYNTHESIZED empty constructor
+            ; (the padded `Structure.initializers`, Modeler.scaly), which
+            ; allocates on the frame page correctly; the Local branch here was
+            ; unreachable in practice (2026-08-02).
+            if life_is_local
+            {
+                let local_frame get_local_frame()
+                set page_val_raw: force_frame(local_frame)
+            }
+            if life_is_local = false
+                set page_val_raw: lookup_variable page_var_name
             ; A `^field` page sigil (host is a receiver member, not a local/param)
             ; misses the variable table — resolve it as a field of `this`. Keeps
             ; `return X^host()` (host a pointer[Page] field) on the receiver's page
