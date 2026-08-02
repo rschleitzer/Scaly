@@ -325,6 +325,11 @@ procedure reset_page(p: pointer[Page])
     ; construction to a local page, and a local page here recurses into
     ; Page.allocate_root_page (allocator allocating from itself).
     set p.exclusive_pages.head: null
+    ; Every page hands out its region's head, and a fresh page heads its
+    ; own — root pages, exclusive pages and the hand-paired alloc/release
+    ; pages in fiber.scaly/File.scaly all stay their own region for good.
+    ; Page.allocate re-points this on the extension pages it appends.
+    set p.region: p
 }
 
 ; --------------------------------------------------------------------------

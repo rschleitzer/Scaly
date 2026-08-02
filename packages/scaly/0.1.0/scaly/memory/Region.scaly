@@ -317,9 +317,18 @@ define Region
         ; Swizzle the page headers. Oversized pages are skipped whole:
         ; next_object is null, current_page RECORDS THE BLOCK LENGTH (a
         ; size, not a pointer — mapping it would be a false MAPFAIL), the
-        ; rest is nulled by allocate_oversized. next_object gets a
-        ; same-page REBASE, not map(): a full page's next_object points
-        ; one past the page end, which the range check rightly excludes.
+        ; rest (including `region`) is nulled by allocate_oversized.
+        ; next_object gets a same-page REBASE, not map(): a full page's
+        ; next_object points one past the page end, which the range check
+        ; rightly excludes.
+        ;
+        ; The slots are addressed BY BYTE OFFSET, matching the Page
+        ; definition in Page.scaly: next_object 0, current_page 8,
+        ; next_page 16, exclusive_pages.head 24, region 32. `region` is
+        ; a plain intra-region address on every non-oversized page — its
+        ; own base on a head page, the head's on an extension page — so
+        ; it maps like any other page pointer, and a received region's
+        ; head keeps pointing at itself.
         set i: 0 as size_t
         while i < n
         {
@@ -335,6 +344,8 @@ define Region
                 rr.fix(npg_slot)
                 let ex_slot ((np as size_t) + (24 as size_t)) as pointer[void]
                 rr.fix(ex_slot)
+                let rg_slot ((np as size_t) + (32 as size_t)) as pointer[void]
+                rr.fix(rg_slot)
                 var nd np.exclusive_pages.head
                 while nd <> null
                 {

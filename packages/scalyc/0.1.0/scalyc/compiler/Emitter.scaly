@@ -3100,16 +3100,17 @@ define Emitter
         if name = "Page"
         {
             ; Page: { next_object: ptr, current_page: ptr, next_page: ptr,
-            ;         exclusive_pages: PageList { head: ptr } }
+            ;         exclusive_pages: PageList { head: ptr }, region: ptr }
             var pl_fields Vector[LLVMTypeRef](1)
             pl_fields.put(0, ptr_ty)
             let pl_ty LLVMStructTypeInContext(context, pl_fields.data, 1, 0)
-            var fields Vector[LLVMTypeRef](4)
+            var fields Vector[LLVMTypeRef](5)
             fields.put(0, ptr_ty)
             fields.put(1, ptr_ty)
             fields.put(2, ptr_ty)
             fields.put(3, pl_ty)
-            return LLVMStructTypeInContext(context, fields.data, 4, 0)
+            fields.put(4, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 5, 0)
         }
         if name = "PageList"
         {

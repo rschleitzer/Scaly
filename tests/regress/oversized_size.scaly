@@ -8,7 +8,7 @@
 
 let mp Page.allocate_page()
 
-; 5000 net bytes: gross = 5032 > PAGE_SIZE -> allocate_oversized,
+; 5000 net bytes: gross = 5040 > PAGE_SIZE -> allocate_oversized,
 ; block rounds to 8192 (2 pages).
 let buf mp.allocate(5000 as size_t, 8 as size_t)
 let head mp.exclusive_pages.head
@@ -23,8 +23,8 @@ if op.next_object <> null
     Console.println "FAIL oversized tag"
     exit 1
 }
-; The returned buffer sits just past the Page header (sizeof Page = 32).
-if ((buf as size_t) - (op as size_t)) <> (32 as size_t)
+; The returned buffer sits just past the Page header (sizeof Page = 40).
+if ((buf as size_t) - (op as size_t)) <> (40 as size_t)
 {
     Console.println "FAIL buffer offset"
     exit 1
@@ -45,7 +45,7 @@ if op.exclusive_pages.head <> null
     exit 1
 }
 
-; The 7.0 spike shape: 100000 net -> gross 100032 -> block 102400
+; The 7.0 spike shape: 100000 net -> gross 100040 -> block 102400
 ; (25 pages) — the constant the spike had to hardcode.
 let buf2 mp.allocate(100000 as size_t, 8 as size_t)
 let head2 mp.exclusive_pages.head

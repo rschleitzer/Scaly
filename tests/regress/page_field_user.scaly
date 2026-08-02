@@ -12,27 +12,32 @@
 
 let mp Page.allocate_page()
 
-; Fresh page: next_object = base + sizeof Page (32).
+; Fresh page: next_object = base + sizeof Page (40).
 let no0 mp.next_object
-if ((no0 as size_t) - (mp as size_t)) <> (32 as size_t)
+if ((no0 as size_t) - (mp as size_t)) <> (40 as size_t)
 {
     Console.println "FAIL next_object fresh"
     exit 1
 }
 
-; One 16-byte allocation bumps it to 48.
+; One 16-byte allocation bumps it to 56.
 let x mp.allocate(16 as size_t, 8 as size_t)
 let no1 mp.next_object
-if ((no1 as size_t) - (mp as size_t)) <> (48 as size_t)
+if ((no1 as size_t) - (mp as size_t)) <> (56 as size_t)
 {
     Console.println "FAIL next_object bump"
     exit 1
 }
 
-; Fresh page has no chain yet.
+; Fresh page has no chain yet, and heads its own region.
 if mp.next_page <> null
 {
     Console.println "FAIL next_page fresh"
+    exit 1
+}
+if mp.region <> mp
+{
+    Console.println "FAIL region self"
     exit 1
 }
 
@@ -56,7 +61,9 @@ if head.next <> null
     exit 1
 }
 
-; Fill the page: the chain appears and next_page/current_page agree.
+; Fill the page: the chain appears, and with one extension page the
+; chain head (next_page) and the chain END (current_page, meaningful on
+; the region head only) are the same page — which points back at mp.
 var i 0 as size_t
 while i < (300 as size_t)
 {
@@ -73,6 +80,11 @@ if np = null
 if np <> cp
 {
     Console.println "FAIL next_page/current_page"
+    exit 1
+}
+if np.region <> mp
+{
+    Console.println "FAIL extension region"
     exit 1
 }
 
