@@ -1,0 +1,117 @@
+; Regression: a construction whose ARGUMENT is a local bound to a PAGE-HOSTED
+; construction (`let o Array[T]^host()`) must resolve to the concept's init
+; (2026-08-02 finding, found via dazzle's SelectGen).
+;
+; Such a local carries the VALUE type T plus the lifetime that placed it, while
+; the value itself is a pointer — so find_initializer# rejected an init
+; parameter declared `pointer[T]` and collapse_operand_sequence fell through to
+; the positional-tuple path meant for data classes WITHOUT an init. Both
+; failure modes were silent:
+;
+;   (a) the init body never ran, so a field with no argument of its own kept
+;       whatever was on the stack (dazzle: a lazy node-list whose cursor
+;       started past its source answered "no matches" for weeks);
+;   (b) even at matching arity, argument i went into field i — an init that
+;       declares its parameters in a different ORDER than the fields wrote
+;       them into the wrong fields.
+;
+; The fix is Planner.region_value_matches_pointer, consulted by
+; check_initializer_match's compatible pass. Expected: PASS
+
+use scaly.memory.Page
+use scaly.containers.Array
+
+define X (v: int)
+{
+    init(v: int)
+        set this.v: v
+}
+
+; `cursor` has no parameter of its own — case (a)
+define B (o: pointer[Array[pointer[X]]], cursor: int)
+{
+    init(o: pointer[Array[pointer[X]]])
+    {
+        set this.o: o
+        set this.cursor: 7
+    }
+}
+
+; arity matches, but the init declares its parameters in the other order —
+; case (b), which fails deterministically without the fix
+define E (o: pointer[Array[pointer[X]]], k: int)
+{
+    init(k: int, o: pointer[Array[pointer[X]]])
+    {
+        set this.o: o
+        set this.k: k
+    }
+}
+
+define M ()
+{
+    ; the argument is a PARAMETER: always resolved to the init
+    function from_param(host: pointer[Page], o: pointer[Array[pointer[X]]]) returns pointer[B]
+    {
+        let g host.allocate(sizeof B, alignof B) as pointer[B]
+        set *g: B(o)
+        g
+    }
+
+    ; the argument is a ^host LOCAL: this is the regression
+    function from_local(host: pointer[Page]) returns pointer[B]
+    {
+        let o Array[pointer[X]]^host()
+        let g host.allocate(sizeof B, alignof B) as pointer[B]
+        set *g: B(o)
+        g
+    }
+
+    function reordered(host: pointer[Page]) returns pointer[E]
+    {
+        let o Array[pointer[X]]^host()
+        let g host.allocate(sizeof E, alignof E) as pointer[E]
+        set *g: E(5, o)
+        g
+    }
+
+    ; leave a recognizable pattern in the stack frame the builders reuse, so
+    ; case (a) cannot pass on a zeroed stack slot
+    function scribble() returns u64
+    {
+        var pad u8[256]
+        let pw pad as pointer[u64]
+        var i 0
+        while i < 32
+        {
+            set pw[i]: 0x5A5A5A5A5A5A5A5A as u64
+            set i: i + 1
+        }
+        pw[7]
+    }
+}
+
+function probe(page: pointer[Page]) returns int
+{
+    var flags 0
+    let arr Array[pointer[X]]^page()
+    let ok M.from_param(page, arr)
+    if ok.cursor <> 7
+        set flags: flags + 1
+    let junk M.scribble()
+    if junk = (0 as u64)
+        return 8
+    let bad M.from_local(page)
+    if bad.cursor <> 7
+        set flags: flags + 2
+    let e M.reordered(page)
+    if e.k <> 5
+        set flags: flags + 4
+    flags
+}
+
+let r probe()
+if r = 0
+    print "PASS\n"
+if r <> 0
+    print "FAIL\n"

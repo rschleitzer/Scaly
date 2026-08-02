@@ -3047,7 +3047,14 @@ define Planner
                     if exact_only
                         set ok: Planner.types_equal(planned_pt, arg)
                     if exact_only = false
+                    {
                         set ok: Planner.types_compatible(planned_pt, arg)
+                        ; a page-hosted construction IS a pointer — see
+                        ; region_value_matches_pointer for what missing this
+                        ; costs (silent positional-tuple construction).
+                        if ok = false
+                            set ok: Planner.region_value_matches_pointer(planned_pt, arg)
+                    }
                     if ok = false
                         return false
                 }
@@ -29104,6 +29111,51 @@ define Planner
         }
 
         false
+    }
+
+    ; A construction PLACED ON A PAGE (`T^page(…)`, `T#(…)`) is a pointer at
+    ; runtime, but its planned type is the VALUE type T carrying the lifetime
+    ; that placed it — and a local bound to such a construction inherits that
+    ; type. Handing it to a parameter declared `pointer[T]` is therefore a
+    ; representational match, not a mismatch.
+    ;
+    ; Without this rule find_initializer# missed on exactly that shape and the
+    ; construction fell through to the positional-tuple path meant for data
+    ; classes WITHOUT an init — silently, with two failure modes measured
+    ; 2026-08-02 on dazzle's SelectGen: the init body never ran, so a field
+    ; with no argument of its own kept stack garbage; and at matching arity an
+    ; init whose parameters are declared in a different ORDER than the fields
+    ; wrote them into the wrong fields. Regression: tests/regress/
+    ; init_page_hosted_arg.scaly.
+    ;
+    ; Deliberately narrow: only Reference/Call lifetimes (an explicit `^`/`#`
+    ; placement) qualify. Unspecified-life constructions may or may not be
+    ; page-resident — that is decided later by concept_needs_this_residency —
+    ; so they keep falling through rather than risk matching a stack value to
+    ; a pointer parameter.
+    function region_value_matches_pointer(param_type: PlannedType, arg_type: PlannedType) returns bool
+    {
+        if param_type.name <> "pointer"
+            return false
+        var hosted: bool false
+        choose arg_type.life
+            when c: Call
+                set hosted: true
+            when r: Reference
+                set hosted: true
+            else
+                0
+        if hosted = false
+            return false
+        if param_type.generics = null
+            return false
+        let pgs (*param_type.generics)
+        if pgs.length = 0
+            return false
+        let pinner_ptr pgs.get 0
+        if pinner_ptr = null
+            return false
+        Planner.types_equal((*pinner_ptr), arg_type)
     }
 
     ; types_equal: structural equality after alias normalisation.
