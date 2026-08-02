@@ -2326,6 +2326,16 @@ function handle_class(name: String, path: String, syntax: ClassSyntax, is_privat
                 }
                 set i: i + 1
             }
+            ; Both vectors were sized to the TOTAL member count — the split
+            ; between inits, the deinit and everything else is only known
+            ; while walking. Cut them back to what was actually filled: the
+            ; tail slots hold uninitialized memory, and every consumer walks
+            ; `length`. The initializers tail in particular was planned as a
+            ; real zero-argument init, so every concept without one got a
+            ; synthesized empty `C1Ev` and its constructions were diverted to
+            ; the ctor path (2026-08-02).
+            set initializers.length: init_idx
+            set members.length: member_idx
         }
     }
 
@@ -2435,6 +2445,9 @@ function handle_namespace(name: String, path: String, syntax: NamespaceSyntax, i
             }
             set i: i + 1
         }
+        ; sized to the declaration count, filled only with the non-module
+        ; ones — cut back to what was written (see handle_structure).
+        set members.length: member_idx
     }
 
     let symbols HashMap[String, Nameable](symbols_builder)
@@ -3037,6 +3050,10 @@ function build_module(path: String, file_name: String, name: String, syntax: Fil
             }
             set i: i + 1
         }
+        ; both sized to the declaration count, each filled with its own
+        ; share — cut back to what was written (see handle_structure).
+        set uses.length: use_idx
+        set members.length: member_idx
     }
 
     let symbols HashMap[String, Nameable](symbols_builder)
