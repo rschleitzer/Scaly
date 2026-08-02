@@ -881,6 +881,13 @@ define cli
         let dep_emit_ok dep_emitter.emit(dep_plan, dep_name)
         if dep_emit_ok = false
             return false
+        ; This object is destined for the JITDylib, not a static link: the ORC
+        ; object linker registers no TLV descriptor for a thread-local it
+        ; materializes, so the first access abort()s in _tlv_bootstrap_error.
+        ; Same de-TLS pass jit_run runs over the program module — a dependency
+        ; package's mutable globals (scalyc's own `modeler_error_count`) hit it
+        ; exactly the same way.
+        dep_emitter.jit_clear_thread_locals()
         let obj_ok dep_emitter.write_object_to_file out_obj
         if obj_ok = false
             return false

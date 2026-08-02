@@ -366,6 +366,14 @@ procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: int) exte
 ; Mark a global as thread-local (one instance per OS thread)
 procedure LLVMSetThreadLocal(global_var: LLVMValueRef, is_thread_local: int) extern
 
+; Walk the global variables of a module + query the thread-local bit.
+; Used by the JIT's de-TLS pass (jit_clear_thread_locals): a thread-local
+; the ORC JIT materializes itself has no dyld-registered TLV descriptor, so
+; the first access lands in _tlv_bootstrap_error and aborts.
+function LLVMGetFirstGlobal(mod: LLVMModuleRef) returns LLVMValueRef extern
+function LLVMGetNextGlobal(global_var: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsThreadLocal(global_var: LLVMValueRef) returns int extern
+
 ; Atomic instruction builders (M2.3). The enum params are C ints:
 ; LLVMAtomicRMWBinOp (Add=1, And=3, Or=5), LLVMAtomicOrdering
 ; (SequentiallyConsistent=7).

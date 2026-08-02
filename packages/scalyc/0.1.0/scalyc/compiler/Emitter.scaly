@@ -5488,6 +5488,37 @@ define Emitter
         }
     }
 
+    ; Drop the thread-local bit from every global the JIT module DEFINES.
+    ;
+    ; M2.2 marks every non-`shared` mutable module global thread-local. That
+    ; is right for AOT — the static linker hands the definition to dyld/ld.so,
+    ; which registers a TLV descriptor. The ORC JIT materializes the module
+    ; itself, so a thread-local it defines never gets one: the first access
+    ; lands in _tlv_bootstrap_error and abort()s the process with SIGABRT and
+    ; no message at all. That killed EVERY --run/--jit program owning a
+    ; mutable global — including the compiler's own `--run test`, which dies
+    ; in Modeler.test's first build_program on `modeler_error_count`.
+    ;
+    ; --run/--jit execute the entry point on the calling thread, so a
+    ; process-global cell is observationally identical unless the JIT'd
+    ; program spawns threads (then the per-thread globals — including the
+    ; parfor HotSpot counters — become shared; the fiber/thread suites are
+    ; AOT and unaffected). DECLARATIONS keep the bit: those resolve to the
+    ; host process's real, dyld-registered TLV via the ORC process generator,
+    ; and clearing the bit there would read the descriptor as the value.
+    ; AOT emission is untouched — this runs inside jit_run, after emit.
+    procedure jit_clear_thread_locals(this)
+    {
+        var gv LLVMGetFirstGlobal(llvm_module)
+        while gv.handle <> null
+        {
+            if LLVMIsDeclaration(gv) = 0
+                if LLVMIsThreadLocal(gv) <> 0
+                    LLVMSetThreadLocal(gv, 0)
+            set gv: LLVMGetNextGlobal(gv)
+        }
+    }
+
     ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
     ; LLVMGetErrorMessage itself consumes the error and yields a C string the
     ; caller must dispose; do NOT also call LLVMConsumeError.
@@ -5550,6 +5581,9 @@ define Emitter
         ; Stub declared-only Scaly symbols so JIT linking can't fail on them —
         ; except the ones a dependency-package object will supply.
         emit_jit_stubs(dep_object_symbols)
+
+        ; A thread-local the JIT materializes itself has no TLV descriptor.
+        jit_clear_thread_locals()
 
         let valid verify_module()
         if valid = false
