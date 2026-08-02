@@ -669,6 +669,7 @@ if.end19:                                         ; preds = %if.then15
 
 define linkonce_odr ptr @_ZN4Page8allocateEmm(ptr %0, i64 %1, i64 %2) {
 entry:
+  %visited = alloca ptr, align 8
   %page = alloca ptr, align 8
   %load.struct = load %_Z4Page, ptr %0, align 8
   %next_object = extractvalue %_Z4Page %load.struct, 0
@@ -690,12 +691,12 @@ if.then:                                          ; preds = %entry
   br i1 %gt, label %if.then6, label %if.end7
 
 if.end:                                           ; preds = %entry
-  %add25 = add i64 %and, %1
-  %as.inttoptr = inttoptr i64 %add25 to ptr
-  %next_object26 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 0
-  store ptr %as.inttoptr, ptr %next_object26, align 8
-  %as.inttoptr27 = inttoptr i64 %and to ptr
-  ret ptr %as.inttoptr27
+  %add68 = add i64 %and, %1
+  %as.inttoptr69 = inttoptr i64 %add68 to ptr
+  %next_object70 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 0
+  store ptr %as.inttoptr69, ptr %next_object70, align 8
+  %as.inttoptr71 = inttoptr i64 %and to ptr
+  ret ptr %as.inttoptr71
 
 if.then6:                                         ; preds = %if.then
   %call = call ptr @_ZN4Page18allocate_oversizedEm(ptr %0, i64 %add5)
@@ -704,39 +705,110 @@ if.then6:                                         ; preds = %if.then
 if.end7:                                          ; preds = %if.then
   %load.struct8 = load %_Z4Page, ptr %0, align 8
   %current_page = extractvalue %_Z4Page %load.struct8, 1
-  %ne = icmp ne ptr %current_page, null
-  br i1 %ne, label %if.then9, label %if.end10
+  %eq = icmp eq ptr %current_page, null
+  br i1 %eq, label %if.then9, label %if.end10
 
 if.then9:                                         ; preds = %if.end7
-  %field.inplace = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call11 = call ptr @_ZN4Page8allocateEmm(ptr %deref.recv, i64 %1, i64 %2)
-  %call12 = call ptr @_ZN4Page3getEPv(ptr %call11)
+  %call11 = call ptr @_ZN4Page13allocate_pageEv()
+  %current_page12 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 1
+  store ptr %call11, ptr %current_page12, align 8
+  %next_page = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 2
+  store ptr %call11, ptr %next_page, align 8
+  br label %if.end10
+
+if.end10:                                         ; preds = %if.then9, %if.end7
   %load.struct13 = load %_Z4Page, ptr %0, align 8
   %current_page14 = extractvalue %_Z4Page %load.struct13, 1
-  %ne15 = icmp ne ptr %call12, %current_page14
-  br i1 %ne15, label %if.then16, label %if.end17
+  store ptr %current_page14, ptr %page, align 1
+  br label %repeat.body
 
-if.end10:                                         ; preds = %if.end7
-  %call19 = call ptr @_ZN4Page13allocate_pageEv()
-  store ptr %call19, ptr %page, align 1
-  %page20 = load ptr, ptr %page, align 8
-  %current_page21 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 1
-  store ptr %page20, ptr %current_page21, align 8
-  %page22 = load ptr, ptr %page, align 8
-  %next_page = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 2
-  store ptr %page22, ptr %next_page, align 8
-  %page23 = load ptr, ptr %page, align 8
-  %call24 = call ptr @_ZN4Page8allocateEmm(ptr %page23, i64 %1, i64 %2)
-  ret ptr %call24
+repeat.body:                                      ; preds = %if.end35, %if.end10
+  %page15 = load ptr, ptr %page, align 8
+  %load.struct16 = load %_Z4Page, ptr %page15, align 8
+  %next_object17 = extractvalue %_Z4Page %load.struct16, 0
+  %as.ptrtoint18 = ptrtoint ptr %next_object17 to i64
+  %add19 = add i64 %as.ptrtoint18, %2
+  %sub20 = sub i64 %add19, 1
+  %sub21 = sub i64 %2, 1
+  %bitnot22 = xor i64 %sub21, -1
+  %and23 = and i64 %sub20, %bitnot22
+  %page24 = load ptr, ptr %page, align 8
+  %as.ptrtoint25 = ptrtoint ptr %page24 to i64
+  %add26 = add i64 %as.ptrtoint25, 4096
+  %sub27 = sub i64 %add26, %and23
+  %ge = icmp uge i64 %sub27, %1
+  br i1 %ge, label %if.then28, label %if.end29
 
-if.then16:                                        ; preds = %if.then9
-  %current_page18 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 1
-  store ptr %call12, ptr %current_page18, align 8
-  br label %if.end17
+repeat.exit:                                      ; preds = %if.then28
+  %page43 = load ptr, ptr %page, align 8
+  %load.struct44 = load %_Z4Page, ptr %page43, align 8
+  %next_object45 = extractvalue %_Z4Page %load.struct44, 0
+  %as.ptrtoint46 = ptrtoint ptr %next_object45 to i64
+  %add47 = add i64 %as.ptrtoint46, %2
+  %sub48 = sub i64 %add47, 1
+  %sub49 = sub i64 %2, 1
+  %bitnot50 = xor i64 %sub49, -1
+  %and51 = and i64 %sub48, %bitnot50
+  %add52 = add i64 %and51, %1
+  %as.inttoptr = inttoptr i64 %add52 to ptr
+  %ptr.load53 = load ptr, ptr %page, align 8
+  %next_object54 = getelementptr inbounds %_Z4Page, ptr %ptr.load53, i32 0, i32 0
+  store ptr %as.inttoptr, ptr %next_object54, align 8
+  %load.struct55 = load %_Z4Page, ptr %0, align 8
+  %current_page56 = extractvalue %_Z4Page %load.struct55, 1
+  store ptr %current_page56, ptr %visited, align 1
+  br label %while.cond
 
-if.end17:                                         ; preds = %if.then16, %if.then9
-  ret ptr %call11
+if.then28:                                        ; preds = %repeat.body
+  br label %repeat.exit
+
+if.end29:                                         ; preds = %repeat.body
+  %page30 = load ptr, ptr %page, align 8
+  %load.struct31 = load %_Z4Page, ptr %page30, align 8
+  %current_page32 = extractvalue %_Z4Page %load.struct31, 1
+  %eq33 = icmp eq ptr %current_page32, null
+  br i1 %eq33, label %if.then34, label %if.end35
+
+if.then34:                                        ; preds = %if.end29
+  %call36 = call ptr @_ZN4Page13allocate_pageEv()
+  %ptr.load = load ptr, ptr %page, align 8
+  %current_page37 = getelementptr inbounds %_Z4Page, ptr %ptr.load, i32 0, i32 1
+  store ptr %call36, ptr %current_page37, align 8
+  %ptr.load38 = load ptr, ptr %page, align 8
+  %next_page39 = getelementptr inbounds %_Z4Page, ptr %ptr.load38, i32 0, i32 2
+  store ptr %call36, ptr %next_page39, align 8
+  br label %if.end35
+
+if.end35:                                         ; preds = %if.then34, %if.end29
+  %page40 = load ptr, ptr %page, align 8
+  %load.struct41 = load %_Z4Page, ptr %page40, align 8
+  %current_page42 = extractvalue %_Z4Page %load.struct41, 1
+  store ptr %current_page42, ptr %page, align 1
+  br label %repeat.body
+
+while.cond:                                       ; preds = %while.body, %repeat.exit
+  %visited57 = load ptr, ptr %visited, align 8
+  %page58 = load ptr, ptr %page, align 8
+  %ne = icmp ne ptr %visited57, %page58
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %visited59 = load ptr, ptr %visited, align 8
+  %load.struct60 = load %_Z4Page, ptr %visited59, align 8
+  %current_page61 = extractvalue %_Z4Page %load.struct60, 1
+  %page62 = load ptr, ptr %page, align 8
+  %ptr.load63 = load ptr, ptr %visited, align 8
+  %current_page64 = getelementptr inbounds %_Z4Page, ptr %ptr.load63, i32 0, i32 1
+  store ptr %page62, ptr %current_page64, align 8
+  store ptr %current_page61, ptr %visited, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %page65 = load ptr, ptr %page, align 8
+  %current_page66 = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 1
+  store ptr %page65, ptr %current_page66, align 8
+  %as.inttoptr67 = inttoptr i64 %and51 to ptr
+  ret ptr %as.inttoptr67
 }
 
 define linkonce_odr ptr @_ZN4Page3getEPv(ptr %0) {

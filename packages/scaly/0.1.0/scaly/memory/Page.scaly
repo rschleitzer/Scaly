@@ -209,20 +209,71 @@ define Page
             if gross_size > PAGE_SIZE
                 return allocate_oversized gross_size
 
-            if current_page <> null
+            ; Walk the extension chain ITERATIVELY. This used to recurse into
+            ; current_page.allocate — one stack frame per chain link.
+            ;
+            ; The walk is almost always one step, and deliberately so: it
+            ; collapses every page it visits onto the serving page (below), so
+            ; the next allocation from any of them is short again. What that
+            ; never reaches is a page that filled up long ago and has not been
+            ; an allocation START since — its current_page still points at its
+            ; immediate successor, and so does that one's, all the way to the
+            ; tail. Such a page becomes a start whenever an allocation derives
+            ; its page from an OBJECT instead of from the frame: Page.get(this)
+            ; in the String/Vector/Array inits, ^this placement, container
+            ; growth. A handle created early in a long-lived region lives in an
+            ; early page, so its first later allocation pays the whole chain.
+            ;
+            ; Measured 2026-08-02 over a multi-GB region: of hundreds of
+            ; millions of allocations exactly FOUR walks exceeded 500 links —
+            ; and one of those ran 1 912 559. Recursion turns that single walk
+            ; into as many frames: SIGSEGV at 104 485 frames on the default
+            ; 8 MB stack, 600 002 at 64 MB. More stack only moves the wall —
+            ; it made the largest region a program can hold a function of the
+            ; stack size (~400 MB at 8 MB). Same walk, no frames.
+            if current_page = null
             {
-                let object current_page.allocate(size, align)
-                let page_of_allocated_object get object
-                if page_of_allocated_object <> current_page
-                    set current_page: page_of_allocated_object
-
-                return object
+                let first allocate_page()
+                set current_page: first
+                set next_page: first
             }
 
-            var page allocate_page()
+            var page current_page
+            repeat
+            {
+                let page_location page.next_object as size_t
+                let page_aligned (page_location + align - (1 as size_t)) & (~(align - (1 as size_t)))
+                if (page as size_t + PAGE_SIZE) - page_aligned >= size
+                    break
+
+                if page.current_page = null
+                {
+                    let fresh allocate_page()
+                    set page.current_page: fresh
+                    set page.next_page: fresh
+                }
+                set page: page.current_page
+            }
+
+            ; Bump-allocate from the page we landed on.
+            let serve_location page.next_object as size_t
+            let serve_aligned (serve_location + align - (1 as size_t)) & (~(align - (1 as size_t)))
+            set page.next_object: (serve_aligned + size) as pointer[void]
+
+            ; Collapse every page we walked past onto the serving page — the
+            ; recursive version did this on the way out (each frame's
+            ; `set current_page: page_of_allocated_object`), and without it the
+            ; next allocation from any of them walks the same distance again.
+            var visited current_page
+            while visited <> page
+            {
+                let following visited.current_page
+                set visited.current_page: page
+                set visited: following
+            }
             set current_page: page
-            set next_page: page
-            return page.allocate(size, align)
+
+            return serve_aligned as pointer[void]
         }
 
         ; Allocate from ourselves

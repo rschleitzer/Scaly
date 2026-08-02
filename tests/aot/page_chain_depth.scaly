@@ -1,0 +1,56 @@
+; AOT Test: a region whose page chain is longer than a recursive walk survives
+; Expected: PASS
+;
+; Page.allocate used to reach the rest of a region's extension chain by
+; recursing into current_page.allocate — one stack frame per chain link. The
+; walk collapses the pages it visits, so it is almost always one step; what it
+; never reaches is a page that filled up long ago and has not been an
+; allocation START since. Its current_page still points at its immediate
+; successor, and so does that one's, all the way to the tail.
+;
+; Such a page becomes a start whenever an allocation derives its page from an
+; OBJECT rather than from the frame — String/Vector/Array all do, via
+; Page.get(this) in their inits. So a handle created early in a long-lived
+; region pays the whole chain on its first later allocation, and with recursion
+; that is one frame per link: measured 2026-08-02, the wall sat at 104 485
+; frames on the default 8 MB stack (600 002 at 64 MB — more stack only moved
+; it). The largest region a program could hold was a function of its stack.
+;
+; Two things make this test actually reproduce that, and both are easy to lose:
+;
+;   1. The chain has to GROW UNCOLLAPSED. Every filler is hosted on the page of
+;      the previous one, so each allocation walks exactly one step and leaves
+;      page_k.current_page pointing at page_k+1. Growing it through one fixed
+;      page instead lets the collapse fold the chain up behind you — that
+;      version of this test built 153 000 pages and still had only 7 500 links.
+;   2. The final allocation has to be TOO BIG for what the anchor left free on
+;      its page. A small one fits in the remainder and never walks at all.
+;
+; The chain built here is 150 000 links (~600 MB), against a limit of 104 485.
+
+use scaly.memory.Page
+use scaly.containers.String
+
+; Fill the region's first page so the anchor lands on a page of its own.
+let pad String(3900 as size_t)
+
+; The anchor's page is entered once and never allocated through again, so the
+; chain from it is the uncollapsed one.
+let anchor String(3900 as size_t)
+let anchor_page Page.get(anchor.data as pointer[void])
+
+; Seed the growth on the page after the anchor's, then extend link by link.
+var prev String(3900 as size_t)
+var i: size_t 0
+while i < (150000 as size_t)
+{
+    let host Page.get(prev.data as pointer[void])
+    let filler String^host(3900 as size_t)
+    set prev: filler
+    set i: i + (1 as size_t)
+}
+
+; One allocation hosted on the early page — the long walk.
+let late String^anchor_page(3900 as size_t)
+
+print "PASS"
