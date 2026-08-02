@@ -9754,7 +9754,7 @@ entry:
 define linkonce_odr void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %1) {
 entry:
   %list_iterator = alloca ptr, align 8
-  %tuple8 = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  %tuple9 = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
   %vector_iterator = alloca ptr, align 8
   %tuple = alloca %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, align 8
   %call = call i64 @_ZN7hashing9get_primeEm(i64 %1)
@@ -9777,52 +9777,54 @@ if.then:                                          ; preds = %entry
   %slots4 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct3, 1
   %tuple.field = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
   store ptr %slots4, ptr %tuple.field, align 1
+  %tuple.field5 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
+  store i64 0, ptr %tuple.field5, align 1
   store ptr %tuple, ptr %vector_iterator, align 1
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots22 = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots22, align 8
+  %slots23 = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots23, align 8
   ret void
 
-while.cond:                                       ; preds = %while.exit12, %if.then
-  %vector_iterator5 = load ptr, ptr %vector_iterator, align 8
-  %call6 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %vector_iterator5)
-  %while.tobool = icmp ne ptr %call6, null
+while.cond:                                       ; preds = %while.exit13, %if.then
+  %vector_iterator6 = load ptr, ptr %vector_iterator, align 8
+  %call7 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %vector_iterator6)
+  %while.tobool = icmp ne ptr %call7, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct7 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call6, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct7, 0
-  %tuple.field9 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple8, i32 0, i32 0
-  store ptr %head, ptr %tuple.field9, align 1
-  store ptr %tuple8, ptr %list_iterator, align 1
-  br label %while.cond10
+  %load.struct8 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call7, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct8, 0
+  %tuple.field10 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple9, i32 0, i32 0
+  store ptr %head, ptr %tuple.field10, align 1
+  store ptr %tuple9, ptr %list_iterator, align 1
+  br label %while.cond11
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct19 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %slots20 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct19, 1
-  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call21)
+  %load.struct20 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots21 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct20, 1
+  %call22 = call ptr @_ZN4Page3getEPv(ptr %slots21)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call22)
   br label %if.end
 
-while.cond10:                                     ; preds = %while.body11, %while.body
-  %list_iterator13 = load ptr, ptr %list_iterator, align 8
-  %call14 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator13)
-  %while.tobool15 = icmp ne ptr %call14, null
-  br i1 %while.tobool15, label %while.body11, label %while.exit12
+while.cond11:                                     ; preds = %while.body12, %while.body
+  %list_iterator14 = load ptr, ptr %list_iterator, align 8
+  %call15 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator14)
+  %while.tobool16 = icmp ne ptr %call15, null
+  br i1 %while.tobool16, label %while.body12, label %while.exit13
 
-while.body11:                                     ; preds = %while.cond10
-  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
-  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
-  %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct17, 0
+while.body12:                                     ; preds = %while.cond11
+  %load.struct17 = load %_Z4SlotI6StringE, ptr %call15, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct17, 1
+  %load.struct18 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct18, 0
   %urem = urem i64 %hash_code, %length
-  %call18 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %struct.region, i64 %urem)
-  call void @_ZN11BuilderListI4SlotI6StringEE3addEP4Page4SlotI6StringE(ptr %call18, ptr %call2, ptr %call14)
-  br label %while.cond10
+  %call19 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %struct.region, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI6StringEE3addEP4Page4SlotI6StringE(ptr %call19, ptr %call2, ptr %call15)
+  br label %while.cond11
 
-while.exit12:                                     ; preds = %while.cond10
+while.exit13:                                     ; preds = %while.cond11
   br label %while.cond
 }
 
@@ -41364,7 +41366,7 @@ entry:
 define linkonce_odr void @_ZN14HashMapBuilderI6String8NameableE10reallocateEm(ptr %0, i64 %1) {
 entry:
   %list_iterator = alloca ptr, align 8
-  %tuple8 = alloca %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, align 8
+  %tuple9 = alloca %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, align 8
   %vector_iterator = alloca ptr, align 8
   %tuple = alloca %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, align 8
   %call = call i64 @_ZN7hashing9get_primeEm(i64 %1)
@@ -41387,52 +41389,54 @@ if.then:                                          ; preds = %entry
   %slots4 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct3, 1
   %tuple.field = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 0
   store ptr %slots4, ptr %tuple.field, align 1
+  %tuple.field5 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 1
+  store i64 0, ptr %tuple.field5, align 1
   store ptr %tuple, ptr %vector_iterator, align 1
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots22 = getelementptr inbounds %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots22, align 8
+  %slots23 = getelementptr inbounds %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots23, align 8
   ret void
 
-while.cond:                                       ; preds = %while.exit12, %if.then
-  %vector_iterator5 = load ptr, ptr %vector_iterator, align 8
-  %call6 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %vector_iterator5)
-  %while.tobool = icmp ne ptr %call6, null
+while.cond:                                       ; preds = %while.exit13, %if.then
+  %vector_iterator6 = load ptr, ptr %vector_iterator, align 8
+  %call7 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %vector_iterator6)
+  %while.tobool = icmp ne ptr %call7, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct7 = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %call6, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct7, 0
-  %tuple.field9 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple8, i32 0, i32 0
-  store ptr %head, ptr %tuple.field9, align 1
-  store ptr %tuple8, ptr %list_iterator, align 1
-  br label %while.cond10
+  %load.struct8 = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %call7, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct8, 0
+  %tuple.field10 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple9, i32 0, i32 0
+  store ptr %head, ptr %tuple.field10, align 1
+  store ptr %tuple9, ptr %list_iterator, align 1
+  br label %while.cond11
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct19 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
-  %slots20 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct19, 1
-  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call21)
+  %load.struct20 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
+  %slots21 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct20, 1
+  %call22 = call ptr @_ZN4Page3getEPv(ptr %slots21)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call22)
   br label %if.end
 
-while.cond10:                                     ; preds = %while.body11, %while.body
-  %list_iterator13 = load ptr, ptr %list_iterator, align 8
-  %call14 = call ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %list_iterator13)
-  %while.tobool15 = icmp ne ptr %call14, null
-  br i1 %while.tobool15, label %while.body11, label %while.exit12
+while.cond11:                                     ; preds = %while.body12, %while.body
+  %list_iterator14 = load ptr, ptr %list_iterator, align 8
+  %call15 = call ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %list_iterator14)
+  %while.tobool16 = icmp ne ptr %call15, null
+  br i1 %while.tobool16, label %while.body12, label %while.exit13
 
-while.body11:                                     ; preds = %while.cond10
-  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
-  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
-  %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.region, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct17, 0
+while.body12:                                     ; preds = %while.cond11
+  %load.struct17 = load %_Z4SlotI6StringE, ptr %call15, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct17, 1
+  %load.struct18 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.region, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct18, 0
   %urem = urem i64 %hash_code, %length
-  %call18 = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %struct.region, i64 %urem)
-  call void @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE3addEP4Page4SlotI12KeyValuePairI6String8NameableEE(ptr %call18, ptr %call2, ptr %call14)
-  br label %while.cond10
+  %call19 = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %struct.region, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE3addEP4Page4SlotI12KeyValuePairI6String8NameableEE(ptr %call19, ptr %call2, ptr %call15)
+  br label %while.cond11
 
-while.exit12:                                     ; preds = %while.cond10
+while.exit13:                                     ; preds = %while.cond11
   br label %while.cond
 }
 
@@ -41652,6 +41656,8 @@ if.then:                                          ; preds = %entry
   call void @_ZN14HashMapBuilderI6String8NameableE10reallocateEm(ptr %0, i64 %field.val)
   %tuple.field = getelementptr inbounds %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %tuple, i32 0, i32 0
   store ptr %1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %tuple, i32 0, i32 1
+  store i64 0, ptr %tuple.field2, align 1
   %tuple.val = load %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %vector_iterator, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64), i1 false)
   br label %while.cond
@@ -41665,9 +41671,9 @@ while.cond:                                       ; preds = %while.body, %if.the
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace2 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %call, i32 0, i32 0
-  %field.inplace3 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %call, i32 0, i32 1
-  %call4 = call i1 @_ZN14HashMapBuilderI6String8NameableE12add_internalE6String8Nameable(ptr %0, ptr %field.inplace2, ptr %field.inplace3)
+  %field.inplace3 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %call, i32 0, i32 0
+  %field.inplace4 = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %call, i32 0, i32 1
+  %call5 = call i1 @_ZN14HashMapBuilderI6String8NameableE12add_internalE6String8Nameable(ptr %0, ptr %field.inplace3, ptr %field.inplace4)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond

@@ -4,7 +4,15 @@ use scaly.memory.runtime
 define VectorIterator[T]
 (
     vector: pointer[Vector[T]]
-    position: size_t
+    ; `position` carries its own default, like SliceIterator's two fields do.
+    ; A positional construction fills a field from its argument or from its
+    ; DEFAULT and leaves it untouched when it has neither — and one site does
+    ; exactly that: the HashMap/HashSet builder's `for` over
+    ; Vector[BuilderList[Slot[T]]] builds this iterator through the tuple path
+    ; (its init does not resolve under the nested generic), so `position`
+    ; started on stack garbage and the loop only ever worked because the slot
+    ; happened to hold 0. Found 2026-08-02.
+    position: size_t(0)
 )
 {
     init (v: pointer[Vector[T]])
