@@ -2933,7 +2933,8 @@ define Planner
             this: Planner,
             struct_name: String,
             loc: Span,
-            provided: ref[Vector[PlannedComponent]]?
+            provided: ref[Vector[PlannedComponent]]?,
+            ctor_type: PlannedType
         ) returns ref[Vector[PlannedComponent]]?
         {
             let concept_ref this.lookup_concept(struct_name)
@@ -2954,17 +2955,77 @@ define Planner
                         ; error handled elsewhere) so we never spuriously
                         ; append.
                         var all_missing_defaulted: bool true
+                        var first_missing: size_t s.properties.length
                         var pchk: size_t provided_count
                         while pchk < s.properties.length
                         {
                             let pc_ptr s.properties.get pchk
                             if pc_ptr <> null
                                 if pc_ptr.initializer = null
+                                {
+                                    if all_missing_defaulted
+                                        set first_missing: pchk
                                     set all_missing_defaulted: false
+                                }
                             set pchk: pchk + 1
                         }
                         if all_missing_defaulted = false
+                        {
+                            ; This helper only runs on the positional-tuple
+                            ; FALLTHROUGH, i.e. after find_initializer# found
+                            ; no matching init#. A property beyond the provided
+                            ; arguments that carries no default of its own can
+                            ; therefore only keep whatever the allocation held
+                            ; — stack garbage, silently (the SelectGen.cursor
+                            ; class, 2026-08-02). Name the first such property
+                            ; and fail the compile instead.
+                            ;
+                            ; EXCEPT the zero-argument construction of a data
+                            ; class that declares no init# at all: `T()` is the
+                            ; documented zero-construction for those (emit_tuple
+                            ; stores a ConstNull over the whole struct), so
+                            ; every property is deterministically zero, not
+                            ; garbage. opensp/dazzle build their plain records
+                            ; that way by the hundred. A concept that DOES
+                            ; declare an init# is a different story — none of
+                            ; them matched, so the body never runs (`Emitter()`
+                            ; left every LLVM handle and both index tables at
+                            ; zero in twelve emitter tests).
+                            ;
+                            ; Suppressed while the generic TEMPLATE body is
+                            ; planned: with `K`/`V` still unbound no init can
+                            ; match by type, and that body is emitted as an
+                            ; empty stub anyway (every instantiation is planned
+                            ; separately, with concrete types, and IS checked).
+                            ; Without this, HashMap[K, V]'s
+                            ; `Vector[KeyValuePair[K, V]]^this(*array)` reports
+                            ; twice, against a location in whatever file the
+                            ; instantiating module happens to be.
+                            var zero_arg_data_class: bool false
+                            if provided_count = 0
+                                if s.initializers.length = 0
+                                    set zero_arg_data_class: true
+                            var report: bool true
+                            if Planner.type_mentions_generic_param(ctor_type)
+                                set report: false
+                            if zero_arg_data_class
+                                set report: false
+                            if report
+                            {
+                                var msb StringBuilder()
+                                msb.append "no matching initializer for "
+                                msb.append struct_name
+                                msb.append " with "
+                                msb.append provided_count
+                                msb.append " argument(s): property "
+                                let miss_ptr s.properties.get first_missing
+                                if miss_ptr <> null
+                                    msb.append miss_ptr.name
+                                msb.append " would be left uninitialized"
+                                this.add_diagnostic(loc, msb.to_string())
+                            }
                             return provided
+                        }
                         var filled Array[PlannedComponent]()
                         if provided <> null
                         {
@@ -8093,7 +8154,7 @@ define Planner
                             ; (`Config()` / `Config(true)` with defaulted fields).
                             ; No-op for a full construction or a plain tuple.
                             ; Mirrors stage-0 Planner.cpp:9229-9275.
-                            set components_holder: this.fill_default_components(fn_name, second.loc, components_holder)
+                            set components_holder: this.fill_default_components(fn_name, second.loc, components_holder, ctor_struct_type)
 
                             ; Propagate the type's lifetime into the tuple.
                             ; ctor_struct_type carries the lifetime from the
@@ -31468,6 +31529,33 @@ define Planner
         false
     }
 
+    ; type_mentions_generic_param: does this planned type — or, recursively,
+    ; any of its resolved generic arguments — still name an UNINSTANTIATED
+    ; type parameter? True only while a generic TEMPLATE body is planned;
+    ; a real instantiation carries concrete types all the way down.
+    function type_mentions_generic_param(t: PlannedType) returns bool
+    {
+        if Planner.is_generic_type_param_name(t.name)
+            return true
+        if t.generics <> null
+        {
+            let gs (*t.generics)
+            var i: size_t 0
+            while i < gs.length
+            {
+                let g_ptr gs.get i
+                if g_ptr <> null
+                {
+                    let g (*g_ptr)
+                    if Planner.type_mentions_generic_param(g)
+                        return true
+                }
+                set i: i + 1
+            }
+        }
+        false
+    }
+
     ; needs_implicit_return_page: does a function whose return type is
     ; known-non-primitive need an implicit page parameter so the caller
     ; can allocate the returned struct?
@@ -34354,8 +34442,8 @@ define Planner
             return 179
 
         ; lookup_local_in_scope - hit, miss.
-        let lb_x LocalBinding(int_ty, false, false)
-        let lb_y LocalBinding(bool_ty, true, true)
+        let lb_x LocalBinding(int_ty, false, false, false)
+        let lb_y LocalBinding(bool_ty, true, true, false)
         var scope1 Vector[KeyValuePair[String, LocalBinding]](2)
         scope1.put(0, KeyValuePair[String, LocalBinding]("x", lb_x))
         scope1.put(1, KeyValuePair[String, LocalBinding]("y", lb_y))
@@ -34368,8 +34456,8 @@ define Planner
             return 182
 
         ; lookup_local_in_stack - innermost shadows outer.
-        let lb_x_outer LocalBinding(int_ty, false, false)
-        let lb_x_inner LocalBinding(bool_ty, true, false)
+        let lb_x_outer LocalBinding(int_ty, false, false, false)
+        let lb_x_inner LocalBinding(bool_ty, true, false, false)
         var outer_scope Vector[KeyValuePair[String, LocalBinding]](1)
         outer_scope.put(0, KeyValuePair[String, LocalBinding]("x", lb_x_outer))
         var inner_scope Vector[KeyValuePair[String, LocalBinding]](1)

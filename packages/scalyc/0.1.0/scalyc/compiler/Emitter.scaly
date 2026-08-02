@@ -16692,7 +16692,8 @@ function test() returns int
                 return 101
 
             ; Emit the plan
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test_module")
             if emit_result = false
                 return 102
@@ -16721,7 +16722,8 @@ function test() returns int
             if plan = null
                 return 111
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test2_module")
             if emit_result = false
                 return 112
@@ -16751,7 +16753,8 @@ function test() returns int
             if plan = null
                 return 121
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test3_module")
             if emit_result = false
                 return 122
@@ -16771,7 +16774,8 @@ function test() returns int
             if plan = null
                 return 131
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test4_module")
             if emit_result = false
                 return 132
@@ -16791,7 +16795,8 @@ function test() returns int
             if plan = null
                 return 141
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test5_module")
             if emit_result = false
                 return 142
@@ -16811,7 +16816,8 @@ function test() returns int
             if plan = null
                 return 151
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test6_module")
             if emit_result = false
                 return 152
@@ -16831,7 +16837,8 @@ function test() returns int
             if plan = null
                 return 161
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test7_module")
             if emit_result = false
                 return 162
@@ -16859,7 +16866,8 @@ function test() returns int
             if plan = null
                 return 171
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test8_module")
             if emit_result = false
                 return 172
@@ -16879,7 +16887,8 @@ function test() returns int
             if plan = null
                 return 181
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test9_module")
             if emit_result = false
                 return 182
@@ -16899,7 +16908,8 @@ function test() returns int
             if plan = null
                 return 191
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test10_module")
             if emit_result = false
                 return 192
@@ -16927,7 +16937,8 @@ function test() returns int
             if plan = null
                 return 201
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test11_module")
             if emit_result = false
                 return 202
@@ -16948,7 +16959,8 @@ function test() returns int
             if plan = null
                 return 211
 
-            var emitter Emitter()
+            let emitter_config EmitterConfig()
+            var emitter Emitter(emitter_config)
             let emit_result emitter.emit(plan, "test12_module")
             if emit_result = false
                 return 212

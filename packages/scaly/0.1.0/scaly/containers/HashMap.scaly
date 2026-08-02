@@ -56,8 +56,33 @@ define HashMap[K, V]
                 while let item list_iterator.next()
                     array.add item.value
 
+                ; Size the slot vector and copy the elements in one by one.
+                ; The natural shape is the COPYING Array init,
+                ; `Vector[KeyValuePair[K, V]]^this(*array)` — but that init
+                ; does not resolve reliably once `V` comes from a DEPENDENT
+                ; package: in scalyls (V = scalyc's `Nameable`) it stopped
+                ; matching, the construction fell into the positional-tuple
+                ; path, and the Array HEADER was bit-copied into the Vector —
+                ; `data` then held the array's inner `pointer[Vector[T]]`, so
+                ; every slot read the vector header instead of the elements.
+                ; Same source, same types, correct code in the scalyc root:
+                ; silent and instantiation-dependent. Found 2026-08-02 by the
+                ; no-matching-initializer diagnostic; the resolution defect
+                ; itself is on the wish list.
                 if array.length > 0
-                    slots.put(i, Vector[KeyValuePair[K, V]]^this(*array))
+                {
+                    let count array.length
+                    let src array.get_buffer()
+                    var slot_vector Vector[KeyValuePair[K, V]]^this(count)
+                    var j: size_t 0
+                    while j < count
+                    {
+                        let item *(src + j)
+                        slot_vector.put(j, item)
+                        set j: j + 1
+                    }
+                    slots.put(i, slot_vector)
+                }
             }
 
             set i: i + 1

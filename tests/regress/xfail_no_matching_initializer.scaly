@@ -1,0 +1,33 @@
+; xfail: no matching initializer for Box with 0 argument(s): property cfg would be left uninitialized
+; A concept that DECLARES an init# but whose construction matches none of them
+; falls through to the positional-tuple path meant for data classes without an
+; init: the init body never runs, and every property the arguments do not cover
+; keeps whatever the allocation held. That was silent until 2026-08-02 —
+; `Emitter()` left both index tables and every LLVM handle at zero in twelve
+; emitter tests, and dazzle's SelectGen read its cursor from stack garbage.
+;
+; Two shapes must be diagnosed and one must NOT:
+;   Box()            -> Box declares init(c: Cfg), none matches       (error)
+;   Pair(1)          -> Pair has no init, but `second` has no default (error)
+;   Plain()          -> no init, zero args: emit_tuple zeroes the whole
+;                       struct, which is the documented data-class
+;                       construction (opensp/dazzle rely on it)        (fine)
+; Only the first is asserted here; the runner matches the first diagnostic.
+
+define Cfg (a: int)
+
+define Box
+(
+    cfg: Cfg
+    n: int
+)
+{
+    init(c: Cfg)
+    {
+        set cfg: c
+        set n: 7
+    }
+}
+
+let b Box()
+exit 0

@@ -1,0 +1,39 @@
+; Regression: the two shapes the no-matching-initializer gate (2026-08-02)
+; must keep accepting.
+;
+;   Plain()   — a data class with NO init# and no defaults, constructed with
+;               zero arguments. emit_tuple stores a ConstNull over the whole
+;               struct, so every property is deterministically ZERO, not
+;               garbage; opensp and dazzle build their plain records this way
+;               by the hundred (UndoEntry, RtfOutputFmt, OeInfo, ...).
+;   Defaulted(7) — a short positional construction whose missing property
+;               carries its own default, filled by fill_default_components.
+;
+; Expected: PASS
+
+define Plain
+(
+    a: int
+    b: int
+)
+
+define Defaulted
+(
+    a: int
+    b: int (42)
+)
+
+let p Plain()
+if p.a <> 0
+    exit 1
+if p.b <> 0
+    exit 2
+
+let d Defaulted(7)
+if d.a <> 7
+    exit 3
+if d.b <> 42
+    exit 4
+
+print "PASS"
+exit 0

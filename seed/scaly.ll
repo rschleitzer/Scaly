@@ -14444,8 +14444,10 @@ if.end:                                           ; No predecessors!
 
 define linkonce_odr void @_ZN7HashMapI6StringiEC1E14HashMapBuilderI6StringiE(ptr %0, ptr %1) {
 entry:
-  %deref.tmp = alloca %_Z5ArrayI12KeyValuePairI6StringiEE, align 8
-  %wrapped_frame33 = alloca { ptr, ptr }, align 8
+  %deref.tmp = alloca %_Z12KeyValuePairI6StringiE, align 8
+  %j = alloca i64, align 8
+  %slot_vector = alloca ptr, align 8
+  %wrapped_frame35 = alloca { ptr, ptr }, align 8
   %list_iterator = alloca %_Z12ListIteratorI4SlotI12KeyValuePairI6StringiEEE, align 8
   %tuple = alloca %_Z12ListIteratorI4SlotI12KeyValuePairI6StringiEEE, align 8
   %array = alloca ptr, align 8
@@ -14521,9 +14523,9 @@ if.then11:                                        ; preds = %while.body
   br label %while.cond18
 
 if.end12:                                         ; preds = %if.end28, %while.body
-  %i38 = load i64, ptr %i, align 8
-  %add = add i64 %i38, 1
-  store i64 %add, ptr %i, align 1
+  %i52 = load i64, ptr %i, align 8
+  %add53 = add i64 %i52, 1
+  store i64 %add53, ptr %i, align 1
   br label %while.cond
 
 while.cond18:                                     ; preds = %while.body19, %if.then11
@@ -14545,23 +14547,49 @@ while.exit20:                                     ; preds = %while.cond18
   br i1 %gt, label %if.then27, label %if.end28
 
 if.then27:                                        ; preds = %while.exit20
-  %field.inplace29 = getelementptr inbounds %_Z7HashMapI6StringiE, ptr %0, i32 0, i32 0
-  %deref.recv30 = load ptr, ptr %field.inplace29, align 8
-  %i31 = load i64, ptr %i, align 8
-  %own_page32 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page32, ptr %wrapped_frame33, align 8
-  %wrapped.parent34 = getelementptr inbounds { ptr, ptr }, ptr %wrapped_frame33, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent34, align 8
-  %forced_page35 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame33)
-  %struct.region36 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page35, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6StringiEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6StringiEE }, ptr null, i64 0, i32 1) to i64))
-  %array37 = load ptr, ptr %array, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array37, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI12KeyValuePairI6StringiEE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6VectorI12KeyValuePairI6StringiEEC1E5ArrayI12KeyValuePairI6StringiEE(ptr %struct.region36, ptr %deref.tmp)
-  call void @_ZN6VectorI6VectorI12KeyValuePairI6StringiEEE3putEm6VectorI12KeyValuePairI6StringiEE(ptr %deref.recv30, i64 %i31, ptr %struct.region36)
-  br label %if.end28
+  %array29 = load ptr, ptr %array, align 8
+  %load.struct30 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %array29, align 8
+  %length31 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct30, 0
+  %array32 = load ptr, ptr %array, align 8
+  %call33 = call ptr @_ZN5ArrayI12KeyValuePairI6StringiEE10get_bufferEv(ptr %array32)
+  %own_page34 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page34, ptr %wrapped_frame35, align 8
+  %wrapped.parent36 = getelementptr inbounds { ptr, ptr }, ptr %wrapped_frame35, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent36, align 8
+  %forced_page37 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame35)
+  %struct.region38 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page37, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6StringiEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6StringiEE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI12KeyValuePairI6StringiEEC1Em(ptr %struct.region38, i64 %length31)
+  store ptr %struct.region38, ptr %slot_vector, align 1
+  store i64 0, ptr %j, align 1
+  br label %while.cond39
 
-if.end28:                                         ; preds = %if.then27, %while.exit20
+if.end28:                                         ; preds = %while.exit41, %while.exit20
   br label %if.end12
+
+while.cond39:                                     ; preds = %while.body40, %if.then27
+  %j42 = load i64, ptr %j, align 8
+  %lt43 = icmp ult i64 %j42, %length31
+  br i1 %lt43, label %while.body40, label %while.exit41
+
+while.body40:                                     ; preds = %while.cond39
+  %j44 = load i64, ptr %j, align 8
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringiE, ptr %call33, i64 %j44
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %ptr.add, i64 ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6StringiE, ptr null, i32 1) to i64), i1 false)
+  %slot_vector45 = load ptr, ptr %slot_vector, align 8
+  %j46 = load i64, ptr %j, align 8
+  call void @_ZN6VectorI12KeyValuePairI6StringiEE3putEm12KeyValuePairI6StringiE(ptr %slot_vector45, i64 %j46, ptr %deref.tmp)
+  %j47 = load i64, ptr %j, align 8
+  %add = add i64 %j47, 1
+  store i64 %add, ptr %j, align 1
+  br label %while.cond39
+
+while.exit41:                                     ; preds = %while.cond39
+  %field.inplace48 = getelementptr inbounds %_Z7HashMapI6StringiE, ptr %0, i32 0, i32 0
+  %deref.recv49 = load ptr, ptr %field.inplace48, align 8
+  %i50 = load i64, ptr %i, align 8
+  %slot_vector51 = load ptr, ptr %slot_vector, align 8
+  call void @_ZN6VectorI6VectorI12KeyValuePairI6StringiEEE3putEm6VectorI12KeyValuePairI6StringiEE(ptr %deref.recv49, i64 %i50, ptr %slot_vector51)
+  br label %if.end28
 }
 
 define linkonce_odr void @_ZN11BuilderListI4SlotI12KeyValuePairI1K1VEEE3addEP4Page4SlotI12KeyValuePairI1K1VEE(ptr %0, ptr %1, ptr %2) {

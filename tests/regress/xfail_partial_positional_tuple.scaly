@@ -1,0 +1,18 @@
+; xfail: no matching initializer for Pair with 1 argument(s): property second would be left uninitialized
+; The other half of the no-matching-initializer gate: a data class WITHOUT an
+; init#, constructed positionally but short of its property count. emit_tuple
+; stores one value per ARGUMENT, so every property past the last argument keeps
+; the stack bytes underneath the alloca — `LocalBinding(ty, false, false)` left
+; `is_parameter` on garbage in four planner tests exactly this way.
+;
+; A property that carries its own default is filled by fill_default_components
+; and stays legal; `second` has none.
+
+define Pair
+(
+    first: int
+    second: int
+)
+
+let p Pair(1)
+exit 0
