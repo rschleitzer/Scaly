@@ -2926,6 +2926,65 @@ define Emitter
         LLVMPointerTypeInContext(context, 0)
     }
 
+    ; Is this planned type pointer-SHAPED, i.e. does map_type's `ptr` answer
+    ; describe the value itself rather than fall out of the last-resort
+    ; fallback at the bottom of map_type?
+    ;
+    ; map_type ends in an opaque `ptr` for any name it cannot resolve — most
+    ; often a BY-VALUE struct from another package that this root never plans
+    ; (the is_runtime_opaque_struct set: Page, PageList, StackBucketHeader,
+    ; ...; ensure_member_layout# deliberately skips exactly those). The IR
+    ; stays valid, but a caller that reads the type KIND back cannot tell the
+    ; placeholder from a real pointer, and every such caller then does the
+    ; pointer thing to a struct: emit_sizeof answers 8 for a 40-byte Page, and
+    ; emit_member_address LOADS the field and stores THROUGH it — a wild store
+    ; that lands wherever the struct's first 8 bytes happen to point.
+    ; Deciding on the NAME instead is exact: only pointer/ref, an NPO Option
+    ; (pointer-payload), a delegate (function pointer) and the intrinsics
+    ; (which map_type resolves before ever reaching the fallback) are really
+    ; pointers.
+    function type_is_pointer_shaped(this, t: PlannedType) returns bool
+    {
+        if t.name = "pointer"
+            return true
+        if t.name = "ref"
+            return true
+        if is_delegate_type_name t.name
+            return true
+        if is_npo_option t
+            return true
+        let intr map_intrinsic_type_by_name t.name
+        if intr.handle <> null
+            return true
+        false
+    }
+
+    ; The element type a GEP should step by for `pointer[T] + n`. map_type is
+    ; the answer except when it hands back its unresolved-name placeholder
+    ; (see type_is_pointer_shaped#) — then the stride would be 8 for a struct
+    ; of any size: `p + 1` on a pointer[Page] stepped 8 bytes instead of 40,
+    ; so walking an array of a cross-package struct read every element from
+    ; inside the first one. The literal layouts synthesize_literal_struct#
+    ; keeps for exactly the never-laid-out stdlib types give the real stride;
+    ; if even that has no entry, keep map_type's answer rather than emit a
+    ; GEP over a type this module has no definition for.
+    function stride_type(this, elem: PlannedType) returns LLVMTypeRef
+    {
+        let mapped map_type elem
+        if mapped.handle = null
+            return mapped
+        if LLVMGetTypeKind(mapped) <> LLVMTypeKind.Pointer()
+            return mapped
+        if type_is_pointer_shaped elem
+            return mapped
+        let lit synthesize_literal_struct elem.name
+        if lit.handle = null
+            return mapped
+        if LLVMGetTypeKind(lit) <> LLVMTypeKind.Struct()
+            return mapped
+        lit
+    }
+
     ; s89: Create a placeholder named struct with `{ ptr }` body for
     ; cross-package types not in plan.structures. Used by emit_function_decl
     ; and emit_call to give the sret type attribute a sized type. Single-
@@ -9448,7 +9507,7 @@ define Emitter
                                     ; map_type(void) returns LLVMVoidType
                                     ; which GEP rejects; fall back to i8.
                                     if (*inner_ptr).name <> "void"
-                                        set elem_ty: map_type(*inner_ptr)
+                                        set elem_ty: stride_type(*inner_ptr)
                                 }
                             }
                         }
@@ -9470,7 +9529,7 @@ define Emitter
                             {
                                 let inner_ptr gens.get 0
                                 if inner_ptr <> null
-                                    set elem_ty: map_type(*inner_ptr)
+                                    set elem_ty: stride_type(*inner_ptr)
                             }
                         }
                     }
@@ -14451,6 +14510,16 @@ define Emitter
             return LLVMConstInt(i64_type, sizeof_expr.size, 0)
         if LLVMTypeIsSized(ty) = 0
             return LLVMConstInt(i64_type, sizeof_expr.size, 0)
+        ; A `ptr` for a name that is not pointer-shaped is map_type's
+        ; last-resort placeholder, not a layout (see type_is_pointer_shaped#).
+        ; LLVMSizeOf would answer 8 for a struct of any size — `sizeof Page`
+        ; in a program root came out 8 instead of 40, and a hand-built page
+        ; header then put its first object INSIDE the header. The planner's
+        ; compute_payload_size# walks the registered Concept's properties and
+        ; is the only estimate available for a type this root never lays out.
+        if LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer()
+            if type_is_pointer_shaped(sizeof_expr.sized_type) = false
+                return LLVMConstInt(i64_type, sizeof_expr.size, 0)
         LLVMSizeOf ty
     }
 
@@ -15930,6 +15999,30 @@ define Emitter
                         ; Mirrors stage-0 Emitter.cpp:2044-2055.
                         if mapped.handle <> null
                         {
+                            ; A `ptr` for a name that is not pointer-shaped is
+                            ; map_type's placeholder for a struct this root
+                            ; never lays out — a BY-VALUE field, not a
+                            ; reference. Loading through it and storing into
+                            ; the load is a wild store: `set p.exclusive_pages.head: null`
+                            ; on a pointer[Page] wrote through Page's
+                            ; uninitialized PageList field instead of into it.
+                            ; The literal layouts synthesize_literal_struct#
+                            ; keeps for exactly these types give the next GEP
+                            ; the right element type; keep GEPing from the
+                            ; field ADDRESS.
+                            var by_value_struct: bool false
+                            if LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
+                                if type_is_pointer_shaped(rt) = false
+                                {
+                                    let lit synthesize_literal_struct rt.name
+                                    if lit.handle <> null
+                                        if LLVMGetTypeKind(lit) = LLVMTypeKind.Struct()
+                                        {
+                                            set current_type: lit
+                                            set by_value_struct: true
+                                        }
+                                }
+                            if by_value_struct = false
                             if LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
                             {
                                 var inner_rt rt

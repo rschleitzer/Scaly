@@ -1,0 +1,71 @@
+; Regression: writing a NESTED by-value field through a pointer to a
+; concept from ANOTHER package emitted a WILD STORE.
+;
+;   set p.exclusive_pages.head: null      ; p: pointer[Page]
+;
+; `exclusive_pages` is a PageList VALUE inside Page, so the store belongs
+; at Page+24. Instead the emitter LOADED the field as if it were a pointer
+; and stored through the load:
+;
+;   %f = load ptr, %gep3 ; %h = gep {ptr}, %f, 0, 0 ; store ptr null, %h
+;
+; — i.e. it wrote to wherever Page's uninitialized fourth word pointed.
+; Inside Page.scaly (implicit `this`) the same assignment was always
+; correct; only the qualified form through a pointer to a FOREIGN type
+; was wrong, because map_type answers an opaque `ptr` for a struct this
+; root never lays out and emit_member_address read that type KIND back as
+; "the field is a reference". The store class is silent: it corrupts an
+; unrelated object and surfaces later as impossible behaviour (in the
+; frameprobe it clobbered a `shared` global and showed up as `0 >= 4096`
+; taking the true branch).
+;
+; The check below builds a fake header in a scratch buffer so both the
+; intended target and the address the buggy store used can be inspected.
+; Expected: PASS
+
+use scaly.memory.Page
+use scaly.memory.PageList
+use scaly.memory.PageNode
+
+let mp Page.allocate_page()
+
+; Eight words: slots 0..4 stand in for a Page header, slot 6 is the decoy
+; the buggy store would land in.
+let raw mp.allocate((8 as size_t) * sizeof size_t, alignof size_t) as pointer[size_t]
+var i: size_t 0
+while i < (8 as size_t)
+{
+    set *(raw + i): 0 as size_t
+    set i: i + 1
+}
+
+let decoy_slot: size_t 6
+set *(raw + decoy_slot): 0xABC as size_t
+; Page's fourth word (exclusive_pages, offset 24) points at the decoy, so
+; a store THROUGH the field is observable instead of a null deref.
+set *(raw + (3 as size_t)): (raw + decoy_slot) as size_t
+
+let pg raw as pointer[Page]
+set pg.exclusive_pages.head: null
+
+; Correct: the null landed IN the field at offset 24 ...
+if *(raw + (3 as size_t)) <> (0 as size_t)
+{
+    Console.println "FAIL store did not reach the nested field"
+    exit 1
+}
+; ... and the decoy the buggy store pointed at is untouched.
+if *(raw + decoy_slot) <> (0xABC as size_t)
+{
+    Console.println "FAIL wild store hit the decoy"
+    exit 1
+}
+
+; The READ side of the same chain agrees with the write side.
+if pg.exclusive_pages.head <> null
+{
+    Console.println "FAIL read back non-null"
+    exit 1
+}
+
+Console.println "PASS"

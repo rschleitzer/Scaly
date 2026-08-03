@@ -1,0 +1,101 @@
+; Regression: `sizeof T` for a concept from ANOTHER package answered 8.
+;
+; emit_sizeof lowers sizeof to LLVMSizeOf(map_type(T)) and only falls back
+; to the planner's compute_payload_size estimate when the mapped type is
+; UNSIZED. But map_type's last resort for a name it cannot resolve is an
+; opaque `ptr` — sized, and 8 bytes — so every cross-package struct came
+; out 8: `sizeof Page` = 8 instead of 40, and a hand-built page header put
+; its first object INSIDE the header (tests/dazzle/frameprobe hit exactly
+; that and had to spell the 40 as a literal).
+;
+; The fix: emit_sizeof only trusts a `ptr` when the type is pointer-SHAPED by
+; name (pointer/ref/NPO Option/delegate/intrinsic); otherwise the `ptr` is
+; map_type's placeholder and the planner's estimate is the only real answer.
+;
+; STILL OPEN (see the wish list): a root struct that embeds a cross-package
+; struct BY VALUE and never READS the field keeps the 8-byte placeholder for
+; it, so its own size and its later fields' offsets are wrong. A member
+; access anywhere triggers ensure_member_layout# and makes the layout right,
+; which is what every real root does today — but it means the layout depends
+; on the order the root touches things. Not covered below.
+; Expected: PASS
+
+use scaly.memory.Page
+use scaly.memory.PageList
+use scaly.fiber.IoWork
+
+; Same shape as Page, declared HERE: the in-package answer has always been
+; right, so it is the control for the cross-package one.
+define PageMirror
+(
+    next_object: pointer[void]
+    current_page: pointer[void]
+    next_page: pointer[void]
+    exclusive_pages: PageList
+    region: pointer[void]
+)
+
+let mirror sizeof PageMirror
+if mirror <> (40 as size_t)
+{
+    Console.println "FAIL in-package mirror size"
+    exit 1
+}
+
+; Page: 3 pointers + PageList (one pointer) + region = 40.
+let page_size sizeof Page
+if page_size <> (40 as size_t)
+{
+    Console.println "FAIL sizeof Page"
+    exit 1
+}
+
+; PageList is a single-pointer struct — 8 for the RIGHT reason, so it only
+; guards against the fix over-correcting.
+if sizeof PageList <> (8 as size_t)
+{
+    Console.println "FAIL sizeof PageList"
+    exit 1
+}
+
+; IoWork: five pointers.
+if sizeof IoWork <> (40 as size_t)
+{
+    Console.println "FAIL sizeof IoWork"
+    exit 1
+}
+
+; A pointer to a cross-package struct is still one word.
+if sizeof pointer[Page] <> (8 as size_t)
+{
+    Console.println "FAIL sizeof pointer[Page]"
+    exit 1
+}
+
+; sizeof feeds allocation sizes — the whole point of getting it right.
+let mp Page.allocate_page()
+let p mp.allocate(sizeof Page, alignof Page) as pointer[Page]
+set p.next_object: null
+set p.region: p
+if p.region <> p
+{
+    Console.println "FAIL page-sized allocation"
+    exit 1
+}
+
+; The GEP stride for `pointer[T] + n` came from the same placeholder, so
+; `p + 1` stepped 8 bytes instead of 40 and walking an array of a
+; cross-package struct read every element out of the first one.
+let stride ((p + 1) as size_t) - (p as size_t)
+if stride <> (40 as size_t)
+{
+    Console.println "FAIL pointer[Page] stride"
+    exit 1
+}
+if (((p - 1) as size_t) + (40 as size_t)) <> (p as size_t)
+{
+    Console.println "FAIL pointer[Page] negative stride"
+    exit 1
+}
+
+Console.println "PASS"
