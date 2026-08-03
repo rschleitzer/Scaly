@@ -1,0 +1,16 @@
+; xfail: unknown use path: scaly.memory.StackBucketHeader
+; Regression: a `use` clause naming a path nothing lives at compiled in
+; TOTAL SILENCE, and the cross-package call it was meant to make visible
+; then mis-emitted just as silently (S64: `use opensp.Attribute.AttributeList`
+; — AttributeList lives in module AttributeList, not Attribute — made a
+; method call return constant false, no diagnostic anywhere).
+;
+; StackBucketHeader is real, but it lives in module root_pages, so
+; `scaly.memory.StackBucketHeader` names nothing. The check uses the SAME
+; origin predicate lookup_concept uses to decide whether an explicit use
+; steers a name, so anything it rejects could never have steered anything.
+; The stdlib itself carried two such dead clauses (cluster.scaly,
+; fiber.scaly) and opensp a third — all three found by this check.
+use scaly.memory.StackBucketHeader
+
+Console.println "PASS"

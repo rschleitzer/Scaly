@@ -702,6 +702,21 @@ define Planner
         ; instantiate_generic — capture discovery still sees the
         ; enclosing scope). Declared LAST (field-index stability).
         scope_isolation_base: size_t
+
+        ; Byte offset of each recorded use clause, in lockstep with
+        ; use_vis_files/names/paths — the anchor check_use_paths# reports at.
+        ; module_paths is every dotted MODULE path the registration walk saw:
+        ; a `use` may name a module rather than a concept (`use
+        ; scaly.memory.runtime`, a module of extern functions), and no
+        ; concept origin records such a path.
+        ; Declared LAST (field-index stability).
+        use_vis_starts: Array[size_t]
+        module_paths: Array[String]
+        ; Container path of each registered Function, in lockstep with
+        ; model_functions — a `use` may name a FUNCTION (`use
+        ; scaly.memory.runtime.system`), and only its origin can tell an
+        ; honest such clause from one naming a path nothing lives at.
+        function_origin_paths: Array[String]
     )
     {
         init(filename: String)
@@ -782,6 +797,9 @@ define Planner
             set file_explicit_names: Array[String]^this()
             set disambiguation_active: false
             set scope_isolation_base: 0
+            set use_vis_starts: Array[size_t]^this()
+            set module_paths: Array[String]^this()
+            set function_origin_paths: Array[String]^this()
             set registering_file: String^this("")
             set registering_path: String^this("")
             set use_vis_files: Array[String]^this()
@@ -1637,6 +1655,7 @@ define Planner
                             use_vis_names.add vis_name
                             let vis_path this.dotted_use_prefix(path)
                             use_vis_paths.add vis_path
+                            use_vis_starts.add(u_ptr.span.start)
                             ; Feed lookup_concept's fast explicit-use cache:
                             ; only the MAIN file's EXPLICIT (non-glob) use
                             ; names. Populated here (persisting context) and
@@ -1652,6 +1671,219 @@ define Planner
                                     if ambiguous_index.lookup((*last_ptr)) >= 0
                                         set disambiguation_active: true
                                 }
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
+        ; check_use_paths: every recorded `use` clause must name something that
+        ; actually exists at that path.
+        ;
+        ; A `use` with a bogus MODULE PATH used to compile in total silence:
+        ; `use opensp.Attribute.AttributeList` (AttributeList lives in module
+        ; AttributeList, not Attribute) said nothing, and the cross-package
+        ; method call it was supposed to make visible mis-emitted just as
+        ; silently — constant false. The clause is a claim about where a name
+        ; lives; if no registered concept agrees, the claim is wrong.
+        ;
+        ; The predicate is use_vis_target_match#, the SAME one lookup_concept
+        ; uses to decide whether an explicit use steers a name — so anything
+        ; this rejects could never have steered anything either.
+        ; `use ns.*` is satisfied by any concept whose container IS ns.
+        ; Functions and operators are not use-gated, so a path that only ever
+        ; held functions is not something a `use` can name — those clauses
+        ; were no-ops before and are reported now.
+        ; use_path_names_origin: does `origin` (a concept's or function's
+        ; ABSOLUTE container path) answer to the path a use clause spells?
+        ; Two degrees of freedom, both real:
+        ;   - the clause may name the container or the container's PARENT (the
+        ;     `scaly.memory.Page` idiom, where the module is named after the
+        ;     concept it holds) — hence prefix vs full;
+        ;   - the clause is RELATIVE to where it is written: `use util.compute`
+        ;     inside a namespace names an origin anchored as
+        ;     "<module>.util". So a trailing segment match counts.
+        ; It stays strict where it matters: `scaly.memory` is NOT a tail of
+        ; `scaly.memory.root_pages`, so a concept named at the wrong module is
+        ; still reported.
+        function use_path_names_origin(this: Planner, origin: String, prefix: String, full: String) returns bool
+        {
+            if origin = prefix
+                return true
+            if origin = full
+                return true
+            var psb StringBuilder()
+            psb.append "."
+            psb.append prefix
+            let dot_prefix psb.to_string()
+            if origin.ends_with(dot_prefix)
+                return true
+            var fsb2 StringBuilder()
+            fsb2.append "."
+            fsb2.append full
+            let dot_full fsb2.to_string()
+            origin.ends_with(dot_full)
+        }
+
+        ; module_path_known: is `candidate` a module path, spelled absolutely
+        ; or relatively (same tail rule as use_path_names_origin#)?
+        function module_path_known(this: Planner, candidate: String) returns bool
+        {
+            var dsb StringBuilder()
+            dsb.append "."
+            dsb.append candidate
+            let dotted dsb.to_string()
+            var i: size_t 0
+            while i < module_paths.length
+            {
+                let mp module_paths.get i
+                if mp <> null
+                {
+                    if (*mp) = candidate
+                        return true
+                    if (*mp).ends_with(dotted)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function check_use_paths(this: Planner)
+        {
+            var i: size_t 0
+            while i < use_vis_names.length
+            {
+                let un use_vis_names.get i
+                let up use_vis_paths.get i
+                let uf use_vis_files.get i
+                if un <> null
+                if up <> null
+                if uf <> null
+                {
+                    let name (*un)
+                    let prefix (*up)
+                    ; A bare `use Name` (no prefix) claims nothing about a
+                    ; path and is always satisfiable.
+                    var judgeable: bool false
+                    if prefix.get_length() > 0
+                    {
+                        ; Only judge a clause whose ROOT we have actually
+                        ; walked. Which packages a root registers differs per
+                        ; compilation root: the LSP suite compiles programs
+                        ; that pull in scalyls WITHOUT walking scalyc, and
+                        ; every `use scalyc.compiler.*` there is honest but
+                        ; unverifiable. Reporting those would make the check
+                        ; a function of the root rather than of the source.
+                        var root_seg: String prefix
+                        let dot prefix.index_of(46 as u8)
+                        if dot >= 0
+                            set root_seg: prefix.substring(0 as size_t, dot as size_t)
+                        if this.module_path_known(root_seg)
+                            set judgeable: true
+                    }
+                    if judgeable
+                    {
+                        ; The two forms an origin may take, built ONCE per
+                        ; clause. use_vis_target_match# builds the second one
+                        ; on every call, and calling it per registered concept
+                        ; put an allocation inside a loop that runs
+                        ; clauses x concepts times — on packages/dazzle that
+                        ; alone exhausted the default stack.
+                        var fsb StringBuilder()
+                        fsb.append prefix
+                        fsb.append "."
+                        fsb.append name
+                        let full_path fsb.to_string()
+
+                        var found: bool false
+                        ; The clause may name a MODULE rather than a concept
+                        ; (`use scaly.memory.runtime` — externs only, so no
+                        ; concept records that path). A glob's own prefix is
+                        ; the module it globs.
+                        if name = "*"
+                            if this.module_path_known(prefix)
+                                set found: true
+                        if found = false
+                            if this.module_path_known(full_path)
+                                set found: true
+
+                        ; A clause may name a FUNCTION (`use ns.system`).
+                        ; Functions are not use-gated, so this is a naming
+                        ; shorthand rather than a visibility grant — but it is
+                        ; still an honest claim about where the name lives.
+                        var fi: size_t 0
+                        while fi < model_functions.length
+                        {
+                            if found
+                                set fi: model_functions.length
+                            if found = false
+                            {
+                                let fkvp model_functions.get fi
+                                if fkvp <> null
+                                    if fkvp.key = name
+                                    {
+                                        let fop function_origin_paths.get fi
+                                        if fop <> null
+                                        {
+                                            ; An unknown origin stays lenient,
+                                            ; as it does for concepts.
+                                            if (*fop).get_length() = 0
+                                                set found: true
+                                            if this.use_path_names_origin((*fop), prefix, full_path)
+                                                set found: true
+                                        }
+                                    }
+                                set fi: fi + 1
+                            }
+                        }
+
+                        var ci: size_t 0
+                        while ci < concepts.length
+                        {
+                            if found
+                                set ci: concepts.length
+                            if found = false
+                            {
+                                let kvp_ptr concepts.get ci
+                                if kvp_ptr <> null
+                                {
+                                    var name_ok: bool false
+                                    if name = "*"
+                                        set name_ok: true
+                                    if kvp_ptr.key = name
+                                        set name_ok: true
+                                    if name_ok
+                                    {
+                                        let op_ptr concept_origin_paths.get ci
+                                        if op_ptr <> null
+                                        {
+                                            if this.use_path_names_origin((*op_ptr), prefix, full_path)
+                                                set found: true
+                                        }
+                                    }
+                                }
+                                set ci: ci + 1
+                            }
+                        }
+
+                        if found = false
+                        {
+                            var sb StringBuilder()
+                            sb.append "unknown use path: "
+                            sb.append full_path
+                            ; The message and the file outlive this frame in
+                            ; this.diagnostics, so both live on this's region
+                            ; (the amb_msg lesson two checks up).
+                            let msg_local sb.to_string()
+                            let msg String^this(msg_local)
+                            let dfile String^this((*uf))
+                            var start: size_t 0
+                            let sp use_vis_starts.get i
+                            if sp <> null
+                                set start: (*sp)
+                            diagnostics.add(PlannerDiagnostic(start, msg, dfile))
                         }
                     }
                 }
@@ -2594,6 +2826,7 @@ define Planner
         {
             model_functions.add(KeyValuePair[String, Function](f.name, f))
             model_function_index.insert(f.name, model_functions.length - 1)
+            function_origin_paths.add(String^this(registering_path))
         }
 
         function register_operator(this: Planner, o: Operator)
@@ -27685,6 +27918,8 @@ define Planner
                     set new_reg_path: String^this(known)
             }
             set this.registering_path: String^this(new_reg_path)
+            if this.array_contains_name(module_paths, new_reg_path) = false
+                module_paths.add(String^this(new_reg_path))
             this.record_module_uses m
 
             var i: size_t 0
@@ -28303,6 +28538,11 @@ define Planner
             ; message binding after its Channel.send is a hard diagnostic
             ; (ownership of the message region moved to the receiver).
             this.check_channel_moves()
+
+            ; A `use` clause naming a path nothing lives at is a hard
+            ; diagnostic (2026-08-04) — it used to be silent, and so was the
+            ; mis-emitted call it was meant to make visible.
+            this.check_use_paths()
 
             var stmts_holder Vector[PlannedStatement](planned_stmts)
             var structs_holder Vector[PlannedStructure](instantiated_structures)

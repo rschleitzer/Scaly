@@ -1397,6 +1397,27 @@ define Emitter
             return LLVMBuildLoad2(builder, ptr_ty, field_ptr, "page.load")
         }
         var page_val nv
+        ; A `var`-bound page name resolves to its stack SLOT, not to the page:
+        ; lookup_variable returns the alloca for a mutable binding and the SSA
+        ; value for a `let`. Handing the slot on unloaded made the whole
+        ; construction allocate from the ADDRESS OF THE VARIABLE —
+        ; scaly_force_frame returned the stack slot as the "page" and
+        ; Page.allocate then wrote a page header over the frame. `let ep p`
+        ; worked, `var ep p` corrupted memory or SIGSEGVed, with nothing said
+        ; (2026-08-04; the workaround note in Array.scaly is what this cost).
+        ; Only a slot that HOLDS a pointer is loaded, so an SSA parameter (the
+        ; usual `this`) and a by-value struct alloca are untouched.
+        let slot LLVMIsAAllocaInst(page_val)
+        if slot.handle <> null
+        {
+            let slot_ty LLVMGetAllocatedType(page_val)
+            if slot_ty.handle <> null
+                if LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Pointer()
+                {
+                    let sptr_ty LLVMPointerTypeInContext(context, 0)
+                    set page_val: LLVMBuildLoad2(builder, sptr_ty, page_val, "page.var.load")
+                }
+        }
         if ref_name = "this"
         {
             ; ^this: wrap the receiver in Page.get(this). Mirrors stage-0's

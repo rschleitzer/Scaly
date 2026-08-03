@@ -1,0 +1,82 @@
+; Regression: `T^page_name(...)` where page_name is a VAR binding allocated
+; from the ADDRESS OF THE VARIABLE instead of from the page.
+;
+; lookup_variable returns the SSA value for a `let` and the stack ALLOCA for
+; a `var`. resolve_reference_page# handed that straight to the wrapped frame,
+; so scaly_force_frame answered with the slot address and Page.allocate wrote
+; a page header over the stack frame. `let ep p` was correct; the same code
+; with `var ep p` corrupted memory and usually SIGSEGVed, with no diagnostic
+; — found via Array.scaly's growth path (S65), whose source comment had to
+; warn that "^page constructions take LET-bound page names".
+;
+; The three shapes below are the ones that mattered: plain var, var written
+; later by `set`, and a var conditionally reassigned (the original Array
+; shape). All must place just past the 40-byte page header, exactly where the
+; let-bound control lands.
+; Expected: PASS
+
+use scaly.memory.Page
+
+let p Page.allocate_page()
+let q Page.allocate_page()
+
+; Control: a let-bound page name has always been right.
+let lp p
+let a Vector[int]^lp(4)
+if ((a as size_t) - (p as size_t)) <> (40 as size_t)
+{
+    Console.println "FAIL let-bound placement"
+    exit 1
+}
+
+; A plain var binding.
+var vp q
+let b Vector[int]^vp(4)
+if ((b as size_t) - (q as size_t)) <> (40 as size_t)
+{
+    Console.println "FAIL var-bound placement"
+    exit 1
+}
+
+; The var written by a later `set` — the value at the CONSTRUCTION must win,
+; not whatever the slot held when it was declared.
+let r Page.allocate_page()
+var wp q
+set wp: r
+let c Vector[int]^wp(4)
+if ((c as size_t) - (r as size_t)) <> (40 as size_t)
+{
+    Console.println "FAIL var placement after set"
+    exit 1
+}
+
+; Conditionally reassigned (the Array.scaly growth shape).
+let s Page.allocate_page()
+var cp r
+if (4 as size_t) > (2 as size_t)
+    set cp: s
+let d Vector[int]^cp(4)
+if ((d as size_t) - (s as size_t)) <> (40 as size_t)
+{
+    Console.println "FAIL var placement after conditional set"
+    exit 1
+}
+
+; The constructions are usable — under the bug the page header was the
+; object, so reading it back gave garbage or crashed.
+if d.length <> (4 as size_t)
+{
+    Console.println "FAIL constructed vector unusable"
+    exit 1
+}
+
+; A second allocation on the same page must follow the first, not restart at
+; the header (the way the corruption used to surface).
+let e Vector[int]^cp(4)
+if (e as size_t) <= (d as size_t)
+{
+    Console.println "FAIL second allocation did not advance"
+    exit 1
+}
+
+Console.println "PASS"

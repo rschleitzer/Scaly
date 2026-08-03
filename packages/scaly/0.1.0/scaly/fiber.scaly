@@ -295,7 +295,7 @@
 ; pool failure (pipe creation), 112 task pool/group pipe failure.
 
 use scaly.memory.Page
-use scaly.memory.StackBucketHeader
+use scaly.memory.root_pages.StackBucketHeader
 
 function scaly_make_context(stack_top: pointer[void], fn: pointer[void]) returns pointer[void] extern
 procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern

@@ -1,0 +1,27 @@
+; Companion to xfail_unknown_use_path: the legitimate `use` forms must all
+; keep compiling. A clause may name a CONCEPT at its real container, a
+; concept whose module is named after it (the `scaly.memory.Page` idiom,
+; where the origin is scaly.memory.Page and the prefix is scaly.memory), a
+; MODULE (scaly.memory.runtime holds only extern functions — no concept
+; records that path), a FUNCTION inside a module, and a glob.
+; Expected: PASS
+
+use scaly.memory.Page                       ; module named after the concept
+use scaly.memory.root_pages.StackBucketHeader ; concept in a differently named module
+use scaly.memory.runtime                    ; a module, no concepts at all
+use scaly.memory.root_pages.getenv          ; a function
+use scaly.containers.*                      ; a glob
+
+let p Page.allocate_page()
+if p = null
+{
+    Console.println "FAIL no page"
+    exit 1
+}
+if sizeof StackBucketHeader <> (16 as size_t)
+{
+    Console.println "FAIL StackBucketHeader"
+    exit 1
+}
+
+Console.println "PASS"

@@ -53,7 +53,7 @@
 
 use scaly.memory.Page
 use scaly.memory.Region
-use scaly.memory.ReceivedRegion
+use scaly.memory.Region.ReceivedRegion
 use scaly.fiber.Channel
 use scaly.fiber.Thread
 use scaly.fiber.Io
