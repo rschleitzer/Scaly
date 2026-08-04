@@ -1,0 +1,52 @@
+# Dependabot configuration (added 2026-08-04).
+#
+# WHY THIS FILE EXISTS: without it, every advisory opened its OWN security PR,
+# and an unmerged queue made the Dependabot runs themselves fail. A security job
+# whose target version already has an open PR records the error
+# `pull_request_exists_for_security_update` and exits 1 — a red run and a
+# failure mail for a condition that is pure bookkeeping. Six such PRs were open,
+# the oldest from 2026-06-24. Grouping collapses them into ONE PR that Dependabot
+# rebases instead of duplicating.
+#
+# Both npm manifests here belong to auxiliary tooling — the VS Code extension and
+# the docs watcher. NOTHING in either ships inside the compiler, which has no npm
+# dependencies at all (LLVM 18 + clang + openjade, see CLAUDE.md).
+#
+# github-actions is deliberately NOT configured: the pinned actions are stable,
+# and each such PR would spend a full bootstrap in CI. Bump them by hand when the
+# runner warns (as it does today about the Node-20 deprecation in
+# actions/checkout@v4).
+version: 2
+updates:
+  # The VS Code extension. Its whole alert surface used to be @vscode/vsce, a
+  # packaging-only devDependency worth 275 of 329 lockfile packages; it is gone
+  # (packaged via `npx @vscode/vsce package`), which took the tree to 16
+  # packages and 0 advisories. Keep it that way — new devDependencies here are
+  # exactly how the noise came back last time.
+  - package-ecosystem: npm
+    directory: /editors/vscode
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      vscode-security:
+        applies-to: security-updates
+        patterns: ['*']
+      vscode-versions:
+        applies-to: version-updates
+        patterns: ['*']
+
+  # docs/: a single devDependency (nodemon) for the docs watcher, no lockfile —
+  # manifest-only updates.
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      docs-security:
+        applies-to: security-updates
+        patterns: ['*']
+      docs-versions:
+        applies-to: version-updates
+        patterns: ['*']
