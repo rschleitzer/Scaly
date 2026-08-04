@@ -40,7 +40,10 @@ jobs:
     name: x86_64-linux-gnu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # v5 runs on Node 24; v4 was being force-migrated off the deprecated
+      # Node 20 and warned on every run. v6/v7 exist — step up when something
+      # needs them, not on principle.
+      - uses: actions/checkout@v5
 
       - name: Install deps
         run: |
@@ -85,7 +88,7 @@ jobs:
         run: tools/verify-seed.sh dist/seed/scalyc_seed
 
       - name: Upload native compiler
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: scalyc-x86_64-linux-gnu
           path: dist/seed/scalyc_seed
