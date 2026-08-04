@@ -133,9 +133,14 @@ tools/fcontext.sh "$WORK/fcontext.o"
 tools/eio.sh "$WORK/eio.o"
 tools/ctime.sh "$WORK/ctime.o"
 
+# -lm AFTER the objects: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/
+# logf/powf, and on Linux those live in a separate libm (macOS has them in
+# libSystem, linked by default). A left-to-right ELF linker only pulls what is
+# still undefined, so the library must FOLLOW its references. Harmless on macOS
+# (/usr/lib/libm.dylib re-exports libSystem).
 mkdir -p "$(dirname "$OUT")"
 ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" \
-    -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT"
+    -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT"
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 
@@ -201,6 +206,6 @@ if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -
         SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
     ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" \
-        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$LSOUT"
+        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 fi

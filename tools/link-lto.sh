@@ -69,5 +69,8 @@ if [ "$(uname -s)" = "Linux" ]; then
 fi
 
 mkdir -p "$(dirname "$OUT")"
-${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "$WORK/whole.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" -o "$OUT" \
+# -lm last: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/logf/powf,
+# a separate libm on Linux (libSystem on macOS), and it must follow the objects
+# that reference it.
+${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "$WORK/whole.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" -lm -o "$OUT" \
   || { echo "link-lto: FAIL (link)" >&2; exit 1; }

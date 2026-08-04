@@ -21,7 +21,11 @@ cd "$(dirname "$0")/.."
 source tools/llvm-env.sh
 [ "$llvm_env_ok" = "1" ] || { echo "bootstrap: FAIL — LLVM 18 not found"; exit 1; }
 
-LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
+# -lm: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/logf/powf, which
+# live in a separate libm on Linux (macOS has them in libSystem). Forwarded to
+# the compiler's own link step, which emits -l flags last — after the archives
+# that reference them, as a left-to-right ELF linker requires.
+LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME -lm"
 
 # Bootstrap ROOT: the committed seed. The C++ stage-0 fallback is retired
 # (sources frozen under retired/scalyc0/) — no seed means no bootstrap.

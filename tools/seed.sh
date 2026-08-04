@@ -92,7 +92,7 @@ CLANG="$CLANG" tools/fcontext.sh "$OUT/fcontext.o" || fail "fcontext assembly"
 CLANG="$CLANG" tools/eio.sh "$OUT/eio.o" || fail "eio shim compile"
 CLANG="$CLANG" tools/ctime.sh "$OUT/ctime.o" || fail "ctime shim compile"
 if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" \
-     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
+     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
   grep -v 'reexported library' "$OUT/link.log" || true
   fail "link (undefined symbols)"
 fi
@@ -104,7 +104,10 @@ out=$("$OUT/hello")
 [ "$out" = "Hello, World!" ] || fail "hello output: '$out'"
 
 echo "seed: AOT corpus"
+# `| tail -1` keeps the summary line only — so check the SCRIPT's status, not
+# the pipeline's (which is tail's, always 0).
 tools/aot_corpus.sh "$OUT/scalyc_seed" seed | tail -1
+[ "${PIPESTATUS[0]}" = "0" ] || fail "AOT corpus"
 
 echo "seed: fixed-point self-reproduction"
 ( ulimit -s 65520
@@ -158,7 +161,7 @@ for f in scalyls_main scalyls; do
   "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
 done
 if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" \
-     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
+     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"
 fi

@@ -740,6 +740,17 @@ define cli
             set bi: bi + 1
         }
 
+        ; libm, last of the -l flags. The runtime archive is ONE object, so a
+        ; program that needs any runtime symbol pulls in the tensor tape kernels
+        ; too, and those call tanhf/expf/sqrtf/logf/powf. macOS has them in
+        ; libSystem (linked by default); on Linux they live in a separate libm,
+        ; where a left-to-right linker also requires the library to come AFTER
+        ; the archive that references it — hence here, past the user's own -l
+        ; entries. Without it every Linux AOT link that touches the runtime
+        ; failed with undefined math symbols (the whole tests/aot corpus minus
+        ; the few programs that pull nothing from the archive).
+        cmd_builder.append " -lm"
+
         cmd_builder.append " -o "
         cmd_builder.append opts.output_file
         let cmd_str cmd_builder.to_string()

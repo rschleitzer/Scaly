@@ -31,7 +31,10 @@ if command -v brew >/dev/null 2>&1; then
 fi
 [ -d "$LIBDIR" ] || LIBDIR="/usr/lib/llvm-18/lib"
 [ -d "$LIBDIR" ] || LIBDIR="/opt/homebrew/opt/llvm@18/lib"
-LINK=(-L"$LIBDIR" -lLLVM-18)
+# -lm: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/logf/powf, which
+# live in a separate libm on Linux (libSystem on macOS). LINK is appended after
+# the objects, as a left-to-right ELF linker requires.
+LINK=(-L"$LIBDIR" -lLLVM-18 -lm)
 
 pass=0
 fail=0

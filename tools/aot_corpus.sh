@@ -54,3 +54,8 @@ for f in tests/aot/*.scaly; do
   fi
 done
 echo "$NAME: $pass PASS, $fail FAIL$failed"
+# Exit non-zero on any failure. Until 2026-08-04 this script always exited 0
+# (the trailing echo), and its only caller piped it to `tail -1` — so a broken
+# AOT corpus could not fail seed.sh. That is how nine Linux link failures rode
+# along under a green "SEED: OK" for weeks.
+[ $fail -eq 0 ]
