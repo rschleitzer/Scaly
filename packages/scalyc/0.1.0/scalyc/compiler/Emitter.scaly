@@ -259,6 +259,40 @@ define Emitter
     ; null there, which roots the task's chain — exactly what a fresh thread
     ; needs (the same reason Fiber.create takes an explicit host page).
     current_frame_parent: LLVMValueRef
+    ; TCO (2026-08-04): self-tail-call → loop. Set per function by
+    ; emit_function_body when the body contains at least one `return f(…)`
+    ; inside f whose shape the transform accepts (tail_loop_eligible), and
+    ; null for every other function — those emit exactly as before.
+    ;
+    ; tail_loop_block is the loop header the back edges branch to. It carries
+    ; one PHI per user parameter, and the parameter NAMES are bound to those
+    ; PHIs instead of to LLVMGetParam, which is the whole reason this is a
+    ; phi-loop and not a slot-loop: lookup_variable keeps answering a plain
+    ; SSA value, so not one of its ~40 consumers changes (parameters are
+    ; immutable, so an alloca would have to be loaded at every read site, and
+    ; emit_variable only loads when the PLAN says is_mutable).
+    ;
+    ; The iteration reuses this function's ONE local frame — allocations
+    ; accumulate in the same region across iterations instead of being
+    ; released per recursive frame. That is the documented cost (a tail loop
+    ; is a `while` loop, and a `while` loop allocates into its enclosing
+    ; region today); it buys a bounded STACK, which is what the recursion
+    ; needed.
+    tail_loop_block: LLVMBasicBlockRef
+    tail_loop_phis: ref[Array[LLVMValueRef]]?
+    ; Per by-value-struct parameter (null handle for the others): a DEDICATED
+    ; entry alloca the back edge copies the next iteration's value into, plus a
+    ; staging slot used only when one back edge copies MORE than one parameter
+    ; (then a source may be another parameter's shadow, so all reads must
+    ; happen before any shadow is written). Never handed to the temp pool —
+    ; that is the point: the pool must never be able to reuse this storage.
+    tail_loop_shadows: ref[Array[LLVMValueRef]]?
+    tail_loop_stages: ref[Array[LLVMValueRef]]?
+    tail_loop_slot_types: ref[Array[LLVMTypeRef]]?
+    ; The mangled name a `return`ed call must carry to be a self call, and
+    ; how many user arguments it must have. Kept beside the phis so
+    ; emit_return can test a candidate without reaching for the Plan.
+    tail_loop_mangled: String
     ; Local variables: name -> LLVM value. Flat tables; per-scope
     ; visibility maintained by scope_marks below.
     local_var_names: ref[Array[String]]?
@@ -374,6 +408,12 @@ define Emitter
         set function_local_page_init: LLVMValueRef(null)
         set function_local_frame_parent_store: LLVMValueRef(null)
         set current_frame_parent: LLVMValueRef(null)
+        set tail_loop_block: LLVMBasicBlockRef(null)
+        set tail_loop_phis: Array[LLVMValueRef]^this()
+        set tail_loop_shadows: Array[LLVMValueRef]^this()
+        set tail_loop_stages: Array[LLVMValueRef]^this()
+        set tail_loop_slot_types: Array[LLVMTypeRef]^this()
+        set tail_loop_mangled: String()
         set local_var_names: Array[String]^this()
         set local_var_values: Array[LLVMValueRef]^this()
         set scope_marks: Array[size_t]^this()
@@ -4283,6 +4323,785 @@ define Emitter
         false
     }
 
+    ; ========================================================================
+    ; TCO — self tail call to loop (2026-08-04)
+    ; ========================================================================
+    ;
+    ; `return f(args)` written INSIDE f becomes `br %tail.loop` with the
+    ; arguments handed to the header's PHIs. Every other shape keeps its
+    ; `call`, and a function without such a return is emitted exactly as
+    ; before — the transform is opt-in per function, decided by the walk
+    ; below before a single instruction of the body exists.
+    ;
+    ; Why in the emitter, when LLVM's tailcallelim does the same under -O2:
+    ; emission defaults to NO opt pipeline, and so do --jit/--run and every
+    ; bootstrap stage. Measured 2026-08-04 on `sum_to(3000000, 0)`: SIGSEGV
+    ; at the default, fine at -O2. A language promise about recursive style
+    ; cannot be a function of -O — and tailcallelim declines exactly the
+    ; cases this compiler produces most (a frame-carrying callee whose
+    ; region calls it cannot prove side-effect-free).
+    ;
+    ; ★What the loop does NOT do: open a fresh region per iteration. The
+    ; jump keeps this function's one local frame, so iteration allocations
+    ; accumulate until the real return, precisely as a `while` loop's do
+    ; today. It trades unbounded STACK for a longer-lived region — which is
+    ; the trade the recursion needed. A tail loop whose body allocates per
+    ; iteration is therefore not automatically an improvement; a bounded
+    ; stack is.
+
+    ; The `return` operand shape that qualifies: exactly one operand, no
+    ; member access on it, and its expression a DIRECT call to `mangled` with
+    ; `arity` user arguments. `return f(x).length`, an operator, an intrinsic
+    ; and an indirect call all fail here.
+    ;
+    ; ★A call carrying a Local or Reference lifetime (`f^page(…)`) is
+    ; rejected: the jump keeps THIS frame, so it cannot honour a request to
+    ; place the next iteration's allocations on another page. Unspecified and
+    ; Call are both fine — Call means "the caller's page", and after the jump
+    ; the caller's page is still ours.
+    function return_is_self_call(this, result: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) returns bool
+    {
+        if result = null
+            return false
+        let ops (*result)
+        if ops.length <> 1
+            return false
+        let op_ptr ops.get 0
+        if op_ptr = null
+            return false
+        let op (*op_ptr)
+        if op.member_access <> null
+        {
+            let chain (*op.member_access)
+            if chain.length > 0
+                return false
+        }
+        var ok: bool false
+        choose op.expr
+            when call: Call
+            {
+                if call.mangled_name = mangled
+                {
+                    if call.is_intrinsic = false
+                    {
+                        if call.is_operator = false
+                        {
+                            if call.is_indirect = false
+                            {
+                                var args_n: size_t 0
+                                if call.args <> null
+                                    set args_n: (*call.args).length
+                                if args_n = arity
+                                {
+                                    choose call.life
+                                        when u: Lifetime.Unspecified
+                                            set ok: true
+                                        when c: Lifetime.Call
+                                            set ok: true
+                                        else
+                                            0
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+                0
+        ok
+    }
+
+    ; Walkers: is there any qualifying `return` anywhere in this body? A
+    ; return inside an `if`, a `choose` arm or even a `while` body is a tail
+    ; call all the same — the jump leaves those blocks the way a `ret` does.
+    ; Lambda bodies are deliberately NOT walked: they are separate functions.
+    function operands_have_self_tail_call(this, ops: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) returns bool
+    {
+        if ops = null
+            return false
+        let v (*ops)
+        var i: size_t 0
+        while i < v.length
+        {
+            let op_ptr v.get i
+            if op_ptr <> null
+            {
+                let op (*op_ptr)
+                choose op.expr
+                    when b: Block
+                    {
+                        if statements_have_self_tail_call(b.statements, mangled, arity)
+                            return true
+                    }
+                    when f: If
+                    {
+                        if operands_have_self_tail_call(f.condition, mangled, arity)
+                            return true
+                        if f.consequent <> null
+                        {
+                            if statement_has_self_tail_call(*f.consequent.unwrap(), mangled, arity)
+                                return true
+                        }
+                        if f.alternative <> null
+                        {
+                            if statement_has_self_tail_call(*f.alternative.unwrap(), mangled, arity)
+                                return true
+                        }
+                    }
+                    when m: Match
+                    {
+                        if operands_have_self_tail_call(m.condition, mangled, arity)
+                            return true
+                        if m.branches <> null
+                        {
+                            let branches (*m.branches)
+                            var bi: size_t 0
+                            while bi < branches.length
+                            {
+                                let br_ptr branches.get bi
+                                if br_ptr <> null
+                                {
+                                    let branch (*br_ptr)
+                                    if branch.consequent <> null
+                                    {
+                                        if statement_has_self_tail_call(*branch.consequent.unwrap(), mangled, arity)
+                                            return true
+                                    }
+                                }
+                                set bi: bi + 1
+                            }
+                        }
+                        if m.alternative <> null
+                        {
+                            if statement_has_self_tail_call(*m.alternative.unwrap(), mangled, arity)
+                                return true
+                        }
+                    }
+                    when c: Choose
+                    {
+                        if operands_have_self_tail_call(c.condition, mangled, arity)
+                            return true
+                        if c.cases <> null
+                        {
+                            let cases (*c.cases)
+                            var ci: size_t 0
+                            while ci < cases.length
+                            {
+                                let case_ptr cases.get ci
+                                if case_ptr <> null
+                                {
+                                    let when_case (*case_ptr)
+                                    if when_case.consequent <> null
+                                    {
+                                        if statement_has_self_tail_call(*when_case.consequent.unwrap(), mangled, arity)
+                                            return true
+                                    }
+                                }
+                                set ci: ci + 1
+                            }
+                        }
+                        if c.alternative <> null
+                        {
+                            if statement_has_self_tail_call(*c.alternative.unwrap(), mangled, arity)
+                                return true
+                        }
+                    }
+                    when fo: For
+                    {
+                        if operands_have_self_tail_call(fo.expr, mangled, arity)
+                            return true
+                        if action_has_self_tail_call(fo.body, mangled, arity)
+                            return true
+                    }
+                    when w: While
+                    {
+                        if operands_have_self_tail_call(w.cond.operation, mangled, arity)
+                            return true
+                        if action_has_self_tail_call(w.body, mangled, arity)
+                            return true
+                    }
+                    when r: Repeat
+                    {
+                        if action_has_self_tail_call(r.body, mangled, arity)
+                            return true
+                    }
+                    when t: Try
+                    {
+                        if operands_have_self_tail_call(t.cond.operation, mangled, arity)
+                            return true
+                        if t.catches <> null
+                        {
+                            let catches (*t.catches)
+                            var ki: size_t 0
+                            while ki < catches.length
+                            {
+                                let k_ptr catches.get ki
+                                if k_ptr <> null
+                                {
+                                    let catch_case (*k_ptr)
+                                    if catch_case.consequent <> null
+                                    {
+                                        if statement_has_self_tail_call(*catch_case.consequent.unwrap(), mangled, arity)
+                                            return true
+                                    }
+                                }
+                                set ki: ki + 1
+                            }
+                        }
+                        if t.alternative <> null
+                        {
+                            if statement_has_self_tail_call(*t.alternative.unwrap(), mangled, arity)
+                                return true
+                        }
+                    }
+                    when call: Call
+                    {
+                        ; A `{ … }` block can be an argument, so an argument
+                        ; can hide a `return`.
+                        if operands_have_self_tail_call(call.args, mangled, arity)
+                            return true
+                    }
+                    else
+                        0
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    function action_has_self_tail_call(this, action: PlannedAction, mangled: String, arity: size_t) returns bool
+    {
+        operands_have_self_tail_call(action.source, mangled, arity)
+    }
+
+    function statement_has_self_tail_call(this, st: PlannedStatement, mangled: String, arity: size_t) returns bool
+    {
+        var found: bool false
+        choose st
+            when ret: Return
+                set found: return_is_self_call(ret.result, mangled, arity)
+            when act: Action
+                set found: action_has_self_tail_call(act, mangled, arity)
+            when bnd: Binding
+                set found: operands_have_self_tail_call(bnd.operation, mangled, arity)
+            when brk: Break
+                set found: operands_have_self_tail_call(brk.result, mangled, arity)
+            else
+                0
+        found
+    }
+
+    function statements_have_self_tail_call(this, sts: ref[Vector[PlannedStatement]]?, mangled: String, arity: size_t) returns bool
+    {
+        if sts = null
+            return false
+        let v (*sts)
+        var i: size_t 0
+        while i < v.length
+        {
+            let st_ptr v.get i
+            if st_ptr <> null
+            {
+                if statement_has_self_tail_call(*st_ptr, mangled, arity)
+                    return true
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; Does this function qualify, and can its parameters carry the loop?
+    function tail_loop_eligible(this, func: PlannedFunction, llvm_func: LLVMValueRef, user_count: size_t, arg_offset: size_t) returns bool
+    {
+        ; A parameter is carried in one of two ways, and every parameter must
+        ; fall into one of them or the function keeps its call:
+        ;
+        ;   (a) a VALUE — a scalar or a language-level pointer/ref/delegate/NPO
+        ;       option. The PHI carries it and there is nothing else to do.
+        ;   (b) a by-value STRUCT, which travels as a pointer to storage. Those
+        ;       get a dedicated shadow slot (see the field declarations and
+        ;       emit_self_tail_jump): a back-edge argument that lives in THIS
+        ;       frame's storage is copied there, because under recursion every
+        ;       frame had its own copy while the loop would otherwise let all
+        ;       iterations share one slot — the pool could hand it out again,
+        ;       and `let next T(a.f - 1)` overwrites it outright. Silent, and
+        ;       latent until something reuses the slot: the class CLAUDE.md's
+        ;       deref-receiver and Page.get(sret) notes describe.
+        ;
+        ; A struct whose mapped LLVM type has NO body — map_type's placeholder
+        ; for a runtime-opaque or never-laid-out cross-package type — is the
+        ; third case, and it disqualifies: without a size there is no copy to
+        ; make (the same reason copy_struct_value refuses element count 0).
+        if func.input <> null
+        {
+            let in_ref func.input.unwrap()
+            let items (*in_ref)
+            var pi: size_t 0
+            while pi < items.length
+            {
+                let item_ptr items.get pi
+                if item_ptr = null
+                    return false
+                let item (*item_ptr)
+                if item.item_type = null
+                    return false
+                let it_ref item.item_type.unwrap()
+                let it (*it_ref)
+                if type_is_pointer_shaped(it) = false
+                {
+                    let sty map_type it
+                    if sty.handle = null
+                        return false
+                    if LLVMGetTypeKind(sty) <> LLVMTypeKind.Struct()
+                        return false
+                    if LLVMCountStructElementTypes(sty) = 0
+                        return false
+                }
+                set pi: pi + 1
+            }
+        }
+        ; LLVMGetParam is unchecked — an index past the argument list walks
+        ; off it. Establish the range once, from LLVM's own count, before
+        ; asking for a single parameter.
+        let param_count LLVMCountParams(llvm_func) as size_t
+        if user_count + arg_offset > param_count
+            return false
+        var i: size_t 0
+        while i < user_count
+        {
+            let p LLVMGetParam(llvm_func, (i + arg_offset) as int)
+            if p.handle = null
+                return false
+            let p_ty LLVMTypeOf(p)
+            if p_ty.handle = null
+                return false
+            let k LLVMGetTypeKind(p_ty)
+            var simple: bool false
+            if k = LLVMTypeKind.Integer()
+                set simple: true
+            if k = LLVMTypeKind.Pointer()
+                set simple: true
+            if k = LLVMTypeKind.Float()
+                set simple: true
+            if k = LLVMTypeKind.Double()
+                set simple: true
+            if simple = false
+                return false
+            set i: i + 1
+        }
+        var found: bool false
+        choose func.impl
+            when action: Action
+                set found: action_has_self_tail_call(action, func.mangled_name, user_count)
+            else
+                0
+        found
+    }
+
+    ; Open the header: entry branches into it and every user parameter gets a
+    ; PHI seeded with the incoming argument. Must run AFTER the page
+    ; parameter is bound (its force_frame belongs in entry) and BEFORE the
+    ; user parameters are bound — they bind to these PHIs.
+    procedure open_tail_loop(this, func: PlannedFunction, llvm_func: LLVMValueRef, entry_block: LLVMBasicBlockRef, mangled: String, user_count: size_t, arg_offset: size_t)
+    {
+        ; The shadow/staging slots go in FIRST, while the builder still sits at
+        ; the end of the entry block and before the branch exists — they must
+        ; dominate the loop, and entry_alloca is deliberately not used: these
+        ; are not pool temps.
+        set tail_loop_shadows.length: 0
+        set tail_loop_stages.length: 0
+        set tail_loop_slot_types.length: 0
+        var si: size_t 0
+        while si < user_count
+        {
+            var slot_ty LLVMTypeRef(null)
+            if func.input <> null
+            {
+                let in_ref func.input.unwrap()
+                let items (*in_ref)
+                if si < items.length
+                {
+                    let item_ptr items.get si
+                    if item_ptr <> null
+                    {
+                        let item (*item_ptr)
+                        if item.item_type <> null
+                        {
+                            let it_ref item.item_type.unwrap()
+                            let it (*it_ref)
+                            if type_is_pointer_shaped(it) = false
+                                set slot_ty: map_type(it)
+                        }
+                    }
+                }
+            }
+            var shadow LLVMValueRef(null)
+            var stage LLVMValueRef(null)
+            if slot_ty.handle <> null
+            {
+                set shadow: LLVMBuildAlloca(builder, slot_ty, "tail.shadow")
+                set stage: LLVMBuildAlloca(builder, slot_ty, "tail.stage")
+            }
+            tail_loop_shadows.add shadow
+            tail_loop_stages.add stage
+            tail_loop_slot_types.add slot_ty
+            set si: si + 1
+        }
+
+        let name "tail.loop"
+        let loop_block LLVMAppendBasicBlockInContext(context, llvm_func, name.c_data())
+        LLVMBuildBr(builder, loop_block)
+        LLVMPositionBuilderAtEnd(builder, loop_block)
+        set tail_loop_phis.length: 0
+        var i: size_t 0
+        while i < user_count
+        {
+            let p LLVMGetParam(llvm_func, (i + arg_offset) as int)
+            let p_ty LLVMTypeOf(p)
+            let phi LLVMBuildPhi(builder, p_ty, "tail.arg")
+            var vals Vector[LLVMValueRef](1)
+            var blks Vector[LLVMBasicBlockRef](1)
+            vals.put(0, p)
+            blks.put(0, entry_block)
+            LLVMAddIncoming(phi, vals.data, blks.data, 1)
+            tail_loop_phis.add phi
+            set i: i + 1
+        }
+        set tail_loop_block: loop_block
+        set tail_loop_mangled: mangled
+    }
+
+    ; Bring one back-edge argument to its PHI's type. Under the scalar/pointer
+    ; restriction above the types already agree in every shape we accept; the
+    ; two shims mirror emit_call's (a struct value handed to a pointer slot
+    ; goes through a temp, a pointer handed to a struct slot is loaded) so a
+    ; member-access argument cannot become a type crash. Anything left is an
+    ; emitter inconsistency, and it dies LOUDLY rather than emitting IR that
+    ; llc would reject with a message pointing nowhere near here.
+    function coerce_tail_arg(this, val: LLVMValueRef, want: LLVMTypeRef) returns LLVMValueRef
+    {
+        let have LLVMTypeOf(val)
+        if have.handle = want.handle
+            return val
+        let hk LLVMGetTypeKind(have)
+        let wk LLVMGetTypeKind(want)
+        if wk = LLVMTypeKind.Pointer()
+        {
+            if hk = LLVMTypeKind.Pointer()
+                return val
+            if hk = LLVMTypeKind.Struct()
+            {
+                let tmp acquire_temp(have, "tail.arg.tmp")
+                copy_struct_value(tmp, val, have)
+                return tmp
+            }
+        }
+        if wk = LLVMTypeKind.Struct()
+        {
+            if hk = LLVMTypeKind.Pointer()
+                return LLVMBuildLoad2(builder, want, val, "tail.arg.load")
+        }
+        scaly_eputs "Emitter: tail-call argument type does not match the parameter it feeds\n"
+        exit 20
+        val
+    }
+
+    ; Is this argument parameter `index` itself, handed on unchanged? Then
+    ; nothing may be copied: the bytes already live where the PHI points, and
+    ; the copy would be a slot memcpy'd onto itself.
+    ;
+    ; ★Only the SAME position counts, and that restriction is the fix for a
+    ; bug this rule had in its first form ("is it ANY of our PHIs"). Consider
+    ; `return f(y, built, …)`: parameter x inherits y's PHI while y's shadow is
+    ; rewritten at the same site, so from the third iteration on x pointed at
+    ; y's NEW value. Same position is safe because the only site that writes
+    ; shadow[i] is one that also sets PHI[i] to it, and every read of the
+    ; parameter happens before the commit phase. A cross-position exchange
+    ; (`return f(y, x, …)`) therefore goes through the copy machinery, where
+    ; staging orders the reads correctly — a little more work than swapping two
+    ; pointers, and correct for every mix of sites.
+    function value_is_phi_at(this, v: LLVMValueRef, index: size_t) returns bool
+    {
+        let p_ptr tail_loop_phis.get index
+        if p_ptr = null
+            return false
+        let p (*p_ptr)
+        if p.handle = v.handle
+            return true
+        false
+    }
+
+    ; Can this pointer be trusted to address the same bytes on the NEXT
+    ; iteration? Only when it does not point into THIS frame's storage: a
+    ; parameter (`this`), a loaded pointer (a region-allocated binding's slot
+    ; holds the heap address) and a call result all point at a page, at the
+    ; caller or at the receiver, and a GEP inherits its base's answer.
+    ;
+    ; ★An ALLOCA is this frame — and so is everything this cannot classify (a
+    ; PHI or select mixing frame storage with a page), which is why the
+    ; fallthrough is `false`: guessing "outside" would keep a pointer whose
+    ; bytes the next iteration overwrites, and that failure is silent. Guessing
+    ; "inside" costs a copy, and a copy is only ever OBSERVABLE for storage
+    ; that lives in this frame — where a caller can neither see a mutation
+    ; through the parameter (its own copy is dead after the tail call) nor
+    ; derive a page from the address (Page.get of frame storage is meaningless
+    ; already). That asymmetry is what makes this direction the safe one.
+    function pointer_outside_frame(this, v: LLVMValueRef) returns bool
+    {
+        if v.handle = null
+            return false
+        let alloca_v LLVMIsAAllocaInst(v)
+        if alloca_v.handle <> null
+            return false
+        let arg_v LLVMIsAArgument(v)
+        if arg_v.handle <> null
+            return true
+        let load_v LLVMIsALoadInst(v)
+        if load_v.handle <> null
+            return true
+        let call_v LLVMIsACallInst(v)
+        if call_v.handle <> null
+            return true
+        let gep_v LLVMIsAGetElementPtrInst(v)
+        if gep_v.handle <> null
+        {
+            let base LLVMGetOperand(v, 0)
+            return pointer_outside_frame(base)
+        }
+        false
+    }
+
+    ; memcpy(dst, src, sizeof(ty)) between two pointers. The C entry point
+    ; rather than a load+store: map_type-produced struct types are not always
+    ; loadable (the s55 cross-package note), and every destination here is a
+    ; slot of exactly this type. Callers guarantee dst and src are disjoint —
+    ; the two ways they could coincide are ruled out before this is reached
+    ; (value_is_own_phi for the pass-through, and a same-type sub-field being
+    ; impossible for a strict part of a struct).
+    procedure copy_struct_bytes(this, dst: LLVMValueRef, src: LLVMValueRef, ty: LLVMTypeRef)
+    {
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var memcpy_fn LLVMGetNamedFunction(llvm_module, "memcpy")
+        if memcpy_fn.handle = null
+        {
+            var decl_pt Vector[LLVMTypeRef](3)
+            decl_pt.put(0, ptr_ty)
+            decl_pt.put(1, ptr_ty)
+            decl_pt.put(2, LLVMInt64TypeInContext context)
+            let decl_ty LLVMFunctionType(ptr_ty, decl_pt.data, 3, 0)
+            set memcpy_fn: LLVMAddFunction(llvm_module, "memcpy", decl_ty)
+            LLVMSetLinkage(memcpy_fn, LLVMLinkage.External())
+        }
+        var args Vector[LLVMValueRef](3)
+        args.put(0, dst)
+        args.put(1, src)
+        args.put(2, LLVMSizeOf(ty))
+        var call_pt Vector[LLVMTypeRef](3)
+        call_pt.put(0, ptr_ty)
+        call_pt.put(1, ptr_ty)
+        call_pt.put(2, LLVMInt64TypeInContext context)
+        let call_ty LLVMFunctionType(ptr_ty, call_pt.data, 3, 0)
+        LLVMBuildCall2(builder, call_ty, memcpy_fn, args.data, 3, "")
+    }
+
+    ; Lower `return f(args)` inside f as a jump to the header. Returns false
+    ; when this return is not that shape — and then NOTHING has been emitted,
+    ; so emit_return proceeds normally. Everything past the shape test is
+    ; committed: the arguments are already emitted, so a giving-up path there
+    ; would evaluate them twice (a call argument would run twice). Hence the
+    ; loud exits rather than a late `return false`.
+    function emit_self_tail_jump(this, ret: PlannedReturn) returns bool
+    {
+        if tail_loop_block.handle = null
+            return false
+        let n tail_loop_phis.length
+        if return_is_self_call(ret.result, tail_loop_mangled, n) = false
+            return false
+
+        let ops (*ret.result)
+        let op0_ptr ops.get 0
+        if op0_ptr = null
+            return false
+        let op (*op0_ptr)
+        var jumped: bool false
+        choose op.expr
+            when call: Call
+            {
+                ; Evaluate EVERY argument before recording a single incoming:
+                ; a PHI's incoming values are read at the branch, so all
+                ; arguments see this iteration's parameters and the update is
+                ; simultaneous — `return f(b, a)` swaps, as it must.
+                var vals Vector[LLVMValueRef](n + 1)
+                ; 1 = this argument lives in this frame's storage and must be
+                ; copied into the parameter's shadow slot before the branch.
+                var copy_flags Vector[size_t](n + 1)
+                var copy_count: size_t 0
+                var i: size_t 0
+                while i < n
+                {
+                    let a_ptr call.args.get i
+                    if a_ptr = null
+                    {
+                        scaly_eputs "Emitter: tail-call argument missing from the plan\n"
+                        exit 20
+                    }
+                    let v emit_operand(*a_ptr)
+                    if v.handle = null
+                    {
+                        ; The silent-drop class: a dropped argument would
+                        ; leave its parameter at the previous iteration's
+                        ; value and spin forever.
+                        scaly_eputs "Emitter: tail-call argument did not emit\n"
+                        exit 20
+                    }
+                    let phi_ptr tail_loop_phis.get i
+                    if phi_ptr = null
+                    {
+                        scaly_eputs "Emitter: tail-call loop is missing a parameter slot\n"
+                        exit 20
+                    }
+                    let phi_ty LLVMTypeOf(*phi_ptr)
+                    let coerced coerce_tail_arg(v, phi_ty)
+                    vals.put(i, coerced)
+
+                    ; Classify: a by-value struct parameter (the ones with a
+                    ; shadow slot) whose argument points into THIS frame needs
+                    ; the copy. Everything else travels as it is.
+                    var needs_copy: size_t 0
+                    let shadow_ptr tail_loop_shadows.get i
+                    if shadow_ptr <> null
+                    {
+                        let shadow (*shadow_ptr)
+                        if shadow.handle <> null
+                        {
+                            if value_is_phi_at(coerced, i) = false
+                            {
+                                if pointer_outside_frame(coerced) = false
+                                    set needs_copy: 1 as size_t
+                            }
+                        }
+                    }
+                    copy_flags.put(i, needs_copy)
+                    if needs_copy = (1 as size_t)
+                        set copy_count: copy_count + 1
+                    set i: i + 1
+                }
+
+                ; Commit phase. With ONE copy the source cannot be another
+                ; parameter's shadow, so it goes straight in. With more, a
+                ; source may well be one (`return f(b, a)` over two struct
+                ; parameters), so every source is read into its staging slot
+                ; BEFORE any shadow is written — otherwise the first copy
+                ; clobbers the second's source, the swap-at-memory-level bug
+                ; the PHIs already rule out for values.
+                if copy_count > (1 as size_t)
+                {
+                    var s1: size_t 0
+                    while s1 < n
+                    {
+                        let f_ptr copy_flags.get s1
+                        if f_ptr <> null
+                        {
+                            if (*f_ptr) = (1 as size_t)
+                            {
+                                let stage_ptr tail_loop_stages.get s1
+                                let ty_ptr tail_loop_slot_types.get s1
+                                let src_ptr vals.get s1
+                                if stage_ptr <> null
+                                {
+                                    if ty_ptr <> null
+                                    {
+                                        if src_ptr <> null
+                                            copy_struct_bytes(*stage_ptr, *src_ptr, *ty_ptr)
+                                    }
+                                }
+                            }
+                        }
+                        set s1: s1 + 1
+                    }
+                }
+                var ci: size_t 0
+                while ci < n
+                {
+                    let f_ptr copy_flags.get ci
+                    if f_ptr <> null
+                    {
+                        if (*f_ptr) = (1 as size_t)
+                        {
+                            let shadow_ptr tail_loop_shadows.get ci
+                            let stage_ptr tail_loop_stages.get ci
+                            let ty_ptr tail_loop_slot_types.get ci
+                            let src_ptr vals.get ci
+                            if shadow_ptr <> null
+                            {
+                                if ty_ptr <> null
+                                {
+                                    var src (*shadow_ptr)
+                                    var have_src: bool false
+                                    if copy_count > (1 as size_t)
+                                    {
+                                        if stage_ptr <> null
+                                        {
+                                            set src: (*stage_ptr)
+                                            set have_src: true
+                                        }
+                                    }
+                                    if copy_count = (1 as size_t)
+                                    {
+                                        if src_ptr <> null
+                                        {
+                                            set src: (*src_ptr)
+                                            set have_src: true
+                                        }
+                                    }
+                                    if have_src
+                                    {
+                                        let shadow (*shadow_ptr)
+                                        copy_struct_bytes(shadow, src, *ty_ptr)
+                                        ; The parameter now names the shadow
+                                        ; slot: stable storage for exactly as
+                                        ; long as the next iteration needs it.
+                                        vals.put(ci, shadow)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    set ci: ci + 1
+                }
+
+                ; One block feeds all the PHIs — read it after the arguments
+                ; (an argument can have split the block) and before the br.
+                let from_block LLVMGetInsertBlock(builder)
+                var j: size_t 0
+                while j < n
+                {
+                    let phi_ptr tail_loop_phis.get j
+                    if phi_ptr <> null
+                    {
+                        var iv Vector[LLVMValueRef](1)
+                        var ib Vector[LLVMBasicBlockRef](1)
+                        let vp vals.get j
+                        if vp <> null
+                            iv.put(0, *vp)
+                        ib.put(0, from_block)
+                        LLVMAddIncoming(*phi_ptr, iv.data, ib.data, 1)
+                    }
+                    set j: j + 1
+                }
+
+                ; ★No emit_release_local_page here: this is not an exit. The
+                ; frame stays open across iterations (see the header note),
+                ; and releasing it would free memory the arguments just
+                ; handed to the next iteration point into.
+                LLVMBuildBr(builder, tail_loop_block)
+                set jumped: true
+            }
+            else
+                0
+        jumped
+    }
+
     ; Emit function body (implementation)
     function emit_function_body(this, func: PlannedFunction) returns bool
     {
@@ -4300,6 +5119,14 @@ define Emitter
         set function_local_page_init: LLVMValueRef(null)
         set function_local_frame_parent_store: LLVMValueRef(null)
         set current_frame_parent: LLVMValueRef(null)
+        ; TCO: no tail loop until the walk below asks for one. Cleared here so
+        ; a previous function's header can never be branched to.
+        set tail_loop_block: LLVMBasicBlockRef(null)
+        set tail_loop_phis.length: 0
+        set tail_loop_shadows.length: 0
+        set tail_loop_stages.length: 0
+        set tail_loop_slot_types.length: 0
+        set tail_loop_mangled: String()
 
         ; 4.4: the promotion classifier keys its foundation-containment
         ; rule on the owning source file.
@@ -4433,6 +5260,16 @@ define Emitter
                     set current_frame_parent: page_value
                 }
 
+                ; TCO: a body containing `return <this same function>(…)` gets
+                ; a loop header here, between the page prologue (which must
+                ; stay in entry) and the user-parameter binding (which then
+                ; binds the header's PHIs instead of the raw arguments).
+                var user_param_count: size_t 0
+                if func.input <> null
+                    set user_param_count: (*func.input.unwrap()).length
+                if tail_loop_eligible(func, llvm_func, user_param_count, page_offset + sret_offset)
+                    open_tail_loop(func, llvm_func, entry_block, func.mangled_name, user_param_count, page_offset + sret_offset)
+
                 ; Bind user parameters as local variables, offset by
                 ; the sret + page-param slots when present.
                 if func.input <> null
@@ -4449,7 +5286,16 @@ define Emitter
                             if item.name <> null
                             {
                                 let param_name (*item.name.unwrap())
-                                let param_value LLVMGetParam(llvm_func, (i + page_offset + sret_offset) as int)
+                                var param_value LLVMGetParam(llvm_func, (i + page_offset + sret_offset) as int)
+                                ; With a tail loop the name must resolve to the
+                                ; header's PHI, or the second iteration would
+                                ; read the FIRST call's arguments.
+                                if tail_loop_block.handle <> null
+                                {
+                                    let phi_ptr tail_loop_phis.get i
+                                    if phi_ptr <> null
+                                        set param_value: (*phi_ptr)
+                                }
                                 define_variable(param_name, param_value)
                                 ; Record the receiver concept so resolve_reference_page
                                 ; can lower `^field` page sigils (opensp Parser's `^host`).
@@ -5072,6 +5918,8 @@ define Emitter
                     let new_main LLVMAddFunction(llvm_module, main_name.c_data(), main_type)
                     set current_function: new_main
                     reset_temp_pool()
+                    ; TCO: main is nobody's tail loop.
+                    set tail_loop_block: LLVMBasicBlockRef(null)
                     ; s196: synthetic main starts with no local root page.
                     set function_local_frame: LLVMValueRef(null)
                     set function_local_page: LLVMValueRef(null)
@@ -13345,6 +14193,18 @@ define Emitter
         let saved_local_frame_parent function_local_frame_parent_store
         let saved_frame_parent current_frame_parent
         let saved_can_throw current_function_can_throw
+        ; TCO: the outlined task function is a DIFFERENT function — a `return`
+        ; inside the loop body must never branch to the enclosing function's
+        ; tail header (a cross-function branch), so the state is parked here
+        ; and restored below. The body's own returns are already rejected by
+        ; the promotion classifier (early exit blocks promotion), which makes
+        ; this a belt to that suspender.
+        let saved_tail_block tail_loop_block
+        let saved_tail_len tail_loop_phis.length
+        let saved_tail_shadow_len tail_loop_shadows.length
+        let saved_tail_stage_len tail_loop_stages.length
+        let saved_tail_slot_len tail_loop_slot_types.length
+        let saved_tail_mangled tail_loop_mangled
         let saved_di_scope current_di_scope
         let saved_pool_start temp_pool_start
         let saved_pool_len temp_pool_slots.length
@@ -13360,6 +14220,7 @@ define Emitter
         set function_local_frame_parent_store: LLVMValueRef(null)
         set current_frame_parent: LLVMValueRef(null)
         set current_function_can_throw: false
+        set tail_loop_block: LLVMBasicBlockRef(null)
         clear_debug_location()
         set temp_pool_start: temp_pool_slots.length
         set temp_stmt_log_start: temp_stmt_log.length
@@ -13504,6 +14365,12 @@ define Emitter
         set function_local_frame_parent_store: saved_local_frame_parent
         set current_frame_parent: saved_frame_parent
         set current_function_can_throw: saved_can_throw
+        set tail_loop_block: saved_tail_block
+        set tail_loop_phis.length: saved_tail_len
+        set tail_loop_shadows.length: saved_tail_shadow_len
+        set tail_loop_stages.length: saved_tail_stage_len
+        set tail_loop_slot_types.length: saved_tail_slot_len
+        set tail_loop_mangled: saved_tail_mangled
         set current_di_scope: saved_di_scope
         LLVMPositionBuilderAtEnd(builder, saved_block)
         if config.emit_debug_info
@@ -16613,6 +17480,12 @@ define Emitter
     ; Emit a return statement
     function emit_return(this, ret: PlannedReturn) returns bool
     {
+        ; TCO: `return f(args)` inside f is a jump to the loop header, not a
+        ; call. Tested before anything is evaluated — when the shape does not
+        ; match, this has emitted nothing and the normal path below runs.
+        if emit_self_tail_jump(ret)
+            return true
+
         ; Evaluate return value first (before cleanup)
         var ret_val LLVMValueRef(null)
         if ret.result <> null

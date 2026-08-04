@@ -1,0 +1,268 @@
+; Regression: a self TAIL call — `return f(…)` written inside f — is lowered
+; as a jump to a loop header, so recursion in tail position runs in ONE stack
+; frame (2026-08-04, the TCO item from the wish list; the documented
+; precondition for the dazzle Stage-6b JIT).
+;
+; Before: the emitter emitted `%call = call @f(…)` / `ret %call`, and the
+; default pipeline runs NO opt passes, so the frames were real. Measured on
+; this file's sum_to: SIGSEGV (rc 139) at 3,000,000 deep, fine under -O2 —
+; LLVM's tailcallelim was the only thing that ever removed these, which made
+; a language promise about recursive style a function of -O.
+;
+; What the transform does NOT do: open a region per iteration. The jump keeps
+; the function's one local frame, exactly as a `while` loop does, so this
+; buys a bounded stack and not lower memory.
+;
+; Expected: PASS
+
+; The plain accumulator recursion.
+function sum_to(n: int, acc: int) returns int
+{
+    if n = 0
+        return acc
+    return sum_to(n - 1, acc + n)
+}
+
+; Simultaneous update: the back edge must hand ALL arguments to the header at
+; once. A slot-by-slot update would read the first parameter after it had
+; already been overwritten, so this swap-per-step would lose the parity.
+function swapper(a: int, b: int, steps: int) returns int
+{
+    if steps = 0
+        return a
+    return swapper(b, a, steps - 1)
+}
+
+; A tail call reached from inside nested control flow: the jump has to leave a
+; `while` body the way a `ret` does.
+function count_down(n: int, hits: int) returns int
+{
+    var i 0
+    while i < 1
+    {
+        if n = 0
+            return hits
+        set i: i + 1
+    }
+    if n < 0
+        return hits
+    return count_down(n - 1, hits + 1)
+}
+
+; Mutual recursion is NOT a self call and must keep its `call`.
+function is_odd(n: int) returns bool
+{
+    if n = 0
+        return false
+    return is_even(n - 1)
+}
+
+function is_even(n: int) returns bool
+{
+    if n = 0
+        return true
+    return is_odd(n - 1)
+}
+
+; A self call that is NOT in tail position keeps its `call` — the result feeds
+; an addition, so this must still unwind normally and answer correctly.
+function tri(n: int) returns int
+{
+    if n = 0
+        return 0
+    let rest tri(n - 1)
+    return rest + n
+}
+
+; Pointer-typed parameters take part too (the shape a node-list walk has).
+function walk(p: pointer[u64], seen: int) returns int
+{
+    let v *p
+    if v = (0 as u64)
+        return seen
+    return walk(p + 1, seen + 1)
+}
+
+; A BY-VALUE STRUCT parameter. It travels as a pointer to storage, so the back
+; edge has to copy it into a dedicated shadow slot: the argument here lives in
+; this frame (a local `let`), and under the loop that storage is the same one
+; every iteration. Neither the emitter (before the shadow slots) nor LLVM's
+; tailcallelim at -O2 could eliminate this shape.
+define Acc
+(
+    n: int
+    total: int
+)
+
+function sum_acc(a: Acc) returns int
+{
+    if a.n = 0
+        return a.total
+    let next Acc(a.n - 1, a.total + a.n)
+    return sum_acc(next)
+}
+
+; Why the copy must land in a slot of its own: this reads the parameter AFTER
+; the next argument has been built. If the parameter still pointed at that
+; storage, the read would see the NEXT iteration's n. For Acc(4, 0) the
+; observed values are 4, 3, 2, 1 (sum 10); aliasing gives 4, 2, 1 (sum 7).
+function acc_probe(a: Acc, sum: int) returns int
+{
+    if a.n = 0
+        return sum
+    let next Acc(a.n - 1, a.total + a.n)
+    let observed a.n
+    return acc_probe(next, sum + observed)
+}
+
+; Two struct parameters exchanged, where the arguments ARE the parameters: no
+; copy may be emitted at all — the PHIs exchange the two pointers and neither
+; storage is touched. (Verified in the IR: zero memcpy in this function.)
+function swap_accs(x: Acc, y: Acc, steps: int) returns int
+{
+    if steps = 0
+        return x.n
+    return swap_accs(y, x, steps - 1)
+}
+
+; Two struct parameters that BOTH need a copy — the only cover for the staging
+; path: every source is read into its staging slot before any shadow is
+; written, because a source may be another parameter's shadow (reachable when
+; a struct parameter comes out of a control-flow merge). Writing the shadows
+; directly would clobber the second copy's source with the first copy.
+function swap_built(x: Acc, y: Acc, steps: int) returns int
+{
+    if steps = 0
+        return x.n
+    let nx Acc(y.n, y.total + 1)
+    let ny Acc(x.n, x.total + 1)
+    return swap_built(nx, ny, steps - 1)
+}
+
+; A struct parameter passed straight through, unchanged: the argument IS the
+; parameter at the SAME position, so no copy may happen at all (a slot copied
+; onto itself).
+function drain(a: Acc, steps: int) returns int
+{
+    if steps = 0
+        return a.total
+    return drain(a, steps - 1)
+}
+
+; MIXED site: one parameter inherits ANOTHER parameter's value while that other
+; parameter's storage is rewritten in the same step. This is the shape that
+; broke the first version of the pass-through rule ("the argument is any of our
+; PHIs → no copy"): x pointed at y's PHI, y's shadow was overwritten, and from
+; the third iteration x read y's NEW value. x must be the PREVIOUS y, so the
+; answer is 1 + steps; the broken version answers one more.
+function mixed(x: Acc, y: Acc, steps: int) returns int
+{
+    if steps = 0
+        return x.n
+    let ny Acc(y.n + 1, y.total)
+    return mixed(y, ny, steps - 1)
+}
+
+; A method: the receiver is a pointer to an object OUTSIDE this frame, so it
+; must be passed through untouched — copying it would break `Page.get(this)`
+; and any mutation through it.
+define Counter
+(
+    limit: int
+)
+{
+    function count_up(this, i: int) returns int
+    {
+        if i >= this.limit
+            return i
+        return count_up(i + 1)
+    }
+}
+
+if sum_to(10, 0) <> 55
+    exit 1
+
+; 3 million frames of even 48 bytes is ~144 MB — far past the 8 MB default.
+; Sum 1..3000000 = 3000000 * 3000001 / 2 = 4500001500000.
+let deep sum_to(3000000, 0)
+if deep <> 4500001500000
+    exit 2
+
+; An odd number of swaps ends with the second argument in front.
+if swapper(7, 9, 1) <> 9
+    exit 3
+if swapper(7, 9, 2) <> 7
+    exit 4
+if swapper(7, 9, 1000001) <> 9
+    exit 5
+
+if count_down(500000, 0) <> 500000
+    exit 6
+
+if is_even(10) = false
+    exit 7
+if is_odd(10)
+    exit 8
+
+if tri(100) <> 5050
+    exit 9
+
+var buf u64[4]
+set buf[0]: 11 as u64
+set buf[1]: 22 as u64
+set buf[2]: 33 as u64
+set buf[3]: 0 as u64
+let steps walk(&buf[0], 0)
+if steps <> 3
+    exit 10
+
+; Struct parameter, 3 million deep.
+let sdeep sum_acc(Acc(3000000, 0))
+if sdeep <> 4500001500000
+    exit 11
+
+; The late read: shallow, because what is under test is WHICH iteration's
+; values the parameter shows, not the depth. Aliasing answers 7 here.
+if acc_probe(Acc(4, 0), 0) <> 10
+    exit 12
+if acc_probe(Acc(1, 0), 0) <> 1
+    exit 13
+
+; Two struct parameters swapped: an odd number of steps ends with the second
+; in front. A commit phase without staging answers 5 for both.
+if swap_accs(Acc(5, 0), Acc(9, 0), 1) <> 9
+    exit 14
+if swap_accs(Acc(5, 0), Acc(9, 0), 2) <> 5
+    exit 15
+if swap_accs(Acc(5, 0), Acc(9, 0), 1000001) <> 9
+    exit 16
+
+; Both parameters copied — the staging path. Same parity property as above.
+if swap_built(Acc(5, 0), Acc(9, 0), 1) <> 9
+    exit 17
+if swap_built(Acc(5, 0), Acc(9, 0), 2) <> 5
+    exit 18
+if swap_built(Acc(5, 0), Acc(9, 0), 1000001) <> 9
+    exit 19
+
+; Pass-through, deep: nothing may be copied here, and the value must survive.
+if drain(Acc(0, 42), 1000000) <> 42
+    exit 20
+
+; The mixed site: x is the PREVIOUS y at every step, so the answer is 1+steps.
+if mixed(Acc(1, 0), Acc(2, 0), 1) <> 2
+    exit 21
+if mixed(Acc(1, 0), Acc(2, 0), 2) <> 3
+    exit 22
+if mixed(Acc(1, 0), Acc(2, 0), 3) <> 4
+    exit 23
+if mixed(Acc(1, 0), Acc(2, 0), 1000000) <> 1000001
+    exit 24
+
+; The receiver must survive as a pointer to the object.
+let counter Counter(500000)
+if counter.count_up(0) <> 500000
+    exit 25
+
+print "PASS"
+exit 0
