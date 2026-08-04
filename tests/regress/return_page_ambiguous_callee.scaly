@@ -1,0 +1,193 @@
+; Regression: the return-position page rule must resolve the RECEIVER's type,
+; not the callee's bare name (2026-08-04).
+;
+; `Maker.make` builds its result on the caller's page; `Borrow.make` hands out a
+; borrowed pointer into its own storage. Under name keying the two are one key,
+; so the rule could only promote both or neither — and since promoting a borrowed
+; overload's callers moves allocations onto the caller page for good, it promoted
+; neither and left every genuinely dangling `return maker.make()` broken. This
+; file pre-fix, after the 200 String(60) allocations below:
+;
+;   FAIL 3/4 1/2 3/4 3/4 1/2 3/4 5/6 9/10
+;         ^       ^   ^                     want 7/8 — the released page, reused
+;
+; ★`outer_static` reads 5/6 here and read `1/4342874275` in the same shapes
+; ordered differently: pre-fix it is unpromoted either way (IR:
+; `@_Z12outer_staticv` vs. `@_Z12outer_staticPN4scaly6memory4PageE` now), and
+; whether the dangling read hits recycled bytes is a question of layout. That is
+; the latency of this whole class — do not read a passing value as a sound one.
+;
+; The IR is the sharper witness — pre-fix `outer_param` was
+; `@_Z11outer_param5Maker(ptr)` and is now
+; `@_Z11outer_paramPN4scaly6memory4PageE5Maker(ptr, ptr)`, while `outer_borrow`
+; keeps its single parameter: the page lands on exactly the callers of the
+; page-needing overload.
+;
+; Shapes covered, one per resolution route in Planner.ret_page_resolve_call:
+; a parameter's type, a property of the enclosing concept with and without an
+; explicit `this.`, `this` itself, a static call on a concept name, and a free
+; function. The last two were already correct (uniquely named callees, so name
+; keying happened to be exact) and are controls; `*_borrow` are the negative
+; controls that must NOT be promoted.
+;
+; The churn loop must run at the SAME frame level as the calls — inside a called
+; procedure its allocations land on that procedure's own frame and never reuse the
+; released page, which hides the bug.
+
+package scaly 0.1.0
+
+define Rec (a: int  b: int)
+{
+    init(a: int, b: int)
+    {
+        set this.a: a
+        set this.b: b
+    }
+}
+
+; page-needing `make`
+define Maker (tag: int)
+{
+    init()
+    {
+        set this.tag: 1
+    }
+    function make#(this: Maker) returns pointer[Rec]
+        Rec#(7, 8)
+}
+
+; borrowed `make` — the same NAME, needs no page
+define Borrow (r: Rec)
+{
+    init()
+    {
+        set this.r: Rec(1, 2)
+    }
+    function make(this: Borrow) returns pointer[Rec]
+        &this.r
+}
+
+; receiver resolved through a PARAMETER's type
+function outer_param(m: Maker) returns pointer[Rec]
+{
+    let r m.make()
+    r
+}
+
+; …to the borrowed overload: must stay unpromoted
+function outer_borrow(b: Borrow) returns pointer[Rec]
+{
+    let r b.make()
+    r
+}
+
+define Host (mk: Maker  bw: Borrow)
+{
+    init()
+    {
+        set this.mk: Maker()
+        set this.bw: Borrow()
+    }
+    ; receiver resolved through a PROPERTY of the enclosing concept
+    function via_field(this: Host) returns pointer[Rec]
+    {
+        let r this.mk.make()
+        r
+    }
+    ; …and through the same property with the `this.` left implicit
+    function via_implicit(this: Host) returns pointer[Rec]
+    {
+        let r mk.make()
+        r
+    }
+    ; the borrowed property, same shape: must stay unpromoted
+    function via_field_borrow(this: Host) returns pointer[Rec]
+    {
+        let r this.bw.make()
+        r
+    }
+    ; receiver is `this` itself
+    function self_make#(this: Host) returns pointer[Rec]
+        Rec#(3, 4)
+    function via_this(this: Host) returns pointer[Rec]
+    {
+        let r this.self_make()
+        r
+    }
+}
+
+; a STATIC call on a concept name
+define Maker2 (tag: int)
+{
+    function make#() returns pointer[Rec]
+        Rec#(5, 6)
+}
+function outer_static() returns pointer[Rec]
+{
+    let r Maker2.make()
+    r
+}
+
+; a free function, resolved in the registry
+function free_make#() returns pointer[Rec]
+    Rec#(9, 10)
+function outer_free() returns pointer[Rec]
+{
+    let r free_make()
+    r
+}
+
+let h Host()
+let mk Maker()
+let bw Borrow()
+let p1 outer_param(mk)
+let p2 outer_borrow(bw)
+let p3 h.via_field()
+let p4 h.via_implicit()
+let p5 h.via_field_borrow()
+let p6 h.via_this()
+let p7 outer_static()
+let p8 outer_free()
+var i 0
+while i < 200
+{
+    let c String("012345678901234567890123456789012345678901234567890123456789")
+    set i: i + 1
+}
+let a1 p1.a
+let b1 p1.b
+let a2 p2.a
+let b2 p2.b
+let a3 p3.a
+let b3 p3.b
+let a4 p4.a
+let b4 p4.b
+let a5 p5.a
+let b5 p5.b
+let a6 p6.a
+let b6 p6.b
+let a7 p7.a
+let b7 p7.b
+let a8 p8.a
+let b8 p8.b
+var ok true
+if (a1 <> 7) || (b1 <> 8)
+    set ok: false
+if (a2 <> 1) || (b2 <> 2)
+    set ok: false
+if (a3 <> 7) || (b3 <> 8)
+    set ok: false
+if (a4 <> 7) || (b4 <> 8)
+    set ok: false
+if (a5 <> 1) || (b5 <> 2)
+    set ok: false
+if (a6 <> 3) || (b6 <> 4)
+    set ok: false
+if (a7 <> 5) || (b7 <> 6)
+    set ok: false
+if (a8 <> 9) || (b8 <> 10)
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL `a1`/`b1` `a2`/`b2` `a3`/`b3` `a4`/`b4` `a5`/`b5` `a6`/`b6` `a7`/`b7` `a8`/`b8`")
