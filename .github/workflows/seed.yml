@@ -1,52 +1,48 @@
 name: seed
 
-# Mint + fixed-point-verify the seed NATIVELY on the "fabulous four" LP64
-# targets. The committed seed .ll is target-neutral (no triple/datalayout,
-# LP64 sizes baked in), so one seed serves all four — but the toolchain is
-# host-only for LINKING + RUNNING, so each target must build + run it natively.
-# This matrix is that native verification on THREE of the four: x86_64-linux,
-# aarch64-linux, and arm64-apple-darwin (the dev box). x86_64-apple-darwin is
-# omitted (scarce/expensive Intel runners — see the matrix note below); its
-# OBJECT emission is still covered by tests/target/run.sh cross-emit in every
-# leg. tools/seed.sh auto-bootstraps stage-2 from the
-# committed seed (no C++, no cmake, no openjade — LLVM 18 + clang only), emits
-# the seed, links it clean, runs hello + the AOT corpus, checks byte-identical
-# self-reproduction, and builds + smoke-tests the scalyls language server.
+# Mint + fixed-point-verify the seed on x86_64-linux-gnu.
+#
+# ONE runner on purpose (2026-08-04). The committed seed .ll is target-neutral
+# (no triple/datalayout, LP64 sizes baked in), so one seed serves all four
+# "fabulous four" LP64 targets — but the toolchain is host-only for LINKING +
+# RUNNING, so a target is only natively verified by a runner of that target.
+# This repo is private, where GitHub bills macOS minutes at 10x the Linux rate
+# and every push ran three legs; that bill, not a technical limit, is why the
+# matrix is gone. x86_64-linux is the cheapest leg and the one whose codegen
+# most needs a native check (the dev box is arm64-apple-darwin, so Linux/x86_64
+# is what nobody exercises locally).
+#
+# What the other three targets still get: OBJECT emission for all four is
+# checked by tests/target/run.sh (--target cross-emit) in this leg, and
+# arm64-apple-darwin is covered by the full local bar on the dev box before
+# every push. To verify another target natively, run `tools/seed.sh` on a host
+# of that target, or add a leg back here.
+#
+# tools/seed.sh auto-bootstraps stage-2 from the committed seed (no C++, no
+# cmake, no openjade — LLVM 18 + clang only), emits the seed, links it clean,
+# runs hello + the AOT corpus, checks byte-identical self-reproduction, and
+# builds + smoke-tests the scalyls language server.
 
+# editors/** is the VS Code extension (TypeScript + npm deps): nothing the seed
+# pipeline compiles, links or runs. Skipping it keeps Dependabot's npm bumps —
+# the bulk of this repo's PR traffic — from spending minutes on a full bootstrap.
 on:
   push:
     branches: [master]
+    paths-ignore: ['editors/**']
   pull_request:
     branches: [master]
+    paths-ignore: ['editors/**']
   workflow_dispatch:
 
 jobs:
   seed:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: x86_64-linux-gnu
-            os: ubuntu-latest
-          - name: aarch64-linux-gnu
-            os: ubuntu-24.04-arm
-          - name: arm64-apple-darwin
-            os: macos-14
-          # x86_64-apple-darwin is intentionally omitted: GitHub-hosted Intel
-          # (macos-13) runners are scarce (queues of 1h+) and cost 10x on a
-          # private repo, for the lowest marginal coverage — x86_64 codegen is
-          # verified natively on x86_64-linux, the macOS ABI on arm64-apple-
-          # darwin, and x86_64-darwin OBJECT emission by tests/target/run.sh
-          # (cross-emit) in every leg. Run it on demand with `--target
-          # x86_64-apple-darwin` on any host, or add it back here if an Intel
-          # runner becomes reliably available.
+    name: x86_64-linux-gnu
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install deps (Linux)
-        if: runner.os == 'Linux'
+      - name: Install deps
         run: |
           sudo apt-get update
           sudo apt-get install -y llvm-18 llvm-18-dev clang-18 lld-18 python3
@@ -61,21 +57,6 @@ jobs:
           # (default ld) — so `ld` itself must be lld, not just seed.sh's links.
           sudo update-alternatives --install /usr/bin/ld ld \
             "$(command -v ld.lld-18 || command -v ld.lld)" 100
-
-      - name: Install deps (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install llvm@18
-          # The 10k demo needs ~20,050 fds in one process; runner images ship
-          # kern.maxfilesperproc=10240 (setrlimit accepts more but the kernel
-          # caps there — accept fails with EMFILE). Raise both sysctls; the
-          # bench script SKIPs itself if this ever stops working.
-          if [ "$(sysctl -n kern.maxfiles)" -lt 40960 ]; then
-            sudo sysctl -w kern.maxfiles=40960
-          fi
-          if [ "$(sysctl -n kern.maxfilesperproc)" -lt 30720 ]; then
-            sudo sysctl -w kern.maxfilesperproc=30720
-          fi
 
       - name: Build + verify seed (bootstrap, link, hello, AOT, fixed point)
         run: tools/seed.sh
@@ -106,6 +87,6 @@ jobs:
       - name: Upload native compiler
         uses: actions/upload-artifact@v4
         with:
-          name: scalyc-${{ matrix.name }}
+          name: scalyc-x86_64-linux-gnu
           path: dist/seed/scalyc_seed
           if-no-files-found: error

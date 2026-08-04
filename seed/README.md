@@ -48,14 +48,23 @@ corpus + a fixed-point re-emit) before trusting it there. See `RELEASING.md`.
 
 ## Verification status
 
-The `verify-seed` CI matrix (`.github/workflows/verify-seed.yml`) builds from
-this seed and runs `tools/verify-seed.sh` (hello + AOT corpus) on every push:
+CI (`.github/workflows/seed.yml`) builds from this seed and runs
+`tools/verify-seed.sh` (hello + AOT corpus) on every push — since 2026-08-04 on
+ONE target, because this repo is private and GitHub bills macOS minutes at 10×
+the Linux rate:
 
-- ✅ `arm64-apple-darwin` — verified (incl. byte-identical fixed point)
-- ✅ `x86_64-linux-gnu` — verified
-- ✅ `aarch64-linux-gnu` — verified
-- 🔹 `x86_64-apple-darwin` — best-effort, covered by inference (not in CI; no
-  GitHub Intel-mac runner). Its two halves are each verified above — the x86_64
-  System-V ABI via `x86_64-linux-gnu` and Mach-O/darwin via `arm64-apple-darwin`
-  — and the seed is host-independent. Run `tools/build-from-seed.sh` +
-  `tools/verify-seed.sh` on an Intel Mac to verify it explicitly.
+- ✅ `x86_64-linux-gnu` — verified in CI on every push (incl. byte-identical
+  fixed point)
+- ✅ `arm64-apple-darwin` — verified by the full local bar on the dev box before
+  every push (was a CI leg until 2026-08-04)
+- 🔹 `aarch64-linux-gnu` — best-effort (was a CI leg until 2026-08-04). Its two
+  halves are each verified above: the AArch64 codegen via `arm64-apple-darwin`,
+  the ELF/glibc side via `x86_64-linux-gnu`.
+- 🔹 `x86_64-apple-darwin` — best-effort, never had a runner. Its halves: the
+  x86_64 System-V codegen via `x86_64-linux-gnu`, Mach-O/darwin via
+  `arm64-apple-darwin`.
+
+Object EMISSION for all four is checked in CI by `tests/target/run.sh`
+(`--target` cross-emit). To verify a best-effort target explicitly, run
+`tools/build-from-seed.sh` + `tools/verify-seed.sh` on a host of that target —
+a container is enough for `aarch64-linux-gnu` on an arm64 Mac.
