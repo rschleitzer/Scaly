@@ -29,6 +29,40 @@ use scalyc.compiler.Plan.*
 function exit(code: int) extern
 
 ; ============================================================================
+; Stack guard for the recursive descent (2026-08-04).
+;
+; The planner recurses once per NESTING level of a construct, NOT per function
+; and NOT per call-graph edge — measured 2026-08-04 with the three probe shapes
+; (800 independent functions: 256 KB; an 800-deep call chain f0->f1->...: 256 KB,
+; i.e. planning a call does NOT recurse into the callee; an 800-level nested
+; expression: 16 MB). So a growing codebase cannot exhaust the stack, but ONE
+; deeply nested function can, and the practical driver in this tree is the long
+; `else if` chain: it nests one level per arm, and each arm costs ~15 KB with the
+; opt -O2 compiler and ~12x that with the UNOPTIMIZED bootstrap stages. dazzle's
+; TeXFOTBuilder.scaly has a 126-arm chain — that single chain is what makes
+; /tmp/scalyc_stage2 need ~24 MB to compile the package (CLAUDE.md iron rule).
+;
+; Without a guard the failure is a bare SIGSEGV with ONE frame in the lldb
+; backtrace (the guard page) and no file, line, or hint — an hour of looking in
+; the wrong place, twice now. `getrlimit` gives the live limit, so the guard
+; adapts to whatever `ulimit -s` the run actually has instead of hard-coding a
+; nesting count that would be either unsafe at 8 MB or wrong at 64 MB.
+;
+; Containment rule (CLAUDE.md): getrlimit is a direct extern, not a C shim —
+; no OS-specific struct layout beyond "two u64" (rlim_t is uint64 on all four
+; LP64 targets), not variadic, no errno needed. RLIMIT_STACK is 3 on both
+; darwin and linux.
+define Rlimit
+(
+    cur: size_t
+    max: size_t
+)
+
+function getrlimit(resource: i32, rlp: pointer[void]) returns i32 extern
+function getenv(name: pointer[const_char]) returns pointer[const_char] extern
+function atol(s: pointer[const_char]) returns i64 extern
+
+; ============================================================================
 ; Scope / binding machinery.
 ;
 ; Defined at module scope so callers outside `define Planner` can construct
@@ -717,6 +751,17 @@ define Planner
         ; scaly.memory.runtime.system`), and only its origin can tell an
         ; honest such clause from one naming a path nothing lives at.
         function_origin_paths: Array[String]
+
+        ; Stack guard (check_nesting_stack#). stack_base is the SHALLOWEST
+        ; plan_operand frame address seen so far, i.e. the top of the recursive
+        ; descent — kept as a running maximum instead of being captured at a
+        ; designated entry point, so it needs no knowledge of who starts the
+        ; walk and self-recalibrates if planning ever runs on another stack
+        ; (a promoted `for` worker). stack_budget is the byte budget derived
+        ; ONCE from getrlimit; 0 in both means "not yet established".
+        ; Declared LAST (field-index stability).
+        stack_base: size_t
+        stack_budget: size_t
     )
     {
         init(filename: String)
@@ -762,6 +807,8 @@ define Planner
             set model_operators: Array[KeyValuePair[String, Operator]]^this()
             set model_operator_index: FunctionIndex.create(65536 as size_t, 262144 as size_t)
             set resolved_op_is_intrinsic: false
+            set stack_base: 0
+            set stack_budget: 0
             set loaded_packages: Array[KeyValuePair[String, Module]]^this()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^this()
             set errors: Array[String]^this()
@@ -2214,6 +2261,103 @@ define Planner
         function has_diagnostics(this: Planner) returns bool
         {
             diagnostics.length > 0
+        }
+
+        ; ====================================================================
+        ; Stack guard — the measurements it rests on are at module scope
+        ; (see `define Rlimit`).
+        ;
+        ; Byte budget for the planner's recursive descent, derived ONCE.
+        ; ====================================================================
+        function stack_budget_bytes() returns size_t
+        {
+            let fallback (64 * 1024 * 1024) as size_t
+
+            ; SCALYC_STACK_BUDGET=<bytes> overrides the derived budget: the only
+            ; way to exercise the trap deterministically from a test
+            ; (tests/regress/xfail_nesting_too_deep.scaly), and a knob for
+            ; lowering the ceiling on purpose while debugging.
+            let override getenv("SCALYC_STACK_BUDGET")
+            if override <> null
+            {
+                let v atol(override) as size_t
+                if v > 0
+                    return v
+            }
+
+            var r Rlimit(0, 0)
+            let rc getrlimit(3, &r as pointer[void]) as int
+            ; Unreadable, unlimited (RLIM_INFINITY) or absurd: use the fixed
+            ; fallback rather than never firing / firing immediately.
+            if rc <> 0
+                return fallback
+            if r.cur < (1024 * 1024) as size_t
+                return fallback
+            if r.cur > (1024 * 1024 * 1024) as size_t
+                return fallback
+
+            ; 80 %. The guard runs at a nesting ENTRY, so the remaining fifth
+            ; must cover the rest of this level's frames — 5 per `else if` arm,
+            ; ~180 KB with the unoptimized bootstrap stages.
+            r.cur / 5 * 4
+        }
+
+        ; Called at the top of plan_operand#, which the lldb backtrace of a real
+        ; overflow shows EVERY nesting level passing through (plan_statement ->
+        ; plan_if -> plan_operand -> plan_operands -> plan_action ->
+        ; plan_statement): an `if` is planned as an OPERAND here, so this one
+        ; site covers a long else-if chain AND a deeply parenthesized expression.
+        function check_nesting_stack(this: Planner, loc: Span)
+        {
+            var probe: size_t 0
+            let here &probe as size_t
+
+            ; Running maximum = the shallowest frame of the descent. Two
+            ; separate ifs, not `a = 0 or b > c`: mixed-precedence conditions
+            ; parse ambiguously here (CLAUDE.md).
+            if this.stack_base = 0
+                set this.stack_base: here
+            if here > this.stack_base
+                set this.stack_base: here
+
+            if this.stack_budget = 0
+                set this.stack_budget: Planner.stack_budget_bytes()
+
+            let used this.stack_base - here
+            if used > this.stack_budget
+                this.nesting_too_deep(loc, used)
+        }
+
+        ; Loud trap (exit 17), deliberately NOT an add_diagnostic: at 80 % of the
+        ; limit there is no safe way to keep planning, and fabricating a stub
+        ; PlannedOperand for the unwind is the "never return null after a
+        ; diagnostic" hazard that already cost a SIGSEGV on the dazzle tree.
+        ; Mirrors not_implemented (111) / Vector.put OOB (15) / unknown
+        ; operator (14).
+        function nesting_too_deep(this: Planner, loc: Span, used: size_t) returns int
+        {
+            var sb StringBuilder()
+            sb.append "scalyc: nesting too deep in "
+            sb.append this.file
+            sb.append " at byte offset "
+            sb.append loc.start
+            sb.append "\n  The planner recurses once per NESTING level of a construct. Planning this\n  one used "
+            ; Parenthesized: a parenless argument may not itself be an operand
+            ; SEQUENCE (`sb.append used / 1024` reaches append with ZERO
+            ; arguments — caught by the planner's own arity gate).
+            let used_kb used / (1024 as size_t)
+            let budget_kb this.stack_budget / (1024 as size_t)
+            sb.append used_kb
+            sb.append " KB of stack, past the guard's budget of "
+            sb.append budget_kb
+            sb.append " KB.\n  What to do, in this order:\n    1. Give this run more stack:   ulimit -s 65520\n    2. Or reduce the nesting in that function. An else-if chain nests ONE level\n       per arm (about 15 KB of stack each, ~180 KB under the unoptimized\n       bootstrap compilers) - split it up or dispatch through a table.\n    3. If you are using /tmp/scalyc_stage1 or /tmp/scalyc_stage2 from\n       tools/bootstrap.sh: those are UNOPTIMIZED and need roughly 12x more\n       stack per level than scalyc/build/scalyc. Try the same command with\n       scalyc/build/scalyc before changing any source.\n  (SCALYC_STACK_BUDGET=<bytes> overrides the guard's budget.)\n"
+            let msg sb.to_string()
+            ; Bind the chain first — a parenless call with a CHAINED argument
+            ; (`scaly_eputs msg.to_c_string()`) mis-parses silently (CLAUDE.md).
+            let msg_cstr msg.to_c_string()
+            scaly_eputs msg_cstr
+            exit 17
+            0
         }
 
         ; Character literals are written as double-quoted strings in a
@@ -18027,6 +18171,10 @@ define Planner
         ; ================================================================
         function plan_operand(this: Planner, op: scalyc.compiler.Model.Operand) returns PlannedOperand
         {
+            ; Stack guard: one nesting level per plan_operand frame. Emission is
+            ; untouched — this only trades a SIGSEGV for a message.
+            this.check_nesting_stack(op.span)
+
             let base choose op.expression
                 when c: Constant
                     this.plan_constant_operand(c, op.span)

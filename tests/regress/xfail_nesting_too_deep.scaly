@@ -1,0 +1,109 @@
+; Regression: the planner's STACK GUARD (2026-08-04) must turn a too-deep
+; nesting into a MESSAGE, not a SIGSEGV.
+;
+; Measured that day: the planner recurses once per NESTING level, not per
+; function and not per call-graph edge (800 independent functions and an
+; 800-deep call chain both plan in 256 KB; an 800-level nested expression
+; needs 16 MB). A long `else if` chain nests ONE level per arm, which is why
+; dazzle's 126-arm TeXFOTBuilder chain makes the UNOPTIMIZED bootstrap
+; compilers need ~24 MB for that package. Before the guard the failure was a
+; bare rc-139 with a single frame in the lldb backtrace and no file, line or
+; hint.
+;
+; `; env:` pins the guard's budget so the trip point does not depend on the
+; caller's `ulimit -s` — 40 arms exceed 256 KB under any build of the compiler.
+;
+; Expected: compile FAILS (exit 17) with the message below.
+; env: SCALYC_STACK_BUDGET=262144
+; xfail: nesting too deep
+
+function classify(x: int) returns int
+{
+    if x = 0
+        return 0 * 2
+    else if x = 1
+        return 1 * 2
+    else if x = 2
+        return 2 * 2
+    else if x = 3
+        return 3 * 2
+    else if x = 4
+        return 4 * 2
+    else if x = 5
+        return 5 * 2
+    else if x = 6
+        return 6 * 2
+    else if x = 7
+        return 7 * 2
+    else if x = 8
+        return 8 * 2
+    else if x = 9
+        return 9 * 2
+    else if x = 10
+        return 10 * 2
+    else if x = 11
+        return 11 * 2
+    else if x = 12
+        return 12 * 2
+    else if x = 13
+        return 13 * 2
+    else if x = 14
+        return 14 * 2
+    else if x = 15
+        return 15 * 2
+    else if x = 16
+        return 16 * 2
+    else if x = 17
+        return 17 * 2
+    else if x = 18
+        return 18 * 2
+    else if x = 19
+        return 19 * 2
+    else if x = 20
+        return 20 * 2
+    else if x = 21
+        return 21 * 2
+    else if x = 22
+        return 22 * 2
+    else if x = 23
+        return 23 * 2
+    else if x = 24
+        return 24 * 2
+    else if x = 25
+        return 25 * 2
+    else if x = 26
+        return 26 * 2
+    else if x = 27
+        return 27 * 2
+    else if x = 28
+        return 28 * 2
+    else if x = 29
+        return 29 * 2
+    else if x = 30
+        return 30 * 2
+    else if x = 31
+        return 31 * 2
+    else if x = 32
+        return 32 * 2
+    else if x = 33
+        return 33 * 2
+    else if x = 34
+        return 34 * 2
+    else if x = 35
+        return 35 * 2
+    else if x = 36
+        return 36 * 2
+    else if x = 37
+        return 37 * 2
+    else if x = 38
+        return 38 * 2
+    else if x = 39
+        return 39 * 2
+    -1
+}
+
+let r classify(7)
+if r <> 14
+    exit 1
+print "PASS"
+exit 0

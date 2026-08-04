@@ -22,7 +22,13 @@ for f in tests/regress/*.scaly; do
       # substring (stdout+stderr — emitter traps print to stderr, planner
       # diagnostics via Console.println to stdout).
       want=$(sed -n 's/^; xfail: //p' "$f" | head -1)
-      err=$("$STAGE" -o "$bin" "$f" 2>&1); rc=$?
+      # `; env: VAR=VALUE` (repeatable) sets environment for the compile only.
+      # Needed by guards whose trip point depends on the machine rather than on
+      # the source — xfail_nesting_too_deep pins the stack guard's budget so the
+      # test does not depend on the caller's `ulimit -s`.
+      env_args=()
+      while IFS= read -r kv; do [ -n "$kv" ] && env_args+=("$kv"); done < <(sed -n 's/^; env: //p' "$f")
+      err=$(env "${env_args[@]}" "$STAGE" -o "$bin" "$f" 2>&1); rc=$?
       if [ $rc -ne 0 ] && printf '%s' "$err" | grep -qF "$want"; then
         pass=$((pass+1))
       else

@@ -1,0 +1,89 @@
+; Regression: the stack guard (2026-08-04) must NOT fire on ordinary code.
+; A 30-arm `else if` chain is deeper than any chain in the stdlib or the
+; compiler and still fits with room to spare even under the UNOPTIMIZED
+; bootstrap stages at the default 8 MB stack (~110 KB of planner stack per arm
+; there, ~15 KB with the opt -O2 compiler). Companion to
+; xfail_nesting_too_deep.scaly, which pins a tiny budget to force the trap.
+;
+; Deliberately NOT deeper: the ceiling under stage2 at 8 MB is ~59 arms, and a
+; regression test must not sit near a machine-dependent limit — dazzle's real
+; 126-arm chains are what `ulimit -s 65520` exists for.
+;
+; Expected: PASS
+
+function classify(x: int) returns int
+{
+    if x = 0
+        return 0 + 1000
+    else if x = 1
+        return 1 + 1000
+    else if x = 2
+        return 2 + 1000
+    else if x = 3
+        return 3 + 1000
+    else if x = 4
+        return 4 + 1000
+    else if x = 5
+        return 5 + 1000
+    else if x = 6
+        return 6 + 1000
+    else if x = 7
+        return 7 + 1000
+    else if x = 8
+        return 8 + 1000
+    else if x = 9
+        return 9 + 1000
+    else if x = 10
+        return 10 + 1000
+    else if x = 11
+        return 11 + 1000
+    else if x = 12
+        return 12 + 1000
+    else if x = 13
+        return 13 + 1000
+    else if x = 14
+        return 14 + 1000
+    else if x = 15
+        return 15 + 1000
+    else if x = 16
+        return 16 + 1000
+    else if x = 17
+        return 17 + 1000
+    else if x = 18
+        return 18 + 1000
+    else if x = 19
+        return 19 + 1000
+    else if x = 20
+        return 20 + 1000
+    else if x = 21
+        return 21 + 1000
+    else if x = 22
+        return 22 + 1000
+    else if x = 23
+        return 23 + 1000
+    else if x = 24
+        return 24 + 1000
+    else if x = 25
+        return 25 + 1000
+    else if x = 26
+        return 26 + 1000
+    else if x = 27
+        return 27 + 1000
+    else if x = 28
+        return 28 + 1000
+    else if x = 29
+        return 29 + 1000
+    -1
+}
+
+let a classify(0)
+let b classify(29)
+let c classify(99)
+if a <> 1000
+    exit 1
+if b <> 1029
+    exit 2
+if c <> -1
+    exit 3
+print "PASS"
+exit 0
