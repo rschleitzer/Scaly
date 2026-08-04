@@ -1,0 +1,42 @@
+; Regression: a deref RECEIVER on a pointer to a struct this root never lays
+; out must pass the struct's ADDRESS, not a load of its first 8 bytes
+; (2026-08-04).
+;
+; map_type answers an opaque `ptr` for any name the root has no layout for —
+; the runtime-opaque set (Page, PageList, ...) and every by-value struct from
+; another package. The deref arm read the LLVM type KIND back, could not tell
+; that placeholder from a real pointer, and emitted a LOAD: `(*p).method()`
+; then called the method with `this` = the struct's first field.
+;
+; Both faces were measured. Here, `(*page).get_capacity(8)` answered
+; 18446181176276686314 instead of 3976, because get_capacity measures the page
+; bounds from `this` as an address. Across a package boundary it was worse and
+; silent: `(*t).bucket_count()` on a `pointer[Table]` returned by a
+; cross-package static ran with `this` = 7 (Table's first field), and the whole
+; program produced no output at all with exit code 0.
+;
+; The fix answers the pointer itself — NOT a copy. Copying is what the
+; laid-out-struct arm does, and it is wrong for these types twice over: a
+; placeholder has no size to copy, and a method that treats `this` as an
+; address needs the original one.
+use scaly.memory.Page
+use scaly.containers.String
+
+; A String anchors a real region page; Page.get gives us a pointer to it.
+let anchor String(64 as size_t)
+let page Page.get(anchor.data as pointer[void])
+
+let direct page.get_capacity(8 as size_t)
+let through (*page).get_capacity(8 as size_t)
+
+; The capacity of a page can never exceed the page size.
+if direct = 0: print "FAIL direct capacity is zero"
+if direct > 4096 as size_t: print "FAIL direct capacity exceeds a page"
+if through <> direct: print "FAIL deref receiver disagrees with the direct call"
+if direct > 0
+{
+    if direct <= 4096 as size_t
+    {
+        if through = direct: print "PASS"
+    }
+}

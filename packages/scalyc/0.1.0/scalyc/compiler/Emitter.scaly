@@ -9475,6 +9475,26 @@ define Emitter
                 LLVMBuildStore(builder, loaded, tmp2)
                 return tmp2
             }
+
+            ; A `ptr` from map_type is not always a pointer: for a name this
+            ; root never lays out — a BY-VALUE struct from another package, or
+            ; one of the runtime-opaque types (Page, PageList, …) — it is the
+            ; last-resort placeholder (see type_is_pointer_shaped#). Loading
+            ; through it reads the struct's FIRST 8 BYTES and passes them on as
+            ; if they were the value, which for a deref RECEIVER becomes the
+            ; callee's `this`: `(*t).bucket_count()` on a cross-package
+            ; `pointer[Table]` called the method with `this` = Table's first
+            ; field, and `(*page).get_capacity(8)` answered nonsense because
+            ; get_capacity derives the page bounds from `this` as an address.
+            ; Answer the pointer itself: the deref of a pointer to a struct
+            ; already denotes that struct's storage. NOT a copy — copying is
+            ; what the laid-out struct arm above does, and for these types it
+            ; is wrong twice over: there is no size to copy for a placeholder,
+            ; and a method that treats `this` as an address (anything calling
+            ; Page.get(this) or measuring from it) needs the ORIGINAL address.
+            if LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer()
+                if type_is_pointer_shaped(result_type) = false
+                    return opv
             return LLVMBuildLoad2(builder, ty, opv, "deref")
         }
 
