@@ -214,6 +214,31 @@ define Page
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         let location next_object as size_t
+
+        ; next_object == null tags an OVERSIZED page (see
+        ; allocate_oversized) — one that holds a single object and has no
+        ; bump pointer. Allocating from it is always a caller bug, and it
+        ; used to be a SILENT one: location 0 makes aligned_location 0, the
+        ; capacity below then measures from offset 0 and comes out larger
+        ; than any request, so the fast path returned ADDRESS 0 and wrote
+        ; the bump pointer over the page header. The usual way in is
+        ; `Page.get(a)` on an address inside an oversized allocation, which
+        ; answers a page nothing can be allocated from. Finding that once
+        ; cost hours; this check names it in a second.
+        if location = 0
+        {
+            scaly_eputs "Page.allocate: this page is OVERSIZED (next_object == null)"
+            scaly_eputnl()
+            scaly_eputs "  An oversized page holds one object and has no bump pointer."
+            scaly_eputnl()
+            scaly_eputs "  Most likely Page.get() was called on an address inside an"
+            scaly_eputnl()
+            scaly_eputs "  oversized allocation: the page it answers cannot serve one."
+            scaly_eputnl()
+            scaly_eputs "  Thread the owning page explicitly instead of deriving it."
+            scaly_eputnl()
+            exit 19
+        }
         let aligned_location (location + align - (1 as size_t)) & (~(align - (1 as size_t)))
         let location_after_page this as size_t + PAGE_SIZE
         let capacity location_after_page - aligned_location
