@@ -13655,11 +13655,32 @@ define Emitter
         let entryp_slot entry_alloca(i64_ty, "parfor.entryp")
         let tentry_slot entry_alloca(i64_ty, "parfor.tentry")
         let fp1k_slot entry_alloca(i64_ty, "parfor.fp1k")
+        ; The cold fork needs TWO CONSECUTIVE windows over the gate
+        ; (this slot is the "first one cleared it" arm). A single
+        ; window is one sample of whatever the OS scheduler was doing:
+        ; the first checkpoint window is ONE iteration wide, so on a
+        ; loaded machine one 22us stall inside a 250ns body reads as
+        ; 22us PER ITERATION, clears the gate, forks, and — because the
+        ; fork publishes its measured cost — promotes the site for the
+        ; rest of the process. That is how CI hit `wave2-forked` in
+        ; tests/fiber/parallel_hotspot.scaly (2026-08-04) while the
+        ; same binary passed on an idle box. The exit-publish path
+        ; already averages over >=512 iterations for exactly this
+        ; reason; the cold path now needs a second, FRESHLY BASED
+        ; window to agree before it commits. Cost: a genuinely heavy
+        ; loop forks one checkpoint later (i=4 instead of i=2 — the
+        ; windows double, so this is a constant, not a factor). Loss:
+        ; a 3- or 4-iteration loop with a >=44us body no longer
+        ; cold-forks at all (nothing is left to submit at the second
+        ; checkpoint); it still promotes through the exit path after
+        ; 512 accumulated iterations.
+        let armed_slot entry_alloca(i64_ty, "parfor.armed")
         LLVMBuildStore(builder, c0, iv_drv)
         LLVMBuildStore(builder, check0_const, nc_slot)
         LLVMBuildStore(builder, c0, t0_slot)
         LLVMBuildStore(builder, c0, i0_slot)
         LLVMBuildStore(builder, c0, tentry_slot)
+        LLVMBuildStore(builder, c0, armed_slot)
         let buf_null LLVMConstNull(ptr_ty)
         LLVMBuildStore(builder, buf_null, buf_slot)
 
@@ -13690,6 +13711,8 @@ define Emitter
             let rc_meas create_block("pfor.check.meas")
             let rc_later create_block("pfor.check.later")
             let rc_decide create_block("pfor.check.decide")
+            let rc_notyet create_block("pfor.check.notyet")
+            let rc_arm create_block("pfor.check.arm")
             let rc_fork create_block("pfor.fork")
             let rg_prom create_block("pfor.gate.prom")
             let rg_prom_fork create_block("pfor.gate.headfork")
@@ -13801,7 +13824,11 @@ define Emitter
             let rc_calib LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), rc_elapsed, c_noise, "parfor.calib")
             LLVMBuildCondBr(builder, rc_calib, rc_decide, rc_later)
 
+            ; Below the gate (or below the noise floor): disarm — the
+            ; two confirming windows must be CONSECUTIVE, otherwise one
+            ; stall stays armed forever and the next one forks.
             LLVMPositionBuilderAtEnd(builder, rc_later)
+            LLVMBuildStore(builder, c0, armed_slot)
             let rcl_nc LLVMBuildMul(builder, il_i, c2, "parfor.nc.dbl2")
             LLVMBuildStore(builder, rcl_nc, nc_slot)
             LLVMBuildBr(builder, il_body)
@@ -13818,7 +13845,25 @@ define Emitter
             let rc_proj0 LLVMBuildMul(builder, rc_rem, rc_p1k, "parfor.proj0")
             let rc_proj LLVMBuildAShr(builder, rc_proj0, c10, "parfor.proj")
             let rc_dofork LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), rc_proj, c_fork, "parfor.dofork")
-            LLVMBuildCondBr(builder, rc_dofork, rc_fork, rc_later)
+            ; Fork only when the PREVIOUS window agreed; otherwise arm
+            ; and re-base the measurement, so the confirming window is
+            ; an independent sample rather than a longer one containing
+            ; the same stall.
+            let rc_armv LLVMBuildLoad2(builder, i64_ty, armed_slot, "parfor.armedv")
+            let rc_isarmed LLVMBuildICmp(builder, LLVMIntPredicate.NE(), rc_armv, c0, "parfor.chk.isarmed")
+            let rc_forknow LLVMBuildAnd(builder, rc_dofork, rc_isarmed, "parfor.forknow")
+            LLVMBuildCondBr(builder, rc_forknow, rc_fork, rc_notyet)
+
+            LLVMPositionBuilderAtEnd(builder, rc_notyet)
+            LLVMBuildCondBr(builder, rc_dofork, rc_arm, rc_later)
+
+            LLVMPositionBuilderAtEnd(builder, rc_arm)
+            LLVMBuildStore(builder, c1, armed_slot)
+            LLVMBuildStore(builder, rc_t, t0_slot)
+            LLVMBuildStore(builder, il_i, i0_slot)
+            let rca_nc LLVMBuildMul(builder, il_i, c2, "parfor.nc.dbl3")
+            LLVMBuildStore(builder, rca_nc, nc_slot)
+            LLVMBuildBr(builder, il_body)
 
             ; Fork: the remaining [i, n) leaves through the shared
             ; dispatch. i < n held at the checkpoint, so at least one
@@ -13892,6 +13937,8 @@ define Emitter
             let ic_first create_block("pfor.check.first")
             let ic_meas create_block("pfor.check.meas")
             let ic_later create_block("pfor.check.later")
+            let ic_notyet create_block("pfor.check.notyet")
+            let ic_arm create_block("pfor.check.arm")
             let ic_fork create_block("pfor.fork")
             let ic_prom create_block("pfor.check.prom")
             let ic_clock create_block("pfor.check.clock")
@@ -13989,12 +14036,30 @@ define Emitter
             LLVMBuildStore(builder, icf_nc, nc_slot)
             LLVMBuildBr(builder, it_body)
 
+            ; Same two-window confirmation as the range path (the slot
+            ; comment at parfor.armed has the why): one scheduler stall
+            ; inside a cheap body must not fork AND promote the site.
             LLVMPositionBuilderAtEnd(builder, ic_meas)
             let ic_elapsed LLVMBuildSub(builder, ic_t, ic_t0, "parfor.elapsed")
             let ic_dofork LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), ic_elapsed, c_iterfork, "parfor.dofork")
-            LLVMBuildCondBr(builder, ic_dofork, ic_forkm, ic_later)
+            let ic_armv LLVMBuildLoad2(builder, i64_ty, armed_slot, "parfor.armedv")
+            let ic_isarmed LLVMBuildICmp(builder, LLVMIntPredicate.NE(), ic_armv, c0, "parfor.chk.isarmed")
+            let ic_forknow LLVMBuildAnd(builder, ic_dofork, ic_isarmed, "parfor.forknow")
+            LLVMBuildCondBr(builder, ic_forknow, ic_forkm, ic_notyet)
+
+            LLVMPositionBuilderAtEnd(builder, ic_notyet)
+            LLVMBuildCondBr(builder, ic_dofork, ic_arm, ic_later)
+
+            LLVMPositionBuilderAtEnd(builder, ic_arm)
+            LLVMBuildStore(builder, c1, armed_slot)
+            LLVMBuildStore(builder, ic_t, t0_slot)
+            LLVMBuildStore(builder, it_i, i0_slot)
+            let ica_nc LLVMBuildMul(builder, it_i, c2, "parfor.nc.dbl3")
+            LLVMBuildStore(builder, ica_nc, nc_slot)
+            LLVMBuildBr(builder, it_body)
 
             LLVMPositionBuilderAtEnd(builder, ic_later)
+            LLVMBuildStore(builder, c0, armed_slot)
             let icl_nc LLVMBuildMul(builder, it_i, c2, "parfor.nc.dbl2")
             LLVMBuildStore(builder, icl_nc, nc_slot)
             LLVMBuildBr(builder, it_body)

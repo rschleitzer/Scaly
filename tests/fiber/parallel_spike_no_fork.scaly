@@ -1,0 +1,92 @@
+; Cold-fork outlier immunity (stage-4 milestone 4.3 hardening,
+; 2026-08-04). The cold gate used to decide on ONE checkpoint window,
+; and the FIRST window is a single iteration wide — so one expensive
+; window inside an otherwise nanosecond-cheap loop read as "every
+; iteration costs that much", forked, and (because the fork publishes
+; its measured cost) promoted the site for the rest of the process. On
+; CI that fired as a scheduler stall: tests/fiber/parallel_hotspot
+; failed 'wave2-forked' on a loaded 2-core runner while the same binary
+; passed on an idle box.
+;
+; The spike here is deterministic AND transient — the two properties of
+; the real thing. Transient matters: a loop that is expensive in EVERY
+; execution is a legitimate fork candidate and the exit-publish path
+; promotes it on its 512-iteration average, which is correct. So only
+; the FIRST of 300 executions carries the spike (~200k adds in
+; iteration 1, exactly the iteration the first checkpoint window
+; measures); the other 299 cost a single store per iteration, so the
+; averaged per-iteration cost stays ~300ns, far under the 16384ns
+; head-fork bar. A single-sample cold gate projects the six remaining
+; iterations at the spike's cost, clears the 131072ns bar and forks.
+; The two-window rule arms instead, re-bases the measurement, and the
+; confirming window (the cheap iterations 2-3) falls below the 4096ns
+; noise floor: no fork. The sum verifies every iteration still ran.
+; Expected: spike-no-fork-ok done
+
+function spike(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (200000 as i64)
+    {
+        set acc: acc + k
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+; 8 iterations. Iteration 1 is expensive only while hot = 1; the slot
+; keeps that value afterwards, so the sum sees it exactly once.
+procedure wave_spike(r: Vector[i64], hot: int)
+{
+    for i in 8
+    {
+        if i <> 1
+            r.put(i, (i * 3) as i64)
+        if i = 1
+        {
+            if hot = 1
+                r.put(i, spike(i as i64))
+        }
+    }
+}
+
+function vsum(r: Vector[i64], n: size_t) returns i64
+{
+    var s 0 as i64
+    var j: size_t 0
+    while j < n
+    {
+        let v r.get j
+        if v <> null
+            set s: s + (*v)
+        set j: j + 1
+    }
+    s
+}
+
+let pool TaskPool.default_pool()
+
+var r Vector[i64](8)
+wave_spike(r, 1)
+var e 0
+while e < 299
+{
+    wave_spike(r, 0)
+    set e: e + 1
+}
+
+; spike(1) = 1 + (0+..+199999) = 19999900001, plus 0,6,9,12,15,18,21.
+if vsum(r, 8 as size_t) <> (19999900082 as i64)
+{
+    Console.println "spike-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "spike-forked"
+    exit 1
+}
+
+Console.print "spike-no-fork-ok "
+Console.println "done"
