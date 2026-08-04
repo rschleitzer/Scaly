@@ -1,0 +1,56 @@
+; Regression: a struct that EMBEDS BY VALUE a type this root never lays out
+; must still get that field's real size, so its own size and every LATER
+; field's offset are right (2026-08-04).
+;
+; map_type answers the last-resort `ptr` placeholder for such a name, and
+; emit_struct_type put that straight into the body — making the field 8 bytes.
+; `define Embedder (work: Page  tail: size_t)` measured 16 instead of 48. A
+; member access anywhere triggered ensure_member_layout and fixed it, which is
+; why every real root worked: the layout depended on the ORDER in which the
+; root happened to touch things.
+;
+; This is the residual of the 2026-08-04 type_is_pointer_shaped family (sizeof,
+; pointer stride, and a nested by-value field store were the other three
+; faces). The fix resolves the placeholder where the body is built. It must NOT
+; move upstream into plan_structure: ensuring every by-value property type's
+; layout eagerly re-plans the whole containers module once per triggering type
+; — 703 plan_structure calls on packages/dazzle and a stack overflow, measured.
+use scaly.memory.Page
+use scaly.containers.String
+
+; Page is opaque in every root (the runtime-opaque set), so it stands in here
+; for any by-value struct the root has no layout for.
+define Embedder (work: Page  tail: size_t  tail2: int)
+{
+    init(work: Page, tail: size_t, tail2: int)
+    {
+        set this.work: work
+        set this.tail: tail
+        set this.tail2: tail2
+    }
+}
+
+let anchor String(64 as size_t)
+let host Page.get(anchor.data as pointer[void])
+let e host.allocate(sizeof Embedder, alignof Embedder) as pointer[Embedder]
+set e.tail: 1234 as size_t
+set e.tail2: 567
+
+let size sizeof Embedder
+let page_size sizeof Page
+
+; The embedded field must contribute its whole size, not 8 bytes.
+if page_size <> 40 as size_t: print "FAIL sizeof Page is `page_size`, want 40"
+if size < page_size: print "FAIL Embedder is smaller than the field it embeds"
+if e.tail <> 1234 as size_t: print "FAIL tail reads `(e.tail)`"
+if e.tail2 <> 567: print "FAIL tail2 reads `(e.tail2)`"
+if page_size = 40 as size_t
+{
+    if size >= page_size + 12 as size_t
+    {
+        if e.tail = 1234 as size_t
+        {
+            if e.tail2 = 567: print "PASS"
+        }
+    }
+}

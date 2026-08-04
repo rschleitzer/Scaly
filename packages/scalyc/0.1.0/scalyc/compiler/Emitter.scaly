@@ -3536,7 +3536,31 @@ define Emitter
             if prop_ptr <> null
             {
                 let prop prop_ptr.unwrap()
-                let prop_llvm_type map_type prop.prop_type
+                var prop_llvm_type map_type prop.prop_type
+                ; A BY-VALUE field whose type this root never lays out comes
+                ; back from map_type as the last-resort `ptr` placeholder (see
+                ; type_is_pointer_shaped#), and putting that in the body makes
+                ; the field 8 bytes: this struct's own size and the offsets of
+                ; every LATER field are then wrong. `define Embedder (work:
+                ; Page  tail: size_t)` measured 16 instead of 48. A member
+                ; access anywhere triggers ensure_member_layout# and fixes it,
+                ; which is why every real root worked — the layout depended on
+                ; the ORDER in which the root happened to touch things.
+                ; Resolve it here instead, where the body is built.
+                ;
+                ; Do NOT move this upstream into plan_structure: ensuring every
+                ; by-value property type's layout eagerly re-plans the whole
+                ; containers module once per triggering type — 703
+                ; plan_structure calls on packages/dazzle and a stack overflow.
+                ; Both measured 2026-08-04.
+                if LLVMGetTypeKind(prop_llvm_type) = LLVMTypeKind.Pointer()
+                    if type_is_pointer_shaped(prop.prop_type) = false
+                    {
+                        let lit synthesize_literal_struct prop.prop_type.name
+                        if lit.handle <> null
+                            if LLVMGetTypeKind(lit) = LLVMTypeKind.Struct()
+                                set prop_llvm_type: lit
+                    }
                 element_types.put(i, prop_llvm_type)
             }
             set i: i + 1

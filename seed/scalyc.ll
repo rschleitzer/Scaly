@@ -264476,6 +264476,8 @@ declare ptr @_ZN6OptionIR15PlannedPropertyE6unwrapEv(ptr)
 
 define linkonce_odr void @_ZN7Emitter16emit_struct_typeEPN4scaly6memory4PageE16PlannedStructure(ptr noalias sret(%_Z11LLVMTypeRef) %0, ptr %1, ptr %2, ptr %3) {
 entry:
+  %sret.result61 = alloca %_Z11LLVMTypeRef, align 8
+  %prop_llvm_type = alloca ptr, align 8
   %sret.result47 = alloca %_Z11LLVMTypeRef, align 8
   %i = alloca i64, align 8
   %element_types = alloca ptr, align 8
@@ -264598,11 +264600,11 @@ while.body:                                       ; preds = %while.cond
   br i1 %ne44, label %if.then45, label %if.end46
 
 while.exit:                                       ; preds = %while.cond
-  %handle52 = extractvalue %_Z11LLVMTypeRef %call17, 0
-  %element_types53 = load ptr, ptr %element_types, align 8
-  %load.struct54 = load %_Z6VectorI11LLVMTypeRefE, ptr %element_types53, align 8
-  %data = extractvalue %_Z6VectorI11LLVMTypeRefE %load.struct54, 1
-  call void @LLVMStructSetBody(ptr %handle52, ptr %data, i64 %length39, i64 0)
+  %handle80 = extractvalue %_Z11LLVMTypeRef %call17, 0
+  %element_types81 = load ptr, ptr %element_types, align 8
+  %load.struct82 = load %_Z6VectorI11LLVMTypeRefE, ptr %element_types81, align 8
+  %data = extractvalue %_Z6VectorI11LLVMTypeRefE %load.struct82, 1
+  call void @LLVMStructSetBody(ptr %handle80, ptr %data, i64 %length39, i64 0)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store %_Z11LLVMTypeRef %call17, ptr %0, align 1
   ret void
@@ -264610,16 +264612,65 @@ while.exit:                                       ; preds = %while.cond
 if.then45:                                        ; preds = %while.body
   %field.inplace48 = getelementptr inbounds %_Z15PlannedProperty, ptr %call43, i32 0, i32 4
   call void @_ZN7Emitter8map_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result47, ptr %1, ptr %2, ptr %field.inplace48)
-  %element_types49 = load ptr, ptr %element_types, align 8
-  %i50 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI11LLVMTypeRefE3putEm11LLVMTypeRef(ptr %element_types49, i64 %i50, ptr %sret.result47)
-  br label %if.end46
+  store ptr %sret.result47, ptr %prop_llvm_type, align 1
+  %prop_llvm_type49 = load ptr, ptr %prop_llvm_type, align 8
+  %wrapper.load = load %_Z11LLVMTypeRef, ptr %prop_llvm_type49, align 8
+  %handle50 = extractvalue %_Z11LLVMTypeRef %wrapper.load, 0
+  %call51 = call i64 @LLVMGetTypeKind(ptr %handle50)
+  %call52 = call i64 @_ZN12LLVMTypeKind7PointerEv()
+  %eq53 = icmp eq i64 %call51, %call52
+  br i1 %eq53, label %if.then54, label %if.end55
 
-if.end46:                                         ; preds = %if.then45, %while.body
-  %i51 = load i64, ptr %i, align 8
-  %add = add i64 %i51, 1
+if.end46:                                         ; preds = %if.end55, %while.body
+  %i79 = load i64, ptr %i, align 8
+  %add = add i64 %i79, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
+
+if.then54:                                        ; preds = %if.then45
+  %field.inplace56 = getelementptr inbounds %_Z15PlannedProperty, ptr %call43, i32 0, i32 4
+  %call57 = call i1 @_ZN7Emitter22type_is_pointer_shapedE11PlannedType(ptr %2, ptr %field.inplace56)
+  %eq58 = icmp eq i1 %call57, false
+  br i1 %eq58, label %if.then59, label %if.end60
+
+if.end55:                                         ; preds = %if.end60, %if.then45
+  %element_types76 = load ptr, ptr %element_types, align 8
+  %i77 = load i64, ptr %i, align 8
+  %prop_llvm_type78 = load ptr, ptr %prop_llvm_type, align 8
+  call void @_ZN6VectorI11LLVMTypeRefE3putEm11LLVMTypeRef(ptr %element_types76, i64 %i77, ptr %prop_llvm_type78)
+  br label %if.end46
+
+if.then59:                                        ; preds = %if.then54
+  %field.inplace62 = getelementptr inbounds %_Z15PlannedProperty, ptr %call43, i32 0, i32 4
+  %field.inplace63 = getelementptr inbounds %_Z11PlannedType, ptr %field.inplace62, i32 0, i32 1
+  call void @_ZN7Emitter25synthesize_literal_structEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z11LLVMTypeRef) %sret.result61, ptr %1, ptr %2, ptr %field.inplace63)
+  %load.struct64 = load %_Z11LLVMTypeRef, ptr %sret.result61, align 8
+  %handle65 = extractvalue %_Z11LLVMTypeRef %load.struct64, 0
+  %ne66 = icmp ne ptr %handle65, null
+  br i1 %ne66, label %if.then67, label %if.end68
+
+if.end60:                                         ; preds = %if.end68, %if.then54
+  br label %if.end55
+
+if.then67:                                        ; preds = %if.then59
+  %wrapper.load69 = load %_Z11LLVMTypeRef, ptr %sret.result61, align 8
+  %handle70 = extractvalue %_Z11LLVMTypeRef %wrapper.load69, 0
+  %call71 = call i64 @LLVMGetTypeKind(ptr %handle70)
+  %call72 = call i64 @_ZN12LLVMTypeKind6StructEv()
+  %eq73 = icmp eq i64 %call71, %call72
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.end68:                                         ; preds = %if.end75, %if.then59
+  br label %if.end60
+
+if.then74:                                        ; preds = %if.then67
+  %set.dest = load ptr, ptr %prop_llvm_type, align 8
+  %set.thru = load %_Z11LLVMTypeRef, ptr %sret.result61, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result61, i64 ptrtoint (ptr getelementptr (%_Z11LLVMTypeRef, ptr null, i32 1) to i64), i1 false)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.then67
+  br label %if.end68
 }
 
 define linkonce_odr i64 @_ZN7Emitter12abi_align_toEmm(ptr %0, i64 %1, i64 %2) {
