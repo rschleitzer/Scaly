@@ -595,6 +595,15 @@ define Planner
         ; storer like add_escaping_*). Computed once by build_transitive_page_
         ; set after registration; consulted by function_needs_caller_page.
         transitive_page_names: Array[String]
+        ; ★A SEPARATE set for the return-position rule, and separate on purpose:
+        ; impl_mentions_set propagates out of transitive_page_names by NAME
+        ; MENTION, so feeding this rule's hits back into that set cascades — one
+        ; newly promoted name pulls in every function that merely mentions it.
+        ; Measured on packages/opensp: 1216 of 5185 functions flipped, among them
+        ; void ones like InputSource.start_token that cannot possibly return a
+        ; page-hosted value. function_needs_caller_page reads both sets; the
+        ; mention rule reads only the transitive one.
+        return_page_names: Array[String]
         transitive_page_built: bool
 
         ; Phase-5 class 1 (value-guts persist summary memo): mangled name ->
@@ -837,6 +846,7 @@ define Planner
             set move_alias_roots: Array[String]^this()
             set move_found: false
             set transitive_page_names: Array[String]^this()
+            set return_page_names: Array[String]^this()
             set transitive_page_built: false
             set concept_origin_files: Array[String]^this()
             set concept_origin_paths: Array[String]^this()
@@ -28950,6 +28960,94 @@ define Planner
                 set si: si + 1
             }
 
+            ; The DIRECT page-needers, by name. They are deliberately kept OUT of
+            ; transitive_page_names (function_needs_caller_page answers them from
+            ; their own checks), which means the fixpoint below cannot propagate
+            ; THROUGH them — and that was the whole hole: a pointer-returning
+            ; function that returns a direct page-needer's result got no page and
+            ; handed the callee its own frame. The return-position rule needs to
+            ; see them, so collect them here, once (none of the direct checks
+            ; consults the set, so this set never changes during the fixpoint).
+            var direct_page_names Array[String]()
+            ; …and the VETO set for the return-position rule — names it must not
+            ; trust, for TWO reasons:
+            ;   (1) the callee takes its page as an explicit first argument, so a
+            ;       call hands over THAT page, never our frame
+            ;       (takes_explicit_page_arg);
+            ;   (2) the name is AMBIGUOUS: these sets are keyed by bare NAME (as
+            ;       transitive_page_names has always been — the pre-pass has no
+            ;       receiver-type resolution), and one page-needing overload then
+            ;       taints every sibling of the same name. Measured: `lookup` is
+            ;       page-needing as `EntityCatalog.lookup` (returns a String) and
+            ;       borrowed as `LinkSetTable.lookup` / `IdTable.lookup`
+            ;       (`pointer[T]` into an existing table), and without this veto
+            ;       the rule promoted nine pure lookups in packages/opensp.
+            ; ★Residual, deliberate: a genuinely dangling return THROUGH an
+            ; ambiguous name stays unfixed. That is strictly better than today
+            ; (where every shape is unfixed) and better than the alternative,
+            ; since a wrong promotion moves a callee's allocations onto the
+            ; caller's page for good.
+            var veto_page_names Array[String]()
+            var di: size_t 0
+            while di < all.length
+            {
+                let fp2 all.get di
+                if fp2 <> null
+                {
+                    let f2 (*fp2)
+                    if Planner.takes_explicit_page_arg(f2)
+                        if this.array_contains_name(veto_page_names, f2.name) = false
+                            veto_page_names.add(String^this(f2.name))
+                    var is_direct: bool false
+                    if Planner.needs_implicit_return_page(f2)
+                        set is_direct: true
+                    if Planner.proc_needs_caller_page_for_storage(f2)
+                        set is_direct: true
+                    if Planner.body_references_rp(f2)
+                        set is_direct: true
+                    if f2.returns_ <> null
+                        if Planner.is_ref_or_pointer_type((*f2.returns_))
+                            if Planner.body_has_call_lifetime(f2)
+                                set is_direct: true
+                    if Planner.body_returns_value_ctor_as_pointer(f2)
+                        set is_direct: true
+                    if is_direct
+                        if this.array_contains_name(direct_page_names, f2.name) = false
+                            direct_page_names.add(String^this(f2.name))
+                }
+                set di: di + 1
+            }
+
+            ; Veto reason (2): a name that ALSO belongs to a function needing no
+            ; page is ambiguous under name keying — do not trust it.
+            var ai: size_t 0
+            while ai < all.length
+            {
+                let fp3 all.get ai
+                if fp3 <> null
+                {
+                    let f3 (*fp3)
+                    var f3_direct: bool false
+                    if Planner.needs_implicit_return_page(f3)
+                        set f3_direct: true
+                    if Planner.proc_needs_caller_page_for_storage(f3)
+                        set f3_direct: true
+                    if Planner.body_references_rp(f3)
+                        set f3_direct: true
+                    if f3.returns_ <> null
+                        if Planner.is_ref_or_pointer_type((*f3.returns_))
+                            if Planner.body_has_call_lifetime(f3)
+                                set f3_direct: true
+                    if Planner.body_returns_value_ctor_as_pointer(f3)
+                        set f3_direct: true
+                    if f3_direct = false
+                        if this.array_contains_name(direct_page_names, f3.name)
+                            if this.array_contains_name(veto_page_names, f3.name) = false
+                                veto_page_names.add(String^this(f3.name))
+                }
+                set ai: ai + 1
+            }
+
             ; Fixpoint propagation up the call graph.
             var grew: bool true
             while grew
@@ -28962,7 +29060,12 @@ define Planner
                     if fp <> null
                     {
                         let f (*fp)
-                        if this.array_contains_name(transitive_page_names, f.name) = false
+                        var known: bool false
+                        if this.array_contains_name(transitive_page_names, f.name)
+                            set known: true
+                        if this.array_contains_name(return_page_names, f.name)
+                            set known: true
+                        if known = false
                         {
                             var direct: bool false
                             if Planner.needs_implicit_return_page(f)
@@ -28972,11 +29075,30 @@ define Planner
                             if Planner.body_references_rp(f)
                                 set direct: true
                             if direct = false
+                            {
+                                ; the MENTION rule feeds, and reads, only the
+                                ; transitive set.
                                 if Planner.impl_mentions_set(f.implementation, transitive_page_names)
                                 {
                                     transitive_page_names.add(String^this(f.name))
                                     set grew: true
                                 }
+                                else
+                                {
+                                    ; the RETURN-POSITION rule: this function returns a
+                                    ; page-needing call's result, so it must receive the
+                                    ; caller's page instead of handing out a pointer
+                                    ; into its own released frame. It reads all three
+                                    ; sets (so `outer` → `mid` → `f#` converges) but
+                                    ; writes only its own — see the field comment for
+                                    ; the cascade this avoids.
+                                    if Planner.body_returns_page_needing_call(f, direct_page_names, transitive_page_names, return_page_names, veto_page_names)
+                                    {
+                                        return_page_names.add(String^this(f.name))
+                                        set grew: true
+                                    }
+                                }
+                            }
                         }
                     }
                     set ii: ii + 1
@@ -33282,6 +33404,402 @@ define Planner
         }
         false
     }
+
+    ; ---- return-position page-need inference ---------------------------------
+    ; A function whose RETURN VALUE is the result of a call to a page-needing
+    ; function must take the caller's page itself. Without one, the callee gets
+    ; the only page this frame can offer — the frame's OWN local page — the frame
+    ; is released on return, and the returned pointer dangles. Silently: it reads
+    ; correct until something reuses the page (measured on the minimal shape:
+    ; `7/8` immediately, `10/51548000360` after 200 String allocations made at the
+    ; call site's own frame level).
+    ;
+    ; GATED on a ref/pointer RETURN TYPE, because that is precisely the hole:
+    ; needs_implicit_return_page treats `pointer`/`ref` as primitive NAMES —
+    ; rightly, since most pointer returns are BORROWED, not owned — so the return
+    ; type alone cannot decide it and the body has to.
+    ;
+    ; ★The narrowness is the point; do NOT widen this to impl_mentions_set's
+    ; mention test. Nearly every function in the tree mentions SOME page-needing
+    ; name (String, Vector, …), so propagating through those would promote almost
+    ; the whole compiler: mangled-name churn plus a real regression, because a
+    ; promoted function's locals move off its own frame onto the caller's page and
+    ; stop dying with the frame — exactly the granularity the region work bought.
+    ;
+    ; Return positions: the body's TAIL (descending through a tail Block and both
+    ; arms of a tail If) and every explicit `return`, including inside nested
+    ; blocks and if/choose/match arms. A non-tail statement call is NOT a return
+    ; position (`helper()` followed by `this.field` must not promote). Value
+    ; shapes: a direct call (`f(x)`, `this.m(x)`, `ns.f(x)`) and a local bound to
+    ; one in the same block (`let r f(x)` … `r`). A `#`-marked construction is not
+    ; this rule's business — body_has_call_lifetime already covers it.
+    ;
+    ; Under-approximate by design where the scope is not obvious (a tail
+    ; referencing a variable bound in an OUTER block): missing a shape leaves it
+    ; as broken as today, whereas promoting one function too many is a live
+    ; regression.
+    ; does this function take its page as an EXPLICIT first argument
+    ; (`f(host: pointer[Page], …)`)? Then a call to it hands over that page, not
+    ; the caller's frame, and returning its result is sound without a page of our
+    ; own. The Modeler has already PEELED a `page`/`rp`-named first parameter into
+    ; page_parameter, so what remains in `input` is exactly the explicit form.
+    ;
+    ; ★This is what separates a real dangler from a false positive, and it is 36
+    ; of 36 in packages/opensp: `ParserState.lookup_create_id` returns
+    ; `id_table.lookup_create(this.host, name)` — page-needing callee, but the
+    ; page comes from a long-lived field, so the created Id never touches this
+    ; frame. Without this test the rule flags every `lookup_create_*` / `copy` /
+    ; `parse_simple*` in the parser and hands each an unused `_rp`.
+    function takes_explicit_page_arg(func: Function) returns bool
+    {
+        if func.input.length = 0
+            return false
+        let ip func.input.get 0
+        if ip = null
+            return false
+        let item (*ip)
+        if item.type = null
+            return false
+        let t (*item.type)
+        if t.name.length = 0
+            return false
+        let np t.name.get(t.name.length - 1)
+        if np = null
+            return false
+        let n (*np)
+        if n <> "pointer"
+            return false
+        if t.generics = null
+            return false
+        let gens (*t.generics)
+        if gens.length <> 1
+            return false
+        let gp gens.get 0
+        if gp = null
+            return false
+        let g (*gp)
+        if g.name.length = 0
+            return false
+        let gnp g.name.get(g.name.length - 1)
+        if gnp = null
+            return false
+        let gn (*gnp)
+        gn = "Page"
+    }
+
+    function ret_page_name_in_sets(direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], n: String) returns bool
+    {
+        ; VETO first: a callee that takes its page as an explicit argument never
+        ; borrows our frame (see takes_explicit_page_arg).
+        if Planner.static_name_in_set(veto_page, n)
+            return false
+        if Planner.static_name_in_set(direct, n)
+            return true
+        if Planner.static_name_in_set(transitive, n)
+            return true
+        Planner.static_name_in_set(returns_set, n)
+    }
+
+    ; the callee name of a call head: the LAST member_access segment when the call
+    ; rides a hop (`this.m(...)`), else the last segment of the head Type's dotted
+    ; name (`ns.f(...)`). A head carrying a lifetime marker is a CONSTRUCTION, not
+    ; a plain call, and is left to body_has_call_lifetime.
+    function ret_page_call_head(op: Operand, direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String]) returns bool
+    {
+        if op.member_access <> null
+        {
+            let ma (*op.member_access)
+            if ma.length = 0
+                return false
+            let np ma.get(ma.length - 1)
+            if np = null
+                return false
+            let n (*np)
+            return Planner.ret_page_name_in_sets(direct, transitive, returns_set, veto_page, n)
+        }
+        choose op.expression
+            when t: scalyc.compiler.Model.Type
+            {
+                var life_ok: bool false
+                choose t.lifetime
+                    when u: Unspecified
+                        set life_ok: true
+                    else
+                        0
+                if life_ok = false
+                    return false
+                if t.name.length = 0
+                    return false
+                let np t.name.get(t.name.length - 1)
+                if np = null
+                    return false
+                let n (*np)
+                return Planner.ret_page_name_in_sets(direct, transitive, returns_set, veto_page, n)
+            }
+            else
+                0
+        false
+    }
+
+    ; find `let`/`var name <ops>` in this block and test its initializer.
+    function ret_page_binding(scope: Vector[Statement], name: String, direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], depth: int) returns bool
+    {
+        var i: size_t 0
+        while i < scope.length
+        {
+            let sp scope.get i
+            if sp <> null
+            {
+                let s (*sp)
+                choose s
+                    when bd: Binding
+                    {
+                        if bd.item.name <> null
+                        {
+                            let bn (*bd.item.name)
+                            if bn = name
+                                return Planner.ret_page_ops_tail(bd.operation, scope, direct, transitive, returns_set, veto_page, depth)
+                        }
+                    }
+                    else
+                        0
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; TAIL semantics: does this operand sequence YIELD a page-needing call's
+    ; result?
+    function ret_page_ops_tail(ops: Vector[Operand], scope: Vector[Statement], direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], depth: int) returns bool
+    {
+        if ops.length = 0
+            return false
+        let head_ptr ops.get 0
+        if head_ptr = null
+            return false
+        let head (*head_ptr)
+
+        ; a lone Block / If operand in tail position: ITS tail is our tail.
+        if ops.length = 1
+        {
+            var handled: bool false
+            var res: bool false
+            choose head.expression
+                when bl: Block
+                {
+                    set handled: true
+                    set res: Planner.ret_page_stmts_tail(bl.statements, direct, transitive, returns_set, veto_page, depth)
+                }
+                when iff: scalyc.compiler.Model.If
+                {
+                    set handled: true
+                    if Planner.ret_page_stmt_tail(iff.consequent, scope, direct, transitive, returns_set, veto_page, depth)
+                        set res: true
+                    if res = false
+                        if iff.alternative <> null
+                            set res: Planner.ret_page_stmt_tail((*iff.alternative), scope, direct, transitive, returns_set, veto_page, depth)
+                }
+                else
+                    0
+            if handled
+                return res
+        }
+
+        ; a direct call: the head (plus its member-access hop) followed by a Tuple.
+        if ops.length >= 2
+        {
+            let next_ptr ops.get 1
+            if next_ptr <> null
+            {
+                var is_tuple: bool false
+                choose (*next_ptr).expression
+                    when tup: Tuple
+                        set is_tuple: true
+                    else
+                        0
+                if is_tuple
+                    if Planner.ret_page_call_head(head, direct, transitive, returns_set, veto_page)
+                        return true
+            }
+        }
+
+        ; a bare local: follow its binding in this block (depth-capped — a cyclic
+        ; or self-referential binding must not spin).
+        if ops.length = 1
+            if depth < 4
+                if head.member_access = null
+                    choose head.expression
+                        when t: scalyc.compiler.Model.Type
+                        {
+                            if t.name.length = 1
+                            {
+                                let np t.name.get 0
+                                if np <> null
+                                {
+                                    let vn (*np)
+                                    return Planner.ret_page_binding(scope, vn, direct, transitive, returns_set, veto_page, depth + 1)
+                                }
+                            }
+                        }
+                        else
+                            0
+        false
+    }
+
+    function ret_page_stmt_tail(s: Statement, scope: Vector[Statement], direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], depth: int) returns bool
+    {
+        choose s
+            when a: Action
+            {
+                if a.target.length = 0
+                    return Planner.ret_page_ops_tail(a.source, scope, direct, transitive, returns_set, veto_page, depth)
+            }
+            when r: Return
+                return Planner.ret_page_ops_tail(r.result, scope, direct, transitive, returns_set, veto_page, depth)
+            else
+                0
+        false
+    }
+
+    ; a block's return positions: every explicit `return` anywhere inside it, plus
+    ; its LAST statement (the tail).
+    function ret_page_stmts_tail(stmts: Vector[Statement], direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], depth: int) returns bool
+    {
+        if Planner.ret_page_stmts_returns(stmts, direct, transitive, returns_set, veto_page, depth)
+            return true
+        if stmts.length = 0
+            return false
+        let lp stmts.get(stmts.length - 1)
+        if lp = null
+            return false
+        let last (*lp)
+        Planner.ret_page_stmt_tail(last, stmts, direct, transitive, returns_set, veto_page, depth)
+    }
+
+    ; the explicit-`return` walk: every Return in the body, however deeply nested.
+    ; Non-tail statements are descended into ONLY to find those returns — their own
+    ; values are not return positions.
+    function ret_page_stmts_returns(stmts: Vector[Statement], direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], depth: int) returns bool
+    {
+        var i: size_t 0
+        while i < stmts.length
+        {
+            let sp stmts.get i
+            if sp <> null
+                if Planner.ret_page_stmt_returns((*sp), stmts, direct, transitive, returns_set, veto_page, depth)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
+    function ret_page_stmt_returns(s: Statement, scope: Vector[Statement], direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], depth: int) returns bool
+    {
+        choose s
+            when r: Return
+            {
+                if Planner.ret_page_ops_tail(r.result, scope, direct, transitive, returns_set, veto_page, depth)
+                    return true
+            }
+            when a: Action
+            {
+                if Planner.ret_page_ops_returns(a.source, direct, transitive, returns_set, veto_page, depth)
+                    return true
+            }
+            when bd: Binding
+            {
+                if Planner.ret_page_ops_returns(bd.operation, direct, transitive, returns_set, veto_page, depth)
+                    return true
+            }
+            else
+                0
+        false
+    }
+
+    function ret_page_ops_returns(ops: Vector[Operand], direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String], depth: int) returns bool
+    {
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+            {
+                let op (*op_ptr)
+                choose op.expression
+                    when bl: Block
+                    {
+                        if Planner.ret_page_stmts_returns(bl.statements, direct, transitive, returns_set, veto_page, depth)
+                            return true
+                    }
+                    when iff: scalyc.compiler.Model.If
+                    {
+                        if Planner.ret_page_stmt_returns(iff.consequent, Vector[Statement](), direct, transitive, returns_set, veto_page, depth)
+                            return true
+                        if iff.alternative <> null
+                            if Planner.ret_page_stmt_returns((*iff.alternative), Vector[Statement](), direct, transitive, returns_set, veto_page, depth)
+                                return true
+                    }
+                    when ch: Choose
+                    {
+                        var ci: size_t 0
+                        while ci < ch.cases.length
+                        {
+                            let wp ch.cases.get ci
+                            if wp <> null
+                                if Planner.ret_page_stmt_returns((*wp).consequent, Vector[Statement](), direct, transitive, returns_set, veto_page, depth)
+                                    return true
+                            set ci: ci + 1
+                        }
+                        if ch.alternative <> null
+                            if Planner.ret_page_stmt_returns((*ch.alternative), Vector[Statement](), direct, transitive, returns_set, veto_page, depth)
+                                return true
+                    }
+                    when m: Match
+                    {
+                        var mi: size_t 0
+                        while mi < m.branches.length
+                        {
+                            let bp m.branches.get mi
+                            if bp <> null
+                                if Planner.ret_page_stmt_returns((*bp).consequent, Vector[Statement](), direct, transitive, returns_set, veto_page, depth)
+                                    return true
+                            set mi: mi + 1
+                        }
+                        if m.alternative <> null
+                            if Planner.ret_page_stmt_returns((*m.alternative), Vector[Statement](), direct, transitive, returns_set, veto_page, depth)
+                                return true
+                    }
+                    else
+                        0
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; entry point: does this function return the result of a page-needing call?
+    function body_returns_page_needing_call(func: Function, direct: Array[String], transitive: Array[String], returns_set: Array[String], veto_page: Array[String]) returns bool
+    {
+        if Planner.is_extern_impl(func.implementation)
+            return false
+        if func.returns_ = null
+            return false
+        let rt (*func.returns_)
+        if Planner.is_ref_or_pointer_type(rt) = false
+            return false
+        choose func.implementation
+            when a: Action
+            {
+                if a.target.length > 0
+                    return false
+                return Planner.ret_page_ops_tail(a.source, Vector[Statement](), direct, transitive, returns_set, veto_page, 0)
+            }
+            else
+                0
+        false
+    }
+
     ; ---- transitive page-need walker: does a function body MENTION any name in
     ; a set? A sibling CALL's name rides either a member_access hop
     ; (`this.collect_flow_locals(...)`) or a dotted Type-name segment
@@ -33573,7 +34091,12 @@ define Planner
         ; gate above.
         if Planner.body_returns_value_ctor_as_pointer(func)
             return true
-        Planner.static_name_in_set(pl.transitive_page_names, func.name)
+        if Planner.static_name_in_set(pl.transitive_page_names, func.name)
+            return true
+        ; the return-position set (build_transitive_page_set's second rule): a
+        ; pointer/ref-returning function that hands out a page-needing call's
+        ; result must own the caller page, or the result lives on its own frame.
+        Planner.static_name_in_set(pl.return_page_names, func.name)
     }
 
     ; ========================================================================

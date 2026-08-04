@@ -1,0 +1,175 @@
+; Regression: a function that RETURNS the result of a call to a page-needing
+; function must itself receive the caller's page (2026-08-04).
+;
+; Without it the callee got the only page the frame could offer — the frame's own
+; local page — the frame was released on return, and the returned pointer
+; dangled. Silently: it read correct until something reused the page. Measured
+; before the fix on `s1` below: `7/8` immediately, `10/51548000360` after 200
+; String allocations made at the caller's own frame level. The user-side fix was
+; one character (`function s1#()`), which is exactly what the planner now infers
+; (Planner.build_transitive_page_set's return-position rule).
+;
+; All four return shapes were broken, and the need is transitive (s7: two levels
+; between the returning function and the `#` construction). s5/s6 are controls
+; that were already correct — an explicit `#` in the body (body_has_call_lifetime)
+; and an explicit `#` on the function.
+;
+; The churn loop must run at the SAME frame level as the calls: inside a called
+; procedure its allocations land on that procedure's own frame and never reuse
+; the released page, which hides the bug.
+
+; ★Observability: pre-fix this file reports FAIL on s1 only — once s1's released
+; page has been recycled by the first churn, the later frames land on pages the
+; following churns happen not to reach, so their corruption is not visible in one
+; program. Each shape WAS verified as its own program (all of s1-s4 and s7 read
+; back garbage after the churn); the assertions below cover all seven so a future
+; partial regression on any one of them trips the test.
+
+package scaly 0.1.0
+
+define Rec (a: int  b: int)
+{
+    init(a: int, b: int)
+    {
+        set this.a: a
+        set this.b: b
+    }
+}
+
+function make_rec#() returns pointer[Rec]
+    Rec#(7, 8)
+
+; let-bound page-needing call, tail is the variable
+function s1() returns pointer[Rec]
+{
+    let r make_rec()
+    r
+}
+
+; the tail IS the call
+function s2() returns pointer[Rec]
+{
+    make_rec()
+}
+
+; explicit return of the call
+function s3() returns pointer[Rec]
+{
+    return make_rec()
+}
+
+; let-bound, explicit return of the variable
+function s4() returns pointer[Rec]
+{
+    let r make_rec()
+    return r
+}
+
+; control: explicit `#` construction in the body
+function s5() returns pointer[Rec]
+{
+    let r Rec#(7, 8)
+    r
+}
+
+; control: the function is already `#`
+function s6#() returns pointer[Rec]
+{
+    let r make_rec()
+    r
+}
+
+; transitive: two levels between the return and the `#` construction
+function s7mid() returns pointer[Rec]
+{
+    let r make_rec()
+    r
+}
+function s7() returns pointer[Rec]
+{
+    let r s7mid()
+    r
+}
+
+let p1 s1()
+var i1 0
+while i1 < 200
+{
+    let c1 String("012345678901234567890123456789012345678901234567890123456789")
+    set i1: i1 + 1
+}
+let a1 p1.a
+let b1 p1.b
+let p2 s2()
+var i2 0
+while i2 < 200
+{
+    let c2 String("012345678901234567890123456789012345678901234567890123456789")
+    set i2: i2 + 1
+}
+let a2 p2.a
+let b2 p2.b
+let p3 s3()
+var i3 0
+while i3 < 200
+{
+    let c3 String("012345678901234567890123456789012345678901234567890123456789")
+    set i3: i3 + 1
+}
+let a3 p3.a
+let b3 p3.b
+let p4 s4()
+var i4 0
+while i4 < 200
+{
+    let c4 String("012345678901234567890123456789012345678901234567890123456789")
+    set i4: i4 + 1
+}
+let a4 p4.a
+let b4 p4.b
+let p5 s5()
+var i5 0
+while i5 < 200
+{
+    let c5 String("012345678901234567890123456789012345678901234567890123456789")
+    set i5: i5 + 1
+}
+let a5 p5.a
+let b5 p5.b
+let p6 s6()
+var i6 0
+while i6 < 200
+{
+    let c6 String("012345678901234567890123456789012345678901234567890123456789")
+    set i6: i6 + 1
+}
+let a6 p6.a
+let b6 p6.b
+let p7 s7()
+var i7 0
+while i7 < 200
+{
+    let c7 String("012345678901234567890123456789012345678901234567890123456789")
+    set i7: i7 + 1
+}
+let a7 p7.a
+let b7 p7.b
+var ok true
+if (a1 <> 7) || (b1 <> 8)
+    set ok: false
+if (a2 <> 7) || (b2 <> 8)
+    set ok: false
+if (a3 <> 7) || (b3 <> 8)
+    set ok: false
+if (a4 <> 7) || (b4 <> 8)
+    set ok: false
+if (a5 <> 7) || (b5 <> 8)
+    set ok: false
+if (a6 <> 7) || (b6 <> 8)
+    set ok: false
+if (a7 <> 7) || (b7 <> 8)
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL `a1`/`b1` `a2`/`b2` `a3`/`b3` `a4`/`b4` `a5`/`b5` `a6`/`b6` `a7`/`b7`")
