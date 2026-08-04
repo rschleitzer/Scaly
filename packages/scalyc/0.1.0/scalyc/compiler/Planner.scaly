@@ -990,6 +990,170 @@ define Planner
             null
         }
 
+        ; enter_concept_generic_scope / leave_concept_generic_scope: reason
+        ; about the DECLARATIONS of the generic concept `name` under exactly
+        ; its own parameter bindings, taken from the generic ARGUMENTS of the
+        ; type being constructed — and under nothing else.
+        ;
+        ; An initializer's parameter types are written in the concept's own
+        ; scope: `Vector[T].init(array: Array[T])` means Vector's T, and no
+        ; other T can be meant. Planning them against whatever bindings happen
+        ; to sit on the substitution stack is how a construction silently
+        ; miscompiled: matching `Vector[KeyValuePair[K, Nameable]]`'s
+        ; initializers in the scalyls root, a leftover `T = Function` from an
+        ; unrelated instantiation was in scope, so every arity-1 init was
+        ; compared against the parameter type `Array[Function]`, none matched,
+        ; and the construction fell through to the positional-tuple path —
+        ; which bit-copied the Array HEADER into the Vector, leaving `data`
+        ; holding the array's inner Vector pointer so every slot read the
+        ; header instead of the elements. The scalyc root had no stale T in
+        ; scope and compiled the same source correctly: that is what made the
+        ; defect a function of the compilation ROOT rather than of the code.
+        ;
+        ; REPLACING the stack matters, twice over — both alternatives were
+        ; measured and both fail. Merely HIDING the foreign binding is not
+        ; enough: the argument types are already substituted and concrete, so
+        ; an unsubstituted `Array[T]` on the parameter side stops matching the
+        ; constructions that work today (`ArrayIterator`, `Vector` in the
+        ; stdlib went unmatched at once). And merely LAYERING the concept's
+        ; own bindings on top diverges, because the substitution is then
+        ; applied to its own result: a generic argument may mention the same
+        ; parameter name it binds (`HashSetBuilder[T]` constructing
+        ; `VectorIterator[BuilderList[Slot[T]]]`), and re-expanding that on
+        ; every pass drove the planner into its own stack guard (exit 17 at
+        ; 52 MB). One simultaneous substitution, from an empty stack, is the
+        ; only shape that is both correct and terminating.
+        ;
+        ; Not entered in three cases, each of which keeps today's behaviour
+        ; exactly (answer null; leave# is then a no-op):
+        ;
+        ;   - a non-generic concept — there is nothing to bind;
+        ;   - fewer arguments than parameters (the template pass) — there is
+        ;     nothing to bind the rest TO, and the ambient fresh type
+        ;     variables are exactly what those uses need;
+        ;   - an argument that MENTIONS one of the parameter names it would
+        ;     bind. That is the occurs-check, and it is what keeps this
+        ;     terminating. `HashSetBuilder[T]` constructs
+        ;     `VectorIterator[BuilderList[Slot[T]]]`, binding the callee's `T`
+        ;     to a type containing a `T` of its own; substituting under that
+        ;     binding grows the type on every pass. Both ways of getting it
+        ;     wrong were measured: layering the binding on the ambient stack
+        ;     recursed into the planner's stack guard (exit 17 at 52 MB), and
+        ;     replacing the stack without this check ran the self-compile past
+        ;     10 minutes and 3.1 GB instead of 35 seconds. A construction that
+        ;     feeds its own parameter name back in keeps the old path.
+        function enter_concept_generic_scope(
+            this: Planner,
+            name: String,
+            struct_type: PlannedType
+        ) returns pointer[Array[KeyValuePair[String, PlannedType]]]
+        {
+            if struct_type.generics = null
+                return null
+            let cgens (*struct_type.generics)
+            let cc_ref this.lookup_concept(name)
+            if cc_ref = null
+                return null
+            let cc (*cc_ref)
+            if cc.parameters.length = 0
+                return null
+            if cgens.length < cc.parameters.length
+                return null
+
+            ; Occurs-check over every (parameter name, argument) pair.
+            var oi: size_t 0
+            while oi < cc.parameters.length
+            {
+                let op_ptr cc.parameters.get oi
+                if op_ptr <> null
+                {
+                    var oj: size_t 0
+                    while oj < cc.parameters.length
+                    {
+                        let oa_ptr cgens.get oj
+                        if oa_ptr <> null
+                        {
+                            if Planner.type_mentions_name((*oa_ptr), op_ptr.name)
+                                return null
+                        }
+                        set oj: oj + 1
+                    }
+                }
+                set oi: oi + 1
+            }
+
+            let snapshot Array[KeyValuePair[String, PlannedType]]^this()
+            var si: size_t 0
+            while si < type_substitutions.length
+            {
+                let sp type_substitutions.get si
+                if sp <> null
+                    snapshot.add((*sp))
+                set si: si + 1
+            }
+
+            ; The concept's own bindings go FIRST (first entry wins), then the
+            ; ambient ones for names the concept does NOT declare — those may
+            ; legitimately appear inside the arguments and must keep resolving
+            ; as they do today. Only a foreign binding of a name the concept
+            ; declares itself is dropped; that one is never meant.
+            set type_substitutions.length: 0
+            var pi: size_t 0
+            while pi < cc.parameters.length
+            {
+                let gp_ptr cc.parameters.get pi
+                let cg_ptr cgens.get pi
+                if gp_ptr <> null
+                {
+                    if cg_ptr <> null
+                        this.define_type_substitution(gp_ptr.name, (*cg_ptr))
+                }
+                set pi: pi + 1
+            }
+            var ai: size_t 0
+            while ai < snapshot.length
+            {
+                let ap snapshot.get ai
+                if ap <> null
+                {
+                    var declared: bool false
+                    var di: size_t 0
+                    while di < cc.parameters.length
+                    {
+                        let dp cc.parameters.get di
+                        if dp <> null
+                        {
+                            if dp.name = ap.key
+                                set declared: true
+                        }
+                        set di: di + 1
+                    }
+                    if declared = false
+                        type_substitutions.add((*ap))
+                }
+                set ai: ai + 1
+            }
+            snapshot
+        }
+
+        function leave_concept_generic_scope(
+            this: Planner,
+            snapshot: pointer[Array[KeyValuePair[String, PlannedType]]]
+        )
+        {
+            if snapshot = null
+                return
+            set type_substitutions.length: 0
+            var ri: size_t 0
+            while ri < snapshot.length
+            {
+                let rp snapshot.get ri
+                if rp <> null
+                    type_substitutions.add((*rp))
+                set ri: ri + 1
+            }
+        }
+
         ; ================================================================
         ; Fresh type variables for HM inference.
         ; ================================================================
@@ -8259,7 +8423,12 @@ define Planner
                             ; init# bodies are emitted by the synthesized
                             ; PlannedFunction wrapper in plan_initializer#.
                             let ctor_arg_types Planner.extract_arg_types(second)
+                            ; Match the initializers in the CONSTRUCTED
+                            ; concept's own generic scope — see
+                            ; enter_concept_generic_scope#.
+                            let ctor_scope this.enter_concept_generic_scope(fn_name, ctor_struct_type)
                             let init_match this.find_initializer(fn_name, ctor_arg_types)
+                            this.leave_concept_generic_scope(ctor_scope)
                             if init_match <> null
                             {
                                 let ini_match (*init_match)
@@ -8277,33 +8446,17 @@ define Planner
                                 ; cli.test() IR for `var opts Options()`.
                                 {
                                     let has_page_param ini_match.page_parameter <> null
-                                    let saved_subst_ctor type_substitutions.length
-                                    if ctor_struct_type.generics <> null
-                                    {
-                                        let cgens (*ctor_struct_type.generics)
-                                        let cc_ref this.lookup_concept(fn_name)
-                                        if cc_ref <> null
-                                        {
-                                            let cc (*cc_ref)
-                                            var pgi: size_t 0
-                                            while pgi < cc.parameters.length
-                                            {
-                                                if pgi < cgens.length
-                                                {
-                                                    let gp_ptr cc.parameters.get pgi
-                                                    let cg_ptr cgens.get pgi
-                                                    if gp_ptr <> null
-                                                    {
-                                                        if cg_ptr <> null
-                                                            this.define_type_substitution(gp_ptr.name, (*cg_ptr))
-                                                    }
-                                                }
-                                                set pgi: pgi + 1
-                                            }
-                                        }
-                                    }
+                                    ; The C1 symbol encodes the init's declared
+                                    ; parameter types, so they must be planned
+                                    ; in the same scope they were MATCHED in —
+                                    ; the concept's own. This used to append
+                                    ; the bindings to the ambient stack, which
+                                    ; a stale binding of the same name silently
+                                    ; won over (first entry wins), mangling a
+                                    ; foreign type into the symbol.
+                                    let mangle_scope this.enter_concept_generic_scope(fn_name, ctor_struct_type)
                                     let init_input_items this.plan_items(ini_match.input)
-                                    set type_substitutions.length: saved_subst_ctor
+                                    this.leave_concept_generic_scope(mangle_scope)
                                     var init_input_holder Vector[PlannedItem](init_input_items)
 
                                     let parent_ref &^this ctor_struct_type
@@ -31921,6 +32074,32 @@ define Planner
     ; any of its resolved generic arguments — still name an UNINSTANTIATED
     ; type parameter? True only while a generic TEMPLATE body is planned;
     ; a real instantiation carries concrete types all the way down.
+    ; Does `t` mention the type-parameter name `name` anywhere, at its own
+    ; head or inside any generic argument? The occurs-check of
+    ; enter_concept_generic_scope# — see there for what it prevents.
+    function type_mentions_name(t: PlannedType, name: String) returns bool
+    {
+        if t.name = name
+            return true
+        if t.generics <> null
+        {
+            let gs (*t.generics)
+            var i: size_t 0
+            while i < gs.length
+            {
+                let g_ptr gs.get i
+                if g_ptr <> null
+                {
+                    let g (*g_ptr)
+                    if Planner.type_mentions_name(g, name)
+                        return true
+                }
+                set i: i + 1
+            }
+        }
+        false
+    }
+
     function type_mentions_generic_param(t: PlannedType) returns bool
     {
         if Planner.is_generic_type_param_name(t.name)

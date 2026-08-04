@@ -1,0 +1,63 @@
+; Regression: an initializer must be matched under the CONSTRUCTED concept's
+; own generic bindings, not under whatever binding of the same parameter name
+; happens to be in scope (2026-08-04).
+;
+; `Vector[T].init(array: Array[T])` means Vector's T. Inside `Outer[T]` with
+; T = int, the planner substituted the ENCLOSING T into Vector's declared
+; parameter type and compared `Array[int]` against the argument's
+; `Array[Elem]`; no initializer matched and the construction fell through to
+; the positional-tuple path meant for data classes without an init — which
+; bit-copies the Array HEADER into the Vector, so `data` ends up holding the
+; array's inner Vector pointer and every slot reads the header instead of the
+; elements. Since the no-matching-initializer diagnostic landed this is a hard
+; rc-4 error instead of silent corruption, which is how this shape was found.
+;
+; The same defect appeared as a function of the compilation ROOT: HashMap's
+; `Vector[KeyValuePair[K, V]]^this(*array)` resolved in the scalyc root and
+; matched nothing in the scalyls root, where a stale `T = Function` from an
+; unrelated instantiation sat on the substitution stack. The fix
+; (Planner.enter_concept_generic_scope) substitutes the concept's own
+; parameters simultaneously from an empty stack, guarded by an occurs-check —
+; an argument that mentions the parameter name it binds keeps the old path,
+; because substituting under such a binding grows the type on every pass.
+define Elem (n: int)
+{
+    init(n: int) { set this.n: n }
+}
+
+define Outer[T]
+(
+    dummy: T
+)
+{
+    init(dummy: T) { set this.dummy: dummy }
+
+    ; Outer's own T is bound to int at every call site below. The Vector
+    ; constructed here declares its OWN T, which must bind to Elem.
+    function build(this: Outer[T]) returns size_t
+    {
+        var a Array[Elem]()
+        let e Elem(5)
+        a.add e
+        let e2 Elem(6)
+        a.add e2
+        var v Vector[Elem](a)
+        let p v.get_ptr(0 as size_t)
+        if p = null: return 90 as size_t
+        if p.n <> 5: return 91 as size_t
+        v.length
+    }
+}
+
+let o Outer[int](3)
+let n o.build()
+if n = 90: print "FAIL slot is null"
+if n = 91: print "FAIL element read from the wrong address"
+if n = 2: print "PASS"
+if n <> 2
+{
+    if n <> 90
+    {
+        if n <> 91: print "FAIL wrong length"
+    }
+}

@@ -46,10 +46,10 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z19BuilderListIteratorI6StringE = type { ptr }
 %_Z6VectorI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
 %_Z11BuilderListI4SlotI6StringEE = type { ptr }
+%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
 %_Z11BuilderListI11BuilderListI4SlotI6StringEEE = type { ptr }
 %_Z4NodeI11BuilderListI4SlotI6StringEEE = type { %_Z11BuilderListI4SlotI6StringEE, ptr }
 %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE = type { ptr }
-%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
 %_Z5SliceI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
 %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE = type { %_Z5SliceI11BuilderListI4SlotI6StringEEE, i64 }
 %_Z5ArrayI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
@@ -310,10 +310,10 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z12ListIteratorI12KeyValuePairI6String8NameableEE = type { ptr }
 %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { i64, ptr }
 %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE = type { ptr }
+%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr, i64 }
 %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr }
 %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr }
 %_Z19BuilderListIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr }
-%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr, i64 }
 %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr, i64 }
 %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, i64 }
 %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { i64, ptr }
@@ -8138,6 +8138,53 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
+define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1EP6VectorI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE3addEP4Page11BuilderListI4SlotI6StringEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
@@ -9430,53 +9477,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
-  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
-  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector3, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1EP6VectorI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
-entry:
-  %vector = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
-  %position = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %0) {
 entry:
   %load.struct = load %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %0, align 8
@@ -9614,9 +9614,12 @@ entry:
 define linkonce_odr void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %1) {
 entry:
   %list_iterator = alloca ptr, align 8
-  %tuple9 = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  %tuple = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
   %vector_iterator = alloca ptr, align 8
-  %tuple = alloca %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
   %call = call i64 @_ZN7hashing9get_primeEm(i64 %1)
   %call1 = call ptr @_ZN4Page3getEPv(ptr %0)
   %call2 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call1)
@@ -9633,58 +9636,58 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %load.struct3 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %slots4 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct3, 1
-  %tuple.field = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
-  store ptr %slots4, ptr %tuple.field, align 1
-  %tuple.field5 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
-  store i64 0, ptr %tuple.field5, align 1
-  store ptr %tuple, ptr %vector_iterator, align 1
+  %forced_page3 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region4 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots6 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct5, 1
+  call void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1EP6VectorI11BuilderListI4SlotI6StringEEE(ptr %struct.region4, ptr %slots6)
+  store ptr %struct.region4, ptr %vector_iterator, align 1
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots23 = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots23, align 8
+  %slots22 = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots22, align 8
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-while.cond:                                       ; preds = %while.exit13, %if.then
-  %vector_iterator6 = load ptr, ptr %vector_iterator, align 8
-  %call7 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %vector_iterator6)
-  %while.tobool = icmp ne ptr %call7, null
+while.cond:                                       ; preds = %while.exit12, %if.then
+  %vector_iterator7 = load ptr, ptr %vector_iterator, align 8
+  %call8 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %vector_iterator7)
+  %while.tobool = icmp ne ptr %call8, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct8 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call7, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct8, 0
-  %tuple.field10 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple9, i32 0, i32 0
-  store ptr %head, ptr %tuple.field10, align 1
-  store ptr %tuple9, ptr %list_iterator, align 1
-  br label %while.cond11
+  %load.struct9 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call8, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct9, 0
+  %tuple.field = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  store ptr %tuple, ptr %list_iterator, align 1
+  br label %while.cond10
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct20 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %slots21 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct20, 1
-  %call22 = call ptr @_ZN4Page3getEPv(ptr %slots21)
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call22)
+  %load.struct19 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots20 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct19, 1
+  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call21)
   br label %if.end
 
-while.cond11:                                     ; preds = %while.body12, %while.body
-  %list_iterator14 = load ptr, ptr %list_iterator, align 8
-  %call15 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator14)
-  %while.tobool16 = icmp ne ptr %call15, null
-  br i1 %while.tobool16, label %while.body12, label %while.exit13
+while.cond10:                                     ; preds = %while.body11, %while.body
+  %list_iterator13 = load ptr, ptr %list_iterator, align 8
+  %call14 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator13)
+  %while.tobool15 = icmp ne ptr %call14, null
+  br i1 %while.tobool15, label %while.body11, label %while.exit12
 
-while.body12:                                     ; preds = %while.cond11
-  %load.struct17 = load %_Z4SlotI6StringE, ptr %call15, align 8
-  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct17, 1
-  %load.struct18 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct18, 0
+while.body11:                                     ; preds = %while.cond10
+  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
+  %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct17, 0
   %urem = urem i64 %hash_code, %length
-  %call19 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %struct.region, i64 %urem)
-  call void @_ZN11BuilderListI4SlotI6StringEE3addEP4Page4SlotI6StringE(ptr %call19, ptr %call2, ptr %call15)
-  br label %while.cond11
+  %call18 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %struct.region, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI6StringEE3addEP4Page4SlotI6StringE(ptr %call18, ptr %call2, ptr %call14)
+  br label %while.cond10
 
-while.exit13:                                     ; preds = %while.cond11
+while.exit12:                                     ; preds = %while.cond10
   br label %while.cond
 }
 
@@ -33475,6 +33478,16 @@ entry:
   ret void
 }
 
+define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE4nextEv(ptr %0) {
+entry:
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
+entry:
+  ret void
+}
+
 define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE3addEP4Page11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1, ptr %2) {
 entry:
   ret void
@@ -33701,16 +33714,6 @@ entry:
 }
 
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1E4ListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
-entry:
-  ret void
-}
-
-define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE4nextEv(ptr %0) {
-entry:
-  ret ptr null
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
 entry:
   ret void
 }
@@ -39040,6 +39043,53 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
+define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct2, 0
+  %deref = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE3addEP4Page11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
@@ -40332,53 +40382,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct, 0
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct1, 1
-  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct2, 0
-  %deref = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %vector3, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE(ptr %0, ptr %1) {
-entry:
-  %vector = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
-  %position = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %0) {
 entry:
   %load.struct = load %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
@@ -40516,9 +40519,12 @@ entry:
 define linkonce_odr void @_ZN14HashMapBuilderI6String8NameableE10reallocateEm(ptr %0, i64 %1) {
 entry:
   %list_iterator = alloca ptr, align 8
-  %tuple9 = alloca %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, align 8
+  %tuple = alloca %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, align 8
   %vector_iterator = alloca ptr, align 8
-  %tuple = alloca %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
   %call = call i64 @_ZN7hashing9get_primeEm(i64 %1)
   %call1 = call ptr @_ZN4Page3getEPv(ptr %0)
   %call2 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call1)
@@ -40535,58 +40541,58 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %load.struct3 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
-  %slots4 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct3, 1
-  %tuple.field = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %slots4, ptr %tuple.field, align 1
-  %tuple.field5 = getelementptr inbounds %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 1
-  store i64 0, ptr %tuple.field5, align 1
-  store ptr %tuple, ptr %vector_iterator, align 1
+  %forced_page3 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region4 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE }, ptr null, i64 0, i32 1) to i64))
+  %load.struct5 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
+  %slots6 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct5, 1
+  call void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE(ptr %struct.region4, ptr %slots6)
+  store ptr %struct.region4, ptr %vector_iterator, align 1
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots23 = getelementptr inbounds %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots23, align 8
+  %slots22 = getelementptr inbounds %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots22, align 8
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-while.cond:                                       ; preds = %while.exit13, %if.then
-  %vector_iterator6 = load ptr, ptr %vector_iterator, align 8
-  %call7 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %vector_iterator6)
-  %while.tobool = icmp ne ptr %call7, null
+while.cond:                                       ; preds = %while.exit12, %if.then
+  %vector_iterator7 = load ptr, ptr %vector_iterator, align 8
+  %call8 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %vector_iterator7)
+  %while.tobool = icmp ne ptr %call8, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct8 = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %call7, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct8, 0
-  %tuple.field10 = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple9, i32 0, i32 0
-  store ptr %head, ptr %tuple.field10, align 1
-  store ptr %tuple9, ptr %list_iterator, align 1
-  br label %while.cond11
+  %load.struct9 = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %call8, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct9, 0
+  %tuple.field = getelementptr inbounds %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  store ptr %tuple, ptr %list_iterator, align 1
+  br label %while.cond10
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct20 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
-  %slots21 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct20, 1
-  %call22 = call ptr @_ZN4Page3getEPv(ptr %slots21)
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call22)
+  %load.struct19 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
+  %slots20 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct19, 1
+  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call1, ptr %call21)
   br label %if.end
 
-while.cond11:                                     ; preds = %while.body12, %while.body
-  %list_iterator14 = load ptr, ptr %list_iterator, align 8
-  %call15 = call ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %list_iterator14)
-  %while.tobool16 = icmp ne ptr %call15, null
-  br i1 %while.tobool16, label %while.body12, label %while.exit13
+while.cond10:                                     ; preds = %while.body11, %while.body
+  %list_iterator13 = load ptr, ptr %list_iterator, align 8
+  %call14 = call ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %list_iterator13)
+  %while.tobool15 = icmp ne ptr %call14, null
+  br i1 %while.tobool15, label %while.body11, label %while.exit12
 
-while.body12:                                     ; preds = %while.cond11
-  %load.struct17 = load %_Z4SlotI6StringE, ptr %call15, align 8
-  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct17, 1
-  %load.struct18 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.region, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct18, 0
+while.body11:                                     ; preds = %while.cond10
+  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
+  %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.region, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct17, 0
   %urem = urem i64 %hash_code, %length
-  %call19 = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %struct.region, i64 %urem)
-  call void @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE3addEP4Page4SlotI12KeyValuePairI6String8NameableEE(ptr %call19, ptr %call2, ptr %call15)
-  br label %while.cond11
+  %call18 = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %struct.region, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE3addEP4Page4SlotI12KeyValuePairI6String8NameableEE(ptr %call18, ptr %call2, ptr %call14)
+  br label %while.cond10
 
-while.exit13:                                     ; preds = %while.cond11
+while.exit12:                                     ; preds = %while.cond10
   br label %while.cond
 }
 
@@ -40789,8 +40795,8 @@ if.end10:                                         ; preds = %while.body
 
 define linkonce_odr void @_ZN14HashMapBuilderI6String8NameableEC1E6VectorI12KeyValuePairI6String8NameableEE(ptr %0, ptr %1) {
 entry:
-  %vector_iterator = alloca %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, align 8
-  %tuple = alloca %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, align 8
+  %vector_iterator = alloca ptr, align 8
+  %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, align 8
   %length = getelementptr inbounds %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   %slots = getelementptr inbounds %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
@@ -40804,19 +40810,16 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN14HashMapBuilderI6String8NameableE10reallocateEm(ptr %0, i64 %field.val)
-  %tuple.field = getelementptr inbounds %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %tuple, i32 0, i32 0
-  store ptr %1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %tuple, i32 0, i32 1
-  store i64 0, ptr %tuple.field2, align 1
-  %tuple.val = load %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %vector_iterator, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEEC1EP6VectorI12KeyValuePairI6String8NameableEE(ptr %struct.init, ptr %1)
+  store ptr %struct.init, ptr %vector_iterator, align 1
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
-  %call = call ptr @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEE4nextEv(ptr %vector_iterator)
+  %vector_iterator2 = load ptr, ptr %vector_iterator, align 8
+  %call = call ptr @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEE4nextEv(ptr %vector_iterator2)
   %while.tobool = icmp ne ptr %call, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
