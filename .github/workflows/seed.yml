@@ -88,7 +88,10 @@ jobs:
         run: tools/verify-seed.sh dist/seed/scalyc_seed
 
       - name: Upload native compiler
-        uses: actions/upload-artifact@v5
+        # v7, not v5: upload-artifact@v5 still declares `using: node20` and kept
+        # warning about the Node-20 deprecation (checkout@v5 is already node24).
+        # node24 arrives here only with v6; v7 is the current major.
+        uses: actions/upload-artifact@v7
         with:
           name: scalyc-x86_64-linux-gnu
           path: dist/seed/scalyc_seed

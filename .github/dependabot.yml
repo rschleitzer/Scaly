@@ -19,7 +19,7 @@
 #
 # github-actions is deliberately NOT configured: each such PR would spend a full
 # bootstrap in CI, and the two pinned actions were bumped to v5 by hand once the
-# runner warned about the Node-20 deprecation.
+# runner warned about the Node-20 deprecation (checkout v5, upload-artifact v7).
 version: 2
 updates:
   # The VS Code extension. Its whole alert surface used to be @vscode/vsce, a
