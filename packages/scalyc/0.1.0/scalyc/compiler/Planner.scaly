@@ -29132,9 +29132,13 @@ define Planner
                                     ; falls back to the name-keyed sets. It writes only
                                     ; its own set — see the field comment for the
                                     ; cascade that avoids.
+                                    ; `owners` is parallel to `all` and holds an
+                                    ; EMPTY name for a free function — every
+                                    ; owner-rooted route then resolves nothing,
+                                    ; which is exactly right for one.
                                     let ow owners.get ii
                                     if ow <> null
-                                        if Planner.body_returns_page_needing_call(this, (*ow), f)
+                                        if Planner.body_returns_page_needing_call(this, ow, f)
                                         {
                                             return_page_names.add(String^this(f.name))
                                             return_page_starts.add(f.span.start)
@@ -33474,29 +33478,36 @@ define Planner
     ; arms of a tail If) and every explicit `return`, including inside nested
     ; blocks and if/choose/match arms. A non-tail statement call is NOT a return
     ; position (`helper()` followed by `this.field` must not promote). Value
-    ; shapes: a direct call (`f(x)`, `this.m(x)`, `ns.f(x)`) and a local bound to
-    ; one in the same block (`let r f(x)` … `r`). A `#`-marked construction is not
-    ; this rule's business — body_has_call_lifetime already covers it.
-    ;
-    ; Under-approximate by design where the scope is not obvious (a tail
-    ; referencing a variable bound in an OUTER block): missing a shape leaves it
-    ; as broken as today, whereas promoting one function too many is a live
-    ; regression.
+    ; shapes: a direct call (`f(x)`, `this.m(x)`, `ns.f(x)`, `(*p).m(x)`) and a
+    ; local bound to one in the same block (`let r f(x)` … `r`). A `#`-marked
+    ; construction is not this rule's business — body_has_call_lifetime already
+    ; covers it. A tail referencing a variable bound in an OUTER block is not
+    ; followed (the scope handed down is the innermost block's).
     ;
     ; ★WHICH function a call names is decided by RECEIVER-TYPE RESOLUTION
-    ; (ret_page_resolve_call), not by the callee's bare name: the receiver's type
-    ; comes from the enclosing concept (`this.m()`), a parameter, a typed local, a
-    ; property of the enclosing concept (implicit `this`), or a concept name (a
-    ; static call), and every further prefix segment is a property hop
-    ; (`this.id_table.lookup(...)`). The resolved concept's overload set — narrowed
-    ; by argument count — is then asked directly via function_needs_caller_page.
+    ; (ret_page_resolve_call → ret_page_receiver_concept), not by the callee's
+    ; bare name: the receiver's type comes from the enclosing concept
+    ; (`this.m()`), a parameter, a local (declared OR inferred from its
+    ; initializer, ret_page_local_type), a property of the enclosing concept
+    ; (implicit `this`), or a concept name (a static call); every further prefix
+    ; segment is a property hop (`this.id_table.lookup(...)`); and a hop off a
+    ; non-name primary is resolved the same way once its base expression has a
+    ; type (`(*p).mk.make()`). The resolved concept's overload set — narrowed by
+    ; argument count — is then asked directly via function_needs_caller_page.
     ; This is what closes the ambiguity hole the name-keyed sets left open: with
     ; `EntityCatalog.lookup` page-needing and `IdTable.lookup` borrowed, a name
     ; test can only either promote both or neither, so the veto below had to
     ; choose neither and left a genuinely dangling `return catalog.lookup(x)`
-    ; broken. Where a receiver does NOT resolve (a local bound to a call, a deref
-    ; hop `(*p).m()`) the name-keyed fallback with its ambiguity veto still
-    ; applies, unchanged.
+    ; broken.
+    ;
+    ; What still falls back to the name-keyed sets: a receiver whose type the
+    ; inference cannot name — an operator expression (`(*(buf + i)).m()`), a
+    ; deref of anything but a plain name, a generic instantiation's element type
+    ; — and a CHAINED tail call (`helper(x).m()`, where the value is the last
+    ; call's and this rule tests the first: over-approximate when `helper` needs a
+    ; page, blind to `m`'s need when it does not). Under-approximating there is
+    ; deliberate: a missed shape stays as broken as it was, while a wrong
+    ; promotion moves a callee's allocations onto the caller's page for good.
     ; does this function take its page as an EXPLICIT first argument
     ; (`f(host: pointer[Page], …)`)? Then a call to it hands over that page, not
     ; the caller's frame, and returning its result is sound without a page of our
@@ -33658,8 +33669,8 @@ define Planner
         false
     }
 
-    ; the DECLARED type of a local (`let p: pointer[Foo] …`). An inferred one is
-    ; not resolvable here — that is the fallback path's business.
+    ; the DECLARED type of a local (`let p: pointer[Foo] …`). Bindings without
+    ; one go through ret_page_local_type's inference.
     function ret_page_local_type_last(scope: Vector[Statement], name: String) returns ref[String]?
     {
         var i: size_t 0
@@ -33712,6 +33723,376 @@ define Planner
             }
             else
                 null
+    }
+
+    ; ---- the local type inference -------------------------------------------
+    ; `let h get_holder()` … `h.make()`: the receiver has no declared type, so its
+    ; type is the CALLEE's return type — which needs the same receiver resolution
+    ; one level down, hence the mutual recursion below (capped by `idepth`; a
+    ; self-referential or cyclic binding must not spin). Everything here answers a
+    ; CONCEPT NAME as a `ref[String]?` pointing into the Model's own name vectors:
+    ; no String is ever constructed on this path, because a String return would
+    ; land on the pre-pass frame once per call site per fixpoint round.
+    ;
+    ; Inferred shapes: a construction (`Foo(…)`, `Foo#(…)`, `Foo^p(…)`), a call
+    ; (free, static, or on a resolvable receiver), a property chain
+    ; (`this.a.b`), another local, a parenthesized expression, and a deref
+    ; (`(*p)` — `ret_page_type_last_name` already strips `pointer`/`ref`, so the
+    ; deref is the identity on the answer). Anything else answers null and leaves
+    ; the call site on the name-keyed fallback.
+
+    ; every segment of `path` from `i` on is a PROPERTY hop; answer the type of
+    ; the last one (a value chain, not a call).
+    function ret_page_walk_props_all(pl: Planner, cur: ref[String]?, path: Vector[String], i: size_t) returns ref[String]?
+    {
+        if cur = null
+            return null
+        if i >= path.length
+            return cur
+        let segp path.get i
+        if segp = null
+            return null
+        let nxt Planner.ret_page_property_type_last(pl, (*cur), (*segp))
+        Planner.ret_page_walk_props_all(pl, nxt, path, i + 1)
+    }
+
+    ; the segments path[i .. length-2] are PROPERTY hops; answer the concept that
+    ; OWNS path[length-1] (its callee). Carries the current concept as a ref so
+    ; the terminal answer can be handed back up without constructing a String.
+    function ret_page_walk_to_concept(pl: Planner, cur: ref[String]?, path: Vector[String], i: size_t) returns ref[String]?
+    {
+        if cur = null
+            return null
+        if path.length = 0
+            return null
+        if i >= path.length - 1
+            return cur
+        let segp path.get i
+        if segp = null
+            return null
+        let nxt Planner.ret_page_property_type_last(pl, (*cur), (*segp))
+        Planner.ret_page_walk_to_concept(pl, nxt, path, i + 1)
+    }
+
+    ; the RETURN type of the functions named `method` among these members — the
+    ; same overload narrowing as ret_page_members_decision, but the answers must
+    ; agree on the type NAME (they do for every real overload set; a disagreement
+    ; answers null rather than guessing).
+    function ret_page_members_return_type(pl: Planner, members: Vector[Member], method: String, argc: size_t) returns ref[String]?
+    {
+        var hit: ref[String]? null
+        var conflict: bool false
+        var arity_hit: ref[String]? null
+        var arity_conflict: bool false
+        var i: size_t 0
+        while i < members.length
+        {
+            let mp members.get i
+            if mp <> null
+                choose (*mp)
+                    when f: Function
+                    {
+                        if f.name = method
+                            if f.returns_ <> null
+                            {
+                                let rt Planner.ret_page_type_last_name((*f.returns_))
+                                if rt <> null
+                                {
+                                    if hit = null
+                                        set hit: rt
+                                    else
+                                        if (*hit) <> (*rt)
+                                            set conflict: true
+                                    if Planner.ret_page_arity_ok(f, argc)
+                                    {
+                                        if arity_hit = null
+                                            set arity_hit: rt
+                                        else
+                                            if (*arity_hit) <> (*rt)
+                                                set arity_conflict: true
+                                    }
+                                }
+                            }
+                        0
+                    }
+                    else
+                        0
+            set i: i + 1
+        }
+        if arity_hit <> null
+        {
+            if arity_conflict
+                return null
+            return arity_hit
+        }
+        if conflict
+            return null
+        hit
+    }
+
+    function ret_page_concept_return_type(pl: Planner, concept_name: String, method: String, argc: size_t) returns ref[String]?
+    {
+        let cr pl.lookup_concept_any(concept_name)
+        if cr = null
+            return null
+        let c (*cr)
+        choose c.definition
+            when s: Structure
+                return Planner.ret_page_members_return_type(pl, s.members, method, argc)
+            when u: scalyc.compiler.Model.Union
+                return Planner.ret_page_members_return_type(pl, u.members, method, argc)
+            else
+                0
+        null
+    }
+
+    function ret_page_functions_return_type(pl: Planner, name: String, argc: size_t) returns ref[String]?
+    {
+        var hit: ref[String]? null
+        var conflict: bool false
+        var arity_hit: ref[String]? null
+        var arity_conflict: bool false
+        var cur pl.model_function_index.lookup_head(name)
+        while cur <> (0 - 1) as i64
+        {
+            let kvp_ptr pl.model_functions.get(cur as size_t)
+            if kvp_ptr <> null
+            {
+                let f kvp_ptr.value
+                if f.returns_ <> null
+                {
+                    let rt Planner.ret_page_type_last_name((*f.returns_))
+                    if rt <> null
+                    {
+                        if hit = null
+                            set hit: rt
+                        else
+                            if (*hit) <> (*rt)
+                                set conflict: true
+                        if Planner.ret_page_arity_ok(f, argc)
+                        {
+                            if arity_hit = null
+                                set arity_hit: rt
+                            else
+                                if (*arity_hit) <> (*rt)
+                                    set arity_conflict: true
+                        }
+                    }
+                }
+            }
+            set cur: pl.model_function_index.next_of(cur as size_t)
+        }
+        if arity_hit <> null
+        {
+            if arity_conflict
+                return null
+            return arity_hit
+        }
+        if conflict
+            return null
+        hit
+    }
+
+    ; the type of a NAME in this scope: a local (declared or inferred), a
+    ; parameter, a property of the enclosing concept, or a concept name used as a
+    ; value. Same precedence the planner uses.
+    function ret_page_name_type(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], name: String, idepth: int) returns ref[String]?
+    {
+        if Planner.ret_page_local_binds(scope, name)
+            return Planner.ret_page_local_type(pl, owner, func, scope, name, idepth)
+        let ptp Planner.ret_page_param_type_last(func, name)
+        if ptp <> null
+            return ptp
+        if owner <> null
+        {
+            let ftp Planner.ret_page_property_type_last(pl, (*owner), name)
+            if ftp <> null
+                return ftp
+        }
+        null
+    }
+
+    ; a local's type: declared if it says so, else inferred from its initializer.
+    function ret_page_local_type(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], name: String, idepth: int) returns ref[String]?
+    {
+        let declared Planner.ret_page_local_type_last(scope, name)
+        if declared <> null
+            return declared
+        if idepth >= 4
+            return null
+        var i: size_t 0
+        while i < scope.length
+        {
+            let sp scope.get i
+            if sp <> null
+                choose (*sp)
+                    when bd: Binding
+                    {
+                        if bd.item.name <> null
+                            if (*bd.item.name) = name
+                                return Planner.ret_page_ops_type(pl, owner, func, scope, bd.operation, idepth + 1)
+                        0
+                    }
+                    else
+                        0
+            set i: i + 1
+        }
+        null
+    }
+
+    ; the type an EXPRESSION evaluates to (no member hops — the operand level
+    ; below adds those).
+    function ret_page_expr_type(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], expr: Expression, idepth: int) returns ref[String]?
+    {
+        if idepth >= 4
+            return null
+        choose expr
+            when t: scalyc.compiler.Model.Type
+            {
+                if t.name.length = 0
+                    return null
+                if t.name.length = 1
+                {
+                    let np t.name.get 0
+                    if np = null
+                        return null
+                    let n (*np)
+                    let nt Planner.ret_page_name_type(pl, owner, func, scope, n, idepth)
+                    if nt <> null
+                        return nt
+                    ; a bare concept name in value position
+                    if pl.lookup_concept_any(n) <> null
+                        return np
+                    return null
+                }
+                ; a dotted value path: the first segment as a name, the rest as
+                ; property hops (`this.a.b`).
+                let s0p t.name.get 0
+                if s0p = null
+                    return null
+                let s0 (*s0p)
+                if s0 = "this"
+                    return Planner.ret_page_walk_props_all(pl, owner, t.name, 1)
+                let base Planner.ret_page_name_type(pl, owner, func, scope, s0, idepth)
+                if base <> null
+                    return Planner.ret_page_walk_props_all(pl, base, t.name, 1)
+                if pl.lookup_concept_any(s0) <> null
+                    return Planner.ret_page_walk_props_all(pl, s0p, t.name, 1)
+                return null
+            }
+            when tup: Tuple
+            {
+                ; a parenthesized expression — including the `(*p)` deref, whose
+                ; base type IS the answer (pointer/ref are stripped anyway).
+                let dn pl.tuple_deref_receiver_name(tup)
+                if dn <> ""
+                    return Planner.ret_page_name_type(pl, owner, func, scope, dn, idepth)
+                if tup.components.length = 1
+                {
+                    let cp tup.components.get 0
+                    if cp = null
+                        return null
+                    return Planner.ret_page_ops_type(pl, owner, func, scope, (*cp).value, idepth + 1)
+                }
+                return null
+            }
+            else
+                0
+        null
+    }
+
+    function ret_page_operand_type(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], op: Operand, idepth: int) returns ref[String]?
+    {
+        let base Planner.ret_page_expr_type(pl, owner, func, scope, op.expression, idepth)
+        if op.member_access = null
+            return base
+        Planner.ret_page_walk_props_all(pl, base, (*op.member_access), 0)
+    }
+
+    ; the type an operand SEQUENCE evaluates to. A call/construction is
+    ; `[head, Tuple]`; a single operand is a value.
+    function ret_page_ops_type(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], ops: Vector[Operand], idepth: int) returns ref[String]?
+    {
+        if idepth >= 4
+            return null
+        if ops.length = 0
+            return null
+        let head_ptr ops.get 0
+        if head_ptr = null
+            return null
+        let head (*head_ptr)
+        if ops.length = 1
+            return Planner.ret_page_operand_type(pl, owner, func, scope, head, idepth)
+        if ops.length <> 2
+            return null
+        let next_ptr ops.get 1
+        if next_ptr = null
+            return null
+        var argc: size_t 0
+        var is_call: bool false
+        choose (*next_ptr).expression
+            when tup: Tuple
+            {
+                set is_call: true
+                set argc: tup.components.length
+            }
+            else
+                0
+        if is_call = false
+            return null
+        ; a hop off a non-name primary: `(*p).m(…)` — the receiver's type carries
+        ; the property hops, the last segment is the callee.
+        if head.member_access <> null
+        {
+            let ma (*head.member_access)
+            if ma.length = 0
+                return null
+            let base Planner.ret_page_expr_type(pl, owner, func, scope, head.expression, idepth)
+            let recv Planner.ret_page_walk_to_concept(pl, base, ma, 0)
+            if recv = null
+                return null
+            let cnp ma.get(ma.length - 1)
+            if cnp = null
+                return null
+            return Planner.ret_page_concept_return_type(pl, (*recv), (*cnp), argc)
+        }
+        choose head.expression
+            when t: scalyc.compiler.Model.Type
+            {
+                if t.name.length = 0
+                    return null
+                let lastp t.name.get(t.name.length - 1)
+                if lastp = null
+                    return null
+                ; a lifetime marker makes it a CONSTRUCTION for sure.
+                var is_ctor: bool false
+                choose t.lifetime
+                    when u: Unspecified
+                        0
+                    else
+                        set is_ctor: true
+                if is_ctor
+                    return lastp
+                ; `Foo(…)` — a concept name wins over a function of that name, as
+                ; it does in the planner.
+                if t.name.length = 1
+                {
+                    let n (*lastp)
+                    if pl.lookup_concept_any(n) <> null
+                        return lastp
+                    return Planner.ret_page_functions_return_type(pl, n, argc)
+                }
+                let recv Planner.ret_page_receiver_concept(pl, owner, func, scope, t.name, idepth)
+                if recv <> null
+                    return Planner.ret_page_concept_return_type(pl, (*recv), (*lastp), argc)
+                ; a qualified construction (`ns.Foo(…)`) as the last resort.
+                if pl.lookup_concept_any((*lastp)) <> null
+                    return lastp
+                return null
+            }
+            else
+                0
+        null
     }
 
     ; an overload's parameter count matches a call's argument count, with the
@@ -33861,34 +34242,48 @@ define Planner
         0
     }
 
-    ; consume the prefix segments path[i .. n-2] as PROPERTY hops off concept
-    ; `concept_name`, then decide on the callee path[n-1]. Recursive rather than
-    ; looping so the current concept name can travel as a parameter (no String
-    ; construction anywhere on this path).
-    function ret_page_walk_fields(pl: Planner, concept_name: String, path: Vector[String], i: size_t, argc: size_t) returns int
+    ; the concept that owns the callee of a dotted call path: resolve the FIRST
+    ; segment to a type (`this`, a parameter, a local — declared or inferred —, a
+    ; property of the enclosing concept, or a concept name for a static call),
+    ; then take every further prefix segment as a property hop.
+    function ret_page_receiver_concept(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], path: Vector[String], idepth: int) returns ref[String]?
     {
-        let n path.length
-        if n = 0
-            return 0 - 1
-        if i >= n - 1
+        if path.length < 2
+            return null
+        let s0p path.get 0
+        if s0p = null
+            return null
+        let s0 (*s0p)
+        if s0 = "this"
+            return Planner.ret_page_walk_to_concept(pl, owner, path, 1)
+        ; a local shadows a property, so an unresolvable local ends the attempt
+        ; rather than falling through to a property of the same name.
+        if Planner.ret_page_local_binds(scope, s0)
         {
-            let cnp path.get(n - 1)
-            if cnp = null
-                return 0 - 1
-            return Planner.ret_page_concept_decision(pl, concept_name, (*cnp), argc)
+            let ltp Planner.ret_page_local_type(pl, owner, func, scope, s0, idepth)
+            if ltp = null
+                return null
+            return Planner.ret_page_walk_to_concept(pl, ltp, path, 1)
         }
-        let segp path.get i
-        if segp = null
-            return 0 - 1
-        let ftp Planner.ret_page_property_type_last(pl, concept_name, (*segp))
-        if ftp = null
-            return 0 - 1
-        Planner.ret_page_walk_fields(pl, (*ftp), path, i + 1, argc)
+        let ptp Planner.ret_page_param_type_last(func, s0)
+        if ptp <> null
+            return Planner.ret_page_walk_to_concept(pl, ptp, path, 1)
+        if owner <> null
+        {
+            let ftp Planner.ret_page_property_type_last(pl, (*owner), s0)
+            if ftp <> null
+                return Planner.ret_page_walk_to_concept(pl, ftp, path, 1)
+        }
+        ; a concept name — a static call on it. Checked LAST so a parameter,
+        ; local or property of the same name wins, as it does in the planner.
+        if pl.lookup_concept_any(s0) <> null
+            return Planner.ret_page_walk_to_concept(pl, s0p, path, 1)
+        null
     }
 
     ; resolve `path(argc args)` to the function it actually calls and answer its
     ; page-need: 1 yes, 0 no, -1 not resolvable here.
-    function ret_page_resolve_call(pl: Planner, owner: String, func: Function, scope: Vector[Statement], path: Vector[String], argc: size_t) returns int
+    function ret_page_resolve_call(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], path: Vector[String], argc: size_t) returns int
     {
         let n path.length
         if n = 0
@@ -33901,37 +34296,13 @@ define Planner
             ; a bare name is a FREE function: a sibling member needs `this.`.
             return Planner.ret_page_functions_decision(pl, (*cnp), argc)
         }
-        let s0p path.get 0
-        if s0p = null
+        let recv Planner.ret_page_receiver_concept(pl, owner, func, scope, path, 0)
+        if recv = null
             return 0 - 1
-        let s0 (*s0p)
-        if s0 = "this"
-        {
-            if owner = ""
-                return 0 - 1
-            return Planner.ret_page_walk_fields(pl, owner, path, 1, argc)
-        }
-        let ptp Planner.ret_page_param_type_last(func, s0)
-        if ptp <> null
-            return Planner.ret_page_walk_fields(pl, (*ptp), path, 1, argc)
-        if Planner.ret_page_local_binds(scope, s0)
-        {
-            let ltp Planner.ret_page_local_type_last(scope, s0)
-            if ltp = null
-                return 0 - 1
-            return Planner.ret_page_walk_fields(pl, (*ltp), path, 1, argc)
-        }
-        if owner <> ""
-        {
-            let ftp Planner.ret_page_property_type_last(pl, owner, s0)
-            if ftp <> null
-                return Planner.ret_page_walk_fields(pl, (*ftp), path, 1, argc)
-        }
-        ; a concept name — a static call on it. Checked LAST so a parameter,
-        ; local or property of the same name wins, as it does in the planner.
-        if pl.lookup_concept_any(s0) <> null
-            return Planner.ret_page_walk_fields(pl, s0, path, 1, argc)
-        0 - 1
+        let cnp path.get(n - 1)
+        if cnp = null
+            return 0 - 1
+        Planner.ret_page_concept_decision(pl, (*recv), (*cnp), argc)
     }
 
     ; the NAME-KEYED fallback, for a receiver this pre-pass cannot type.
@@ -33951,10 +34322,9 @@ define Planner
     ; the callee of a call head: the head Type's dotted name (`ns.f(...)`,
     ; `this.m(...)`, `recv.m(...)` — the Modeler folds the whole path into the
     ; name), or the LAST member_access segment when the call rides a hop off a
-    ; non-name primary (`(*p).m(...)`, where the receiver's type is out of reach
-    ; and only the fallback applies). A head carrying a lifetime marker is a
+    ; non-name primary (`(*p).m(...)`). A head carrying a lifetime marker is a
     ; CONSTRUCTION, not a plain call, and is left to body_has_call_lifetime.
-    function ret_page_call_head(pl: Planner, owner: String, func: Function, scope: Vector[Statement], op: Operand, argc: size_t) returns bool
+    function ret_page_call_head(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], op: Operand, argc: size_t) returns bool
     {
         if op.member_access <> null
         {
@@ -33965,6 +34335,21 @@ define Planner
             if np = null
                 return false
             let n (*np)
+            ; the hop's base is an expression, not a name — a deref of a typed
+            ; name (`(*p).m()`) resolves, anything else falls back.
+            let base Planner.ret_page_expr_type(pl, owner, func, scope, op.expression, 0)
+            if base <> null
+            {
+                let recv Planner.ret_page_walk_to_concept(pl, base, ma, 0)
+                if recv <> null
+                {
+                    let resolved Planner.ret_page_concept_decision(pl, (*recv), n, argc)
+                    if resolved = 1
+                        return true
+                    if resolved = 0
+                        return false
+                }
+            }
             return Planner.ret_page_name_in_sets(pl, n)
         }
         choose op.expression
@@ -33997,7 +34382,7 @@ define Planner
     }
 
     ; find `let`/`var name <ops>` in this block and test its initializer.
-    function ret_page_binding(pl: Planner, owner: String, func: Function, scope: Vector[Statement], name: String, depth: int) returns bool
+    function ret_page_binding(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], name: String, depth: int) returns bool
     {
         var i: size_t 0
         while i < scope.length
@@ -34026,7 +34411,7 @@ define Planner
 
     ; TAIL semantics: does this operand sequence YIELD a page-needing call's
     ; result?
-    function ret_page_ops_tail(pl: Planner, owner: String, func: Function, ops: Vector[Operand], scope: Vector[Statement], depth: int) returns bool
+    function ret_page_ops_tail(pl: Planner, owner: ref[String]?, func: Function, ops: Vector[Operand], scope: Vector[Statement], depth: int) returns bool
     {
         if ops.length = 0
             return false
@@ -34108,7 +34493,7 @@ define Planner
         false
     }
 
-    function ret_page_stmt_tail(pl: Planner, owner: String, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
+    function ret_page_stmt_tail(pl: Planner, owner: ref[String]?, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
     {
         choose s
             when a: Action
@@ -34125,7 +34510,7 @@ define Planner
 
     ; a block's return positions: every explicit `return` anywhere inside it, plus
     ; its LAST statement (the tail).
-    function ret_page_stmts_tail(pl: Planner, owner: String, func: Function, stmts: Vector[Statement], depth: int) returns bool
+    function ret_page_stmts_tail(pl: Planner, owner: ref[String]?, func: Function, stmts: Vector[Statement], depth: int) returns bool
     {
         if Planner.ret_page_stmts_returns(pl, owner, func, stmts, depth)
             return true
@@ -34141,7 +34526,7 @@ define Planner
     ; the explicit-`return` walk: every Return in the body, however deeply nested.
     ; Non-tail statements are descended into ONLY to find those returns — their own
     ; values are not return positions.
-    function ret_page_stmts_returns(pl: Planner, owner: String, func: Function, stmts: Vector[Statement], depth: int) returns bool
+    function ret_page_stmts_returns(pl: Planner, owner: ref[String]?, func: Function, stmts: Vector[Statement], depth: int) returns bool
     {
         var i: size_t 0
         while i < stmts.length
@@ -34155,7 +34540,7 @@ define Planner
         false
     }
 
-    function ret_page_stmt_returns(pl: Planner, owner: String, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
+    function ret_page_stmt_returns(pl: Planner, owner: ref[String]?, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
     {
         choose s
             when r: Return
@@ -34178,7 +34563,7 @@ define Planner
         false
     }
 
-    function ret_page_ops_returns(pl: Planner, owner: String, func: Function, ops: Vector[Operand], depth: int) returns bool
+    function ret_page_ops_returns(pl: Planner, owner: ref[String]?, func: Function, ops: Vector[Operand], depth: int) returns bool
     {
         var i: size_t 0
         while i < ops.length
@@ -34240,9 +34625,9 @@ define Planner
     }
 
     ; entry point: does this function return the result of a page-needing call?
-    ; `owner` is the concept it is a member of ("" for a free function) — the
-    ; anchor for receiver-type resolution.
-    function body_returns_page_needing_call(pl: Planner, owner: String, func: Function) returns bool
+    ; `owner` names the concept it is a member of (EMPTY for a free function) —
+    ; the anchor for receiver-type resolution.
+    function body_returns_page_needing_call(pl: Planner, owner: ref[String]?, func: Function) returns bool
     {
         if Planner.is_extern_impl(func.implementation)
             return false

@@ -1,0 +1,281 @@
+; Regression: the return-position page rule resolves receivers whose type is
+; INFERRED and receivers reached through a DEREF hop (2026-08-04).
+;
+; The sibling test return_page_ambiguous_callee.scaly covers the receivers whose
+; type is written down (a parameter, a property, `this`, a concept name). This one
+; covers the two that have to be inferred, again with the callee name ambiguous —
+; `Maker.make` builds on the caller's page, `Borrow.make` hands out a borrowed
+; pointer — so a name-keyed rule can only get one of the two polarities right:
+;
+;   let m h.get_maker()   … m.make()      the local's type IS the callee's
+;   let hh make_holder()  … hh.get_maker()   return type, transitively
+;   let m Maker()         … m.make()      a construction
+;   (*p).make()                           a deref hop
+;   (*p).mk.make()                        a deref hop plus a property hop
+;
+; Pre-fix, this file printed
+;   FAIL 7/8 3906085646303834172/3761405300628338743 1/2 7/8 7/8 1/2 7/8 …
+; — only case 2 reads visibly wrong here, while the same shapes in a differently
+; ordered probe read `48473849904/3906085646303834172` for cases 1, 4, 5 and 7.
+; ★NONE of them was promoted pre-fix; whether a dangling read hits recycled bytes
+; is a question of layout, so the SYMBOL is the reliable witness, not the value:
+;   via_inferred    @_Z12via_inferred6Holder
+;                 → @_Z12via_inferredPN4scaly6memory4PageE6Holder
+;   via_deref       @_Z9via_derefP5Maker
+;                 → @_Z9via_derefPN4scaly6memory4PageEP5Maker
+; while via_inferred_borrow / via_deref_borrow keep their single parameter.
+;
+; The last six cases are the precision half: SHADOWING must pick the local over a
+; property of the same name in BOTH directions, and the two `*_borrow` /
+; `plain_field` controls must stay unpromoted — a wrong promotion is not visible
+; in a value, only in the symbol, so the witness is the mangled name:
+;   HostB.shadow_to_maker → @_ZN5HostB15shadow_to_makerEPN4scaly6memory4PageE
+;   HostM.shadow_to_borrow → @_ZN5HostM16shadow_to_borrowE6Borrow   (no page)
+;
+; The churn loop must run at the SAME frame level as the calls — inside a called
+; procedure its allocations land on that procedure's own frame and never reuse the
+; released page, which hides the bug.
+
+package scaly 0.1.0
+
+define Rec (a: int  b: int)
+{
+    init(a: int, b: int)
+    {
+        set this.a: a
+        set this.b: b
+    }
+}
+
+; page-needing `make`
+define Maker (tag: int)
+{
+    init()
+    {
+        set this.tag: 1
+    }
+    function make#(this: Maker) returns pointer[Rec]
+        Rec#(7, 8)
+}
+
+; borrowed `make` — the same NAME, needs no page
+define Borrow (r: Rec)
+{
+    init()
+    {
+        set this.r: Rec(1, 2)
+    }
+    function make(this: Borrow) returns pointer[Rec]
+        &this.r
+}
+
+define Holder (mk: Maker  bw: Borrow)
+{
+    init()
+    {
+        set this.mk: Maker()
+        set this.bw: Borrow()
+    }
+    function get_maker(this: Holder) returns pointer[Maker]
+        &this.mk
+    function get_borrow(this: Holder) returns pointer[Borrow]
+        &this.bw
+}
+
+function make_holder#() returns pointer[Holder]
+    Holder#()
+
+; the receiver is a local whose type comes from a method's return type
+function via_inferred(h: Holder) returns pointer[Rec]
+{
+    let m h.get_maker()
+    let r m.make()
+    r
+}
+
+; …transitively: `hh` is itself an inferred local (a free function's return type)
+function via_inferred2() returns pointer[Rec]
+{
+    let hh make_holder()
+    let m hh.get_maker()
+    let r m.make()
+    r
+}
+
+; the same shape to the borrowed overload: must stay unpromoted
+function via_inferred_borrow(h: Holder) returns pointer[Rec]
+{
+    let b h.get_borrow()
+    let r b.make()
+    r
+}
+
+; the receiver is a local bound to a CONSTRUCTION
+function via_ctor_local() returns pointer[Rec]
+{
+    let m Maker()
+    let r m.make()
+    r
+}
+
+; the receiver is a DEREF hop
+function via_deref(p: pointer[Maker]) returns pointer[Rec]
+{
+    let r (*p).make()
+    r
+}
+
+; …to the borrowed overload: must stay unpromoted
+function via_deref_borrow(p: pointer[Borrow]) returns pointer[Rec]
+{
+    let r (*p).make()
+    r
+}
+
+; a deref hop with a property hop behind it
+function via_deref_field(p: pointer[Holder]) returns pointer[Rec]
+{
+    let r (*p).mk.make()
+    r
+}
+
+; the property is BORROWED, the local of the same name is page-needing:
+; must promote (the local wins)
+define HostB (mk: Borrow)
+{
+    init()
+    {
+        set this.mk: Borrow()
+    }
+    function shadow_to_maker(this: HostB) returns pointer[Rec]
+    {
+        let mk Maker()
+        let r mk.make()
+        r
+    }
+    ; the property route with nothing shadowing it: must NOT promote
+    function plain_field(this: HostB) returns pointer[Rec]
+    {
+        let r mk.make()
+        r
+    }
+}
+
+; the property is page-needing, the local of the same name is borrowed:
+; must NOT promote (the local wins)
+define HostM (mk: Maker)
+{
+    init()
+    {
+        set this.mk: Maker()
+    }
+    ; (the borrowed object comes in as a parameter — a Borrow built as a LOCAL
+    ; would hand out a pointer into this frame, which is a different bug)
+    function shadow_to_borrow(this: HostM, b: Borrow) returns pointer[Rec]
+    {
+        let mk b
+        let r mk.make()
+        r
+    }
+    function plain_field(this: HostM) returns pointer[Rec]
+    {
+        let r mk.make()
+        r
+    }
+}
+
+; a `var` receiver, and an explicitly annotated local behind a deref
+function via_var() returns pointer[Rec]
+{
+    var m Maker()
+    let r m.make()
+    r
+}
+function via_annotated(p: pointer[Maker]) returns pointer[Rec]
+{
+    let m: pointer[Maker] p
+    let r (*m).make()
+    r
+}
+
+let h Holder()
+let hb HostB()
+let hm HostM()
+let mk Maker()
+let bw Borrow()
+let p1 via_inferred(h)
+let p2 via_inferred2()
+let p3 via_inferred_borrow(h)
+let p4 via_ctor_local()
+let p5 via_deref(&mk)
+let p6 via_deref_borrow(&bw)
+let p7 via_deref_field(&h)
+let p8 hb.shadow_to_maker()
+let p9 hb.plain_field()
+let p10 hm.shadow_to_borrow(bw)
+let p11 hm.plain_field()
+let p12 via_var()
+let p13 via_annotated(&mk)
+var i 0
+while i < 200
+{
+    let c String("012345678901234567890123456789012345678901234567890123456789")
+    set i: i + 1
+}
+let a1 p1.a
+let b1 p1.b
+let a2 p2.a
+let b2 p2.b
+let a3 p3.a
+let b3 p3.b
+let a4 p4.a
+let b4 p4.b
+let a5 p5.a
+let b5 p5.b
+let a6 p6.a
+let b6 p6.b
+let a7 p7.a
+let b7 p7.b
+let a8 p8.a
+let b8 p8.b
+let a9 p9.a
+let b9 p9.b
+let a10 p10.a
+let b10 p10.b
+let a11 p11.a
+let b11 p11.b
+let a12 p12.a
+let b12 p12.b
+let a13 p13.a
+let b13 p13.b
+var ok true
+if (a1 <> 7) || (b1 <> 8)
+    set ok: false
+if (a2 <> 7) || (b2 <> 8)
+    set ok: false
+if (a3 <> 1) || (b3 <> 2)
+    set ok: false
+if (a4 <> 7) || (b4 <> 8)
+    set ok: false
+if (a5 <> 7) || (b5 <> 8)
+    set ok: false
+if (a6 <> 1) || (b6 <> 2)
+    set ok: false
+if (a7 <> 7) || (b7 <> 8)
+    set ok: false
+if (a8 <> 7) || (b8 <> 8)
+    set ok: false
+if (a9 <> 1) || (b9 <> 2)
+    set ok: false
+if (a10 <> 1) || (b10 <> 2)
+    set ok: false
+if (a11 <> 7) || (b11 <> 8)
+    set ok: false
+if (a12 <> 7) || (b12 <> 8)
+    set ok: false
+if (a13 <> 7) || (b13 <> 8)
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL `a1`/`b1` `a2`/`b2` `a3`/`b3` `a4`/`b4` `a5`/`b5` `a6`/`b6` `a7`/`b7` `a8`/`b8` `a9`/`b9` `a10`/`b10` `a11`/`b11` `a12`/`b12` `a13`/`b13`")
