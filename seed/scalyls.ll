@@ -2347,6 +2347,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayIcE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayIcE3putEmc(ptr %0, i64 %1, i8 %2) {
 entry:
   %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
@@ -6178,6 +6185,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI6StringE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6StringE3putEm6String(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
@@ -7474,6 +7488,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI6VectorI6StringEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE3putEm6VectorI6StringE(ptr %0, i64 %1, ptr %2) {
@@ -9106,6 +9127,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE3putEm11BuilderListI4SlotI6StringEE(ptr %0, i64 %1, ptr %2) {
@@ -11275,6 +11303,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE3putEm12KeyValuePairI6String12LocalBindingE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
@@ -12567,6 +12602,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayImE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayImE3putEmm(ptr %0, i64 %1, i64 %2) {
 entry:
   %load.struct = load %_Z5ArrayImE, ptr %0, align 8
@@ -13825,6 +13867,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String11PlannedTypeE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE3putEm12KeyValuePairI6String11PlannedTypeE(ptr %0, i64 %1, ptr %2) {
@@ -15088,6 +15137,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI14TypeConstraintE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI14TypeConstraintE3putEm14TypeConstraint(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
@@ -16349,6 +16405,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE3putEm12KeyValuePairIm11PlannedTypeE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
@@ -17376,6 +17439,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI6VectorI7OperandEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z6VectorI7OperandE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI7OperandEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI7OperandEE3putEm6VectorI7OperandE(ptr %0, i64 %1, ptr %2) {
@@ -18639,6 +18709,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI9StatementE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI9StatementE3putEm9Statement(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI9StatementE, ptr %0, align 8
@@ -19898,6 +19975,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI4CaseE %deref, 1
   %ptr.add = getelementptr inbounds %_Z4Case, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI4CaseE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4CaseE3putEm4Case(ptr %0, i64 %1, ptr %2) {
@@ -21161,6 +21245,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI6BranchE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6BranchE3putEm6Branch(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6BranchE, ptr %0, align 8
@@ -22420,6 +22511,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI4WhenE %deref, 1
   %ptr.add = getelementptr inbounds %_Z4When, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI4WhenE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4WhenE3putEm4When(ptr %0, i64 %1, ptr %2) {
@@ -23683,6 +23781,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI4ItemE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI4ItemE3putEm4Item(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI4ItemE, ptr %0, align 8
@@ -24942,6 +25047,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI7OperandE %deref, 1
   %ptr.add = getelementptr inbounds %_Z7Operand, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI7OperandE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI7OperandE3putEm7Operand(ptr %0, i64 %1, ptr %2) {
@@ -26205,6 +26317,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI9ComponentE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI9ComponentE3putEm9Component(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI9ComponentE, ptr %0, align 8
@@ -27464,6 +27583,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI9AttributeE %deref, 1
   %ptr.add = getelementptr inbounds %_Z9Attribute, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI9AttributeE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI9AttributeE3putEm9Attribute(ptr %0, i64 %1, ptr %2) {
@@ -28727,6 +28853,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI16GenericParameterE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16GenericParameterE3putEm16GenericParameter(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI16GenericParameterE, ptr %0, align 8
@@ -29986,6 +30119,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI3UseE %deref, 1
   %ptr.add = getelementptr inbounds %_Z3Use, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI3UseE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI3UseE3putEm3Use(ptr %0, i64 %1, ptr %2) {
@@ -31249,6 +31389,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI6MemberE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6MemberE3putEm6Member(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6MemberE, ptr %0, align 8
@@ -32510,6 +32657,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI8FunctionE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI8FunctionE3putEm8Function(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI8FunctionE, ptr %0, align 8
@@ -33029,6 +33183,11 @@ entry:
   ret ptr null
 }
 
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K8NameableEEE5clearEv(ptr %0) {
+entry:
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K8NameableEEE3putEm6VectorI12KeyValuePairI1K8NameableEE(ptr %0, i64 %1, ptr %2) {
 entry:
   ret void
@@ -33247,6 +33406,11 @@ entry:
 define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI1K8NameableEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret ptr null
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K8NameableEE5clearEv(ptr %0) {
+entry:
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K8NameableEE3putEm12KeyValuePairI1K8NameableE(ptr %0, i64 %1, ptr %2) {
@@ -33646,6 +33810,11 @@ entry:
 define linkonce_odr ptr @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret ptr null
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE5clearEv(ptr %0) {
+entry:
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE3putEm11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE(ptr %0, i64 %1, ptr %2) {
@@ -34688,6 +34857,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE3putEm6VectorI12KeyValuePairI8Nameable8NameableEE(ptr %0, i64 %1, ptr %2) {
@@ -35949,6 +36125,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI12KeyValuePairI8Nameable8NameableEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI8Nameable8NameableE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI8Nameable8NameableEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI8Nameable8NameableEE3putEm12KeyValuePairI8Nameable8NameableE(ptr %0, i64 %1, ptr %2) {
@@ -37222,6 +37405,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableEEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableEEE3putEm6VectorI12KeyValuePairI6String8NameableEE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
@@ -38481,6 +38671,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableEE3putEm12KeyValuePairI6String8NameableE(ptr %0, i64 %1, ptr %2) {
@@ -40011,6 +40208,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE3putEm11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE(ptr %0, i64 %1, ptr %2) {
@@ -42108,6 +42312,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE3putEm12KeyValuePairI6String7ConceptE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
@@ -43367,6 +43578,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI16PlannedStructureE %deref, 1
   %ptr.add = getelementptr inbounds %_Z16PlannedStructure, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI16PlannedStructureE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI16PlannedStructureE3putEm16PlannedStructure(ptr %0, i64 %1, ptr %2) {
@@ -44630,6 +44848,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12PlannedUnionE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12PlannedUnionE3putEm12PlannedUnion(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
@@ -45889,6 +46114,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 1
   %ptr.add = getelementptr inbounds %_Z15PlannedFunction, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE3putEm15PlannedFunction(ptr %0, i64 %1, ptr %2) {
@@ -47152,6 +47384,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE3putEm13PlannedGlobal(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
@@ -48411,6 +48650,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8FunctionE, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE3putEm12KeyValuePairI6String8FunctionE(ptr %0, i64 %1, ptr %2) {
@@ -49674,6 +49920,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE3putEm12KeyValuePairI6String6LambdaE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
@@ -50935,6 +51188,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE3putEm12KeyValuePairI6String8OperatorE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
@@ -51962,6 +52222,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI11PlannedTypeE %deref, 1
   %ptr.add = getelementptr inbounds %_Z11PlannedType, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI11PlannedTypeE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI11PlannedTypeE3putEm11PlannedType(ptr %0, i64 %1, ptr %2) {
@@ -53457,6 +53724,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE3putEm12KeyValuePairI6String6ModuleE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
@@ -54718,6 +54992,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE3putEm17PlannerDiagnostic(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
@@ -55745,6 +56026,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI6ModuleE %deref, 1
   %ptr.add = getelementptr inbounds %_Z6Module, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI6ModuleE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6ModuleE3putEm6Module(ptr %0, i64 %1, ptr %2) {
@@ -57240,6 +57528,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI7ProgramE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI7ProgramE3putEm7Program(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
@@ -58499,6 +58794,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI12EscapeRecordE %deref, 1
   %ptr.add = getelementptr inbounds %_Z12EscapeRecord, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI12EscapeRecordE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12EscapeRecordE3putEm12EscapeRecord(ptr %0, i64 %1, ptr %2) {
@@ -61048,6 +61350,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxE3putEm17DeclarationSyntax(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI17DeclarationSyntaxE, ptr %0, align 8
@@ -63360,6 +63669,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI12MemberSyntaxE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12MemberSyntaxE3putEm12MemberSyntax(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12MemberSyntaxE, ptr %0, align 8
@@ -64756,6 +65072,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI13VariantSyntaxE %deref, 1
   %ptr.add = getelementptr inbounds %_Z13VariantSyntax, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI13VariantSyntaxE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI13VariantSyntaxE3putEm13VariantSyntax(ptr %0, i64 %1, ptr %2) {
@@ -69668,6 +69991,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI10ItemSyntaxE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI10ItemSyntaxE3putEm10ItemSyntax(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI10ItemSyntaxE, ptr %0, align 8
@@ -71899,6 +72229,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI10PartSyntaxE %deref, 1
   %ptr.add = getelementptr inbounds %_Z10PartSyntax, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI10PartSyntaxE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI10PartSyntaxE3putEm10PartSyntax(ptr %0, i64 %1, ptr %2) {
@@ -94895,6 +95232,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxE3putEm15ExtensionSyntax(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI15ExtensionSyntaxE, ptr %0, align 8
@@ -96154,6 +96498,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %deref, 1
   %ptr.add = getelementptr inbounds %_Z21GenericArgumentSyntax, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxE3putEm21GenericArgumentSyntax(ptr %0, i64 %1, ptr %2) {
@@ -98328,6 +98679,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI16PlannedStatementE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16PlannedStatementE3putEm16PlannedStatement(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI16PlannedStatementE, ptr %0, align 8
@@ -100085,6 +100443,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI14PlannedOperandE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI14PlannedOperandE3putEm14PlannedOperand(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI14PlannedOperandE, ptr %0, align 8
@@ -101401,6 +101766,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI18PlannedInitializerE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI18PlannedInitializerE3putEm18PlannedInitializer(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI18PlannedInitializerE, ptr %0, align 8
@@ -102660,6 +103032,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI15PlannedOperatorE %deref, 1
   %ptr.add = getelementptr inbounds %_Z15PlannedOperator, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedOperatorE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI15PlannedOperatorE3putEm15PlannedOperator(ptr %0, i64 %1, ptr %2) {
@@ -105420,6 +105799,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI16PlannedComponentE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16PlannedComponentE3putEm16PlannedComponent(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI16PlannedComponentE, ptr %0, align 8
@@ -106679,6 +107065,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI13PlannedBranchE %deref, 1
   %ptr.add = getelementptr inbounds %_Z13PlannedBranch, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI13PlannedBranchE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI13PlannedBranchE3putEm13PlannedBranch(ptr %0, i64 %1, ptr %2) {
@@ -107942,6 +108335,13 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr void @_ZN5ArrayI11PlannedWhenE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI11PlannedWhenE3putEm11PlannedWhen(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI11PlannedWhenE, ptr %0, align 8
@@ -109201,6 +109601,13 @@ if.end:                                           ; preds = %entry
   %data = extractvalue %_Z6VectorI19PlannedMemberAccessE %deref, 1
   %ptr.add = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %data, i64 %2
   ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI19PlannedMemberAccessE5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI19PlannedMemberAccessE3putEm19PlannedMemberAccess(ptr %0, i64 %1, ptr %2) {
