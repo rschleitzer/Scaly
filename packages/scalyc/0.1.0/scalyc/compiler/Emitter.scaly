@@ -5027,7 +5027,10 @@ define Emitter
                         LLVMSetThreadLocal(gv, 1)
                 }
                 if global.is_mutable = false
+                {
                     LLVMSetGlobalConstant(gv, 1)
+                    set_module_constant_linkage gv
+                }
             }
         }
 
@@ -6820,7 +6823,28 @@ define Emitter
         let arr_init LLVMConstArray2(elem_ty, elems.data, count)
         LLVMSetInitializer(gv, arr_init)
         LLVMSetGlobalConstant(gv, 1)
+        set_module_constant_linkage gv
         true
+    }
+
+    ; A module-level `define NAME: T VALUE` is not part of a package's ABI:
+    ; the name is unreachable from any other compilation root — even a program
+    ; that declares the package and spells out `use pkg.mod.NAME` gets a hard
+    ; `unknown identifier` (measured 2026-08-04, and the same holds for the
+    ; prelude's own PAGE_SIZE). Every reference is resolved by
+    ; LLVMGetNamedGlobal inside the SAME llvm_module, and no seed module
+    ; references another's constant. So the definition has no business being a
+    ; strong global symbol — and being one made two packages that happen to
+    ; spell a constant the same way unlinkable: `duplicate symbol
+    ; '_10SHARED_TAG'`, which is why dazzle carries hand-renamed mirrors of
+    ; opensp's constants (GADV_IDREF, GDT_SGML).
+    ;
+    ; Only CONSTANTS. A `mutable` global stays external — the runtime's
+    ; allocator state is reached by name from emitted prologue code — and a
+    ; `shared` one is a deliberate process-global cell.
+    function set_module_constant_linkage(this, gv: LLVMValueRef)
+    {
+        LLVMSetLinkage(gv, LLVMLinkage.Internal())
     }
 
     ; Emit a global reference
