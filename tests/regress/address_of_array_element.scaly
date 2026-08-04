@@ -1,0 +1,76 @@
+; Regression: `&arr[i]` on a fixed-size stack array must be the ELEMENT'S
+; ADDRESS (2026-08-04).
+;
+; It used to be the element's VALUE, silently. A fixed-size array local decays
+; to a pointer variable, so `arr[i]` is planned as `*(arr + i)` — a GEP plus a
+; LOAD — and address-of reached emit_intrinsic_unary_op("&") holding the loaded
+; value, whose LLVM type is not a struct, so the `&` fell through its
+; `return op` and was a NO-OP. Measured before the fix: with `set arr[0]: 111`
+; and `set arr[1]: 222`, `&arr[0]` read back as 111 and `&arr[1]` as 222, so
+; `&arr[1] - &arr[0]` was nonsense and handing `&buf[0]` to a C API passed the
+; element's contents as a pointer (that is how the stack guard's first
+; getrlimit probe failed with EFAULT).
+;
+; Fix: `&*x` cancels — Emitter's `&` branch emits the deref's OPERAND.
+;
+; Expected: PASS
+
+var arr u64[4]
+set arr[0]: 111
+set arr[1]: 222
+set arr[2]: 333
+
+; The values themselves were never the problem — guard them anyway so a future
+; change to fixed-array storage cannot make the rest of this test vacuous.
+let v0 arr[0] as size_t
+let v1 arr[1] as size_t
+if v0 <> (111 as size_t)
+    exit 1
+if v1 <> (222 as size_t)
+    exit 2
+
+let p0 &arr[0]
+let p1 &arr[1]
+let p2 &arr[2]
+let a0 p0 as size_t
+let a1 p1 as size_t
+let a2 p2 as size_t
+
+; Consecutive elements are exactly one u64 apart. This is the assertion that
+; failed before the fix (it measured differences in the thousands of millions —
+; the difference of two element VALUES).
+let d10 a1 - a0
+let d21 a2 - a1
+if d10 <> (8 as size_t)
+    exit 3
+if d21 <> (8 as size_t)
+    exit 4
+
+; An address must not be equal to the element's contents. Pins the exact old
+; symptom rather than only its consequence.
+if a0 = (111 as size_t)
+    exit 5
+if a1 = (222 as size_t)
+    exit 6
+
+; The pointer must actually address the element: read back through it, then
+; WRITE through it and observe the array change.
+let r1 *p1
+if r1 <> (222 as u64)
+    exit 7
+
+set *p1: 999 as u64
+let after arr[1] as size_t
+if after <> (999 as size_t)
+    exit 8
+
+; The address of an element must sit inside the buffer the array's own base
+; pointer describes: &arr[0] is where element 0 lives, so a byte-stride step
+; from the base lands on element 1.
+let base arr
+let base_addr base as size_t
+if base_addr <> a0
+    exit 9
+
+print "PASS"
+exit 0

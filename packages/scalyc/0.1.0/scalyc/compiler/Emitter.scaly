@@ -9114,6 +9114,51 @@ define Emitter
             ; address so `(*p).f = 1` still mutates x in place.
             if call.name = "&"
             {
+                ; `&*x` CANCELS (2026-08-04). A fixed-size stack array decays to
+                ; a pointer variable, so `arr[i]` is planned as `*(arr + i)` —
+                ; a GEP plus a LOAD. Address-of then reached
+                ; emit_intrinsic_unary_op("&") with the loaded VALUE, whose type
+                ; is not a struct, so the `&` fell through `return op` and was a
+                ; silent NO-OP: `&arr[0]` came back as the element's CONTENTS
+                ; (isolated with `set arr[0]: 111` / `set arr[1]: 222` →
+                ; `&arr[0]` = 111, `&arr[1]` = 222), and handing `&buf[0]` to a
+                ; C API passed those contents as a pointer (EFAULT if lucky, a
+                ; wild store if not — how the stack guard's first getrlimit
+                ; probe failed). Emitting the deref's OPERAND yields the address
+                ; the load would have read from, which is exactly `&*x` = x.
+                ; Only when nothing is selected out of the deref: with a
+                ; member_access the address must be a GEP from here into the
+                ; field, which the block below does from its own base.
+                if arg_op.member_access = null
+                {
+                    var addr_deref_args: ref[Vector[PlannedOperand]]? null
+                    choose arg_op.expr
+                        when adc: Call
+                        {
+                            if adc.is_intrinsic
+                            {
+                                if adc.name = "*"
+                                    set addr_deref_args: adc.args
+                            }
+                        }
+                        else
+                            0
+                    if addr_deref_args <> null
+                    {
+                        let adargs (*addr_deref_args)
+                        if adargs.length = 1
+                        {
+                            let adinner_ptr adargs.get 0
+                            if adinner_ptr <> null
+                            {
+                                ; Bind the deref before use — `(*p).method()`
+                                ; hands the callee the SLOT address (CLAUDE.md).
+                                let adinner (*adinner_ptr)
+                                return emit_operand adinner
+                            }
+                        }
+                    }
+                }
                 if arg_op.member_access = null
                 {
                     choose arg_op.expr
