@@ -549,10 +549,10 @@ define Emitter
         let i32_ty LLVMInt32TypeInContext(context)
         let dwarf_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 4, 0))
         var dwarf_key "Dwarf Version"
-        LLVMAddModuleFlag(llvm_module, (1 as i32), dwarf_key.c_data(), dwarf_key.get_length(), dwarf_ver)
+        LLVMAddModuleFlag(llvm_module, 1, dwarf_key.c_data(), dwarf_key.get_length(), dwarf_ver)
         let di_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 3, 0))
         var di_key "Debug Info Version"
-        LLVMAddModuleFlag(llvm_module, (1 as i32), di_key.c_data(), di_key.get_length(), di_ver)
+        LLVMAddModuleFlag(llvm_module, 1, di_key.c_data(), di_key.get_length(), di_ver)
 
         ; DIBuilder + file + compile unit.
         set di_builder: LLVMCreateDIBuilder(llvm_module)
@@ -566,7 +566,7 @@ define Emitter
         ; lang 1 = DW_LANG_C89 (closest to Scaly), emission kind 1 = Full.
         var producer "scalyc"
         var empty ""
-        set di_cu: LLVMDIBuilderCreateCompileUnit(di_builder, (1 as i32), di_file, producer.c_data(), producer.get_length(), (0 as i32), empty.c_data(), (0 as size_t), (0 as i32), empty.c_data(), (0 as size_t), (1 as i32), (0 as i32), (1 as i32), (0 as i32), empty.c_data(), (0 as size_t), empty.c_data(), (0 as size_t))
+        set di_cu: LLVMDIBuilderCreateCompileUnit(di_builder, 1, di_file, producer.c_data(), producer.get_length(), 0, empty.c_data(), 0, 0, empty.c_data(), 0, 1, 0, 1, 0, empty.c_data(), 0, empty.c_data(), 0)
     }
 
     ; Convert a byte offset into the source into a 1-based (line, column).
@@ -623,14 +623,14 @@ define Emitter
         ; breakpoints + stepping, not a full signature. A single null
         ; element (the usual "void return" form) SIGSEGVs in LLVM's
         ; getOrCreateTypeArray, so pass an empty array instead.
-        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], (0 as i32), (0 as i32))
+        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], 0, 0)
 
         var name func.name
         var mangled func.mangled_name
         ; is_local_to_unit=0, is_definition=1, flags=0, is_optimized=0 — cast
         ; to i32 so the call passes 4-byte stack args (Apple-arm64 packing;
         ; see LLVM.scaly). pos.line/scope_line are already i32.
-        let sp LLVMDIBuilderCreateFunction(di_builder, di_file, name.c_data(), name.get_length(), mangled.c_data(), mangled.get_length(), di_file, pos.line, subroutine_ty, (0 as i32), (1 as i32), pos.line, (0 as i32), (0 as i32))
+        let sp LLVMDIBuilderCreateFunction(di_builder, di_file, name.c_data(), name.get_length(), mangled.c_data(), mangled.get_length(), di_file, pos.line, subroutine_ty, 0, 1, pos.line, 0, 0)
         LLVMSetSubprogram(current_function, sp)
         set current_di_scope: sp
 
@@ -737,7 +737,7 @@ define Emitter
         }
         if bits = 0
             return LLVMMetadataRef null
-        LLVMDIBuilderCreateBasicType(di_builder, name.c_data(), name.get_length(), bits, enc, (0 as i32))
+        LLVMDIBuilderCreateBasicType(di_builder, name.c_data(), name.get_length(), bits, enc, 0)
     }
 
     ; Synthesize an opaque unsigned basic type of the given width — used
@@ -749,7 +749,7 @@ define Emitter
         if b = 0
             set b: 8
         var nm ""
-        LLVMDIBuilderCreateBasicType(di_builder, nm.c_data(), nm.get_length(), b, (7 as i32), (0 as i32))
+        LLVMDIBuilderCreateBasicType(di_builder, nm.c_data(), nm.get_length(), b, 7, 0)
     }
 
     function di_type_for(this, pt: PlannedType) returns LLVMMetadataRef
@@ -770,7 +770,7 @@ define Emitter
                         set inner: di_type_for((*g0p))
                 }
             }
-            return LLVMDIBuilderCreatePointerType(di_builder, inner, (64 as size_t), (64 as i32), (0 as i32), pt.name.c_data(), pt.name.get_length())
+            return LLVMDIBuilderCreatePointerType(di_builder, inner, 64, 64, 0, pt.name.c_data(), pt.name.get_length())
         }
 
         let basic di_basic_type pt.name
@@ -861,7 +861,7 @@ define Emitter
         var empty ""
 
         ; Forward decl FIRST, cached, so a back-pointer member resolves here.
-        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, (19 as i32), s.name.c_data(), s.name.get_length(), di_cu, di_file, pos.line, (0 as i32), (size_bits as size_t), (0 as i32), (0 as i32), empty.c_data(), (0 as size_t))
+        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, s.name.c_data(), s.name.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
         let idx di_type_cache_names.length
         di_type_cache_names.add s.mangled_name
         di_type_cache_types.add fwd
@@ -898,7 +898,7 @@ define Emitter
                         var mty di_type_for prop.prop_type
                         if mty.handle = null
                             set mty: di_placeholder_type(msize_bits)
-                        let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length(), di_file, pos.line, (msize_bits as size_t), (0 as i32), (this_off * 8 as size_t), (0 as i32), mty)
+                        let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length(), di_file, pos.line, (msize_bits as size_t), 0, (this_off * 8 as size_t), 0, mty)
                         member_vec.put(added, member)
                         set added: added + 1
                     }
@@ -908,7 +908,7 @@ define Emitter
             }
         }
 
-        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, s.name.c_data(), s.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef null, members_ptr, (added as i32), (0 as i32), LLVMMetadataRef null, empty.c_data(), (0 as size_t))
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, s.name.c_data(), s.name.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, LLVMMetadataRef null, members_ptr, (added as i32), 0, LLVMMetadataRef null, empty.c_data(), 0)
         LLVMMetadataReplaceAllUsesWith(fwd, final)
         di_type_cache_types.put(idx, final)
         final
@@ -927,7 +927,7 @@ define Emitter
         var empty ""
 
         ; Forward decl (emitted as a struct, tag 19), cached for cycle-break.
-        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, (19 as i32), u.name.c_data(), u.name.get_length(), di_cu, di_file, pos.line, (0 as i32), (size_bits as size_t), (0 as i32), (0 as i32), empty.c_data(), (0 as size_t))
+        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, u.name.c_data(), u.name.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
         let idx di_type_cache_names.length
         di_type_cache_names.add u.mangled_name
         di_type_cache_types.add fwd
@@ -964,7 +964,7 @@ define Emitter
                             var vty di_type_for vt
                             if vty.handle = null
                                 set vty: di_placeholder_type(payload_bits)
-                            let vmember LLVMDIBuilderCreateMemberType(di_builder, fwd, variant.name.c_data(), variant.name.get_length(), di_file, pos.line, (payload_bits as size_t), (0 as i32), (0 as size_t), (0 as i32), vty)
+                            let vmember LLVMDIBuilderCreateMemberType(di_builder, fwd, variant.name.c_data(), variant.name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, 0, 0, vty)
                             var_vec.put(vadded, vmember)
                             set vadded: vadded + 1
                         }
@@ -972,25 +972,25 @@ define Emitter
                     set vi: vi + 1
                 }
                 if vadded > 0
-                    set payload_ty: LLVMDIBuilderCreateUnionType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (payload_bits as size_t), (0 as i32), (0 as i32), var_vec.data, (vadded as i32), (0 as i32), empty.c_data(), (0 as size_t))
+                    set payload_ty: LLVMDIBuilderCreateUnionType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, 0, var_vec.data, (vadded as i32), 0, empty.c_data(), 0)
             }
         }
 
         ; Outer struct members: tag, then payload (if any).
         var tag_name "tag"
         var pay_name "payload"
-        let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8 as size_t), (0 as i32), (0 as size_t), (0 as i32), di_placeholder_type(tag_size * 8))
+        let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8 as size_t), 0, 0, 0, di_placeholder_type(tag_size * 8))
         var out_vec Vector[LLVMMetadataRef](2)
         out_vec.put(0, tag_member)
         var out_count: size_t 1
         if payload_ty.handle <> null
         {
-            let pay_member LLVMDIBuilderCreateMemberType(di_builder, fwd, pay_name.c_data(), pay_name.get_length(), di_file, pos.line, (payload_bits as size_t), (0 as i32), (tag_size * 8 as size_t), (0 as i32), payload_ty)
+            let pay_member LLVMDIBuilderCreateMemberType(di_builder, fwd, pay_name.c_data(), pay_name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, (tag_size * 8 as size_t), 0, payload_ty)
             out_vec.put(1, pay_member)
             set out_count: 2
         }
 
-        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef null, out_vec.data, (out_count as i32), (0 as i32), LLVMMetadataRef null, empty.c_data(), (0 as size_t))
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, LLVMMetadataRef null, out_vec.data, (out_count as i32), 0, LLVMMetadataRef null, empty.c_data(), 0)
         LLVMMetadataReplaceAllUsesWith(fwd, final)
         di_type_cache_types.put(idx, final)
         final
@@ -1002,12 +1002,12 @@ define Emitter
     ; Attaches to current_function (set by the caller before this).
     procedure set_synthetic_debug_scope(this, name: String, line: i32)
     {
-        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], (0 as i32), (0 as i32))
+        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], 0, 0)
         var nm name
-        let sp LLVMDIBuilderCreateFunction(di_builder, di_file, nm.c_data(), nm.get_length(), nm.c_data(), nm.get_length(), di_file, line, subroutine_ty, (0 as i32), (1 as i32), line, (0 as i32), (0 as i32))
+        let sp LLVMDIBuilderCreateFunction(di_builder, di_file, nm.c_data(), nm.get_length(), nm.c_data(), nm.get_length(), di_file, line, subroutine_ty, 0, 1, line, 0, 0)
         LLVMSetSubprogram(current_function, sp)
         set current_di_scope: sp
-        let loc LLVMDIBuilderCreateDebugLocation(context, line, (1 as i32), sp, LLVMMetadataRef null)
+        let loc LLVMDIBuilderCreateDebugLocation(context, line, 1, sp, LLVMMetadataRef null)
         LLVMSetCurrentDebugLocation2(builder, loc)
     }
 
@@ -2420,14 +2420,14 @@ define Emitter
         if is_struct = false
         {
             let st0 LLVMBuildStore(builder, sv, d)
-            LLVMSetAlignment(st0, 1 as u32)
+            LLVMSetAlignment(st0, 1)
             return st0
         }
         let ld LLVMIsALoadInst(sv)
         if ld.handle = null
         {
             let st1 LLVMBuildStore(builder, sv, d)
-            LLVMSetAlignment(st1, 1 as u32)
+            LLVMSetAlignment(st1, 1)
             return st1
         }
         ; TEMPORAL SOUNDNESS GATE: memcpy reads the load's source at
@@ -2442,21 +2442,21 @@ define Emitter
         if cur_block.handle = null
         {
             let st3 LLVMBuildStore(builder, sv, d)
-            LLVMSetAlignment(st3, 1 as u32)
+            LLVMSetAlignment(st3, 1)
             return st3
         }
         let last_inst LLVMGetLastInstruction(cur_block)
         if last_inst.handle <> sv.handle
         {
             let st4 LLVMBuildStore(builder, sv, d)
-            LLVMSetAlignment(st4, 1 as u32)
+            LLVMSetAlignment(st4, 1)
             return st4
         }
         let src_ptr LLVMGetOperand(sv, 0)
         if src_ptr.handle = null
         {
             let st2 LLVMBuildStore(builder, sv, d)
-            LLVMSetAlignment(st2, 1 as u32)
+            LLVMSetAlignment(st2, 1)
             return st2
         }
         ; Self-copy: the pooled temp acquired for the destination can be
@@ -4229,9 +4229,9 @@ define Emitter
                 let sk sret_kind_id()
                 let nk noalias_kind_id()
                 let sret_attr LLVMCreateTypeAttribute(context, sk, sret_type)
-                LLVMAddAttributeAtIndex(llvm_func, 1 as u32, sret_attr)
-                let noalias_attr LLVMCreateEnumAttribute(context, nk, 0 as u64)
-                LLVMAddAttributeAtIndex(llvm_func, 1 as u32, noalias_attr)
+                LLVMAddAttributeAtIndex(llvm_func, 1, sret_attr)
+                let noalias_attr LLVMCreateEnumAttribute(context, nk, 0)
+                LLVMAddAttributeAtIndex(llvm_func, 1, noalias_attr)
             }
         }
 
@@ -5358,7 +5358,7 @@ define Emitter
                         ; emit_return throws branch below.
                         if current_function_can_throw
                         {
-                            let sret_attr_imp LLVMGetEnumAttributeAtIndex(llvm_func, 1 as u32, sret_kind_id())
+                            let sret_attr_imp LLVMGetEnumAttributeAtIndex(llvm_func, 1, sret_kind_id())
                             if sret_attr_imp.handle <> null
                             {
                                 let result_sty LLVMGetTypeAttributeValue(sret_attr_imp)
@@ -5606,7 +5606,7 @@ define Emitter
         var wi: size_t 0
         while wrest >= 0x80
         {
-            bytes.put(wi, LLVMConstInt(i8ty, wrest | (0x80 as size_t), 0))
+            bytes.put(wi, LLVMConstInt(i8ty, wrest | 0x80, 0))
             set wrest: wrest >> 7
             set wi: wi + 1
         }
@@ -5624,7 +5624,7 @@ define Emitter
             set ci: ci + 1
         }
         ; trailing NUL (not counted in the varint length)
-        bytes.put(wi, LLVMConstInt(i8ty, 0 as size_t, 0))
+        bytes.put(wi, LLVMConstInt(i8ty, 0, 0))
 
         let arr_ty LLVMArrayType(i8ty, total as int)
         let arr LLVMConstArray(i8ty, bytes.data, total as int)
@@ -8166,7 +8166,7 @@ define Emitter
         let i8ty LLVMInt8TypeInContext(context)
         let arr_ty LLVMArrayType(i8ty, 1)
         var vals Vector[LLVMValueRef](1)
-        vals.put(0, LLVMConstInt(i8ty, 0 as size_t, 0))
+        vals.put(0, LLVMConstInt(i8ty, 0, 0))
         let arr LLVMConstArray(i8ty, vals.data, 1)
         set g: LLVMAddGlobal(llvm_module, arr_ty, ".scaly.empty.cstr")
         LLVMSetInitializer(g, arr)
@@ -8237,7 +8237,7 @@ define Emitter
             let i64_ty LLVMInt64TypeInContext(context)
             let ld LLVMBuildLoad2(builder, i64_ty, ptr, "atomic.load")
             LLVMSetOrdering(ld, seq_cst)
-            LLVMSetAlignment(ld, 8 as u32)
+            LLVMSetAlignment(ld, 8)
             return ld
         }
         if call.args.length < 2
@@ -8250,15 +8250,15 @@ define Emitter
         {
             let st LLVMBuildStore(builder, val, ptr)
             LLVMSetOrdering(st, seq_cst)
-            LLVMSetAlignment(st, 8 as u32)
+            LLVMSetAlignment(st, 8)
             return st
         }
         if call.mangled_name = "scaly_atomic_or_u64"
-            return LLVMBuildAtomicRMW(builder, 5 as i32, ptr, val, seq_cst, 0 as i32)
+            return LLVMBuildAtomicRMW(builder, 5, ptr, val, seq_cst, 0)
         if call.mangled_name = "scaly_atomic_and_u64"
-            return LLVMBuildAtomicRMW(builder, 3 as i32, ptr, val, seq_cst, 0 as i32)
+            return LLVMBuildAtomicRMW(builder, 3, ptr, val, seq_cst, 0)
         if call.mangled_name = "scaly_atomic_add_u64"
-            return LLVMBuildAtomicRMW(builder, 1 as i32, ptr, val, seq_cst, 0 as i32)
+            return LLVMBuildAtomicRMW(builder, 1, ptr, val, seq_cst, 0)
         if call.mangled_name = "scaly_atomic_cas_u64"
         {
             if call.args.length < 3
@@ -8267,7 +8267,7 @@ define Emitter
             if arg2 = null
                 return LLVMValueRef null
             var desired emit_operand(arg2.unwrap())
-            let pair LLVMBuildAtomicCmpXchg(builder, ptr, val, desired, seq_cst, seq_cst, 0 as i32)
+            let pair LLVMBuildAtomicCmpXchg(builder, ptr, val, desired, seq_cst, seq_cst, 0)
             return LLVMBuildExtractValue(builder, pair, 0, "cas.old")
         }
         LLVMValueRef null
@@ -8300,8 +8300,8 @@ define Emitter
         arg_tys.put(0, ptr_ty)
         var arg_vals Vector[LLVMValueRef](1)
         arg_vals.put(0, argv)
-        let fn_ty LLVMFunctionType(ptr_ty, arg_tys.data, 1 as u32, 0)
-        return LLVMBuildCall2(builder, fn_ty, fnv, arg_vals.data, 1 as u32, "")
+        let fn_ty LLVMFunctionType(ptr_ty, arg_tys.data, 1, 0)
+        return LLVMBuildCall2(builder, fn_ty, fnv, arg_vals.data, 1, "")
     }
 
     ; ========================================================================
@@ -8590,14 +8590,14 @@ define Emitter
     {
         let i64_ty LLVMInt64TypeInContext(context)
         let old LLVMBuildLoad2(builder, i64_ty, slot, "walk.old")
-        LLVMSetAlignment(old, 1 as u32)
+        LLVMSetAlignment(old, 1)
         let fv region_fix_value_fn()
         var fargs Vector[LLVMValueRef](2)
         fargs.put(0, rr)
         fargs.put(1, old)
         let nv LLVMBuildCall2(builder, region_fix_value_type(), fv, fargs.data, 2, "walk.new")
         let st LLVMBuildStore(builder, nv, slot)
-        LLVMSetAlignment(st, 1 as u32)
+        LLVMSetAlignment(st, 1)
         nv
     }
 
@@ -8714,7 +8714,7 @@ define Emitter
 
         let len_ptr LLVMBuildStructGEP2(builder, vty, obj, 0, "walk.vlen.ptr")
         let len LLVMBuildLoad2(builder, i64_ty, len_ptr, "walk.vlen")
-        LLVMSetAlignment(len, 1 as u32)
+        LLVMSetAlignment(len, 1)
         emit_region_elem_loop(fn, rr, dv, len, elem)
     }
 
@@ -8763,7 +8763,7 @@ define Emitter
         {
             let len_ptr LLVMBuildStructGEP2(builder, aty, obj, 0, "walk.alen.ptr")
             let len LLVMBuildLoad2(builder, i64_ty, len_ptr, "walk.alen")
-            LLVMSetAlignment(len, 1 as u32)
+            LLVMSetAlignment(len, 1)
             emit_region_elem_loop(fn, rr, dv, len, elem)
         }
         LLVMBuildBr(builder, out_bb)
@@ -8842,7 +8842,7 @@ define Emitter
             set tag_size: 4
         }
         let tag LLVMBuildLoad2(builder, tag_ty, obj, "walk.tag")
-        LLVMSetAlignment(tag, 1 as u32)
+        LLVMSetAlignment(tag, 1)
         var pidx Vector[LLVMValueRef](1)
         pidx.put(0, LLVMConstInt(i64_ty, tag_size, 0))
         let payload LLVMBuildInBoundsGEP2(builder, i8_ty, obj, pidx.data, 1, "walk.pay")
@@ -9221,14 +9221,14 @@ define Emitter
                 sa.put(0, sret_slot)
                 sp.put(0, LLVMPointerTypeInContext(context, 0))
                 let void_ty LLVMVoidTypeInContext(context)
-                let f_ty LLVMFunctionType(void_ty, sp.data, 1 as u32, 0)
-                let cv LLVMBuildCall2(builder, f_ty, func, sa.data, 1 as u32, "")
+                let f_ty LLVMFunctionType(void_ty, sp.data, 1, 0)
+                let cv LLVMBuildCall2(builder, f_ty, func, sa.data, 1, "")
                 let sk sret_kind_id()
                 let nk noalias_kind_id()
                 let sa_attr LLVMCreateTypeAttribute(context, sk, sret_element_ty)
-                LLVMAddCallSiteAttribute(cv, 1 as u32, sa_attr)
-                let na_attr LLVMCreateEnumAttribute(context, nk, 0 as u64)
-                LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
+                LLVMAddCallSiteAttribute(cv, 1, sa_attr)
+                let na_attr LLVMCreateEnumAttribute(context, nk, 0)
+                LLVMAddCallSiteAttribute(cv, 1, na_attr)
                 return sret_slot
             }
             var result_type map_type call.result_type
@@ -9274,14 +9274,14 @@ define Emitter
                     sa.put(0, sret_slot)
                     sp.put(0, LLVMPointerTypeInContext(context, 0))
                     let void_ty LLVMVoidTypeInContext(context)
-                    let f_ty LLVMFunctionType(void_ty, sp.data, 1 as u32, 0)
-                    let cv LLVMBuildCall2(builder, f_ty, func, sa.data, 1 as u32, "")
+                    let f_ty LLVMFunctionType(void_ty, sp.data, 1, 0)
+                    let cv LLVMBuildCall2(builder, f_ty, func, sa.data, 1, "")
                     let sk sret_kind_id()
                     let nk noalias_kind_id()
                     let sa_attr LLVMCreateTypeAttribute(context, sk, sret_element_ty)
-                    LLVMAddCallSiteAttribute(cv, 1 as u32, sa_attr)
-                    let na_attr LLVMCreateEnumAttribute(context, nk, 0 as u64)
-                    LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
+                    LLVMAddCallSiteAttribute(cv, 1, sa_attr)
+                    let na_attr LLVMCreateEnumAttribute(context, nk, 0)
+                    LLVMAddCallSiteAttribute(cv, 1, na_attr)
                     return sret_slot
                 }
                 var result_type map_type call.result_type
@@ -9515,7 +9515,7 @@ define Emitter
                                                                 if base_aty.handle <> null
                                                                 {
                                                                     if LLVMGetTypeKind(base_aty) = LLVMTypeKind.Pointer()
-                                                                        set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0 as u32), current_ptr, "base.deref")
+                                                                        set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "base.deref")
                                                                 }
                                                             }
                                                             var chain_ok: bool true
@@ -9964,9 +9964,9 @@ define Emitter
             let sk sret_kind_id()
             let nk noalias_kind_id()
             let sa_attr LLVMCreateTypeAttribute(context, sk, sret_element_ty)
-            LLVMAddCallSiteAttribute(call_value, 1 as u32, sa_attr)
-            let na_attr LLVMCreateEnumAttribute(context, nk, 0 as u64)
-            LLVMAddCallSiteAttribute(call_value, 1 as u32, na_attr)
+            LLVMAddCallSiteAttribute(call_value, 1, sa_attr)
+            let na_attr LLVMCreateEnumAttribute(context, nk, 0)
+            LLVMAddCallSiteAttribute(call_value, 1, na_attr)
             return sret_slot
         }
 
@@ -10089,7 +10089,7 @@ define Emitter
                                                     set is_ptr_var: true
                                                 if is_ptr_var = false
                                                 {
-                                                    let ptr_ty LLVMPointerTypeInContext(context, 0 as u32)
+                                                    let ptr_ty LLVMPointerTypeInContext(context, 0)
                                                     return LLVMBuildLoad2(builder, ptr_ty, var_ptr, "addr.heap")
                                                 }
                                             }
@@ -11379,9 +11379,9 @@ define Emitter
                                         let end_block create_block("conv.end")
                                         LLVMBuildCondBr(builder, is_null, then_block, else_block)
                                         LLVMPositionBuilderAtEnd(builder, then_block)
-                                        let len_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
+                                        let len_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0, "v.length.ptr")
                                         LLVMBuildStore(builder, LLVMConstInt(LLVMInt64TypeInContext context, 0, 0), len_gep_e)
-                                        let data_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
+                                        let data_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1, "v.data.ptr")
                                         LLVMBuildStore(builder, null_ptr, data_gep_e)
                                         LLVMBuildBr(builder, end_block)
                                         LLVMPositionBuilderAtEnd(builder, else_block)
@@ -11391,9 +11391,9 @@ define Emitter
                                         let inner_vec_ty LLVMStructTypeInContext(context, inner_ftys.data, 2, 0)
                                         let inner_vec LLVMBuildLoad2(builder, inner_vec_ty, arr_vec_ptr, "arr.inner")
                                         let inner_data LLVMBuildExtractValue(builder, inner_vec, 1, "arr.inner.data")
-                                        let len_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
+                                        let len_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0, "v.length.ptr")
                                         LLVMBuildStore(builder, arr_len, len_gep)
-                                        let data_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
+                                        let data_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1, "v.data.ptr")
                                         LLVMBuildStore(builder, inner_data, data_gep)
                                         LLVMBuildBr(builder, end_block)
                                         LLVMPositionBuilderAtEnd(builder, end_block)
@@ -11444,9 +11444,9 @@ define Emitter
                                         let end_block2 create_block("convp.end")
                                         LLVMBuildCondBr(builder, is_null2, then_block2, else_block2)
                                         LLVMPositionBuilderAtEnd(builder, then_block2)
-                                        let len_gep_e2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
+                                        let len_gep_e2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0, "v.length.ptr")
                                         LLVMBuildStore(builder, LLVMConstInt(LLVMInt64TypeInContext context, 0, 0), len_gep_e2)
-                                        let data_gep_e2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
+                                        let data_gep_e2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1, "v.data.ptr")
                                         LLVMBuildStore(builder, null_ptr2, data_gep_e2)
                                         LLVMBuildBr(builder, end_block2)
                                         LLVMPositionBuilderAtEnd(builder, else_block2)
@@ -11456,9 +11456,9 @@ define Emitter
                                         let inner_vec_ty2 LLVMStructTypeInContext(context, inner_ftys2.data, 2, 0)
                                         let inner_vec2 LLVMBuildLoad2(builder, inner_vec_ty2, arr_vec_ptr, "arr.inner")
                                         let inner_data2 LLVMBuildExtractValue(builder, inner_vec2, 1, "arr.inner.data")
-                                        let len_gep2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
+                                        let len_gep2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0, "v.length.ptr")
                                         LLVMBuildStore(builder, arr_len, len_gep2)
-                                        let data_gep2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
+                                        let data_gep2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1, "v.data.ptr")
                                         LLVMBuildStore(builder, inner_data2, data_gep2)
                                         LLVMBuildBr(builder, end_block2)
                                         LLVMPositionBuilderAtEnd(builder, end_block2)
@@ -12681,7 +12681,7 @@ define Emitter
                                     ; align 1 — the wrapper's struct alignment is
                                     ; 1, rt_ty's natural alignment may be 8.
                                     let rt_value LLVMBuildLoad2(builder, rt_ty, throws_success_ptr, "throws.success.val")
-                                    LLVMSetAlignment(rt_value, 1 as u32)
+                                    LLVMSetAlignment(rt_value, 1)
                                     define_variable(when_case.name, rt_value)
                                 }
                             }
@@ -12696,7 +12696,7 @@ define Emitter
                                 if LLVMGetTypeKind(var_ty_e) <> LLVMTypeKind.Void()
                                 {
                                     let err_value LLVMBuildLoad2(builder, var_ty_e, throws_success_ptr, "throws.err.val")
-                                    LLVMSetAlignment(err_value, 1 as u32)
+                                    LLVMSetAlignment(err_value, 1)
                                     define_variable(when_case.name, err_value)
                                 }
                             }
@@ -15378,7 +15378,7 @@ define Emitter
 
         ; Wrapper status tag at byte offset 0.
         let tag LLVMBuildLoad2(builder, i8_ty, result_ptr, "tag")
-        LLVMSetAlignment(tag, 1 as u32)
+        LLVMSetAlignment(tag, 1)
 
         ; Is there any error handling (catches or an else dropper)?
         var has_err: bool false
@@ -15420,7 +15420,7 @@ define Emitter
         ok_idx.put(0, ok_one)
         let ok_data_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, ok_idx.data, 1, "ok.data.ptr")
         let ok_value LLVMBuildLoad2(builder, ok_type, ok_data_ptr, "ok.val")
-        LLVMSetAlignment(ok_value, 1 as u32)
+        LLVMSetAlignment(ok_value, 1)
         if try_expr.cond.binding_item.name <> null
         {
             let name_ref try_expr.cond.binding_item.name
@@ -15452,7 +15452,7 @@ define Emitter
             et_idx.put(0, et_one)
             let errtag_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, et_idx.data, 1, "err.tag.ptr")
             let err_tag LLVMBuildLoad2(builder, i8_ty, errtag_ptr, "err.tag")
-            LLVMSetAlignment(err_tag, 1 as u32)
+            LLVMSetAlignment(err_tag, 1)
 
             ; The variant payload sits at byte offset 2 (after the wrapper
             ; status byte and the inline error union's own tag byte).
@@ -15502,7 +15502,7 @@ define Emitter
                         {
                             let err_ty map_type catch_case.variant_type
                             let err_value LLVMBuildLoad2(builder, err_ty, payload_ptr, "err.val")
-                            LLVMSetAlignment(err_value, 1 as u32)
+                            LLVMSetAlignment(err_value, 1)
                             define_variable(catch_case.name, err_value)
                         }
                     }
@@ -17369,7 +17369,7 @@ define Emitter
                                 set dbits: 8
                                 set tyname: "bool"
                             }
-                            set dty: LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length(), dbits, enc, (0 as i32))
+                            set dty: LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length(), dbits, enc, 0)
                         }
                         ; aggregates / pointers: resolve from the planned type
                         ; (annotated item_type first, else the initializer's
@@ -17396,8 +17396,8 @@ define Emitter
                         }
                         if dty.handle <> null
                         {
-                            let dvar LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, (0 as i32), (0 as i32), (0 as i32))
-                            let dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], (0 as size_t))
+                            let dvar LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, 0, 0, 0)
+                            let dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], 0)
                             let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef null)
                             let dblk LLVMGetInsertBlock(builder)
                             let ddecl LLVMDIBuilderInsertDeclareAtEnd(di_builder, alloca, dvar, dexpr, dloc, dblk)
@@ -17515,7 +17515,7 @@ define Emitter
         ; If ret_val is a pointer to the struct, load via the sret type
         ; attribute's element type (the canonical sret slot type) before
         ; storing.
-        let sret_attr LLVMGetEnumAttributeAtIndex(current_function, 1 as u32, sret_kind_id())
+        let sret_attr LLVMGetEnumAttributeAtIndex(current_function, 1, sret_kind_id())
         if sret_attr.handle <> null
         {
             let sret_ptr LLVMGetParam(current_function, 0)
@@ -17649,7 +17649,7 @@ define Emitter
         ;     Result struct itself. Allocate locally, store, ret.
         let func_ty LLVMGlobalGetValueType(current_function)
         let ret_ty LLVMGetReturnType(func_ty)
-        let sret_attr LLVMGetEnumAttributeAtIndex(current_function, 1 as u32, sret_kind_id())
+        let sret_attr LLVMGetEnumAttributeAtIndex(current_function, 1, sret_kind_id())
 
         var result_ptr LLVMValueRef(null)
         var result_ty LLVMTypeRef(null)
@@ -17733,7 +17733,7 @@ define Emitter
                         ; s150: Result wrapper has struct-align 1; store at
                         ; byte offset 1 is misaligned for natural-aligned T.
                         let store_inst LLVMBuildStore(builder, thrown_value, data_ptr)
-                        LLVMSetAlignment(store_inst, 1 as u32)
+                        LLVMSetAlignment(store_inst, 1)
                     }
                 }
             }
