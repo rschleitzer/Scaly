@@ -9,8 +9,8 @@ define LLVMAbortProcessAction: int 0    ; verifier will print and abort()
 define LLVMPrintMessageAction: int 1    ; verifier will print and return 1
 define LLVMReturnStatusAction: int 2    ; verifier will just return 1
 
-function LLVMVerifyModule(M: pointer[void], Action: i32, OutMessage: pointer[pointer[char]]) returns int extern
-function LLVMVerifyFunction(Fn: pointer[void], Action: i32) returns int extern
+function LLVMVerifyModule(M: pointer[void], Action: i32, OutMessage: pointer[pointer[char]]) returns i32 extern
+function LLVMVerifyFunction(Fn: pointer[void], Action: i32) returns i32 extern
 function LLVMViewFunctionCFG(Fn: pointer[void]) extern
 function LLVMViewFunctionCFGOnly(Fn: pointer[void]) extern
 
@@ -121,8 +121,8 @@ function LLVMDIBuilderInsertDbgValueAtEnd(Builder: pointer[void], Val: pointer[v
 ; ===========================================================================
 ; Debug Locations
 ; ===========================================================================
-function LLVMDILocationGetLine(Location: pointer[void]) returns int extern
-function LLVMDILocationGetColumn(Location: pointer[void]) returns int extern
+function LLVMDILocationGetLine(Location: pointer[void]) returns u32 extern
+function LLVMDILocationGetColumn(Location: pointer[void]) returns u32 extern
 function LLVMDILocationGetScope(Location: pointer[void]) returns pointer[void] extern
 function LLVMDILocationGetInlinedAt(Location: pointer[void]) returns pointer[void] extern
 function LLVMDILocationGetFile(Location: pointer[void]) returns pointer[void] extern
@@ -134,8 +134,8 @@ function LLVMSetCurrentDebugLocation2(Builder: pointer[void], Loc: pointer[void]
 function LLVMGetCurrentDebugLocation2(Builder: pointer[void]) returns pointer[void] extern
 
 ; Module debug info version
-function LLVMGetModuleDebugMetadataVersion(M: pointer[void]) returns int extern
-function LLVMStripModuleDebugInfo(M: pointer[void]) returns int extern
+function LLVMGetModuleDebugMetadataVersion(M: pointer[void]) returns u32 extern
+function LLVMStripModuleDebugInfo(M: pointer[void]) returns i32 extern
 
 ; ===========================================================================
 ; Metadata Operations

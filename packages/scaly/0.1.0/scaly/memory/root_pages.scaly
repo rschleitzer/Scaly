@@ -90,7 +90,7 @@ define HeapTraceHeader
 )
 
 function getenv(name: pointer[const_char]) returns pointer[const_char] extern
-procedure atexit(cb: pointer[void]) returns int extern
+procedure atexit(cb: pointer[void]) returns i32 extern
 function strdup(s: pointer[const_char]) returns pointer[char] extern
 
 ; Scratch buffer for integer/pointer formatting. 32 bytes is enough for

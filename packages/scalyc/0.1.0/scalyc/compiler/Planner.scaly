@@ -26,7 +26,7 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 
 ; libc extern for loud-failing stubs.
-function exit(code: int) extern
+function exit(code: i32) extern
 
 ; ============================================================================
 ; Stack guard for the recursive descent (2026-08-04).

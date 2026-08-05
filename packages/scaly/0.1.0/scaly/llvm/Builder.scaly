@@ -173,7 +173,7 @@ function LLVMBuildFreeze(Builder: pointer[void], Val: pointer[void], Name: point
 ; Phi Node Helpers
 ; ===========================================================================
 function LLVMAddIncoming(PhiNode: pointer[void], IncomingValues: pointer[pointer[void]], IncomingBlocks: pointer[pointer[void]], Count: u32) extern
-function LLVMCountIncoming(PhiNode: pointer[void]) returns int extern
+function LLVMCountIncoming(PhiNode: pointer[void]) returns u32 extern
 function LLVMGetIncomingValue(PhiNode: pointer[void], Index: u32) returns pointer[void] extern
 function LLVMGetIncomingBlock(PhiNode: pointer[void], Index: u32) returns pointer[void] extern
 

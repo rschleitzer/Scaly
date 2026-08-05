@@ -1322,17 +1322,17 @@ declare ptr @memset(...)
 
 define linkonce_odr i64 @_Z7printlnP2i8(ptr %0) {
 entry:
-  %call = call i64 @puts(ptr %0)
-  ret i64 %call
+  %call = call i32 @puts(ptr %0)
+  ret i64 0
 }
 
 define linkonce_odr i64 @_Z5printP2i8(ptr %0) {
 entry:
-  %call = call i64 @puts(ptr %0)
-  ret i64 %call
+  %call = call i32 @puts(ptr %0)
+  ret i64 0
 }
 
-declare i64 @puts(ptr)
+declare i32 @puts(ptr)
 
 define linkonce_odr void @_ZN4json10null_valueEPN4scaly6memory4PageE(ptr noalias sret(%_Z9JsonValue) %0, ptr %1) {
 entry:
@@ -1856,7 +1856,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -5696,7 +5696,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -7000,7 +7000,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -8638,7 +8638,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -10579,7 +10579,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -11845,7 +11845,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorImE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -13143,7 +13143,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -14410,7 +14410,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI14TypeConstraintE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -15677,7 +15677,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -16944,7 +16944,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI7OperandEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -18211,7 +18211,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI9StatementE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -19478,7 +19478,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI4CaseE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z4Case, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -20745,7 +20745,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6BranchE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6Branch, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -22012,7 +22012,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI4WhenE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z4When, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -23279,7 +23279,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI4ItemE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z4Item, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -24546,7 +24546,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI7OperandE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z7Operand, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -25813,7 +25813,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI9ComponentE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9Component, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -27080,7 +27080,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI9AttributeE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9Attribute, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -28347,7 +28347,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI16GenericParameterE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z16GenericParameter, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -29614,7 +29614,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI3UseE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z3Use, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -30881,7 +30881,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6MemberE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6Member, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -32148,7 +32148,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI8FunctionE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z8Function, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -34349,7 +34349,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -35616,7 +35616,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI8Nameable8NameableE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -36893,7 +36893,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -38160,7 +38160,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8NameableE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -39696,7 +39696,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -41565,7 +41565,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -42832,7 +42832,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI16PlannedStructureE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -44099,7 +44099,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12PlannedUnionE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -45366,7 +45366,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI15PlannedFunctionE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -46633,7 +46633,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI13PlannedGlobalE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -47900,7 +47900,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -49167,7 +49167,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -50434,7 +50434,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -51701,7 +51701,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI11PlannedTypeE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -52968,7 +52968,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -54235,7 +54235,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -55502,7 +55502,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6ModuleE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6Module, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -56769,7 +56769,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI7ProgramE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -58036,7 +58036,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12EscapeRecordE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -60413,7 +60413,7 @@ if.end19:                                         ; preds = %if.then15
 
 declare ptr @popen(ptr, ptr)
 
-declare i64 @pclose(ptr)
+declare i32 @pclose(ptr)
 
 declare i32 @fgetc(ptr)
 
@@ -60821,7 +60821,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI17DeclarationSyntaxE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -63139,7 +63139,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12MemberSyntaxE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -64543,7 +64543,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI13VariantSyntaxE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z13VariantSyntax, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -69459,7 +69459,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI10ItemSyntaxE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -71698,7 +71698,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI10PartSyntaxE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -75641,7 +75641,7 @@ while.body24:                                     ; preds = %while.cond23
   br i1 %lt28, label %if.then29, label %if.end30
 
 while.exit25:                                     ; preds = %while.cond23
-  %call34 = call i64 @pclose(ptr %call20)
+  %call34 = call i32 @pclose(ptr %call20)
   %sb35 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb35, i8 10)
   %sb37 = load ptr, ptr %sb, align 8
@@ -94698,7 +94698,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI15ExtensionSyntaxE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z15ExtensionSyntax, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -95965,7 +95965,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z21GenericArgumentSyntax, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -98143,7 +98143,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI16PlannedStatementE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -99906,7 +99906,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI14PlannedOperandE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -101228,7 +101228,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI18PlannedInitializerE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -102495,7 +102495,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI15PlannedOperatorE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -105259,7 +105259,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI16PlannedComponentE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z16PlannedComponent, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -106526,7 +106526,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI13PlannedBranchE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z13PlannedBranch, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -107793,7 +107793,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI11PlannedWhenE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -109060,7 +109060,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI19PlannedMemberAccessE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z19PlannedMemberAccess, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -110322,15 +110322,15 @@ if.end2:                                          ; preds = %if.then
   br label %if.end
 }
 
-declare i64 @fork()
+declare i32 @fork()
 
 declare i32 @pipe(ptr)
 
-declare i64 @close(i64)
+declare i32 @close(i64)
 
-declare i64 @waitpid(i64, ptr, i64)
+declare i32 @waitpid(i64, ptr, i64)
 
-declare i64 @kill(i64, i64)
+declare i32 @kill(i64, i64)
 
 declare i32 @poll(ptr, i64, i32)
 
@@ -110613,21 +110613,21 @@ if.then9:                                         ; preds = %if.end
   ret void
 
 if.end10:                                         ; preds = %if.end
-  %call11 = call i64 @fork()
-  %eq = icmp eq i64 %call11, 0
+  %call11 = call i32 @fork()
+  %eq = icmp eq i32 %call11, 0
   br i1 %eq, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end10
-  %call14 = call i64 @close(i64 0)
-  %call15 = call i64 @close(i64 1)
+  %call14 = call i32 @close(i64 0)
+  %call15 = call i32 @close(i64 1)
   %p2c16 = load ptr, ptr %p2c1, align 8
   %ptr.add = getelementptr inbounds i32, ptr %p2c16, i64 1
   %deref = load i32, ptr %ptr.add, align 4
-  %call17 = call i64 @close(i32 %deref)
+  %call17 = call i32 @close(i32 %deref)
   %c2p18 = load ptr, ptr %c2p5, align 8
   %ptr.add19 = getelementptr inbounds i32, ptr %c2p18, i64 0
   %deref20 = load i32, ptr %ptr.add19, align 4
-  %call21 = call i64 @close(i32 %deref20)
+  %call21 = call i32 @close(i32 %deref20)
   %p2c22 = load ptr, ptr %p2c1, align 8
   %ptr.add23 = getelementptr inbounds i32, ptr %p2c22, i64 0
   %deref24 = load i32, ptr %ptr.add23, align 4
@@ -110639,38 +110639,38 @@ if.then12:                                        ; preds = %if.end10
   ret void
 
 if.end13:                                         ; preds = %if.end10
-  %lt = icmp slt i64 %call11, 0
+  %lt = icmp slt i32 %call11, 0
   br i1 %lt, label %if.then29, label %if.end30
 
 if.then29:                                        ; preds = %if.end13
   %p2c31 = load ptr, ptr %p2c1, align 8
   %ptr.add32 = getelementptr inbounds i32, ptr %p2c31, i64 0
   %deref33 = load i32, ptr %ptr.add32, align 4
-  %call34 = call i64 @close(i32 %deref33)
+  %call34 = call i32 @close(i32 %deref33)
   %p2c35 = load ptr, ptr %p2c1, align 8
   %ptr.add36 = getelementptr inbounds i32, ptr %p2c35, i64 1
   %deref37 = load i32, ptr %ptr.add36, align 4
-  %call38 = call i64 @close(i32 %deref37)
+  %call38 = call i32 @close(i32 %deref37)
   %c2p39 = load ptr, ptr %c2p5, align 8
   %ptr.add40 = getelementptr inbounds i32, ptr %c2p39, i64 0
   %deref41 = load i32, ptr %ptr.add40, align 4
-  %call42 = call i64 @close(i32 %deref41)
+  %call42 = call i32 @close(i32 %deref41)
   %c2p43 = load ptr, ptr %c2p5, align 8
   %ptr.add44 = getelementptr inbounds i32, ptr %c2p43, i64 1
   %deref45 = load i32, ptr %ptr.add44, align 4
-  %call46 = call i64 @close(i32 %deref45)
+  %call46 = call i32 @close(i32 %deref45)
   ret void
 
 if.end30:                                         ; preds = %if.end13
   %p2c47 = load ptr, ptr %p2c1, align 8
   %ptr.add48 = getelementptr inbounds i32, ptr %p2c47, i64 0
   %deref49 = load i32, ptr %ptr.add48, align 4
-  %call50 = call i64 @close(i32 %deref49)
+  %call50 = call i32 @close(i32 %deref49)
   %c2p51 = load ptr, ptr %c2p5, align 8
   %ptr.add52 = getelementptr inbounds i32, ptr %c2p51, i64 1
   %deref53 = load i32, ptr %ptr.add52, align 4
-  %call54 = call i64 @close(i32 %deref53)
-  store i64 %call11, ptr @worker_pid, align 8
+  %call54 = call i32 @close(i32 %deref53)
+  store i32 %call11, ptr @worker_pid, align 4
   %p2c55 = load ptr, ptr %p2c1, align 8
   %ptr.add56 = getelementptr inbounds i32, ptr %p2c55, i64 1
   %deref57 = load i32, ptr %ptr.add56, align 4
@@ -110698,17 +110698,17 @@ if.end:                                           ; preds = %if.then, %entry
 
 define linkonce_odr void @_ZN6worker8shutdownEv() {
 entry:
-  %status = alloca i64, align 8
+  %status = alloca i32, align 4
   %global.load = load i64, ptr @worker_pid, align 8
   %gt = icmp sgt i64 %global.load, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %global.load1 = load i64, ptr @worker_pid, align 8
-  %call = call i64 @kill(i64 %global.load1, i64 9)
-  store i64 0, ptr %status, align 1
+  %call = call i32 @kill(i64 %global.load1, i64 9)
+  store i32 0, ptr %status, align 1
   %global.load2 = load i64, ptr @worker_pid, align 8
-  %call3 = call i64 @waitpid(i64 %global.load2, ptr %status, i64 0)
+  %call3 = call i32 @waitpid(i64 %global.load2, ptr %status, i64 0)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -110718,7 +110718,7 @@ if.end:                                           ; preds = %if.then, %entry
 
 if.then6:                                         ; preds = %if.end
   %global.load8 = load i64, ptr @worker_in, align 8
-  %call9 = call i64 @close(i64 %global.load8)
+  %call9 = call i32 @close(i64 %global.load8)
   br label %if.end7
 
 if.end7:                                          ; preds = %if.then6, %if.end
@@ -110728,7 +110728,7 @@ if.end7:                                          ; preds = %if.then6, %if.end
 
 if.then12:                                        ; preds = %if.end7
   %global.load14 = load i64, ptr @worker_out, align 8
-  %call15 = call i64 @close(i64 %global.load14)
+  %call15 = call i32 @close(i64 %global.load14)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.end7

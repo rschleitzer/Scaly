@@ -36,15 +36,15 @@ use scalyls.semantic
 
 ; POSIX process / pipe primitives (libc). Declared here rather than in the
 ; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
-function fork() returns int extern
+function fork() returns i32 extern
 ; pipe fills two C `int` (32-bit) fds. Scaly `int` is 64-bit, so the fd
 ; pair MUST be an i32[2] (an int[2] would be 2x8 bytes and splice both fds
 ; into one garbage i64). The fd values themselves are small and widen
 ; cleanly into `int` when handed to read/write/close.
 function pipe(fds: pointer[i32]) returns i32 extern
-function close(fd: int) returns int extern
-function waitpid(pid: int, status: pointer[int], options: int) returns int extern
-function kill(pid: int, sig: int) returns int extern
+function close(fd: int) returns i32 extern
+function waitpid(pid: int, status: pointer[i32], options: int) returns i32 extern
+function kill(pid: int, sig: int) returns i32 extern
 ; poll: the C prototype is `int poll(struct pollfd *, nfds_t, int)`, and
 ; nfds_t is 32 bits on macOS (unsigned int) but 64 on glibc (unsigned long).
 ; ONE seed serves every target, so the width cannot be per-OS: `u64` is the
@@ -323,7 +323,10 @@ define worker
         if worker_pid > 0
         {
             kill(worker_pid, SIGKILL)
-            var status int 0
+            ; i32, not int: waitpid writes FOUR bytes through this pointer
+            ; (C `int *status`), so an i64 slot would leave four bytes of the
+            ; local unwritten and the declaration would not resolve.
+            var status i32 0
             waitpid(worker_pid, &status, 0)
         }
         if worker_in > 0

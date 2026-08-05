@@ -454,17 +454,17 @@ declare ptr @memset(...)
 
 define linkonce_odr i64 @_Z7printlnP2i8(ptr %0) {
 entry:
-  %call = call i64 @puts(ptr %0)
-  ret i64 %call
+  %call = call i32 @puts(ptr %0)
+  ret i64 0
 }
 
 define linkonce_odr i64 @_Z5printP2i8(ptr %0) {
 entry:
-  %call = call i64 @puts(ptr %0)
-  ret i64 %call
+  %call = call i32 @puts(ptr %0)
+  ret i64 0
 }
 
-declare i64 @puts(ptr)
+declare i32 @puts(ptr)
 
 define linkonce_odr ptr @_ZN4Page13allocate_pageEv() {
 entry:
@@ -815,7 +815,7 @@ declare ptr @aligned_alloc(i64, i64)
 
 declare void @free(ptr)
 
-declare void @exit(i64)
+declare void @exit(i32)
 
 declare void @abort()
 
@@ -827,13 +827,13 @@ declare i64 @read(i64, ptr, i64)
 
 declare ptr @fopen(ptr, ptr)
 
-declare i64 @fclose(ptr)
+declare i32 @fclose(ptr)
 
 declare i64 @fread(ptr, i64, i64, ptr)
 
 declare i64 @fwrite(ptr, i64, i64, ptr)
 
-declare i64 @fseek(ptr, i64, i64)
+declare i32 @fseek(ptr, i64, i64)
 
 declare i64 @ftell(ptr)
 
@@ -841,23 +841,23 @@ declare void @rewind(ptr)
 
 declare ptr @opendir(ptr)
 
-declare i64 @closedir(ptr)
+declare i32 @closedir(ptr)
 
-declare i64 @access(ptr, i64)
+declare i32 @access(ptr, i64)
 
-declare i64 @unlink(ptr)
+declare i32 @unlink(ptr)
 
-declare i64 @rmdir(ptr)
+declare i32 @rmdir(ptr)
 
-declare i64 @mkdir(ptr, i64)
+declare i32 @mkdir(ptr, i64)
 
-declare i64 @system(ptr)
+declare i32 @system(ptr)
 
 declare ptr @dirname(ptr)
 
 declare ptr @basename(ptr)
 
-declare i64 @strcmp(ptr, ptr)
+declare i32 @strcmp(ptr, ptr)
 
 declare i32 @memcmp(ptr, ptr, i64)
 
@@ -1182,7 +1182,7 @@ if.end:                                           ; preds = %if.then, %entry
 
 declare ptr @getenv(ptr)
 
-declare i64 @atexit(ptr)
+declare i32 @atexit(ptr)
 
 declare ptr @strdup(ptr)
 
@@ -1928,7 +1928,7 @@ if.end2:                                          ; preds = %if.end
   store i64 1, ptr @trace_enabled, align 8
   %call3 = call ptr @aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
   store ptr %call3, ptr @trace_entries, align 8
-  %call4 = call i64 @atexit(ptr @_Z16scaly_trace_dumpv)
+  %call4 = call i32 @atexit(ptr @_Z16scaly_trace_dumpv)
   ret void
 }
 
@@ -1950,8 +1950,8 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %global.load2, i64 %i3
   %field.inplace = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i64 @strcmp(ptr %deref.recv, ptr %0)
-  %eq = icmp eq i64 %call, 0
+  %call = call i32 @strcmp(ptr %deref.recv, ptr %0)
+  %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
@@ -2145,7 +2145,7 @@ if.end2:                                          ; preds = %if.end
   store ptr %call4, ptr %entries, align 8
   store ptr %call3, ptr @heap_trace, align 8
   store i64 2, ptr @heap_trace_state, align 8
-  %call5 = call i64 @atexit(ptr @_Z21scaly_heap_trace_dumpv)
+  %call5 = call i32 @atexit(ptr @_Z21scaly_heap_trace_dumpv)
   ret void
 }
 
@@ -2197,8 +2197,8 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %entries, i64 %i3
   %field.inplace = getelementptr inbounds %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i64 @strcmp(ptr %deref.recv, ptr %1)
-  %eq = icmp eq i64 %call, 0
+  %call = call i32 @strcmp(ptr %deref.recv, ptr %1)
+  %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
@@ -3398,7 +3398,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorIiE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -4832,7 +4832,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -6497,7 +6497,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -8230,7 +8230,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -9717,7 +9717,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6StringiE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -11118,7 +11118,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -12757,7 +12757,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6StringiEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -14512,7 +14512,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -16055,7 +16055,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6StringmE, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -18529,7 +18529,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6Vector, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, 8
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -21444,7 +21444,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -23414,7 +23414,7 @@ declare i32 @scaly_eio_ncpu()
 
 declare i64 @scaly_eio_now_ns()
 
-declare i64 @close(i64)
+declare i32 @close(i64)
 
 declare i64 @scaly_atomic_load_u64(ptr)
 
@@ -23508,7 +23508,7 @@ if.end:                                           ; preds = %entry
   %load.struct = load %_Z6IoPool, ptr %global.load, align 8
   %pipe_write = extractvalue %_Z6IoPool %load.struct, 4
   %as.zext = zext i32 %pipe_write to i64
-  %call = call i64 @close(i64 %as.zext)
+  %call = call i32 @close(i64 %as.zext)
   store i64 0, ptr %i, align 1
   br label %while.cond
 
@@ -23538,7 +23538,7 @@ while.exit:                                       ; preds = %while.cond
   %load.struct7 = load %_Z6IoPool, ptr %global.load, align 8
   %pipe_read = extractvalue %_Z6IoPool %load.struct7, 3
   %as.zext8 = zext i32 %pipe_read to i64
-  %call9 = call i64 @close(i64 %as.zext8)
+  %call9 = call i32 @close(i64 %as.zext8)
   %call10 = call ptr @_ZN4Page3getEPv(ptr %global.load)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call10)
   call void @_ZN4Page19release_page_tracedEP4PageP10const_char(ptr %call10, ptr @.str.49)
@@ -23571,7 +23571,7 @@ if.then2:                                         ; preds = %if.end
 
 if.end3:                                          ; preds = %if.then2, %if.end
   %sub6 = sub i64 %global.load, 1
-  %call7 = call i64 @close(i64 %sub6)
+  %call7 = call i32 @close(i64 %sub6)
   store i64 0, ptr @io_poller_fd, align 8
   ret void
 }
@@ -26401,11 +26401,11 @@ repeat.exit:                                      ; preds = %if.then
   %load.struct = load %_Z9TaskGroup, ptr %0, align 8
   %pipe_write = extractvalue %_Z9TaskGroup %load.struct, 3
   %as.zext = zext i32 %pipe_write to i64
-  %call = call i64 @close(i64 %as.zext)
+  %call = call i32 @close(i64 %as.zext)
   %load.struct1 = load %_Z9TaskGroup, ptr %0, align 8
   %pipe_read = extractvalue %_Z9TaskGroup %load.struct1, 2
   %as.zext2 = zext i32 %pipe_read to i64
-  %call3 = call i64 @close(i64 %as.zext2)
+  %call3 = call i32 @close(i64 %as.zext2)
   %call4 = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call4)
   call void @_ZN4Page19release_page_tracedEP4PageP10const_char(ptr %call4, ptr @.str.54)
@@ -26779,7 +26779,7 @@ entry:
   %load.struct = load %_Z8TaskPool, ptr %0, align 8
   %pipe_write = extractvalue %_Z8TaskPool %load.struct, 6
   %as.zext = zext i32 %pipe_write to i64
-  %call = call i64 @close(i64 %as.zext)
+  %call = call i32 @close(i64 %as.zext)
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
@@ -26810,7 +26810,7 @@ while.exit:                                       ; preds = %while.cond
   %load.struct7 = load %_Z8TaskPool, ptr %0, align 8
   %pipe_read = extractvalue %_Z8TaskPool %load.struct7, 5
   %as.zext8 = zext i32 %pipe_read to i64
-  %call9 = call i64 @close(i64 %as.zext8)
+  %call9 = call i32 @close(i64 %as.zext8)
   %call10 = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call10)
   call void @_ZN4Page19release_page_tracedEP4PageP10const_char(ptr %call10, ptr @.str.56)
@@ -26924,7 +26924,7 @@ if.end6:                                          ; preds = %if.end
   %file9 = load ptr, ptr %file, align 8
   %call10 = call i64 @fwrite(ptr %call7, i64 1, i64 %call8, ptr %file9)
   %file11 = load ptr, ptr %file, align 8
-  %call12 = call i64 @fclose(ptr %file11)
+  %call12 = call i32 @fclose(ptr %file11)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 }
@@ -26961,7 +26961,7 @@ if.then4:                                         ; preds = %if.end
 
 if.end5:                                          ; preds = %if.end
   %file7 = load ptr, ptr %file, align 8
-  %call8 = call i64 @fseek(ptr %file7, i64 0, i64 2)
+  %call8 = call i32 @fseek(ptr %file7, i64 0, i64 2)
   %file9 = load ptr, ptr %file, align 8
   %call10 = call i64 @ftell(ptr %file9)
   %file11 = load ptr, ptr %file, align 8
@@ -26975,7 +26975,7 @@ if.end5:                                          ; preds = %if.end
   %file16 = load ptr, ptr %file, align 8
   %call17 = call i64 @fread(ptr %call15, i64 1, i64 %call10, ptr %file16)
   %file18 = load ptr, ptr %file, align 8
-  %call19 = call i64 @fclose(ptr %file18)
+  %call19 = call i32 @fclose(ptr %file18)
   %ret20 = load ptr, ptr %ret, align 8
   %sret.body21 = load %_Z6String, ptr %ret20, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %ret20, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
@@ -27000,8 +27000,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %call3 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %0)
-  %call4 = call i64 @access(ptr %call3, i64 0)
-  %eq = icmp eq i64 %call4, 0
+  %call4 = call i32 @access(ptr %call3, i64 0)
+  %eq = icmp eq i32 %call4, 0
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 %eq
 }
@@ -27023,8 +27023,8 @@ if.then:                                          ; preds = %entry
   ret i1 %ne
 
 if.end:                                           ; preds = %entry
-  %call3 = call i64 @access(ptr %call, i64 0)
-  %eq = icmp eq i64 %call3, 0
+  %call3 = call i32 @access(ptr %call, i64 0)
+  %eq = icmp eq i32 %call3, 0
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 %eq
 }
@@ -27059,7 +27059,7 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %dir7 = load ptr, ptr %dir, align 8
-  %call8 = call i64 @closedir(ptr %dir7)
+  %call8 = call i32 @closedir(ptr %dir7)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 }
@@ -27133,8 +27133,8 @@ define linkonce_odr void @_ZN4Path18get_directory_nameEPN4scaly6memory4PageE6Str
 entry:
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
   %call1 = call ptr @dirname(ptr %call)
-  %call2 = call i64 @strcmp(ptr %call1, ptr @.str.66)
-  %eq = icmp eq i64 %call2, 0
+  %call2 = call i32 @strcmp(ptr %call1, ptr @.str.66)
+  %eq = icmp eq i32 %call2, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -27176,7 +27176,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %file2 = load ptr, ptr %file, align 8
-  %call3 = call i64 @fseek(ptr %file2, i64 0, i64 2)
+  %call3 = call i32 @fseek(ptr %file2, i64 0, i64 2)
   %file4 = load ptr, ptr %file, align 8
   %call5 = call i64 @ftell(ptr %file4)
   %file6 = load ptr, ptr %file, align 8
@@ -27212,14 +27212,14 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %call8 = call i64 @fclose(ptr %as.inttoptr)
+  %call8 = call i32 @fclose(ptr %as.inttoptr)
   ret ptr inttoptr (i64 1 to ptr)
 }
 
 define linkonce_odr ptr @_Z18file_access_workerPv(ptr %0) {
 entry:
-  %call = call i64 @access(ptr %0, i64 0)
-  %eq = icmp eq i64 %call, 0
+  %call = call i32 @access(ptr %0, i64 0)
+  %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -27256,7 +27256,7 @@ if.end:                                           ; preds = %entry
   %file9 = load ptr, ptr %file, align 8
   %call10 = call i64 @fwrite(ptr %as.inttoptr3, i64 1, i64 %deref7, ptr %file9)
   %file11 = load ptr, ptr %file, align 8
-  %call12 = call i64 @fclose(ptr %file11)
+  %call12 = call i32 @fclose(ptr %file11)
   ret ptr inttoptr (i64 1 to ptr)
 }
 
@@ -27339,8 +27339,8 @@ entry:
 
 define linkonce_odr ptr @_Z17dir_access_workerPv(ptr %0) {
 entry:
-  %call = call i64 @access(ptr %0, i64 0)
-  %eq = icmp eq i64 %call, 0
+  %call = call i32 @access(ptr %0, i64 0)
+  %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -27364,14 +27364,14 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %dir2 = load ptr, ptr %dir, align 8
-  %call3 = call i64 @closedir(ptr %dir2)
+  %call3 = call i32 @closedir(ptr %dir2)
   ret ptr inttoptr (i64 1 to ptr)
 }
 
 define linkonce_odr ptr @_Z17dir_create_workerPv(ptr %0) {
 entry:
-  %call = call i64 @mkdir(ptr %0, i64 493)
-  %eq = icmp eq i64 %call, 0
+  %call = call i32 @mkdir(ptr %0, i64 493)
+  %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -27383,8 +27383,8 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr ptr @_Z17dir_remove_workerPv(ptr %0) {
 entry:
-  %call = call i64 @rmdir(ptr %0)
-  %eq = icmp eq i64 %call, 0
+  %call = call i32 @rmdir(ptr %0)
+  %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -27411,8 +27411,8 @@ if.then:                                          ; preds = %entry
   ret i1 %ne
 
 if.end:                                           ; preds = %entry
-  %call3 = call i64 @mkdir(ptr %call, i64 493)
-  %eq = icmp eq i64 %call3, 0
+  %call3 = call i32 @mkdir(ptr %call, i64 493)
+  %eq = icmp eq i32 %call3, 0
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 %eq
 }
@@ -27434,8 +27434,8 @@ if.then:                                          ; preds = %entry
   ret i1 %ne
 
 if.end:                                           ; preds = %entry
-  %call3 = call i64 @rmdir(ptr %call)
-  %eq = icmp eq i64 %call3, 0
+  %call3 = call i32 @rmdir(ptr %call)
+  %eq = icmp eq i32 %call3, 0
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 %eq
 }
@@ -27467,7 +27467,7 @@ repeat.exit:                                      ; preds = %if.then32, %if.then
   call void @_ZN7Cluster8wacquireEP8NodePeer(ptr %0)
   %field.inplace = getelementptr inbounds %_Z8NodePeer, ptr %0, i32 0, i32 1
   %field.val = load i32, ptr %field.inplace, align 4
-  %call34 = call i64 @close(i32 %field.val)
+  %call34 = call i32 @close(i32 %field.val)
   call void @_ZN7Cluster8wreleaseEP8NodePeer(ptr %0)
   ret void
 
@@ -27658,7 +27658,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call7 = call i64 @close(i32 %0)
+  %call7 = call i32 @close(i32 %0)
   ret ptr null
 
 if.end:                                           ; preds = %entry
@@ -27692,7 +27692,7 @@ while.exit:                                       ; preds = %while.cond
   br i1 %ne, label %if.then22, label %if.end23
 
 if.then15:                                        ; preds = %while.body
-  %call17 = call i64 @close(i32 %0)
+  %call17 = call i32 @close(i32 %0)
   ret ptr null
 
 if.end16:                                         ; preds = %while.body
@@ -27704,7 +27704,7 @@ if.end16:                                         ; preds = %while.body
 if.then22:                                        ; preds = %while.exit
   call void @_Z11scaly_eputsP10const_char(ptr @.str.67)
   call void @_Z12scaly_eputnlv()
-  %call24 = call i64 @close(i32 %0)
+  %call24 = call i32 @close(i32 %0)
   ret ptr null
 
 if.end23:                                         ; preds = %while.exit
@@ -27719,7 +27719,7 @@ if.then28:                                        ; preds = %if.end23
   call void @_Z11scaly_eputsP10const_char(ptr @.str.69)
   call void @_Z11scaly_eputi3i64(i64 %deref26)
   call void @_Z12scaly_eputnlv()
-  %call30 = call i64 @close(i32 %0)
+  %call30 = call i32 @close(i32 %0)
   ret ptr null
 
 if.end29:                                         ; preds = %if.end23
@@ -27737,7 +27737,7 @@ if.then35:                                        ; preds = %if.end29
   %as.inttoptr38 = inttoptr i64 %deref33 to ptr
   call void @_Z11scaly_eputpPv(ptr %as.inttoptr38)
   call void @_Z12scaly_eputnlv()
-  %call39 = call i64 @close(i32 %0)
+  %call39 = call i32 @close(i32 %0)
   ret ptr null
 
 if.end36:                                         ; preds = %if.end29
@@ -28727,7 +28727,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorIfE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -31991,7 +31991,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI3i64E, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -33350,7 +33350,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z6VectorI8TapeNodeE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z8TapeNode, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul2)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
   br label %if.end
 
 if.else:                                          ; preds = %entry

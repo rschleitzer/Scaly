@@ -343,7 +343,7 @@ function scaly_eio_now_ns() returns i64 extern
 ; residual). Declared (int)->(int) to MATCH scalyls's existing declare:
 ; the whole-program llvm-link sees ONE `close` declaration across the
 ; linked roots (a type-mismatched pair would conflict).
-function close(fd: int) returns int extern
+function close(fd: int) returns i32 extern
 
 ; Atomic load (milestone 2.4; cas/store are declared in root_pages.scaly).
 ; Like all scaly_atomic_* names this is emitter-lowered, never a symbol.

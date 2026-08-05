@@ -11,4 +11,4 @@ function print(msg: pointer[i8]) returns int
     puts msg
 }
 
-function puts(s: pointer[i8]) returns int extern
+function puts(s: pointer[i8]) returns i32 extern

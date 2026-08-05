@@ -8,17 +8,17 @@ declare ptr @memset(...)
 
 define linkonce_odr i64 @_Z7printlnP2i8(ptr %0) {
 entry:
-  %call = call i64 @puts(ptr %0)
-  ret i64 %call
+  %call = call i32 @puts(ptr %0)
+  ret i64 0
 }
 
 define linkonce_odr i64 @_Z5printP2i8(ptr %0) {
 entry:
-  %call = call i64 @puts(ptr %0)
-  ret i64 %call
+  %call = call i32 @puts(ptr %0)
+  ret i64 0
 }
 
-declare i64 @puts(ptr)
+declare i32 @puts(ptr)
 
 declare void @_ZN6server3runEv()
 
@@ -30,5 +30,5 @@ entry:
 
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 -3769299285105331095
+  ret i64 1298144578545528496
 }

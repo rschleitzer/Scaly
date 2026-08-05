@@ -150,10 +150,10 @@ procedure LLVMSetDataLayout(mod: LLVMModuleRef, layout: pointer[const_char]) ext
 function LLVMPrintModuleToString(mod: LLVMModuleRef) returns pointer[char] extern
 
 ; Write module to file
-function LLVMPrintModuleToFile(mod: LLVMModuleRef, filename: pointer[const_char], error_message: pointer[pointer[char]]) returns int extern
+function LLVMPrintModuleToFile(mod: LLVMModuleRef, filename: pointer[const_char], error_message: pointer[pointer[char]]) returns i32 extern
 
 ; Write bitcode to file
-function LLVMWriteBitcodeToFile(mod: LLVMModuleRef, path: pointer[const_char]) returns int extern
+function LLVMWriteBitcodeToFile(mod: LLVMModuleRef, path: pointer[const_char]) returns i32 extern
 
 ; ============================================================================
 ; Builder Functions
@@ -201,7 +201,7 @@ function LLVMInt16TypeInContext(context: LLVMContextRef) returns LLVMTypeRef ext
 function LLVMInt32TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
 function LLVMInt64TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
 function LLVMIntTypeInContext(context: LLVMContextRef, num_bits: u32) returns LLVMTypeRef extern
-function LLVMGetIntTypeWidth(int_type: LLVMTypeRef) returns int extern
+function LLVMGetIntTypeWidth(int_type: LLVMTypeRef) returns u32 extern
 
 ; Floating point types
 function LLVMFloatTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
@@ -230,14 +230,14 @@ function LLVMABISizeOfType(td: LLVMTargetDataRef, ty: LLVMTypeRef) returns u64 e
 function LLVMFunctionType(return_type: LLVMTypeRef, param_types: pointer[LLVMTypeRef], param_count: u32, is_var_arg: i32) returns LLVMTypeRef extern
 
 ; Type queries
-function LLVMGetTypeKind(type: LLVMTypeRef) returns int extern
-function LLVMTypeIsSized(type: LLVMTypeRef) returns int extern
+function LLVMGetTypeKind(type: LLVMTypeRef) returns i32 extern
+function LLVMTypeIsSized(type: LLVMTypeRef) returns i32 extern
 function LLVMGetElementType(type: LLVMTypeRef) returns LLVMTypeRef extern
 function LLVMGetReturnType(func_type: LLVMTypeRef) returns LLVMTypeRef extern
-function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns int extern
+function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns u32 extern
 function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
 function LLVMStructGetTypeAtIndex(struct_type: LLVMTypeRef, index: u32) returns LLVMTypeRef extern
-function LLVMIsOpaqueStruct(struct_type: LLVMTypeRef) returns int extern
+function LLVMIsOpaqueStruct(struct_type: LLVMTypeRef) returns i32 extern
 function LLVMGetArrayLength2(array_type: LLVMTypeRef) returns u64 extern
 
 ; ============================================================================
@@ -254,11 +254,11 @@ function LLVMGetNamedFunction(mod: LLVMModuleRef, name: pointer[const_char]) ret
 function LLVMGetParam(func: LLVMValueRef, index: u32) returns LLVMValueRef extern
 
 ; Get number of parameters
-function LLVMCountParams(func: LLVMValueRef) returns int extern
+function LLVMCountParams(func: LLVMValueRef) returns u32 extern
 
 ; Set linkage
 procedure LLVMSetLinkage(global: LLVMValueRef, linkage: i32) extern
-function LLVMGetLinkage(global: LLVMValueRef) returns int extern
+function LLVMGetLinkage(global: LLVMValueRef) returns i32 extern
 
 ; Set the alignment (in bytes) of a load, store, or alloca instruction.
 ; Used for the s149 Result-wrapper { i8, [N x i8] } whose struct alignment
@@ -307,7 +307,7 @@ function LLVMIsAReturnInst(val: LLVMValueRef) returns LLVMValueRef extern
 ; substituted call target).
 function LLVMGetFirstFunction(mod: LLVMModuleRef) returns LLVMValueRef extern
 function LLVMGetNextFunction(func: LLVMValueRef) returns LLVMValueRef extern
-function LLVMIsDeclaration(global: LLVMValueRef) returns int extern
+function LLVMIsDeclaration(global: LLVMValueRef) returns i32 extern
 
 ; ============================================================================
 ; Constant Functions
@@ -372,7 +372,7 @@ procedure LLVMSetThreadLocal(global_var: LLVMValueRef, is_thread_local: i32) ext
 ; the first access lands in _tlv_bootstrap_error and aborts.
 function LLVMGetFirstGlobal(mod: LLVMModuleRef) returns LLVMValueRef extern
 function LLVMGetNextGlobal(global_var: LLVMValueRef) returns LLVMValueRef extern
-function LLVMIsThreadLocal(global_var: LLVMValueRef) returns int extern
+function LLVMIsThreadLocal(global_var: LLVMValueRef) returns i32 extern
 
 ; Atomic instruction builders (M2.3). The enum params are C ints:
 ; LLVMAtomicRMWBinOp (Add=1, And=3, Or=5), LLVMAtomicOrdering
@@ -384,7 +384,7 @@ function LLVMBuildAtomicCmpXchg(builder: LLVMBuilderRef, ptr: LLVMValueRef, cmp:
 procedure LLVMSetOrdering(inst: LLVMValueRef, ordering: i32) extern
 
 ; Query whether a global is marked constant (0 = mutable global)
-function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns int extern
+function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns i32 extern
 
 ; ============================================================================
 ; Instruction Builder - Arithmetic
@@ -503,7 +503,7 @@ procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[const_char], name_l
 function LLVMTypeOf(val: LLVMValueRef) returns LLVMTypeRef extern
 
 ; Check if value is null
-function LLVMIsNull(val: LLVMValueRef) returns int extern
+function LLVMIsNull(val: LLVMValueRef) returns i32 extern
 
 ; Alloca instruction inspection. LLVMIsAAllocaInst returns the value if it
 ; is an alloca instruction, null otherwise. LLVMGetAllocatedType returns
@@ -554,8 +554,8 @@ function LLVMIsAGetElementPtrInst(val: LLVMValueRef) returns LLVMValueRef extern
 ; unused SRET parameter (a template stub's `ret null` body never writes it) is
 ; exactly the one that must NOT be handed a null, since the attribute promises
 ; the callee a dereferenceable slot.
-function LLVMGetAttributeCountAtIndex(f: LLVMValueRef, index: u32) returns int extern
-function LLVMGetNumOperands(val: LLVMValueRef) returns int extern
+function LLVMGetAttributeCountAtIndex(f: LLVMValueRef, index: u32) returns u32 extern
+function LLVMGetNumOperands(val: LLVMValueRef) returns i32 extern
 function LLVMSetOperand(user: LLVMValueRef, index: u32, val: LLVMValueRef) extern
 function LLVMGetCalledValue(instr: LLVMValueRef) returns LLVMValueRef extern
 function LLVMInstructionEraseFromParent(inst: LLVMValueRef) extern
@@ -597,7 +597,7 @@ procedure LLVMInitializeX86AsmPrinter() extern
 function LLVMGetDefaultTargetTriple() returns pointer[char] extern
 
 ; Get target from triple
-function LLVMGetTargetFromTriple(triple: pointer[const_char], target: pointer[LLVMTargetRef], error_message: pointer[pointer[char]]) returns int extern
+function LLVMGetTargetFromTriple(triple: pointer[const_char], target: pointer[LLVMTargetRef], error_message: pointer[pointer[char]]) returns i32 extern
 
 ; Create target machine
 function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[const_char], cpu: pointer[const_char], features: pointer[const_char], level: i32, reloc: i32, code_model: i32) returns LLVMTargetMachineRef extern
@@ -623,7 +623,7 @@ function LLVMCopyStringRepOfTargetData(td: LLVMTargetDataRef) returns pointer[ch
 procedure LLVMDisposeTargetData(td: LLVMTargetDataRef) extern
 
 ; Emit to file
-function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[const_char], codegen: i32, error_message: pointer[pointer[char]]) returns int extern
+function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[const_char], codegen: i32, error_message: pointer[pointer[char]]) returns i32 extern
 
 ; ============================================================================
 ; Memory Functions
@@ -637,10 +637,10 @@ procedure LLVMDisposeMessage(message: pointer[char]) extern
 ; ============================================================================
 
 ; Verify module (0 = success)
-function LLVMVerifyModule(mod: LLVMModuleRef, action: i32, out_message: pointer[pointer[char]]) returns int extern
+function LLVMVerifyModule(mod: LLVMModuleRef, action: i32, out_message: pointer[pointer[char]]) returns i32 extern
 
 ; Verify function (0 = success)
-function LLVMVerifyFunction(func: LLVMValueRef, action: i32) returns int extern
+function LLVMVerifyFunction(func: LLVMValueRef, action: i32) returns i32 extern
 
 ; ============================================================================
 ; Pass Manager
@@ -654,10 +654,10 @@ function LLVMCreateFunctionPassManagerForModule(mod: LLVMModuleRef) returns LLVM
 procedure LLVMDisposePassManager(pm: LLVMPassManagerRef) extern
 
 ; Run passes
-function LLVMRunPassManager(pm: LLVMPassManagerRef, mod: LLVMModuleRef) returns int extern
-function LLVMInitializeFunctionPassManager(fpm: LLVMPassManagerRef) returns int extern
-function LLVMRunFunctionPassManager(fpm: LLVMPassManagerRef, func: LLVMValueRef) returns int extern
-function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns int extern
+function LLVMRunPassManager(pm: LLVMPassManagerRef, mod: LLVMModuleRef) returns i32 extern
+function LLVMInitializeFunctionPassManager(fpm: LLVMPassManagerRef) returns i32 extern
+function LLVMRunFunctionPassManager(fpm: LLVMPassManagerRef, func: LLVMValueRef) returns i32 extern
+function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns i32 extern
 
 ; ============================================================================
 ; Debug Info (DWARF) — DIBuilder
@@ -781,7 +781,7 @@ function LLVMOrcLLJITAddLLVMIRModule(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef,
 function LLVMOrcLLJITAddObjectFile(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, objbuf: LLVMMemoryBufferRef) returns LLVMErrorRef extern
 ; Load a file into a MemoryBuffer (used to hand a dep-package object to the
 ; JIT). Returns an LLVMBool (0 = success); writes the buffer to *out.
-function LLVMCreateMemoryBufferWithContentsOfFile(path: pointer[const_char], out: pointer[LLVMMemoryBufferRef], msg: pointer[pointer[char]]) returns int extern
+function LLVMCreateMemoryBufferWithContentsOfFile(path: pointer[const_char], out: pointer[LLVMMemoryBufferRef], msg: pointer[pointer[char]]) returns i32 extern
 ; LLVMOrcExecutorAddress is a bare u64 (a runtime code address), so the
 ; result is pointer[u64], NOT a wrapper-struct pointer.
 function LLVMOrcLLJITLookup(j: LLVMOrcLLJITRef, result: pointer[u64], name: pointer[const_char]) returns LLVMErrorRef extern

@@ -36,7 +36,7 @@ function LLVMSetTarget(M: pointer[void], Triple: pointer[const_char]) extern
 
 ; Module output
 function LLVMPrintModuleToString(M: pointer[void]) returns pointer[char] extern
-function LLVMPrintModuleToFile(M: pointer[void], Filename: pointer[const_char], ErrorMessage: pointer[pointer[char]]) returns int extern
+function LLVMPrintModuleToFile(M: pointer[void], Filename: pointer[const_char], ErrorMessage: pointer[pointer[char]]) returns i32 extern
 function LLVMDisposeMessage(Message: pointer[char]) extern
 
 ; ===========================================================================
@@ -60,7 +60,7 @@ function LLVMInt128Type() returns pointer[void] extern
 function LLVMIntType(NumBits: u32) returns pointer[void] extern
 
 ; Integer type properties
-function LLVMGetIntTypeWidth(IntegerTy: pointer[void]) returns int extern
+function LLVMGetIntTypeWidth(IntegerTy: pointer[void]) returns u32 extern
 
 ; ===========================================================================
 ; Type Operations - Floating Point Types
@@ -86,15 +86,15 @@ function LLVMVoidType() returns pointer[void] extern
 ; ===========================================================================
 function LLVMPointerType(ElementType: pointer[void], AddressSpace: u32) returns pointer[void] extern
 function LLVMPointerTypeInContext(C: pointer[void], AddressSpace: u32) returns pointer[void] extern
-function LLVMPointerTypeIsOpaque(Ty: pointer[void]) returns int extern
-function LLVMGetPointerAddressSpace(PointerTy: pointer[void]) returns int extern
+function LLVMPointerTypeIsOpaque(Ty: pointer[void]) returns i32 extern
+function LLVMGetPointerAddressSpace(PointerTy: pointer[void]) returns u32 extern
 
 ; ===========================================================================
 ; Type Operations - Array Types
 ; ===========================================================================
 function LLVMArrayType(ElementType: pointer[void], ElementCount: u32) returns pointer[void] extern
 function LLVMArrayType2(ElementType: pointer[void], ElementCount: i64) returns pointer[void] extern
-function LLVMGetArrayLength(ArrayTy: pointer[void]) returns int extern
+function LLVMGetArrayLength(ArrayTy: pointer[void]) returns u32 extern
 function LLVMGetArrayLength2(ArrayTy: pointer[void]) returns i64 extern
 function LLVMGetElementType(Ty: pointer[void]) returns pointer[void] extern
 
@@ -106,20 +106,20 @@ function LLVMStructType(ElementTypes: pointer[pointer[void]], ElementCount: u32,
 function LLVMStructCreateNamed(C: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
 function LLVMStructSetBody(StructTy: pointer[void], ElementTypes: pointer[pointer[void]], ElementCount: u32, Packed: i32) extern
 function LLVMGetStructName(Ty: pointer[void]) returns pointer[const_char] extern
-function LLVMCountStructElementTypes(StructTy: pointer[void]) returns int extern
+function LLVMCountStructElementTypes(StructTy: pointer[void]) returns u32 extern
 function LLVMGetStructElementTypes(StructTy: pointer[void], Dest: pointer[pointer[void]]) extern
 function LLVMStructGetTypeAtIndex(StructTy: pointer[void], i: u32) returns pointer[void] extern
-function LLVMIsPackedStruct(StructTy: pointer[void]) returns int extern
-function LLVMIsOpaqueStruct(StructTy: pointer[void]) returns int extern
-function LLVMIsLiteralStruct(StructTy: pointer[void]) returns int extern
+function LLVMIsPackedStruct(StructTy: pointer[void]) returns i32 extern
+function LLVMIsOpaqueStruct(StructTy: pointer[void]) returns i32 extern
+function LLVMIsLiteralStruct(StructTy: pointer[void]) returns i32 extern
 
 ; ===========================================================================
 ; Type Operations - Function Types
 ; ===========================================================================
 function LLVMFunctionType(ReturnType: pointer[void], ParamTypes: pointer[pointer[void]], ParamCount: u32, IsVarArg: i32) returns pointer[void] extern
-function LLVMIsFunctionVarArg(FunctionTy: pointer[void]) returns int extern
+function LLVMIsFunctionVarArg(FunctionTy: pointer[void]) returns i32 extern
 function LLVMGetReturnType(FunctionTy: pointer[void]) returns pointer[void] extern
-function LLVMCountParamTypes(FunctionTy: pointer[void]) returns int extern
+function LLVMCountParamTypes(FunctionTy: pointer[void]) returns u32 extern
 function LLVMGetParamTypes(FunctionTy: pointer[void], Dest: pointer[pointer[void]]) extern
 
 ; ===========================================================================
@@ -142,8 +142,8 @@ define LLVMVectorTypeKind: int 13
 define LLVMMetadataTypeKind: int 14
 define LLVMTokenTypeKind: int 16
 
-function LLVMGetTypeKind(Ty: pointer[void]) returns int extern
-function LLVMTypeIsSized(Ty: pointer[void]) returns int extern
+function LLVMGetTypeKind(Ty: pointer[void]) returns i32 extern
+function LLVMTypeIsSized(Ty: pointer[void]) returns i32 extern
 function LLVMGetTypeContext(Ty: pointer[void]) returns pointer[void] extern
 function LLVMPrintTypeToString(Val: pointer[void]) returns pointer[char] extern
 
@@ -151,14 +151,14 @@ function LLVMPrintTypeToString(Val: pointer[void]) returns pointer[char] extern
 ; Value Operations - General
 ; ===========================================================================
 function LLVMTypeOf(Val: pointer[void]) returns pointer[void] extern
-function LLVMGetValueKind(Val: pointer[void]) returns int extern
+function LLVMGetValueKind(Val: pointer[void]) returns i32 extern
 function LLVMGetValueName2(Val: pointer[void], Length: pointer[size_t]) returns pointer[const_char] extern
 function LLVMSetValueName2(Val: pointer[void], Name: pointer[const_char], NameLen: size_t) extern
 function LLVMPrintValueToString(Val: pointer[void]) returns pointer[char] extern
 function LLVMReplaceAllUsesWith(OldVal: pointer[void], NewVal: pointer[void]) extern
-function LLVMIsConstant(Val: pointer[void]) returns int extern
-function LLVMIsUndef(Val: pointer[void]) returns int extern
-function LLVMIsPoison(Val: pointer[void]) returns int extern
+function LLVMIsConstant(Val: pointer[void]) returns i32 extern
+function LLVMIsUndef(Val: pointer[void]) returns i32 extern
+function LLVMIsPoison(Val: pointer[void]) returns i32 extern
 
 ; ===========================================================================
 ; Constant Operations - Scalar Constants
@@ -180,14 +180,14 @@ function LLVMConstNull(Ty: pointer[void]) returns pointer[void] extern
 function LLVMConstAllOnes(Ty: pointer[void]) returns pointer[void] extern
 function LLVMGetUndef(Ty: pointer[void]) returns pointer[void] extern
 function LLVMGetPoison(Ty: pointer[void]) returns pointer[void] extern
-function LLVMIsNull(Val: pointer[void]) returns int extern
+function LLVMIsNull(Val: pointer[void]) returns i32 extern
 
 ; ===========================================================================
 ; Constant Operations - String Constants
 ; ===========================================================================
 function LLVMConstStringInContext(C: pointer[void], Str: pointer[const_char], Length: u32, DontNullTerminate: i32) returns pointer[void] extern
 function LLVMConstString(Str: pointer[const_char], Length: u32, DontNullTerminate: i32) returns pointer[void] extern
-function LLVMIsConstantString(c: pointer[void]) returns int extern
+function LLVMIsConstantString(c: pointer[void]) returns i32 extern
 function LLVMGetAsString(c: pointer[void], Length: pointer[size_t]) returns pointer[const_char] extern
 
 ; ===========================================================================
@@ -221,14 +221,14 @@ function LLVMConstIntCast(ConstantVal: pointer[void], ToType: pointer[void], isS
 ; Global Values
 ; ===========================================================================
 function LLVMGetGlobalParent(Global: pointer[void]) returns pointer[void] extern
-function LLVMIsDeclaration(Global: pointer[void]) returns int extern
-function LLVMGetLinkage(Global: pointer[void]) returns int extern
+function LLVMIsDeclaration(Global: pointer[void]) returns i32 extern
+function LLVMGetLinkage(Global: pointer[void]) returns i32 extern
 function LLVMSetLinkage(Global: pointer[void], Linkage: i32) extern
 function LLVMGetSection(Global: pointer[void]) returns pointer[const_char] extern
 function LLVMSetSection(Global: pointer[void], Section: pointer[const_char]) extern
-function LLVMGetVisibility(Global: pointer[void]) returns int extern
+function LLVMGetVisibility(Global: pointer[void]) returns i32 extern
 function LLVMSetVisibility(Global: pointer[void], Viz: i32) extern
-function LLVMGetAlignment(V: pointer[void]) returns int extern
+function LLVMGetAlignment(V: pointer[void]) returns u32 extern
 function LLVMSetAlignment(V: pointer[void], Bytes: u32) extern
 
 ; Linkage types
@@ -257,9 +257,9 @@ function LLVMGetPreviousGlobal(GlobalVar: pointer[void]) returns pointer[void] e
 function LLVMDeleteGlobal(GlobalVar: pointer[void]) extern
 function LLVMGetInitializer(GlobalVar: pointer[void]) returns pointer[void] extern
 function LLVMSetInitializer(GlobalVar: pointer[void], ConstantVal: pointer[void]) extern
-function LLVMIsThreadLocal(GlobalVar: pointer[void]) returns int extern
+function LLVMIsThreadLocal(GlobalVar: pointer[void]) returns i32 extern
 function LLVMSetThreadLocal(GlobalVar: pointer[void], IsThreadLocal: i32) extern
-function LLVMIsGlobalConstant(GlobalVar: pointer[void]) returns int extern
+function LLVMIsGlobalConstant(GlobalVar: pointer[void]) returns i32 extern
 function LLVMSetGlobalConstant(GlobalVar: pointer[void], IsConstant: i32) extern
 function LLVMGetValueType(GlobalVar: pointer[void]) returns pointer[void] extern
 
@@ -275,7 +275,7 @@ function LLVMGetPreviousFunction(Fn: pointer[void]) returns pointer[void] extern
 function LLVMDeleteFunction(Fn: pointer[void]) extern
 
 ; Function parameters
-function LLVMCountParams(Fn: pointer[void]) returns int extern
+function LLVMCountParams(Fn: pointer[void]) returns u32 extern
 function LLVMGetParams(Fn: pointer[void], Params: pointer[pointer[void]]) extern
 function LLVMGetParam(Fn: pointer[void], Index: u32) returns pointer[void] extern
 
@@ -283,12 +283,12 @@ function LLVMGetParam(Fn: pointer[void], Index: u32) returns pointer[void] exter
 ; Basic Block Operations
 ; ===========================================================================
 function LLVMBasicBlockAsValue(BB: pointer[void]) returns pointer[void] extern
-function LLVMValueIsBasicBlock(Val: pointer[void]) returns int extern
+function LLVMValueIsBasicBlock(Val: pointer[void]) returns i32 extern
 function LLVMValueAsBasicBlock(Val: pointer[void]) returns pointer[void] extern
 function LLVMGetBasicBlockName(BB: pointer[void]) returns pointer[const_char] extern
 function LLVMGetBasicBlockParent(BB: pointer[void]) returns pointer[void] extern
 function LLVMGetBasicBlockTerminator(BB: pointer[void]) returns pointer[void] extern
-function LLVMCountBasicBlocks(Fn: pointer[void]) returns int extern
+function LLVMCountBasicBlocks(Fn: pointer[void]) returns u32 extern
 function LLVMGetBasicBlocks(Fn: pointer[void], BasicBlocks: pointer[pointer[void]]) extern
 function LLVMGetFirstBasicBlock(Fn: pointer[void]) returns pointer[void] extern
 function LLVMGetLastBasicBlock(Fn: pointer[void]) returns pointer[void] extern
@@ -316,4 +316,4 @@ function LLVMGetNextInstruction(Inst: pointer[void]) returns pointer[void] exter
 function LLVMGetPreviousInstruction(Inst: pointer[void]) returns pointer[void] extern
 function LLVMInstructionRemoveFromParent(Inst: pointer[void]) extern
 function LLVMInstructionEraseFromParent(Inst: pointer[void]) extern
-function LLVMGetInstructionOpcode(Inst: pointer[void]) returns int extern
+function LLVMGetInstructionOpcode(Inst: pointer[void]) returns i32 extern

@@ -4,7 +4,7 @@
 ; Note: Using i64 for size parameters since Scaly integer literals are signed
 function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
 function free(ptr: pointer[void]) extern
-function exit(code: int) extern
+function exit(code: i32) extern
 procedure abort() extern
 
 ; I/O and string functions
@@ -15,37 +15,37 @@ function write(fd: int, buf: pointer[void], count: size_t) returns size_t extern
 ; scaly.ll (fixpoint-safe); consumers (e.g. the LSP stdin transport)
 ; reference it and get the declaration in their own module.
 function read(fd: int, buf: pointer[void], count: size_t) returns size_t extern
-function memset(dest: pointer[void], value: int, count: size_t) returns pointer[void] extern
+function memset(dest: pointer[void], value: i32, count: size_t) returns pointer[void] extern
 function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
 
 ; File I/O functions (stdio.h)
 function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
-function fclose(stream: pointer[void]) returns int extern
+function fclose(stream: pointer[void]) returns i32 extern
 function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
 function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
-function fseek(stream: pointer[void], offset: int, origin: int) returns int extern
+function fseek(stream: pointer[void], offset: int, origin: int) returns i32 extern
 function ftell(stream: pointer[void]) returns int extern
 function rewind(stream: pointer[void]) extern
 
 ; Directory functions (dirent.h)
 function opendir(name: pointer[const_char]) returns pointer[void] extern
-function closedir(dirp: pointer[void]) returns int extern
+function closedir(dirp: pointer[void]) returns i32 extern
 
 ; File system functions (unistd.h)
-function access(path: pointer[const_char], mode: int) returns int extern
-function unlink(path: pointer[const_char]) returns int extern
-function rmdir(path: pointer[const_char]) returns int extern
-function mkdir(path: pointer[const_char], mode: int) returns int extern
+function access(path: pointer[const_char], mode: int) returns i32 extern
+function unlink(path: pointer[const_char]) returns i32 extern
+function rmdir(path: pointer[const_char]) returns i32 extern
+function mkdir(path: pointer[const_char], mode: int) returns i32 extern
 
 ; Subprocess spawn (stdlib.h) - runs command via /bin/sh
-function system(command: pointer[const_char]) returns int extern
+function system(command: pointer[const_char]) returns i32 extern
 
 ; Path functions (libgen.h)
 function dirname(path: pointer[char]) returns pointer[char] extern
 function basename(path: pointer[char]) returns pointer[char] extern
 
 ; String comparison (string.h)
-function strcmp(s1: pointer[const_char], s2: pointer[const_char]) returns int extern
+function strcmp(s1: pointer[const_char], s2: pointer[const_char]) returns i32 extern
 function memcmp(s1: pointer[void], s2: pointer[void], n: size_t) returns i32 extern
 
 ; Page allocator entry points are defined in scaly/memory/root_pages.scaly

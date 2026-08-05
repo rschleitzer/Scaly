@@ -18,8 +18,8 @@ use scaly.memory.root_pages.getenv
 ; LLVMGetNamedFunction lookup failed and the system()/unlink() calls —
 ; the entire link step — silently dropped from stage-2's cli.run. Same
 ; in-file pattern as Planner.scaly's local `exit` extern (line 143).
-function system(command: pointer[const_char]) returns int extern
-function unlink(path: pointer[const_char]) returns int extern
+function system(command: pointer[const_char]) returns i32 extern
+function unlink(path: pointer[const_char]) returns i32 extern
 
 ; Compiler module imports
 use scalyc.compiler.Modeler
