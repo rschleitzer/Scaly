@@ -150,7 +150,7 @@ define symindex
         set s.blob_len: 0
 
         let len blob.get_length()
-        if len > (0 as size_t)
+        if len > 0
         {
             let dst malloc(len) as pointer[u8]
             if dst <> null
@@ -172,7 +172,7 @@ define symindex
         set s.path_len: 0
 
         let len path.get_length()
-        if len > (0 as size_t)
+        if len > 0
         {
             let dst malloc(len) as pointer[u8]
             if dst <> null

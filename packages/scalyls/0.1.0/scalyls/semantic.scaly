@@ -81,9 +81,9 @@ define semantic
         while i < n
         {
             let c packed.get i
-            if c = (0x20 as u8)
+            if c = 0x20
                 set seen_space: true
-            if c <> (0x20 as u8)
+            if c <> 0x20
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
@@ -103,13 +103,13 @@ define semantic
         if offset >= len
             return ""
         let b source.get offset
-        if b = (0x20 as u8)
+        if b = 0x20
             return ""
-        if b = (0x09 as u8)
+        if b = 0x09
             return ""
-        if b = (0x0A as u8)
+        if b = 0x0A
             return ""
-        if b = (0x0D as u8)
+        if b = 0x0D
             return ""
         let path diagnostics.strip_uri uri
         semantic.resolve_at(source, path, 0, offset)
@@ -123,7 +123,7 @@ define semantic
     {
         let ty semantic.semantic_type_packed(source, uri, packed)
         var sb StringBuilder()
-        if ty.get_length() > (0 as size_t)
+        if ty.get_length() > 0
         {
             sb.append(0x31 as char)                ; '1' = hit
             sb.append ty
@@ -482,7 +482,7 @@ define semantic
             if semantic.contains(bi.loc, offset)
             {
                 let tn semantic.type_name(*bi.item_type)
-                if tn.get_length() > (0 as size_t)
+                if tn.get_length() > 0
                     return ResolveResult(true, bi.loc.end - bi.loc.start, tn)
             }
         }
@@ -526,12 +526,12 @@ define semantic
         ; RECEIVER mode (completion): the innermost expression's OWN base type
         ; (ignoring member access / the enclosing call) — `g.member` reports
         ; g's type, not the member-access result.
-        if mode = (2 as size_t)
+        if mode = 2
         {
             if child.found
                 return child
             let bt semantic.expr_type(op.expr, op.result_type)
-            if bt.get_length() > (0 as size_t)
+            if bt.get_length() > 0
                 return ResolveResult(true, self_width, bt)
             return semantic.none()
         }
@@ -545,7 +545,7 @@ define semantic
         ; Otherwise this operand, when it has a usable (non-void) type. On an
         ; equal-width tie this beats the deeper match — the call over its
         ; same-span receiver.
-        if self_type.get_length() > (0 as size_t)
+        if self_type.get_length() > 0
             return ResolveResult(true, self_width, self_type)
         ; This operand has no usable type (a void block wrapper): defer to the
         ; deeper match even at equal width.
@@ -800,7 +800,7 @@ define semantic
         if op.member_access <> null
         {
             let ma (*op.member_access)
-            if ma.length > (0 as size_t)
+            if ma.length > 0
             {
                 let lp ma.get(ma.length - (1 as size_t))
                 if lp <> null
@@ -851,7 +851,7 @@ define semantic
     {
         if pt.variable <> null
             return ""
-        if pt.name.get_length() = (0 as size_t)
+        if pt.name.get_length() = 0
             return ""
         if pt.name = "void"
             return ""

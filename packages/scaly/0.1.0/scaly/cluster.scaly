@@ -179,7 +179,7 @@ define Cluster
     procedure accept(lfd: i32) returns pointer[NodePeer]
     {
         let fd Io.accept(lfd)
-        if fd < (0 as i32)
+        if fd < 0
             return null
         Cluster.setup(fd)
     }
@@ -190,7 +190,7 @@ define Cluster
     procedure connect(host: pointer[const_char], port: i32) returns pointer[NodePeer]
     {
         let fd Io.connect_host(host, port)
-        if fd < (0 as i32)
+        if fd < 0
             return null
         Cluster.setup(fd)
     }
@@ -212,10 +212,10 @@ define Cluster
         }
         var inb u8[24]
         var got 0 as size_t
-        while got < (24 as size_t)
+        while got < 24
         {
             let r Io.read(fd, ((inb as size_t) + got) as pointer[void], (24 as size_t) - got)
-            if r <= (0 as i64)
+            if r <= 0
             {
                 close(fd)
                 return null
@@ -515,7 +515,7 @@ define Cluster
             }
             else
             {
-                if r <= (0 as i64)
+                if r <= 0
                     return false
                 set done: done + (r as size_t)
                 set p.last_rx: scaly_eio_now_ns()
@@ -540,7 +540,7 @@ define Cluster
         var bad false
         if kind <> NODE_FRAME_DATA
             set bad: true
-        if len < (32 as size_t)
+        if len < 32
             set bad: true
         if len > NODE_MAX_FRAME
             set bad: true
@@ -604,14 +604,14 @@ define Cluster
                 Cluster.poll_in(fd, NODE_HEARTBEAT_MS as i32)
             else
             {
-                if r <= (0 as i64)
+                if r <= 0
                 {
                     Cluster.teardown(p, NODE_DOWN_SUSPECT)
                     break
                 }
                 set got: got + (r as size_t)
                 set p.last_rx: scaly_eio_now_ns()
-                if got = (24 as size_t)
+                if got = 24
                 {
                     set got: 0
                     if Cluster.dispatch(p, hdr as pointer[u64]) = false

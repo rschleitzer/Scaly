@@ -18933,7 +18933,7 @@ define Planner
         ; stage-0 index-0 if in Planner.cpp::planBinding.
         function strip_leading_eq(ops: Vector[PlannedOperand]) returns Vector[PlannedOperand]
         {
-            if ops.length > (0 as size_t)
+            if ops.length > 0
             {
                 let f0 ops.get 0
                 if f0 <> null
@@ -19754,7 +19754,7 @@ define Planner
                     if planned_target_collapsed.member_access <> null
                     {
                         let ma (*planned_target_collapsed.member_access)
-                        if ma.length > (0 as size_t)
+                        if ma.length > 0
                             set has_member: true
                     }
                     var external false
@@ -20309,7 +20309,7 @@ define Planner
                 if t.generics <> null
                 {
                     let gens (*t.generics)
-                    if gens.length > (0 as size_t)
+                    if gens.length > 0
                     {
                         let inner_ptr gens.get 0
                         if inner_ptr <> null
@@ -20335,7 +20335,7 @@ define Planner
                 if t.generics <> null
                 {
                     let gens_o (*t.generics)
-                    if gens_o.length > (0 as size_t)
+                    if gens_o.length > 0
                     {
                         let io_ptr gens_o.get 0
                         if io_ptr <> null
@@ -20368,7 +20368,7 @@ define Planner
             if op.member_access <> null
             {
                 let ma (*op.member_access)
-                if ma.length > (0 as size_t)
+                if ma.length > 0
                     return false
             }
             choose op.expr
@@ -20391,7 +20391,7 @@ define Planner
             if target.member_access <> null
             {
                 let ma (*target.member_access)
-                if ma.length > (0 as size_t)
+                if ma.length > 0
                     set has_member: true
             }
             choose target.expr
@@ -20522,7 +20522,7 @@ define Planner
                 if t.generics <> null
                 {
                     let gens (*t.generics)
-                    if gens.length > (0 as size_t)
+                    if gens.length > 0
                     {
                         let inner_ptr gens.get 0
                         if inner_ptr <> null
@@ -20550,7 +20550,7 @@ define Planner
                 if t.generics <> null
                 {
                     let gens_o (*t.generics)
-                    if gens_o.length > (0 as size_t)
+                    if gens_o.length > 0
                     {
                         let io_ptr gens_o.get 0
                         if io_ptr <> null
@@ -20655,7 +20655,7 @@ define Planner
                     if op.member_access <> null
                     {
                         let chain (*op.member_access)
-                        if chain.length > (0 as size_t)
+                        if chain.length > 0
                             if this.array_contains_name(local_tainted_struct_bindings, v.name)
                                 if Planner.is_reference_like(op.result_type)
                                     set result: true
@@ -20749,7 +20749,7 @@ define Planner
                 if t.generics <> null
                 {
                     let gens (*t.generics)
-                    if gens.length > (0 as size_t)
+                    if gens.length > 0
                     {
                         let inner_ptr gens.get 0
                         if inner_ptr <> null
@@ -20913,7 +20913,7 @@ define Planner
             if arg.member_access <> null
             {
                 let ma (*arg.member_access)
-                if ma.length > (0 as size_t)
+                if ma.length > 0
                     return false
             }
             choose arg.expr
@@ -21163,7 +21163,7 @@ define Planner
             if op0.member_access <> null
             {
                 let ma (*op0.member_access)
-                if ma.length > (0 as size_t)
+                if ma.length > 0
                     return
             }
             let bind_name (*binding.binding_item.name)
@@ -21216,7 +21216,7 @@ define Planner
             if op.member_access <> null
             {
                 let ma (*op.member_access)
-                if ma.length > (0 as size_t)
+                if ma.length > 0
                     return -1
             }
             choose op.expr
@@ -21296,7 +21296,7 @@ define Planner
                     if tgt.member_access <> null
                     {
                         let tma (*tgt.member_access)
-                        if tma.length > (0 as size_t)
+                        if tma.length > 0
                             set tgt_has_member: true
                     }
                     if tgt_has_member
@@ -21378,7 +21378,7 @@ define Planner
                 if arg.member_access <> null
                 {
                     let ma (*arg.member_access)
-                    if ma.length > (0 as size_t)
+                    if ma.length > 0
                         set arg_has_member: true
                 }
                 if arg_has_member = false
@@ -21402,7 +21402,7 @@ define Planner
                                                 if inner.member_access <> null
                                                 {
                                                     let ima (*inner.member_access)
-                                                    if ima.length > (0 as size_t)
+                                                    if ima.length > 0
                                                         set inner_has_member: true
                                                 }
                                                 if inner_has_member = false
@@ -21750,7 +21750,7 @@ define Planner
                         if dest_op.member_access <> null
                         {
                             let dma (*dest_op.member_access)
-                            if dma.length > (0 as size_t)
+                            if dma.length > 0
                                 set dest_has_member: true
                         }
                         var dest_param_index: int -1
@@ -22270,7 +22270,7 @@ define Planner
             if op.member_access <> null
             {
                 let ma (*op.member_access)
-                if ma.length > (0 as size_t)
+                if ma.length > 0
                     return
             }
             choose op.expr
@@ -22309,7 +22309,7 @@ define Planner
             if op.member_access <> null
             {
                 let ma (*op.member_access)
-                if ma.length > (0 as size_t)
+                if ma.length > 0
                     return
             }
             choose op.expr
@@ -22466,7 +22466,7 @@ define Planner
                         set is_send: true
                     if is_send
                         if call.args <> null
-                            if call.args.length >= (2 as size_t)
+                            if call.args.length >= 2
                             {
                                 let mp_ call.args.get(call.args.length - (1 as size_t))
                                 if mp_ <> null
@@ -22694,7 +22694,7 @@ define Planner
                         if top.member_access <> null
                         {
                             let ma (*top.member_access)
-                            if ma.length > (0 as size_t)
+                            if ma.length > 0
                                 set bare: false
                         }
                         if bare
@@ -24178,7 +24178,7 @@ define Planner
                 return false
             let b n.get_buffer()
             let c (*b)
-            (c >= (65 as u8)) && (c <= (90 as u8))
+            (c >= 65) && (c <= 90)
         }
         ; If `ops` is a `RECV.get(...)` call (a dotted Type name ["RECV","get"]),
         ; return RECV (deep-copied onto rp); otherwise the empty string. Used to
@@ -24556,9 +24556,9 @@ define Planner
                                                 let c0b c0s.get_buffer()
                                                 let c0c (*c0b)
                                                 var c0_ident false
-                                                if (c0c >= (97 as u8)) && (c0c <= (122 as u8))
+                                                if (c0c >= 97) && (c0c <= 122)
                                                     set c0_ident: true
-                                                if c0c = (95 as u8)
+                                                if c0c = 95
                                                     set c0_ident: true
                                                 if c0_ident
                                                     set is_call: true
@@ -31669,7 +31669,7 @@ define Planner
         var char_len: size_t 0
 
         ; ASCII: 0xxxxxxx
-        if (b0 & (0x80 as u8)) = (0 as u8)
+        if (b0 & (0x80 as u8)) = 0
         {
             set code_point: b0 as int
             set char_len: 1
@@ -31678,12 +31678,12 @@ define Planner
         ; 2-byte: 110xxxxx 10xxxxxx
         if char_len = 0
         {
-            if (b0 & (0xE0 as u8)) = (0xC0 as u8)
+            if (b0 & (0xE0 as u8)) = 0xC0
             {
                 if len >= 2
                 {
                     let b1 *(buf + 1)
-                    if (b1 & (0xC0 as u8)) = (0x80 as u8)
+                    if (b1 & (0xC0 as u8)) = 0x80
                     {
                         let cp (((b0 & (0x1F as u8)) as int) << 6) | ((b1 & (0x3F as u8)) as int)
                         if cp >= 0x80
@@ -31699,15 +31699,15 @@ define Planner
         ; 3-byte: 1110xxxx 10xxxxxx 10xxxxxx
         if char_len = 0
         {
-            if (b0 & (0xF0 as u8)) = (0xE0 as u8)
+            if (b0 & (0xF0 as u8)) = 0xE0
             {
                 if len >= 3
                 {
                     let b1 *(buf + 1)
                     let b2 *(buf + 2)
-                    if (b1 & (0xC0 as u8)) = (0x80 as u8)
+                    if (b1 & (0xC0 as u8)) = 0x80
                     {
-                        if (b2 & (0xC0 as u8)) = (0x80 as u8)
+                        if (b2 & (0xC0 as u8)) = 0x80
                         {
                             let cp (((b0 & (0x0F as u8)) as int) << 12) | (((b1 & (0x3F as u8)) as int) << 6) | ((b2 & (0x3F as u8)) as int)
                             if cp >= 0x800
@@ -31724,18 +31724,18 @@ define Planner
         ; 4-byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
         if char_len = 0
         {
-            if (b0 & (0xF8 as u8)) = (0xF0 as u8)
+            if (b0 & (0xF8 as u8)) = 0xF0
             {
                 if len >= 4
                 {
                     let b1 *(buf + 1)
                     let b2 *(buf + 2)
                     let b3 *(buf + 3)
-                    if (b1 & (0xC0 as u8)) = (0x80 as u8)
+                    if (b1 & (0xC0 as u8)) = 0x80
                     {
-                        if (b2 & (0xC0 as u8)) = (0x80 as u8)
+                        if (b2 & (0xC0 as u8)) = 0x80
                         {
-                            if (b3 & (0xC0 as u8)) = (0x80 as u8)
+                            if (b3 & (0xC0 as u8)) = 0x80
                             {
                                 let cp (((b0 & (0x07 as u8)) as int) << 18) | (((b1 & (0x3F as u8)) as int) << 12) | (((b2 & (0x3F as u8)) as int) << 6) | ((b3 & (0x3F as u8)) as int)
                                 if cp >= 0x10000
@@ -32454,9 +32454,9 @@ define Planner
         if name.get_length() = 1
         {
             let c name.get 0
-            if c >= (65 as u8)
+            if c >= 65
             {
-                if c <= (90 as u8)
+                if c <= 90
                     return true
             }
         }

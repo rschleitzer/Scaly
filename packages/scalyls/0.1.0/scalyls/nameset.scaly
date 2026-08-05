@@ -128,7 +128,7 @@ define nameset
     ; wins regardless of order. A full table drops the name silently.
     procedure insert(slots: pointer[NameSlot], cap: size_t, name_ptr: pointer[u8], name_len: size_t, h: size_t, kind: i64)
     {
-        if name_len > (0 as size_t)
+        if name_len > 0
         {
             let mask cap - (1 as size_t)
             var idx h & mask
@@ -163,7 +163,7 @@ define nameset
     procedure insert_name_list(slots: pointer[NameSlot], cap: size_t, list: String, kind: i64)
     {
         let llen list.get_length()
-        if llen > (0 as size_t)
+        if llen > 0
         {
             let base list.get_buffer()
             if base <> null
@@ -171,7 +171,7 @@ define nameset
                 var i: size_t 0
                 while i < llen
                 {
-                    if list.get(i) = (10 as u8)
+                    if list.get(i) = 10
                     {
                         set i: i + (1 as size_t)
                         continue
@@ -179,12 +179,12 @@ define nameset
                     var j i
                     while j < llen
                     {
-                        if list.get(j) = (10 as u8)
+                        if list.get(j) = 10
                             break
                         set j: j + (1 as size_t)
                     }
                     let seglen j - i
-                    if seglen > (0 as size_t)
+                    if seglen > 0
                     {
                         let h nameset.hash_ptr(base + i, seglen)
                         nameset.insert(slots, cap, base + i, seglen, h, kind)
@@ -201,7 +201,7 @@ define nameset
         if slots <> null
         {
             let tlen end - start
-            if tlen > (0 as size_t)
+            if tlen > 0
             {
                 let sbuf source.get_buffer()
                 if sbuf <> null

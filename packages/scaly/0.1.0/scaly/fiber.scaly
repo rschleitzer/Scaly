@@ -646,7 +646,7 @@ define Fiber
             let size *(((e as size_t) + (8 as size_t)) as pointer[size_t])
             let base ((e as size_t) - guard_page_size) as pointer[void]
             let mrc munmap(base, size)
-            if mrc <> (0 as i32)
+            if mrc <> 0
                 exit 105
             set fiber_stacks_pooled: fiber_stacks_pooled - (1 as i64)
             set e: next
@@ -690,7 +690,7 @@ define Fiber
             if (base as i64) = ((0 - 1) as i64)
                 exit 103
             let grc mprotect(base, guard_size, PROT_NONE)
-            if grc <> (0 as i32)
+            if grc <> 0
                 exit 104
         }
         let top ((base as size_t) + size) as pointer[void]
@@ -809,7 +809,7 @@ define Fiber
         else
         {
             let mrc munmap(f.stack_base, f.stack_size)
-            if mrc <> (0 as i32)
+            if mrc <> 0
                 exit 105
         }
         set fiber_pages_freed: fiber_pages_freed + (pages_freed as i64)
@@ -1039,7 +1039,7 @@ define Scheduler
         let s current_scheduler as pointer[Scheduler]
         let hp &s.inject
         var h scaly_atomic_load_u64(hp)
-        if h = (0 as u64)
+        if h = 0
             return
         repeat
         {
@@ -1139,7 +1139,7 @@ define Scheduler
             let e0 scaly_atomic_load_u64(ep)
             scaly_atomic_add_u64(bp, 1 as u64)
             set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[void], 64 as i32, CHAN_DEADLOCK_MS)
-            if n = (0 as i32)
+            if n = 0
             {
                 let e1 scaly_atomic_load_u64(ep)
                 if e1 = e0
@@ -1159,13 +1159,13 @@ define Scheduler
         while i < (n as i64)
         {
             let raw *(((tagbuf as size_t) + ((i * 8) as size_t)) as pointer[size_t])
-            if raw = (0 as size_t)
+            if raw = 0
             {
                 set main_woke: true
             }
             else
             {
-                if raw = (1 as size_t)
+                if raw = 1
                 {
                     ; The wake handle fired (milestone 2.4): a remote
                     ; thread pushed onto the inject queue or closed a
@@ -1345,7 +1345,7 @@ procedure io_worker(arg: pointer[void]) returns pointer[void]
         IoPool.release(pl)
         var byte u8[1]
         let n scaly_eio_read(pl.pipe_read, byte as pointer[void], 1 as size_t)
-        if n <> (1 as i64)
+        if n <> 1
             return null
         IoPool.acquire(pl)
         set pl.idle: pl.idle - (1 as i64)
@@ -1428,7 +1428,7 @@ define Io
     procedure set_nonblocking(fd: i32)
     {
         let rc scaly_eio_set_nonblocking(fd)
-        if rc <> (0 as i32)
+        if rc <> 0
             exit 107
     }
 
@@ -1471,7 +1471,7 @@ define Io
         if me = null
         {
             let arc scaly_eio_arm(q, fd, wr, null)
-            if arc <> (0 as i32)
+            if arc <> 0
                 exit 107
             ; The armed fd makes this an EXTERNAL I/O wait: count it, so
             ; poll_io blocks unbounded instead of taking the channel-
@@ -1495,7 +1495,7 @@ define Io
             }
         }
         let arc2 scaly_eio_arm(q, fd, wr, me as pointer[void])
-        if arc2 <> (0 as i32)
+        if arc2 <> 0
             exit 107
         let s current_scheduler as pointer[Scheduler]
         set s.blocked: s.blocked + 1
@@ -1599,7 +1599,7 @@ define Io
         while done < count
         {
             let r Io.tcp_write(fd, ((buf as size_t) + done) as pointer[void], count - done)
-            if r <= (0 as i64)
+            if r <= 0
                 return false
             set done: done + (r as size_t)
         }
@@ -1616,7 +1616,7 @@ define Io
         while done < count
         {
             let r Io.write(fd, ((buf as size_t) + done) as pointer[void], count - done)
-            if r <= (0 as i64)
+            if r <= 0
                 return false
             set done: done + (r as size_t)
         }
@@ -1644,7 +1644,7 @@ define Io
             set pl: p.allocate(sizeof IoPool, alignof IoPool) as pointer[IoPool]
             var fds u8[8]
             let rc pipe(fds as pointer[i32])
-            if rc <> (0 as i32)
+            if rc <> 0
                 exit 111
             set pl.lock: 0
             set pl.head: null
@@ -1703,7 +1703,7 @@ define Io
             set pl.tail: w
         }
         var grow false
-        if pl.idle = (0 as i64)
+        if pl.idle = 0
         {
             if pl.workers < IO_POOL_WORKERS
             {
@@ -2016,7 +2016,7 @@ define Channel
         ; needs the scheduler). Unbounded and scheduler-less senders skip
         ; it: they never park on the FIFO.
         if me <> null
-            if m.capacity > (0 as i64)
+            if m.capacity > 0
                 Io.ensure_wake()
         repeat
         {
@@ -2027,7 +2027,7 @@ define Channel
                 exit 110
             }
             var room true
-            if m.capacity > (0 as i64)
+            if m.capacity > 0
                 if m.count >= m.capacity
                     set room: false
             if room
@@ -2113,7 +2113,7 @@ define Channel
     {
         Channel.acquire(m)
         set m.senders: m.senders - (1 as i64)
-        if m.senders > (0 as i64)
+        if m.senders > 0
         {
             Channel.release(m)
             return
@@ -2248,7 +2248,7 @@ define Channel
             ; 0 = main-context own-event tag, 1 = wake sentinel (the
             ; caller re-checks its queue on return); > 1 = an Io-parked
             ; task's record.
-            if raw > (1 as size_t)
+            if raw > 1
             {
                 let t raw as pointer[SchedTask]
                 Scheduler.enqueue(t)
@@ -2299,7 +2299,7 @@ define Channel
             set m.recv_sched: current_scheduler
             Channel.release(m)
             let remaining deadline - scaly_eio_now_ns()
-            if remaining <= (0 as i64)
+            if remaining <= 0
             {
                 set *timed_out: true
                 return null
@@ -2311,7 +2311,7 @@ define Channel
                     var slice (remaining + (999999 as i64)) / (1000000 as i64)
                     if slice > (CHAN_DEADLOCK_MS as i64)
                         set slice: CHAN_DEADLOCK_MS as i64
-                    if slice < (1 as i64)
+                    if slice < 1
                         set slice: 1
                     Channel.timed_poll(slice as i32)
                 }
@@ -2354,7 +2354,7 @@ define Thread
         var handle u8[8]
         let hp handle as pointer[size_t]
         let rc pthread_create(hp, null, &scaly_thread_start, cell as pointer[void])
-        if rc <> (0 as i32)
+        if rc <> 0
             exit 109
         *hp
     }
@@ -2363,7 +2363,7 @@ define Thread
     procedure join(t: size_t)
     {
         let rc pthread_join(t, null)
-        if rc <> (0 as i32)
+        if rc <> 0
             exit 109
     }
 }
@@ -2396,7 +2396,7 @@ define TaskGroup
         set g.active: 0
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
-        if rc <> (0 as i32)
+        if rc <> 0
             exit 112
         set g.pipe_read: *(fds as pointer[i32])
         set g.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
@@ -2418,7 +2418,7 @@ define TaskGroup
         let prev scaly_atomic_add_u64(ap, 1 as u64)
         let pp &g.pending
         let old scaly_atomic_add_u64(pp, (0 - 1) as u64)
-        if old = (1 as u64)
+        if old = 1
         {
             var one u8[1]
             set *(one as pointer[u8]): 1
@@ -2438,7 +2438,7 @@ define TaskGroup
         {
             var byte u8[1]
             let n scaly_eio_read(g.pipe_read, byte as pointer[void], 1 as size_t)
-            if n <> (1 as i64)
+            if n <> 1
                 exit 112
         }
     }
@@ -2555,7 +2555,7 @@ define TaskPool
     procedure create(nworkers: i64) returns pointer[TaskPool]
     {
         var n nworkers
-        if n < (1 as i64)
+        if n < 1
             set n: 1
         let p Page.allocate_page_traced("TaskPool.pool_page")
         let pl p.allocate(sizeof TaskPool, alignof TaskPool) as pointer[TaskPool]
@@ -2565,7 +2565,7 @@ define TaskPool
         set pl.submitted: 0
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
-        if rc <> (0 as i32)
+        if rc <> 0
             exit 112
         set pl.pipe_read: *(fds as pointer[i32])
         set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
@@ -2665,7 +2665,7 @@ define TaskPool
                 TaskDeque.release(d)
                 if w <> null
                 {
-                    if k > (0 as i64)
+                    if k > 0
                     {
                         let sp &pl.stolen
                         let old scaly_atomic_add_u64(sp, 1 as u64)
@@ -2750,7 +2750,7 @@ procedure task_worker(arg: pointer[void]) returns pointer[void]
     {
         var byte u8[1]
         let n scaly_eio_read(pl.pipe_read, byte as pointer[void], 1 as size_t)
-        if n <> (1 as i64)
+        if n <> 1
             return null
         let w TaskPool.take(pl, me)
         let res scaly_call_ptr(w.fn, w.arg)

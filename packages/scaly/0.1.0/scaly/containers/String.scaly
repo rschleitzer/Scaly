@@ -29,7 +29,7 @@ define String (data: pointer[u8](null))
         ; verifying object path, an .ll round-trip (Step D seed) rejects it.
         var rest length
         var counter: size_t 0
-        while rest >= (0x80 as size_t)
+        while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
@@ -42,7 +42,7 @@ define String (data: pointer[u8](null))
         set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
-        while wrest >= (0x80 as size_t)
+        while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
@@ -54,7 +54,7 @@ define String (data: pointer[u8](null))
 
     init(other: pointer[const_char], length: size_t)
     {
-        if length = (0 as size_t)
+        if length = 0
         {
             set data: null
             return
@@ -62,7 +62,7 @@ define String (data: pointer[u8](null))
 
         var rest length
         var counter: size_t 0
-        while rest >= (0x80 as size_t)
+        while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
@@ -73,7 +73,7 @@ define String (data: pointer[u8](null))
         set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
-        while wrest >= (0x80 as size_t)
+        while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
@@ -89,7 +89,7 @@ define String (data: pointer[u8](null))
         ; Same encoding as String(pointer, length)
         var rest other.length
         var counter: size_t 0
-        while rest >= (0x80 as size_t)
+        while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
@@ -100,7 +100,7 @@ define String (data: pointer[u8](null))
         set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest other.length
         var wi: size_t 0
-        while wrest >= (0x80 as size_t)
+        while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
@@ -116,7 +116,7 @@ define String (data: pointer[u8](null))
     init(c_string: pointer[const_char])
     {
         let length strlen c_string
-        if length = (0 as size_t)
+        if length = 0
         {
             set data: null
             return
@@ -124,7 +124,7 @@ define String (data: pointer[u8](null))
 
         var rest length
         var counter: size_t 0
-        while rest >= (0x80 as size_t)
+        while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
@@ -135,7 +135,7 @@ define String (data: pointer[u8](null))
         set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
-        while wrest >= (0x80 as size_t)
+        while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
@@ -167,7 +167,7 @@ define String (data: pointer[u8](null))
 
             let byte *(other.data + index)
             set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-            if (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = 0
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -204,7 +204,7 @@ define String (data: pointer[u8](null))
 
             var byte: u8 *(data + index)
             set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-            if (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = 0
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -232,7 +232,7 @@ define String (data: pointer[u8](null))
 
                 var byte: u8 *(data + index)
                 set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-                if (byte & (0x80 as u8)) = (0 as u8)
+                if (byte & (0x80 as u8)) = 0
                     break
 
                 set bit_count: bit_count + (7 as size_t)
@@ -267,7 +267,7 @@ define String (data: pointer[u8](null))
 
             var byte: u8 *(data + index)
             set result: result | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = 0
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -308,7 +308,7 @@ define String (data: pointer[u8](null))
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-                if (byte & (0x80 as u8)) = (0 as u8)
+                if (byte & (0x80 as u8)) = 0
                     break
 
                 set bit_count: bit_count + (7 as size_t)
@@ -339,7 +339,7 @@ define String (data: pointer[u8](null))
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-                if (byte & (0x80 as u8)) = (0 as u8)
+                if (byte & (0x80 as u8)) = 0
                     break
 
                 set bit_count: bit_count + (7 as size_t)
@@ -368,7 +368,7 @@ define String (data: pointer[u8](null))
 
             var byte: u8 *(data + index)
             set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = 0
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -399,7 +399,7 @@ define String (data: pointer[u8](null))
 
             var byte: u8 *(data + index)
             set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = 0
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -429,7 +429,7 @@ define String (data: pointer[u8](null))
 
             var byte: u8 *(data + index)
             set string_length: string_length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = 0
                 break
 
             set bit_count: bit_count + (7 as size_t)

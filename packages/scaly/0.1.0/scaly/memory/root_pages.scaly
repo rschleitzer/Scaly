@@ -169,7 +169,7 @@ procedure scaly_eputi(n: i64)
 ; the runtime self-hostable (s189, same avoidance as s188's hashing).
 function hex_digit(nibble: i64) returns char
 {
-    if nibble < 10 as i64
+    if nibble < 10
         return (nibble + 48) as char       ; '0'..'9'
     (nibble - 10 + 97) as char             ; 'a'..'f'
 }
@@ -181,7 +181,7 @@ procedure scaly_eputp(p: pointer[void])
     set *(buf + 1): 120 as char
     var val p as u64
     var i 17 as i64
-    while i >= 2 as i64
+    while i >= 2
     {
         let nibble (val & (15 as u64)) as i64
         set *(buf + i): hex_digit(nibble)
@@ -248,7 +248,7 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader])
 ; hard "unknown identifier" diagnostic).
 function drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
 {
-    if b.dead = (0 as u64)
+    if b.dead = 0
         return false
     if b.bitmap <> BITMAP_ALL_FREE
         return false
@@ -390,32 +390,32 @@ function ctz_u64(x: u64) returns i32
     ; allocation pattern, s189). Cast to i32 only at return.
     var n 0 as i64
     var v x
-    if (v & (0xFFFFFFFF as u64)) = (0 as u64)
+    if (v & (0xFFFFFFFF as u64)) = 0
     {
         set n: n + 32
         set v: v >> (32 as u64)
     }
-    if (v & (0xFFFF as u64)) = (0 as u64)
+    if (v & (0xFFFF as u64)) = 0
     {
         set n: n + 16
         set v: v >> (16 as u64)
     }
-    if (v & (0xFF as u64)) = (0 as u64)
+    if (v & (0xFF as u64)) = 0
     {
         set n: n + 8
         set v: v >> (8 as u64)
     }
-    if (v & (0xF as u64)) = (0 as u64)
+    if (v & (0xF as u64)) = 0
     {
         set n: n + 4
         set v: v >> (4 as u64)
     }
-    if (v & (0x3 as u64)) = (0 as u64)
+    if (v & (0x3 as u64)) = 0
     {
         set n: n + 2
         set v: v >> (2 as u64)
     }
-    if (v & (0x1 as u64)) = (0 as u64)
+    if (v & (0x1 as u64)) = 0
         set n: n + 1
     n as i32
 }
@@ -766,7 +766,7 @@ procedure scaly_rt_register_heap_trace()
     ; Already armed (either way) — nothing to do. See the header comment:
     ; the 0→1/2 transition provably runs single-threaded, so plain
     ; loads/stores suffice here.
-    if heap_trace_state <> (0 as u64)
+    if heap_trace_state <> 0
         return
     ; Env var not set — leave trace disabled.
     if getenv("SCALY_TRACE_HEAP") = null
@@ -832,7 +832,7 @@ function scaly_heap_trace_find_or_add(hdr: pointer[HeapTraceHeader], name: point
 procedure scaly_heap_trace_alloc(site: pointer[const_char])
 {
     scaly_rt_register_heap_trace()
-    if heap_trace_state <> (2 as u64)
+    if heap_trace_state <> 2
         return
     let hdr heap_trace
     heap_trace_lock hdr
@@ -845,7 +845,7 @@ procedure scaly_heap_trace_alloc(site: pointer[const_char])
 procedure scaly_heap_trace_release(site: pointer[const_char])
 {
     scaly_rt_register_heap_trace()
-    if heap_trace_state <> (2 as u64)
+    if heap_trace_state <> 2
         return
     let hdr heap_trace
     heap_trace_lock hdr

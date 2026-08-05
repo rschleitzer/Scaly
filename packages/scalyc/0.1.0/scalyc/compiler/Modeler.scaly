@@ -47,7 +47,7 @@ function decode_escapes(raw: String) returns String
     var scan: size_t 0
     while scan < len
     {
-        if *(buf + scan) = (92 as u8)
+        if *(buf + scan) = 92
             set has_escape: true
         set scan: scan + (1 as size_t)
     }
@@ -59,7 +59,7 @@ function decode_escapes(raw: String) returns String
     while i < len
     {
         let b *(buf + i)
-        if b <> (92 as u8)
+        if b <> 92
         {
             sb.append(b as char)
             set i: i + (1 as size_t)
@@ -69,23 +69,23 @@ function decode_escapes(raw: String) returns String
             ; The lexer only emits a string token when every escape is
             ; one of " \ ' n r t 0 or \uXXXX, so buf[i + 1] exists.
             let e *(buf + i + 1)
-            if e = (110 as u8)
+            if e = 110
                 sb.append(10 as char)
-            if e = (116 as u8)
+            if e = 116
                 sb.append(9 as char)
-            if e = (114 as u8)
+            if e = 114
                 sb.append(13 as char)
-            if e = (48 as u8)
+            if e = 48
                 sb.append(0 as char)
-            if e = (34 as u8)
+            if e = 34
                 sb.append(34 as char)
-            if e = (39 as u8)
+            if e = 39
                 sb.append(39 as char)
-            if e = (92 as u8)
+            if e = 92
                 sb.append(92 as char)
-            if e = (96 as u8)
+            if e = 96
                 sb.append(96 as char)
-            if e = (117 as u8)
+            if e = 117
             {
                 ; \uXXXX - four lexer-validated hex digits to a code
                 ; point, then UTF-8 (plain arithmetic, no bit ops).
@@ -95,13 +95,13 @@ function decode_escapes(raw: String) returns String
                 {
                     let h *(buf + i + 2 + k)
                     var d: size_t 0
-                    if h <= (57 as u8)
+                    if h <= 57
                         set d: (h - (48 as u8)) as size_t
-                    if h >= (97 as u8)
+                    if h >= 97
                         set d: ((h - (97 as u8)) as size_t) + (10 as size_t)
-                    if h >= (65 as u8)
+                    if h >= 65
                     {
-                        if h <= (70 as u8)
+                        if h <= 70
                             set d: ((h - (65 as u8)) as size_t) + (10 as size_t)
                     }
                     set cp: cp * (16 as size_t) + d
@@ -178,11 +178,11 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
             {
                 let byte *(buf + i)
                 var digit: size_t 0
-                if (byte >= (48 as u8)) && (byte <= (57 as u8))
+                if (byte >= 48) && (byte <= 57)
                     set digit: (byte - (48 as u8)) as size_t
-                if (byte >= (65 as u8)) && (byte <= (70 as u8))
+                if (byte >= 65) && (byte <= 70)
                     set digit: (byte - (55 as u8)) as size_t
-                if (byte >= (97 as u8)) && (byte <= (102 as u8))
+                if (byte >= 97) && (byte <= 102)
                     set digit: (byte - (87 as u8)) as size_t
                 set value: value * (16 as size_t) + digit
                 set i: i + (1 as size_t)
@@ -432,9 +432,9 @@ function string_has_interpolation(raw: String) returns bool
     while i < len
     {
         let b *(buf + i)
-        if b = (96 as u8)
+        if b = 96
             return true
-        if b = (92 as u8)
+        if b = 92
             set i: i + (2 as size_t)
         else
             set i: i + (1 as size_t)
@@ -478,11 +478,11 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
     while i < len
     {
         let b *(buf + i)
-        if b = (96 as u8)
+        if b = 96
         {
             if in_expr
             {
-                if seg_len = (0 as size_t)
+                if seg_len = 0
                     set empty_expr: true
                 set in_expr: false
             }
@@ -493,19 +493,19 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
         }
         else
         {
-            if b = (92 as u8)
+            if b = 92
             {
                 if in_expr
                 {
                     let e *(buf + i + 1)
                     var ok_escape false
-                    if e = (34 as u8)
+                    if e = 34
                         set ok_escape: true
-                    if e = (92 as u8)
+                    if e = 92
                         set ok_escape: true
-                    if e = (39 as u8)
+                    if e = 39
                         set ok_escape: true
-                    if e = (96 as u8)
+                    if e = 96
                         set ok_escape: true
                     if ok_escape = false
                         set bad_escape: true
@@ -552,11 +552,11 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
         if is_end = false
         {
             let b *(buf + i)
-            if b = (96 as u8)
+            if b = 96
                 set is_tick: true
             else
             {
-                if b = (92 as u8)
+                if b = 92
                     set i: i + (2 as size_t)
                 else
                     set i: i + (1 as size_t)
@@ -574,7 +574,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
                 while k < i
                 {
                     let eb *(buf + k)
-                    if eb = (92 as u8)
+                    if eb = 92
                     {
                         ; Validated above: decode so embedded string
                         ; literals arrive unescaped in the sub-source.
@@ -585,11 +585,11 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
                     {
                         ; A raw newline would split the synthesized
                         ; statement — expressions are one line anyway.
-                        if eb = (10 as u8)
+                        if eb = 10
                             src.append(32 as char)
                         else
                         {
-                            if eb = (13 as u8)
+                            if eb = 13
                                 src.append(32 as char)
                             else
                                 src.append(eb as char)

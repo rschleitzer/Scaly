@@ -66,7 +66,7 @@ define docstore
         set ws_root_len: 0
 
         let len path.get_length()
-        if len > (0 as size_t)
+        if len > 0
         {
             let dst malloc(len) as pointer[u8]
             if dst <> null
@@ -144,7 +144,7 @@ define docstore
         set s.text_len: 0
 
         let len text.get_length()
-        if len > (0 as size_t)
+        if len > 0
         {
             let dst malloc(len) as pointer[u8]
             if dst <> null
@@ -166,7 +166,7 @@ define docstore
         set s.uri_len: 0
 
         let len uri.get_length()
-        if len > (0 as size_t)
+        if len > 0
         {
             let dst malloc(len) as pointer[u8]
             if dst <> null

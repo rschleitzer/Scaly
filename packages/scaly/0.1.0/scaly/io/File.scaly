@@ -41,7 +41,7 @@ procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
     let file (*cell) as pointer[void]
     let size *(((cell as size_t) + (8 as size_t)) as pointer[size_t])
     let buf (*(((cell as size_t) + (16 as size_t)) as pointer[size_t])) as pointer[void]
-    if size > (0 as size_t)
+    if size > 0
         fread(buf, 1, size, file)
     fclose file
     (1 as size_t) as pointer[void]

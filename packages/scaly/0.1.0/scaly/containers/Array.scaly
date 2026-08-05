@@ -56,7 +56,7 @@ define Array[T]
         if size > 0
         {
             let own_page Page.get(this as pointer[void])
-            if size * sizeof T <= (0x400 as size_t)
+            if size * sizeof T <= 0x400
                 set vector: Vector[T]^own_page(size)
             else
             {
@@ -119,8 +119,8 @@ define Array[T]
             ; page names — a var binding mis-places the construction.
             let own_page Page.get(this as pointer[void])
             let old_vector vector
-            let old_small (vector.length * size) <= (0x400 as size_t)
-            if new_length * size <= (0x400 as size_t)
+            let old_small (vector.length * size) <= 0x400
+            if new_length * size <= 0x400
             {
                 let new_vector Vector[T]^own_page(new_length)
                 if length > 0
@@ -204,9 +204,9 @@ define Array[T]
         {
             ; first buffer: small and bump-hosted (see the policy note above)
             var capacity (0x20 as size_t) / size
-            if capacity < (1 as size_t)
+            if capacity < 1
                 set capacity: 1
-            if capacity * size <= (0x400 as size_t)
+            if capacity * size <= 0x400
             {
                 set vector: Vector[T]^own_page(capacity)
                 return
@@ -216,9 +216,9 @@ define Array[T]
             set vector: Vector[T]^exclusive_page(page_room / size)
             return
         }
-        let old_small (vector.length * size) <= (0x400 as size_t)
+        let old_small (vector.length * size) <= 0x400
         var new_capacity vector.length * 2
-        if new_capacity * size <= (0x400 as size_t)
+        if new_capacity * size <= 0x400
         {
             ; still small: a fresh bump-hosted buffer; the old one is
             ; abandoned to the region (never an exclusive page).

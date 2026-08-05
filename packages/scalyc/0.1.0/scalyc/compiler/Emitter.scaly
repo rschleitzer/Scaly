@@ -2141,9 +2141,9 @@ define Emitter
         while i < s.get_length()
         {
             let c s.get i
-            if c < (48 as u8)
+            if c < 48
                 return 0
-            if c > (57 as u8)
+            if c > 57
                 return 0
             set result: result * 10 + ((c - (48 as u8)) as size_t)
             set i: i + 1
@@ -4982,7 +4982,7 @@ define Emitter
                         }
                     }
                     copy_flags.put(i, needs_copy)
-                    if needs_copy = (1 as size_t)
+                    if needs_copy = 1
                         set copy_count: copy_count + 1
                     set i: i + 1
                 }
@@ -4994,7 +4994,7 @@ define Emitter
                 ; BEFORE any shadow is written — otherwise the first copy
                 ; clobbers the second's source, the swap-at-memory-level bug
                 ; the PHIs already rule out for values.
-                if copy_count > (1 as size_t)
+                if copy_count > 1
                 {
                     var s1: size_t 0
                     while s1 < n
@@ -5002,7 +5002,7 @@ define Emitter
                         let f_ptr copy_flags.get s1
                         if f_ptr <> null
                         {
-                            if (*f_ptr) = (1 as size_t)
+                            if (*f_ptr) = 1
                             {
                                 let stage_ptr tail_loop_stages.get s1
                                 let ty_ptr tail_loop_slot_types.get s1
@@ -5026,7 +5026,7 @@ define Emitter
                     let f_ptr copy_flags.get ci
                     if f_ptr <> null
                     {
-                        if (*f_ptr) = (1 as size_t)
+                        if (*f_ptr) = 1
                         {
                             let shadow_ptr tail_loop_shadows.get ci
                             let stage_ptr tail_loop_stages.get ci
@@ -5038,7 +5038,7 @@ define Emitter
                                 {
                                     var src (*shadow_ptr)
                                     var have_src: bool false
-                                    if copy_count > (1 as size_t)
+                                    if copy_count > 1
                                     {
                                         if stage_ptr <> null
                                         {
@@ -5046,7 +5046,7 @@ define Emitter
                                             set have_src: true
                                         }
                                     }
-                                    if copy_count = (1 as size_t)
+                                    if copy_count = 1
                                     {
                                         if src_ptr <> null
                                         {
@@ -5593,7 +5593,7 @@ define Emitter
         ; count varint bytes (LEB128)
         var rest content_len
         var vcount: size_t 1
-        while rest >= (0x80 as size_t)
+        while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
             set vcount: vcount + (1 as size_t)
@@ -5604,7 +5604,7 @@ define Emitter
         ; write the varint, mirroring String.init# exactly
         var wrest content_len
         var wi: size_t 0
-        while wrest >= (0x80 as size_t)
+        while wrest >= 0x80
         {
             bytes.put(wi, LLVMConstInt(i8ty, wrest | (0x80 as size_t), 0))
             set wrest: wrest >> (7 as size_t)
@@ -6073,38 +6073,38 @@ define Emitter
         let b0 (*(((text as size_t) + i) as pointer[char])) as u8
         ; "; M..." — the ModuleID comment (Function-Attrs comments are
         ; "; F", they stay hashed; printed IR has no other comments).
-        if b0 = (59 as u8)
+        if b0 = 59
         {
             let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
-            if b1 = (32 as u8)
+            if b1 = 32
             {
                 let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
-                if b2 = (77 as u8)
+                if b2 = 77
                     return true
             }
             return false
         }
         ; "sou..." — source_filename (no block label collides: the
         ; emitter's block names are entry/then/else/...).
-        if b0 = (115 as u8)
+        if b0 = 115
         {
             let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
-            if b1 = (111 as u8)
+            if b1 = 111
             {
                 let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
-                if b2 = (117 as u8)
+                if b2 = 117
                     return true
             }
             return false
         }
         ; "tar..." — the target datalayout line.
-        if b0 = (116 as u8)
+        if b0 = 116
         {
             let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
-            if b1 = (97 as u8)
+            if b1 = 97
             {
                 let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
-                if b2 = (114 as u8)
+                if b2 = 114
                     return true
             }
             return false
@@ -6129,13 +6129,13 @@ define Emitter
         repeat
         {
             let b (*(((text as size_t) + i) as pointer[char])) as u8
-            if b = (0 as u8)
+            if b = 0
                 break
             if line_begin
                 set skipping: stamp_line_skipped(text, i)
             if skipping = false
                 set hash: (hash xor (b as u64)) * (0x100000001b3 as u64)
-            if b = (10 as u8)
+            if b = 10
                 set line_begin: true
             else
                 set line_begin: false
@@ -8240,7 +8240,7 @@ define Emitter
             LLVMSetAlignment(ld, 8 as u32)
             return ld
         }
-        if call.args.length < (2 as size_t)
+        if call.args.length < 2
             return LLVMValueRef null
         let arg1 call.args.get 1
         if arg1 = null
@@ -8261,7 +8261,7 @@ define Emitter
             return LLVMBuildAtomicRMW(builder, 1 as i32, ptr, val, seq_cst, 0 as i32)
         if call.mangled_name = "scaly_atomic_cas_u64"
         {
-            if call.args.length < (3 as size_t)
+            if call.args.length < 3
                 return LLVMValueRef null
             let arg2 call.args.get 2
             if arg2 = null
@@ -8285,7 +8285,7 @@ define Emitter
             return LLVMValueRef null
         if call.args = null
             return LLVMValueRef null
-        if call.args.length < (2 as size_t)
+        if call.args.length < 2
             return LLVMValueRef null
         let a0 call.args.get 0
         let a1 call.args.get 1
@@ -13679,7 +13679,7 @@ define Emitter
     function parfor_wmul(this, a: size_t, b: size_t) returns size_t
     {
         let cap 1048576 as size_t
-        if a = (0 as size_t)
+        if a = 0
             return 0 as size_t
         if a >= cap
             return cap
@@ -13693,7 +13693,7 @@ define Emitter
     {
         if name = "init"
             return true
-        if name.get_length() = (0 as size_t)
+        if name.get_length() = 0
             return false
         let c name.get(0)
         if c >= (65 as char)
@@ -14257,13 +14257,13 @@ define Emitter
             var rebuild_slot: size_t 0
             if fs_ptr <> null
                 set rebuild_slot: (*fs_ptr)
-            if rebuild_slot = (1 as size_t)
+            if rebuild_slot = 1
             {
                 let cap_slot LLVMBuildAlloca(builder, slot_ty, nm.c_data())
                 LLVMBuildStore(builder, cap_val, cap_slot)
                 define_variable(nm, cap_slot)
             }
-            if rebuild_slot = (0 as size_t)
+            if rebuild_slot = 0
                 define_variable(nm, cap_val)
             set ci: ci + 1
         }
@@ -14441,10 +14441,10 @@ define Emitter
         ; 65536ns elapsed, per-chunk volume floor 16384ns (kept <<10
         ; like the measured per-iteration cost), 4x steal oversubmit.
         var body_weight parfor_weight_action(for_expr.body)
-        if body_weight = (0 as size_t)
+        if body_weight = 0
             set body_weight: 1
         var check0: size_t (256 as size_t) / body_weight
-        if check0 = (0 as size_t)
+        if check0 = 0
             set check0: 1
         let check0_const LLVMConstInt(i64_ty, check0, 0)
         let c0 LLVMConstInt(i64_ty, 0, 0)

@@ -37,7 +37,7 @@ define ReceivedRegion
     ; so 4K masking cannot find the owner.
     function map(this: ReceivedRegion, address: size_t) returns size_t
     {
-        if address = (0 as size_t)
+        if address = 0
             return 0 as size_t
 
         let ob old_bases
@@ -63,11 +63,11 @@ define ReceivedRegion
     {
         let s slot as pointer[size_t]
         let old *s
-        if old = (0 as size_t)
+        if old = 0
             return
 
         let mapped map(old)
-        if mapped = (0 as size_t)
+        if mapped = 0
         {
             scaly_eputs "ReceivedRegion.fix: pointer outside the received region"
             scaly_eputnl()
@@ -83,11 +83,11 @@ define ReceivedRegion
     ; the region means the region was NOT closed — fail loud.
     function fix_value(this: ReceivedRegion, old: size_t) returns size_t
     {
-        if old = (0 as size_t)
+        if old = 0
             return 0 as size_t
 
         let mapped map(old)
-        if mapped = (0 as size_t)
+        if mapped = 0
         {
             scaly_eputs "ReceivedRegion.fix_value: pointer outside the received region"
             scaly_eputnl()
@@ -251,7 +251,7 @@ define Region
             return null
 
         let n h[2] as size_t
-        if n = (0 as size_t)
+        if n = 0
             return null
 
         let root_old h[3] as size_t
@@ -265,10 +265,10 @@ define Region
         while v < n * (2 as size_t)
         {
             let len table[v]
-            if len = (0 as size_t)
+            if len = 0
                 return null
 
-            if (len % PAGE_SIZE) <> (0 as size_t)
+            if (len % PAGE_SIZE) <> 0
                 return null
 
             set v: v + (2 as size_t)
@@ -334,7 +334,7 @@ define Region
         {
             let np nb[i] as pointer[Page]
             let no np.next_object as size_t
-            if no <> (0 as size_t)
+            if no <> 0
             {
                 let obase ob[i]
                 set np.next_object: (nb[i] + (no - obase)) as pointer[void]
@@ -359,7 +359,7 @@ define Region
         }
 
         let root_new rr.map(root_old)
-        if root_new = (0 as size_t)
+        if root_new = 0
         {
             scaly_eputs "Region.deserialize: root outside the received region"
             scaly_eputnl()

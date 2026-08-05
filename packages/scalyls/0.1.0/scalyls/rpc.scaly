@@ -33,7 +33,7 @@ define rpc
         ; Read the byte back THROUGH the pointer: `read` wrote it via cp,
         ; and stage-0 does not reload an escaped local (`c as int` returns
         ; the stale pre-read value), so deref cp to force a memory load.
-        if n = (1 as size_t)
+        if n = 1
             return (*cp) as int
 
         -1
@@ -48,7 +48,7 @@ define rpc
             let dst (buf as pointer[u8] + total) as pointer[void]
             let got read(RPC_STDIN_FD, dst, n - total)
 
-            if got = (0 as size_t)          ; EOF
+            if got = 0          ; EOF
                 return
 
             if got > (n - total)            ; (size_t)-1 error wraps high
@@ -90,7 +90,7 @@ define rpc
                 return String()
 
             let line_str line.to_string()
-            if line_str.get_length() = (0 as size_t)   ; blank -> headers done
+            if line_str.get_length() = 0   ; blank -> headers done
                 break
 
             if line_str.starts_with("Content-Length:")
@@ -98,7 +98,7 @@ define rpc
         }
 
         ; ---- body ----
-        if content_length = (0 as size_t)
+        if content_length = 0
             return String()
 
         var body String(content_length)
@@ -118,11 +118,11 @@ define rpc
         let len line.get_length()
 
         ; skip leading spaces
-        while (i < len) && (line.get(i) = (0x20 as u8))
+        while (i < len) && (line.get(i) = 0x20)
             set i: i + 1
 
         var value: size_t 0
-        while (i < len) && (line.get(i) >= (0x30 as u8)) && (line.get(i) <= (0x39 as u8))
+        while (i < len) && (line.get(i) >= 0x30) && (line.get(i) <= 0x39)
         {
             set value: (value * 10) + ((line.get(i) - (0x30 as u8)) as size_t)
             set i: i + 1
@@ -154,7 +154,7 @@ define rpc
     function write_all(s: String)
     {
         let len s.get_length()
-        if len = (0 as size_t)
+        if len = 0
             return
 
         let buf s.get_buffer()
@@ -164,7 +164,7 @@ define rpc
             let dst (buf + total) as pointer[void]
             let w write(RPC_STDOUT_FD, dst, len - total)
 
-            if w = (0 as size_t)
+            if w = 0
                 return
 
             if w > (len - total)        ; (size_t)-1 error wraps high
@@ -176,13 +176,13 @@ define rpc
 
     function format_size(rp, n: size_t) returns String
     {
-        if n = (0 as size_t)
+        if n = 0
             return "0"
 
         var sb StringBuilder()
         var value n
         var digits Array[char]()
-        while value > (0 as size_t)
+        while value > 0
         {
             let digit ((value % 10) as char) + (0x30 as char)
             digits.add digit
@@ -212,7 +212,7 @@ define rpc
         var c: u8 0
         let cp &c
         let n read(fd, cp as pointer[void], 1 as size_t)
-        if n = (1 as size_t)
+        if n = 1
             return (*cp) as int
 
         -1
@@ -226,7 +226,7 @@ define rpc
             let dst (buf as pointer[u8] + total) as pointer[void]
             let got read(fd, dst, n - total)
 
-            if got = (0 as size_t)
+            if got = 0
                 return
 
             if got > (n - total)
@@ -265,14 +265,14 @@ define rpc
                 return String()
 
             let line_str line.to_string()
-            if line_str.get_length() = (0 as size_t)
+            if line_str.get_length() = 0
                 break
 
             if line_str.starts_with("Content-Length:")
                 set content_length: rpc.parse_header_size line_str
         }
 
-        if content_length = (0 as size_t)
+        if content_length = 0
             return String()
 
         var body String(content_length)
@@ -284,7 +284,7 @@ define rpc
     function write_all_fd(fd: int, s: String)
     {
         let len s.get_length()
-        if len = (0 as size_t)
+        if len = 0
             return
 
         let buf s.get_buffer()
@@ -302,7 +302,7 @@ define rpc
             if w > (len - total)        ; (size_t)-1 error wraps high
                 return
 
-            if w = (0 as size_t)
+            if w = 0
                 return
 
             set total: total + w

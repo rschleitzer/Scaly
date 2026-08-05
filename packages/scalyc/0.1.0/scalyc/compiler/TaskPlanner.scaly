@@ -789,7 +789,7 @@ define TaskPlanner
 
         function retaint_write_target(this: TaskPlanner, t: Vector[PlannedOperand], src: ref[Vector[PlannedOperand]]?)
         {
-            if t.length <> (1 as size_t)
+            if t.length <> 1
                 return
             let tp_ t.get 0
             if tp_ = null
@@ -814,7 +814,7 @@ define TaskPlanner
         {
             if cls_blocked
                 return
-            if t.length <> (1 as size_t)
+            if t.length <> 1
             {
                 this.block("compound assignment target")
                 return
@@ -857,12 +857,12 @@ define TaskPlanner
                     this.block("early exit (throw)")
                 when brk: Break
                 {
-                    if cls_depth = (0 as size_t)
+                    if cls_depth = 0
                     {
                         this.block("early exit (break)")
                         return
                     }
-                    if brk.loop_label.get_length() > (0 as size_t)
+                    if brk.loop_label.get_length() > 0
                     {
                         this.block("early exit (labeled break)")
                         return
@@ -1277,7 +1277,7 @@ define TaskPlanner
                     {
                         let f pure_memo_flags.get i
                         if f <> null
-                            return (*f) = (1 as size_t)
+                            return (*f) = 1
                         return false
                     }
                 }
@@ -1694,7 +1694,7 @@ define TaskPlanner
         {
             if name = "init"
                 return true
-            if name.get_length() = (0 as size_t)
+            if name.get_length() = 0
                 return false
             let c name.get(0)
             if c >= (65 as char)
@@ -1708,7 +1708,7 @@ define TaskPlanner
         {
             if call.args = null
                 return false
-            if call.args.length < (3 as size_t)
+            if call.args.length < 3
                 return false
             let recv_ptr call.args.get 0
             if recv_ptr <> null
@@ -1718,7 +1718,7 @@ define TaskPlanner
                 if recv.member_access <> null
                 {
                     let ma (*recv.member_access)
-                    if ma.length > (0 as size_t)
+                    if ma.length > 0
                         set recv_bare: false
                 }
                 if recv_bare
@@ -1816,7 +1816,7 @@ define TaskPlanner
                                 let input (*input_ref)
                                 set pcount: input.length
                             }
-                            if pcount > (62 as size_t)
+                            if pcount > 62
                             {
                                 this.memo_written(mangled, wm_all())
                                 return wm_all()
@@ -2068,7 +2068,7 @@ define TaskPlanner
             if act.target <> null
             {
                 let t (*act.target)
-                if t.length <> (1 as size_t)
+                if t.length <> 1
                 {
                     set wr_mask: wm_all()
                     return
@@ -2283,7 +2283,7 @@ define TaskPlanner
                 var written false
                 if sub = wm_all()
                     set written: true
-                if i > (62 as size_t)
+                if i > 62
                     set written: true
                 if written = false
                     if ((sub >> i) & (1 as size_t)) <> 0
@@ -2392,7 +2392,7 @@ define TaskPlanner
                 var written false
                 if mask = wm_all()
                     set written: true
-                if i > (62 as size_t)
+                if i > 62
                     set written: true
                 if written = false
                     if ((mask >> i) & (1 as size_t)) <> 0

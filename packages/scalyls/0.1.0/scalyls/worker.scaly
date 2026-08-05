@@ -109,7 +109,7 @@ define worker
     function serve_one(in_fd: int, out_fd: int) returns bool
     {
         let kind rpc.read_message_fd in_fd
-        if kind.get_length() = (0 as size_t)
+        if kind.get_length() = 0
             return false
 
         let uri rpc.read_message_fd in_fd
@@ -131,7 +131,7 @@ define worker
         ; the parent has no buffer for this uri (empty doctext frame).
         let path diagnostics.strip_uri uri
         var source doctext
-        if source.get_length() = (0 as size_t)
+        if source.get_length() = 0
             set source: File.read_to_string(path)
 
         ; documentSymbol: outline of the resolved source.
@@ -470,7 +470,7 @@ define worker
 
             let resp rpc.read_message_fd worker_out
             ; Non-empty = a real answer.
-            if resp.get_length() > (0 as size_t)
+            if resp.get_length() > 0
                 return resp
 
             ; Empty = the worker crashed mid-request (its write end closed).
