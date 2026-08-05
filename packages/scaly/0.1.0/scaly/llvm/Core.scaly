@@ -48,7 +48,7 @@ function LLVMInt16TypeInContext(C: pointer[void]) returns pointer[void] extern
 function LLVMInt32TypeInContext(C: pointer[void]) returns pointer[void] extern
 function LLVMInt64TypeInContext(C: pointer[void]) returns pointer[void] extern
 function LLVMInt128TypeInContext(C: pointer[void]) returns pointer[void] extern
-function LLVMIntTypeInContext(C: pointer[void], NumBits: int) returns pointer[void] extern
+function LLVMIntTypeInContext(C: pointer[void], NumBits: u32) returns pointer[void] extern
 
 ; Convenience wrappers using global context
 function LLVMInt1Type() returns pointer[void] extern
@@ -57,7 +57,7 @@ function LLVMInt16Type() returns pointer[void] extern
 function LLVMInt32Type() returns pointer[void] extern
 function LLVMInt64Type() returns pointer[void] extern
 function LLVMInt128Type() returns pointer[void] extern
-function LLVMIntType(NumBits: int) returns pointer[void] extern
+function LLVMIntType(NumBits: u32) returns pointer[void] extern
 
 ; Integer type properties
 function LLVMGetIntTypeWidth(IntegerTy: pointer[void]) returns int extern
@@ -84,15 +84,15 @@ function LLVMVoidType() returns pointer[void] extern
 ; ===========================================================================
 ; Type Operations - Pointer Types
 ; ===========================================================================
-function LLVMPointerType(ElementType: pointer[void], AddressSpace: int) returns pointer[void] extern
-function LLVMPointerTypeInContext(C: pointer[void], AddressSpace: int) returns pointer[void] extern
+function LLVMPointerType(ElementType: pointer[void], AddressSpace: u32) returns pointer[void] extern
+function LLVMPointerTypeInContext(C: pointer[void], AddressSpace: u32) returns pointer[void] extern
 function LLVMPointerTypeIsOpaque(Ty: pointer[void]) returns int extern
 function LLVMGetPointerAddressSpace(PointerTy: pointer[void]) returns int extern
 
 ; ===========================================================================
 ; Type Operations - Array Types
 ; ===========================================================================
-function LLVMArrayType(ElementType: pointer[void], ElementCount: int) returns pointer[void] extern
+function LLVMArrayType(ElementType: pointer[void], ElementCount: u32) returns pointer[void] extern
 function LLVMArrayType2(ElementType: pointer[void], ElementCount: i64) returns pointer[void] extern
 function LLVMGetArrayLength(ArrayTy: pointer[void]) returns int extern
 function LLVMGetArrayLength2(ArrayTy: pointer[void]) returns i64 extern
@@ -101,14 +101,14 @@ function LLVMGetElementType(Ty: pointer[void]) returns pointer[void] extern
 ; ===========================================================================
 ; Type Operations - Structure Types
 ; ===========================================================================
-function LLVMStructTypeInContext(C: pointer[void], ElementTypes: pointer[pointer[void]], ElementCount: int, Packed: int) returns pointer[void] extern
-function LLVMStructType(ElementTypes: pointer[pointer[void]], ElementCount: int, Packed: int) returns pointer[void] extern
+function LLVMStructTypeInContext(C: pointer[void], ElementTypes: pointer[pointer[void]], ElementCount: u32, Packed: i32) returns pointer[void] extern
+function LLVMStructType(ElementTypes: pointer[pointer[void]], ElementCount: u32, Packed: i32) returns pointer[void] extern
 function LLVMStructCreateNamed(C: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
-function LLVMStructSetBody(StructTy: pointer[void], ElementTypes: pointer[pointer[void]], ElementCount: int, Packed: int) extern
+function LLVMStructSetBody(StructTy: pointer[void], ElementTypes: pointer[pointer[void]], ElementCount: u32, Packed: i32) extern
 function LLVMGetStructName(Ty: pointer[void]) returns pointer[const_char] extern
 function LLVMCountStructElementTypes(StructTy: pointer[void]) returns int extern
 function LLVMGetStructElementTypes(StructTy: pointer[void], Dest: pointer[pointer[void]]) extern
-function LLVMStructGetTypeAtIndex(StructTy: pointer[void], i: int) returns pointer[void] extern
+function LLVMStructGetTypeAtIndex(StructTy: pointer[void], i: u32) returns pointer[void] extern
 function LLVMIsPackedStruct(StructTy: pointer[void]) returns int extern
 function LLVMIsOpaqueStruct(StructTy: pointer[void]) returns int extern
 function LLVMIsLiteralStruct(StructTy: pointer[void]) returns int extern
@@ -116,7 +116,7 @@ function LLVMIsLiteralStruct(StructTy: pointer[void]) returns int extern
 ; ===========================================================================
 ; Type Operations - Function Types
 ; ===========================================================================
-function LLVMFunctionType(ReturnType: pointer[void], ParamTypes: pointer[pointer[void]], ParamCount: int, IsVarArg: int) returns pointer[void] extern
+function LLVMFunctionType(ReturnType: pointer[void], ParamTypes: pointer[pointer[void]], ParamCount: u32, IsVarArg: i32) returns pointer[void] extern
 function LLVMIsFunctionVarArg(FunctionTy: pointer[void]) returns int extern
 function LLVMGetReturnType(FunctionTy: pointer[void]) returns pointer[void] extern
 function LLVMCountParamTypes(FunctionTy: pointer[void]) returns int extern
@@ -163,8 +163,8 @@ function LLVMIsPoison(Val: pointer[void]) returns int extern
 ; ===========================================================================
 ; Constant Operations - Scalar Constants
 ; ===========================================================================
-function LLVMConstInt(IntTy: pointer[void], N: i64, SignExtend: int) returns pointer[void] extern
-function LLVMConstIntOfArbitraryPrecision(IntTy: pointer[void], NumWords: int, Words: pointer[i64]) returns pointer[void] extern
+function LLVMConstInt(IntTy: pointer[void], N: i64, SignExtend: i32) returns pointer[void] extern
+function LLVMConstIntOfArbitraryPrecision(IntTy: pointer[void], NumWords: u32, Words: pointer[i64]) returns pointer[void] extern
 function LLVMConstIntOfString(IntTy: pointer[void], Text: pointer[const_char], Radix: i8) returns pointer[void] extern
 function LLVMConstReal(RealTy: pointer[void], N: double) returns pointer[void] extern
 function LLVMConstRealOfString(RealTy: pointer[void], Text: pointer[const_char]) returns pointer[void] extern
@@ -185,19 +185,19 @@ function LLVMIsNull(Val: pointer[void]) returns int extern
 ; ===========================================================================
 ; Constant Operations - String Constants
 ; ===========================================================================
-function LLVMConstStringInContext(C: pointer[void], Str: pointer[const_char], Length: int, DontNullTerminate: int) returns pointer[void] extern
-function LLVMConstString(Str: pointer[const_char], Length: int, DontNullTerminate: int) returns pointer[void] extern
+function LLVMConstStringInContext(C: pointer[void], Str: pointer[const_char], Length: u32, DontNullTerminate: i32) returns pointer[void] extern
+function LLVMConstString(Str: pointer[const_char], Length: u32, DontNullTerminate: i32) returns pointer[void] extern
 function LLVMIsConstantString(c: pointer[void]) returns int extern
 function LLVMGetAsString(c: pointer[void], Length: pointer[size_t]) returns pointer[const_char] extern
 
 ; ===========================================================================
 ; Constant Operations - Aggregate Constants
 ; ===========================================================================
-function LLVMConstStructInContext(C: pointer[void], ConstantVals: pointer[pointer[void]], Count: int, Packed: int) returns pointer[void] extern
-function LLVMConstStruct(ConstantVals: pointer[pointer[void]], Count: int, Packed: int) returns pointer[void] extern
-function LLVMConstArray(ElementTy: pointer[void], ConstantVals: pointer[pointer[void]], Length: int) returns pointer[void] extern
+function LLVMConstStructInContext(C: pointer[void], ConstantVals: pointer[pointer[void]], Count: u32, Packed: i32) returns pointer[void] extern
+function LLVMConstStruct(ConstantVals: pointer[pointer[void]], Count: u32, Packed: i32) returns pointer[void] extern
+function LLVMConstArray(ElementTy: pointer[void], ConstantVals: pointer[pointer[void]], Length: u32) returns pointer[void] extern
 function LLVMConstArray2(ElementTy: pointer[void], ConstantVals: pointer[pointer[void]], Length: i64) returns pointer[void] extern
-function LLVMConstNamedStruct(StructTy: pointer[void], ConstantVals: pointer[pointer[void]], Count: int) returns pointer[void] extern
+function LLVMConstNamedStruct(StructTy: pointer[void], ConstantVals: pointer[pointer[void]], Count: u32) returns pointer[void] extern
 
 ; ===========================================================================
 ; Constant Expressions
@@ -209,8 +209,8 @@ function LLVMConstNot(ConstantVal: pointer[void]) returns pointer[void] extern
 function LLVMConstAdd(LHSConstant: pointer[void], RHSConstant: pointer[void]) returns pointer[void] extern
 function LLVMConstSub(LHSConstant: pointer[void], RHSConstant: pointer[void]) returns pointer[void] extern
 function LLVMConstMul(LHSConstant: pointer[void], RHSConstant: pointer[void]) returns pointer[void] extern
-function LLVMConstGEP2(Ty: pointer[void], ConstantVal: pointer[void], ConstantIndices: pointer[pointer[void]], NumIndices: int) returns pointer[void] extern
-function LLVMConstInBoundsGEP2(Ty: pointer[void], ConstantVal: pointer[void], ConstantIndices: pointer[pointer[void]], NumIndices: int) returns pointer[void] extern
+function LLVMConstGEP2(Ty: pointer[void], ConstantVal: pointer[void], ConstantIndices: pointer[pointer[void]], NumIndices: u32) returns pointer[void] extern
+function LLVMConstInBoundsGEP2(Ty: pointer[void], ConstantVal: pointer[void], ConstantIndices: pointer[pointer[void]], NumIndices: u32) returns pointer[void] extern
 function LLVMConstTrunc(ConstantVal: pointer[void], ToType: pointer[void]) returns pointer[void] extern
 function LLVMConstSExt(ConstantVal: pointer[void], ToType: pointer[void]) returns pointer[void] extern
 function LLVMConstZExt(ConstantVal: pointer[void], ToType: pointer[void]) returns pointer[void] extern
@@ -223,13 +223,13 @@ function LLVMConstIntCast(ConstantVal: pointer[void], ToType: pointer[void], isS
 function LLVMGetGlobalParent(Global: pointer[void]) returns pointer[void] extern
 function LLVMIsDeclaration(Global: pointer[void]) returns int extern
 function LLVMGetLinkage(Global: pointer[void]) returns int extern
-function LLVMSetLinkage(Global: pointer[void], Linkage: int) extern
+function LLVMSetLinkage(Global: pointer[void], Linkage: i32) extern
 function LLVMGetSection(Global: pointer[void]) returns pointer[const_char] extern
 function LLVMSetSection(Global: pointer[void], Section: pointer[const_char]) extern
 function LLVMGetVisibility(Global: pointer[void]) returns int extern
-function LLVMSetVisibility(Global: pointer[void], Viz: int) extern
+function LLVMSetVisibility(Global: pointer[void], Viz: i32) extern
 function LLVMGetAlignment(V: pointer[void]) returns int extern
-function LLVMSetAlignment(V: pointer[void], Bytes: int) extern
+function LLVMSetAlignment(V: pointer[void], Bytes: u32) extern
 
 ; Linkage types
 define LLVMExternalLinkage: int 0
@@ -248,7 +248,7 @@ define LLVMCommonLinkage: int 14
 ; Global Variables
 ; ===========================================================================
 function LLVMAddGlobal(M: pointer[void], Ty: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
-function LLVMAddGlobalInAddressSpace(M: pointer[void], Ty: pointer[void], Name: pointer[const_char], AddressSpace: int) returns pointer[void] extern
+function LLVMAddGlobalInAddressSpace(M: pointer[void], Ty: pointer[void], Name: pointer[const_char], AddressSpace: u32) returns pointer[void] extern
 function LLVMGetNamedGlobal(M: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
 function LLVMGetFirstGlobal(M: pointer[void]) returns pointer[void] extern
 function LLVMGetLastGlobal(M: pointer[void]) returns pointer[void] extern
@@ -258,9 +258,9 @@ function LLVMDeleteGlobal(GlobalVar: pointer[void]) extern
 function LLVMGetInitializer(GlobalVar: pointer[void]) returns pointer[void] extern
 function LLVMSetInitializer(GlobalVar: pointer[void], ConstantVal: pointer[void]) extern
 function LLVMIsThreadLocal(GlobalVar: pointer[void]) returns int extern
-function LLVMSetThreadLocal(GlobalVar: pointer[void], IsThreadLocal: int) extern
+function LLVMSetThreadLocal(GlobalVar: pointer[void], IsThreadLocal: i32) extern
 function LLVMIsGlobalConstant(GlobalVar: pointer[void]) returns int extern
-function LLVMSetGlobalConstant(GlobalVar: pointer[void], IsConstant: int) extern
+function LLVMSetGlobalConstant(GlobalVar: pointer[void], IsConstant: i32) extern
 function LLVMGetValueType(GlobalVar: pointer[void]) returns pointer[void] extern
 
 ; ===========================================================================
@@ -277,7 +277,7 @@ function LLVMDeleteFunction(Fn: pointer[void]) extern
 ; Function parameters
 function LLVMCountParams(Fn: pointer[void]) returns int extern
 function LLVMGetParams(Fn: pointer[void], Params: pointer[pointer[void]]) extern
-function LLVMGetParam(Fn: pointer[void], Index: int) returns pointer[void] extern
+function LLVMGetParam(Fn: pointer[void], Index: u32) returns pointer[void] extern
 
 ; ===========================================================================
 ; Basic Block Operations
