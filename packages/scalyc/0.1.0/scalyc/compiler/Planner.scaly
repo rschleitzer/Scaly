@@ -6593,6 +6593,81 @@ define Planner
                             }
                             else
                                 0
+                        ; The same intercept with ARGUMENTS: `f(a, b)` on a
+                        ; pointer[void] local. The emitter builds the callee's
+                        ; function type from the planned argument types and an
+                        ; i64 result — the JIT-side contract, so a Scaly caller
+                        ; can invoke code an ORC JIT produced at runtime and
+                        ; hand it real operands (dazzle's Stage-6b trampoline
+                        ; passes the VM). Nothing else in the language calls a
+                        ; pointer[void] local, so this cannot shadow user code;
+                        ; result stays i64 (cast at the call site).
+                        if ic_is_void_ptr
+                        {
+                            if ic_is_empty_tuple = false
+                            {
+                                var ica_is_tuple: bool false
+                                choose ic_tail.expr
+                                    when itp: PlannedTuple
+                                        set ica_is_tuple: true
+                                    else
+                                        0
+                                if ica_is_tuple
+                                {
+                                    let ica_ret Planner.make_i64_type()
+                                    var ica_args Array[PlannedOperand]()
+                                    ica_args.add ic_head
+                                    choose ic_tail.expr
+                                        when itp: PlannedTuple
+                                        {
+                                            if itp.components <> null
+                                            {
+                                                let icomps (*itp.components)
+                                                var ici: size_t 0
+                                                while ici < icomps.length
+                                                {
+                                                    let icp icomps.get ici
+                                                    if icp <> null
+                                                        if (*icp).value <> null
+                                                        {
+                                                            let ivals (*(*icp).value)
+                                                            if ivals.length > 0
+                                                            {
+                                                                let ica this.collapse_operand_sequence(ivals)
+                                                                ica_args.add ica
+                                                            }
+                                                        }
+                                                    set ici: ici + 1
+                                                }
+                                            }
+                                        }
+                                        else
+                                            0
+                                    var ica_holder Vector[PlannedOperand](ica_args)
+                                    let ica_call PlannedCall(
+                                        ic_head.loc,
+                                        "__jit_indirect",
+                                        "",
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        &ica_holder,
+                                        ica_ret,
+                                        Lifetime.Unspecified(Unspecified()),
+                                        null,
+                                        true
+                                    )
+                                    return PlannedOperand(
+                                        ic_head.loc,
+                                        PlannedExpression.Call ica_call,
+                                        null,
+                                        ica_ret
+                                    )
+                                }
+                            }
+                        }
+
                         if ic_is_empty_tuple
                         {
                             if ic_is_void_ptr
@@ -8240,12 +8315,20 @@ define Planner
                                     let fc_ptr fref_cands.get 0
                                     if fc_ptr <> null
                                     {
+                                        ; Any arity (2026-08-06): only the ADDRESS
+                                        ; is taken and emit_function_ref declares a
+                                        ; varargs stub, so the parameter count never
+                                        ; reaches the IR. The old `< 2` gate was the
+                                        ; arity of the two callbacks that first
+                                        ; needed this (atexit, fiber entry), not a
+                                        ; constraint — dazzle's JIT embeds the
+                                        ; addresses of n-ary runtime helpers as
+                                        ; inttoptr constants in the code it emits.
+                                        ; Generics stay out (no mangling without a
+                                        ; substitution).
                                         var fref_arity_ok: bool false
                                         if (*fc_ptr).parameters.length = 0
-                                        {
-                                            if (*fc_ptr).input.length < 2
-                                                set fref_arity_ok: true
-                                        }
+                                            set fref_arity_ok: true
                                         if fref_arity_ok
                                         {
                                             var fref_mangled fref_name

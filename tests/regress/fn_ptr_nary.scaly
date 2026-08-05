@@ -1,0 +1,90 @@
+; Regression: `&fn` on a function of ANY arity, and an indirect call through
+; a pointer[void] value WITH arguments (2026-08-06, the two language
+; prerequisites of dazzle's Stage-6b JIT).
+;
+; Before: `&fn` accepted only arity 0 or 1 (the `input.length < 2` gate in
+; Planner's `&` branch, sized for the two callbacks that first needed it —
+; atexit and the fiber entry) and the indirect-call intercept accepted only an
+; EMPTY argument list. Neither limit was a property of the emission:
+; emit_function_ref declares a VARARGS stub and only ever takes the symbol's
+; address, and the emitter already reconstructs a call signature from planned
+; argument types for delegates. The JIT needs both directions — it embeds the
+; addresses of n-ary runtime helpers as inttoptr constants in the code it
+; generates, and the trampoline calls the generated region back with the VM.
+;
+; SHAPE RULE (unchanged, inherited from the zero-arg form): an indirect call
+; must be the WHOLE operand sequence — a statement or a binding initializer.
+; `let r f(a, b)` is the form; `if f(a, b) <> x` is not, because the intercept
+; only fires on a two-operand [callee, args] sequence. Bind first, compare
+; after — that is how the compiler's own `cli --run` writes it.
+;
+; Expected: PASS
+
+function qq_add3(a: int, b: int, c: int) returns int
+    (a + b) + c
+
+function qq_mix5(a: int, b: int, c: int, d: int, e: int) returns int
+    ((((a * 10000) + (b * 1000)) + (c * 100)) + (d * 10)) + e
+
+function qq_zero() returns int
+    7
+
+; A pointer argument and a pointer result — the shape a runtime helper has.
+function qq_bump(cell: pointer[i64], by: i64) returns pointer[i64]
+{
+    set *cell: (*cell) + by
+    cell
+}
+
+; The direct call first, so the two paths are compared and not merely
+; exercised.
+if qq_add3(1, 2, 3) <> 6
+    exit 10
+
+let f3 &qq_add3
+if f3 = null
+    exit 11
+let r3 f3(1, 2, 3)
+if r3 <> 6
+    exit 12
+let r3b f3(10, 20, 30)
+if r3b <> 60
+    exit 13
+
+; Five arguments — past anything the old gate allowed. A wrong operand order
+; would still sum to the same total, so the digits are weighted.
+let f5 &qq_mix5
+let r5 f5(1, 2, 3, 4, 5)
+if r5 <> 12345
+    exit 14
+let r5b f5(9, 0, 0, 0, 1)
+if r5b <> 90001
+    exit 15
+
+; Arguments that are not plain literals: a local, an expression, a call.
+let n 2
+let inner qq_add3(1, 1, 1)
+let r3c f3(n, n + 1, inner)
+if r3c <> 8
+    exit 16
+
+; Pointer argument, pointer result. The result comes back as i64 (the
+; indirect-call contract is i64), so compare it as one.
+var cell u8[8]
+let cp cell as pointer[i64]
+set *cp: 40 as i64
+let fb &qq_bump
+let got fb(cp, 2 as i64)
+if got <> (cp as i64)
+    exit 17
+if *cp <> (42 as i64)
+    exit 18
+
+; The zero-argument form must still work — it is what `cli --run` uses.
+let f0 &qq_zero
+let r0 f0()
+if r0 <> 7
+    exit 19
+
+print "PASS"
+exit 0

@@ -9050,8 +9050,32 @@ define Emitter
                         if call.name = "__jit_indirect"
                         {
                             let i64_ty LLVMInt64TypeInContext(context)
-                            let jit_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
-                            return LLVMBuildCall2(builder, jit_ty, callee_val, null as pointer[LLVMValueRef], 0, "jit.call")
+                            let n_jargs ic_args.length - 1
+                            if n_jargs = 0
+                            {
+                                let jit_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
+                                return LLVMBuildCall2(builder, jit_ty, callee_val, null as pointer[LLVMValueRef], 0, "jit.call")
+                            }
+                            ; With arguments: i64(argtypes...) built from the
+                            ; planned operand types, the callee value itself is
+                            ; the address. dazzle's Stage-6b trampoline calls a
+                            ; JIT-compiled region this way, passing the VM.
+                            var jarg_tys Vector[LLVMTypeRef](n_jargs)
+                            var jarg_vals Vector[LLVMValueRef](n_jargs)
+                            var jk: size_t 1
+                            while jk < ic_args.length
+                            {
+                                let ja_ptr ic_args.get jk
+                                if ja_ptr <> null
+                                {
+                                    let jav emit_operand(*ja_ptr)
+                                    jarg_vals.put(jk - 1, jav)
+                                    jarg_tys.put(jk - 1, map_type((*ja_ptr).result_type))
+                                }
+                                set jk: jk + 1
+                            }
+                            let jfn_ty LLVMFunctionType(i64_ty, jarg_tys.data, n_jargs as u32, 0)
+                            return LLVMBuildCall2(builder, jfn_ty, callee_val, jarg_vals.data, n_jargs as u32, "jit.call")
                         }
                         ; GAP B closure indirect call. `callee_val` is a closure
                         ; record pointer `{ ptr thunk, caps... }`. Load the thunk
