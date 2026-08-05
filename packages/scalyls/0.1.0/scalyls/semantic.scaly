@@ -85,7 +85,7 @@ define semantic
                 set seen_space: true
             if c <> 0x20
             {
-                let digit (c - (0x30 as u8)) as size_t
+                let digit (c - 0x30) as size_t
                 if seen_space = false
                     set line: line * 10 + digit
                 if seen_space

@@ -124,7 +124,7 @@ define rpc
         var value: size_t 0
         while (i < len) && (line.get(i) >= 0x30) && (line.get(i) <= 0x39)
         {
-            set value: (value * 10) + ((line.get(i) - (0x30 as u8)) as size_t)
+            set value: (value * 10) + ((line.get(i) - 0x30) as size_t)
             set i: i + 1
         }
         value

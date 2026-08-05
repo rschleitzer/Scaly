@@ -31771,7 +31771,7 @@ define Planner
         var char_len: size_t 0
 
         ; ASCII: 0xxxxxxx
-        if (b0 & (0x80 as u8)) = 0
+        if (b0 & 0x80) = 0
         {
             set code_point: b0 as int
             set char_len: 1
@@ -31780,14 +31780,14 @@ define Planner
         ; 2-byte: 110xxxxx 10xxxxxx
         if char_len = 0
         {
-            if (b0 & (0xE0 as u8)) = 0xC0
+            if (b0 & 0xE0) = 0xC0
             {
                 if len >= 2
                 {
                     let b1 *(buf + 1)
-                    if (b1 & (0xC0 as u8)) = 0x80
+                    if (b1 & 0xC0) = 0x80
                     {
-                        let cp (((b0 & (0x1F as u8)) as int) << 6) | ((b1 & (0x3F as u8)) as int)
+                        let cp (((b0 & 0x1F) as int) << 6) | ((b1 & 0x3F) as int)
                         if cp >= 0x80
                         {
                             set code_point: cp
@@ -31801,17 +31801,17 @@ define Planner
         ; 3-byte: 1110xxxx 10xxxxxx 10xxxxxx
         if char_len = 0
         {
-            if (b0 & (0xF0 as u8)) = 0xE0
+            if (b0 & 0xF0) = 0xE0
             {
                 if len >= 3
                 {
                     let b1 *(buf + 1)
                     let b2 *(buf + 2)
-                    if (b1 & (0xC0 as u8)) = 0x80
+                    if (b1 & 0xC0) = 0x80
                     {
-                        if (b2 & (0xC0 as u8)) = 0x80
+                        if (b2 & 0xC0) = 0x80
                         {
-                            let cp (((b0 & (0x0F as u8)) as int) << 12) | (((b1 & (0x3F as u8)) as int) << 6) | ((b2 & (0x3F as u8)) as int)
+                            let cp (((b0 & 0x0F) as int) << 12) | (((b1 & 0x3F) as int) << 6) | ((b2 & 0x3F) as int)
                             if cp >= 0x800
                             {
                                 set code_point: cp
@@ -31826,20 +31826,20 @@ define Planner
         ; 4-byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
         if char_len = 0
         {
-            if (b0 & (0xF8 as u8)) = 0xF0
+            if (b0 & 0xF8) = 0xF0
             {
                 if len >= 4
                 {
                     let b1 *(buf + 1)
                     let b2 *(buf + 2)
                     let b3 *(buf + 3)
-                    if (b1 & (0xC0 as u8)) = 0x80
+                    if (b1 & 0xC0) = 0x80
                     {
-                        if (b2 & (0xC0 as u8)) = 0x80
+                        if (b2 & 0xC0) = 0x80
                         {
-                            if (b3 & (0xC0 as u8)) = 0x80
+                            if (b3 & 0xC0) = 0x80
                             {
-                                let cp (((b0 & (0x07 as u8)) as int) << 18) | (((b1 & (0x3F as u8)) as int) << 12) | (((b2 & (0x3F as u8)) as int) << 6) | ((b3 & (0x3F as u8)) as int)
+                                let cp (((b0 & 0x07) as int) << 18) | (((b1 & 0x3F) as int) << 12) | (((b2 & 0x3F) as int) << 6) | ((b3 & 0x3F) as int)
                                 if cp >= 0x10000
                                 {
                                     if cp <= 0x10FFFF

@@ -96,13 +96,13 @@ function decode_escapes(raw: String) returns String
                     let h *(buf + i + 2 + k)
                     var d: size_t 0
                     if h <= 57
-                        set d: (h - (48 as u8)) as size_t
+                        set d: (h - 48) as size_t
                     if h >= 97
-                        set d: ((h - (97 as u8)) as size_t) + 10
+                        set d: ((h - 97) as size_t) + 10
                     if h >= 65
                     {
                         if h <= 70
-                            set d: ((h - (65 as u8)) as size_t) + 10
+                            set d: ((h - 65) as size_t) + 10
                     }
                     set cp: cp * 16 + d
                     set k: k + 1
@@ -150,7 +150,7 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
             while i < len
             {
                 let byte *(buf + i)
-                set value: value * 10 + ((byte - (48 as u8)) as size_t)
+                set value: value * 10 + ((byte - 48) as size_t)
                 set i: i + 1
             }
             Constant.Integer(IntegerConstant(loc, value))
@@ -179,11 +179,11 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
                 let byte *(buf + i)
                 var digit: size_t 0
                 if (byte >= 48) && (byte <= 57)
-                    set digit: (byte - (48 as u8)) as size_t
+                    set digit: (byte - 48) as size_t
                 if (byte >= 65) && (byte <= 70)
-                    set digit: (byte - (55 as u8)) as size_t
+                    set digit: (byte - 55) as size_t
                 if (byte >= 97) && (byte <= 102)
-                    set digit: (byte - (87 as u8)) as size_t
+                    set digit: (byte - 87) as size_t
                 set value: value * 16 + digit
                 set i: i + 1
             }

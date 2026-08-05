@@ -44,7 +44,7 @@ define String (data: pointer[u8](null))
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set *(data + wi): (wrest as u8) | 0x80
             set wrest: wrest >> 7
             set wi: wi + 1
         }
@@ -75,7 +75,7 @@ define String (data: pointer[u8](null))
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set *(data + wi): (wrest as u8) | 0x80
             set wrest: wrest >> 7
             set wi: wi + 1
         }
@@ -102,7 +102,7 @@ define String (data: pointer[u8](null))
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set *(data + wi): (wrest as u8) | 0x80
             set wrest: wrest >> 7
             set wi: wi + 1
         }
@@ -137,7 +137,7 @@ define String (data: pointer[u8](null))
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set *(data + wi): (wrest as u8) | 0x80
             set wrest: wrest >> 7
             set wi: wi + 1
         }
@@ -166,8 +166,8 @@ define String (data: pointer[u8](null))
             }
 
             let byte *(other.data + index)
-            set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-            if (byte & (0x80 as u8)) = 0
+            set length: length | ((byte & 0x7F) as size_t) << bit_count
+            if (byte & 0x80) = 0
                 break
 
             set bit_count: bit_count + 7
@@ -203,8 +203,8 @@ define String (data: pointer[u8](null))
                 exit 11
 
             var byte: u8 *(data + index)
-            set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-            if (byte & (0x80 as u8)) = 0
+            set length: length | ((byte & 0x7F) as size_t) << bit_count
+            if (byte & 0x80) = 0
                 break
 
             set bit_count: bit_count + 7
@@ -231,8 +231,8 @@ define String (data: pointer[u8](null))
                     exit 11
 
                 var byte: u8 *(data + index)
-                set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-                if (byte & (0x80 as u8)) = 0
+                set length: length | ((byte & 0x7F) as size_t) << bit_count
+                if (byte & 0x80) = 0
                     break
 
                 set bit_count: bit_count + 7
@@ -266,8 +266,8 @@ define String (data: pointer[u8](null))
                 exit 11
 
             var byte: u8 *(data + index)
-            set result: result | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = 0
+            set result: result | (((byte & 0x7F) as size_t)) << bit_count
+            if (byte & 0x80) = 0
                 break
 
             set bit_count: bit_count + 7
@@ -307,8 +307,8 @@ define String (data: pointer[u8](null))
                     exit 11
 
                 var byte: u8 *(data + index)
-                set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-                if (byte & (0x80 as u8)) = 0
+                set length: length | (((byte & 0x7F) as size_t)) << bit_count
+                if (byte & 0x80) = 0
                     break
 
                 set bit_count: bit_count + 7
@@ -338,8 +338,8 @@ define String (data: pointer[u8](null))
                     exit 13
 
                 var byte: u8 *(data + index)
-                set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-                if (byte & (0x80 as u8)) = 0
+                set length: length | (((byte & 0x7F) as size_t)) << bit_count
+                if (byte & 0x80) = 0
                     break
 
                 set bit_count: bit_count + 7
@@ -367,8 +367,8 @@ define String (data: pointer[u8](null))
                 exit 11
 
             var byte: u8 *(data + index)
-            set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = 0
+            set length: length | (((byte & 0x7F) as size_t)) << bit_count
+            if (byte & 0x80) = 0
                 break
 
             set bit_count: bit_count + 7
@@ -398,8 +398,8 @@ define String (data: pointer[u8](null))
                 exit 11
 
             var byte: u8 *(data + index)
-            set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = 0
+            set length: length | (((byte & 0x7F) as size_t)) << bit_count
+            if (byte & 0x80) = 0
                 break
 
             set bit_count: bit_count + 7
@@ -428,8 +428,8 @@ define String (data: pointer[u8](null))
                 exit 11
 
             var byte: u8 *(data + index)
-            set string_length: string_length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            if (byte & (0x80 as u8)) = 0
+            set string_length: string_length | (((byte & 0x7F) as size_t)) << bit_count
+            if (byte & 0x80) = 0
                 break
 
             set bit_count: bit_count + 7
