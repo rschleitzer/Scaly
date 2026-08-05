@@ -507,9 +507,9 @@ if.then7:                                         ; preds = %if.end
 if.end8:                                          ; preds = %if.end12, %if.end
   call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %global.load1)
   %as.ptrtoint = ptrtoint ptr %global.load1 to i64
-  %sext = sext i32 %call2 to i64
-  %add = add i64 %sext, 1
-  %mul = mul i64 %add, 4096
+  %add = add i32 %call2, 1
+  %as.zext = zext i32 %add to i64
+  %mul = mul i64 %as.zext, 4096
   %add15 = add i64 %as.ptrtoint, %mul
   %as.inttoptr = inttoptr i64 %add15 to ptr
   call void @_Z10reset_pageP4Page(ptr %as.inttoptr)

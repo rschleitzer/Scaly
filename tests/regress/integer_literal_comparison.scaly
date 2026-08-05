@@ -113,12 +113,48 @@ if u8_of(44) = 300
 if (u8_of(44) < 300) = false
     exit 29
 
-; --- arithmetic is NOT retyped ------------------------------------------
-; The typed side widens, so this add happens at i64 and does not wrap.
-; 4000000000 + 400000000 exceeds a u32; the sum must be the full value.
-let wide d + 400000000
-if (wide = 4400000000) = false
+; --- arithmetic: the literal follows the typed side, and that is CONSISTENT --
+; This block used to pin the opposite (the typed side widening to i64), which
+; was the one shape where a bare literal disagreed with everything else in the
+; language: `a + b` with both u32 has ALWAYS emitted `add i32`, and so has
+; `a + (1 as u32)` — only `a + 1` widened. Retyping the literal removed that
+; special case rather than adding one.
+;
+; So the invariant to pin is AGREEMENT: all three spellings must produce the
+; same value, including the wrap. 4000000000 + 400000000 exceeds a u32, so the
+; sum wraps to 105032704 in all three.
+let e u32_of(400000000)
+let sum_var d + e                   ; two typed operands
+let sum_cast d + (400000000 as u32)  ; explicit cast
+let sum_bare d + 400000000           ; bare literal
+if (sum_var = sum_cast) = false
     exit 30
+if (sum_var = sum_bare) = false
+    exit 31
+if (sum_bare = u32_of(105032704)) = false
+    exit 32
+
+; Widening is still available, and still explicit: cast the OPERAND, not the
+; literal, and the sum is computed at 64 bits.
+let wide (d as size_t) + 400000000
+if (wide = 4400000000) = false
+    exit 33
+
+; --- SHIFTS are exempt, and it is load-bearing --------------------------
+; A shift's operands are not symmetric: the result width comes from the LEFT
+; operand alone, and the count on the right does not participate. Pulling a
+; left-hand literal onto the count's type broke Page.allocate_page —
+; `1 << slot` with a u32 slot became `shl i32`, and the `xor`/`and` that
+; follows then cleared the TOP 32 BITS of the 64-bit bucket bitmap instead of
+; one bit (tests/fiber thread_reclaim caught it). So `1 << n` must stay 64-bit
+; even when n is narrow: bit 40 must be reachable.
+let n32 u32_of(40)
+let bit 1 << n32
+if (bit = 1099511627776) = false
+    exit 34
+let mask ~(1 << n32)
+if (mask = 18446742974197923839) = false
+    exit 35
 
 print "PASS"
 exit 0

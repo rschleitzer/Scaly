@@ -2887,10 +2887,14 @@ define Planner
                 return true
             if name = "mod"
                 return true
-            if name = "<<"
-                return true
-            if name = ">>"
-                return true
+            ; ★NOT the shifts. Their operands are not symmetric: the result
+            ; width comes from the LEFT operand alone and the shift COUNT on
+            ; the right does not participate in it, so pulling a left-hand
+            ; literal onto the count's type is simply wrong. Measured, and it
+            ; is a memory-corruption class: `1 << index` in Page.allocate_page
+            ; with a u32 index became `shl i32 1, %index`, and the following
+            ; `xor`/`zext` then cleared the TOP 32 BITS of the 64-bit bucket
+            ; bitmap instead of one bit. tests/fiber thread_reclaim caught it.
             if name = "&"
                 return true
             if name = "|"
@@ -11828,16 +11832,28 @@ define Planner
                     ; udiv: without it the literal's `int` sits on the left,
                     ; and emit_intrinsic_binary_op reads signedness off the
                     ; LEFT operand alone.
+                    ; ★No width gate here, and the reason is that the LANGUAGE
+                    ; already computes narrow arithmetic narrow: `a + b` with
+                    ; both u32 emits `add i32`, and so does `a + (1 as u32)`.
+                    ; The one shape that did NOT was a BARE literal — `a + 1`
+                    ; emitted `zext i32 to i64` + `add i64` — so the literal
+                    ; dragged the operation to 64 bits and the `as u32` casts
+                    ; existed only to restore the consistency that holds
+                    ; everywhere else. Retyping the literal removes the
+                    ; special case rather than introducing one; it does not
+                    ; make Scaly wrap where it did not wrap before, because
+                    ; two typed operands already wrapped.
+                    ; An out-of-range literal is still left alone by
+                    ; operand_retypes_to_integer's fits check, so nothing is
+                    ; truncated behind the author's back.
                     if Planner.is_integer_arithmetic_operator(op_name)
                     {
-                        if Planner.type_is_integer_64(result.result_type)
-                            if this.operand_is_integer_constant(result) = false
-                                if this.operand_retypes_to_integer(rhs, result.result_type)
-                                    set rhs: this.retype_integer_operand(rhs, result.result_type)
-                        if Planner.type_is_integer_64(rhs.result_type)
-                            if this.operand_is_integer_constant(rhs) = false
-                                if this.operand_retypes_to_integer(result, rhs.result_type)
-                                    set result: this.retype_integer_operand(result, rhs.result_type)
+                        if this.operand_is_integer_constant(result) = false
+                            if this.operand_retypes_to_integer(rhs, result.result_type)
+                                set rhs: this.retype_integer_operand(rhs, result.result_type)
+                        if this.operand_is_integer_constant(rhs) = false
+                            if this.operand_retypes_to_integer(result, rhs.result_type)
+                                set result: this.retype_integer_operand(result, rhs.result_type)
                     }
 
                     ; Unknown identifier on either side of a binary
