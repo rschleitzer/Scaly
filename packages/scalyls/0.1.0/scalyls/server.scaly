@@ -368,7 +368,7 @@ define server
 
         var pb StringBuilder()
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
@@ -398,16 +398,16 @@ define server
             return ""
         let tname framed.substring(1, framed.get_length() - 1)
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(server.key("contents"))
-        sb.append(0x7B as char)                    ; contents {
+        sb.append("{" as char)                    ; contents {
         sb.append(server.key("kind"))
         sb.append(json.quote_string("markdown"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("value"))
         sb.append(json.quote_string(tname))
-        sb.append(0x7D as char)                    ; }
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -426,7 +426,7 @@ define server
 
         var pb StringBuilder()
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
@@ -449,7 +449,7 @@ define server
 
         var pb StringBuilder()
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
@@ -477,11 +477,11 @@ define server
 
         var pb StringBuilder()
         pb.append(json.format_i64(sl))
-        pb.append(0x20 as char)
+        pb.append(" " as char)
         pb.append(json.format_i64(sc))
-        pb.append(0x20 as char)
+        pb.append(" " as char)
         pb.append(json.format_i64(el))
-        pb.append(0x20 as char)
+        pb.append(" " as char)
         pb.append(json.format_i64(ec))
         let packed pb.to_string()
 
@@ -518,9 +518,9 @@ define server
             pb.append(root.get(ri) as char)
             set ri: ri + 1
         }
-        pb.append(0x0A as char)                    ; \n  (root / position separator)
+        pb.append("\n" as char)                    ; \n  (root / position separator)
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
@@ -545,7 +545,7 @@ define server
 
         var pb StringBuilder()
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
@@ -571,7 +571,7 @@ define server
 
         var pb StringBuilder()
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
@@ -597,7 +597,7 @@ define server
 
         var pb StringBuilder()
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
@@ -633,11 +633,11 @@ define server
             pb.append(root.get(ri) as char)
             set ri: ri + 1
         }
-        pb.append(0x0A as char)                    ; \n  (root / position separator)
+        pb.append("\n" as char)                    ; \n  (root / position separator)
         pb.append(json.format_i64(line))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         pb.append(json.format_i64(character))
-        pb.append(0x20 as char)                    ; space
+        pb.append(" " as char)
         ; new_name is an identifier (no spaces). Append byte-at-a-time (small,
         ; but keeps to the no-StringBuilder.append(String) discipline).
         var ni: size_t 0
@@ -735,124 +735,124 @@ define server
     function initialize_response(rp, id: i64) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(server.key("jsonrpc"))
         sb.append(server.quoted("2.0"))
-        sb.append(0x2C as char)                    ; ,
+        sb.append("," as char)
         sb.append(server.key("id"))
         sb.append(json.format_i64(id))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("result"))
-        sb.append(0x7B as char)                    ; result {
+        sb.append("{" as char)                    ; result {
         sb.append(server.key("capabilities"))
-        sb.append(0x7B as char)                    ; capabilities {
+        sb.append("{" as char)                    ; capabilities {
         sb.append(server.key("textDocumentSync"))
-        sb.append(0x32 as char)                    ; 2 = incremental
-        sb.append(0x2C as char)
+        sb.append("2" as char)                    ; 2 = incremental
+        sb.append("," as char)
         sb.append(server.key("documentSymbolProvider"))
         sb.append "true"
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("hoverProvider"))
         sb.append "true"
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("definitionProvider"))
         sb.append "true"
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("referencesProvider"))
         sb.append "true"
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("documentHighlightProvider"))
         sb.append "true"
-        sb.append(0x2C as char)
+        sb.append("," as char)
         ; completionProvider must be a CompletionOptions object (not a bool).
         ; Empty {} = no trigger chars; the editor invokes it on word typing.
         sb.append(server.key("completionProvider"))
-        sb.append(0x7B as char)                    ; {
-        sb.append(0x7D as char)                    ; }
-        sb.append(0x2C as char)
+        sb.append("{" as char)
+        sb.append("}" as char)
+        sb.append("," as char)
         ; renameProvider as RenameOptions {prepareProvider:true} so the editor
         ; also calls textDocument/prepareRename to validate + pre-fill.
         sb.append(server.key("renameProvider"))
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(server.key("prepareProvider"))
         sb.append "true"
-        sb.append(0x7D as char)                    ; }
-        sb.append(0x2C as char)
+        sb.append("}" as char)
+        sb.append("," as char)
         ; signatureHelpProvider with ( and , as trigger / retrigger chars.
         sb.append(server.key("signatureHelpProvider"))
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(server.key("triggerCharacters"))
-        sb.append(0x5B as char)                    ; [
-        sb.append(0x22 as char)                    ; "
-        sb.append(0x28 as char)                    ; (
-        sb.append(0x22 as char)                    ; "
-        sb.append(0x2C as char)                    ; ,
-        sb.append(0x22 as char)                    ; "
-        sb.append(0x2C as char)                    ; , (the trigger char)
-        sb.append(0x22 as char)                    ; "
-        sb.append(0x5D as char)                    ; ]
-        sb.append(0x7D as char)                    ; }
-        sb.append(0x2C as char)
+        sb.append("[" as char)
+        sb.append("\"" as char)
+        sb.append("(" as char)
+        sb.append("\"" as char)
+        sb.append("," as char)
+        sb.append("\"" as char)
+        sb.append("," as char)                    ; , (the trigger char)
+        sb.append("\"" as char)
+        sb.append("]" as char)
+        sb.append("}" as char)
+        sb.append("," as char)
         sb.append(server.key("foldingRangeProvider"))
         sb.append "true"
-        sb.append(0x2C as char)
+        sb.append("," as char)
         ; semanticTokensProvider: legend (token types, no modifiers) + full.
         ; The token-type order MUST match symbols.semantic_tokens#'s indices:
         ;   0 keyword 1 type 2 function 3 variable 4 operator 5 string
         ;   6 number  7 comment 8 parameter 9 property
         sb.append(server.key("semanticTokensProvider"))
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(server.key("legend"))
-        sb.append(0x7B as char)                    ; legend {
+        sb.append("{" as char)                    ; legend {
         sb.append(server.key("tokenTypes"))
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         sb.append(server.quoted("keyword"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("type"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("function"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("variable"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("operator"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("string"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("number"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("comment"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("parameter"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.quoted("property"))
-        sb.append(0x5D as char)                    ; ]
-        sb.append(0x2C as char)
+        sb.append("]" as char)
+        sb.append("," as char)
         sb.append(server.key("tokenModifiers"))
-        sb.append(0x5B as char)                    ; [
-        sb.append(0x5D as char)                    ; ]
-        sb.append(0x7D as char)                    ; } legend
-        sb.append(0x2C as char)
+        sb.append("[" as char)
+        sb.append("]" as char)
+        sb.append("}" as char)                    ; } legend
+        sb.append("," as char)
         sb.append(server.key("full"))
         sb.append "true"
-        sb.append(0x7D as char)                    ; } semanticTokensProvider
-        sb.append(0x2C as char)
+        sb.append("}" as char)                    ; } semanticTokensProvider
+        sb.append("," as char)
         sb.append(server.key("workspaceSymbolProvider"))
         sb.append "true"
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("inlayHintProvider"))
         sb.append "true"
-        sb.append(0x7D as char)                    ; } capabilities
-        sb.append(0x2C as char)
+        sb.append("}" as char)                    ; } capabilities
+        sb.append("," as char)
         sb.append(server.key("serverInfo"))
-        sb.append(0x7B as char)                    ; serverInfo {
+        sb.append("{" as char)                    ; serverInfo {
         sb.append(server.key("name"))
         sb.append(server.quoted("scalyls"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("version"))
         sb.append(server.quoted("0.1.0"))
-        sb.append(0x7D as char)                    ; } serverInfo
-        sb.append(0x7D as char)                    ; } result
-        sb.append(0x7D as char)                    ; } root
+        sb.append("}" as char)                    ; } serverInfo
+        sb.append("}" as char)                    ; } result
+        sb.append("}" as char)                    ; } root
         sb.to_string()
     }
 
@@ -860,16 +860,16 @@ define server
     function null_result_response(rp, id: i64) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(server.key("jsonrpc"))
         sb.append(server.quoted("2.0"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("id"))
         sb.append(json.format_i64(id))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("result"))
         sb.append "null"
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -886,13 +886,13 @@ define server
     function document_symbol_response(rp, id: i64, result: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(server.key("jsonrpc"))
         sb.append(server.quoted("2.0"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("id"))
         sb.append(json.format_i64(id))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("result"))
         var ci: size_t 0
         let cn result.get_length()
@@ -901,7 +901,7 @@ define server
             sb.append(result.get(ci) as char)
             set ci: ci + 1
         }
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -911,19 +911,19 @@ define server
     function hover_response(rp, id: i64, result: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(server.key("jsonrpc"))
         sb.append(server.quoted("2.0"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("id"))
         sb.append(json.format_i64(id))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("result"))
         if result.get_length() = 0
             sb.append "null"
         if result.get_length() > 0
             sb.append result
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -934,19 +934,19 @@ define server
     function definition_response(rp, id: i64, result: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(server.key("jsonrpc"))
         sb.append(server.quoted("2.0"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("id"))
         sb.append(json.format_i64(id))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(server.key("result"))
         if result.get_length() = 0
             sb.append "null"
         if result.get_length() > 0
             sb.append result
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -954,10 +954,10 @@ define server
     function key(rp, k: pointer[const_char]) returns String
     {
         var sb StringBuilder()
-        sb.append(0x22 as char)
+        sb.append("\"" as char)
         sb.append k
-        sb.append(0x22 as char)
-        sb.append(0x3A as char)                    ; :
+        sb.append("\"" as char)
+        sb.append(":" as char)
         sb.to_string()
     }
 
@@ -965,9 +965,9 @@ define server
     function quoted(rp, s: pointer[const_char]) returns String
     {
         var sb StringBuilder()
-        sb.append(0x22 as char)
+        sb.append("\"" as char)
         sb.append s
-        sb.append(0x22 as char)
+        sb.append("\"" as char)
         sb.to_string()
     }
 }

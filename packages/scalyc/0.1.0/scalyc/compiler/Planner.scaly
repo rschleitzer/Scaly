@@ -35573,7 +35573,7 @@ define Planner
 
         while value > 0
         {
-            let digit ((value % 10) as char) + 48 as char
+            let digit ((value % 10) as char) + "0" as char
             digits.add digit
             set value: value / 10
         }

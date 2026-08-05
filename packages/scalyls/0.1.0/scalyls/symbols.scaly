@@ -75,7 +75,7 @@ define symbols
     function document_symbols(rp, source: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
 
         var p parser.Parser(source)
         choose p.parse_program()
@@ -98,7 +98,7 @@ define symbols
                             if piece.get_length() > 0
                             {
                                 if first = false
-                                    sb.append(0x2C as char)    ; ,
+                                    sb.append("," as char)
                                 var ci: size_t 0
                                 let cn piece.get_length()
                                 while ci < cn
@@ -114,7 +114,7 @@ define symbols
                 }
             }
 
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -225,7 +225,7 @@ define symbols
     function body_children(rp, source: String, body: ref[BodySyntax]?) returns String
     {
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         if body <> null
         {
             let b (*body)
@@ -244,7 +244,7 @@ define symbols
                         if piece.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             var ci: size_t 0
                             let cn piece.get_length()
                             while ci < cn
@@ -259,7 +259,7 @@ define symbols
                 }
             }
         }
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -296,7 +296,7 @@ define symbols
     function namespace_children(rp, source: String, ns: NamespaceSyntax) returns String
     {
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         if ns.declarations <> null
         {
             let decls (*ns.declarations)
@@ -312,7 +312,7 @@ define symbols
                     if piece.get_length() > 0
                     {
                         if first = false
-                            sb.append(0x2C as char)
+                            sb.append("," as char)
                         var ci: size_t 0
                         let cn piece.get_length()
                         while ci < cn
@@ -326,7 +326,7 @@ define symbols
                 set i: i + 1
             }
         }
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -335,7 +335,7 @@ define symbols
     function union_children(rp, source: String, un: UnionSyntax) returns String
     {
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         var first true
         if un.variants <> null
         {
@@ -347,7 +347,7 @@ define symbols
                 if vptr <> null
                 {
                     if first = false
-                        sb.append(0x2C as char)
+                        sb.append("," as char)
                     let vsym symbols.symbol_object(source, vptr.name, 22, vptr.start, vptr.end, "[]")
                     var ci: size_t 0
                     let cn vsym.get_length()
@@ -378,7 +378,7 @@ define symbols
                         if piece.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             var ci: size_t 0
                             let cn piece.get_length()
                             while ci < cn
@@ -393,7 +393,7 @@ define symbols
                 }
             }
         }
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -404,19 +404,19 @@ define symbols
     function symbol_object(rp, source: String, name: String, kind: i64, start: size_t, end: size_t, children: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("name"))
         sb.append(json.quote_string(name))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append(json.format_i64(kind))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, end))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("selectionRange"))
         sb.append(symbols.range_for(source, start, end))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("children"))
         var ci: size_t 0
         let cn children.get_length()
@@ -425,7 +425,7 @@ define symbols
             sb.append(children.get(ci) as char)
             set ci: ci + 1
         }
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -433,13 +433,13 @@ define symbols
     function range_for(rp, source: String, start: size_t, end: size_t) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(symbols.key("start"))
         sb.append(symbols.offset_to_pos(source, start))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("end"))
         sb.append(symbols.offset_to_pos(source, end))
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -458,7 +458,7 @@ define symbols
         while off < target
         {
             let c source.get off
-            if c = (10 as char)
+            if c = ("\n" as char)
             {
                 set line: line + 1
                 set col: 0
@@ -469,13 +469,13 @@ define symbols
         }
 
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(symbols.key("line"))
         sb.append(json.format_i64(line as i64))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("character"))
         sb.append(json.format_i64(col as i64))
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -483,10 +483,10 @@ define symbols
     function key(rp, k: pointer[const_char]) returns String
     {
         var sb StringBuilder()
-        sb.append(0x22 as char)
+        sb.append("\"" as char)
         sb.append k
-        sb.append(0x22 as char)
-        sb.append(0x3A as char)                    ; :
+        sb.append("\"" as char)
+        sb.append(":" as char)
         sb.to_string()
     }
 
@@ -514,7 +514,7 @@ define symbols
     function folding_ranges(rp, source: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
 
         var p parser.Parser(source)
         choose p.parse_program()
@@ -537,7 +537,7 @@ define symbols
                             if frag.get_length() > 0
                             {
                                 if first = false
-                                    sb.append(0x2C as char)
+                                    sb.append("," as char)
                                 var ci: size_t 0
                                 let cn frag.get_length()
                                 while ci < cn
@@ -553,7 +553,7 @@ define symbols
                 }
             }
 
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -648,7 +648,7 @@ define symbols
                         if frag.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -713,7 +713,7 @@ define symbols
                     if frag.get_length() > 0
                     {
                         if first = false
-                            sb.append(0x2C as char)
+                            sb.append("," as char)
                         var ci: size_t 0
                         let cn frag.get_length()
                         while ci < cn
@@ -753,7 +753,7 @@ define symbols
                         if frag.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -782,13 +782,13 @@ define symbols
         if end_line <= start_line
             return ""
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("startLine"))
         sb.append(json.format_i64(start_line as i64))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("endLine"))
         sb.append(json.format_i64(end_line as i64))
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -807,7 +807,7 @@ define symbols
             sb.append(a.get(ai) as char)
             set ai: ai + 1
         }
-        sb.append(0x2C as char)
+        sb.append("," as char)
         var bi: size_t 0
         let bn b.get_length()
         while bi < bn
@@ -831,7 +831,7 @@ define symbols
         while off < target
         {
             let c source.get off
-            if c = (10 as char)
+            if c = ("\n" as char)
                 set line: line + 1
             set off: off + 1
         }
@@ -896,9 +896,9 @@ define symbols
     function semantic_tokens(rp, source: String, uri: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("data"))            ; "data":
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
 
         ; Semantic name tables: reuse completion_items# (one parse + walk) to
         ; harvest declared function/method names (CompletionItemKind 2/3) and
@@ -998,7 +998,7 @@ define symbols
                             if seglen > 0
                             {
                                 if first = false
-                                    sb.append(0x2C as char)
+                                    sb.append("," as char)
                                 sb.append(symbols.encode_token(prev_line, prev_col, seg_line, seg_col, seglen, 7))
                                 set prev_line: seg_line
                                 set prev_col: seg_col
@@ -1027,7 +1027,7 @@ define symbols
                     if seglen > 0
                     {
                         if first = false
-                            sb.append(0x2C as char)
+                            sb.append("," as char)
                         sb.append(symbols.encode_token(prev_line, prev_col, seg_line, seg_col, seglen, 7))
                         set prev_line: seg_line
                         set prev_col: seg_col
@@ -1049,7 +1049,7 @@ define symbols
                 }
                 let clen j - i
                 if first = false
-                    sb.append(0x2C as char)
+                    sb.append("," as char)
                 sb.append(symbols.encode_token(prev_line, prev_col, line, col, clen, 7))
                 set prev_line: line
                 set prev_col: col
@@ -1196,7 +1196,7 @@ define symbols
             if tok_type >= 0
             {
                 if first = false
-                    sb.append(0x2C as char)
+                    sb.append("," as char)
                 sb.append(symbols.encode_token(prev_line, prev_col, line, start_col, tlen, tok_type))
                 set prev_line: line
                 set prev_col: start_col
@@ -1218,8 +1218,8 @@ define symbols
             set pending: 0 - 1
         }
 
-        sb.append(0x5D as char)                    ; ]
-        sb.append(0x7D as char)                    ; }
+        sb.append("]" as char)
+        sb.append("}" as char)
         nameset.destroy ns_slots
         sb.to_string()
     }
@@ -1233,14 +1233,14 @@ define symbols
             set dcol: tcol - prev_col
         var sb StringBuilder()
         sb.append(json.format_i64(dline as i64))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(json.format_i64(dcol as i64))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(json.format_i64(tlen as i64))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(json.format_i64(ttype))
-        sb.append(0x2C as char)
-        sb.append(0x30 as char)                    ; 0 (no modifiers)
+        sb.append("," as char)
+        sb.append("0" as char)                    ; 0 (no modifiers)
         sb.to_string()
     }
 
@@ -1348,7 +1348,7 @@ define symbols
     function names_from_items(rp, items_json: String, k1: i64, k2: i64) returns String
     {
         var sb StringBuilder()
-        sb.append(0x0A as char)                    ; leading newline
+        sb.append("\n" as char)                    ; leading newline
         let jv json.parse items_json
         let count json.array_length jv
         var i: size_t 0
@@ -1359,12 +1359,12 @@ define symbols
             if kind = k1
             {
                 sb.append(json.as_string(json.get(item, "label")))
-                sb.append(0x0A as char)
+                sb.append("\n" as char)
             }
             if kind = k2
             {
                 sb.append(json.as_string(json.get(item, "label")))
-                sb.append(0x0A as char)
+                sb.append("\n" as char)
             }
             set i: i + 1
         }
@@ -1377,41 +1377,41 @@ define symbols
     function primitive_type_list(rp) returns String
     {
         var sb StringBuilder()
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "int"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "bool"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "char"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "void"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "float"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "double"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "size_t"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "u8"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "u16"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "u32"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "u64"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "i8"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "i16"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "i32"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "i64"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "pointer"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append "ref"
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.to_string()
     }
 
@@ -1503,7 +1503,7 @@ define symbols
                                     sb.append(it.name.get(k) as char)
                                     set k: k + 1
                                 }
-                                sb.append(0x20 as char)
+                                sb.append(" " as char)
                             }
                             set i: i + 1
                         }
@@ -1521,12 +1521,12 @@ define symbols
         if names.get_length() > 0
         {
             var sb StringBuilder()
-            sb.append(0x50 as char)                ; P
-            sb.append(0x09 as char)                ; tab
+            sb.append("P" as char)
+            sb.append("\t" as char)
             sb.append(json.format_i64(start as i64))
-            sb.append(0x09 as char)
+            sb.append("\t" as char)
             sb.append(json.format_i64(end as i64))
-            sb.append(0x09 as char)
+            sb.append("\t" as char)
             var k: size_t 0
             let nn names.get_length()
             while k < nn
@@ -1534,7 +1534,7 @@ define symbols
                 sb.append(names.get(k) as char)
                 set k: k + 1
             }
-            sb.append(0x0A as char)                ; newline
+            sb.append("\n" as char)
             return sb.to_string()
         }
         ""
@@ -1548,12 +1548,12 @@ define symbols
     function r_record(rp, start: size_t, end: size_t) returns String
     {
         var sb StringBuilder()
-        sb.append(0x52 as char)                    ; R
-        sb.append(0x09 as char)                    ; tab
+        sb.append("R" as char)
+        sb.append("\t" as char)
         sb.append(json.format_i64(start as i64))
-        sb.append(0x09 as char)
+        sb.append("\t" as char)
         sb.append(json.format_i64(end as i64))
-        sb.append(0x0A as char)                    ; newline
+        sb.append("\n" as char)
         sb.to_string()
     }
 
@@ -1561,10 +1561,10 @@ define symbols
     function f_record(rp, off: size_t) returns String
     {
         var sb StringBuilder()
-        sb.append(0x46 as char)                    ; F
-        sb.append(0x09 as char)                    ; tab
+        sb.append("F" as char)
+        sb.append("\t" as char)
         sb.append(json.format_i64(off as i64))
-        sb.append(0x0A as char)                    ; newline
+        sb.append("\n" as char)
         sb.to_string()
     }
 
@@ -2030,7 +2030,7 @@ define symbols
         {
             var sb StringBuilder()
             sb.append(json.format_i64(best_start as i64))
-            sb.append(0x20 as char)                 ; space
+            sb.append(" " as char)
             sb.append(json.format_i64(best_end as i64))
             return sb.to_string()
         }
@@ -2100,7 +2100,7 @@ define symbols
     function completion_items(rp, source: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
 
         var p parser.Parser(source)
         choose p.parse_program()
@@ -2123,7 +2123,7 @@ define symbols
                             if frag.get_length() > 0
                             {
                                 if first = false
-                                    sb.append(0x2C as char)
+                                    sb.append("," as char)
                                 var ci: size_t 0
                                 let cn frag.get_length()
                                 while ci < cn
@@ -2139,7 +2139,7 @@ define symbols
                 }
             }
 
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -2147,13 +2147,13 @@ define symbols
     function completion_item(rp, name: String, kind: i64) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("label"))
         sb.append(json.quote_string(name))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append(json.format_i64(kind))
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -2247,7 +2247,7 @@ define symbols
         }
         if members.get_length() > 0
         {
-            sb.append(0x2C as char)
+            sb.append("," as char)
             var mi: size_t 0
             let mn members.get_length()
             while mi < mn
@@ -2281,7 +2281,7 @@ define symbols
                         if frag.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -2346,7 +2346,7 @@ define symbols
                     if frag.get_length() > 0
                     {
                         if first = false
-                            sb.append(0x2C as char)
+                            sb.append("," as char)
                         var ci: size_t 0
                         let cn frag.get_length()
                         while ci < cn
@@ -2380,7 +2380,7 @@ define symbols
                 {
                     let vitem symbols.completion_item(vptr.name, 20)
                     if first = false
-                        sb.append(0x2C as char)
+                        sb.append("," as char)
                     var ci: size_t 0
                     let cn vitem.get_length()
                     while ci < cn
@@ -2410,7 +2410,7 @@ define symbols
                         if frag.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -2591,7 +2591,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if result.get_length() = 0
                 {
@@ -3065,7 +3065,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if result.get_length() = 0
                 {
@@ -3218,7 +3218,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if result.get_length() = 0
                 {
@@ -3556,7 +3556,7 @@ define symbols
                 else
                     0
             var sb StringBuilder()
-            sb.append(0x5B as char)                ; [
+            sb.append("[" as char)
             var ci: size_t 0
             let cn members.get_length()
             while ci < cn
@@ -3564,7 +3564,7 @@ define symbols
                 sb.append(members.get(ci) as char)
                 set ci: ci + 1
             }
-            sb.append(0x5D as char)                ; ]
+            sb.append("]" as char)
             return sb.to_string()
         }
         var nested ""
@@ -3648,16 +3648,16 @@ define symbols
         if text.get_length() = 0
             return ""
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(symbols.key("contents"))
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(symbols.key("kind"))
         sb.append(json.quote_string("markdown"))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("value"))
         sb.append(json.quote_string(text))
-        sb.append(0x7D as char)
-        sb.append(0x7D as char)
+        sb.append("}" as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -3674,7 +3674,7 @@ define symbols
                 return off
             let c source.get off
             set off: off + 1
-            if c = (10 as char)
+            if c = ("\n" as char)
                 set cur_line: cur_line + 1
         }
         var col: size_t 0
@@ -3683,7 +3683,7 @@ define symbols
             if off >= len
                 return off
             let c source.get off
-            if c = (10 as char)
+            if c = ("\n" as char)
                 return off
             set off: off + 1
             set col: col + 1
@@ -3813,7 +3813,7 @@ define symbols
                         set kind: "struct"
                 var sb StringBuilder()
                 sb.append kind
-                sb.append(0x20 as char)
+                sb.append(" " as char)
                 sb.append def.name
                 return sb.to_string()
             }
@@ -3936,7 +3936,7 @@ define symbols
             {
                 var sb StringBuilder()
                 sb.append kind
-                sb.append(0x20 as char)
+                sb.append(" " as char)
                 sb.append name
                 return sb.to_string()
             }
@@ -4280,13 +4280,13 @@ define symbols
     function location_object(rp, source: String, uri: String, start: size_t) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("uri"))
         sb.append(json.quote_string(uri))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, start))
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -4393,7 +4393,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if result.get_length() = 0
                 {
@@ -4436,10 +4436,10 @@ define symbols
     function def_from_ws_blob(rp, blob: String, name: String) returns String
     {
         var needle StringBuilder()
-        needle.append(0x22 as char)                ; "
+        needle.append("\"" as char)
         needle.append "location"
-        needle.append(0x22 as char)                ; "
-        needle.append(0x3A as char)                ; :
+        needle.append("\"" as char)
+        needle.append(":" as char)
         let loc_needle needle.to_string()
         let ln loc_needle.get_length()
 
@@ -4572,7 +4572,7 @@ define symbols
                                 if blob.get(dstart) = tag
                                 {
                                     var sb StringBuilder()
-                                    sb.append(0x59 as char)    ; Y sentinel
+                                    sb.append("Y" as char)    ; Y sentinel
                                     var d dstart + 1
                                     while d < tab3
                                     {
@@ -4615,7 +4615,7 @@ define symbols
         {
             let frag symbols.substring(r, 1, r.get_length())
             var sb StringBuilder()
-            sb.append(0x5B as char)                    ; [
+            sb.append("[" as char)
             var d: size_t 0
             let de frag.get_length()
             while d < de
@@ -4623,7 +4623,7 @@ define symbols
                 sb.append(frag.get(d) as char)
                 set d: d + 1
             }
-            sb.append(0x5D as char)                    ; ]
+            sb.append("]" as char)
             return sb.to_string()
         }
         ""
@@ -4700,10 +4700,10 @@ define symbols
     function concept_in_ws_blob(rp, blob: String, name: String) returns bool
     {
         var needle StringBuilder()
-        needle.append(0x22 as char)                ; "
+        needle.append("\"" as char)
         needle.append "kind"
-        needle.append(0x22 as char)                ; "
-        needle.append(0x3A as char)                ; :
+        needle.append("\"" as char)
+        needle.append(":" as char)
         let kind_needle needle.to_string()
         let kn kind_needle.get_length()
 
@@ -4874,7 +4874,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if found = false
                 {
@@ -4934,7 +4934,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if result.get_length() = 0
                 {
@@ -5041,7 +5041,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 let fpath symbols.substring(listing, line_start, i)
                 if fpath.get_length() > 0
@@ -5084,10 +5084,10 @@ define symbols
     {
         var sb StringBuilder()
         var needle StringBuilder()
-        needle.append(0x22 as char)                ; "
+        needle.append("\"" as char)
         needle.append "kind"
-        needle.append(0x22 as char)                ; "
-        needle.append(0x3A as char)                ; :
+        needle.append("\"" as char)
+        needle.append(":" as char)
         let kind_needle needle.to_string()
         let kn kind_needle.get_length()
 
@@ -5144,14 +5144,14 @@ define symbols
                 if tagb > 0
                 {
                     sb.append(tagb as char)
-                    sb.append(0x09 as char)
+                    sb.append("\t" as char)
                     var k rec_start
                     while k < tab
                     {
                         sb.append(blob.get(k) as char)
                         set k: k + 1
                     }
-                    sb.append(0x0A as char)
+                    sb.append("\n" as char)
                 }
                 set rec_start: i + 1
             }
@@ -5285,10 +5285,10 @@ define symbols
                 let fnm symbols.lex_read_ident(source, fk, n)
                 if fnm.get_length() > 0
                 {
-                    sb.append(0x46 as char)            ; F
-                    sb.append(0x09 as char)
+                    sb.append("F" as char)
+                    sb.append("\t" as char)
                     sb.append fnm
-                    sb.append(0x0A as char)
+                    sb.append("\n" as char)
                 }
                 continue
             }
@@ -5325,9 +5325,9 @@ define symbols
                     if tag > 0
                     {
                         sb.append(tag as char)
-                        sb.append(0x09 as char)
+                        sb.append("\t" as char)
                         sb.append nm
-                        sb.append(0x0A as char)
+                        sb.append("\n" as char)
                     }
                 }
                 continue
@@ -5352,7 +5352,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 let fpath symbols.substring(listing, line_start, i)
                 if fpath.get_length() > 0
@@ -5381,7 +5381,7 @@ define symbols
     function tagged_name_list(rp, blob: String, tag: u8) returns String
     {
         var sb StringBuilder()
-        sb.append(0x0A as char)                        ; leading newline
+        sb.append("\n" as char)                        ; leading newline
         let n blob.get_length()
         var line_start: size_t 0
         var i: size_t 0
@@ -5399,7 +5399,7 @@ define symbols
                                 sb.append(blob.get(k) as char)
                                 set k: k + 1
                             }
-                            sb.append(0x0A as char)
+                            sb.append("\n" as char)
                         }
                 set line_start: i + 1
             }
@@ -5439,7 +5439,7 @@ define symbols
             sb.append(home_str.get(i) as char)
             set i: i + 1
         }
-        sb.append(0x2F as char)                        ; /
+        sb.append("/" as char)
         sb.to_string()
     }
 
@@ -5501,7 +5501,7 @@ define symbols
     {
         var cmd StringBuilder()
         cmd.append "find "
-        cmd.append(0x27 as char)                   ; '
+        cmd.append("'" as char)
         var di: size_t 0
         let dn dir.get_length()
         while di < dn
@@ -5509,11 +5509,11 @@ define symbols
             cmd.append(dir.get(di) as char)
             set di: di + 1
         }
-        cmd.append(0x27 as char)                   ; '
+        cmd.append("'" as char)
         cmd.append " -name "
-        cmd.append(0x27 as char)                   ; '
+        cmd.append("'" as char)
         cmd.append "*.scaly"
-        cmd.append(0x27 as char)                   ; '
+        cmd.append("'" as char)
         cmd.append " 2>/dev/null"
         let cmd_str cmd.to_string()
 
@@ -5532,7 +5532,7 @@ define symbols
                 sb.append(c as char)
         }
         pclose f
-        sb.append(0x0A as char)                    ; trailing LF
+        sb.append("\n" as char)                    ; trailing LF
         sb.to_string()
     }
 
@@ -5625,14 +5625,14 @@ define symbols
         let listing symbols.list_scaly_files root
 
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         var first true
         var line_start: size_t 0
         let n listing.get_length()
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 let fpath symbols.substring(listing, line_start, i)
                 if fpath.get_length() > 0
@@ -5653,7 +5653,7 @@ define symbols
                         if frag.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -5668,7 +5668,7 @@ define symbols
             }
             set i: i + 1
         }
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -5725,7 +5725,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if blob.get(i) = (10 as char)       ; record terminator
+            if blob.get(i) = ("\n" as char)       ; record terminator
             {
                 ; tab1 = name/json separator, tab2 = json/detail separator.
                 ; Emit only the json part [tab1+1, tab2) so the detail field
@@ -5737,7 +5737,7 @@ define symbols
                 var t: size_t rec_start
                 while t < i
                 {
-                    if blob.get(t) = (9 as char)
+                    if blob.get(t) = ("\t" as char)
                     {
                         if ntabs = 0
                             set tab1: t
@@ -5755,7 +5755,7 @@ define symbols
                         let jstart tab1 + 1
                         let jobj symbols.substring(blob, jstart, tab2)
                         if first = false
-                            sb.append(0x2C as char)
+                            sb.append("," as char)
                         var ci: size_t 0
                         let cn jobj.get_length()
                         while ci < cn
@@ -6013,7 +6013,7 @@ define symbols
             when named: NamedSyntax
             {
                 var sb StringBuilder()
-                sb.append(0x53 as char)            ; S
+                sb.append("S" as char)
                 let labels symbols.signature_param_labels(source, named.routine)
                 var i: size_t 0
                 let ln labels.get_length()
@@ -6047,7 +6047,7 @@ define symbols
             else
                 0
         var sb StringBuilder()
-        sb.append(0x4D as char)                    ; M
+        sb.append("M" as char)
         var i: size_t 0
         let ln members.get_length()
         while i < ln
@@ -6205,18 +6205,18 @@ define symbols
             sb.append(name.get(ni) as char)
             set ni: ni + 1
         }
-        sb.append(0x09 as char)                    ; tab: name / json separator
-        sb.append(0x7B as char)                    ; {
+        sb.append("\t" as char)                    ; tab: name / json separator
+        sb.append("{" as char)
         sb.append(symbols.key("name"))
         sb.append(json.quote_string(name))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append(json.format_i64(kind))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("location"))
         sb.append(symbols.location_span_object(source, uri, start, end))
-        sb.append(0x7D as char)                    ; }
-        sb.append(0x09 as char)                    ; tab: json / detail separator
+        sb.append("}" as char)
+        sb.append("\t" as char)                    ; tab: json / detail separator
         var di: size_t 0
         let dl detail.get_length()
         while di < dl
@@ -6224,7 +6224,7 @@ define symbols
             sb.append(detail.get(di) as char)
             set di: di + 1
         }
-        sb.append(0x09 as char)                    ; tab: detail / rettype separator
+        sb.append("\t" as char)                    ; tab: detail / rettype separator
         var ri: size_t 0
         let rl rettype.get_length()
         while ri < rl
@@ -6232,7 +6232,7 @@ define symbols
             sb.append(rettype.get(ri) as char)
             set ri: ri + 1
         }
-        sb.append(0x09 as char)                    ; tab: rettype / membertypes separator
+        sb.append("\t" as char)                    ; tab: rettype / membertypes separator
         var mi: size_t 0
         let ml membertypes.get_length()
         while mi < ml
@@ -6240,7 +6240,7 @@ define symbols
             sb.append(membertypes.get(mi) as char)
             set mi: mi + 1
         }
-        sb.append(0x0A as char)                    ; newline: record terminator
+        sb.append("\n" as char)                    ; newline: record terminator
         sb.to_string()
     }
 
@@ -6861,9 +6861,9 @@ define symbols
                 if symbols.range_binds_name(source, name, k, rend)
                 {
                     sb.append(json.format_i64(k as i64))
-                    sb.append(0x20 as char)         ; space
+                    sb.append(" " as char)
                     sb.append(json.format_i64(rend as i64))
-                    sb.append(0x0A as char)         ; newline
+                    sb.append("\n" as char)
                 }
                 ; routines don't nest in a body -> resume past this routine
                 if rend > j
@@ -6993,7 +6993,7 @@ define symbols
                     if ok
                     {
                         if first = false
-                            sb.append(0x2C as char)    ; ,
+                            sb.append("," as char)
                         var piece ""
                         if want_uri
                             set piece: symbols.location_span_object(source, uri, k, j)
@@ -7022,7 +7022,7 @@ define symbols
         ; documentHighlight): no shadow exclusion needed.
         let frag symbols.scan_fragment(source, uri, name, want_uri, range_packed, "")
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         var i: size_t 0
         let n frag.get_length()
         while i < n
@@ -7030,7 +7030,7 @@ define symbols
             sb.append(frag.get(i) as char)
             set i: i + 1
         }
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -7149,7 +7149,7 @@ define symbols
     function references_workspace(rp, source: String, uri: String, name: String, root: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         var first true
 
         ; (1) the current file (in-memory text, whole-file scan). Skip any
@@ -7187,7 +7187,7 @@ define symbols
             var i: size_t 0
             while i < n
             {
-                if listing.get(i) = (10 as char)
+                if listing.get(i) = ("\n" as char)
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > 0
@@ -7208,7 +7208,7 @@ define symbols
                                 if frag.get_length() > 0
                                 {
                                     if first = false
-                                        sb.append(0x2C as char)
+                                        sb.append("," as char)
                                     var fi: size_t 0
                                     let fn frag.get_length()
                                     while fi < fn
@@ -7225,7 +7225,7 @@ define symbols
                 set i: i + 1
             }
         }
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -7393,13 +7393,13 @@ define symbols
     function location_span_object(rp, source: String, uri: String, start: size_t, end: size_t) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("uri"))
         sb.append(json.quote_string(uri))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, end))
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -7451,10 +7451,10 @@ define symbols
     function highlight_object(rp, source: String, start: size_t, end: size_t) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, end))
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -7605,7 +7605,7 @@ define symbols
                     if ok
                     {
                         if first = false
-                            sb.append(0x2C as char)    ; ,
+                            sb.append("," as char)
                         let piece symbols.text_edit_object(source, k, j, new_name)
                         var ci: size_t 0
                         let cn piece.get_length()
@@ -7629,12 +7629,12 @@ define symbols
         ; Single-file scoped path (a local confined to its routine): no shadow.
         let frag symbols.edits_fragment(source, old_name, new_name, range_packed, "")
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("changes"))
-        sb.append(0x7B as char)                    ; { (changes object)
+        sb.append("{" as char)                    ; { (changes object)
         sb.append(json.quote_string(uri))
-        sb.append(0x3A as char)                    ; :
-        sb.append(0x5B as char)                    ; [ (TextEdit array)
+        sb.append(":" as char)
+        sb.append("[" as char)                    ; [ (TextEdit array)
         var i: size_t 0
         let n frag.get_length()
         while i < n
@@ -7642,9 +7642,9 @@ define symbols
             sb.append(frag.get(i) as char)
             set i: i + 1
         }
-        sb.append(0x5D as char)                    ; ]
-        sb.append(0x7D as char)                    ; } changes object
-        sb.append(0x7D as char)                    ; } workspace edit
+        sb.append("]" as char)
+        sb.append("}" as char)                    ; } changes object
+        sb.append("}" as char)                    ; } workspace edit
         sb.to_string()
     }
 
@@ -7661,9 +7661,9 @@ define symbols
     function rename_workspace(rp, source: String, uri: String, old_name: String, new_name: String, root: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("changes"))
-        sb.append(0x7B as char)                    ; { (changes object)
+        sb.append("{" as char)                    ; { (changes object)
         var first true
 
         ; (1) the current file. Skip any routine that binds `old_name` as a
@@ -7673,8 +7673,8 @@ define symbols
         if cur.get_length() > 0
         {
             sb.append(json.quote_string(uri))
-            sb.append(0x3A as char)                ; :
-            sb.append(0x5B as char)                ; [
+            sb.append(":" as char)
+            sb.append("[" as char)
             var ci: size_t 0
             let cn cur.get_length()
             while ci < cn
@@ -7682,7 +7682,7 @@ define symbols
                 sb.append(cur.get(ci) as char)
                 set ci: ci + 1
             }
-            sb.append(0x5D as char)                ; ]
+            sb.append("]" as char)
             set first: false
         }
 
@@ -7705,7 +7705,7 @@ define symbols
             var i: size_t 0
             while i < n
             {
-                if listing.get(i) = (10 as char)
+                if listing.get(i) = ("\n" as char)
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > 0
@@ -7725,11 +7725,11 @@ define symbols
                                 if frag.get_length() > 0
                                 {
                                     if first = false
-                                        sb.append(0x2C as char)
+                                        sb.append("," as char)
                                     let furi symbols.path_to_uri fpath
                                     sb.append(json.quote_string(furi))
-                                    sb.append(0x3A as char)        ; :
-                                    sb.append(0x5B as char)        ; [
+                                    sb.append(":" as char)
+                                    sb.append("[" as char)
                                     var fi: size_t 0
                                     let fn frag.get_length()
                                     while fi < fn
@@ -7737,7 +7737,7 @@ define symbols
                                         sb.append(frag.get(fi) as char)
                                         set fi: fi + 1
                                     }
-                                    sb.append(0x5D as char)        ; ]
+                                    sb.append("]" as char)
                                     set first: false
                                 }
                             }
@@ -7747,8 +7747,8 @@ define symbols
                 set i: i + 1
             }
         }
-        sb.append(0x7D as char)                    ; } changes object
-        sb.append(0x7D as char)                    ; } workspace edit
+        sb.append("}" as char)                    ; } changes object
+        sb.append("}" as char)                    ; } workspace edit
         sb.to_string()
     }
 
@@ -7756,13 +7756,13 @@ define symbols
     function text_edit_object(rp, source: String, start: size_t, end: size_t, new_name: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, end))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("newText"))
         sb.append(json.quote_string(new_name))
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -8122,8 +8122,8 @@ define symbols
     function bm_routine_record(rp, source: String, name: String, routine: RoutineSyntax) returns String
     {
         var sb StringBuilder()
-        sb.append(0x52 as char)                    ; R
-        sb.append(0x09 as char)
+        sb.append("R" as char)
+        sb.append("\t" as char)
         var ni: size_t 0
         let nl name.get_length()
         while ni < nl
@@ -8131,7 +8131,7 @@ define symbols
             sb.append(name.get(ni) as char)
             set ni: ni + 1
         }
-        sb.append(0x09 as char)
+        sb.append("\t" as char)
         let labels symbols.signature_param_labels(source, routine)
         var li: size_t 0
         let ll labels.get_length()
@@ -8140,7 +8140,7 @@ define symbols
             sb.append(labels.get(li) as char)
             set li: li + 1
         }
-        sb.append(0x09 as char)
+        sb.append("\t" as char)
         let rt symbols.routine_return_base routine
         var ri: size_t 0
         let rl rt.get_length()
@@ -8149,15 +8149,15 @@ define symbols
             sb.append(rt.get(ri) as char)
             set ri: ri + 1
         }
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.to_string()
     }
 
     function bm_concept_record(rp, name: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x43 as char)                    ; C
-        sb.append(0x09 as char)
+        sb.append("C" as char)
+        sb.append("\t" as char)
         var i: size_t 0
         let nl name.get_length()
         while i < nl
@@ -8165,7 +8165,7 @@ define symbols
             sb.append(name.get(i) as char)
             set i: i + 1
         }
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.to_string()
     }
 
@@ -8388,7 +8388,7 @@ define symbols
                             set t3: t3 + 1
                         }
                         var sb StringBuilder()
-                        sb.append(0x59 as char)        ; Y
+                        sb.append("Y" as char)
                         var li t2 + 1
                         while li < t3
                         {
@@ -8553,7 +8553,7 @@ define symbols
         let map symbols.binding_map source
 
         var sb StringBuilder()
-        sb.append(0x5B as char)                    ; [
+        sb.append("[" as char)
         var first true
         let len source.get_length()
         let kw_let "let"
@@ -8588,7 +8588,7 @@ define symbols
                         if bt.get_length() > 0
                         {
                             if first = false
-                                sb.append(0x2C as char)
+                                sb.append("," as char)
                             let th symbols.inlay_type_hint_object(source, j, bt)
                             var ti: size_t 0
                             let tn th.get_length()
@@ -8626,7 +8626,7 @@ define symbols
                                         if frag.get_length() > 0
                                         {
                                             if first = false
-                                                sb.append(0x2C as char)
+                                                sb.append("," as char)
                                             var fi: size_t 0
                                             let fn frag.get_length()
                                             while fi < fn
@@ -8641,7 +8641,7 @@ define symbols
                         }
             set k: j
         }
-        sb.append(0x5D as char)                    ; ]
+        sb.append("]" as char)
         sb.to_string()
     }
 
@@ -8791,7 +8791,7 @@ define symbols
                                     if a <= range_end
                                     {
                                         if first = false
-                                            sb.append(0x2C as char)
+                                            sb.append("," as char)
                                         let hint symbols.inlay_hint_object(source, a, pname)
                                         var hi: size_t 0
                                         let hn hint.get_length()
@@ -8848,22 +8848,22 @@ define symbols
             lbl.append(name.get(i) as char)
             set i: i + 1
         }
-        lbl.append(0x3A as char)                   ; :
+        lbl.append(":" as char)
         let lbl_str lbl.to_string()
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("position"))
         sb.append(symbols.offset_to_pos(source, offset))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("label"))
         sb.append(json.quote_string(lbl_str))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append "2"                             ; InlayHintKind.Parameter
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("paddingRight"))
         sb.append "true"
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -8872,8 +8872,8 @@ define symbols
     function inlay_type_hint_object(rp, source: String, offset: size_t, type_name: String) returns String
     {
         var lbl StringBuilder()
-        lbl.append(0x3A as char)                   ; :
-        lbl.append(0x20 as char)                   ; (space)
+        lbl.append(":" as char)
+        lbl.append(" " as char)                   ; (space)
         var i: size_t 0
         let nn type_name.get_length()
         while i < nn
@@ -8883,19 +8883,19 @@ define symbols
         }
         let lbl_str lbl.to_string()
         var sb StringBuilder()
-        sb.append(0x7B as char)                    ; {
+        sb.append("{" as char)
         sb.append(symbols.key("position"))
         sb.append(symbols.offset_to_pos(source, offset))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("label"))
         sb.append(json.quote_string(lbl_str))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append "1"                             ; InlayHintKind.Type
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("paddingLeft"))
         sb.append "true"
-        sb.append(0x7D as char)                    ; }
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -9279,7 +9279,7 @@ define symbols
             sig_label.append(name.get(ni) as char)
             set ni: ni + 1
         }
-        sig_label.append(0x28 as char)                 ; (
+        sig_label.append("(" as char)
 
         var first true
         if routine.parameters <> null
@@ -9319,9 +9319,9 @@ define symbols
                                 {
                                     if first = false
                                     {
-                                        sig_label.append(0x2C as char)
-                                        sig_label.append(0x20 as char)
-                                        arr.append(0x2C as char)
+                                        sig_label.append("," as char)
+                                        sig_label.append(" " as char)
+                                        arr.append("," as char)
                                     }
                                     var li: size_t 0
                                     let ll ptext.get_length()
@@ -9370,7 +9370,7 @@ define symbols
                     }
                 }
         }
-        sig_label.append(0x29 as char)                 ; )
+        sig_label.append(")" as char)
 
         var act active
         if count > 0
@@ -9383,15 +9383,15 @@ define symbols
         let arr_str arr.to_string()
 
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(symbols.key("signatures"))
-        sb.append(0x5B as char)                        ; [
-        sb.append(0x7B as char)                        ; {
+        sb.append("[" as char)
+        sb.append("{" as char)
         sb.append(symbols.key("label"))
         sb.append(json.quote_string(sig_label_str))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("parameters"))
-        sb.append(0x5B as char)                        ; [
+        sb.append("[" as char)
         var pi: size_t 0
         let pl arr_str.get_length()
         while pi < pl
@@ -9399,16 +9399,16 @@ define symbols
             sb.append(arr_str.get(pi) as char)
             set pi: pi + 1
         }
-        sb.append(0x5D as char)                        ; ]
-        sb.append(0x7D as char)                        ; }
-        sb.append(0x5D as char)                        ; ]
-        sb.append(0x2C as char)
+        sb.append("]" as char)
+        sb.append("}" as char)
+        sb.append("]" as char)
+        sb.append("," as char)
         sb.append(symbols.key("activeSignature"))
-        sb.append(0x30 as char)                        ; 0
-        sb.append(0x2C as char)
+        sb.append("0" as char)
+        sb.append("," as char)
         sb.append(symbols.key("activeParameter"))
         sb.append(json.format_i64(act as i64))
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -9506,7 +9506,7 @@ define symbols
             sig_label.append(name.get(ni) as char)
             set ni: ni + 1
         }
-        sig_label.append(0x28 as char)                 ; (
+        sig_label.append("(" as char)
 
         ; Append a trailing 0x1F so every segment (incl. the last) ends with a
         ; separator and the split loop flushes uniformly.
@@ -9533,9 +9533,9 @@ define symbols
                     let ptext symbols.substring(ws, seg_start, i)
                     if first = false
                     {
-                        sig_label.append(0x2C as char)
-                        sig_label.append(0x20 as char)
-                        arr.append(0x2C as char)
+                        sig_label.append("," as char)
+                        sig_label.append(" " as char)
+                        arr.append("," as char)
                     }
                     var li: size_t 0
                     let ll ptext.get_length()
@@ -9559,7 +9559,7 @@ define symbols
                 set i: i + 1
             }
         }
-        sig_label.append(0x29 as char)                 ; )
+        sig_label.append(")" as char)
 
         var act active
         if count > 0
@@ -9572,15 +9572,15 @@ define symbols
         let arr_str arr.to_string()
 
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(symbols.key("signatures"))
-        sb.append(0x5B as char)                        ; [
-        sb.append(0x7B as char)                        ; {
+        sb.append("[" as char)
+        sb.append("{" as char)
         sb.append(symbols.key("label"))
         sb.append(json.quote_string(sig_label_str))
-        sb.append(0x2C as char)
+        sb.append("," as char)
         sb.append(symbols.key("parameters"))
-        sb.append(0x5B as char)                        ; [
+        sb.append("[" as char)
         var pi: size_t 0
         let pl arr_str.get_length()
         while pi < pl
@@ -9588,16 +9588,16 @@ define symbols
             sb.append(arr_str.get(pi) as char)
             set pi: pi + 1
         }
-        sb.append(0x5D as char)                        ; ]
-        sb.append(0x7D as char)                        ; }
-        sb.append(0x5D as char)                        ; ]
-        sb.append(0x2C as char)
+        sb.append("]" as char)
+        sb.append("}" as char)
+        sb.append("]" as char)
+        sb.append("," as char)
         sb.append(symbols.key("activeSignature"))
-        sb.append(0x30 as char)                        ; 0
-        sb.append(0x2C as char)
+        sb.append("0" as char)
+        sb.append("," as char)
         sb.append(symbols.key("activeParameter"))
         sb.append(json.format_i64(act as i64))
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -9622,8 +9622,8 @@ define symbols
             let tt symbols.type_text(source, ann.type)
             if tt.get_length() > 0
             {
-                sb.append(0x3A as char)                ; :
-                sb.append(0x20 as char)                ; space
+                sb.append(":" as char)
+                sb.append(" " as char)
                 var ti: size_t 0
                 let tl tt.get_length()
                 while ti < tl
@@ -9662,7 +9662,7 @@ define symbols
                 if eptr <> null
                 {
                     let ex (*eptr)
-                    sb.append(0x2E as char)            ; .
+                    sb.append("." as char)
                     let en ex.name
                     var xi: size_t 0
                     let xl en.get_length()
@@ -9681,7 +9681,7 @@ define symbols
             if g.generics <> null
             {
                 let gs (*g.generics)
-                sb.append(0x5B as char)                ; [
+                sb.append("[" as char)
                 var first true
                 var gi: size_t 0
                 while gi < gs.length
@@ -9692,8 +9692,8 @@ define symbols
                         let ga (*gptr)
                         if first = false
                         {
-                            sb.append(0x2C as char)
-                            sb.append(0x20 as char)
+                            sb.append("," as char)
+                            sb.append(" " as char)
                         }
                         let inner symbols.type_text(source, ga.type)
                         var ii: size_t 0
@@ -9707,11 +9707,11 @@ define symbols
                     }
                     set gi: gi + 1
                 }
-                sb.append(0x5D as char)                ; ]
+                sb.append("]" as char)
             }
         }
         if ty.optional <> null
-            sb.append(0x3F as char)                    ; ?
+            sb.append("?" as char)
         sb.to_string()
     }
 
@@ -9719,10 +9719,10 @@ define symbols
     function param_item(rp, ptext: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x7B as char)
+        sb.append("{" as char)
         sb.append(symbols.key("label"))
         sb.append(json.quote_string(ptext))
-        sb.append(0x7D as char)
+        sb.append("}" as char)
         sb.to_string()
     }
 
@@ -9763,7 +9763,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if result.get_length() = 0
                 {
@@ -9831,7 +9831,7 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            if listing.get(i) = (10 as char)
+            if listing.get(i) = ("\n" as char)
             {
                 if result.get_length() = 0
                 {

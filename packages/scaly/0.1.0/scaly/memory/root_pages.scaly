@@ -123,7 +123,7 @@ procedure scaly_eputnl()
     ; it to pointer[void] and writing 1 byte emitted the struct's first byte
     ; (garbage), not the newline. Write the LF byte from the scratch buffer.
     let buf scaly_fmt_scratch_ptr()
-    set *buf: (10 as char)
+    set *buf: ("\n" as char)
     write(2 as int, buf as pointer[void], 1 as size_t)
 }
 
@@ -144,7 +144,7 @@ procedure scaly_eputi(n: i64)
     if val = 0
     {
         set pos: pos - 1
-        set *(buf + pos): 48 as char
+        set *(buf + pos): "0" as char
     }
     while val > 0
     {
@@ -156,7 +156,7 @@ procedure scaly_eputi(n: i64)
     if negative
     {
         set pos: pos - 1
-        set *(buf + pos): 45 as char
+        set *(buf + pos): "-" as char
     }
     let len 31 - pos
     write(2 as int, (buf + pos) as pointer[void], len as size_t)
@@ -177,8 +177,8 @@ function hex_digit(nibble: i64) returns char
 procedure scaly_eputp(p: pointer[void])
 {
     let buf scaly_fmt_scratch_ptr()
-    set *(buf + 0): 48 as char
-    set *(buf + 1): 120 as char
+    set *(buf + 0): "0" as char
+    set *(buf + 1): "x" as char
     var val p as u64
     var i: i64 17
     while i >= 2

@@ -583,7 +583,7 @@ define Emitter
         while off < target
         {
             let c source_text.get off
-            if c = (10 as char)
+            if c = ("\n" as char)
             {
                 set line: line + 1
                 set col: 1
@@ -4296,22 +4296,22 @@ define Emitter
         {
             let c mangled.get i
             var is_param: bool false
-            if c = (84 as char)
+            if c = ("T" as char)
                 set is_param: true
-            if c = (75 as char)
+            if c = ("K" as char)
                 set is_param: true
-            if c = (86 as char)
+            if c = ("V" as char)
                 set is_param: true
             if is_param
             {
                 let prev mangled.get(i - 1)
-                if prev = (49 as char)
+                if prev = ("1" as char)
                 {
                     let prev2 mangled.get(i - 2)
                     var prev2_digit: bool false
-                    if prev2 >= (48 as char)
+                    if prev2 >= ("0" as char)
                     {
-                        if prev2 <= (57 as char)
+                        if prev2 <= ("9" as char)
                             set prev2_digit: true
                     }
                     if prev2_digit = false
@@ -13696,8 +13696,8 @@ define Emitter
         if name.get_length() = 0
             return false
         let c name.get(0)
-        if c >= (65 as char)
-            if c <= (90 as char)
+        if c >= ("A" as char)
+            if c <= ("Z" as char)
                 return true
         false
     }

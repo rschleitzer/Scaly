@@ -125,11 +125,11 @@ define semantic
         var sb StringBuilder()
         if ty.get_length() > 0
         {
-            sb.append(0x31 as char)                ; '1' = hit
+            sb.append("1" as char)                ; '1' = hit
             sb.append ty
             return sb.to_string()
         }
-        sb.append(0x30 as char)                    ; '0' = miss
+        sb.append("0" as char)                    ; '0' = miss
         sb.to_string()
     }
 
@@ -182,7 +182,7 @@ define semantic
                 return off
             let c source.get off
             set off: off + 1
-            if c = (10 as char)
+            if c = ("\n" as char)
                 set cur_line: cur_line + 1
         }
         var col: size_t 0
@@ -191,7 +191,7 @@ define semantic
             if off >= len
                 return off
             let c source.get off
-            if c = (10 as char)
+            if c = ("\n" as char)
                 return off
             set off: off + 1
             set col: col + 1

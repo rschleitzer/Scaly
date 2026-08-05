@@ -942,7 +942,7 @@ define cli
         while off < target
         {
             let c source.get off
-            if c = (10 as char)
+            if c = ("\n" as char)
             {
                 set line: line + 1
                 set col: 1
@@ -996,7 +996,7 @@ define cli
                     ; never-true comparison under stage-1 (escape handling
                     ; in char-cast literals); 10 works in every stage.
                     let c dsrc.get off
-                    if c = (10 as char)
+                    if c = ("\n" as char)
                     {
                         set line: line + 1
                         set col: 1
@@ -1123,7 +1123,7 @@ define cli
                 {
                     ; Numeric LF compare (see print_diagnostics).
                     let c cur_src.get off
-                    if c = (10 as char)
+                    if c = ("\n" as char)
                     {
                         set line: line + 1
                         set col: 1
@@ -1162,7 +1162,7 @@ define cli
         var digits Array[char]()
         while value > 0
         {
-            let digit ((value % 10) as char) + 48 as char
+            let digit ((value % 10) as char) + "0" as char
             digits.add digit
             set value: value / 10
         }

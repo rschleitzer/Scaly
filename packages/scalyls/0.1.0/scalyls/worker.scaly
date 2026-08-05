@@ -427,14 +427,14 @@ define worker
     function semantic_tokens(rp, uri: String, text: String) returns String
     {
         var fb StringBuilder()
-        fb.append(0x7B as char)                    ; {
-        fb.append(0x22 as char)                    ; "
+        fb.append("{" as char)
+        fb.append("\"" as char)
         fb.append "data"
-        fb.append(0x22 as char)                    ; "
-        fb.append(0x3A as char)                    ; :
-        fb.append(0x5B as char)                    ; [
-        fb.append(0x5D as char)                    ; ]
-        fb.append(0x7D as char)                    ; }
+        fb.append("\"" as char)
+        fb.append(":" as char)
+        fb.append("[" as char)
+        fb.append("]" as char)
+        fb.append("}" as char)
         worker.exchange("t", uri, text, "", fb.to_string())
     }
 

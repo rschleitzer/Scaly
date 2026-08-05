@@ -351,13 +351,13 @@ define json
     function decode_escape(p: pointer[JsonParser], e: u8) returns char
     {
         if e = 0x6E             ; 'n'
-            return 10 as char
+            return "\n" as char
 
         if e = 0x74             ; 't'
-            return 9 as char
+            return "\t" as char
 
         if e = 0x72             ; 'r'
-            return 13 as char
+            return "\r" as char
 
         if e = 0x62             ; 'b'
             return 8 as char
@@ -379,7 +379,7 @@ define json
             if value < 128
                 return value as char
 
-            return 0x3F as char            ; '?'
+            return "?" as char            ; '?'
         }
 
         ; default: \" \\ \/ map to themselves
@@ -524,36 +524,36 @@ define json
             when arr: Array
             {
                 var sb StringBuilder()
-                sb.append(0x5B as char)    ; '['
+                sb.append("[" as char)    ; '['
                 var i: size_t 0
                 while i < arr.count
                 {
                     if i > 0
-                        sb.append(0x2C as char)       ; ','
+                        sb.append("," as char)       ; ','
 
                     sb.append(json.stringify(*(arr.items + i)))
                     set i: i + 1
                 }
-                sb.append(0x5D as char)    ; ']'
+                sb.append("]" as char)    ; ']'
                 return sb.to_string()
             }
             when obj: Object
             {
                 var sb StringBuilder()
-                sb.append(0x7B as char)    ; '{'
+                sb.append("{" as char)    ; '{'
                 var i: size_t 0
                 while i < obj.count
                 {
                     if i > 0
-                        sb.append(0x2C as char)
+                        sb.append("," as char)
 
                     let mm (*(obj.members + i))
                     sb.append(json.quote_string(mm.key))
-                    sb.append(0x3A as char)           ; ':'
+                    sb.append(":" as char)           ; ':'
                     sb.append(json.stringify(mm.value))
                     set i: i + 1
                 }
-                sb.append(0x7D as char)    ; '}'
+                sb.append("}" as char)    ; '}'
                 return sb.to_string()
             }
             else
@@ -564,7 +564,7 @@ define json
     function quote_string(rp, s: String) returns String
     {
         var sb StringBuilder()
-        sb.append(0x22 as char)            ; opening '"'
+        sb.append("\"" as char)            ; opening '"'
         let len s.get_length()
         var i: size_t 0
         while i < len
@@ -572,36 +572,36 @@ define json
             let c s.get i
             if c = 0x22            ; '"'
             {
-                sb.append(0x5C as char)
-                sb.append(0x22 as char)
+                sb.append("\\" as char)
+                sb.append("\"" as char)
             }
             else
             {
                 if c = 0x5C        ; '\'
                 {
-                    sb.append(0x5C as char)
-                    sb.append(0x5C as char)
+                    sb.append("\\" as char)
+                    sb.append("\\" as char)
                 }
                 else
                 {
                     if c = 0x0A    ; LF
                     {
-                        sb.append(0x5C as char)
-                        sb.append(0x6E as char)       ; 'n'
+                        sb.append("\\" as char)
+                        sb.append("n" as char)       ; 'n'
                     }
                     else
                     {
                         if c = 0x0D    ; CR
                         {
-                            sb.append(0x5C as char)
-                            sb.append(0x72 as char)   ; 'r'
+                            sb.append("\\" as char)
+                            sb.append("r" as char)   ; 'r'
                         }
                         else
                         {
                             if c = 0x09    ; tab
                             {
-                                sb.append(0x5C as char)
-                                sb.append(0x74 as char)   ; 't'
+                                sb.append("\\" as char)
+                                sb.append("t" as char)   ; 't'
                             }
                             else
                                 sb.append(c as char)
@@ -611,7 +611,7 @@ define json
             }
             set i: i + 1
         }
-        sb.append(0x22 as char)            ; closing '"'
+        sb.append("\"" as char)            ; closing '"'
         sb.to_string()
     }
 
@@ -624,7 +624,7 @@ define json
         var value n
         if value < 0
         {
-            sb.append(0x2D as char)        ; '-'
+            sb.append("-" as char)        ; '-'
             set value: 0 - value
         }
 
@@ -632,7 +632,7 @@ define json
         var digits Array[char]()
         while value > 0
         {
-            let digit ((value % 10) as char) + (0x30 as char)
+            let digit ((value % 10) as char) + ("0" as char)
             digits.add digit
             set value: value / 10
         }

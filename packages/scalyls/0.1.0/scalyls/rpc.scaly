@@ -141,10 +141,10 @@ define rpc
         ; propagate (the receiver is copied), so the size is formatted
         ; into its own String and appended by value.
         sb.append(rpc.format_size(len))
-        sb.append(13 as char)              ; CR
-        sb.append(10 as char)              ; LF
-        sb.append(13 as char)              ; CR
-        sb.append(10 as char)              ; LF
+        sb.append("\r" as char)
+        sb.append("\n" as char)
+        sb.append("\r" as char)
+        sb.append("\n" as char)
 
         rpc.write_all(sb.to_string())
         rpc.write_all body
@@ -184,7 +184,7 @@ define rpc
         var digits Array[char]()
         while value > 0
         {
-            let digit ((value % 10) as char) + (0x30 as char)
+            let digit ((value % 10) as char) + ("0" as char)
             digits.add digit
             set value: value / 10
         }
@@ -316,10 +316,10 @@ define rpc
         var sb StringBuilder()
         sb.append "Content-Length: "
         sb.append(rpc.format_size(len))
-        sb.append(13 as char)
-        sb.append(10 as char)
-        sb.append(13 as char)
-        sb.append(10 as char)
+        sb.append("\r" as char)
+        sb.append("\n" as char)
+        sb.append("\r" as char)
+        sb.append("\n" as char)
 
         rpc.write_all_fd(fd, sb.to_string())
         rpc.write_all_fd(fd, body)
