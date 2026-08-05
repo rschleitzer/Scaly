@@ -2832,6 +2832,74 @@ define Planner
             PlannedOperand(op.loc, op.expr, null, int_type)
         }
 
+        ; type_is_integer_64: an integer type that is 64 bits wide. Retyping a
+        ; bare literal to one of these can never narrow anything, which is what
+        ; makes the ARITHMETIC retype safe for them and unsafe for the rest.
+        function type_is_integer_64(t: PlannedType) returns bool
+        {
+            if Planner.type_is_integer_like(t) = false
+                return false
+            if t.name = "int"
+                return true
+            if t.name = "uint"
+                return true
+            if t.name = "i64"
+                return true
+            if t.name = "u64"
+                return true
+            if t.name = "size_t"
+                return true
+            if t.name = "size"
+                return true
+            false
+        }
+
+        ; is_integer_arithmetic_operator: the arithmetic and bitwise operators
+        ; a bare literal may retype across when the OTHER side is 64 bits wide
+        ; (type_is_integer_64). Two things ride on this:
+        ;
+        ;   * signedness. `is_signed` in emit_intrinsic_binary_op derives from
+        ;     the LEFT operand's type alone, so `256 / count` with count a
+        ;     size_t emitted `sdiv` — the literal's `int` was on the left and
+        ;     won. Retyping the literal to size_t makes it `udiv`. Measured:
+        ;     that literal-on-the-left shape is the ONLY one that flipped;
+        ;     `count / 2`, `this.vec_size / 2` and `(hi - lo) / 2` were all
+        ;     already unsigned.
+        ;   * nothing else. At 64 bits the literal's own width is already the
+        ;     operand's width, so no instruction changes except the predicate.
+        ;
+        ; A NARROW other side is excluded on purpose: there the retype would
+        ; narrow the RESULT too (`x + 1` on a u32 would wrap at 2^32 instead of
+        ; widening), and that is a change of meaning rather than a fix.
+        function is_integer_arithmetic_operator(name: String) returns bool
+        {
+            if name = "+"
+                return true
+            if name = "-"
+                return true
+            if name = "*"
+                return true
+            if name = "/"
+                return true
+            if name = "%"
+                return true
+            if name = "div"
+                return true
+            if name = "mod"
+                return true
+            if name = "<<"
+                return true
+            if name = ">>"
+                return true
+            if name = "&"
+                return true
+            if name = "|"
+                return true
+            if name = "xor"
+                return true
+            false
+        }
+
         ; is_integer_comparison_operator: the relational and equality
         ; operators — the only binary operators where retyping a bare integer
         ; literal to the OTHER side's type is purely a fix. The result is a
@@ -11752,6 +11820,24 @@ define Planner
                         if this.operand_is_integer_constant(rhs) = false
                             if this.operand_retypes_to_integer(result, rhs.result_type)
                                 set result: this.retype_integer_operand(result, rhs.result_type)
+                    }
+
+                    ; Same for ARITHMETIC, but only across a 64-bit sibling
+                    ; (see is_integer_arithmetic_operator for why the narrow
+                    ; case is excluded). This is what makes `256 / count` a
+                    ; udiv: without it the literal's `int` sits on the left,
+                    ; and emit_intrinsic_binary_op reads signedness off the
+                    ; LEFT operand alone.
+                    if Planner.is_integer_arithmetic_operator(op_name)
+                    {
+                        if Planner.type_is_integer_64(result.result_type)
+                            if this.operand_is_integer_constant(result) = false
+                                if this.operand_retypes_to_integer(rhs, result.result_type)
+                                    set rhs: this.retype_integer_operand(rhs, result.result_type)
+                        if Planner.type_is_integer_64(rhs.result_type)
+                            if this.operand_is_integer_constant(rhs) = false
+                                if this.operand_retypes_to_integer(result, rhs.result_type)
+                                    set result: this.retype_integer_operand(result, rhs.result_type)
                     }
 
                     ; Unknown identifier on either side of a binary

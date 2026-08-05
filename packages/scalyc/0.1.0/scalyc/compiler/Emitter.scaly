@@ -5595,7 +5595,7 @@ define Emitter
         var vcount: size_t 1
         while rest >= 0x80
         {
-            set rest: rest >> (7 as size_t)
+            set rest: rest >> 7
             set vcount: vcount + 1
         }
         let total vcount + content_len + (1 as size_t)
@@ -5607,7 +5607,7 @@ define Emitter
         while wrest >= 0x80
         {
             bytes.put(wi, LLVMConstInt(i8ty, wrest | (0x80 as size_t), 0))
-            set wrest: wrest >> (7 as size_t)
+            set wrest: wrest >> 7
             set wi: wi + 1
         }
         bytes.put(wi, LLVMConstInt(i8ty, wrest, 0))
@@ -14443,7 +14443,7 @@ define Emitter
         var body_weight parfor_weight_action(for_expr.body)
         if body_weight = 0
             set body_weight: 1
-        var check0: size_t (256 as size_t) / body_weight
+        var check0: size_t 256 / body_weight
         if check0 = 0
             set check0: 1
         let check0_const LLVMConstInt(i64_ty, check0, 0)

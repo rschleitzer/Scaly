@@ -31,7 +31,7 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> (7 as size_t)
+            set rest: rest >> 7
             set counter: counter + 1
         }
 
@@ -45,7 +45,7 @@ define String (data: pointer[u8](null))
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
-            set wrest: wrest >> (7 as size_t)
+            set wrest: wrest >> 7
             set wi: wi + 1
         }
         set *(data + wi): wrest as u8
@@ -64,7 +64,7 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> (7 as size_t)
+            set rest: rest >> 7
             set counter: counter + 1
         }
 
@@ -76,7 +76,7 @@ define String (data: pointer[u8](null))
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
-            set wrest: wrest >> (7 as size_t)
+            set wrest: wrest >> 7
             set wi: wi + 1
         }
         set *(data + wi): wrest as u8
@@ -91,7 +91,7 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> (7 as size_t)
+            set rest: rest >> 7
             set counter: counter + 1
         }
 
@@ -103,7 +103,7 @@ define String (data: pointer[u8](null))
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
-            set wrest: wrest >> (7 as size_t)
+            set wrest: wrest >> 7
             set wi: wi + 1
         }
         set *(data + wi): wrest as u8
@@ -126,7 +126,7 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> (7 as size_t)
+            set rest: rest >> 7
             set counter: counter + 1
         }
 
@@ -138,7 +138,7 @@ define String (data: pointer[u8](null))
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
-            set wrest: wrest >> (7 as size_t)
+            set wrest: wrest >> 7
             set wi: wi + 1
         }
         set *(data + wi): wrest as u8
