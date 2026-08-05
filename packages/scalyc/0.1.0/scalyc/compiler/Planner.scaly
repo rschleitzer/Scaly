@@ -2832,6 +2832,37 @@ define Planner
             PlannedOperand(op.loc, op.expr, null, int_type)
         }
 
+        ; is_integer_comparison_operator: the relational and equality
+        ; operators — the only binary operators where retyping a bare integer
+        ; literal to the OTHER side's type is purely a fix. The result is a
+        ; bool either way, so nothing downstream changes type; what changes is
+        ; the predicate. `x < 0` with x unsigned used to emit `icmp slt`,
+        ; because the literal's `int` won the pair and int is signed — and slt
+        ; differs from ult exactly when the top bit is set.
+        ;
+        ; The ARITHMETIC operators are deliberately excluded. There, narrowing
+        ; the literal would also narrow the RESULT: `x + 1` with x: u32 is an
+        ; i64 add today (the typed side widens) and would become an i32 add
+        ; that wraps at 2^32. That is a change of meaning, not a correction,
+        ; and it is not this pass's business — the explicit cast stays the way
+        ; to ask for narrow arithmetic.
+        function is_integer_comparison_operator(name: String) returns bool
+        {
+            if name = "<"
+                return true
+            if name = ">"
+                return true
+            if name = "<="
+                return true
+            if name = ">="
+                return true
+            if name = "="
+                return true
+            if name = "<>"
+                return true
+            false
+        }
+
         ; arg_is_foldable_float: is the argument at position `j` a bare float
         ; literal that may retype to a float/f32 parameter? The counterpart to
         ; arg_is_foldable_char_string for the float-width case.
@@ -11704,6 +11735,24 @@ define Planner
                         if this.operand_is_float_constant(result)
                             if this.operand_is_float_constant(rhs) = false
                                 set result: this.retype_float_operand(result, rhs.result_type)
+
+                    ; Integer literal beside an integer-typed operand in a
+                    ; COMPARISON: retype the literal to the other side's type,
+                    ; so `count > 0` on a size_t emits `ugt` and not `sgt`.
+                    ; Before this the literal's own `int` won the pair and
+                    ; every bare comparison against an unsigned value was
+                    ; SIGNED — the tree hid it by writing `> (0 as size_t)`
+                    ; some 5000 times. Guarded on the other side NOT being a
+                    ; literal too: two literals keep int and fold as before.
+                    if Planner.is_integer_comparison_operator(op_name)
+                    {
+                        if this.operand_is_integer_constant(result) = false
+                            if this.operand_retypes_to_integer(rhs, result.result_type)
+                                set rhs: this.retype_integer_operand(rhs, result.result_type)
+                        if this.operand_is_integer_constant(rhs) = false
+                            if this.operand_retypes_to_integer(result, rhs.result_type)
+                                set result: this.retype_integer_operand(result, rhs.result_type)
+                    }
 
                     ; Unknown identifier on either side of a binary
                     ; operator: a bare, chain-free, single-segment Type

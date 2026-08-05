@@ -1695,8 +1695,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceIcE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -5540,8 +5539,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -6845,8 +6843,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -8484,8 +8481,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -10426,8 +10422,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String12LocalBindingEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -11693,8 +11688,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceImE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -12992,8 +12986,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String11PlannedTypeEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -14260,8 +14253,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI14TypeConstraintE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -15528,8 +15520,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairIm11PlannedTypeEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -16796,8 +16787,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6VectorI7OperandEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -18064,8 +18054,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI9StatementE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -19332,8 +19321,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI4CaseE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z4Case, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -20600,8 +20588,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6BranchE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6Branch, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -21868,8 +21855,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI4WhenE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z4When, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -23136,8 +23122,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI4ItemE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z4Item, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -24404,8 +24389,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI7OperandE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z7Operand, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -25672,8 +25656,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI9ComponentE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z9Component, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -26940,8 +26923,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI9AttributeE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z9Attribute, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -28208,8 +28190,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI16GenericParameterE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z16GenericParameter, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -29476,8 +29457,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI3UseE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z3Use, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -30744,8 +30724,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6MemberE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6Member, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -32012,8 +31991,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI8FunctionE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z8Function, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -34214,8 +34192,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -35482,8 +35459,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI8Nameable8NameableEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI8Nameable8NameableE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -36760,8 +36736,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6String8NameableEEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -38028,8 +38003,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String8NameableEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8NameableE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -39565,8 +39539,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -41435,8 +41408,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String7ConceptEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -42703,8 +42675,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI16PlannedStructureE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -43971,8 +43942,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12PlannedUnionE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -45239,8 +45209,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI15PlannedFunctionE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -46507,8 +46476,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI13PlannedGlobalE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -47775,8 +47743,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String8FunctionEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -49043,8 +49010,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String6LambdaEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -50311,8 +50277,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String8OperatorEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -51579,8 +51544,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI11PlannedTypeE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -52847,8 +52811,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12KeyValuePairI6String6ModuleEE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -54115,8 +54078,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI17PlannerDiagnosticE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -55383,8 +55345,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI6ModuleE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6Module, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -56651,8 +56612,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI7ProgramE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -57919,8 +57879,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12EscapeRecordE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -60705,8 +60664,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI17DeclarationSyntaxE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -63024,8 +62982,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI12MemberSyntaxE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -64429,8 +64386,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI13VariantSyntaxE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z13VariantSyntax, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -69346,8 +69302,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI10ItemSyntaxE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -71586,8 +71541,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI10PartSyntaxE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -94587,8 +94541,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI15ExtensionSyntaxE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z15ExtensionSyntax, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -95855,8 +95808,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI21GenericArgumentSyntaxE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z21GenericArgumentSyntax, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -98034,8 +97986,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI16PlannedStatementE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -99798,8 +99749,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI14PlannedOperandE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -101121,8 +101071,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI18PlannedInitializerE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -102389,8 +102338,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI15PlannedOperatorE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -105154,8 +105102,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI16PlannedComponentE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z16PlannedComponent, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -106422,8 +106369,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI13PlannedBranchE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z13PlannedBranch, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -107690,8 +107636,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI11PlannedWhenE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -108958,8 +108903,7 @@ if.end6:                                          ; preds = %if.end
   %length11 = extractvalue %_Z5SliceI19PlannedMemberAccessE %load.struct10, 1
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z19PlannedMemberAccess, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
-  %sext = sext i32 %call to i64
-  %eq12 = icmp eq i64 %sext, 0
+  %eq12 = icmp eq i32 %call, 0
   ret i1 %eq12
 }
 
@@ -110651,8 +110595,7 @@ entry:
   store ptr %arr.ptr, ptr %p2c1, align 8
   %p2c2 = load ptr, ptr %p2c1, align 8
   %call3 = call i32 @pipe(ptr %p2c2)
-  %sext = sext i32 %call3 to i64
-  %ne = icmp ne i64 %sext, 0
+  %ne = icmp ne i32 %call3, 0
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -110663,80 +110606,79 @@ if.end:                                           ; preds = %entry
   store ptr %arr.ptr4, ptr %c2p5, align 8
   %c2p6 = load ptr, ptr %c2p5, align 8
   %call7 = call i32 @pipe(ptr %c2p6)
-  %sext8 = sext i32 %call7 to i64
-  %ne9 = icmp ne i64 %sext8, 0
-  br i1 %ne9, label %if.then10, label %if.end11
+  %ne8 = icmp ne i32 %call7, 0
+  br i1 %ne8, label %if.then9, label %if.end10
 
-if.then10:                                        ; preds = %if.end
+if.then9:                                         ; preds = %if.end
   ret void
 
-if.end11:                                         ; preds = %if.end
-  %call12 = call i64 @fork()
-  %eq = icmp eq i64 %call12, 0
-  br i1 %eq, label %if.then13, label %if.end14
+if.end10:                                         ; preds = %if.end
+  %call11 = call i64 @fork()
+  %eq = icmp eq i64 %call11, 0
+  br i1 %eq, label %if.then12, label %if.end13
 
-if.then13:                                        ; preds = %if.end11
-  %call15 = call i64 @close(i64 0)
-  %call16 = call i64 @close(i64 1)
-  %p2c17 = load ptr, ptr %p2c1, align 8
-  %ptr.add = getelementptr inbounds i32, ptr %p2c17, i64 1
+if.then12:                                        ; preds = %if.end10
+  %call14 = call i64 @close(i64 0)
+  %call15 = call i64 @close(i64 1)
+  %p2c16 = load ptr, ptr %p2c1, align 8
+  %ptr.add = getelementptr inbounds i32, ptr %p2c16, i64 1
   %deref = load i32, ptr %ptr.add, align 4
-  %call18 = call i64 @close(i32 %deref)
-  %c2p19 = load ptr, ptr %c2p5, align 8
-  %ptr.add20 = getelementptr inbounds i32, ptr %c2p19, i64 0
-  %deref21 = load i32, ptr %ptr.add20, align 4
-  %call22 = call i64 @close(i32 %deref21)
-  %p2c23 = load ptr, ptr %p2c1, align 8
-  %ptr.add24 = getelementptr inbounds i32, ptr %p2c23, i64 0
-  %deref25 = load i32, ptr %ptr.add24, align 4
-  %c2p26 = load ptr, ptr %c2p5, align 8
-  %ptr.add27 = getelementptr inbounds i32, ptr %c2p26, i64 1
-  %deref28 = load i32, ptr %ptr.add27, align 4
-  %call29 = call i64 @_ZN6worker5serveEii(i32 %deref25, i32 %deref28)
-  call void @exit(i64 %call29)
+  %call17 = call i64 @close(i32 %deref)
+  %c2p18 = load ptr, ptr %c2p5, align 8
+  %ptr.add19 = getelementptr inbounds i32, ptr %c2p18, i64 0
+  %deref20 = load i32, ptr %ptr.add19, align 4
+  %call21 = call i64 @close(i32 %deref20)
+  %p2c22 = load ptr, ptr %p2c1, align 8
+  %ptr.add23 = getelementptr inbounds i32, ptr %p2c22, i64 0
+  %deref24 = load i32, ptr %ptr.add23, align 4
+  %c2p25 = load ptr, ptr %c2p5, align 8
+  %ptr.add26 = getelementptr inbounds i32, ptr %c2p25, i64 1
+  %deref27 = load i32, ptr %ptr.add26, align 4
+  %call28 = call i64 @_ZN6worker5serveEii(i32 %deref24, i32 %deref27)
+  call void @exit(i64 %call28)
   ret void
 
-if.end14:                                         ; preds = %if.end11
-  %lt = icmp slt i64 %call12, 0
-  br i1 %lt, label %if.then30, label %if.end31
+if.end13:                                         ; preds = %if.end10
+  %lt = icmp slt i64 %call11, 0
+  br i1 %lt, label %if.then29, label %if.end30
 
-if.then30:                                        ; preds = %if.end14
-  %p2c32 = load ptr, ptr %p2c1, align 8
-  %ptr.add33 = getelementptr inbounds i32, ptr %p2c32, i64 0
-  %deref34 = load i32, ptr %ptr.add33, align 4
-  %call35 = call i64 @close(i32 %deref34)
-  %p2c36 = load ptr, ptr %p2c1, align 8
-  %ptr.add37 = getelementptr inbounds i32, ptr %p2c36, i64 1
-  %deref38 = load i32, ptr %ptr.add37, align 4
-  %call39 = call i64 @close(i32 %deref38)
-  %c2p40 = load ptr, ptr %c2p5, align 8
-  %ptr.add41 = getelementptr inbounds i32, ptr %c2p40, i64 0
-  %deref42 = load i32, ptr %ptr.add41, align 4
-  %call43 = call i64 @close(i32 %deref42)
-  %c2p44 = load ptr, ptr %c2p5, align 8
-  %ptr.add45 = getelementptr inbounds i32, ptr %c2p44, i64 1
-  %deref46 = load i32, ptr %ptr.add45, align 4
-  %call47 = call i64 @close(i32 %deref46)
+if.then29:                                        ; preds = %if.end13
+  %p2c31 = load ptr, ptr %p2c1, align 8
+  %ptr.add32 = getelementptr inbounds i32, ptr %p2c31, i64 0
+  %deref33 = load i32, ptr %ptr.add32, align 4
+  %call34 = call i64 @close(i32 %deref33)
+  %p2c35 = load ptr, ptr %p2c1, align 8
+  %ptr.add36 = getelementptr inbounds i32, ptr %p2c35, i64 1
+  %deref37 = load i32, ptr %ptr.add36, align 4
+  %call38 = call i64 @close(i32 %deref37)
+  %c2p39 = load ptr, ptr %c2p5, align 8
+  %ptr.add40 = getelementptr inbounds i32, ptr %c2p39, i64 0
+  %deref41 = load i32, ptr %ptr.add40, align 4
+  %call42 = call i64 @close(i32 %deref41)
+  %c2p43 = load ptr, ptr %c2p5, align 8
+  %ptr.add44 = getelementptr inbounds i32, ptr %c2p43, i64 1
+  %deref45 = load i32, ptr %ptr.add44, align 4
+  %call46 = call i64 @close(i32 %deref45)
   ret void
 
-if.end31:                                         ; preds = %if.end14
-  %p2c48 = load ptr, ptr %p2c1, align 8
-  %ptr.add49 = getelementptr inbounds i32, ptr %p2c48, i64 0
-  %deref50 = load i32, ptr %ptr.add49, align 4
-  %call51 = call i64 @close(i32 %deref50)
-  %c2p52 = load ptr, ptr %c2p5, align 8
-  %ptr.add53 = getelementptr inbounds i32, ptr %c2p52, i64 1
-  %deref54 = load i32, ptr %ptr.add53, align 4
-  %call55 = call i64 @close(i32 %deref54)
-  store i64 %call12, ptr @worker_pid, align 8
-  %p2c56 = load ptr, ptr %p2c1, align 8
-  %ptr.add57 = getelementptr inbounds i32, ptr %p2c56, i64 1
-  %deref58 = load i32, ptr %ptr.add57, align 4
-  store i32 %deref58, ptr @worker_in, align 4
-  %c2p59 = load ptr, ptr %c2p5, align 8
-  %ptr.add60 = getelementptr inbounds i32, ptr %c2p59, i64 0
-  %deref61 = load i32, ptr %ptr.add60, align 4
-  store i32 %deref61, ptr @worker_out, align 4
+if.end30:                                         ; preds = %if.end13
+  %p2c47 = load ptr, ptr %p2c1, align 8
+  %ptr.add48 = getelementptr inbounds i32, ptr %p2c47, i64 0
+  %deref49 = load i32, ptr %ptr.add48, align 4
+  %call50 = call i64 @close(i32 %deref49)
+  %c2p51 = load ptr, ptr %c2p5, align 8
+  %ptr.add52 = getelementptr inbounds i32, ptr %c2p51, i64 1
+  %deref53 = load i32, ptr %ptr.add52, align 4
+  %call54 = call i64 @close(i32 %deref53)
+  store i64 %call11, ptr @worker_pid, align 8
+  %p2c55 = load ptr, ptr %p2c1, align 8
+  %ptr.add56 = getelementptr inbounds i32, ptr %p2c55, i64 1
+  %deref57 = load i32, ptr %ptr.add56, align 4
+  store i32 %deref57, ptr @worker_in, align 4
+  %c2p58 = load ptr, ptr %c2p5, align 8
+  %ptr.add59 = getelementptr inbounds i32, ptr %c2p58, i64 0
+  %deref60 = load i32, ptr %ptr.add59, align 4
+  store i32 %deref60, ptr @worker_out, align 4
   ret void
 }
 

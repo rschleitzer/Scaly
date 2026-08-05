@@ -1,0 +1,124 @@
+; Regression: a bare integer literal compared against an integer-typed operand
+; is retyped to that operand's type, so the comparison happens at the operand's
+; own width instead of widening the operand to i64 (2026-08-05, the third
+; position of the literal-width inference — see integer_literal_width.scaly for
+; the call-argument and member-assignment positions).
+;
+; What changed: `u = 7` with u: u32 emitted `zext i32 %u to i64` + `icmp eq i64`
+; and now emits `icmp eq i32`. Measured over the five package roots: 581 sext/
+; zext instructions removed, none added, and the distribution of all ten icmp
+; predicates is EXACTLY unchanged — the retype moves the width, never the
+; signedness. That is also what makes ~5000 `> (0 as size_t)`-style casts
+; droppable.
+;
+; What this file guards is the boundary behaviour, because narrowing is where a
+; comparison could silently go wrong: an unsigned operand whose top bit is set
+; must still compare unsigned, a signed one must still compare signed, and a
+; literal too large for the operand's type must NOT be truncated into range.
+;
+; Note on what is NOT retyped: the arithmetic operators. `x + 1` with x: u32
+; stays an i64 add (the typed side widens) — narrowing there would change the
+; RESULT and wrap at 2^32, which is a change of meaning rather than a fix.
+; The last block below pins that.
+;
+; Expected: PASS
+
+function u8_of(x: u8) returns u8
+{
+    x
+}
+
+function u32_of(x: u32) returns u32
+{
+    x
+}
+
+function u16_of(x: u16) returns u16
+{
+    x
+}
+
+function i32_of(x: i32) returns i32
+{
+    x
+}
+
+function size_of(x: size_t) returns size_t
+{
+    x
+}
+
+; --- unsigned narrow, top bit SET ---------------------------------------
+; 200 as a u8 is 0xC8 — negative when read as i8. A narrowed compare that
+; used a signed predicate would answer these backwards.
+let b200 u8_of(200)
+if (b200 > 100) = false
+    exit 10
+if (b200 < 255) = false
+    exit 11
+if (b200 = 200) = false
+    exit 12
+if b200 < 100
+    exit 13
+
+; 0xFF is the extreme: every bit set.
+let bmax u8_of(255)
+if (bmax > 254) = false
+    exit 14
+if (bmax = 255) = false
+    exit 15
+
+; u16 and u32 with the top bit set.
+let w u16_of(40000)
+if (w > 32768) = false
+    exit 16
+if w < 32768
+    exit 17
+
+let d u32_of(4000000000)
+if (d > 2147483648) = false
+    exit 18
+if d < 2147483648
+    exit 19
+
+; --- signed narrow ------------------------------------------------------
+; i32 must keep a SIGNED predicate: -1 is greater than 0 only unsigned.
+let neg i32_of(0 - 1)
+if neg > 0
+    exit 20
+if (neg < 0) = false
+    exit 21
+if (neg = 0 - 1) = false
+    exit 22
+
+; --- size_t, the dominant shape in the tree -----------------------------
+let n size_of(5)
+if (n > 0) = false
+    exit 23
+if (n <= 1024) = false
+    exit 24
+if (n <> 3) = false
+    exit 25
+let zero size_of(0)
+if zero > 0
+    exit 26
+if (zero = 0) = false
+    exit 27
+
+; --- a literal too large for the operand's type -------------------------
+; 300 does not fit a u8, so the literal keeps its width and the operand is
+; widened as before. Truncating 300 to 44 would make this compare equal.
+if u8_of(44) = 300
+    exit 28
+if (u8_of(44) < 300) = false
+    exit 29
+
+; --- arithmetic is NOT retyped ------------------------------------------
+; The typed side widens, so this add happens at i64 and does not wrap.
+; 4000000000 + 400000000 exceeds a u32; the sum must be the full value.
+let wide d + 400000000
+if (wide = 4400000000) = false
+    exit 30
+
+print "PASS"
+exit 0
