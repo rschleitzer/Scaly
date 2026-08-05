@@ -211,7 +211,7 @@ define Cluster
             return null
         }
         var inb u8[24]
-        var got 0 as size_t
+        var got: size_t 0
         while got < 24
         {
             let r Io.read(fd, ((inb as size_t) + got) as pointer[void], (24 as size_t) - got)
@@ -288,7 +288,7 @@ define Cluster
     procedure channel(p: pointer[NodePeer], id: u64) returns pointer[Channel]
     {
         Cluster.acquire(p)
-        var i 0 as size_t
+        var i: size_t 0
         let ids p.chan_ids
         let chs p.chans
         while i < p.chan_count
@@ -435,14 +435,14 @@ define Cluster
         let nc p.chan_count
         let nm p.monitor_count
         Cluster.release(p)
-        var i 0 as size_t
+        var i: size_t 0
         let chs p.chans
         while i < nc
         {
             Channel.close_sender(chs[i])
             set i: i + 1
         }
-        var j 0 as size_t
+        var j: size_t 0
         let ms p.monitors
         while j < nm
         {
@@ -500,7 +500,7 @@ define Cluster
     function read_exact(p: pointer[NodePeer], buf: pointer[void], count: size_t) returns bool
     {
         let fd p.fd
-        var done 0 as size_t
+        var done: size_t 0
         while done < count
         {
             if p.alive = false
@@ -582,7 +582,7 @@ define Cluster
     {
         let fd p.fd
         var hdr u8[24]
-        var got 0 as size_t
+        var got: size_t 0
         var last_hb scaly_eio_now_ns()
         repeat
         {

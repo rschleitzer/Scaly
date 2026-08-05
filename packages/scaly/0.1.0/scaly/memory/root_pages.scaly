@@ -130,7 +130,7 @@ procedure scaly_eputnl()
 procedure scaly_eputi(n: i64)
 {
     let buf scaly_fmt_scratch_ptr()
-    var pos 31 as i64
+    var pos: i64 31
     var val n
     var negative false
     if val < 0
@@ -180,7 +180,7 @@ procedure scaly_eputp(p: pointer[void])
     set *(buf + 0): 48 as char
     set *(buf + 1): 120 as char
     var val p as u64
-    var i 17 as i64
+    var i: i64 17
     while i >= 2
     {
         let nibble (val & (15 as u64)) as i64
@@ -388,7 +388,7 @@ function ctz_u64(x: u64) returns i32
     ; and an i32 slot would get an 8-byte store clobbering the adjacent `v`
     ; slot (observed corrupting heap-bucket slot selection under stage-1's
     ; allocation pattern, s189). Cast to i32 only at return.
-    var n 0 as i64
+    var n: i64 0
     var v x
     if (v & 0xFFFFFFFF) = 0
     {
@@ -592,7 +592,7 @@ procedure scaly_release_frame(f: pointer[Frame])
 
 procedure scaly_trace_dump()
 {
-    var i 0 as i64
+    var i: i64 0
     var any false
     while i < trace_count
     {
@@ -639,7 +639,7 @@ procedure scaly_rt_register_trace()
 
 function scaly_trace_find_or_add(name: pointer[const_char]) returns pointer[TraceEntry]
 {
-    var i 0 as i64
+    var i: i64 0
     while i < trace_count
     {
         let e trace_entries + i
@@ -733,7 +733,7 @@ procedure scaly_heap_trace_dump()
     let hdr heap_trace
     if hdr = null
         return
-    var i 0 as i64
+    var i: i64 0
     var any false
     while i < hdr.count
     {
@@ -806,7 +806,7 @@ procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader])
 ; Caller holds hdr's lock.
 function scaly_heap_trace_find_or_add(hdr: pointer[HeapTraceHeader], name: pointer[const_char]) returns pointer[TraceEntry]
 {
-    var i 0 as i64
+    var i: i64 0
     while i < hdr.count
     {
         let e hdr.entries + i

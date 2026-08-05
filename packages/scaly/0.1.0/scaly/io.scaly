@@ -33,7 +33,7 @@ define io
         ; Write a test file
         let test_path "/tmp/scaly_raw_test.txt"
         let test_content "Hello from Scaly raw I/O!\n"
-        let content_len 26 as size_t
+        let content_len: size_t 26
 
         var file fopen(test_path, "wb")
         if file = null

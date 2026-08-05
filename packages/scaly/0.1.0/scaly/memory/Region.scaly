@@ -43,7 +43,7 @@ define ReceivedRegion
         let ob old_bases
         let nb new_bases
         let ln lengths
-        var i 0 as size_t
+        var i: size_t 0
         while i < page_count
         {
             let base ob[i]
@@ -111,7 +111,7 @@ define Region
 
     function count_exclusives(p: pointer[Page]) returns size_t
     {
-        var n 0 as size_t
+        var n: size_t 0
         var nd p.exclusive_pages.head
         while nd <> null
         {
@@ -199,7 +199,7 @@ define Region
         }
 
         var total (32 as size_t) + n * (16 as size_t)
-        var w 1 as size_t
+        var w: size_t 1
         while w < n * 2
         {
             set total: total + table[w]
@@ -215,7 +215,7 @@ define Region
         memcpy(((frame as size_t) + (32 as size_t)) as pointer[void], table as pointer[void], n * (16 as size_t))
 
         var off (32 as size_t) + n * (16 as size_t)
-        var r 0 as size_t
+        var r: size_t 0
         while r < n * 2
         {
             let base table[r]
@@ -261,7 +261,7 @@ define Region
         let ln host.allocate(n * (8 as size_t), 8) as pointer[size_t]
 
         ; Validate the table before touching the allocator.
-        var v 1 as size_t
+        var v: size_t 1
         while v < n * 2
         {
             let len table[v]
@@ -278,8 +278,8 @@ define Region
         ; entries, aligned_alloc blocks for oversized ones — the two
         ; shapes release_page knows how to free.
         var off (32 as size_t) + n * (16 as size_t)
-        var i 0 as size_t
-        var r 0 as size_t
+        var i: size_t 0
+        var r: size_t 0
         while i < n
         {
             let base table[r]

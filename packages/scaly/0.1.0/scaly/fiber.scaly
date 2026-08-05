@@ -1115,7 +1115,7 @@ define Scheduler
     {
         let s current_scheduler as pointer[Scheduler]
         var tagbuf u8[512]
-        var n 0 as i32
+        var n: i32 0
         if s.io_waiting > 0
         {
             ; At least one fd-readiness waiter: block until the OS reports
@@ -1443,7 +1443,7 @@ define Io
         ; POLLIN=1 / POLLOUT=4 on both OSes. Inlined, not module
         ; constants: scalyls defines its own POLLIN and the two global
         ; symbols would collide in a whole-stack link.
-        var ev 1 as i32
+        var ev: i32 1
         if for_write
             set ev: 4
         ; events is the u16 at offset 4 (revents at 6 is poll's to fill).
@@ -1464,7 +1464,7 @@ define Io
             return
         }
         let q Io.ensure_poll()
-        var wr (0 as i32)
+        var wr: i32 0
         if for_write
             set wr: 1
         let me current_task as pointer[SchedTask]
@@ -1595,7 +1595,7 @@ define Io
     ; program error.
     procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) returns bool
     {
-        var done 0 as size_t
+        var done: size_t 0
         while done < count
         {
             let r Io.tcp_write(fd, ((buf as size_t) + done) as pointer[void], count - done)
@@ -1612,7 +1612,7 @@ define Io
     ; context, plain-blocks without a scheduler. False on a hard error.
     procedure write_all(fd: i32, buf: pointer[void], count: size_t) returns bool
     {
-        var done 0 as size_t
+        var done: size_t 0
         while done < count
         {
             let r Io.write(fd, ((buf as size_t) + done) as pointer[void], count - done)
@@ -1763,7 +1763,7 @@ define Io
         if pl = null
             return
         close(pl.pipe_write as int)
-        var i 0 as i64
+        var i: i64 0
         while i < pl.workers
         {
             let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
@@ -2571,7 +2571,7 @@ define TaskPool
         set pl.pipe_write: *(((fds as size_t) + 4) as pointer[i32])
         set pl.deques: p.allocate((n as size_t) * sizeof TaskDeque, alignof TaskDeque) as pointer[TaskDeque]
         set pl.handles: p.allocate((n * 8) as size_t, 8) as pointer[size_t]
-        var i 0 as i64
+        var i: i64 0
         while i < n
         {
             let d TaskPool.deque_at(pl, i)
@@ -2646,7 +2646,7 @@ define TaskPool
     {
         repeat
         {
-            var k 0 as i64
+            var k: i64 0
             while k < pl.nworkers
             {
                 var idx start + k
@@ -2687,7 +2687,7 @@ define TaskPool
     procedure shutdown(pl: pointer[TaskPool])
     {
         close(pl.pipe_write as int)
-        var i 0 as i64
+        var i: i64 0
         while i < pl.nworkers
         {
             let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
