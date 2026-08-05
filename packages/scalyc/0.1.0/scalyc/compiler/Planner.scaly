@@ -2683,6 +2683,155 @@ define Planner
             PlannedOperand(op.loc, op.expr, null, float_type)
         }
 
+        ; ===== integer-literal retype (the width counterpart) =====
+        ;
+        ; A bare integer literal is typed `int` (i64) and a bare hex literal
+        ; `u64` by infer_constant_type. In a narrower integer position that
+        ; width is WRONG, and the Emitter had no way to notice: `f(5)` with a
+        ; u32 parameter emitted `call i32 @f(i64 5)`, and `set r.a: 9` on a
+        ; u32 field emitted `store i64 9` — eight bytes over a four-byte
+        ; field, silently clobbering the NEXT field. Writing `5 as u32` at
+        ; every such site is what the tree did instead; these helpers make the
+        ; cast unnecessary by restamping the literal to the target width.
+        ;
+        ; This runs strictly AFTER overload resolution, on the parameter types
+        ; of the ALREADY CHOSEN callee. It therefore fixes only the width of
+        ; an argument, and can never change which candidate a call picks —
+        ; `append 0x2C` still resolves to append(int), not append(char).
+
+        ; type_is_integer_like: an integer target into which a bare integer or
+        ; hex literal may retype. `char` counts (it is an i8 in the emitter,
+        ; and the char fold above converts only STRING literals). A generic
+        ; type (`pointer[u8]`) is never a target — no name below matches one,
+        ; but the guard says so outright.
+        function type_is_integer_like(t: PlannedType) returns bool
+        {
+            if t.generics <> null
+                return false
+            if t.name = "int"
+                return true
+            if t.name = "uint"
+                return true
+            if t.name = "size_t"
+                return true
+            if t.name = "size"
+                return true
+            if t.name = "char"
+                return true
+            if t.name = "i8"
+                return true
+            if t.name = "i16"
+                return true
+            if t.name = "i32"
+                return true
+            if t.name = "i64"
+                return true
+            if t.name = "u8"
+                return true
+            if t.name = "u16"
+                return true
+            if t.name = "u32"
+                return true
+            if t.name = "u64"
+                return true
+            false
+        }
+
+        ; integer_literal_fits: does the literal payload fit the target width?
+        ; The payload is always non-negative (a leading minus is its OWN
+        ; operand, so `-1` never reaches here as one constant). A literal that
+        ; does NOT fit is left at its default width — retyping it would
+        ; silently truncate, and truncation must stay something the author
+        ; asked for with an explicit `as`, never something inference does.
+        function integer_literal_fits(value: size_t, type_name: String) returns bool
+        {
+            if type_name = "u8"
+                return value <= 255
+            if type_name = "i8"
+                return value <= 127
+            if type_name = "char"
+                return value <= 127
+            if type_name = "u16"
+                return value <= 65535
+            if type_name = "i16"
+                return value <= 32767
+            if type_name = "u32"
+                return value <= 4294967295
+            if type_name = "i32"
+                return value <= 2147483647
+            ; The 8-byte family (int, uint, i64, u64, size_t, size): every
+            ; size_t payload fits by construction. i64's signed maximum is
+            ; not checked — a payload above it is exactly the shape an
+            ; explicit cast handles today, and `int` is the default type
+            ; anyway, so retyping it changes nothing.
+            true
+        }
+
+        ; operand_is_integer_constant: a chainless Integer- or Hex-constant
+        ; operand (the shape retype_integer_operand converts).
+        function operand_is_integer_constant(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when i: IntegerConstant
+                            return true
+                        when h: HexConstant
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; integer_constant_value: the payload of an operand
+        ; operand_is_integer_constant accepted. Zero for anything else — the
+        ; callers gate on the predicate first.
+        function integer_constant_value(this: Planner, op: PlannedOperand) returns size_t
+        {
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when i: IntegerConstant
+                            return i.value
+                        when h: HexConstant
+                            return h.value
+                        else
+                            return 0
+                }
+                else
+                    return 0
+            0
+        }
+
+        ; operand_retypes_to_integer: the whole gate in one predicate — is
+        ; `op` a bare integer/hex literal whose payload fits integer target
+        ; `t`? Callers that answer true then call retype_integer_operand.
+        function operand_retypes_to_integer(this: Planner, op: PlannedOperand, t: PlannedType) returns bool
+        {
+            if Planner.type_is_integer_like(t) = false
+                return false
+            if this.operand_is_integer_constant(op) = false
+                return false
+            let v this.integer_constant_value(op)
+            Planner.integer_literal_fits(v, t.name)
+        }
+
+        ; retype_integer_operand: restamp a bare integer-literal operand's
+        ; result_type to the target integer width, so emit_constant builds the
+        ; constant at the width the store or the callee reads. Only call on
+        ; operands operand_retypes_to_integer accepted.
+        function retype_integer_operand(this: Planner, op: PlannedOperand, int_type: PlannedType) returns PlannedOperand
+        {
+            PlannedOperand(op.loc, op.expr, null, int_type)
+        }
+
         ; arg_is_foldable_float: is the argument at position `j` a bare float
         ; literal that may retype to a float/f32 parameter? The counterpart to
         ; arg_is_foldable_char_string for the float-width case.
@@ -6065,6 +6214,20 @@ define Planner
                                             set folded: true
                                         }
                                     }
+                            ; Integer literal into a narrower integer
+                            ; parameter: restamp the default-int (or
+                            ; default-u64 hex) literal to the matched
+                            ; parameter's width. Without this `f(5)` with a
+                            ; u32 parameter emits `call i32 @f(i64 5)` — the
+                            ; callee reads a register the caller never wrote
+                            ; at that width, which is what made `5 as u32`
+                            ; mandatory at every such call site.
+                            if folded = false
+                                if this.operand_retypes_to_integer(a, pt)
+                                {
+                                    out.add(this.retype_integer_operand(a, pt))
+                                    set folded: true
+                                }
                         }
                     }
                     if folded = false
@@ -19495,6 +19658,17 @@ define Planner
                 if Planner.type_is_float_like(planned_target_collapsed.result_type)
                     if this.operand_is_float_constant(planned_source_collapsed)
                         set planned_source_collapsed: this.retype_float_operand(planned_source_collapsed, planned_target_collapsed.result_type)
+
+            ; Integer literal assigned into a narrower integer target
+            ; (`set r.a: 9` with a u32 field): retype the default-int literal
+            ; to the target's width. Without this the Emitter stored the
+            ; literal at ITS width — `store i64 9` into a four-byte field,
+            ; which silently overwrote the four bytes AFTER it (a u32 field
+            ; following a u32 field read back as 0). A plain typed local was
+            ; already correct; only the member path took the wrong width.
+            if a.target.length > 0
+                if this.operand_retypes_to_integer(planned_source_collapsed, planned_target_collapsed.result_type)
+                    set planned_source_collapsed: this.retype_integer_operand(planned_source_collapsed, planned_target_collapsed.result_type)
 
             ; For -g line info: take the location from the FIRST flat source
             ; operand, which carries the authoritative source span. The

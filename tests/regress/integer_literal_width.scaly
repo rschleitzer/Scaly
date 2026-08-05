@@ -1,0 +1,154 @@
+; Regression: a bare integer literal adopts the width of the integer position
+; it lands in — a call argument's parameter type, or a member-assignment
+; target's field type (2026-08-05).
+;
+; Before: infer_constant_type types every integer literal `int` (i64) and every
+; hex literal `u64`, and nothing narrowed it afterwards. Two consequences, both
+; silent:
+;
+;   * a call argument kept its own width. `f(5)` with a `u32` parameter emitted
+;     `call i32 @f(i64 5)` — emit_call synthesizes the callee's function type
+;     from the ARGUMENTS, never from the callee's declaration, so LLVM had
+;     nothing to verify against and the callee read a register the caller had
+;     written at the wrong width.
+;   * `set r.a: 9` on a u32 field emitted `store i64 9` — eight bytes over a
+;     four-byte field, overwriting the NEXT field. A u32 following a u32 read
+;     back as 0. A plain typed local (`set m: 3`) was already correct; only the
+;     member path took the value's width instead of the target's.
+;
+; Writing `5 as u32` at every such site is what the tree did instead — 11308
+; literal casts, of which this makes the overwhelming majority unnecessary.
+;
+; The retype runs AFTER overload resolution, on the chosen callee's parameter
+; types, so it can only fix a width — it never changes which candidate a call
+; picks. A literal too large for its target keeps its default width rather than
+; being truncated behind the author's back (see the u8 case below).
+;
+; Expected: PASS
+
+define Pair (a: u32  c: u32)
+
+define Wide (a: u8  b: u8  c: u8  d: u8)
+
+define Box (v: u32)
+{
+    function plus(this: Box, k: u32) returns u32
+    {
+        this.v + k
+    }
+
+    function twice(k: u32) returns u32
+    {
+        k + k
+    }
+}
+
+define Sized (n: size_t  m: u16)
+{
+    init(n: size_t, m: u16)
+    {
+        set this.n: n
+        set this.m: m
+    }
+}
+
+function take32(x: u32) returns u32
+{
+    x
+}
+
+function take8(x: u8) returns u8
+{
+    x
+}
+
+function takes(x: size_t) returns size_t
+{
+    x
+}
+
+function take16(x: u16) returns u16
+{
+    x
+}
+
+; --- call arguments -----------------------------------------------------
+; Each of these passed a literal of the wrong width before the fix. The
+; returned value proves the callee read what the caller meant to send.
+
+if take32(5) <> (5 as u32)
+    exit 10
+if take8(200) <> (200 as u8)
+    exit 11
+if takes(7) <> (7 as size_t)
+    exit 12
+if take16(1000) <> (1000 as u16)
+    exit 13
+
+; Hex literals default to u64 and need the same narrowing.
+if take32(0x7FFFFFFF) <> (0x7FFFFFFF as u32)
+    exit 14
+if take8(0xFF) <> (0xFF as u8)
+    exit 15
+
+; A method (receiver in slot 0) and a concept static take the same path.
+let b Box(1)
+if b.plus(6) <> (7 as u32)
+    exit 16
+if Box.twice(21) <> (42 as u32)
+    exit 17
+
+; An explicit init's parameters, both widths in one construction.
+let s Sized(9, 300)
+if s.n <> (9 as size_t)
+    exit 18
+if s.m <> (300 as u16)
+    exit 19
+
+; --- member assignment --------------------------------------------------
+; The corrupting case: the store must be four bytes wide, so the field that
+; FOLLOWS it survives.
+
+var p Pair(1, 7)
+set p.a: 9
+if p.a <> (9 as u32)
+    exit 20
+if p.c <> (7 as u32)
+    exit 21
+
+; Four one-byte fields: an eight-byte store at field `a` wiped all of b, c, d
+; and four bytes past the struct.
+var w Wide(1, 2, 3, 4)
+set w.a: 11
+if w.a <> (11 as u8)
+    exit 22
+if w.b <> (2 as u8)
+    exit 23
+if w.c <> (3 as u8)
+    exit 24
+if w.d <> (4 as u8)
+    exit 25
+
+; Writing the LAST field must not disturb the earlier ones either.
+set w.d: 44
+if w.a <> (11 as u8)
+    exit 26
+if w.d <> (44 as u8)
+    exit 27
+
+; A plain typed local was already correct — it must stay correct.
+var m: u32 0
+set m: 3
+if m <> (3 as u32)
+    exit 28
+
+; --- out-of-range literals stay at their default width ------------------
+; 300 does not fit a u8. Retyping it would truncate to 44 silently, so the
+; literal keeps `int` and the argument is passed as it always was. This
+; documents the deliberate limit: truncation stays something an explicit
+; `as u8` asks for, never something inference performs.
+if take8(300 as u8) <> (44 as u8)
+    exit 29
+
+print "PASS"
+exit 0

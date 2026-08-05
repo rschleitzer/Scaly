@@ -23009,7 +23009,7 @@ entry:
   store ptr %call1, ptr %data, align 8
   %load.struct = load %_Z6String, ptr %0, align 8
   %data2 = extractvalue %_Z6String %load.struct, 0
-  store i64 1, ptr %data2, align 8
+  store i8 1, ptr %data2, align 1
   %load.struct3 = load %_Z6String, ptr %0, align 8
   %data4 = extractvalue %_Z6String %load.struct3, 0
   %ptr.add = getelementptr inbounds i8, ptr %data4, i64 1
