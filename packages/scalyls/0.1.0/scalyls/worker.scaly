@@ -45,7 +45,18 @@ function pipe(fds: pointer[i32]) returns i32 extern
 function close(fd: int) returns int extern
 function waitpid(pid: int, status: pointer[int], options: int) returns int extern
 function kill(pid: int, sig: int) returns int extern
-function poll(fds: pointer[pollfd], nfds: u64, timeout: int) returns int extern
+; poll: the C prototype is `int poll(struct pollfd *, nfds_t, int)`, and
+; nfds_t is 32 bits on macOS (unsigned int) but 64 on glibc (unsigned long).
+; ONE seed serves every target, so the width cannot be per-OS: `u64` is the
+; portable choice, because the caller then writes the WHOLE register and a
+; 32-bit callee reads the correct low half. `timeout` and the RESULT are
+; plain C `int`, i.e. 32 bits on both.
+; This declaration must stay type-identical to the one in scaly/fiber.scaly:
+; both modules are linked into this binary, and they used to disagree --
+; `declare i32 @poll(ptr, i32, i32)` against `declare i64 @poll(ptr, i64,
+; i64)` -- so this call read a 64-bit result from a function that returns 32,
+; with the upper half undefined.
+function poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
 function signal(sig: int, handler: pointer[void]) returns pointer[void] extern
 
 ; struct pollfd { int fd; short events; short revents; } — 8 bytes, matches
@@ -63,7 +74,7 @@ define SIGPIPE int 13
 
 ; Wait at most this long for the worker to answer one analysis before
 ; declaring it hung and killing it (milliseconds).
-define ANALYZE_TIMEOUT_MS int 8000
+define ANALYZE_TIMEOUT_MS i32 8000
 
 ; Worker process state, owned by the PARENT. worker_pid <= 0 means "no
 ; live worker"; the fds are the parent's ends of the two pipes.

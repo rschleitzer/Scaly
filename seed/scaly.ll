@@ -23652,7 +23652,7 @@ if.end:                                           ; preds = %if.then, %entry
   ret ptr null
 }
 
-declare i32 @poll(ptr, i32, i32)
+declare i32 @poll(ptr, i64, i32)
 
 declare i32 @pipe(ptr)
 
@@ -24936,7 +24936,7 @@ if.end:                                           ; preds = %if.then, %entry
   %as.inttoptr = inttoptr i64 %add to ptr
   store i16 %as.trunc, ptr %as.inttoptr, align 2
   %pfd5 = load ptr, ptr %pfd1, align 8
-  %call = call i32 @poll(ptr %pfd5, i32 1, i32 -1)
+  %call = call i32 @poll(ptr %pfd5, i64 1, i32 -1)
   ret void
 }
 
@@ -25837,7 +25837,7 @@ if.end51:                                         ; preds = %if.then50, %if.then
   br i1 %not, label %if.then54, label %if.end55
 
 if.then54:                                        ; preds = %if.end51
-  %call56 = call i32 @poll(ptr null, i32 0, i32 1)
+  %call56 = call i32 @poll(ptr null, i64 0, i32 1)
   br label %if.end55
 
 if.end55:                                         ; preds = %if.then54, %if.end51

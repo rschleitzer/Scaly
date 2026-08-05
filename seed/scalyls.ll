@@ -722,7 +722,7 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 @"6POLLIN" = internal constant i16 1
 @"7SIGKILL" = internal constant i64 9
 @"7SIGPIPE" = internal constant i64 13
-@"18ANALYZE_TIMEOUT_MS" = internal constant i64 8000
+@"18ANALYZE_TIMEOUT_MS" = internal constant i32 8000
 @worker_pid = thread_local global i64 0
 @worker_in = thread_local global i64 0
 @worker_out = thread_local global i64 0
@@ -110332,7 +110332,7 @@ declare i64 @waitpid(i64, ptr, i64)
 
 declare i64 @kill(i64, i64)
 
-declare i64 @poll(ptr, i64, i64)
+declare i32 @poll(ptr, i64, i32)
 
 declare ptr @signal(i64, ptr)
 
@@ -110800,8 +110800,8 @@ if.end:                                           ; preds = %while.body
   store i16 0, ptr %tuple.field10, align 1
   %tuple.val = load %_Z6pollfd, ptr %tuple, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %pfd, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z6pollfd, ptr null, i32 1) to i64), i1 false)
-  %call = call i64 @poll(ptr %pfd, i64 1, i64 8000)
-  %le11 = icmp sle i64 %call, 0
+  %call = call i32 @poll(ptr %pfd, i64 1, i32 8000)
+  %le11 = icmp sle i32 %call, 0
   br i1 %le11, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end

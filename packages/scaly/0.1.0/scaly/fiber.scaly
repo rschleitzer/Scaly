@@ -503,7 +503,11 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
 ; rule this is a direct extern, not a shim call. nfds_t is 32-bit on
 ; darwin and 64-bit on linux: the constant 1 passed as i32 materializes
 ; with the upper register half zeroed on both ABIs.
-procedure poll(fds: pointer[void], nfds: i32, timeout: i32) returns i32 extern
+; nfds is `nfds_t`: 32 bits on macOS, 64 on glibc. `u64` is portable both ways
+; (the caller writes the whole register; a 32-bit callee reads the low half),
+; and it keeps this declaration type-identical to the one in scalyls/worker.scaly
+; -- both land in the same linked binary.
+procedure poll(fds: pointer[void], nfds: u64, timeout: i32) returns i32 extern
 
 ; POSIX pipe(2) — the worker pool's blocking wait channel (milestone
 ; 2.5). int[2] on both OSes: direct extern.
@@ -1448,7 +1452,7 @@ define Io
             set ev: 4
         ; events is the u16 at offset 4 (revents at 6 is poll's to fill).
         set *(((pfd as size_t) + 4) as pointer[u16]): ev as u16
-        poll(pfd as pointer[void], 1 as i32, (0 - 1) as i32)
+        poll(pfd as pointer[void], 1 as u64, (0 - 1) as i32)
     }
 
     ; Park until fd is ready. A task arms the fd (oneshot, tagged with
@@ -2077,7 +2081,7 @@ define Channel
                 if current_scheduler <> null
                     set ran: Scheduler.step()
                 if not ran
-                    poll(null as pointer[void], 0 as i32, 1 as i32)
+                    poll(null as pointer[void], 0 as u64, 1 as i32)
             }
             else
             {
