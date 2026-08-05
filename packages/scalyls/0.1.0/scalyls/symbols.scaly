@@ -2717,7 +2717,7 @@ define symbols
                     set colon_ok: true
                 if colon_ok
                 {
-                    let tstart symbols.skip_ws(source, after + (1 as size_t), len)
+                    let tstart symbols.skip_ws(source, after + 1, len)
                     return symbols.read_type_name(source, tstart, len)
                 }
             }
@@ -3277,12 +3277,12 @@ define symbols
         if p > 0
             if source.get(p - 1) = 0x2E
             {
-                let dot p - (1 as size_t)
+                let dot p - 1
                 ; Walk left over [ident | '.'] to the chain start.
                 var cstart dot
                 while cstart > 0
                 {
-                    let cc source.get(cstart - (1 as size_t))
+                    let cc source.get(cstart - 1)
                     if symbols.is_ident_byte(cc) = false
                         if cc <> 0x2E
                             break
@@ -3371,7 +3371,7 @@ define symbols
         if p > 0
             if source.get(p - 1) = 0x2E
             {
-                let dot p - (1 as size_t)
+                let dot p - 1
                 ; Walk back over the receiver identifier ending just before it.
                 var r dot
                 while r > 0
@@ -3416,7 +3416,7 @@ define symbols
         if p > 0
             if source.get(p - 1) = 0x2E
             {
-                let dot p - (1 as size_t)
+                let dot p - 1
                 if dot > 0
                     if symbols.is_ident_byte(source.get(dot - 1))
                         return dot - 1
@@ -4037,7 +4037,7 @@ define symbols
                 break
             set start: start - 1
         }
-        var end anchor + (1 as size_t)
+        var end anchor + 1
         while end < len
         {
             if symbols.is_ident_byte(source.get end) = false
@@ -4567,13 +4567,13 @@ define symbols
                             ; detail = [tab2+1, tab3) — bounded at the THIRD tab
                             ; (Step 32 added a 4th rettype field), NOT the LF, so
                             ; the rettype never bleeds into the "S"/"M" payload.
-                            let dstart tab2 + (1 as size_t)
+                            let dstart tab2 + 1
                             if dstart < tab3
                                 if blob.get(dstart) = tag
                                 {
                                     var sb StringBuilder()
                                     sb.append(0x59 as char)    ; Y sentinel
-                                    var d dstart + (1 as size_t)
+                                    var d dstart + 1
                                     while d < tab3
                                     {
                                         sb.append(blob.get(d) as char)
@@ -4804,7 +4804,7 @@ define symbols
                         {
                             ; Walk the 0x1F-joined pairs in [tab4+1, i): even
                             ; tokens are member names, odd tokens their types.
-                            var ps tab4 + (1 as size_t)
+                            var ps tab4 + 1
                             var seg_start ps
                             var expect_name true
                             var matched_name false
@@ -5393,7 +5393,7 @@ define symbols
                     if blob.get(line_start) = tag
                         if blob.get(line_start + 1) = 9
                         {
-                            var k line_start + (2 as size_t)
+                            var k line_start + 2
                             while k < i
                             {
                                 sb.append(blob.get(k) as char)
@@ -5752,7 +5752,7 @@ define symbols
                     let name symbols.substring(blob, rec_start, tab1)
                     if symbols.name_matches(name, query)
                     {
-                        let jstart tab1 + (1 as size_t)
+                        let jstart tab1 + 1
                         let jobj symbols.substring(blob, jstart, tab2)
                         if first = false
                             sb.append(0x2C as char)
@@ -6559,8 +6559,8 @@ define symbols
         if (j - k) <> 3
             return false
         let c0 source.get k
-        let c1 source.get(k + (1 as size_t))
-        let c2 source.get(k + (2 as size_t))
+        let c1 source.get(k + 1)
+        let c2 source.get(k + 2)
         if c0 = 0x6C                     ; 'l'
             if c1 = 0x65                 ; 'e'
                 if c2 = 0x74             ; 't'
@@ -6725,7 +6725,7 @@ define symbols
                     return symbols.match_brace_end(source, p, len)
                 if c = 0x0A              ; newline at depth 0 = sig end
                 {
-                    var q p + (1 as size_t)
+                    var q p + 1
                     while q < len
                     {
                         let qc source.get q
@@ -7276,7 +7276,7 @@ define symbols
             }
             if t < nl
             {
-                let nstart t + (1 as size_t)
+                let nstart t + 1
                 if (nl - nstart) = nlen
                     if symbols.range_equals(blob, nstart, name, 0, nlen)
                         return true
@@ -7832,7 +7832,7 @@ define symbols
                 break
             set start: start - 1
         }
-        var end anchor + (1 as size_t)
+        var end anchor + 1
         while end < len
         {
             if symbols.is_ident_byte(source.get end) = false
@@ -7947,7 +7947,7 @@ define symbols
                 set searching: false
             if p > 0
             {
-                let c source.get(p - (1 as size_t))
+                let c source.get(p - 1)
                 if c = 0x29                 ; )
                     set depth: depth + 1
                 if c = 0x5D                 ; ]
@@ -7982,7 +7982,7 @@ define symbols
         var e paren_pos
         while e > 0
         {
-            let c source.get(e - (1 as size_t))
+            let c source.get(e - 1)
             if c <> 0x20
                 if c <> 0x09
                     if c <> 0x0A
@@ -8014,7 +8014,7 @@ define symbols
         var e paren_pos
         while e > 0
         {
-            let c source.get(e - (1 as size_t))
+            let c source.get(e - 1)
             if c <> 0x20
                 if c <> 0x09
                     if c <> 0x0A
@@ -8037,7 +8037,7 @@ define symbols
             return ""
         if source.get(s - 1) <> 0x2E      ; '.'
             return ""
-        var re s - (1 as size_t)
+        var re s - 1
         if re = 0
             return ""
         if symbols.is_ident_byte(source.get(re - 1)) = false
@@ -8062,7 +8062,7 @@ define symbols
             set end: len
         var depth: size_t 0
         var commas: size_t 0
-        var i paren_pos + (1 as size_t)
+        var i paren_pos + 1
         while i < end
         {
             let c source.get i
@@ -8369,7 +8369,7 @@ define symbols
             }
             if map.get(rs) = 0x52           ; R
             {
-                let nstart rs + (2 as size_t)
+                let nstart rs + 2
                 var t2 nstart
                 while t2 < re
                 {
@@ -8380,7 +8380,7 @@ define symbols
                 if (t2 - nstart) = nl
                     if symbols.range_equals(map, nstart, name, 0, nl)
                     {
-                        var t3 t2 + (1 as size_t)
+                        var t3 t2 + 1
                         while t3 < re
                         {
                             if map.get(t3) = 0x09
@@ -8389,7 +8389,7 @@ define symbols
                         }
                         var sb StringBuilder()
                         sb.append(0x59 as char)        ; Y
-                        var li t2 + (1 as size_t)
+                        var li t2 + 1
                         while li < t3
                         {
                             sb.append(map.get(li) as char)
@@ -8421,7 +8421,7 @@ define symbols
             }
             if map.get(rs) = 0x52           ; R
             {
-                let nstart rs + (2 as size_t)
+                let nstart rs + 2
                 var t2 nstart
                 while t2 < re
                 {
@@ -8432,7 +8432,7 @@ define symbols
                 if (t2 - nstart) = nl
                     if symbols.range_equals(map, nstart, name, 0, nl)
                     {
-                        var t3 t2 + (1 as size_t)
+                        var t3 t2 + 1
                         while t3 < re
                         {
                             if map.get(t3) = 0x09
@@ -8464,7 +8464,7 @@ define symbols
             }
             if map.get(rs) = 0x43           ; C
             {
-                let nstart rs + (2 as size_t)
+                let nstart rs + 2
                 if (re - nstart) = nl
                     if symbols.range_equals(map, nstart, name, 0, nl)
                         return true
@@ -8654,7 +8654,7 @@ define symbols
         var e name_start
         while e > 0
         {
-            let c source.get(e - (1 as size_t))
+            let c source.get(e - 1)
             if symbols.is_ws_byte(c) = false
                 break
             set e: e - 1
@@ -8749,7 +8749,7 @@ define symbols
         var depth: size_t 0
         var arg_index: size_t 0
         var expecting true
-        var a paren_pos + (1 as size_t)
+        var a paren_pos + 1
         var scanning true
         while scanning
         {
@@ -8914,7 +8914,7 @@ define symbols
         {
             if list.get(i) = 0x0A
             {
-                var e i + (1 as size_t)
+                var e i + 1
                 while e < ll
                 {
                     if list.get(e) = 0x0A

@@ -802,7 +802,7 @@ define semantic
             let ma (*op.member_access)
             if ma.length > 0
             {
-                let lp ma.get(ma.length - (1 as size_t))
+                let lp ma.get(ma.length - 1)
                 if lp <> null
                     return semantic.type_name((*lp).result_type)
             }

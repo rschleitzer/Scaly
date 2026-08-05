@@ -35,7 +35,7 @@ define String (data: pointer[u8](null))
             set counter: counter + 1
         }
 
-        let overall_length counter + (1 as size_t) + length
+        let overall_length counter + 1 + length
         ; Over-allocate by 1 byte so c_data() is safely null-terminated for
         ; C APIs. Keeps the logical content length unchanged.
         let own_page Page.get(this as pointer[void])
@@ -68,7 +68,7 @@ define String (data: pointer[u8](null))
             set counter: counter + 1
         }
 
-        let overall_length counter + (1 as size_t) + length
+        let overall_length counter + 1 + length
         let own_page Page.get(this as pointer[void])
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
@@ -95,7 +95,7 @@ define String (data: pointer[u8](null))
             set counter: counter + 1
         }
 
-        let overall_length counter + (1 as size_t) + other.length
+        let overall_length counter + 1 + other.length
         let own_page Page.get(this as pointer[void])
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest other.length
@@ -130,7 +130,7 @@ define String (data: pointer[u8](null))
             set counter: counter + 1
         }
 
-        let overall_length counter + (1 as size_t) + length
+        let overall_length counter + 1 + length
         let own_page Page.get(this as pointer[void])
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
@@ -173,7 +173,7 @@ define String (data: pointer[u8](null))
             set bit_count: bit_count + 7
             set index: index + 1
         }
-        var overall_length index + (1 as size_t) + length
+        var overall_length index + 1 + length
         let own_page Page.get(this as pointer[void])
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
@@ -240,7 +240,7 @@ define String (data: pointer[u8](null))
             }
         }
 
-        var dest page.allocate(length + (1 as size_t), 1)
+        var dest page.allocate(length + 1, 1)
         if data <> null
             memcpy(dest, data + index + (1 as size_t), length)
 

@@ -203,7 +203,7 @@ define Array[T]
         if vector = null
         {
             ; first buffer: small and bump-hosted (see the policy note above)
-            var capacity (0x20 as size_t) / size
+            var capacity 0x20 / size
             if capacity < 1
                 set capacity: 1
             if capacity * size <= 0x400

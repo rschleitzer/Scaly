@@ -470,7 +470,7 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
 {
     let cell raw as pointer[size_t]
     let fn_v *cell
-    let arg_slot (raw as size_t + (8 as size_t)) as pointer[size_t]
+    let arg_slot (raw as size_t + 8) as pointer[size_t]
     let arg_v *arg_slot
     let host Page.get(raw)
     Page.release_page_traced(host, "Thread.spawn_cell")
@@ -630,7 +630,7 @@ define Fiber
         if e = null
             return null
         let entry e as pointer[size_t]
-        let esize *(((e as size_t) + (8 as size_t)) as pointer[size_t])
+        let esize *(((e as size_t) + 8) as pointer[size_t])
         if esize <> size
             return null
         set stack_pool: (*entry) as pointer[void]
@@ -647,7 +647,7 @@ define Fiber
         {
             let entry e as pointer[size_t]
             let next (*entry) as pointer[void]
-            let size *(((e as size_t) + (8 as size_t)) as pointer[size_t])
+            let size *(((e as size_t) + 8) as pointer[size_t])
             let base ((e as size_t) - guard_page_size) as pointer[void]
             let mrc munmap(base, size)
             if mrc <> 0
@@ -1719,7 +1719,7 @@ define Io
         if grow
         {
             let h Thread.spawn(&io_worker, pl as pointer[void])
-            let idx pl.workers - (1 as i64)
+            let idx pl.workers - 1
             set *(((pl.handles as size_t) + ((idx * 8) as size_t)) as pointer[size_t]): h
         }
         ; One byte per item: an idle worker's blocking read consumes
@@ -1770,7 +1770,7 @@ define Io
         var i: i64 0
         while i < pl.workers
         {
-            let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
+            let h *(((pl.handles as size_t) + ((i * 8) as size_t)) as pointer[size_t])
             Thread.join(h)
             set i: i + 1
         }
@@ -2312,7 +2312,7 @@ define Channel
             {
                 if not Scheduler.step()
                 {
-                    var slice (remaining + (999999 as i64)) / (1000000 as i64)
+                    var slice (remaining + 999999) / 1000000
                     if slice > (CHAN_DEADLOCK_MS as i64)
                         set slice: CHAN_DEADLOCK_MS as i64
                     if slice < 1
@@ -2345,7 +2345,7 @@ define Thread
         let p Page.allocate_page_traced("Thread.spawn_cell")
         let cell p.allocate(16, 8) as pointer[size_t]
         set *cell: fn as size_t
-        let slot1 (cell as size_t + (8 as size_t)) as pointer[size_t]
+        let slot1 (cell as size_t + 8) as pointer[size_t]
         set *slot1: arg as size_t
         ; Count the new thread in the deadlock census BEFORE it starts, so
         ; it is a known potential sender before it can do anything (the
@@ -2586,11 +2586,11 @@ define TaskPool
         }
         ; Worker spawn cells {pool, index}, 16 bytes each on the pool
         ; page — the worker's only door to the pool.
-        let cells p.allocate((n * (16 as i64)) as size_t, 8) as pointer[size_t]
+        let cells p.allocate((n * 16) as size_t, 8) as pointer[size_t]
         set i: 0
         while i < n
         {
-            let c ((cells as size_t) + ((i * (16 as i64)) as size_t)) as pointer[size_t]
+            let c ((cells as size_t) + ((i * 16) as size_t)) as pointer[size_t]
             set *c: pl as size_t
             set *(((c as size_t) + 8) as pointer[size_t]): i as size_t
             let h Thread.spawn(&task_worker, c as pointer[void])
@@ -2694,7 +2694,7 @@ define TaskPool
         var i: i64 0
         while i < pl.nworkers
         {
-            let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
+            let h *(((pl.handles as size_t) + ((i * 8) as size_t)) as pointer[size_t])
             Thread.join(h)
             set i: i + 1
         }
@@ -2749,7 +2749,7 @@ procedure task_worker(arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[size_t]
     let pl (*cell) as pointer[TaskPool]
-    let me ((*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as i64)
+    let me ((*(((cell as size_t) + 8) as pointer[size_t])) as i64)
     repeat
     {
         var byte u8[1]

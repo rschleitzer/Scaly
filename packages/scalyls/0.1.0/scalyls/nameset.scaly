@@ -130,7 +130,7 @@ define nameset
     {
         if name_len > 0
         {
-            let mask cap - (1 as size_t)
+            let mask cap - 1
             var idx h & mask
             var probes: size_t 0
             while probes < cap
@@ -208,7 +208,7 @@ define nameset
                 {
                     let sp sbuf + start
                     let h nameset.hash_ptr(sp, tlen)
-                    let mask cap - (1 as size_t)
+                    let mask cap - 1
                     var idx h & mask
                     var probes: size_t 0
                     while probes < cap

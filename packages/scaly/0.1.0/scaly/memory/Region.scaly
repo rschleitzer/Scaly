@@ -128,7 +128,7 @@ define Region
 
     function count_pages(region: pointer[Page]) returns size_t
     {
-        var n (1 as size_t) + count_exclusives(region)
+        var n 1 + count_exclusives(region)
         var q region.next_page
         while q <> null
         {
@@ -189,7 +189,7 @@ define Region
     function serialize(region: pointer[Page], root: pointer[void], host: pointer[Page]) returns pointer[u8]
     {
         let n count_pages(region)
-        let table host.allocate(n * (16 as size_t), 8) as pointer[size_t]
+        let table host.allocate(n * 16, 8) as pointer[size_t]
         let end fill_pages(region, table, 0)
         if end <> n * 2
         {
@@ -198,7 +198,7 @@ define Region
             exit 17
         }
 
-        var total (32 as size_t) + n * (16 as size_t)
+        var total 32 + n * 16
         var w: size_t 1
         while w < n * 2
         {
@@ -214,7 +214,7 @@ define Region
         set h[3]: (root as size_t) as u64
         memcpy(((frame as size_t) + (32 as size_t)) as pointer[void], table as pointer[void], n * (16 as size_t))
 
-        var off (32 as size_t) + n * (16 as size_t)
+        var off 32 + n * 16
         var r: size_t 0
         while r < n * 2
         {
@@ -255,10 +255,10 @@ define Region
             return null
 
         let root_old h[3] as size_t
-        let table ((frame as size_t) + (32 as size_t)) as pointer[size_t]
-        let ob host.allocate(n * (8 as size_t), 8) as pointer[size_t]
-        let nb host.allocate(n * (8 as size_t), 8) as pointer[size_t]
-        let ln host.allocate(n * (8 as size_t), 8) as pointer[size_t]
+        let table ((frame as size_t) + 32) as pointer[size_t]
+        let ob host.allocate(n * 8, 8) as pointer[size_t]
+        let nb host.allocate(n * 8, 8) as pointer[size_t]
+        let ln host.allocate(n * 8, 8) as pointer[size_t]
 
         ; Validate the table before touching the allocator.
         var v: size_t 1
@@ -277,7 +277,7 @@ define Region
         ; Land every page in its real home: bucket pages for PAGE_SIZE
         ; entries, aligned_alloc blocks for oversized ones — the two
         ; shapes release_page knows how to free.
-        var off (32 as size_t) + n * (16 as size_t)
+        var off 32 + n * 16
         var i: size_t 0
         var r: size_t 0
         while i < n
@@ -338,19 +338,19 @@ define Region
             {
                 let obase ob[i]
                 set np.next_object: (nb[i] + (no - obase)) as pointer[void]
-                let cp_slot ((np as size_t) + (8 as size_t)) as pointer[void]
+                let cp_slot ((np as size_t) + 8) as pointer[void]
                 rr.fix(cp_slot)
-                let npg_slot ((np as size_t) + (16 as size_t)) as pointer[void]
+                let npg_slot ((np as size_t) + 16) as pointer[void]
                 rr.fix(npg_slot)
-                let ex_slot ((np as size_t) + (24 as size_t)) as pointer[void]
+                let ex_slot ((np as size_t) + 24) as pointer[void]
                 rr.fix(ex_slot)
-                let rg_slot ((np as size_t) + (32 as size_t)) as pointer[void]
+                let rg_slot ((np as size_t) + 32) as pointer[void]
                 rr.fix(rg_slot)
                 var nd np.exclusive_pages.head
                 while nd <> null
                 {
                     rr.fix(nd as pointer[void])
-                    let next_slot ((nd as size_t) + (8 as size_t)) as pointer[void]
+                    let next_slot ((nd as size_t) + 8) as pointer[void]
                     rr.fix(next_slot)
                     set nd: nd.next
                 }

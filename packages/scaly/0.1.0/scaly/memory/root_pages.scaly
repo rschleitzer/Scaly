@@ -183,7 +183,7 @@ procedure scaly_eputp(p: pointer[void])
     var i: i64 17
     while i >= 2
     {
-        let nibble (val & (15 as u64)) as i64
+        let nibble (val & 15) as i64
         set *(buf + i): hex_digit(nibble)
         set val: val >> 4
         set i: i - 1

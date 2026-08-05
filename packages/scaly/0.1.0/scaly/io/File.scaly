@@ -39,8 +39,8 @@ procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[size_t]
     let file (*cell) as pointer[void]
-    let size *(((cell as size_t) + (8 as size_t)) as pointer[size_t])
-    let buf (*(((cell as size_t) + (16 as size_t)) as pointer[size_t])) as pointer[void]
+    let size *(((cell as size_t) + 8) as pointer[size_t])
+    let buf (*(((cell as size_t) + 16) as pointer[size_t])) as pointer[void]
     if size > 0
         fread(buf, 1, size, file)
     fclose file
@@ -64,8 +64,8 @@ procedure file_write_worker(arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[size_t]
     let path (*cell) as pointer[const_char]
-    let data (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[void]
-    let len *(((cell as size_t) + (16 as size_t)) as pointer[size_t])
+    let data (*(((cell as size_t) + 8) as pointer[size_t])) as pointer[void]
+    let len *(((cell as size_t) + 16) as pointer[size_t])
     var file fopen(path, "wb")
     if file = null
         return null
@@ -130,7 +130,7 @@ define File
             Page.release_page_traced(p, "File.read_cell")
             return String()
         }
-        let size *(((cell as size_t) + (8 as size_t)) as pointer[size_t])
+        let size *(((cell as size_t) + 8) as pointer[size_t])
         var ret String(size)
         let buffer ret.get_buffer()
         set *(((cell as size_t) + 16) as pointer[size_t]): buffer as size_t

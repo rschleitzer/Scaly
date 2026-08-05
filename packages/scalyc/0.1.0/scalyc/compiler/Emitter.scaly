@@ -898,7 +898,7 @@ define Emitter
                         var mty di_type_for prop.prop_type
                         if mty.handle = null
                             set mty: di_placeholder_type(msize_bits)
-                        let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length(), di_file, pos.line, (msize_bits as size_t), 0, (this_off * 8 as size_t), 0, mty)
+                        let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length(), di_file, pos.line, (msize_bits as size_t), 0, (this_off * 8), 0, mty)
                         member_vec.put(added, member)
                         set added: added + 1
                     }
@@ -979,13 +979,13 @@ define Emitter
         ; Outer struct members: tag, then payload (if any).
         var tag_name "tag"
         var pay_name "payload"
-        let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8 as size_t), 0, 0, 0, di_placeholder_type(tag_size * 8))
+        let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8), 0, 0, 0, di_placeholder_type(tag_size * 8))
         var out_vec Vector[LLVMMetadataRef](2)
         out_vec.put(0, tag_member)
         var out_count: size_t 1
         if payload_ty.handle <> null
         {
-            let pay_member LLVMDIBuilderCreateMemberType(di_builder, fwd, pay_name.c_data(), pay_name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, (tag_size * 8 as size_t), 0, payload_ty)
+            let pay_member LLVMDIBuilderCreateMemberType(di_builder, fwd, pay_name.c_data(), pay_name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, (tag_size * 8), 0, payload_ty)
             out_vec.put(1, pay_member)
             set out_count: 2
         }
@@ -5598,7 +5598,7 @@ define Emitter
             set rest: rest >> 7
             set vcount: vcount + 1
         }
-        let total vcount + content_len + (1 as size_t)
+        let total vcount + content_len + 1
         var bytes Vector[LLVMValueRef](total)
 
         ; write the varint, mirroring String.init# exactly
@@ -6075,10 +6075,10 @@ define Emitter
         ; "; F", they stay hashed; printed IR has no other comments).
         if b0 = 59
         {
-            let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
+            let b1 (*(((text as size_t) + i + 1) as pointer[char])) as u8
             if b1 = 32
             {
-                let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
+                let b2 (*(((text as size_t) + i + 2) as pointer[char])) as u8
                 if b2 = 77
                     return true
             }
@@ -6088,10 +6088,10 @@ define Emitter
         ; emitter's block names are entry/then/else/...).
         if b0 = 115
         {
-            let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
+            let b1 (*(((text as size_t) + i + 1) as pointer[char])) as u8
             if b1 = 111
             {
-                let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
+                let b2 (*(((text as size_t) + i + 2) as pointer[char])) as u8
                 if b2 = 117
                     return true
             }
@@ -6100,10 +6100,10 @@ define Emitter
         ; "tar..." — the target datalayout line.
         if b0 = 116
         {
-            let b1 (*(((text as size_t) + i + (1 as size_t)) as pointer[char])) as u8
+            let b1 (*(((text as size_t) + i + 1) as pointer[char])) as u8
             if b1 = 97
             {
-                let b2 (*(((text as size_t) + i + (2 as size_t)) as pointer[char])) as u8
+                let b2 (*(((text as size_t) + i + 2) as pointer[char])) as u8
                 if b2 = 114
                     return true
             }
@@ -14470,7 +14470,7 @@ define Emitter
         ; not lower the bar (measured: forking ~100us of work wins
         ; less than 2x on 10 cores — not worth the energy).
         let c_hotvol LLVMConstInt(i64_ty, 1048576, 0)
-        let volcap_v (1048576 as size_t) * (1048576 as size_t)
+        let volcap_v 1048576 * 1048576
         let c_volcap LLVMConstInt(i64_ty, volcap_v, 0)
         let c_calmin LLVMConstInt(i64_ty, 16384, 0)
         let c_caliters LLVMConstInt(i64_ty, 512, 0)

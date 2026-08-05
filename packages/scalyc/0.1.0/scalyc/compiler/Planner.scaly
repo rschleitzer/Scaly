@@ -2540,8 +2540,8 @@ define Planner
             ; Parenthesized: a parenless argument may not itself be an operand
             ; SEQUENCE (`sb.append used / 1024` reaches append with ZERO
             ; arguments — caught by the planner's own arity gate).
-            let used_kb used / (1024 as size_t)
-            let budget_kb this.stack_budget / (1024 as size_t)
+            let used_kb used / 1024
+            let budget_kb this.stack_budget / 1024
             sb.append used_kb
             sb.append " KB of stack, past the guard's budget of "
             sb.append budget_kb
@@ -22554,7 +22554,7 @@ define Planner
                         if call.args <> null
                             if call.args.length >= 2
                             {
-                                let mp_ call.args.get(call.args.length - (1 as size_t))
+                                let mp_ call.args.get(call.args.length - 1)
                                 if mp_ <> null
                                     this.move_mark_sent(mp_.unwrap())
                             }

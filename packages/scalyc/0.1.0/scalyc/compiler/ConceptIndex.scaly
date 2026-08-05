@@ -79,7 +79,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
         if slots <> null
         {
             let h name.hash()
-            let mask cap - (1 as size_t)
+            let mask cap - 1
             var idx h & mask
             var probes: size_t 0
             while probes < cap
@@ -114,7 +114,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
         if slots <> null
         {
             let h name.hash()
-            let mask cap - (1 as size_t)
+            let mask cap - 1
             var idx h & mask
             var probes: size_t 0
             while probes < cap
@@ -143,7 +143,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
         if slots <> null
         {
             let h name.hash()
-            let mask cap - (1 as size_t)
+            let mask cap - 1
             var idx h & mask
             var probes: size_t 0
             while probes < cap
