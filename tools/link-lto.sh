@@ -72,5 +72,13 @@ mkdir -p "$(dirname "$OUT")"
 # -lm last: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/logf/powf,
 # a separate libm on Linux (libSystem on macOS), and it must follow the objects
 # that reference it.
-${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "$WORK/whole.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" -lm -o "$OUT" \
+# LINK_EXTRA: additional libraries the program needs, appended before -lm.
+# dazzle's Stage-6b JIT calls LLVM-C/ORC, so its build passes
+# -L<llvm-libdir> -lLLVM-18 here; nothing else uses it.
+EXTRA=()
+if [ -n "${LINK_EXTRA:-}" ]; then
+  # shellcheck disable=SC2206
+  EXTRA=(${LINK_EXTRA})
+fi
+${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "$WORK/whole.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" ${EXTRA[@]+"${EXTRA[@]}"} -lm -o "$OUT" \
   || { echo "link-lto: FAIL (link)" >&2; exit 1; }
