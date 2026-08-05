@@ -124,19 +124,19 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.routine_symbol(source, f.target, f.start, f.end, 12 as i64)
+                return symbols.routine_symbol(source, f.target, f.start, f.end, 12)
             when pr: ProcedureSyntax
-                return symbols.routine_symbol(source, pr.target, pr.start, pr.end, 12 as i64)
+                return symbols.routine_symbol(source, pr.target, pr.start, pr.end, 12)
             when o: OperatorSyntax
-                return symbols.routine_symbol(source, o.target, o.start, o.end, 25 as i64)
+                return symbols.routine_symbol(source, o.target, o.start, o.end, 25)
             when def: DefinitionSyntax
                 return symbols.definition_symbol(source, def)
             when m: ModuleSyntax
-                return symbols.symbol_object(source, m.name, 2 as i64, m.start, m.end, "[]")
+                return symbols.symbol_object(source, m.name, 2, m.start, m.end, "[]")
             when mut: MutableSyntax
-                return symbols.symbol_object(source, mut.binding.name, 13 as i64, mut.start, mut.end, "[]")
+                return symbols.symbol_object(source, mut.binding.name, 13, mut.start, mut.end, "[]")
             when sh: SharedSyntax
-                return symbols.symbol_object(source, sh.binding.name, 13 as i64, sh.start, sh.end, "[]")
+                return symbols.symbol_object(source, sh.binding.name, 13, sh.start, sh.end, "[]")
             when priv: PrivateSyntax
                 return symbols.export_symbol(source, priv.export_)
             when e: EmptySyntax
@@ -156,17 +156,17 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.routine_symbol(source, f.target, f.start, f.end, 12 as i64)
+                return symbols.routine_symbol(source, f.target, f.start, f.end, 12)
             when pr: ProcedureSyntax
-                return symbols.routine_symbol(source, pr.target, pr.start, pr.end, 12 as i64)
+                return symbols.routine_symbol(source, pr.target, pr.start, pr.end, 12)
             when o: OperatorSyntax
-                return symbols.routine_symbol(source, o.target, o.start, o.end, 25 as i64)
+                return symbols.routine_symbol(source, o.target, o.start, o.end, 25)
             when def: DefinitionSyntax
                 return symbols.definition_symbol(source, def)
             when t: TraitSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.symbol_object(source, m.name, 2 as i64, m.start, m.end, "[]")
+                return symbols.symbol_object(source, m.name, 2, m.start, m.end, "[]")
     }
 
     ; A function / procedure / operator: name from its target, no children.
@@ -199,25 +199,25 @@ define symbols
         choose def.concept_
             when c: ClassSyntax
             {
-                set kind: (23 as i64)
+                set kind: 23
                 set children: symbols.body_children(source, c.body)
             }
             when n: NamespaceSyntax
             {
-                set kind: (3 as i64)
+                set kind: 3
                 set children: symbols.namespace_children(source, n)
             }
             when un: UnionSyntax
             {
-                set kind: (10 as i64)
+                set kind: 10
                 set children: symbols.union_children(source, un)
             }
             when cn: ConstantSyntax
-                set kind: (14 as i64)
+                set kind: 14
             when dl: DelegateSyntax
-                set kind: (12 as i64)
+                set kind: 12
             when ic: IntrinsicSyntax
-                set kind: (23 as i64)
+                set kind: 23
         symbols.symbol_object(source, def.name, kind, def.start, def.end, children)
     }
 
@@ -269,15 +269,15 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.routine_symbol(source, f.target, f.start, f.end, 6 as i64)
+                return symbols.routine_symbol(source, f.target, f.start, f.end, 6)
             when pr: ProcedureSyntax
-                return symbols.routine_symbol(source, pr.target, pr.start, pr.end, 6 as i64)
+                return symbols.routine_symbol(source, pr.target, pr.start, pr.end, 6)
             when o: OperatorSyntax
-                return symbols.routine_symbol(source, o.target, o.start, o.end, 25 as i64)
+                return symbols.routine_symbol(source, o.target, o.start, o.end, 25)
             when ini: InitSyntax
-                return symbols.symbol_object(source, "init", 9 as i64, ini.start, ini.end, "[]")
+                return symbols.symbol_object(source, "init", 9, ini.start, ini.end, "[]")
             when dei: DeInitSyntax
-                return symbols.symbol_object(source, "deinit", 9 as i64, dei.start, dei.end, "[]")
+                return symbols.symbol_object(source, "deinit", 9, dei.start, dei.end, "[]")
             when def: DefinitionSyntax
                 return symbols.definition_symbol(source, def)
             when e: EmptySyntax
@@ -289,7 +289,7 @@ define symbols
             when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.symbol_object(source, m.name, 2 as i64, m.start, m.end, "[]")
+                return symbols.symbol_object(source, m.name, 2, m.start, m.end, "[]")
     }
 
     ; Children of a namespace: its nested declarations (reuses decl_symbol#).
@@ -348,7 +348,7 @@ define symbols
                 {
                     if first = false
                         sb.append(0x2C as char)
-                    let vsym symbols.symbol_object(source, vptr.name, 22 as i64, vptr.start, vptr.end, "[]")
+                    let vsym symbols.symbol_object(source, vptr.name, 22, vptr.start, vptr.end, "[]")
                     var ci: size_t 0
                     let cn vsym.get_length()
                     while ci < cn
@@ -461,7 +461,7 @@ define symbols
             if c = (10 as char)
             {
                 set line: line + 1
-                set col: 0 as size_t
+                set col: 0
             }
             else
                 set col: col + 1
@@ -906,8 +906,8 @@ define symbols
         ; An identifier USE matching one of these is coloured by its declared
         ; kind, not just its shape.
         let comp_items symbols.completion_items source
-        let fn_list symbols.names_from_items(comp_items, 2 as i64, 3 as i64)
-        let ty_list symbols.names_from_items(comp_items, 22 as i64, 13 as i64)
+        let fn_list symbols.names_from_items(comp_items, 2, 3)
+        let ty_list symbols.names_from_items(comp_items, 22, 13)
         let prim_list symbols.primitive_type_list()
 
         ; Cross-file name tables: function/method + struct/enum names harvested
@@ -919,8 +919,8 @@ define symbols
         ; gate is removed; the harvest cost is bounded by the content-hashed
         ; symindex regardless of the current file's size).
         let xname_blob symbols.workspace_name_blob uri
-        let xfn_list symbols.tagged_name_list(xname_blob, 0x46 as u8)  ; F
-        let xty_list symbols.tagged_name_list(xname_blob, 0x54 as u8)  ; T
+        let xfn_list symbols.tagged_name_list(xname_blob, 0x46)  ; F
+        let xty_list symbols.tagged_name_list(xname_blob, 0x54)  ; T
 
         ; One hashed name->token-kind table from the five lists. Type lists
         ; (primitives, intra-file types, cross-file types) -> token type 1;
@@ -930,11 +930,11 @@ define symbols
         ; before return.
         let ns_cap (NS_CAP as size_t)
         let ns_slots nameset.create ns_cap
-        nameset.insert_name_list(ns_slots, ns_cap, prim_list, 1 as i64)
-        nameset.insert_name_list(ns_slots, ns_cap, ty_list, 1 as i64)
-        nameset.insert_name_list(ns_slots, ns_cap, xty_list, 1 as i64)
-        nameset.insert_name_list(ns_slots, ns_cap, fn_list, 2 as i64)
-        nameset.insert_name_list(ns_slots, ns_cap, xfn_list, 2 as i64)
+        nameset.insert_name_list(ns_slots, ns_cap, prim_list, 1)
+        nameset.insert_name_list(ns_slots, ns_cap, ty_list, 1)
+        nameset.insert_name_list(ns_slots, ns_cap, xty_list, 1)
+        nameset.insert_name_list(ns_slots, ns_cap, fn_list, 2)
+        nameset.insert_name_list(ns_slots, ns_cap, xfn_list, 2)
 
         ; Scope-aware tables: routine [start,end)+param-names and field-decl
         ; offsets, both from ONE more parse. param_in_scope / is_field_decl_offset
@@ -960,7 +960,7 @@ define symbols
             if c = (10 as u8)
             {
                 set line: line + 1
-                set col: 0 as size_t
+                set col: 0
                 set i: i + 1
                 continue
             }
@@ -999,16 +999,16 @@ define symbols
                             {
                                 if first = false
                                     sb.append(0x2C as char)
-                                sb.append(symbols.encode_token(prev_line, prev_col, seg_line, seg_col, seglen, 7 as i64))
+                                sb.append(symbols.encode_token(prev_line, prev_col, seg_line, seg_col, seglen, 7))
                                 set prev_line: seg_line
                                 set prev_col: seg_col
                                 set first: false
                             }
                             set line: line + 1
-                            set col: 0 as size_t
+                            set col: 0
                             set k: k + 1
                             set seg_line: line
-                            set seg_col: 0 as size_t
+                            set seg_col: 0
                             continue
                         }
                         if cc = (42 as u8)
@@ -1028,7 +1028,7 @@ define symbols
                     {
                         if first = false
                             sb.append(0x2C as char)
-                        sb.append(symbols.encode_token(prev_line, prev_col, seg_line, seg_col, seglen, 7 as i64))
+                        sb.append(symbols.encode_token(prev_line, prev_col, seg_line, seg_col, seglen, 7))
                         set prev_line: seg_line
                         set prev_col: seg_col
                         set first: false
@@ -1050,7 +1050,7 @@ define symbols
                 let clen j - i
                 if first = false
                     sb.append(0x2C as char)
-                sb.append(symbols.encode_token(prev_line, prev_col, line, col, clen, 7 as i64))
+                sb.append(symbols.encode_token(prev_line, prev_col, line, col, clen, 7))
                 set prev_line: line
                 set prev_col: col
                 set first: false
@@ -1091,7 +1091,7 @@ define symbols
                 if j > n
                     set j: n
                 set tlen: j - i
-                set tok_type: 5 as i64                 ; string
+                set tok_type: 5                 ; string
                 set pending: 0 - 1
             }
 
@@ -1107,7 +1107,7 @@ define symbols
                     set j: j + 1
                 }
                 set tlen: j - i
-                set tok_type: 6 as i64                 ; number
+                set tok_type: 6                 ; number
                 set pending: 0 - 1
             }
 
@@ -1127,11 +1127,11 @@ define symbols
                 let after_dot prev_was_dot
                 var t: i64 (3)                     ; variable
                 if symbols.is_upper(c)
-                    set t: 1 as i64                ; lexical: uppercase -> type
+                    set t: 1                ; lexical: uppercase -> type
                 if pending = (1 as i64)
-                    set t: 1 as i64                ; after define/union/... -> type
+                    set t: 1                ; after define/union/... -> type
                 if pending = (2 as i64)
-                    set t: 2 as i64                ; after function/procedure -> function
+                    set t: 2                ; after function/procedure -> function
                 ; semantic override: resolve the USE to its declared kind via
                 ; the hashed name set (1 type / 2 function, function wins).
                 let nk nameset.lookup(ns_slots, ns_cap, source, i, j)
@@ -1139,37 +1139,37 @@ define symbols
                     set t: nk
                 ; parameter: in scope of the enclosing routine (above function)
                 if symbols.param_in_scope(scope_tbl, source, i, j, i)
-                    set t: 8 as i64
+                    set t: 8
                 ; property (a): a field/property name at its declaration site
                 if symbols.is_field_decl_offset(scope_tbl, i)
-                    set t: 9 as i64
+                    set t: 9
                 ; property (b): an after-`.` member access not resolved as a
                 ; function/method or type (Type.method / ns.fn keep their kind)
                 if after_dot
                 {
                     if t <> (1 as i64)
                         if t <> (2 as i64)
-                            set t: 9 as i64
+                            set t: 9
                 }
                 if grammar.is_keyword(word)
-                    set t: 0 as i64                ; keyword wins (grammar-derived)
+                    set t: 0                ; keyword wins (grammar-derived)
                 set tok_type: t
                 ; set pending for the NEXT identifier off this keyword, else clear
                 if t = (0 as i64)
                 {
                     var np: i64 (0 - 1)
                     if word = "function"
-                        set np: 2 as i64
+                        set np: 2
                     if word = "procedure"
-                        set np: 2 as i64
+                        set np: 2
                     if word = "define"
-                        set np: 1 as i64
+                        set np: 1
                     if word = "union"
-                        set np: 1 as i64
+                        set np: 1
                     if word = "trait"
-                        set np: 1 as i64
+                        set np: 1
                     if word = "module"
-                        set np: 1 as i64
+                        set np: 1
                     set pending: np
                 }
                 if t <> (0 as i64)
@@ -1188,7 +1188,7 @@ define symbols
                     set j: j + 1
                 }
                 set tlen: j - i
-                set tok_type: 4 as i64
+                set tok_type: 4
                 set pending: 0 - 1
             }
 
@@ -1481,13 +1481,13 @@ define symbols
                         var i: size_t 0
                         if items.length > (0 as size_t)
                         {
-                            let i0 items.get(0 as size_t)
+                            let i0 items.get(0)
                             if i0 <> null
                             {
                                 let it0 (*i0)
                                 let kw_this "this"
                                 if it0.name = kw_this
-                                    set i: 1 as size_t
+                                    set i: 1
                             }
                         }
                         while i < items.length
@@ -1602,7 +1602,7 @@ define symbols
                 let off symbols.name_offset_at(source, prop.start)
                 let nlen prop.name.get_length()
                 if off + nlen <= source.get_length()
-                    if symbols.range_equals(source, off, prop.name, 0 as size_t, nlen)
+                    if symbols.range_equals(source, off, prop.name, 0, nlen)
                         return symbols.f_record off
                 return ""
             }
@@ -1611,7 +1611,7 @@ define symbols
                 let off symbols.name_offset_at(source, prop2.start)
                 let nlen prop2.name.get_length()
                 if off + nlen <= source.get_length()
-                    if symbols.range_equals(source, off, prop2.name, 0 as size_t, nlen)
+                    if symbols.range_equals(source, off, prop2.name, 0, nlen)
                         return symbols.f_record off
                 return ""
             }
@@ -2163,19 +2163,19 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.completion_item(symbols.target_name(f.target), 3 as i64)
+                return symbols.completion_item(symbols.target_name(f.target), 3)
             when pr: ProcedureSyntax
-                return symbols.completion_item(symbols.target_name(pr.target), 3 as i64)
+                return symbols.completion_item(symbols.target_name(pr.target), 3)
             when o: OperatorSyntax
-                return symbols.completion_item(symbols.target_name(o.target), 24 as i64)
+                return symbols.completion_item(symbols.target_name(o.target), 24)
             when def: DefinitionSyntax
                 return symbols.completion_definition(source, def)
             when m: ModuleSyntax
-                return symbols.completion_item(m.name, 9 as i64)
+                return symbols.completion_item(m.name, 9)
             when mut: MutableSyntax
-                return symbols.completion_item(mut.binding.name, 6 as i64)
+                return symbols.completion_item(mut.binding.name, 6)
             when sh: SharedSyntax
-                return symbols.completion_item(sh.binding.name, 6 as i64)
+                return symbols.completion_item(sh.binding.name, 6)
             when priv: PrivateSyntax
                 return symbols.completion_export(source, priv.export_)
             when e: EmptySyntax
@@ -2195,17 +2195,17 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.completion_item(symbols.target_name(f.target), 3 as i64)
+                return symbols.completion_item(symbols.target_name(f.target), 3)
             when pr: ProcedureSyntax
-                return symbols.completion_item(symbols.target_name(pr.target), 3 as i64)
+                return symbols.completion_item(symbols.target_name(pr.target), 3)
             when o: OperatorSyntax
-                return symbols.completion_item(symbols.target_name(o.target), 24 as i64)
+                return symbols.completion_item(symbols.target_name(o.target), 24)
             when def: DefinitionSyntax
                 return symbols.completion_definition(source, def)
             when t: TraitSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.completion_item(m.name, 9 as i64)
+                return symbols.completion_item(m.name, 9)
     }
 
     ; A `define X` -> the type's name item followed by its members' items.
@@ -2216,25 +2216,25 @@ define symbols
         choose def.concept_
             when c: ClassSyntax
             {
-                set kind: (22 as i64)
+                set kind: 22
                 set members: symbols.completion_body(source, c.body)
             }
             when n: NamespaceSyntax
             {
-                set kind: (9 as i64)
+                set kind: 9
                 set members: symbols.completion_namespace(source, n)
             }
             when un: UnionSyntax
             {
-                set kind: (13 as i64)
+                set kind: 13
                 set members: symbols.completion_union(source, un)
             }
             when cn: ConstantSyntax
-                set kind: (21 as i64)
+                set kind: 21
             when dl: DelegateSyntax
-                set kind: (3 as i64)
+                set kind: 3
             when ic: IntrinsicSyntax
-                set kind: (22 as i64)
+                set kind: 22
 
         let name_item symbols.completion_item(def.name, kind)
         var sb StringBuilder()
@@ -2304,15 +2304,15 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.completion_item(symbols.target_name(f.target), 2 as i64)
+                return symbols.completion_item(symbols.target_name(f.target), 2)
             when pr: ProcedureSyntax
-                return symbols.completion_item(symbols.target_name(pr.target), 2 as i64)
+                return symbols.completion_item(symbols.target_name(pr.target), 2)
             when o: OperatorSyntax
-                return symbols.completion_item(symbols.target_name(o.target), 24 as i64)
+                return symbols.completion_item(symbols.target_name(o.target), 24)
             when ini: InitSyntax
-                return symbols.completion_item("init", 4 as i64)
+                return symbols.completion_item("init", 4)
             when dei: DeInitSyntax
-                return symbols.completion_item("deinit", 4 as i64)
+                return symbols.completion_item("deinit", 4)
             when def: DefinitionSyntax
                 return symbols.completion_definition(source, def)
             when e: EmptySyntax
@@ -2324,7 +2324,7 @@ define symbols
             when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.completion_item(m.name, 9 as i64)
+                return symbols.completion_item(m.name, 9)
     }
 
     ; Nested declarations of a namespace -> a comma-joined fragment.
@@ -2378,7 +2378,7 @@ define symbols
                 let vptr variants.get i
                 if vptr <> null
                 {
-                    let vitem symbols.completion_item(vptr.name, 20 as i64)
+                    let vitem symbols.completion_item(vptr.name, 20)
                     if first = false
                         sb.append(0x2C as char)
                     var ci: size_t 0
@@ -2654,7 +2654,7 @@ define symbols
                     if c <> (0x09 as u8)
                         if c <> (0x28 as u8)
                             if c <> (0x2C as u8)
-                                set prev_punct: (0 as size_t)
+                                set prev_punct: 0
                 set k: k + (1 as size_t)
             }
             if symbols.is_ident_byte(c)
@@ -2670,8 +2670,8 @@ define symbols
                     set result: symbols.type_after_decl(source, j, len, prev_start, prev_end, have_prev, prev_punct)
                 set prev_start: k
                 set prev_end: j
-                set have_prev: (1 as size_t)
-                set prev_punct: (0 as size_t)
+                set have_prev: 1
+                set prev_punct: 0
                 set k: j
             }
         }
@@ -4595,10 +4595,10 @@ define symbols
     ; via build_signature_from_labels#. "" on no match.
     function sig_from_ws_blob(rp, blob: String, name: String, active: size_t) returns String
     {
-        let r symbols.detail_payload(blob, name, 0x53 as u8)
+        let r symbols.detail_payload(blob, name, 0x53)
         if r.get_length() > (0 as size_t)
         {
-            let labels symbols.substring(r, 1 as size_t, r.get_length())
+            let labels symbols.substring(r, 1, r.get_length())
             return symbols.build_signature_from_labels(name, labels, active)
         }
         ""
@@ -4610,10 +4610,10 @@ define symbols
     ; found concept (matching mem_definition#).
     function members_from_ws_blob(rp, blob: String, name: String) returns String
     {
-        let r symbols.detail_payload(blob, name, 0x4D as u8)
+        let r symbols.detail_payload(blob, name, 0x4D)
         if r.get_length() > (0 as size_t)
         {
-            let frag symbols.substring(r, 1 as size_t, r.get_length())
+            let frag symbols.substring(r, 1, r.get_length())
             var sb StringBuilder()
             sb.append(0x5B as char)                    ; [
             var d: size_t 0
@@ -4682,7 +4682,7 @@ define symbols
                 ; added a 5th membertypes field), NOT the LF.
                 if ntabs >= (4 as size_t)
                     if tab1 - rec_start = nm_len
-                        if symbols.range_equals(blob, rec_start, name, 0 as size_t, nm_len)
+                        if symbols.range_equals(blob, rec_start, name, 0, nm_len)
                             return symbols.substring(blob, tab3 + (1 as size_t), tab4)
                 set rec_start: i + (1 as size_t)
             }
@@ -4724,7 +4724,7 @@ define symbols
                     set tab: tab + (1 as size_t)
                 }
                 if tab - rec_start = nm_len
-                    if symbols.range_equals(blob, rec_start, name, 0 as size_t, nm_len)
+                    if symbols.range_equals(blob, rec_start, name, 0, nm_len)
                     {
                         ; first "kind": in [tab, i) is the json's
                         var kind: i64 (0 - 1)
@@ -4800,7 +4800,7 @@ define symbols
                 }
                 if ntabs >= (4 as size_t)
                     if tab1 - rec_start = tn_len
-                        if symbols.range_equals(blob, rec_start, type_name, 0 as size_t, tn_len)
+                        if symbols.range_equals(blob, rec_start, type_name, 0, tn_len)
                         {
                             ; Walk the 0x1F-joined pairs in [tab4+1, i): even
                             ; tokens are member names, odd tokens their types.
@@ -4823,7 +4823,7 @@ define symbols
                                     {
                                         set matched_name: false
                                         if ps - seg_start = mt_len
-                                            if symbols.range_equals(blob, seg_start, member_name, 0 as size_t, mt_len)
+                                            if symbols.range_equals(blob, seg_start, member_name, 0, mt_len)
                                                 set matched_name: true
                                     }
                                     if is_name = false
@@ -5134,13 +5134,13 @@ define symbols
                 }
                 var tagb: size_t 0
                 if kind = (12 as i64)
-                    set tagb: 0x46 as size_t           ; F: function
+                    set tagb: 0x46           ; F: function
                 if kind = (6 as i64)
-                    set tagb: 0x46 as size_t           ; F: method
+                    set tagb: 0x46           ; F: method
                 if kind = (23 as i64)
-                    set tagb: 0x54 as size_t           ; T: struct
+                    set tagb: 0x54           ; T: struct
                 if kind = (10 as i64)
-                    set tagb: 0x54 as size_t           ; T: enum/union
+                    set tagb: 0x54           ; T: enum/union
                 if tagb > (0 as size_t)
                 {
                     sb.append(tagb as char)
@@ -5310,16 +5310,16 @@ define symbols
                     {
                         let pc source.get k
                         if pc = (0x28 as u8)              ; ( -> class/struct
-                            set tag: (0x54 as size_t)
+                            set tag: 0x54
                         if symbols.is_ident_byte(pc)
                         {
                             let cw symbols.lex_read_ident(source, k, n)
                             if cw = "union"
-                                set tag: (0x54 as size_t)
+                                set tag: 0x54
                             if cw = "intrinsic"
-                                set tag: (0x54 as size_t)
+                                set tag: 0x54
                             if cw = "delegate"
-                                set tag: (0x46 as size_t)
+                                set tag: 0x46
                         }
                     }
                     if tag > (0 as size_t)
@@ -5488,7 +5488,7 @@ define symbols
                 set i: i + (1 as size_t)
             }
             if found
-                return symbols.substring(path, 0 as size_t, last_found + nn - (1 as size_t))
+                return symbols.substring(path, 0, last_found + nn - (1 as size_t))
         }
         ""
     }
@@ -5553,7 +5553,7 @@ define symbols
     function uri_to_path(rp, uri: String) returns String
     {
         if uri.starts_with("file://")
-            return symbols.substring(uri, 7 as size_t, uri.get_length())
+            return symbols.substring(uri, 7, uri.get_length())
         uri
     }
 
@@ -5591,7 +5591,7 @@ define symbols
             set i: i + (1 as size_t)
         }
         if found
-            return symbols.substring(path, 0 as size_t, last)
+            return symbols.substring(path, 0, last)
         ""
     }
 
@@ -5779,19 +5779,19 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail(source, f.target), symbols.target_return_field(f.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(f.target), 12, f.start, f.end, symbols.routine_param_detail(source, f.target), symbols.target_return_field(f.target), "")
             when pr: ProcedureSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail(source, pr.target), symbols.target_return_field(pr.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(pr.target), 12, pr.start, pr.end, symbols.routine_param_detail(source, pr.target), symbols.target_return_field(pr.target), "")
             when o: OperatorSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail(source, o.target), symbols.target_return_field(o.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(o.target), 25, o.start, o.end, symbols.routine_param_detail(source, o.target), symbols.target_return_field(o.target), "")
             when def: DefinitionSyntax
                 return symbols.ws_definition(source, uri, def)
             when m: ModuleSyntax
-                return symbols.ws_item(source, uri, String(m.name), 2 as i64, m.start, m.end, "", "", "")
+                return symbols.ws_item(source, uri, String(m.name), 2, m.start, m.end, "", "", "")
             when mut: MutableSyntax
-                return symbols.ws_item(source, uri, String(mut.binding.name), 13 as i64, mut.start, mut.end, "", "", "")
+                return symbols.ws_item(source, uri, String(mut.binding.name), 13, mut.start, mut.end, "", "", "")
             when sh: SharedSyntax
-                return symbols.ws_item(source, uri, String(sh.binding.name), 13 as i64, sh.start, sh.end, "", "", "")
+                return symbols.ws_item(source, uri, String(sh.binding.name), 13, sh.start, sh.end, "", "", "")
             when priv: PrivateSyntax
                 return symbols.ws_export(source, uri, priv.export_)
             when e: EmptySyntax
@@ -5811,17 +5811,17 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail(source, f.target), symbols.target_return_field(f.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(f.target), 12, f.start, f.end, symbols.routine_param_detail(source, f.target), symbols.target_return_field(f.target), "")
             when pr: ProcedureSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail(source, pr.target), symbols.target_return_field(pr.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(pr.target), 12, pr.start, pr.end, symbols.routine_param_detail(source, pr.target), symbols.target_return_field(pr.target), "")
             when o: OperatorSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail(source, o.target), symbols.target_return_field(o.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(o.target), 25, o.start, o.end, symbols.routine_param_detail(source, o.target), symbols.target_return_field(o.target), "")
             when def: DefinitionSyntax
                 return symbols.ws_definition(source, uri, def)
             when t: TraitSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.ws_item(source, uri, String(m.name), 2 as i64, m.start, m.end, "", "", "")
+                return symbols.ws_item(source, uri, String(m.name), 2, m.start, m.end, "", "", "")
     }
 
     ; A `define X` -> its own item (struct/namespace/union/…) joined with its
@@ -5833,25 +5833,25 @@ define symbols
         choose def.concept_
             when c: ClassSyntax
             {
-                set kind: (23 as i64)
+                set kind: 23
                 set children: symbols.ws_body(source, uri, c.body)
             }
             when n: NamespaceSyntax
             {
-                set kind: (3 as i64)
+                set kind: 3
                 set children: symbols.ws_namespace(source, uri, n)
             }
             when un: UnionSyntax
             {
-                set kind: (10 as i64)
+                set kind: 10
                 set children: symbols.ws_union(source, uri, un)
             }
             when cn: ConstantSyntax
-                set kind: (14 as i64)
+                set kind: 14
             when dl: DelegateSyntax
-                set kind: (12 as i64)
+                set kind: 12
             when ic: IntrinsicSyntax
-                set kind: (23 as i64)
+                set kind: 23
         let own symbols.ws_item(source, uri, def.name, kind, def.start, def.end, symbols.concept_member_detail(source, def), "", symbols.concept_member_types(source, def))
         symbols.join_fragments(own, children)
     }
@@ -5894,15 +5894,15 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(f.target), 6 as i64, f.start, f.end, symbols.routine_param_detail(source, f.target), symbols.target_return_field(f.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(f.target), 6, f.start, f.end, symbols.routine_param_detail(source, f.target), symbols.target_return_field(f.target), "")
             when pr: ProcedureSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(pr.target), 6 as i64, pr.start, pr.end, symbols.routine_param_detail(source, pr.target), symbols.target_return_field(pr.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(pr.target), 6, pr.start, pr.end, symbols.routine_param_detail(source, pr.target), symbols.target_return_field(pr.target), "")
             when o: OperatorSyntax
-                return symbols.ws_item(source, uri, symbols.target_name(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail(source, o.target), symbols.target_return_field(o.target), "")
+                return symbols.ws_item(source, uri, symbols.target_name(o.target), 25, o.start, o.end, symbols.routine_param_detail(source, o.target), symbols.target_return_field(o.target), "")
             when ini: InitSyntax
-                return symbols.ws_item(source, uri, "init", 9 as i64, ini.start, ini.end, "", "", "")
+                return symbols.ws_item(source, uri, "init", 9, ini.start, ini.end, "", "", "")
             when dei: DeInitSyntax
-                return symbols.ws_item(source, uri, "deinit", 9 as i64, dei.start, dei.end, "", "", "")
+                return symbols.ws_item(source, uri, "deinit", 9, dei.start, dei.end, "", "", "")
             when def: DefinitionSyntax
                 return symbols.ws_definition(source, uri, def)
             when e: EmptySyntax
@@ -5914,7 +5914,7 @@ define symbols
             when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.ws_item(source, uri, String(m.name), 2 as i64, m.start, m.end, "", "", "")
+                return symbols.ws_item(source, uri, String(m.name), 2, m.start, m.end, "", "", "")
     }
 
     ; Nested declarations of a namespace -> a concatenated record fragment.
@@ -5961,7 +5961,7 @@ define symbols
                 let vptr variants.get i
                 if vptr <> null
                 {
-                    let vitem symbols.ws_item(source, uri, String(vptr.name), 22 as i64, vptr.start, vptr.end, "", "", "")
+                    let vitem symbols.ws_item(source, uri, String(vptr.name), 22, vptr.start, vptr.end, "", "", "")
                     var ci: size_t 0
                     let cn vitem.get_length()
                     while ci < cn
@@ -6362,7 +6362,7 @@ define symbols
         while i < plen
         {
             if packed.get(i) = (0x0A as u8)
-                return symbols.substring(packed, 0 as size_t, i)
+                return symbols.substring(packed, 0, i)
             set i: i + (1 as size_t)
         }
         ""
@@ -6641,7 +6641,7 @@ define symbols
     ; `shadow_ranges#` is skipped entirely.
     function has_local_binding_candidate(source: String, name: String) returns bool
     {
-        symbols.range_binds_name(source, name, 0 as size_t, source.get_length())
+        symbols.range_binds_name(source, name, 0, source.get_length())
     }
 
     ; Given `open_pos` at a `{`, return the offset just past its matching `}`
@@ -6811,7 +6811,7 @@ define symbols
     function shadow_ranges(rp, source: String, name: String) returns String
     {
         let len source.get_length()
-        if symbols.range_binds_name(source, name, 0 as size_t, len) = false
+        if symbols.range_binds_name(source, name, 0, len) = false
             return ""
         let kw_function "function"
         let kw_procedure "procedure"
@@ -7046,7 +7046,7 @@ define symbols
         let pl path.get_length()
         if pl < dl
             return false
-        if symbols.matches_at(path, 0 as size_t, dir) = false
+        if symbols.matches_at(path, 0, dir) = false
             return false
         if pl = dl
             return true
@@ -7102,7 +7102,7 @@ define symbols
                             break
                         set j: j + (1 as size_t)
                     }
-                    return symbols.substring(path, 0 as size_t, j)
+                    return symbols.substring(path, 0, j)
                 }
                 set i: i + (1 as size_t)
             }
@@ -7278,7 +7278,7 @@ define symbols
             {
                 let nstart t + (1 as size_t)
                 if (nl - nstart) = nlen
-                    if symbols.range_equals(blob, nstart, name, 0 as size_t, nlen)
+                    if symbols.range_equals(blob, nstart, name, 0, nlen)
                         return true
             }
             set i: nl + (1 as size_t)
@@ -7350,7 +7350,7 @@ define symbols
     ; following byte, if any, is not an identifier byte).
     function field_name_matches(source: String, off: size_t, nlen: size_t, name: String) returns bool
     {
-        if symbols.range_equals(source, off, name, 0 as size_t, nlen) = false
+        if symbols.range_equals(source, off, name, 0, nlen) = false
             return false
         let slen source.get_length()
         if off + nlen < slen
@@ -8378,7 +8378,7 @@ define symbols
                     set t2: t2 + (1 as size_t)
                 }
                 if (t2 - nstart) = nl
-                    if symbols.range_equals(map, nstart, name, 0 as size_t, nl)
+                    if symbols.range_equals(map, nstart, name, 0, nl)
                     {
                         var t3 t2 + (1 as size_t)
                         while t3 < re
@@ -8430,7 +8430,7 @@ define symbols
                     set t2: t2 + (1 as size_t)
                 }
                 if (t2 - nstart) = nl
-                    if symbols.range_equals(map, nstart, name, 0 as size_t, nl)
+                    if symbols.range_equals(map, nstart, name, 0, nl)
                     {
                         var t3 t2 + (1 as size_t)
                         while t3 < re
@@ -8466,7 +8466,7 @@ define symbols
             {
                 let nstart rs + (2 as size_t)
                 if (re - nstart) = nl
-                    if symbols.range_equals(map, nstart, name, 0 as size_t, nl)
+                    if symbols.range_equals(map, nstart, name, 0, nl)
                         return true
             }
             set rs: re + (1 as size_t)
@@ -8697,12 +8697,12 @@ define symbols
         if mlabels.get_length() > (0 as size_t)
             return symbols.names_from_labels mlabels
         ; Cross-file: the symindex-cached signature path.
-        var sig symbols.find_signature_in_workspace(uri, callee, 0 as size_t)
+        var sig symbols.find_signature_in_workspace(uri, callee, 0)
         if sig.get_length() = (0 as size_t)
             return ""
         let v json.parse sig
         let sigs json.get(v, "signatures")
-        let sig0 json.array_get(sigs, 0 as size_t)
+        let sig0 json.array_get(sigs, 0)
         let params json.get(sig0, "parameters")
         let np json.array_length params
         var sb StringBuilder()
@@ -8922,7 +8922,7 @@ define symbols
                     set e: e + (1 as size_t)
                 }
                 if (e - (i + (1 as size_t))) = nl
-                    if symbols.range_equals(list, i + (1 as size_t), name, 0 as size_t, nl)
+                    if symbols.range_equals(list, i + (1 as size_t), name, 0, nl)
                         return true
             }
             set i: i + (1 as size_t)
@@ -9299,13 +9299,13 @@ define symbols
                         var i: size_t 0
                         if items.length > (0 as size_t)
                         {
-                            let i0 items.get(0 as size_t)
+                            let i0 items.get(0)
                             if i0 <> null
                             {
                                 let it0 (*i0)
                                 let kw_this "this"
                                 if it0.name = kw_this
-                                    set i: 1 as size_t
+                                    set i: 1
                             }
                         }
                         while i < items.length
@@ -9377,7 +9377,7 @@ define symbols
             if act >= count
                 set act: count - (1 as size_t)
         if count = (0 as size_t)
-            set act: (0 as size_t)
+            set act: 0
 
         let sig_label_str sig_label.to_string()
         let arr_str arr.to_string()
@@ -9437,13 +9437,13 @@ define symbols
                         var i: size_t 0
                         if items.length > (0 as size_t)
                         {
-                            let i0 items.get(0 as size_t)
+                            let i0 items.get(0)
                             if i0 <> null
                             {
                                 let it0 (*i0)
                                 let kw_this "this"
                                 if it0.name = kw_this
-                                    set i: 1 as size_t
+                                    set i: 1
                             }
                         }
                         while i < items.length
@@ -9566,7 +9566,7 @@ define symbols
             if act >= count
                 set act: count - (1 as size_t)
         if count = (0 as size_t)
-            set act: (0 as size_t)
+            set act: 0
 
         let sig_label_str sig_label.to_string()
         let arr_str arr.to_string()

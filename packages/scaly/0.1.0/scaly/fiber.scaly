@@ -439,9 +439,9 @@ procedure ensure_deadlock_state()
     if deadlock_state <> null
         return
     let d aligned_alloc(8, (sizeof DeadlockState) as i64) as pointer[DeadlockState]
-    set d.threads: 1 as u64
-    set d.blocked: 0 as u64
-    set d.epoch: 0 as u64
+    set d.threads: 1
+    set d.blocked: 0
+    set d.epoch: 0
     set deadlock_state: d
 }
 
@@ -902,7 +902,7 @@ define Scheduler
         set s.eio: (0 - 1) as i32
         set s.io_waiting: 0
         set s.wake: (0 - 1) as i32
-        set s.inject: 0 as u64
+        set s.inject: 0
         set s.chan_parked: 0
         set current_scheduler: s as pointer[void]
         s
@@ -1445,7 +1445,7 @@ define Io
         ; symbols would collide in a whole-stack link.
         var ev 1 as i32
         if for_write
-            set ev: 4 as i32
+            set ev: 4
         ; events is the u16 at offset 4 (revents at 6 is poll's to fill).
         set *(((pfd as size_t) + (4 as size_t)) as pointer[u16]): ev as u16
         poll(pfd as pointer[void], 1 as i32, (0 - 1) as i32)
@@ -1466,7 +1466,7 @@ define Io
         let q Io.ensure_poll()
         var wr (0 as i32)
         if for_write
-            set wr: (1 as i32)
+            set wr: 1
         let me current_task as pointer[SchedTask]
         if me = null
         {
@@ -1646,14 +1646,14 @@ define Io
             let rc pipe(fds as pointer[i32])
             if rc <> (0 as i32)
                 exit 111
-            set pl.lock: 0 as u64
+            set pl.lock: 0
             set pl.head: null
             set pl.tail: null
             set pl.pipe_read: *(fds as pointer[i32])
             set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
-            set pl.workers: 0 as i64
-            set pl.idle: 0 as i64
-            set pl.handles: p.allocate((IO_POOL_WORKERS * (8 as i64)) as size_t, 8 as size_t) as pointer[size_t]
+            set pl.workers: 0
+            set pl.idle: 0
+            set pl.handles: p.allocate((IO_POOL_WORKERS * (8 as i64)) as size_t, 8) as pointer[size_t]
             set io_pool: pl as pointer[void]
         }
         pl
@@ -1721,7 +1721,7 @@ define Io
         ; One byte per item: an idle worker's blocking read consumes
         ; exactly one and pops exactly one.
         var one u8[1]
-        set *(one as pointer[u8]): 1 as u8
+        set *(one as pointer[u8]): 1
         scaly_eio_write(pl.pipe_write, one as pointer[void], 1 as size_t)
         ; Park like a channel receive: blocked + chan_parked keep
         ; step_or_wait blocking in the poller until the worker's inject
@@ -1900,7 +1900,7 @@ define Channel
     ; first send handle.
     procedure create() returns pointer[Channel]
     {
-        Channel.create_bounded(0 as i64)
+        Channel.create_bounded(0)
     }
 
     ; Create a channel with a bounded queue: at most `capacity`
@@ -1910,8 +1910,8 @@ define Channel
     {
         let p Page.allocate_page_traced("Channel.record_page")
         let m p.allocate(sizeof Channel, alignof Channel) as pointer[Channel]
-        set m.lock: 0 as u64
-        set m.senders: 1 as i64
+        set m.lock: 0
+        set m.senders: 1
         set m.closed: false
         set m.head: null
         set m.tail: null
@@ -1919,7 +1919,7 @@ define Channel
         set m.recv_tail: null
         set m.recv_sched: null
         set m.capacity: capacity
-        set m.count: 0 as i64
+        set m.count: 0
         set m.send_head: null
         set m.send_tail: null
         m
@@ -2312,7 +2312,7 @@ define Channel
                     if slice > (CHAN_DEADLOCK_MS as i64)
                         set slice: CHAN_DEADLOCK_MS as i64
                     if slice < (1 as i64)
-                        set slice: 1 as i64
+                        set slice: 1
                     Channel.timed_poll(slice as i32)
                 }
             }
@@ -2339,7 +2339,7 @@ define Thread
     procedure spawn(fn: pointer[void], arg: pointer[void]) returns size_t
     {
         let p Page.allocate_page_traced("Thread.spawn_cell")
-        let cell p.allocate(16 as size_t, 8 as size_t) as pointer[size_t]
+        let cell p.allocate(16, 8) as pointer[size_t]
         set *cell: fn as size_t
         let slot1 (cell as size_t + (8 as size_t)) as pointer[size_t]
         set *slot1: arg as size_t
@@ -2392,8 +2392,8 @@ define TaskGroup
     {
         let p Page.allocate_page_traced("TaskGroup.record_page")
         let g p.allocate(sizeof TaskGroup, alignof TaskGroup) as pointer[TaskGroup]
-        set g.pending: 0 as u64
-        set g.active: 0 as u64
+        set g.pending: 0
+        set g.active: 0
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
         if rc <> (0 as i32)
@@ -2421,7 +2421,7 @@ define TaskGroup
         if old = (1 as u64)
         {
             var one u8[1]
-            set *(one as pointer[u8]): 1 as u8
+            set *(one as pointer[u8]): 1
             scaly_eio_write(g.pipe_write, one as pointer[void], 1 as size_t)
         }
         let fini scaly_atomic_add_u64(ap, (0 - 1) as u64)
@@ -2556,13 +2556,13 @@ define TaskPool
     {
         var n nworkers
         if n < (1 as i64)
-            set n: 1 as i64
+            set n: 1
         let p Page.allocate_page_traced("TaskPool.pool_page")
         let pl p.allocate(sizeof TaskPool, alignof TaskPool) as pointer[TaskPool]
         set pl.nworkers: n
-        set pl.next_deque: 0 as i64
-        set pl.stolen: 0 as u64
-        set pl.submitted: 0 as u64
+        set pl.next_deque: 0
+        set pl.stolen: 0
+        set pl.submitted: 0
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
         if rc <> (0 as i32)
@@ -2570,20 +2570,20 @@ define TaskPool
         set pl.pipe_read: *(fds as pointer[i32])
         set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
         set pl.deques: p.allocate((n as size_t) * sizeof TaskDeque, alignof TaskDeque) as pointer[TaskDeque]
-        set pl.handles: p.allocate((n * (8 as i64)) as size_t, 8 as size_t) as pointer[size_t]
+        set pl.handles: p.allocate((n * (8 as i64)) as size_t, 8) as pointer[size_t]
         var i 0 as i64
         while i < n
         {
             let d TaskPool.deque_at(pl, i)
-            set d.lock: 0 as u64
+            set d.lock: 0
             set d.head: null
             set d.tail: null
             set i: i + (1 as i64)
         }
         ; Worker spawn cells {pool, index}, 16 bytes each on the pool
         ; page — the worker's only door to the pool.
-        let cells p.allocate((n * (16 as i64)) as size_t, 8 as size_t) as pointer[size_t]
-        set i: 0 as i64
+        let cells p.allocate((n * (16 as i64)) as size_t, 8) as pointer[size_t]
+        set i: 0
         while i < n
         {
             let c ((cells as size_t) + ((i * (16 as i64)) as size_t)) as pointer[size_t]
@@ -2616,7 +2616,7 @@ define TaskPool
         set w.group: g
         var idx pl.next_deque
         if idx >= pl.nworkers
-            set idx: 0 as i64
+            set idx: 0
         set pl.next_deque: idx + (1 as i64)
         let d TaskPool.deque_at(pl, idx)
         TaskDeque.acquire(d)
@@ -2633,7 +2633,7 @@ define TaskPool
         }
         TaskDeque.release(d)
         var one u8[1]
-        set *(one as pointer[u8]): 1 as u8
+        set *(one as pointer[u8]): 1
         scaly_eio_write(pl.pipe_write, one as pointer[void], 1 as size_t)
     }
 

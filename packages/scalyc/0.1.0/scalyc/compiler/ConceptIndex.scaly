@@ -65,7 +65,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
         {
             let s slots + i
             set s.used: false
-            set s.index: 0 as size_t
+            set s.index: 0
             set i: i + (1 as size_t)
         }
         ConceptIndex(slots, cap)

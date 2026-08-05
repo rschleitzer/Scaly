@@ -189,8 +189,8 @@ define Region
     function serialize(region: pointer[Page], root: pointer[void], host: pointer[Page]) returns pointer[u8]
     {
         let n count_pages(region)
-        let table host.allocate(n * (16 as size_t), 8 as size_t) as pointer[size_t]
-        let end fill_pages(region, table, 0 as size_t)
+        let table host.allocate(n * (16 as size_t), 8) as pointer[size_t]
+        let end fill_pages(region, table, 0)
         if end <> n * (2 as size_t)
         {
             scaly_eputs "Region.serialize: page walk disagreement"
@@ -206,7 +206,7 @@ define Region
             set w: w + (2 as size_t)
         }
 
-        let frame host.allocate(total, 8 as size_t) as pointer[u8]
+        let frame host.allocate(total, 8) as pointer[u8]
         let h frame as pointer[u64]
         set h[0]: REGION_WIRE_MAGIC
         set h[1]: total as u64
@@ -256,9 +256,9 @@ define Region
 
         let root_old h[3] as size_t
         let table ((frame as size_t) + (32 as size_t)) as pointer[size_t]
-        let ob host.allocate(n * (8 as size_t), 8 as size_t) as pointer[size_t]
-        let nb host.allocate(n * (8 as size_t), 8 as size_t) as pointer[size_t]
-        let ln host.allocate(n * (8 as size_t), 8 as size_t) as pointer[size_t]
+        let ob host.allocate(n * (8 as size_t), 8) as pointer[size_t]
+        let nb host.allocate(n * (8 as size_t), 8) as pointer[size_t]
+        let ln host.allocate(n * (8 as size_t), 8) as pointer[size_t]
 
         ; Validate the table before touching the allocator.
         var v 1 as size_t
@@ -329,7 +329,7 @@ define Region
         ; own base on a head page, the head's on an extension page — so
         ; it maps like any other page pointer, and a received region's
         ; head keeps pointing at itself.
-        set i: 0 as size_t
+        set i: 0
         while i < n
         {
             let np nb[i] as pointer[Page]

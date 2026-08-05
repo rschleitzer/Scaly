@@ -79,7 +79,7 @@ define diagnostics
                     }
                     when d: Different
                     {
-                        sb.append(diagnostics.diag_object(text, 0 as size_t, "unexpected top-level construct"))
+                        sb.append(diagnostics.diag_object(text, 0, "unexpected top-level construct"))
                         set first: false
                     }
             }
@@ -177,7 +177,7 @@ define diagnostics
             if c = (10 as char)
             {
                 set line: line + 1
-                set col: 0 as size_t
+                set col: 0
             }
             else
                 set col: col + 1
@@ -231,7 +231,7 @@ define diagnostics
 
         ; 7 == length of "file://"
         let len uri.get_length()
-        uri.substring(7 as size_t, len - (7 as size_t))
+        uri.substring(7, len - (7 as size_t))
     }
 
     ; `"key":`

@@ -1696,7 +1696,7 @@ define TaskPlanner
                 return true
             if name.get_length() = (0 as size_t)
                 return false
-            let c name.get(0 as size_t)
+            let c name.get(0)
             if c >= (65 as char)
                 if c <= (90 as char)
                     return true

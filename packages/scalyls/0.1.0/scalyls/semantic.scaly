@@ -112,7 +112,7 @@ define semantic
         if b = (0x0D as u8)
             return ""
         let path diagnostics.strip_uri uri
-        semantic.resolve_at(source, path, 0 as size_t, offset)
+        semantic.resolve_at(source, path, 0, offset)
     }
 
     ; Worker reply wrapper: a leading status byte distinguishes a genuine
@@ -139,7 +139,7 @@ define semantic
     function receiver_type_at_offset(rp, source: String, uri: String, offset: size_t) returns String
     {
         let path diagnostics.strip_uri uri
-        semantic.resolve_at(source, path, 2 as size_t, offset)
+        semantic.resolve_at(source, path, 2, offset)
     }
 
     ; Run the full pipeline and walk the Plan for the type at `offset`.
@@ -200,7 +200,7 @@ define semantic
     }
 
     function none(rp) returns ResolveResult
-        ResolveResult(false, 0 as size_t, "")
+        ResolveResult(false, 0, "")
 
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.

@@ -49,7 +49,7 @@ define String (data: pointer[u8](null))
             set wi: wi + (1 as size_t)
         }
         set *(data + wi): wrest as u8
-        set *(data + overall_length): (0 as u8)
+        set *(data + overall_length): 0
     }
 
     init(other: pointer[const_char], length: size_t)
@@ -81,7 +81,7 @@ define String (data: pointer[u8](null))
         }
         set *(data + wi): wrest as u8
         memcpy((data + counter + (1 as size_t)) as pointer[void], other, length)
-        set *(data + overall_length): (0 as u8)
+        set *(data + overall_length): 0
     }
 
     init(other: Vector[char])
@@ -109,7 +109,7 @@ define String (data: pointer[u8](null))
         set *(data + wi): wrest as u8
         if other.length > 0
             memcpy((data + counter + (1 as size_t)) as pointer[void], other.data, other.length)
-        set *(data + overall_length): (0 as u8)
+        set *(data + overall_length): 0
 
     }
 
@@ -143,7 +143,7 @@ define String (data: pointer[u8](null))
         }
         set *(data + wi): wrest as u8
         memcpy((data + counter + (1 as size_t)) as pointer[void], c_string, length)
-        set *(data + overall_length): (0 as u8)
+        set *(data + overall_length): 0
     }
 
     init(other: String)
@@ -177,7 +177,7 @@ define String (data: pointer[u8](null))
         let own_page Page.get(this as pointer[void])
         set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
-        set *(data + overall_length): (0 as u8)
+        set *(data + overall_length): 0
     }
 
     init(character: u8)
@@ -186,7 +186,7 @@ define String (data: pointer[u8](null))
         set data: own_page.allocate(3, 1) as pointer[u8]
         set *data: 1
         set *(data + 1): character
-        set *(data + 2): (0 as u8)
+        set *(data + 2): 0
     }
 
     function get_buffer(this: String) returns pointer[u8]
@@ -240,14 +240,14 @@ define String (data: pointer[u8](null))
             }
         }
 
-        var dest page.allocate(length + (1 as size_t), (1 as size_t))
+        var dest page.allocate(length + (1 as size_t), 1)
         if data <> null
             memcpy(dest, data + index + (1 as size_t), length)
 
         ; NUL terminator at offset `length` (last byte of the length+1
         ; allocation). The previous `+ index + length` form OOB-wrote past
         ; the buffer when the source had a multi-byte varint header.
-        set *(dest as pointer[u8] + length): (0 as u8)
+        set *(dest as pointer[u8] + length): 0
 
         dest as pointer[const_char]
     }

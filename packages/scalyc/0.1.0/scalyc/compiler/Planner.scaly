@@ -800,7 +800,7 @@ define Planner
             set constraints: Array[TypeConstraint]^this()
             set solution: Array[KeyValuePair[size_t, PlannedType]]^this()
             set concepts: Array[KeyValuePair[String, Concept]]^this()
-            set concept_index: ConceptIndex.create(65536 as size_t)
+            set concept_index: ConceptIndex.create(65536)
             set instantiated_structures: Array[PlannedStructure]^this()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^this()
             set delegate_names: Array[String]^this()
@@ -823,15 +823,15 @@ define Planner
             set promote_tail_return: false
             set check_tail_escape: false
             set instantiated_functions: Array[PlannedFunction]^this()
-            set function_name_index: ConceptIndex.create(262144 as size_t)
+            set function_name_index: ConceptIndex.create(262144)
             set instantiated_globals: Array[PlannedGlobal]^this()
             set instantiating_structures: Array[String]^this()
             set instantiating_methods: Array[String]^this()
             set model_functions: Array[KeyValuePair[String, Function]]^this()
             set lambda_models: Array[KeyValuePair[String, Lambda]]^this()
-            set model_function_index: FunctionIndex.create(65536 as size_t, 262144 as size_t)
+            set model_function_index: FunctionIndex.create(65536, 262144)
             set model_operators: Array[KeyValuePair[String, Operator]]^this()
-            set model_operator_index: FunctionIndex.create(65536 as size_t, 262144 as size_t)
+            set model_operator_index: FunctionIndex.create(65536, 262144)
             set resolved_op_is_intrinsic: false
             set stack_base: 0
             set stack_budget: 0
@@ -871,7 +871,7 @@ define Planner
             set transitive_page_built: false
             set concept_origin_files: Array[String]^this()
             set concept_origin_paths: Array[String]^this()
-            set ambiguous_index: ConceptIndex.create(4096 as size_t)
+            set ambiguous_index: ConceptIndex.create(4096)
             set file_explicit_names: Array[String]^this()
             set disambiguation_active: false
             set scope_isolation_base: 0
@@ -1244,7 +1244,7 @@ define Planner
                         if registering_file.get_length() > 0
                             if prev_of.get_length() > 0
                             {
-                                ambiguous_index.insert(c.name, 1 as size_t)
+                                ambiguous_index.insert(c.name, 1)
                                 ; If the main file also explicitly uses this
                                 ; now-ambiguous name, disambiguation matters.
                                 if this.array_contains_name(file_explicit_names, c.name)
@@ -2019,9 +2019,9 @@ define Planner
                         ; unverifiable. Reporting those would make the check
                         ; a function of the root rather than of the source.
                         var root_seg: String prefix
-                        let dot prefix.index_of(46 as u8)
+                        let dot prefix.index_of(46)
                         if dot >= 0
-                            set root_seg: prefix.substring(0 as size_t, dot as size_t)
+                            set root_seg: prefix.substring(0, dot as size_t)
                         if this.module_path_known(root_seg)
                             set judgeable: true
                     }
@@ -3165,7 +3165,7 @@ define Planner
                                 ; region (this function takes no caller page).
                                 let amb_local sb.to_string()
                                 let amb_msg String^this(amb_local)
-                                this.add_diagnostic(Span(0 as size_t, 0 as size_t), amb_msg)
+                                this.add_diagnostic(Span(0, 0), amb_msg)
                             }
                         }
                     }
@@ -5517,7 +5517,7 @@ define Planner
             ; Formatter"). Concepts register under their SIMPLE name, so look up
             ; the last dotted segment (the concept name itself).
             var chprefix prefix
-            let chdot prefix.last_index_of(46 as u8)
+            let chdot prefix.last_index_of(46)
             if chdot > 0
                 set chprefix: prefix.substring(chdot as size_t + 1, prefix.get_length() - (chdot as size_t) - 1)
             ; Gated-first, raw fallback (like lookup_concept_for_layout#): a
@@ -8545,7 +8545,7 @@ define Planner
                         ; suffix as a variant.
                         if is_struct_ctor = false
                         {
-                            let dot_idx fn_name.last_index_of(46 as u8)
+                            let dot_idx fn_name.last_index_of(46)
                             if dot_idx > 0
                             {
                                 let dot_pos dot_idx as size_t
@@ -9127,7 +9127,7 @@ define Planner
                         var stamp_getref_local: bool false
                         if match_ref = null
                         {
-                            let dot_idx fn_name.last_index_of(46 as u8)
+                            let dot_idx fn_name.last_index_of(46)
                             if dot_idx > 0
                             {
                                 let dot_pos dot_idx as size_t
@@ -9565,7 +9565,7 @@ define Planner
                         var ns_return_valid: bool false
                         if match_ref = null
                         {
-                            let dot_idx fn_name.last_index_of(46 as u8)
+                            let dot_idx fn_name.last_index_of(46)
                             if dot_idx > 0
                             {
                                 let dot_pos dot_idx as size_t
@@ -10026,7 +10026,7 @@ define Planner
                                     ; (`_ZN16MessageFormatter4testEv`). Use the last
                                     ; segment for the lookup AND the mangled parent.
                                     var sconcept prefix
-                                    let sc_dot prefix.last_index_of(46 as u8)
+                                    let sc_dot prefix.last_index_of(46)
                                     if sc_dot > 0
                                         set sconcept: prefix.substring(sc_dot as size_t + 1, prefix.get_length() - (sc_dot as size_t) - 1)
                                     ; Gated-first, raw fallback: a qualified
@@ -10537,7 +10537,7 @@ define Planner
                         {
                             if call_is_intrinsic = false
                             {
-                                if fn_name.last_index_of(46 as u8) < 0
+                                if fn_name.last_index_of(46) < 0
                                 {
                                     var bv_found: bool false
                                     var bv_tag: size_t 0
@@ -21619,7 +21619,7 @@ define Planner
                         if fwd_param_index >= 0
                         {
                             let cpc this.escape_current_param_count()
-                            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (1 as size_t), (0 as size_t), (0 as size_t), (0 as size_t), (0 as size_t)) = false
+                            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), 1, 0, 0, 0, 0) = false
                                 escape_records.add(EscapeRecord(
                                     escape_fn_index,
                                     cpc,
@@ -35202,7 +35202,7 @@ define Planner
             when t: PlannedTuple
                 Planner.extract_tuple_arg_types(t)
             else
-                Vector[PlannedType](null as pointer[PlannedType], 0 as size_t)
+                Vector[PlannedType](null as pointer[PlannedType], 0)
     }
 
     ; ========================================================================

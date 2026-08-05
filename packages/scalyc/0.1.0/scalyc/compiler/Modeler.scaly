@@ -488,7 +488,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
             }
             else
                 set in_expr: true
-            set seg_len: 0 as size_t
+            set seg_len: 0
             set i: i + (1 as size_t)
         }
         else
@@ -541,7 +541,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
 
     var seg_start: size_t 0
     set in_expr: false
-    set i: 0 as size_t
+    set i: 0
     var done false
     while done = false
     {

@@ -70,8 +70,8 @@ define FunctionIndex
         {
             let s slots + i
             set s.used: false
-            set s.head: 0 as size_t
-            set s.tail: 0 as size_t
+            set s.head: 0
+            set s.tail: 0
             set i: i + (1 as size_t)
         }
         let nbytes entry_cap * sizeof size_t

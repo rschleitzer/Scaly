@@ -109,7 +109,7 @@ define nameset
             let s slots + i
             set s.used: false
             set s.name_ptr: null
-            set s.name_len: 0 as size_t
+            set s.name_len: 0
             set s.kind: 0 - 1
             set i: i + (1 as size_t)
         }

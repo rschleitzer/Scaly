@@ -391,10 +391,10 @@ define Emitter
         set function_cache_names: Array[String]^this()
         set function_cache_funcs: Array[LLVMValueRef]^this()
         set function_cache_page_param: Array[int]^this()
-        set type_index: ConceptIndex.create(131072 as size_t)
-        set struct_index: ConceptIndex.create(131072 as size_t)
-        set function_index: ConceptIndex.create(262144 as size_t)
-        set di_index: ConceptIndex.create(131072 as size_t)
+        set type_index: ConceptIndex.create(131072)
+        set struct_index: ConceptIndex.create(131072)
+        set function_index: ConceptIndex.create(262144)
+        set di_index: ConceptIndex.create(131072)
         set throws_result_names: Array[String]^this()
         set throws_result_types: Array[LLVMTypeRef]^this()
         set intrinsic_type_names: Array[String]^this()
@@ -667,73 +667,73 @@ define Emitter
         var enc: i32 (5 as i32)
         if name = "bool"
         {
-            set bits: (8 as size_t)
-            set enc: (2 as i32)
+            set bits: 8
+            set enc: 2
         }
         if name = "char"
         {
-            set bits: (8 as size_t)
-            set enc: (8 as i32)
+            set bits: 8
+            set enc: 8
         }
         if name = "i8"
-            set bits: (8 as size_t)
+            set bits: 8
         if name = "u8"
         {
-            set bits: (8 as size_t)
-            set enc: (7 as i32)
+            set bits: 8
+            set enc: 7
         }
         if name = "i16"
-            set bits: (16 as size_t)
+            set bits: 16
         if name = "u16"
         {
-            set bits: (16 as size_t)
-            set enc: (7 as i32)
+            set bits: 16
+            set enc: 7
         }
         if name = "i32"
-            set bits: (32 as size_t)
+            set bits: 32
         if name = "u32"
         {
-            set bits: (32 as size_t)
-            set enc: (7 as i32)
+            set bits: 32
+            set enc: 7
         }
         if name = "i64"
-            set bits: (64 as size_t)
+            set bits: 64
         if name = "u64"
         {
-            set bits: (64 as size_t)
-            set enc: (7 as i32)
+            set bits: 64
+            set enc: 7
         }
         if name = "int"
-            set bits: (64 as size_t)
+            set bits: 64
         if name = "uint"
         {
-            set bits: (64 as size_t)
-            set enc: (7 as i32)
+            set bits: 64
+            set enc: 7
         }
         if name = "size_t"
         {
-            set bits: (64 as size_t)
-            set enc: (7 as i32)
+            set bits: 64
+            set enc: 7
         }
         if name = "float"
         {
-            set bits: (32 as size_t)
-            set enc: (4 as i32)
+            set bits: 32
+            set enc: 4
         }
         if name = "f32"
         {
-            set bits: (32 as size_t)
-            set enc: (4 as i32)
+            set bits: 32
+            set enc: 4
         }
         if name = "double"
         {
-            set bits: (64 as size_t)
-            set enc: (4 as i32)
+            set bits: 64
+            set enc: 4
         }
         if name = "f64"
         {
-            set bits: (64 as size_t)
-            set enc: (4 as i32)
+            set bits: 64
+            set enc: 4
         }
         if bits = 0
             return LLVMMetadataRef null
@@ -747,7 +747,7 @@ define Emitter
     {
         var b bits
         if b = 0
-            set b: (8 as size_t)
+            set b: 8
         var nm ""
         LLVMDIBuilderCreateBasicType(di_builder, nm.c_data(), nm.get_length(), b, (7 as i32), (0 as i32))
     }
@@ -4977,7 +4977,7 @@ define Emitter
                             if value_is_phi_at(coerced, i) = false
                             {
                                 if pointer_outside_frame(coerced) = false
-                                    set needs_copy: 1 as size_t
+                                    set needs_copy: 1
                             }
                         }
                     }
@@ -13695,7 +13695,7 @@ define Emitter
             return true
         if name.get_length() = (0 as size_t)
             return false
-        let c name.get(0 as size_t)
+        let c name.get(0)
         if c >= (65 as char)
             if c <= (90 as char)
                 return true
@@ -13757,7 +13757,7 @@ define Emitter
             }
         }
         weight_memo_names.add mangled
-        weight_memo_vals.add(64 as size_t)
+        weight_memo_vals.add(64)
         64 as size_t
     }
 
@@ -13798,7 +13798,7 @@ define Emitter
             let tw parfor_weight_operands(act.target)
             set w: parfor_wadd(w, tw)
         }
-        parfor_wadd(w, 1 as size_t)
+        parfor_wadd(w, 1)
     }
 
     function parfor_weight_statement(this, stmt: PlannedStatement) returns size_t
@@ -13809,22 +13809,22 @@ define Emitter
             when binding: Binding
             {
                 let w parfor_weight_operands(binding.operation)
-                return parfor_wadd(w, 1 as size_t)
+                return parfor_wadd(w, 1)
             }
             when ret: Return
             {
                 let w parfor_weight_operands(ret.result)
-                return parfor_wadd(w, 1 as size_t)
+                return parfor_wadd(w, 1)
             }
             when throw_stmt: Throw
             {
                 let w parfor_weight_operands(throw_stmt.result)
-                return parfor_wadd(w, 1 as size_t)
+                return parfor_wadd(w, 1)
             }
             when brk: Break
             {
                 let w parfor_weight_operands(brk.result)
-                return parfor_wadd(w, 1 as size_t)
+                return parfor_wadd(w, 1)
             }
             when cont: Continue
                 return 1 as size_t
@@ -13835,13 +13835,13 @@ define Emitter
     {
         var w parfor_weight_operands(call.args)
         if call.is_intrinsic
-            return parfor_wadd(w, 1 as size_t)
+            return parfor_wadd(w, 1)
         if call.is_operator
-            return parfor_wadd(w, 1 as size_t)
+            return parfor_wadd(w, 1)
         if call.is_indirect
-            return parfor_wadd(w, 64 as size_t)
+            return parfor_wadd(w, 64)
         if parfor_weight_is_construction(call.name)
-            return parfor_wadd(w, 16 as size_t)
+            return parfor_wadd(w, 16)
         let fw parfor_weight_fn(call.mangled_name)
         parfor_wadd(w, fw)
     }
@@ -13896,7 +13896,7 @@ define Emitter
                 set w: parfor_wadd(w, cw)
                 let aw parfor_weight_statement_ref(iff.alternative)
                 set w: parfor_wadd(w, aw)
-                return parfor_wadd(w, 1 as size_t)
+                return parfor_wadd(w, 1)
             }
             when mt: Match
             {
@@ -13959,7 +13959,7 @@ define Emitter
             {
                 let ew parfor_weight_operands(fr.expr)
                 let bw parfor_weight_action(fr.body)
-                let lw parfor_wmul(bw, 64 as size_t)
+                let lw parfor_wmul(bw, 64)
                 return parfor_wadd(ew, lw)
             }
             when wh: While
@@ -13967,12 +13967,12 @@ define Emitter
                 let cw parfor_weight_operands(wh.cond.operation)
                 let bw parfor_weight_action(wh.body)
                 let per parfor_wadd(cw, bw)
-                return parfor_wmul(per, 64 as size_t)
+                return parfor_wmul(per, 64)
             }
             when rp: Repeat
             {
                 let bw parfor_weight_action(rp.body)
-                return parfor_wmul(bw, 64 as size_t)
+                return parfor_wmul(bw, 64)
             }
             when tr: Try
             {
@@ -14001,7 +14001,7 @@ define Emitter
                 {
                     let r is_expr.value
                     let iw parfor_weight_operand((*r))
-                    return parfor_wadd(iw, 1 as size_t)
+                    return parfor_wadd(iw, 1)
                 }
                 return 1 as size_t
             }
@@ -14020,7 +14020,7 @@ define Emitter
                 {
                     let r vc.value
                     let vw parfor_weight_operand((*r))
-                    return parfor_wadd(vw, 1 as size_t)
+                    return parfor_wadd(vw, 1)
                 }
                 return 1 as size_t
             }
@@ -14049,7 +14049,7 @@ define Emitter
                 {
                     let r bx.value
                     let bw parfor_weight_operand((*r))
-                    return parfor_wadd(bw, 16 as size_t)
+                    return parfor_wadd(bw, 16)
                 }
                 return 16 as size_t
             }
@@ -14119,14 +14119,14 @@ define Emitter
                 let content LLVMBuildLoad2(builder, slot_ty, v, "parfor.cap")
                 cap_values.put(ci, content)
                 cap_slot_tys.put(ci, slot_ty)
-                cap_from_slot.put(ci, 1 as size_t)
+                cap_from_slot.put(ci, 1)
             }
             if v_alloca.handle = null
             {
                 cap_values.put(ci, v)
                 let v_ty LLVMTypeOf(v)
                 cap_slot_tys.put(ci, v_ty)
-                cap_from_slot.put(ci, 0 as size_t)
+                cap_from_slot.put(ci, 0)
             }
             set ci: ci + 1
         }
@@ -14143,7 +14143,7 @@ define Emitter
             set index_ty: LLVMTypeOf(seq_value)
         var base_fields: size_t 2
         if for_expr.is_iterator_loop
-            set base_fields: 3 as size_t
+            set base_fields: 3
         var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count)
         if for_expr.is_iterator_loop
         {
@@ -14238,7 +14238,7 @@ define Emitter
         {
             let buf_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, 0, "parfor.buf.ptr")
             set chunk_buf: LLVMBuildLoad2(builder, ptr_ty, buf_gep, "parfor.buf")
-            set lo_idx: 1 as size_t
+            set lo_idx: 1
         }
         let lo_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, lo_idx as int, "parfor.lo.ptr")
         let chunk_lo LLVMBuildLoad2(builder, i64_ty, lo_gep, "parfor.lo")
@@ -14442,10 +14442,10 @@ define Emitter
         ; like the measured per-iteration cost), 4x steal oversubmit.
         var body_weight parfor_weight_action(for_expr.body)
         if body_weight = (0 as size_t)
-            set body_weight: 1 as size_t
+            set body_weight: 1
         var check0: size_t (256 as size_t) / body_weight
         if check0 = (0 as size_t)
-            set check0: 1 as size_t
+            set check0: 1
         let check0_const LLVMConstInt(i64_ty, check0, 0)
         let c0 LLVMConstInt(i64_ty, 0, 0)
         let c1 LLVMConstInt(i64_ty, 1, 0)
@@ -15165,7 +15165,7 @@ define Emitter
         {
             let sb_buf_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, 0, "parfor.cell.buf")
             LLVMBuildStore(builder, ds_buf, sb_buf_gep)
-            set sb_fi: 1 as size_t
+            set sb_fi: 1
         }
         let sb_lo_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, sb_fi as int, "parfor.cell.lo")
         LLVMBuildStore(builder, sb_lo, sb_lo_gep)
@@ -17365,8 +17365,8 @@ define Emitter
                             var tyname "int"
                             if width = 1
                             {
-                                set enc: (2 as i32)       ; DW_ATE_boolean
-                                set dbits: (8 as size_t)
+                                set enc: 2       ; DW_ATE_boolean
+                                set dbits: 8
                                 set tyname: "bool"
                             }
                             set dty: LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length(), dbits, enc, (0 as i32))

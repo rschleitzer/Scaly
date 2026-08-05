@@ -292,7 +292,7 @@ procedure scaly_thread_release_buckets()
         let empty hb.bitmap = BITMAP_ALL_FREE
         if empty = false
         {
-            set hb.dead: 1 as u64
+            set hb.dead: 1
             set hb.next: null
             set hb.prev: null
         }
@@ -361,8 +361,8 @@ function create_heap_bucket() returns pointer[HeapBucketHeader]
     set hb.prev: null
     set hb.next: null
     set hb.bitmap: BITMAP_ALL_FREE
-    set hb.lock: 0 as u64
-    set hb.dead: 0 as u64
+    set hb.lock: 0
+    set hb.dead: 0
     hb
 }
 
@@ -771,16 +771,16 @@ procedure scaly_rt_register_heap_trace()
     ; Env var not set — leave trace disabled.
     if getenv("SCALY_TRACE_HEAP") = null
     {
-        set heap_trace_state: 1 as u64
+        set heap_trace_state: 1
         return
     }
     let hdr aligned_alloc(8, (sizeof HeapTraceHeader) as i64) as pointer[HeapTraceHeader]
-    set hdr.lock: 0 as u64
-    set hdr.count: 0 as i64
+    set hdr.lock: 0
+    set hdr.count: 0
     let bytes TRACE_MAX * (sizeof TraceEntry)
     set hdr.entries: aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
     set heap_trace: hdr
-    set heap_trace_state: 2 as u64
+    set heap_trace_state: 2
     atexit(&scaly_heap_trace_dump)
 }
 

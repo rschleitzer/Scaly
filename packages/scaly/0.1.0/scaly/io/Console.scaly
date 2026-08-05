@@ -9,7 +9,7 @@ define Console
     function print(message: pointer[const_char])
     {
         var len strlen message
-        Io.write_all(1 as i32, message as pointer[void], len)
+        Io.write_all(1, message as pointer[void], len)
     }
 
     function println(message: pointer[const_char])
@@ -22,6 +22,6 @@ define Console
         ; mirroring cli.print_diagnostics#'s numeric `10 as char` compare.
         var nl: u8 (10 as u8)
         let nl_ptr &nl
-        Io.write_all(1 as i32, nl_ptr as pointer[void], 1 as size_t)
+        Io.write_all(1, nl_ptr as pointer[void], 1)
     }
 }

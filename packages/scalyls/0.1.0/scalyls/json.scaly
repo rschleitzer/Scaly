@@ -173,7 +173,7 @@ define json
 
     function parse(rp, source: String) returns JsonValue
     {
-        var p JsonParser(source, 0 as size_t, true)
+        var p JsonParser(source, 0, true)
         json.parse_value(&p)
     }
 
@@ -214,7 +214,7 @@ define json
 
     function parse_object(rp, p: pointer[JsonParser]) returns JsonValue
     {
-        json.expect(p, 0x7B as u8)         ; '{'
+        json.expect(p, 0x7B)         ; '{'
         json.skip_ws p
 
         var members List[JsonMember]()
@@ -229,7 +229,7 @@ define json
                 json.skip_ws p
                 let key json.parse_string p
                 json.skip_ws p
-                json.expect(p, 0x3A as u8) ; ':'
+                json.expect(p, 0x3A) ; ':'
                 let value json.parse_value p
                 members.add(JsonMember(key, value))
                 set count: count + 1
@@ -238,7 +238,7 @@ define json
                 let sep json.peek p
                 if sep <> (0x2C as u8)  ; not ',' -> object ends
                 {
-                    json.expect(p, 0x7D as u8)
+                    json.expect(p, 0x7D)
                     break
                 }
                 json.advance p            ; consume ','
@@ -247,7 +247,7 @@ define json
 
         ; Materialize the List into a contiguous, order-preserving buffer.
         if count = (0 as size_t)
-            return JsonValue.Object(JsonObject(0 as size_t, null))
+            return JsonValue.Object(JsonObject(0, null))
 
         let buf rp.allocate(count * sizeof JsonMember, alignof JsonMember) as pointer[JsonMember]
         var it members.get_iterator()
@@ -262,7 +262,7 @@ define json
 
     function parse_array(rp, p: pointer[JsonParser]) returns JsonValue
     {
-        json.expect(p, 0x5B as u8)         ; '['
+        json.expect(p, 0x5B)         ; '['
         json.skip_ws p
 
         var items List[JsonValue]()
@@ -282,7 +282,7 @@ define json
                 let sep json.peek p
                 if sep <> (0x2C as u8)  ; not ',' -> array ends
                 {
-                    json.expect(p, 0x5D as u8)
+                    json.expect(p, 0x5D)
                     break
                 }
                 json.advance p            ; consume ','
@@ -290,7 +290,7 @@ define json
         }
 
         if count = (0 as size_t)
-            return JsonValue.Array(JsonArray(0 as size_t, null))
+            return JsonValue.Array(JsonArray(0, null))
 
         let buf rp.allocate(count * sizeof JsonValue, alignof JsonValue) as pointer[JsonValue]
         var it items.get_iterator()

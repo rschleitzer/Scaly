@@ -81,10 +81,10 @@ define symindex
                 let s idx_slots + i
                 set s.used: false
                 set s.path_data: null
-                set s.path_len: 0 as size_t
-                set s.chash: 0 as size_t
+                set s.path_len: 0
+                set s.chash: 0
                 set s.blob_data: null
-                set s.blob_len: 0 as size_t
+                set s.blob_len: 0
                 set i: i + 1
             }
         }
@@ -147,7 +147,7 @@ define symindex
         if s.blob_data <> null
             free(s.blob_data as pointer[void])
         set s.blob_data: null
-        set s.blob_len: 0 as size_t
+        set s.blob_len: 0
 
         let len blob.get_length()
         if len > (0 as size_t)
@@ -169,7 +169,7 @@ define symindex
         if s.path_data <> null
             free(s.path_data as pointer[void])
         set s.path_data: null
-        set s.path_len: 0 as size_t
+        set s.path_len: 0
 
         let len path.get_length()
         if len > (0 as size_t)

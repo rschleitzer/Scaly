@@ -457,7 +457,7 @@ define worker
             rpc.write_message_fd(worker_in, position)
 
             ; Wait for the answer with a timeout (catches a hung pipeline).
-            var pfd pollfd(worker_out as i32, POLLIN, 0 as i16)
+            var pfd pollfd(worker_out as i32, POLLIN, 0)
             let pr poll(&pfd, 1 as u64, ANALYZE_TIMEOUT_MS)
 
             ; poll == 0 (timeout) or < 0 (error): the pipeline hung. Kill it

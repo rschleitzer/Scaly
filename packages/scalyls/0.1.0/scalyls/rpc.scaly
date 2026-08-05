@@ -110,7 +110,7 @@ define rpc
     ; Parse the integer value from a "Header-Name: <digits>" line.
     function parse_header_size(line: String) returns size_t
     {
-        let colon line.index_of(0x3A as u8)    ; ':'
+        let colon line.index_of(0x3A)    ; ':'
         if colon < 0
             return 0 as size_t
 

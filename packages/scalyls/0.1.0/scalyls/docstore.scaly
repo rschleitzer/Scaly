@@ -63,7 +63,7 @@ define docstore
         if ws_root_data <> null
             free(ws_root_data as pointer[void])
         set ws_root_data: null
-        set ws_root_len: 0 as size_t
+        set ws_root_len: 0
 
         let len path.get_length()
         if len > (0 as size_t)
@@ -104,9 +104,9 @@ define docstore
                 let s doc_slots + i
                 set s.used: false
                 set s.uri_data: null
-                set s.uri_len: 0 as size_t
+                set s.uri_len: 0
                 set s.text_data: null
-                set s.text_len: 0 as size_t
+                set s.text_len: 0
                 set i: i + 1
             }
         }
@@ -141,7 +141,7 @@ define docstore
         if s.text_data <> null
             free(s.text_data as pointer[void])
         set s.text_data: null
-        set s.text_len: 0 as size_t
+        set s.text_len: 0
 
         let len text.get_length()
         if len > (0 as size_t)
@@ -163,7 +163,7 @@ define docstore
         if s.uri_data <> null
             free(s.uri_data as pointer[void])
         set s.uri_data: null
-        set s.uri_len: 0 as size_t
+        set s.uri_len: 0
 
         let len uri.get_length()
         if len > (0 as size_t)
@@ -223,9 +223,9 @@ define docstore
             if s.uri_data <> null
                 free(s.uri_data as pointer[void])
             set s.text_data: null
-            set s.text_len: 0 as size_t
+            set s.text_len: 0
             set s.uri_data: null
-            set s.uri_len: 0 as size_t
+            set s.uri_len: 0
             set s.used: false
         }
     }
