@@ -52,7 +52,7 @@ define ReceivedRegion
                 if address < base + ln[i]
                     return nb[i] + (address - base)
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         0 as size_t
     }
@@ -117,7 +117,7 @@ define Region
         {
             let excl nd.page
             if excl.next_object = null
-                set n: n + (1 as size_t)
+                set n: n + 1
             else
                 set n: n + count_pages(excl)
 
@@ -132,7 +132,7 @@ define Region
         var q region.next_page
         while q <> null
         {
-            set n: n + (1 as size_t) + count_exclusives(q)
+            set n: n + 1 + count_exclusives(q)
             set q: q.next_page
         }
         n
@@ -150,10 +150,10 @@ define Region
             if excl.next_object = null
             {
                 set table[w]: excl as size_t
-                set w: w + (1 as size_t)
+                set w: w + 1
                 let len Page.oversized_size(excl)
                 set table[w]: len
-                set w: w + (1 as size_t)
+                set w: w + 1
             }
             else
                 set w: fill_pages(excl, table, w)
@@ -167,17 +167,17 @@ define Region
     {
         var w index
         set table[w]: region as size_t
-        set w: w + (1 as size_t)
+        set w: w + 1
         set table[w]: PAGE_SIZE
-        set w: w + (1 as size_t)
+        set w: w + 1
         set w: fill_exclusives(region, table, w)
         var q region.next_page
         while q <> null
         {
             set table[w]: q as size_t
-            set w: w + (1 as size_t)
+            set w: w + 1
             set table[w]: PAGE_SIZE
-            set w: w + (1 as size_t)
+            set w: w + 1
             set w: fill_exclusives(q, table, w)
             set q: q.next_page
         }
@@ -191,7 +191,7 @@ define Region
         let n count_pages(region)
         let table host.allocate(n * (16 as size_t), 8) as pointer[size_t]
         let end fill_pages(region, table, 0)
-        if end <> n * (2 as size_t)
+        if end <> n * 2
         {
             scaly_eputs "Region.serialize: page walk disagreement"
             scaly_eputnl()
@@ -200,10 +200,10 @@ define Region
 
         var total (32 as size_t) + n * (16 as size_t)
         var w 1 as size_t
-        while w < n * (2 as size_t)
+        while w < n * 2
         {
             set total: total + table[w]
-            set w: w + (2 as size_t)
+            set w: w + 2
         }
 
         let frame host.allocate(total, 8) as pointer[u8]
@@ -216,12 +216,12 @@ define Region
 
         var off (32 as size_t) + n * (16 as size_t)
         var r 0 as size_t
-        while r < n * (2 as size_t)
+        while r < n * 2
         {
             let base table[r]
-            set r: r + (1 as size_t)
+            set r: r + 1
             let len table[r]
-            set r: r + (1 as size_t)
+            set r: r + 1
             memcpy(((frame as size_t) + off) as pointer[void], base as pointer[void], len)
             set off: off + len
         }
@@ -262,7 +262,7 @@ define Region
 
         ; Validate the table before touching the allocator.
         var v 1 as size_t
-        while v < n * (2 as size_t)
+        while v < n * 2
         {
             let len table[v]
             if len = 0
@@ -271,7 +271,7 @@ define Region
             if (len % PAGE_SIZE) <> 0
                 return null
 
-            set v: v + (2 as size_t)
+            set v: v + 2
         }
 
         ; Land every page in its real home: bucket pages for PAGE_SIZE
@@ -283,9 +283,9 @@ define Region
         while i < n
         {
             let base table[r]
-            set r: r + (1 as size_t)
+            set r: r + 1
             let len table[r]
-            set r: r + (1 as size_t)
+            set r: r + 1
             var np: pointer[Page] null
             if len = PAGE_SIZE
                 set np: Page.allocate_page()
@@ -302,7 +302,7 @@ define Region
             set nb[i]: np as size_t
             set ln[i]: len
             set off: off + len
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
 
         let rr host.allocate(sizeof ReceivedRegion, alignof ReceivedRegion) as pointer[ReceivedRegion]
@@ -355,7 +355,7 @@ define Region
                     set nd: nd.next
                 }
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
 
         let root_new rr.map(root_old)

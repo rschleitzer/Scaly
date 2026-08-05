@@ -72,7 +72,7 @@ define FunctionIndex
             set s.used: false
             set s.head: 0
             set s.tail: 0
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         let nbytes entry_cap * sizeof size_t
         let next malloc(nbytes) as pointer[size_t]
@@ -120,8 +120,8 @@ define FunctionIndex
                     set s.tail: index
                     return
                 }
-                set idx: (idx + (1 as size_t)) & mask
-                set probes: probes + (1 as size_t)
+                set idx: (idx + 1) & mask
+                set probes: probes + 1
             }
             scaly_eputs "FunctionIndex: table full\n"
             exit 14
@@ -145,8 +145,8 @@ define FunctionIndex
                     return (0 - 1) as i64
                 if s.name = name
                     return s.head as i64
-                set idx: (idx + (1 as size_t)) & mask
-                set probes: probes + (1 as size_t)
+                set idx: (idx + 1) & mask
+                set probes: probes + 1
             }
         }
         (0 - 1) as i64

@@ -261,10 +261,10 @@ define Cluster
         set np.fd: fd
         set np.alive: true
         set np.peer_stamp: theirs
-        set np.chan_ids: p.allocate(NODE_MAX_CHANNELS * (8 as size_t), 8) as pointer[u64]
-        set np.chans: p.allocate(NODE_MAX_CHANNELS * (8 as size_t), 8) as pointer[pointer[Channel]]
+        set np.chan_ids: p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[u64]
+        set np.chans: p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]]
         set np.chan_count: 0
-        set np.monitors: p.allocate(NODE_MAX_CHANNELS * (8 as size_t), 8) as pointer[pointer[Channel]]
+        set np.monitors: p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]]
         set np.monitor_count: 0
         set np.wlock: 0
         set np.last_rx: scaly_eio_now_ns()
@@ -299,7 +299,7 @@ define Cluster
                 Cluster.release(p)
                 return c0
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if p.chan_count >= NODE_MAX_CHANNELS
         {
@@ -318,7 +318,7 @@ define Cluster
         let c Channel.create()
         set ids[p.chan_count]: id
         set chs[p.chan_count]: c
-        set p.chan_count: p.chan_count + (1 as size_t)
+        set p.chan_count: p.chan_count + 1
         Cluster.release(p)
         c
     }
@@ -346,7 +346,7 @@ define Cluster
         }
         let ms p.monitors
         set ms[p.monitor_count]: c
-        set p.monitor_count: p.monitor_count + (1 as size_t)
+        set p.monitor_count: p.monitor_count + 1
         Cluster.release(p)
         c
     }
@@ -440,14 +440,14 @@ define Cluster
         while i < nc
         {
             Channel.close_sender(chs[i])
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         var j 0 as size_t
         let ms p.monitors
         while j < nm
         {
             Cluster.deliver_down(ms[j], reason)
-            set j: j + (1 as size_t)
+            set j: j + 1
         }
     }
 
@@ -490,7 +490,7 @@ define Cluster
         var pfd u8[8]
         set *(pfd as pointer[i32]): fd
         ; POLLIN=1 on both OSes (inlined like Io.wait_ready).
-        set *(((pfd as size_t) + (4 as size_t)) as pointer[u16]): 1
+        set *(((pfd as size_t) + 4) as pointer[u16]): 1
         poll(pfd as pointer[void], 1 as i32, ms)
     }
 
@@ -509,7 +509,7 @@ define Cluster
             if r = ((0 - 2) as i64)
             {
                 let t scaly_eio_now_ns()
-                if t - p.last_rx > (NODE_SUSPECT_MS * (1000000 as i64))
+                if t - p.last_rx > (NODE_SUSPECT_MS * 1000000)
                     return false
                 Cluster.poll_in(fd, NODE_HEARTBEAT_MS as i32)
             }
@@ -589,12 +589,12 @@ define Cluster
             if p.alive = false
                 break
             let t scaly_eio_now_ns()
-            if t - last_hb >= (NODE_HEARTBEAT_MS * (1000000 as i64))
+            if t - last_hb >= (NODE_HEARTBEAT_MS * 1000000)
             {
                 Cluster.send_control(p, NODE_FRAME_HEARTBEAT, true)
                 set last_hb: t
             }
-            if t - p.last_rx > (NODE_SUSPECT_MS * (1000000 as i64))
+            if t - p.last_rx > (NODE_SUSPECT_MS * 1000000)
             {
                 Cluster.teardown(p, NODE_DOWN_SUSPECT)
                 break

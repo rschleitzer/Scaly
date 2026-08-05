@@ -192,7 +192,7 @@ define diagnostics
         sb.append(diagnostics.pos(line, col))
         sb.append(0x2C as char)
         sb.append(diagnostics.key("end"))
-        sb.append(diagnostics.pos(line, col + (1 as size_t)))
+        sb.append(diagnostics.pos(line, col + 1))
         sb.append(0x7D as char)                    ; } range
         sb.append(0x2C as char)
         sb.append(diagnostics.key("severity"))
@@ -231,7 +231,7 @@ define diagnostics
 
         ; 7 == length of "file://"
         let len uri.get_length()
-        uri.substring(7, len - (7 as size_t))
+        uri.substring(7, len - 7)
     }
 
     ; `"key":`

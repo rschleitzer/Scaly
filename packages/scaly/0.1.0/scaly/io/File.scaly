@@ -26,7 +26,7 @@ procedure file_open_worker(arg: pointer[void]) returns pointer[void]
     let size ftell file
     rewind file
     set *cell: file as size_t
-    set *(((cell as size_t) + (8 as size_t)) as pointer[size_t]): size as size_t
+    set *(((cell as size_t) + 8) as pointer[size_t]): size as size_t
     (1 as size_t) as pointer[void]
 }
 
@@ -133,7 +133,7 @@ define File
         let size *(((cell as size_t) + (8 as size_t)) as pointer[size_t])
         var ret String(size)
         let buffer ret.get_buffer()
-        set *(((cell as size_t) + (16 as size_t)) as pointer[size_t]): buffer as size_t
+        set *(((cell as size_t) + 16) as pointer[size_t]): buffer as size_t
         Io.offload(&file_read_close_worker, cell as pointer[void])
         p.deallocate_extensions()
         Page.release_page_traced(p, "File.read_cell")
@@ -166,8 +166,8 @@ define File
         let p Page.allocate_page_traced("File.write_cell")
         let cell p.allocate(24, 8) as pointer[size_t]
         set *cell: pc as size_t
-        set *(((cell as size_t) + (8 as size_t)) as pointer[size_t]): buf as size_t
-        set *(((cell as size_t) + (16 as size_t)) as pointer[size_t]): len
+        set *(((cell as size_t) + 8) as pointer[size_t]): buf as size_t
+        set *(((cell as size_t) + 16) as pointer[size_t]): len
         let res Io.offload(&file_write_worker, cell as pointer[void])
         p.deallocate_extensions()
         Page.release_page_traced(p, "File.write_cell")

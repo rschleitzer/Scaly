@@ -67,7 +67,7 @@ define nameset
             ; lifetime sigil; the legacy `h // value` used an unknown
             ; operator the self-hosted emitter dropped — length-only hash).
             set h: (h xor value) * prime
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         h
     }
@@ -90,7 +90,7 @@ define nameset
         {
             if *(a + k) <> *(b + k)
                 return false
-            set k: k + (1 as size_t)
+            set k: k + 1
         }
         true
     }
@@ -111,7 +111,7 @@ define nameset
             set s.name_ptr: null
             set s.name_len: 0
             set s.kind: 0 - 1
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         slots
     }
@@ -151,8 +151,8 @@ define nameset
                             set s.kind: kind
                         return
                     }
-                set idx: (idx + (1 as size_t)) & mask
-                set probes: probes + (1 as size_t)
+                set idx: (idx + 1) & mask
+                set probes: probes + 1
             }
         }
     }
@@ -173,7 +173,7 @@ define nameset
                 {
                     if list.get(i) = 10
                     {
-                        set i: i + (1 as size_t)
+                        set i: i + 1
                         continue
                     }
                     var j i
@@ -181,7 +181,7 @@ define nameset
                     {
                         if list.get(j) = 10
                             break
-                        set j: j + (1 as size_t)
+                        set j: j + 1
                     }
                     let seglen j - i
                     if seglen > 0
@@ -219,8 +219,8 @@ define nameset
                         if s.name_len = tlen
                             if nameset.eq_ptr(s.name_ptr, sp, tlen)
                                 return s.kind
-                        set idx: (idx + (1 as size_t)) & mask
-                        set probes: probes + (1 as size_t)
+                        set idx: (idx + 1) & mask
+                        set probes: probes + 1
                     }
                 }
             }

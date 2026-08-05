@@ -516,7 +516,7 @@ define server
         while ri < rn
         {
             pb.append(root.get(ri) as char)
-            set ri: ri + (1 as size_t)
+            set ri: ri + 1
         }
         pb.append(0x0A as char)                    ; \n  (root / position separator)
         pb.append(json.format_i64(line))
@@ -631,7 +631,7 @@ define server
         while ri < rn
         {
             pb.append(root.get(ri) as char)
-            set ri: ri + (1 as size_t)
+            set ri: ri + 1
         }
         pb.append(0x0A as char)                    ; \n  (root / position separator)
         pb.append(json.format_i64(line))

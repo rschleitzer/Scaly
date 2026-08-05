@@ -87,9 +87,9 @@ define semantic
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }

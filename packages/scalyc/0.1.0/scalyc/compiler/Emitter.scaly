@@ -5596,7 +5596,7 @@ define Emitter
         while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
-            set vcount: vcount + (1 as size_t)
+            set vcount: vcount + 1
         }
         let total vcount + content_len + (1 as size_t)
         var bytes Vector[LLVMValueRef](total)
@@ -5608,10 +5608,10 @@ define Emitter
         {
             bytes.put(wi, LLVMConstInt(i8ty, wrest | (0x80 as size_t), 0))
             set wrest: wrest >> (7 as size_t)
-            set wi: wi + (1 as size_t)
+            set wi: wi + 1
         }
         bytes.put(wi, LLVMConstInt(i8ty, wrest, 0))
-        set wi: wi + (1 as size_t)
+        set wi: wi + 1
 
         ; content bytes
         let buf value.get_buffer()
@@ -5620,8 +5620,8 @@ define Emitter
         {
             let b *(buf + ci)
             bytes.put(wi, LLVMConstInt(i8ty, b as size_t, 0))
-            set wi: wi + (1 as size_t)
-            set ci: ci + (1 as size_t)
+            set wi: wi + 1
+            set ci: ci + 1
         }
         ; trailing NUL (not counted in the varint length)
         bytes.put(wi, LLVMConstInt(i8ty, 0 as size_t, 0))
@@ -6134,12 +6134,12 @@ define Emitter
             if line_begin
                 set skipping: stamp_line_skipped(text, i)
             if skipping = false
-                set hash: (hash xor (b as u64)) * (0x100000001b3 as u64)
+                set hash: (hash xor (b as u64)) * 0x100000001b3
             if b = 10
                 set line_begin: true
             else
                 set line_begin: false
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         LLVMDisposeMessage text
 
@@ -13747,7 +13747,7 @@ define Emitter
                     {
                         weight_stack.add mangled
                         let w parfor_weight_action(action)
-                        set weight_stack.length: weight_stack.length - (1 as size_t)
+                        set weight_stack.length: weight_stack.length - 1
                         weight_memo_names.add mangled
                         weight_memo_vals.add w
                         return w

@@ -253,7 +253,7 @@ function drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
     if b.bitmap <> BITMAP_ALL_FREE
         return false
     bucket_unlock b
-    set dead_buckets_reclaimed: dead_buckets_reclaimed + (1 as i64)
+    set dead_buckets_reclaimed: dead_buckets_reclaimed + 1
     free(b as pointer[void])
     true
 }
@@ -308,7 +308,7 @@ function first_usable_page(bucket: pointer[void]) returns pointer[Page]
     (bucket as size_t + PAGE_SIZE) as pointer[Page]
 
 function last_usable_page(bucket: pointer[void]) returns pointer[Page]
-    (bucket as size_t + (BUCKET_PAGES - (1 as size_t)) * PAGE_SIZE) as pointer[Page]
+    (bucket as size_t + (BUCKET_PAGES - 1) * PAGE_SIZE) as pointer[Page]
 
 ; --------------------------------------------------------------------------
 ; reset_page — fresh-page initialization: bump pointer sits just past the
@@ -390,32 +390,32 @@ function ctz_u64(x: u64) returns i32
     ; allocation pattern, s189). Cast to i32 only at return.
     var n 0 as i64
     var v x
-    if (v & (0xFFFFFFFF as u64)) = 0
+    if (v & 0xFFFFFFFF) = 0
     {
         set n: n + 32
         set v: v >> (32 as u64)
     }
-    if (v & (0xFFFF as u64)) = 0
+    if (v & 0xFFFF) = 0
     {
         set n: n + 16
         set v: v >> (16 as u64)
     }
-    if (v & (0xFF as u64)) = 0
+    if (v & 0xFF) = 0
     {
         set n: n + 8
         set v: v >> (8 as u64)
     }
-    if (v & (0xF as u64)) = 0
+    if (v & 0xF) = 0
     {
         set n: n + 4
         set v: v >> (4 as u64)
     }
-    if (v & (0x3 as u64)) = 0
+    if (v & 0x3) = 0
     {
         set n: n + 2
         set v: v >> (2 as u64)
     }
-    if (v & (0x1 as u64)) = 0
+    if (v & 0x1) = 0
         set n: n + 1
     n as i32
 }

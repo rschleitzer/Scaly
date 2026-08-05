@@ -49,7 +49,7 @@ function decode_escapes(raw: String) returns String
     {
         if *(buf + scan) = 92
             set has_escape: true
-        set scan: scan + (1 as size_t)
+        set scan: scan + 1
     }
     if has_escape = false
         return raw
@@ -62,7 +62,7 @@ function decode_escapes(raw: String) returns String
         if b <> 92
         {
             sb.append(b as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         else
         {
@@ -98,14 +98,14 @@ function decode_escapes(raw: String) returns String
                     if h <= 57
                         set d: (h - (48 as u8)) as size_t
                     if h >= 97
-                        set d: ((h - (97 as u8)) as size_t) + (10 as size_t)
+                        set d: ((h - (97 as u8)) as size_t) + 10
                     if h >= 65
                     {
                         if h <= 70
-                            set d: ((h - (65 as u8)) as size_t) + (10 as size_t)
+                            set d: ((h - (65 as u8)) as size_t) + 10
                     }
-                    set cp: cp * (16 as size_t) + d
-                    set k: k + (1 as size_t)
+                    set cp: cp * 16 + d
+                    set k: k + 1
                 }
                 if cp < 128
                     sb.append(cp as char)
@@ -123,9 +123,9 @@ function decode_escapes(raw: String) returns String
                         sb.append((128 + (cp - (cp / 64) * 64)) as char)
                     }
                 }
-                set i: i + (4 as size_t)
+                set i: i + 4
             }
-            set i: i + (2 as size_t)
+            set i: i + 2
         }
     }
     sb.to_string()
@@ -150,8 +150,8 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
             while i < len
             {
                 let byte *(buf + i)
-                set value: value * (10 as size_t) + ((byte - (48 as u8)) as size_t)
-                set i: i + (1 as size_t)
+                set value: value * 10 + ((byte - (48 as u8)) as size_t)
+                set i: i + 1
             }
             Constant.Integer(IntegerConstant(loc, value))
         }
@@ -184,8 +184,8 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
                     set digit: (byte - (55 as u8)) as size_t
                 if (byte >= 97) && (byte <= 102)
                     set digit: (byte - (87 as u8)) as size_t
-                set value: value * (16 as size_t) + digit
-                set i: i + (1 as size_t)
+                set value: value * 16 + digit
+                set i: i + 1
             }
             Constant.Hex(HexConstant(loc, value))
         }
@@ -435,9 +435,9 @@ function string_has_interpolation(raw: String) returns bool
         if b = 96
             return true
         if b = 92
-            set i: i + (2 as size_t)
+            set i: i + 2
         else
-            set i: i + (1 as size_t)
+            set i: i + 1
     }
     false
 }
@@ -489,7 +489,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
             else
                 set in_expr: true
             set seg_len: 0
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         else
         {
@@ -510,11 +510,11 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
                     if ok_escape = false
                         set bad_escape: true
                 }
-                set i: i + (2 as size_t)
+                set i: i + 2
             }
             else
-                set i: i + (1 as size_t)
-            set seg_len: seg_len + (1 as size_t)
+                set i: i + 1
+            set seg_len: seg_len + 1
         }
     }
     if in_expr
@@ -557,9 +557,9 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
             else
             {
                 if b = 92
-                    set i: i + (2 as size_t)
+                    set i: i + 2
                 else
-                    set i: i + (1 as size_t)
+                    set i: i + 1
             }
         }
         var boundary is_end
@@ -579,7 +579,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
                         ; Validated above: decode so embedded string
                         ; literals arrive unescaped in the sub-source.
                         src.append((*(buf + k + 1)) as char)
-                        set k: k + (2 as size_t)
+                        set k: k + 2
                     }
                     else
                     {
@@ -594,7 +594,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
                             else
                                 src.append(eb as char)
                         }
-                        set k: k + (1 as size_t)
+                        set k: k + 1
                     }
                 }
                 src.append("))\n")
@@ -609,7 +609,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
                     while k < i
                     {
                         src.append((*(buf + k)) as char)
-                        set k: k + (1 as size_t)
+                        set k: k + 1
                     }
                     src.append("\")\n")
                 }
@@ -619,7 +619,7 @@ function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns 
                 set done: true
             else
             {
-                set i: i + (1 as size_t)
+                set i: i + 1
                 set seg_start: i
             }
         }

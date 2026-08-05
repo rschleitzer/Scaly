@@ -1501,11 +1501,11 @@ define symbols
                                 while k < nn
                                 {
                                     sb.append(it.name.get(k) as char)
-                                    set k: k + (1 as size_t)
+                                    set k: k + 1
                                 }
                                 sb.append(0x20 as char)
                             }
-                            set i: i + (1 as size_t)
+                            set i: i + 1
                         }
                     }
                 }
@@ -1532,7 +1532,7 @@ define symbols
             while k < nn
             {
                 sb.append(names.get(k) as char)
-                set k: k + (1 as size_t)
+                set k: k + 1
             }
             sb.append(0x0A as char)                ; newline
             return sb.to_string()
@@ -1707,10 +1707,10 @@ define symbols
                     while ci < cn
                     {
                         sb.append(frag.get(ci) as char)
-                        set ci: ci + (1 as size_t)
+                        set ci: ci + 1
                     }
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
         }
         let bodyfrag symbols.st_body(source, c.body)
@@ -1719,7 +1719,7 @@ define symbols
         while bi < bn
         {
             sb.append(bodyfrag.get(bi) as char)
-            set bi: bi + (1 as size_t)
+            set bi: bi + 1
         }
         sb.to_string()
     }
@@ -1747,10 +1747,10 @@ define symbols
                         while ci < cn
                         {
                             sb.append(frag.get(ci) as char)
-                            set ci: ci + (1 as size_t)
+                            set ci: ci + 1
                         }
                     }
-                    set i: i + (1 as size_t)
+                    set i: i + 1
                 }
             }
         }
@@ -1805,10 +1805,10 @@ define symbols
                     while ci < cn
                     {
                         sb.append(frag.get(ci) as char)
-                        set ci: ci + (1 as size_t)
+                        set ci: ci + 1
                     }
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
         }
         sb.to_string()
@@ -1849,10 +1849,10 @@ define symbols
                             while ci < cn
                             {
                                 sb.append(frag.get(ci) as char)
-                                set ci: ci + (1 as size_t)
+                                set ci: ci + 1
                             }
                         }
-                        set i: i + (1 as size_t)
+                        set i: i + 1
                     }
                 }
             }
@@ -1876,36 +1876,36 @@ define symbols
             let tag table.get i
             if tag = 0x50
             {
-                set i: i + (2 as size_t)            ; skip 'P' + tab
+                set i: i + 2            ; skip 'P' + tab
                 var rstart: size_t 0
                 while i < n
                 {
                     let c table.get i
                     if c = 0x09
                         break
-                    set rstart: rstart * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
-                    set i: i + (1 as size_t)
+                    set rstart: rstart * 10 + ((c - (0x30 as u8)) as size_t)
+                    set i: i + 1
                 }
-                set i: i + (1 as size_t)            ; skip tab
+                set i: i + 1            ; skip tab
                 var rend: size_t 0
                 while i < n
                 {
                     let c table.get i
                     if c = 0x09
                         break
-                    set rend: rend * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
-                    set i: i + (1 as size_t)
+                    set rend: rend * 10 + ((c - (0x30 as u8)) as size_t)
+                    set i: i + 1
                 }
-                set i: i + (1 as size_t)            ; skip tab
+                set i: i + 1            ; skip tab
                 let name_start i
                 while i < n
                 {
                     if table.get(i) = 0x0A
                         break
-                    set i: i + (1 as size_t)
+                    set i: i + 1
                 }
                 let name_end i
-                set i: i + (1 as size_t)            ; skip newline
+                set i: i + 1            ; skip newline
                 if offset >= rstart
                 {
                     if offset < rend
@@ -1931,9 +1931,9 @@ define symbols
             {
                 if table.get(i) = 0x0A
                     break
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if found
         {
@@ -1942,7 +1942,7 @@ define symbols
             {
                 if table.get(k) = 0x20
                 {
-                    set k: k + (1 as size_t)
+                    set k: k + 1
                     continue
                 }
                 var j k
@@ -1950,7 +1950,7 @@ define symbols
                 {
                     if table.get(j) = 0x20
                         break
-                    set j: j + (1 as size_t)
+                    set j: j + 1
                 }
                 if (j - k) = tlen
                     if symbols.range_equals(table, k, source, tstart, tlen)
@@ -1979,27 +1979,27 @@ define symbols
             let tag table.get i
             if tag = 0x52                ; R
             {
-                set i: i + (2 as size_t)            ; skip 'R' + tab
+                set i: i + 2            ; skip 'R' + tab
                 var rstart: size_t 0
                 while i < n
                 {
                     let c table.get i
                     if c = 0x09
                         break
-                    set rstart: rstart * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
-                    set i: i + (1 as size_t)
+                    set rstart: rstart * 10 + ((c - (0x30 as u8)) as size_t)
+                    set i: i + 1
                 }
-                set i: i + (1 as size_t)            ; skip tab
+                set i: i + 1            ; skip tab
                 var rend: size_t 0
                 while i < n
                 {
                     let c table.get i
                     if c = 0x0A
                         break
-                    set rend: rend * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
-                    set i: i + (1 as size_t)
+                    set rend: rend * 10 + ((c - (0x30 as u8)) as size_t)
+                    set i: i + 1
                 }
-                set i: i + (1 as size_t)            ; skip newline
+                set i: i + 1            ; skip newline
                 if offset >= rstart
                     if offset < rend
                     {
@@ -2022,9 +2022,9 @@ define symbols
             {
                 if table.get(i) = 0x0A
                     break
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if found
         {
@@ -2047,17 +2047,17 @@ define symbols
             let tag table.get i
             if tag = 0x46
             {
-                set i: i + (2 as size_t)            ; skip 'F' + tab
+                set i: i + 2            ; skip 'F' + tab
                 var roff: size_t 0
                 while i < n
                 {
                     let c table.get i
                     if c = 0x0A
                         break
-                    set roff: roff * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
-                    set i: i + (1 as size_t)
+                    set roff: roff * 10 + ((c - (0x30 as u8)) as size_t)
+                    set i: i + 1
                 }
-                set i: i + (1 as size_t)            ; skip newline
+                set i: i + 1            ; skip newline
                 if roff = off
                     return true
                 continue
@@ -2067,9 +2067,9 @@ define symbols
             {
                 if table.get(i) = 0x0A
                     break
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -2458,9 +2458,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -2614,9 +2614,9 @@ define symbols
                                 set result: symbols.members_from_ws_blob(blob, type_name)
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         result
     }
@@ -2655,7 +2655,7 @@ define symbols
                         if c <> 0x28
                             if c <> 0x2C
                                 set prev_punct: 0
-                set k: k + (1 as size_t)
+                set k: k + 1
             }
             if symbols.is_ident_byte(c)
             {
@@ -2664,7 +2664,7 @@ define symbols
                 {
                     if symbols.is_ident_byte(source.get j) = false
                         break
-                    set j: j + (1 as size_t)
+                    set j: j + 1
                 }
                 if symbols.token_equals(source, k, j, receiver)
                     set result: symbols.type_after_decl(source, j, len, prev_start, prev_end, have_prev, prev_punct)
@@ -2732,7 +2732,7 @@ define symbols
                     {
                         if symbols.is_ident_byte(source.get te) = false
                             break
-                        set te: te + (1 as size_t)
+                        set te: te + 1
                     }
                     if te < len
                         if symbols.is_ctor_sigil(source.get te)
@@ -2751,7 +2751,7 @@ define symbols
             if c <> 0x20
                 if c <> 0x09
                     break
-            set p: p + (1 as size_t)
+            set p: p + 1
         }
         p
     }
@@ -2786,7 +2786,7 @@ define symbols
                 {
                     if symbols.is_ident_byte(source.get e) = false
                         break
-                    set e: e + (1 as size_t)
+                    set e: e + 1
                 }
                 return symbols.substring(source, start, e)
             }
@@ -3088,9 +3088,9 @@ define symbols
                                 set result: symbols.member_type_from_ws_blob(blob, type_name, member_name)
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         result
     }
@@ -3231,9 +3231,9 @@ define symbols
                                 set result: symbols.function_return_type(fsrc, fname)
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         result
     }
@@ -3247,7 +3247,7 @@ define symbols
         {
             if s.get(i) = 0x2E
                 return true
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -3269,13 +3269,13 @@ define symbols
         ; Skip back over the in-progress member word.
         while p > 0
         {
-            if symbols.is_ident_byte(source.get(p - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(p - 1)) = false
                 break
-            set p: p - (1 as size_t)
+            set p: p - 1
         }
 
         if p > 0
-            if source.get(p - (1 as size_t)) = 0x2E
+            if source.get(p - 1) = 0x2E
             {
                 let dot p - (1 as size_t)
                 ; Walk left over [ident | '.'] to the chain start.
@@ -3286,12 +3286,12 @@ define symbols
                     if symbols.is_ident_byte(cc) = false
                         if cc <> 0x2E
                             break
-                    set cstart: cstart - (1 as size_t)
+                    set cstart: cstart - 1
                 }
                 ; Trim a leading dot (e.g. after `)` -> `.a.b`).
                 if cstart < dot
                     if source.get(cstart) = 0x2E
-                        set cstart: cstart + (1 as size_t)
+                        set cstart: cstart + 1
                 if cstart < dot
                     return symbols.substring(source, cstart, dot)
             }
@@ -3333,11 +3333,11 @@ define symbols
                         if base.get_length() = 0
                             set failed: true
                     }
-                    set seg_index: seg_index + (1 as size_t)
+                    set seg_index: seg_index + 1
                 }
-                set seg_start: i + (1 as size_t)
+                set seg_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if failed
             return ""
@@ -3362,23 +3362,23 @@ define symbols
         ; the cursor), leaving p just after the dot (or unchanged).
         while p > 0
         {
-            if symbols.is_ident_byte(source.get(p - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(p - 1)) = false
                 break
-            set p: p - (1 as size_t)
+            set p: p - 1
         }
 
         ; Require a `.` immediately to the left.
         if p > 0
-            if source.get(p - (1 as size_t)) = 0x2E
+            if source.get(p - 1) = 0x2E
             {
                 let dot p - (1 as size_t)
                 ; Walk back over the receiver identifier ending just before it.
                 var r dot
                 while r > 0
                 {
-                    if symbols.is_ident_byte(source.get(r - (1 as size_t))) = false
+                    if symbols.is_ident_byte(source.get(r - 1)) = false
                         break
-                    set r: r - (1 as size_t)
+                    set r: r - 1
                 }
                 if r < dot
                 {
@@ -3409,17 +3409,17 @@ define symbols
             set p: len
         while p > 0
         {
-            if symbols.is_ident_byte(source.get(p - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(p - 1)) = false
                 break
-            set p: p - (1 as size_t)
+            set p: p - 1
         }
         if p > 0
-            if source.get(p - (1 as size_t)) = 0x2E
+            if source.get(p - 1) = 0x2E
             {
                 let dot p - (1 as size_t)
                 if dot > 0
-                    if symbols.is_ident_byte(source.get(dot - (1 as size_t)))
-                        return dot - (1 as size_t)
+                    if symbols.is_ident_byte(source.get(dot - 1))
+                        return dot - 1
             }
         len
     }
@@ -3444,7 +3444,7 @@ define symbols
         while j < end
         {
             if name.get(j) = 0x2E
-                set start: j + (1 as size_t)
+                set start: j + 1
             set j: j + 1
         }
         name.substring(start, end - start)
@@ -3633,9 +3633,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -3977,9 +3977,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -4018,31 +4018,31 @@ define symbols
             return ""
         var off offset
         if off >= len
-            set off: len - (1 as size_t)
+            set off: len - 1
 
         var anchor off
         if symbols.is_ident_byte(source.get off) = false
         {
             if off = 0
                 return ""
-            if symbols.is_ident_byte(source.get(off - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(off - 1)) = false
                 return ""
-            set anchor: off - (1 as size_t)
+            set anchor: off - 1
         }
 
         var start anchor
         while start > 0
         {
-            if symbols.is_ident_byte(source.get(start - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(start - 1)) = false
                 break
-            set start: start - (1 as size_t)
+            set start: start - 1
         }
         var end anchor + (1 as size_t)
         while end < len
         {
             if symbols.is_ident_byte(source.get end) = false
                 break
-            set end: end + (1 as size_t)
+            set end: end + 1
         }
 
         var sb StringBuilder()
@@ -4333,9 +4333,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -4416,9 +4416,9 @@ define symbols
                                 set result: symbols.def_from_ws_blob(blob, name)
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         result
     }
@@ -4457,7 +4457,7 @@ define symbols
                 {
                     if blob.get(tab) = 9
                         break
-                    set tab: tab + (1 as size_t)
+                    set tab: tab + 1
                 }
                 ; exact name match
                 if tab - rec_start = nm_len
@@ -4471,7 +4471,7 @@ define symbols
                             set matched: false
                             break
                         }
-                        set k: k + (1 as size_t)
+                        set k: k + 1
                     }
                     if matched
                     {
@@ -4489,23 +4489,23 @@ define symbols
                                 {
                                     let c blob.get j
                                     if c = 0x7B
-                                        set depth: depth + (1 as i64)
+                                        set depth: depth + 1
                                     if c = 0x7D
                                     {
-                                        set depth: depth - (1 as i64)
+                                        set depth: depth - 1
                                         if depth = 0
-                                            return symbols.substring(blob, lstart, j + (1 as size_t))
+                                            return symbols.substring(blob, lstart, j + 1)
                                     }
-                                    set j: j + (1 as size_t)
+                                    set j: j + 1
                                 }
                             }
-                            set s: s + (1 as size_t)
+                            set s: s + 1
                         }
                     }
                 }
-                set rec_start: i + (1 as size_t)
+                set rec_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         ""
     }
@@ -4544,9 +4544,9 @@ define symbols
                             set tab2: t
                         if ntabs = 2
                             set tab3: t
-                        set ntabs: ntabs + (1 as size_t)
+                        set ntabs: ntabs + 1
                     }
-                    set t: t + (1 as size_t)
+                    set t: t + 1
                 }
                 if ntabs >= 3
                     if tab1 - rec_start = nm_len
@@ -4560,7 +4560,7 @@ define symbols
                                 set matched: false
                                 break
                             }
-                            set k: k + (1 as size_t)
+                            set k: k + 1
                         }
                         if matched
                         {
@@ -4577,15 +4577,15 @@ define symbols
                                     while d < tab3
                                     {
                                         sb.append(blob.get(d) as char)
-                                        set d: d + (1 as size_t)
+                                        set d: d + 1
                                     }
                                     return sb.to_string()
                                 }
                         }
                     }
-                set rec_start: i + (1 as size_t)
+                set rec_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         ""
     }
@@ -4621,7 +4621,7 @@ define symbols
             while d < de
             {
                 sb.append(frag.get(d) as char)
-                set d: d + (1 as size_t)
+                set d: d + 1
             }
             sb.append(0x5D as char)                    ; ]
             return sb.to_string()
@@ -4674,19 +4674,19 @@ define symbols
                             set tab3: t
                         if ntabs = 3
                             set tab4: t
-                        set ntabs: ntabs + (1 as size_t)
+                        set ntabs: ntabs + 1
                     }
-                    set t: t + (1 as size_t)
+                    set t: t + 1
                 }
                 ; rettype = [tab3+1, tab4) — bounded at the FOURTH tab (Step 33
                 ; added a 5th membertypes field), NOT the LF.
                 if ntabs >= 4
                     if tab1 - rec_start = nm_len
                         if symbols.range_equals(blob, rec_start, name, 0, nm_len)
-                            return symbols.substring(blob, tab3 + (1 as size_t), tab4)
-                set rec_start: i + (1 as size_t)
+                            return symbols.substring(blob, tab3 + 1, tab4)
+                set rec_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         ""
     }
@@ -4721,7 +4721,7 @@ define symbols
                 {
                     if blob.get(tab) = 9
                         break
-                    set tab: tab + (1 as size_t)
+                    set tab: tab + 1
                 }
                 if tab - rec_start = nm_len
                     if symbols.range_equals(blob, rec_start, name, 0, nm_len)
@@ -4741,8 +4741,8 @@ define symbols
                                     if c >= 0x30
                                         if c <= 0x39
                                         {
-                                            set v: v * (10 as i64) + ((c - (0x30 as u8)) as i64)
-                                            set j: j + (1 as size_t)
+                                            set v: v * 10 + ((c - (0x30 as u8)) as i64)
+                                            set j: j + 1
                                             continue
                                         }
                                     break
@@ -4750,7 +4750,7 @@ define symbols
                                 set kind: v
                                 set s: i                   ; stop scanning
                             }
-                            set s: s + (1 as size_t)
+                            set s: s + 1
                         }
                         if kind = 23
                             return true
@@ -4758,9 +4758,9 @@ define symbols
                             return true
                         return false
                     }
-                set rec_start: i + (1 as size_t)
+                set rec_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -4794,9 +4794,9 @@ define symbols
                             set tab1: t
                         if ntabs = 3
                             set tab4: t
-                        set ntabs: ntabs + (1 as size_t)
+                        set ntabs: ntabs + 1
                     }
-                    set t: t + (1 as size_t)
+                    set t: t + 1
                 }
                 if ntabs >= 4
                     if tab1 - rec_start = tn_len
@@ -4830,15 +4830,15 @@ define symbols
                                         if matched_name
                                             return symbols.substring(blob, seg_start, ps)
                                     set expect_name: is_name = false
-                                    set seg_start: ps + (1 as size_t)
+                                    set seg_start: ps + 1
                                 }
-                                set ps: ps + (1 as size_t)
+                                set ps: ps + 1
                             }
                             return ""        ; concept found, member not
                         }
-                set rec_start: i + (1 as size_t)
+                set rec_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         ""
     }
@@ -4898,9 +4898,9 @@ define symbols
                                     set found: true
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         found
     }
@@ -4957,9 +4957,9 @@ define symbols
                                 set result: symbols.return_type_from_ws_blob(blob, name)
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         result
     }
@@ -4999,7 +4999,7 @@ define symbols
             while hi < hn
             {
                 sb.append(here.get(hi) as char)
-                set hi: hi + (1 as size_t)
+                set hi: hi + 1
             }
             ; (2) the package dependency tree (stdlib String/Vector/Page, …).
             ; Aggregated, not first-match: a file uses names from both. Skipped
@@ -5016,7 +5016,7 @@ define symbols
                     while ti < tn
                     {
                         sb.append(there.get(ti) as char)
-                        set ti: ti + (1 as size_t)
+                        set ti: ti + 1
                     }
                 }
             return sb.to_string()
@@ -5065,12 +5065,12 @@ define symbols
                             while ci < cn
                             {
                                 sb.append(frag.get(ci) as char)
-                                set ci: ci + (1 as size_t)
+                                set ci: ci + 1
                             }
                         }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -5104,7 +5104,7 @@ define symbols
                 {
                     if blob.get(tab) = 9
                         break
-                    set tab: tab + (1 as size_t)
+                    set tab: tab + 1
                 }
                 ; kind: find the "kind": needle in the json part [tab, i)
                 var kind: i64 (0 - 1)
@@ -5121,8 +5121,8 @@ define symbols
                             if c >= 0x30
                                 if c <= 0x39
                                 {
-                                    set v: v * (10 as i64) + ((c - (0x30 as u8)) as i64)
-                                    set j: j + (1 as size_t)
+                                    set v: v * 10 + ((c - (0x30 as u8)) as i64)
+                                    set j: j + 1
                                     continue
                                 }
                             break
@@ -5130,7 +5130,7 @@ define symbols
                         set kind: v
                         set s: i                       ; stop scanning
                     }
-                    set s: s + (1 as size_t)
+                    set s: s + 1
                 }
                 var tagb: size_t 0
                 if kind = 12
@@ -5149,13 +5149,13 @@ define symbols
                     while k < tab
                     {
                         sb.append(blob.get(k) as char)
-                        set k: k + (1 as size_t)
+                        set k: k + 1
                     }
                     sb.append(0x0A as char)
                 }
-                set rec_start: i + (1 as size_t)
+                set rec_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -5187,12 +5187,12 @@ define symbols
             }
             if symbols.is_ws_byte(c)
             {
-                set k: k + (1 as size_t)
+                set k: k + 1
                 continue
             }
             if c = 10
             {
-                set k: k + (1 as size_t)
+                set k: k + 1
                 continue
             }
             break
@@ -5212,7 +5212,7 @@ define symbols
         {
             if symbols.is_ident_byte(source.get j) = false
                 break
-            set j: j + (1 as size_t)
+            set j: j + 1
         }
         symbols.substring(source, k, j)
     }
@@ -5226,17 +5226,17 @@ define symbols
         {
             let c source.get k
             if c = 0x5B
-                set d: d + (1 as i64)
+                set d: d + 1
             if c = 0x5D
             {
-                set d: d - (1 as i64)
+                set d: d - 1
                 if d = 0
                 {
-                    set k: k + (1 as size_t)
+                    set k: k + 1
                     break
                 }
             }
-            set k: k + (1 as size_t)
+            set k: k + 1
         }
         k
     }
@@ -5256,7 +5256,7 @@ define symbols
             }
             if symbols.is_ident_byte(c) = false
             {
-                set i: i + (1 as size_t)
+                set i: i + 1
                 continue
             }
             ; read an identifier word [wstart, i). The declaration keywords
@@ -5271,7 +5271,7 @@ define symbols
             {
                 if symbols.is_ident_byte(source.get i) = false
                     break
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
             let word symbols.substring(source, wstart, i)
             var is_fn false
@@ -5366,12 +5366,12 @@ define symbols
                             while ci < cn
                             {
                                 sb.append(frag.get(ci) as char)
-                                set ci: ci + (1 as size_t)
+                                set ci: ci + 1
                             }
                         }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -5389,21 +5389,21 @@ define symbols
         {
             if blob.get(i) = 10
             {
-                if i > line_start + (1 as size_t)
+                if i > line_start + 1
                     if blob.get(line_start) = tag
-                        if blob.get(line_start + (1 as size_t)) = 9
+                        if blob.get(line_start + 1) = 9
                         {
                             var k line_start + (2 as size_t)
                             while k < i
                             {
                                 sb.append(blob.get(k) as char)
-                                set k: k + (1 as size_t)
+                                set k: k + 1
                             }
                             sb.append(0x0A as char)
                         }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -5437,7 +5437,7 @@ define symbols
         while i < hl
         {
             sb.append(home_str.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.append(0x2F as char)                        ; /
         sb.to_string()
@@ -5457,7 +5457,7 @@ define symbols
             while i < bl
             {
                 sb.append(base.get(i) as char)
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
             sb.append "packages"
             return sb.to_string()
@@ -5485,10 +5485,10 @@ define symbols
                     set last_found: i
                     set found: true
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
             if found
-                return symbols.substring(path, 0, last_found + nn - (1 as size_t))
+                return symbols.substring(path, 0, last_found + nn - 1)
         }
         ""
     }
@@ -5507,7 +5507,7 @@ define symbols
         while di < dn
         {
             cmd.append(dir.get(di) as char)
-            set di: di + (1 as size_t)
+            set di: di + 1
         }
         cmd.append(0x27 as char)                   ; '
         cmd.append " -name "
@@ -5544,7 +5544,7 @@ define symbols
         while i < end
         {
             sb.append(s.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -5567,7 +5567,7 @@ define symbols
         while i < n
         {
             sb.append(path.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -5588,7 +5588,7 @@ define symbols
                 set last: i
                 set found: true
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if found
             return symbols.substring(path, 0, last)
@@ -5664,9 +5664,9 @@ define symbols
                             set first: false
                         }
                     }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.append(0x5D as char)                    ; ]
         sb.to_string()
@@ -5743,9 +5743,9 @@ define symbols
                             set tab1: t
                         if ntabs = 1
                             set tab2: t
-                        set ntabs: ntabs + (1 as size_t)
+                        set ntabs: ntabs + 1
                     }
-                    set t: t + (1 as size_t)
+                    set t: t + 1
                 }
                 if ntabs >= 1
                 {
@@ -5766,9 +5766,9 @@ define symbols
                         set first: false
                     }
                 }
-                set rec_start: i + (1 as size_t)
+                set rec_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -6020,7 +6020,7 @@ define symbols
                 while i < ln
                 {
                     sb.append(labels.get(i) as char)
-                    set i: i + (1 as size_t)
+                    set i: i + 1
                 }
                 return sb.to_string()
             }
@@ -6053,7 +6053,7 @@ define symbols
         while i < ln
         {
             sb.append(members.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -6090,10 +6090,10 @@ define symbols
                             while ci < cn
                             {
                                 sb.append(frag.get(ci) as char)
-                                set ci: ci + (1 as size_t)
+                                set ci: ci + 1
                             }
                         }
-                        set i: i + (1 as size_t)
+                        set i: i + 1
                     }
                 }
                 if c.body <> null
@@ -6115,10 +6115,10 @@ define symbols
                                 while ci < cn
                                 {
                                     sb.append(frag.get(ci) as char)
-                                    set ci: ci + (1 as size_t)
+                                    set ci: ci + 1
                                 }
                             }
-                            set j: j + (1 as size_t)
+                            set j: j + 1
                         }
                     }
                 }
@@ -6163,7 +6163,7 @@ define symbols
         while ni < nn
         {
             sb.append(name.get(ni) as char)
-            set ni: ni + (1 as size_t)
+            set ni: ni + 1
         }
         sb.append(0x1F as char)
         var ti: size_t 0
@@ -6171,7 +6171,7 @@ define symbols
         while ti < tn
         {
             sb.append(type_base.get(ti) as char)
-            set ti: ti + (1 as size_t)
+            set ti: ti + 1
         }
         sb.append(0x1F as char)
         sb.to_string()
@@ -6203,7 +6203,7 @@ define symbols
         while ni < nn                              ; raw name (matched by filter)
         {
             sb.append(name.get(ni) as char)
-            set ni: ni + (1 as size_t)
+            set ni: ni + 1
         }
         sb.append(0x09 as char)                    ; tab: name / json separator
         sb.append(0x7B as char)                    ; {
@@ -6222,7 +6222,7 @@ define symbols
         while di < dl
         {
             sb.append(detail.get(di) as char)
-            set di: di + (1 as size_t)
+            set di: di + 1
         }
         sb.append(0x09 as char)                    ; tab: detail / rettype separator
         var ri: size_t 0
@@ -6230,7 +6230,7 @@ define symbols
         while ri < rl
         {
             sb.append(rettype.get(ri) as char)
-            set ri: ri + (1 as size_t)
+            set ri: ri + 1
         }
         sb.append(0x09 as char)                    ; tab: rettype / membertypes separator
         var mi: size_t 0
@@ -6238,7 +6238,7 @@ define symbols
         while mi < ml
         {
             sb.append(membertypes.get(mi) as char)
-            set mi: mi + (1 as size_t)
+            set mi: mi + 1
         }
         sb.append(0x0A as char)                    ; newline: record terminator
         sb.to_string()
@@ -6271,14 +6271,14 @@ define symbols
         while i < an
         {
             sb.append(a.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         var j: size_t 0
         let bn b.get_length()
         while j < bn
         {
             sb.append(b.get(j) as char)
-            set j: j + (1 as size_t)
+            set j: j + 1
         }
         sb.to_string()
     }
@@ -6301,7 +6301,7 @@ define symbols
         {
             if symbols.lower_byte(name.get(start + j)) <> symbols.lower_byte(query.get j)
                 return false
-            set j: j + (1 as size_t)
+            set j: j + 1
         }
         true
     }
@@ -6322,7 +6322,7 @@ define symbols
         {
             if symbols.matches_at(name, i, query)
                 return true
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -6363,7 +6363,7 @@ define symbols
         {
             if packed.get(i) = 0x0A
                 return symbols.substring(packed, 0, i)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         ""
     }
@@ -6375,8 +6375,8 @@ define symbols
         while i < plen
         {
             if packed.get(i) = 0x0A
-                return symbols.substring(packed, i + (1 as size_t), plen)
-            set i: i + (1 as size_t)
+                return symbols.substring(packed, i + 1, plen)
+            set i: i + 1
         }
         packed
     }
@@ -6399,9 +6399,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -6596,7 +6596,7 @@ define symbols
             }
             if symbols.is_ident_byte(c) = false
             {
-                set k: k + (1 as size_t)
+                set k: k + 1
                 continue
             }
             var j k
@@ -6604,7 +6604,7 @@ define symbols
             {
                 if symbols.is_ident_byte(source.get j) = false
                     break
-                set j: j + (1 as size_t)
+                set j: j + 1
             }
             if symbols.token_equals(source, k, j, name)
             {
@@ -6616,12 +6616,12 @@ define symbols
                     let pc source.get p
                     if pc = 0x20
                     {
-                        set p: p + (1 as size_t)
+                        set p: p + 1
                         continue
                     }
                     if pc = 0x09
                     {
-                        set p: p + (1 as size_t)
+                        set p: p + 1
                         continue
                     }
                     break
@@ -6661,18 +6661,18 @@ define symbols
             if c = 0x7B                  ; {
             {
                 set depth: depth + 1
-                set p: p + (1 as size_t)
+                set p: p + 1
                 continue
             }
             if c = 0x7D                  ; }
             {
                 set depth: depth - 1
                 if depth <= 0
-                    return p + (1 as size_t)
-                set p: p + (1 as size_t)
+                    return p + 1
+                set p: p + 1
                 continue
             }
-            set p: p + (1 as size_t)
+            set p: p + 1
         }
         len
     }
@@ -6698,25 +6698,25 @@ define symbols
             if c = 0x28                  ; (
             {
                 set depth: depth + 1
-                set p: p + (1 as size_t)
+                set p: p + 1
                 continue
             }
             if c = 0x5B                  ; [
             {
                 set depth: depth + 1
-                set p: p + (1 as size_t)
+                set p: p + 1
                 continue
             }
             if c = 0x29                  ; )
             {
                 set depth: depth - 1
-                set p: p + (1 as size_t)
+                set p: p + 1
                 continue
             }
             if c = 0x5D                  ; ]
             {
                 set depth: depth - 1
-                set p: p + (1 as size_t)
+                set p: p + 1
                 continue
             }
             if depth <= 0
@@ -6736,17 +6736,17 @@ define symbols
                         }
                         if qc = 0x20
                         {
-                            set q: q + (1 as size_t)
+                            set q: q + 1
                             continue
                         }
                         if qc = 0x09
                         {
-                            set q: q + (1 as size_t)
+                            set q: q + 1
                             continue
                         }
                         if qc = 0x0A
                         {
-                            set q: q + (1 as size_t)
+                            set q: q + 1
                             continue
                         }
                         break
@@ -6767,12 +6767,12 @@ define symbols
                     {
                         if source.get(e) = 0x0A
                             break
-                        set e: e + (1 as size_t)
+                        set e: e + 1
                     }
                     return e
                 }
             }
-            set p: p + (1 as size_t)
+            set p: p + 1
         }
         len
     }
@@ -6785,16 +6785,16 @@ define symbols
         if q + 7 > len
             return false
         if source.get(q) = 0x72          ; r
-            if source.get(q + (1 as size_t)) = 0x65    ; e
-                if source.get(q + (2 as size_t)) = 0x74; t
-                    if source.get(q + (3 as size_t)) = 0x75 ; u
-                        if source.get(q + (4 as size_t)) = 0x72 ; r
-                            if source.get(q + (5 as size_t)) = 0x6E ; n
-                                if source.get(q + (6 as size_t)) = 0x73 ; s
+            if source.get(q + 1) = 0x65    ; e
+                if source.get(q + 2) = 0x74; t
+                    if source.get(q + 3) = 0x75 ; u
+                        if source.get(q + 4) = 0x72 ; r
+                            if source.get(q + 5) = 0x6E ; n
+                                if source.get(q + 6) = 0x73 ; s
                                 {
                                     if q + 7 = len
                                         return true
-                                    if symbols.is_ident_byte(source.get(q + (7 as size_t))) = false
+                                    if symbols.is_ident_byte(source.get(q + 7)) = false
                                         return true
                                     return false
                                 }
@@ -6830,7 +6830,7 @@ define symbols
             }
             if symbols.is_ident_byte(c) = false
             {
-                set k: k + (1 as size_t)
+                set k: k + 1
                 continue
             }
             var j k
@@ -6838,7 +6838,7 @@ define symbols
             {
                 if symbols.is_ident_byte(source.get j) = false
                     break
-                set j: j + (1 as size_t)
+                set j: j + 1
             }
             var is_kw false
             if symbols.token_equals(source, k, j, kw_function)
@@ -6893,7 +6893,7 @@ define symbols
                 let c shadow_packed.get i
                 if c = 0x0A
                 {
-                    set i: i + (1 as size_t)
+                    set i: i + 1
                     break
                 }
                 if c = 0x20
@@ -6902,11 +6902,11 @@ define symbols
                 {
                     let digit (c - (0x30 as u8)) as size_t
                     if seen_space = false
-                        set rstart: rstart * (10 as size_t) + digit
+                        set rstart: rstart * 10 + digit
                     if seen_space
-                        set rend: rend * (10 as size_t) + digit
+                        set rend: rend * 10 + digit
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
             if symbols.in_range(off, rstart, rend)
                 return true
@@ -6949,9 +6949,9 @@ define symbols
                 {
                     let digit (rc - (0x30 as u8)) as size_t
                     if seen_space = false
-                        set rstart: rstart * (10 as size_t) + digit
+                        set rstart: rstart * 10 + digit
                     if seen_space
-                        set rend: rend * (10 as size_t) + digit
+                        set rend: rend * 10 + digit
                 }
                 set ri: ri + 1
             }
@@ -7028,7 +7028,7 @@ define symbols
         while i < n
         {
             sb.append(frag.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.append(0x5D as char)                    ; ]
         sb.to_string()
@@ -7071,7 +7071,7 @@ define symbols
         {
             if symbols.matches_at(path, i, needle)
                 return true
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -7100,11 +7100,11 @@ define symbols
                     {
                         if path.get(j) = 0x2F
                             break
-                        set j: j + (1 as size_t)
+                        set j: j + 1
                     }
                     return symbols.substring(path, 0, j)
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
         }
         ""
@@ -7163,7 +7163,7 @@ define symbols
             while ci < cn
             {
                 sb.append(cur.get(ci) as char)
-                set ci: ci + (1 as size_t)
+                set ci: ci + 1
             }
             set first: false
         }
@@ -7214,15 +7214,15 @@ define symbols
                                     while fi < fn
                                     {
                                         sb.append(frag.get(fi) as char)
-                                        set fi: fi + (1 as size_t)
+                                        set fi: fi + 1
                                     }
                                     set first: false
                                 }
                             }
                     }
-                    set line_start: i + (1 as size_t)
+                    set line_start: i + 1
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
         }
         sb.append(0x5D as char)                    ; ]
@@ -7265,14 +7265,14 @@ define symbols
             {
                 if blob.get(nl) = 0x0A
                     break
-                set nl: nl + (1 as size_t)
+                set nl: nl + 1
             }
             var t i
             while t < nl
             {
                 if blob.get(t) = 0x09
                     break
-                set t: t + (1 as size_t)
+                set t: t + 1
             }
             if t < nl
             {
@@ -7281,7 +7281,7 @@ define symbols
                     if symbols.range_equals(blob, nstart, name, 0, nlen)
                         return true
             }
-            set i: nl + (1 as size_t)
+            set i: nl + 1
         }
         false
     }
@@ -7298,7 +7298,7 @@ define symbols
             let lbl json.as_string(json.get(item, "label"))
             if lbl = name
                 return true
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -7319,17 +7319,17 @@ define symbols
             let tag table.get i
             if tag = 0x46               ; F
             {
-                set i: i + (2 as size_t)           ; skip 'F' + tab
+                set i: i + 2           ; skip 'F' + tab
                 var roff: size_t 0
                 while i < n
                 {
                     let c table.get i
                     if c = 0x0A
                         break
-                    set roff: roff * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
-                    set i: i + (1 as size_t)
+                    set roff: roff * 10 + ((c - (0x30 as u8)) as size_t)
+                    set i: i + 1
                 }
-                set i: i + (1 as size_t)           ; skip newline
+                set i: i + 1           ; skip newline
                 if roff + nlen <= slen
                     if symbols.field_name_matches(source, roff, nlen, name)
                         return true
@@ -7339,9 +7339,9 @@ define symbols
             {
                 if table.get(i) = 0x0A
                     break
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -7428,9 +7428,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -7506,9 +7506,9 @@ define symbols
                 {
                     let digit (c - (0x30 as u8)) as size_t
                     if phase = 0
-                        set line: line * (10 as size_t) + digit
+                        set line: line * 10 + digit
                     if phase = 1
-                        set character: character * (10 as size_t) + digit
+                        set character: character * 10 + digit
                 }
             }
             set i: i + 1
@@ -7563,9 +7563,9 @@ define symbols
                 {
                     let digit (rc - (0x30 as u8)) as size_t
                     if seen_space = false
-                        set rstart: rstart * (10 as size_t) + digit
+                        set rstart: rstart * 10 + digit
                     if seen_space
-                        set rend: rend * (10 as size_t) + digit
+                        set rend: rend * 10 + digit
                 }
                 set ri: ri + 1
             }
@@ -7640,7 +7640,7 @@ define symbols
         while i < n
         {
             sb.append(frag.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.append(0x5D as char)                    ; ]
         sb.append(0x7D as char)                    ; } changes object
@@ -7680,7 +7680,7 @@ define symbols
             while ci < cn
             {
                 sb.append(cur.get(ci) as char)
-                set ci: ci + (1 as size_t)
+                set ci: ci + 1
             }
             sb.append(0x5D as char)                ; ]
             set first: false
@@ -7735,16 +7735,16 @@ define symbols
                                     while fi < fn
                                     {
                                         sb.append(frag.get(fi) as char)
-                                        set fi: fi + (1 as size_t)
+                                        set fi: fi + 1
                                     }
                                     sb.append(0x5D as char)        ; ]
                                     set first: false
                                 }
                             }
                     }
-                    set line_start: i + (1 as size_t)
+                    set line_start: i + 1
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
         }
         sb.append(0x7D as char)                    ; } changes object
@@ -7785,9 +7785,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -7813,31 +7813,31 @@ define symbols
             return ""
         var off offset
         if off >= len
-            set off: len - (1 as size_t)
+            set off: len - 1
 
         var anchor off
         if symbols.is_ident_byte(source.get off) = false
         {
             if off = 0
                 return ""
-            if symbols.is_ident_byte(source.get(off - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(off - 1)) = false
                 return ""
-            set anchor: off - (1 as size_t)
+            set anchor: off - 1
         }
 
         var start anchor
         while start > 0
         {
-            if symbols.is_ident_byte(source.get(start - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(start - 1)) = false
                 break
-            set start: start - (1 as size_t)
+            set start: start - 1
         }
         var end anchor + (1 as size_t)
         while end < len
         {
             if symbols.is_ident_byte(source.get end) = false
                 break
-            set end: end + (1 as size_t)
+            set end: end + 1
         }
 
         symbols.range_for(source, start, end)
@@ -7882,9 +7882,9 @@ define symbols
             {
                 let digit (c - (0x30 as u8)) as size_t
                 if seen_space = false
-                    set line: line * (10 as size_t) + digit
+                    set line: line * 10 + digit
                 if seen_space
-                    set character: character * (10 as size_t) + digit
+                    set character: character * 10 + digit
             }
             set i: i + 1
         }
@@ -7949,27 +7949,27 @@ define symbols
             {
                 let c source.get(p - (1 as size_t))
                 if c = 0x29                 ; )
-                    set depth: depth + (1 as size_t)
+                    set depth: depth + 1
                 if c = 0x5D                 ; ]
-                    set depth: depth + (1 as size_t)
+                    set depth: depth + 1
                 if c = 0x28                 ; (
                 {
                     if depth = 0
                     {
-                        set result: p - (1 as size_t)
+                        set result: p - 1
                         set searching: false
                     }
                     if depth > 0
-                        set depth: depth - (1 as size_t)
+                        set depth: depth - 1
                 }
                 if c = 0x5B                 ; [
                 {
                     if depth = 0
                         set searching: false           ; an index/generic encloses us
                     if depth > 0
-                        set depth: depth - (1 as size_t)
+                        set depth: depth - 1
                 }
-                set p: p - (1 as size_t)
+                set p: p - 1
             }
         }
         result
@@ -7988,18 +7988,18 @@ define symbols
                     if c <> 0x0A
                         if c <> 0x0D
                             break
-            set e: e - (1 as size_t)
+            set e: e - 1
         }
         if e = 0
             return ""
-        if symbols.is_ident_byte(source.get(e - (1 as size_t))) = false
+        if symbols.is_ident_byte(source.get(e - 1)) = false
             return ""
         var s e
         while s > 0
         {
-            if symbols.is_ident_byte(source.get(s - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(s - 1)) = false
                 break
-            set s: s - (1 as size_t)
+            set s: s - 1
         }
         symbols.substring(source, s, e)
     }
@@ -8020,34 +8020,34 @@ define symbols
                     if c <> 0x0A
                         if c <> 0x0D
                             break
-            set e: e - (1 as size_t)
+            set e: e - 1
         }
         if e = 0
             return ""
-        if symbols.is_ident_byte(source.get(e - (1 as size_t))) = false
+        if symbols.is_ident_byte(source.get(e - 1)) = false
             return ""
         var s e
         while s > 0
         {
-            if symbols.is_ident_byte(source.get(s - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(s - 1)) = false
                 break
-            set s: s - (1 as size_t)
+            set s: s - 1
         }
         if s = 0
             return ""
-        if source.get(s - (1 as size_t)) <> 0x2E      ; '.'
+        if source.get(s - 1) <> 0x2E      ; '.'
             return ""
         var re s - (1 as size_t)
         if re = 0
             return ""
-        if symbols.is_ident_byte(source.get(re - (1 as size_t))) = false
+        if symbols.is_ident_byte(source.get(re - 1)) = false
             return ""
         var rs re
         while rs > 0
         {
-            if symbols.is_ident_byte(source.get(rs - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(rs - 1)) = false
                 break
-            set rs: rs - (1 as size_t)
+            set rs: rs - 1
         }
         symbols.substring(source, rs, re)
     }
@@ -8067,19 +8067,19 @@ define symbols
         {
             let c source.get i
             if c = 0x28
-                set depth: depth + (1 as size_t)
+                set depth: depth + 1
             if c = 0x5B
-                set depth: depth + (1 as size_t)
+                set depth: depth + 1
             if c = 0x29
                 if depth > 0
-                    set depth: depth - (1 as size_t)
+                    set depth: depth - 1
             if c = 0x5D
                 if depth > 0
-                    set depth: depth - (1 as size_t)
+                    set depth: depth - 1
             if c = 0x2C
                 if depth = 0
-                    set commas: commas + (1 as size_t)
-            set i: i + (1 as size_t)
+                    set commas: commas + 1
+            set i: i + 1
         }
         commas
     }
@@ -8129,7 +8129,7 @@ define symbols
         while ni < nl
         {
             sb.append(name.get(ni) as char)
-            set ni: ni + (1 as size_t)
+            set ni: ni + 1
         }
         sb.append(0x09 as char)
         let labels symbols.signature_param_labels(source, routine)
@@ -8138,7 +8138,7 @@ define symbols
         while li < ll
         {
             sb.append(labels.get(li) as char)
-            set li: li + (1 as size_t)
+            set li: li + 1
         }
         sb.append(0x09 as char)
         let rt symbols.routine_return_base routine
@@ -8147,7 +8147,7 @@ define symbols
         while ri < rl
         {
             sb.append(rt.get(ri) as char)
-            set ri: ri + (1 as size_t)
+            set ri: ri + 1
         }
         sb.append(0x0A as char)
         sb.to_string()
@@ -8163,7 +8163,7 @@ define symbols
         while i < nl
         {
             sb.append(name.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.append(0x0A as char)
         sb.to_string()
@@ -8219,7 +8219,7 @@ define symbols
         while ci < cn
         {
             sb.append(crec.get(ci) as char)
-            set ci: ci + (1 as size_t)
+            set ci: ci + 1
         }
         var members ""
         choose def.concept_
@@ -8236,7 +8236,7 @@ define symbols
         while mi < mn
         {
             sb.append(members.get(mi) as char)
-            set mi: mi + (1 as size_t)
+            set mi: mi + 1
         }
         sb.to_string()
     }
@@ -8263,10 +8263,10 @@ define symbols
                         while ci < cn
                         {
                             sb.append(frag.get(ci) as char)
-                            set ci: ci + (1 as size_t)
+                            set ci: ci + 1
                         }
                     }
-                    set i: i + (1 as size_t)
+                    set i: i + 1
                 }
             }
         }
@@ -8307,10 +8307,10 @@ define symbols
                     while ci < cn
                     {
                         sb.append(frag.get(ci) as char)
-                        set ci: ci + (1 as size_t)
+                        set ci: ci + 1
                     }
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
         }
         sb.to_string()
@@ -8341,10 +8341,10 @@ define symbols
                             while ci < cn
                             {
                                 sb.append(frag.get(ci) as char)
-                                set ci: ci + (1 as size_t)
+                                set ci: ci + 1
                             }
                         }
-                        set i: i + (1 as size_t)
+                        set i: i + 1
                     }
                 }
             }
@@ -8365,7 +8365,7 @@ define symbols
             {
                 if map.get(re) = 0x0A
                     break
-                set re: re + (1 as size_t)
+                set re: re + 1
             }
             if map.get(rs) = 0x52           ; R
             {
@@ -8375,7 +8375,7 @@ define symbols
                 {
                     if map.get(t2) = 0x09
                         break
-                    set t2: t2 + (1 as size_t)
+                    set t2: t2 + 1
                 }
                 if (t2 - nstart) = nl
                     if symbols.range_equals(map, nstart, name, 0, nl)
@@ -8385,7 +8385,7 @@ define symbols
                         {
                             if map.get(t3) = 0x09
                                 break
-                            set t3: t3 + (1 as size_t)
+                            set t3: t3 + 1
                         }
                         var sb StringBuilder()
                         sb.append(0x59 as char)        ; Y
@@ -8393,12 +8393,12 @@ define symbols
                         while li < t3
                         {
                             sb.append(map.get(li) as char)
-                            set li: li + (1 as size_t)
+                            set li: li + 1
                         }
                         return sb.to_string()
                     }
             }
-            set rs: re + (1 as size_t)
+            set rs: re + 1
         }
         ""
     }
@@ -8417,7 +8417,7 @@ define symbols
             {
                 if map.get(re) = 0x0A
                     break
-                set re: re + (1 as size_t)
+                set re: re + 1
             }
             if map.get(rs) = 0x52           ; R
             {
@@ -8427,7 +8427,7 @@ define symbols
                 {
                     if map.get(t2) = 0x09
                         break
-                    set t2: t2 + (1 as size_t)
+                    set t2: t2 + 1
                 }
                 if (t2 - nstart) = nl
                     if symbols.range_equals(map, nstart, name, 0, nl)
@@ -8437,12 +8437,12 @@ define symbols
                         {
                             if map.get(t3) = 0x09
                                 break
-                            set t3: t3 + (1 as size_t)
+                            set t3: t3 + 1
                         }
-                        return symbols.substring(map, t3 + (1 as size_t), re)
+                        return symbols.substring(map, t3 + 1, re)
                     }
             }
-            set rs: re + (1 as size_t)
+            set rs: re + 1
         }
         ""
     }
@@ -8460,7 +8460,7 @@ define symbols
             {
                 if map.get(re) = 0x0A
                     break
-                set re: re + (1 as size_t)
+                set re: re + 1
             }
             if map.get(rs) = 0x43           ; C
             {
@@ -8469,7 +8469,7 @@ define symbols
                     if symbols.range_equals(map, nstart, name, 0, nl)
                         return true
             }
-            set rs: re + (1 as size_t)
+            set rs: re + 1
         }
         false
     }
@@ -8501,18 +8501,18 @@ define symbols
                 {
                     if payload.get(ce) = 0x3A
                         break
-                    set ce: ce + (1 as size_t)
+                    set ce: ce + 1
                 }
                 var ni seg_start
                 while ni < ce
                 {
                     sb.append(payload.get(ni) as char)
-                    set ni: ni + (1 as size_t)
+                    set ni: ni + 1
                 }
                 set first: false
-                set seg_start: i + (1 as size_t)
+                set seg_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -8531,20 +8531,20 @@ define symbols
             let c packed.get i
             if c = 0x20
             {
-                set field: field + (1 as size_t)
-                set i: i + (1 as size_t)
+                set field: field + 1
+                set i: i + 1
                 continue
             }
             let digit (c - (0x30 as u8)) as size_t
             if field = 0
-                set sl: sl * (10 as size_t) + digit
+                set sl: sl * 10 + digit
             if field = 1
-                set sc: sc * (10 as size_t) + digit
+                set sc: sc * 10 + digit
             if field = 2
-                set el: el * (10 as size_t) + digit
+                set el: el * 10 + digit
             if field = 3
-                set ec: ec * (10 as size_t) + digit
-            set i: i + (1 as size_t)
+                set ec: ec * 10 + digit
+            set i: i + 1
         }
         let range_start symbols.position_to_offset(source, sl, sc)
         let range_end symbols.position_to_offset(source, el, ec)
@@ -8565,7 +8565,7 @@ define symbols
             let c source.get k
             if symbols.is_ident_byte(c) = false
             {
-                set k: k + (1 as size_t)
+                set k: k + 1
                 continue
             }
             var j k
@@ -8573,7 +8573,7 @@ define symbols
             {
                 if symbols.is_ident_byte(source.get j) = false
                     break
-                set j: j + (1 as size_t)
+                set j: j + 1
             }
             ; A `let`/`var` binding NAME (the token right after the keyword): emit a
             ; Type hint just after the name when its type can be inferred and the
@@ -8595,7 +8595,7 @@ define symbols
                             while ti < tn
                             {
                                 sb.append(th.get(ti) as char)
-                                set ti: ti + (1 as size_t)
+                                set ti: ti + 1
                             }
                             set first: false
                         }
@@ -8632,7 +8632,7 @@ define symbols
                                             while fi < fn
                                             {
                                                 sb.append(frag.get(fi) as char)
-                                                set fi: fi + (1 as size_t)
+                                                set fi: fi + 1
                                             }
                                             set first: false
                                         }
@@ -8657,18 +8657,18 @@ define symbols
             let c source.get(e - (1 as size_t))
             if symbols.is_ws_byte(c) = false
                 break
-            set e: e - (1 as size_t)
+            set e: e - 1
         }
         if e = 0
             return false
-        if symbols.is_ident_byte(source.get(e - (1 as size_t))) = false
+        if symbols.is_ident_byte(source.get(e - 1)) = false
             return false
         var s e
         while s > 0
         {
-            if symbols.is_ident_byte(source.get(s - (1 as size_t))) = false
+            if symbols.is_ident_byte(source.get(s - 1)) = false
                 break
-            set s: s - (1 as size_t)
+            set s: s - 1
         }
         let kwf "function"
         if symbols.token_equals(source, s, e, kwf)
@@ -8721,7 +8721,7 @@ define symbols
                     set nlen: ci
                     break
                 }
-                set ci: ci + (1 as size_t)
+                set ci: ci + 1
             }
             if i > 0
                 sb.append(0x1F as char)
@@ -8729,9 +8729,9 @@ define symbols
             while ni < nlen
             {
                 sb.append(plabel.get(ni) as char)
-                set ni: ni + (1 as size_t)
+                set ni: ni + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         sb.to_string()
     }
@@ -8759,27 +8759,27 @@ define symbols
             {
                 let ac source.get a
                 if ac = 0x28
-                    set depth: depth + (1 as size_t)
+                    set depth: depth + 1
                 if ac = 0x5B
-                    set depth: depth + (1 as size_t)
+                    set depth: depth + 1
                 if ac = 0x29
                 {
                     if depth = 0
                         set scanning: false
                     if depth > 0
-                        set depth: depth - (1 as size_t)
+                        set depth: depth - 1
                 }
                 if ac = 0x5D
                     if depth > 0
-                        set depth: depth - (1 as size_t)
+                        set depth: depth - 1
                 if scanning
                 {
                     if ac = 0x2C
                         if depth = 0
                         {
-                            set arg_index: arg_index + (1 as size_t)
+                            set arg_index: arg_index + 1
                             set expecting: true
-                            set a: a + (1 as size_t)
+                            set a: a + 1
                             continue
                         }
                     if expecting
@@ -8798,13 +8798,13 @@ define symbols
                                         while hi < hn
                                         {
                                             sb.append(hint.get(hi) as char)
-                                            set hi: hi + (1 as size_t)
+                                            set hi: hi + 1
                                         }
                                         set first: false
                                     }
                             set expecting: false
                         }
-                    set a: a + (1 as size_t)
+                    set a: a + 1
                 }
             }
         }
@@ -8826,10 +8826,10 @@ define symbols
             {
                 if idx = k
                     return symbols.substring(s, seg_start, i)
-                set idx: idx + (1 as size_t)
-                set seg_start: i + (1 as size_t)
+                set idx: idx + 1
+                set seg_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if idx = k
             return symbols.substring(s, seg_start, n)
@@ -8846,7 +8846,7 @@ define symbols
         while i < nn
         {
             lbl.append(name.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         lbl.append(0x3A as char)                   ; :
         let lbl_str lbl.to_string()
@@ -8879,7 +8879,7 @@ define symbols
         while i < nn
         {
             lbl.append(type_name.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         let lbl_str lbl.to_string()
         var sb StringBuilder()
@@ -8919,13 +8919,13 @@ define symbols
                 {
                     if list.get(e) = 0x0A
                         break
-                    set e: e + (1 as size_t)
+                    set e: e + 1
                 }
-                if (e - (i + (1 as size_t))) = nl
-                    if symbols.range_equals(list, i + (1 as size_t), name, 0, nl)
+                if (e - (i + 1)) = nl
+                    if symbols.range_equals(list, i + 1, name, 0, nl)
                         return true
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         false
     }
@@ -8967,7 +8967,7 @@ define symbols
         {
             if symbols.is_ident_byte(source.get te) = false
                 break
-            set te: te + (1 as size_t)
+            set te: te + 1
         }
         ; Field-access chain `a.b.c` (or `a.b.c()`): follow the type graph.
         if te < len
@@ -8980,7 +8980,7 @@ define symbols
                     if symbols.is_ident_byte(cc) = false
                         if cc <> 0x2E
                             break
-                    set ce: ce + (1 as size_t)
+                    set ce: ce + 1
                 }
                 let chain symbols.substring(source, after, ce)
                 let ct symbols.resolve_chain_type(source, uri, chain)
@@ -9277,7 +9277,7 @@ define symbols
         while ni < nl
         {
             sig_label.append(name.get(ni) as char)
-            set ni: ni + (1 as size_t)
+            set ni: ni + 1
         }
         sig_label.append(0x28 as char)                 ; (
 
@@ -9328,7 +9328,7 @@ define symbols
                                     while li < ll
                                     {
                                         sig_label.append(ptext.get(li) as char)
-                                        set li: li + (1 as size_t)
+                                        set li: li + 1
                                     }
                                     let item_obj symbols.param_item ptext
                                     var ai: size_t 0
@@ -9336,13 +9336,13 @@ define symbols
                                     while ai < al
                                     {
                                         arr.append(item_obj.get(ai) as char)
-                                        set ai: ai + (1 as size_t)
+                                        set ai: ai + 1
                                     }
                                     set first: false
-                                    set count: count + (1 as size_t)
+                                    set count: count + 1
                                 }
                             }
-                            set i: i + (1 as size_t)
+                            set i: i + 1
                         }
                     }
                 }
@@ -9356,7 +9356,7 @@ define symbols
                         while li < ll
                         {
                             sig_label.append(ptext.get(li) as char)
-                            set li: li + (1 as size_t)
+                            set li: li + 1
                         }
                         let item_obj symbols.param_item ptext
                         var ai: size_t 0
@@ -9364,9 +9364,9 @@ define symbols
                         while ai < al
                         {
                             arr.append(item_obj.get(ai) as char)
-                            set ai: ai + (1 as size_t)
+                            set ai: ai + 1
                         }
-                        set count: count + (1 as size_t)
+                        set count: count + 1
                     }
                 }
         }
@@ -9375,7 +9375,7 @@ define symbols
         var act active
         if count > 0
             if act >= count
-                set act: count - (1 as size_t)
+                set act: count - 1
         if count = 0
             set act: 0
 
@@ -9397,7 +9397,7 @@ define symbols
         while pi < pl
         {
             sb.append(arr_str.get(pi) as char)
-            set pi: pi + (1 as size_t)
+            set pi: pi + 1
         }
         sb.append(0x5D as char)                        ; ]
         sb.append(0x7D as char)                        ; }
@@ -9462,12 +9462,12 @@ define symbols
                                     while li < ll
                                     {
                                         sb.append(ptext.get(li) as char)
-                                        set li: li + (1 as size_t)
+                                        set li: li + 1
                                     }
                                     set first: false
                                 }
                             }
-                            set i: i + (1 as size_t)
+                            set i: i + 1
                         }
                     }
                 }
@@ -9481,7 +9481,7 @@ define symbols
                         while li < ll
                         {
                             sb.append(ptext.get(li) as char)
-                            set li: li + (1 as size_t)
+                            set li: li + 1
                         }
                     }
                 }
@@ -9504,7 +9504,7 @@ define symbols
         while ni < nl
         {
             sig_label.append(name.get(ni) as char)
-            set ni: ni + (1 as size_t)
+            set ni: ni + 1
         }
         sig_label.append(0x28 as char)                 ; (
 
@@ -9519,7 +9519,7 @@ define symbols
             while wi < ln
             {
                 work.append(labels.get(wi) as char)
-                set wi: wi + (1 as size_t)
+                set wi: wi + 1
             }
             work.append(0x1F as char)
             let ws work.to_string()
@@ -9542,7 +9542,7 @@ define symbols
                     while li < ll
                     {
                         sig_label.append(ptext.get(li) as char)
-                        set li: li + (1 as size_t)
+                        set li: li + 1
                     }
                     let item_obj symbols.param_item ptext
                     var ai: size_t 0
@@ -9550,13 +9550,13 @@ define symbols
                     while ai < al
                     {
                         arr.append(item_obj.get(ai) as char)
-                        set ai: ai + (1 as size_t)
+                        set ai: ai + 1
                     }
                     set first: false
-                    set count: count + (1 as size_t)
-                    set seg_start: i + (1 as size_t)
+                    set count: count + 1
+                    set seg_start: i + 1
                 }
-                set i: i + (1 as size_t)
+                set i: i + 1
             }
         }
         sig_label.append(0x29 as char)                 ; )
@@ -9564,7 +9564,7 @@ define symbols
         var act active
         if count > 0
             if act >= count
-                set act: count - (1 as size_t)
+                set act: count - 1
         if count = 0
             set act: 0
 
@@ -9586,7 +9586,7 @@ define symbols
         while pi < pl
         {
             sb.append(arr_str.get(pi) as char)
-            set pi: pi + (1 as size_t)
+            set pi: pi + 1
         }
         sb.append(0x5D as char)                        ; ]
         sb.append(0x7D as char)                        ; }
@@ -9614,7 +9614,7 @@ define symbols
         while i < nl
         {
             sb.append(nm.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if it.annotation <> null
         {
@@ -9629,7 +9629,7 @@ define symbols
                 while ti < tl
                 {
                     sb.append(tt.get(ti) as char)
-                    set ti: ti + (1 as size_t)
+                    set ti: ti + 1
                 }
             }
         }
@@ -9650,7 +9650,7 @@ define symbols
         while i < bl
         {
             sb.append(bn.get(i) as char)
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         if nms.extensions <> null
         {
@@ -9669,10 +9669,10 @@ define symbols
                     while xi < xl
                     {
                         sb.append(en.get(xi) as char)
-                        set xi: xi + (1 as size_t)
+                        set xi: xi + 1
                     }
                 }
-                set ei: ei + (1 as size_t)
+                set ei: ei + 1
             }
         }
         if ty.generics <> null
@@ -9701,11 +9701,11 @@ define symbols
                         while ii < il
                         {
                             sb.append(inner.get(ii) as char)
-                            set ii: ii + (1 as size_t)
+                            set ii: ii + 1
                         }
                         set first: false
                     }
-                    set gi: gi + (1 as size_t)
+                    set gi: gi + 1
                 }
                 sb.append(0x5D as char)                ; ]
             }
@@ -9786,9 +9786,9 @@ define symbols
                                 set result: symbols.sig_from_ws_blob(blob, name, active)
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         result
     }
@@ -9855,9 +9855,9 @@ define symbols
                                     set result: symbols.sig_from_ws_blob(blob, name, active)
                             }
                 }
-                set line_start: i + (1 as size_t)
+                set line_start: i + 1
             }
-            set i: i + (1 as size_t)
+            set i: i + 1
         }
         result
     }

@@ -630,8 +630,8 @@ define Fiber
         if esize <> size
             return null
         set stack_pool: (*entry) as pointer[void]
-        set fiber_stacks_pooled: fiber_stacks_pooled - (1 as i64)
-        set fiber_stacks_reused: fiber_stacks_reused + (1 as i64)
+        set fiber_stacks_pooled: fiber_stacks_pooled - 1
+        set fiber_stacks_reused: fiber_stacks_reused + 1
         ((e as size_t) - guard_page_size) as pointer[void]
     }
 
@@ -648,7 +648,7 @@ define Fiber
             let mrc munmap(base, size)
             if mrc <> 0
                 exit 105
-            set fiber_stacks_pooled: fiber_stacks_pooled - (1 as i64)
+            set fiber_stacks_pooled: fiber_stacks_pooled - 1
             set e: next
         }
         set stack_pool: null
@@ -791,7 +791,7 @@ define Fiber
             }
             let next_bucket bucket.next
             free(bucket as pointer[void])
-            set fiber_buckets_freed: fiber_buckets_freed + (1 as i64)
+            set fiber_buckets_freed: fiber_buckets_freed + 1
             set bucket: next_bucket
         }
         set f.saved_head: null
@@ -802,9 +802,9 @@ define Fiber
         {
             let e ((f.stack_base as size_t) + guard_page_size) as pointer[size_t]
             set *e: stack_pool as size_t
-            set *(((e as size_t) + (8 as size_t)) as pointer[size_t]): f.stack_size
+            set *(((e as size_t) + 8) as pointer[size_t]): f.stack_size
             set stack_pool: e as pointer[void]
-            set fiber_stacks_pooled: fiber_stacks_pooled + (1 as i64)
+            set fiber_stacks_pooled: fiber_stacks_pooled + 1
         }
         else
         {
@@ -813,7 +813,7 @@ define Fiber
                 exit 105
         }
         set fiber_pages_freed: fiber_pages_freed + (pages_freed as i64)
-        set fiber_regions_freed: fiber_regions_freed + (1 as i64)
+        set fiber_regions_freed: fiber_regions_freed + 1
         pages_freed
     }
 }
@@ -1341,14 +1341,14 @@ procedure io_worker(arg: pointer[void]) returns pointer[void]
     repeat
     {
         IoPool.acquire(pl)
-        set pl.idle: pl.idle + (1 as i64)
+        set pl.idle: pl.idle + 1
         IoPool.release(pl)
         var byte u8[1]
         let n scaly_eio_read(pl.pipe_read, byte as pointer[void], 1 as size_t)
         if n <> 1
             return null
         IoPool.acquire(pl)
-        set pl.idle: pl.idle - (1 as i64)
+        set pl.idle: pl.idle - 1
         let w pl.head
         if w <> null
         {
@@ -1447,7 +1447,7 @@ define Io
         if for_write
             set ev: 4
         ; events is the u16 at offset 4 (revents at 6 is poll's to fill).
-        set *(((pfd as size_t) + (4 as size_t)) as pointer[u16]): ev as u16
+        set *(((pfd as size_t) + 4) as pointer[u16]): ev as u16
         poll(pfd as pointer[void], 1 as i32, (0 - 1) as i32)
     }
 
@@ -1650,10 +1650,10 @@ define Io
             set pl.head: null
             set pl.tail: null
             set pl.pipe_read: *(fds as pointer[i32])
-            set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
+            set pl.pipe_write: *(((fds as size_t) + 4) as pointer[i32])
             set pl.workers: 0
             set pl.idle: 0
-            set pl.handles: p.allocate((IO_POOL_WORKERS * (8 as i64)) as size_t, 8) as pointer[size_t]
+            set pl.handles: p.allocate((IO_POOL_WORKERS * 8) as size_t, 8) as pointer[size_t]
             set io_pool: pl as pointer[void]
         }
         pl
@@ -1678,7 +1678,7 @@ define Io
             return scaly_call_ptr(fn, arg)
         Io.ensure_wake()
         let pl Io.ensure_pool()
-        set io_offloads: io_offloads + (1 as i64)
+        set io_offloads: io_offloads + 1
         ; The work record rides on its own heap page — freed below once
         ; the result is consumed.
         let p Page.allocate_page_traced("Io.work_page")
@@ -1707,7 +1707,7 @@ define Io
         {
             if pl.workers < IO_POOL_WORKERS
             {
-                set pl.workers: pl.workers + (1 as i64)
+                set pl.workers: pl.workers + 1
                 set grow: true
             }
         }
@@ -1716,7 +1716,7 @@ define Io
         {
             let h Thread.spawn(&io_worker, pl as pointer[void])
             let idx pl.workers - (1 as i64)
-            set *(((pl.handles as size_t) + ((idx * (8 as i64)) as size_t)) as pointer[size_t]): h
+            set *(((pl.handles as size_t) + ((idx * 8) as size_t)) as pointer[size_t]): h
         }
         ; One byte per item: an idle worker's blocking read consumes
         ; exactly one and pops exactly one.
@@ -1768,7 +1768,7 @@ define Io
         {
             let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
             Thread.join(h)
-            set i: i + (1 as i64)
+            set i: i + 1
         }
         close(pl.pipe_read as int)
         let pp Page.get(pl as pointer[void])
@@ -1941,7 +1941,7 @@ define Channel
     procedure add_sender(m: pointer[Channel])
     {
         Channel.acquire(m)
-        set m.senders: m.senders + (1 as i64)
+        set m.senders: m.senders + 1
         Channel.release(m)
     }
 
@@ -2043,7 +2043,7 @@ define Channel
                     set tl.next: n
                     set m.tail: n
                 }
-                set m.count: m.count + (1 as i64)
+                set m.count: m.count + 1
                 ; A queued message lets a waiting receiver progress —
                 ; note the event so a concurrent deadlock check re-arms.
                 deadlock_event()
@@ -2112,7 +2112,7 @@ define Channel
     procedure close_sender(m: pointer[Channel])
     {
         Channel.acquire(m)
-        set m.senders: m.senders - (1 as i64)
+        set m.senders: m.senders - 1
         if m.senders > 0
         {
             Channel.release(m)
@@ -2177,7 +2177,7 @@ define Channel
                 set m.head: n.next
                 if m.head = null
                     set m.tail: null
-                set m.count: m.count - (1 as i64)
+                set m.count: m.count - 1
                 ; A freed slot lets one parked sender proceed (bounded
                 ; channels only — the FIFO is empty otherwise).
                 let snd Channel.pop_sender(m)
@@ -2284,7 +2284,7 @@ define Channel
                 set m.head: n.next
                 if m.head = null
                     set m.tail: null
-                set m.count: m.count - (1 as i64)
+                set m.count: m.count - 1
                 let snd Channel.pop_sender(m)
                 Channel.release(m)
                 if snd <> null
@@ -2399,7 +2399,7 @@ define TaskGroup
         if rc <> 0
             exit 112
         set g.pipe_read: *(fds as pointer[i32])
-        set g.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
+        set g.pipe_write: *(((fds as size_t) + 4) as pointer[i32])
         g
     }
 
@@ -2568,9 +2568,9 @@ define TaskPool
         if rc <> 0
             exit 112
         set pl.pipe_read: *(fds as pointer[i32])
-        set pl.pipe_write: *(((fds as size_t) + (4 as size_t)) as pointer[i32])
+        set pl.pipe_write: *(((fds as size_t) + 4) as pointer[i32])
         set pl.deques: p.allocate((n as size_t) * sizeof TaskDeque, alignof TaskDeque) as pointer[TaskDeque]
-        set pl.handles: p.allocate((n * (8 as i64)) as size_t, 8) as pointer[size_t]
+        set pl.handles: p.allocate((n * 8) as size_t, 8) as pointer[size_t]
         var i 0 as i64
         while i < n
         {
@@ -2578,7 +2578,7 @@ define TaskPool
             set d.lock: 0
             set d.head: null
             set d.tail: null
-            set i: i + (1 as i64)
+            set i: i + 1
         }
         ; Worker spawn cells {pool, index}, 16 bytes each on the pool
         ; page — the worker's only door to the pool.
@@ -2588,10 +2588,10 @@ define TaskPool
         {
             let c ((cells as size_t) + ((i * (16 as i64)) as size_t)) as pointer[size_t]
             set *c: pl as size_t
-            set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): i as size_t
+            set *(((c as size_t) + 8) as pointer[size_t]): i as size_t
             let h Thread.spawn(&task_worker, c as pointer[void])
-            set *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t]): h
-            set i: i + (1 as i64)
+            set *(((pl.handles as size_t) + ((i * 8) as size_t)) as pointer[size_t]): h
+            set i: i + 1
         }
         pl
     }
@@ -2617,7 +2617,7 @@ define TaskPool
         var idx pl.next_deque
         if idx >= pl.nworkers
             set idx: 0
-        set pl.next_deque: idx + (1 as i64)
+        set pl.next_deque: idx + 1
         let d TaskPool.deque_at(pl, idx)
         TaskDeque.acquire(d)
         if d.tail = null
@@ -2672,7 +2672,7 @@ define TaskPool
                     }
                     return w
                 }
-                set k: k + (1 as i64)
+                set k: k + 1
             }
         }
     }
@@ -2692,7 +2692,7 @@ define TaskPool
         {
             let h *(((pl.handles as size_t) + ((i * (8 as i64)) as size_t)) as pointer[size_t])
             Thread.join(h)
-            set i: i + (1 as i64)
+            set i: i + 1
         }
         close(pl.pipe_read as int)
         let pp Page.get(pl as pointer[void])

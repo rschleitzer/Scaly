@@ -90,7 +90,7 @@ function hash(data: pointer[char], length: size_t) returns size_t
         ; llc never folded back to xor — 3 ALU ops per byte.)
         set hash: (hash xor value) * prime
 
-        set i: i + (1 as size_t)
+        set i: i + 1
     }
     return hash
 }

@@ -1315,7 +1315,7 @@ define TaskPlanner
                             if pw_impure
                                 set is_pure: false
                             set pw_impure: saved
-                            set pure_stack.length: pure_stack.length - (1 as size_t)
+                            set pure_stack.length: pure_stack.length - 1
                             this.memo_purity(mangled, is_pure)
                             return is_pure
                         }
@@ -1757,7 +1757,7 @@ define TaskPlanner
 
         function wm_all() returns size_t
         {
-            (0 as size_t) - (1 as size_t)
+            0 - 1
         }
 
         function memo_written(this: TaskPlanner, mangled: String, mask: size_t)
@@ -1841,7 +1841,7 @@ define TaskPlanner
                                     {
                                         let item (*item_p)
                                         if item.name <> null
-                                            this.wr_add_name((*item.name), (1 as size_t) << pi)
+                                            this.wr_add_name((*item.name), 1 << pi)
                                     }
                                     set pi: pi + 1
                                 }
@@ -1852,7 +1852,7 @@ define TaskPlanner
                             set wr_base: saved_base
                             set wr_names.length: saved_len
                             set wr_masks.length: saved_len
-                            set wm_stack.length: wm_stack.length - (1 as size_t)
+                            set wm_stack.length: wm_stack.length - 1
                             this.memo_written(mangled, result)
                             return result
                         }
@@ -2286,7 +2286,7 @@ define TaskPlanner
                 if i > 62
                     set written: true
                 if written = false
-                    if ((sub >> i) & (1 as size_t)) <> 0
+                    if ((sub >> i) & 1) <> 0
                         set written: true
                 if written
                 {
@@ -2395,7 +2395,7 @@ define TaskPlanner
                 if i > 62
                     set written: true
                 if written = false
-                    if ((mask >> i) & (1 as size_t)) <> 0
+                    if ((mask >> i) & 1) <> 0
                         set written: true
                 if written
                 {

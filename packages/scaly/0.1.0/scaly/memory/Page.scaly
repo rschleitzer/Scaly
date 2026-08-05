@@ -52,7 +52,7 @@ define Page
         ; bit stays set until WE clear it).
         bucket_lock b
         let slot ctz_u64 b.bitmap
-        set b.bitmap: b.bitmap & ~((1 as u64) << slot)
+        set b.bitmap: b.bitmap & ~(1 << slot)
 
         if b.bitmap = 0
         {
@@ -90,7 +90,7 @@ define Page
 
         bucket_lock b
         let was_full b.bitmap = 0
-        set b.bitmap: b.bitmap | ((1 as u64) << slot)
+        set b.bitmap: b.bitmap | (1 << slot)
 
         if was_full
         {
@@ -200,7 +200,7 @@ define Page
     {
         set current_page: null
         set next_page: null
-        set next_object: this + (1 as size_t)
+        set next_object: this + 1
         ; Zero the field directly — no PageList() construction. The allocator
         ; must never region-allocate: residency inference would promote the
         ; construction to a local page, and a local page here recurses into
@@ -298,7 +298,7 @@ define Page
                 set head.current_page: fresh
                 set tail: fresh
                 set serve_location: fresh.next_object as size_t
-                set serve_aligned: (serve_location + align - (1 as size_t)) & (~(align - (1 as size_t)))
+                set serve_aligned: (serve_location + align - 1) & (~(align - 1))
             }
 
             set tail.next_object: (serve_aligned + size) as pointer[void]

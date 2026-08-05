@@ -32,21 +32,21 @@ define String (data: pointer[u8](null))
         while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
-            set counter: counter + (1 as size_t)
+            set counter: counter + 1
         }
 
         let overall_length counter + (1 as size_t) + length
         ; Over-allocate by 1 byte so c_data() is safely null-terminated for
         ; C APIs. Keeps the logical content length unchanged.
         let own_page Page.get(this as pointer[void])
-        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
-            set wi: wi + (1 as size_t)
+            set wi: wi + 1
         }
         set *(data + wi): wrest as u8
         set *(data + overall_length): 0
@@ -65,19 +65,19 @@ define String (data: pointer[u8](null))
         while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
-            set counter: counter + (1 as size_t)
+            set counter: counter + 1
         }
 
         let overall_length counter + (1 as size_t) + length
         let own_page Page.get(this as pointer[void])
-        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
-            set wi: wi + (1 as size_t)
+            set wi: wi + 1
         }
         set *(data + wi): wrest as u8
         memcpy((data + counter + (1 as size_t)) as pointer[void], other, length)
@@ -92,19 +92,19 @@ define String (data: pointer[u8](null))
         while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
-            set counter: counter + (1 as size_t)
+            set counter: counter + 1
         }
 
         let overall_length counter + (1 as size_t) + other.length
         let own_page Page.get(this as pointer[void])
-        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest other.length
         var wi: size_t 0
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
-            set wi: wi + (1 as size_t)
+            set wi: wi + 1
         }
         set *(data + wi): wrest as u8
         if other.length > 0
@@ -127,19 +127,19 @@ define String (data: pointer[u8](null))
         while rest >= 0x80
         {
             set rest: rest >> (7 as size_t)
-            set counter: counter + (1 as size_t)
+            set counter: counter + 1
         }
 
         let overall_length counter + (1 as size_t) + length
         let own_page Page.get(this as pointer[void])
-        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= 0x80
         {
             set *(data + wi): (wrest as u8) | (0x80 as u8)
             set wrest: wrest >> (7 as size_t)
-            set wi: wi + (1 as size_t)
+            set wi: wi + 1
         }
         set *(data + wi): wrest as u8
         memcpy((data + counter + (1 as size_t)) as pointer[void], c_string, length)
@@ -170,12 +170,12 @@ define String (data: pointer[u8](null))
             if (byte & (0x80 as u8)) = 0
                 break
 
-            set bit_count: bit_count + (7 as size_t)
-            set index: index + (1 as size_t)
+            set bit_count: bit_count + 7
+            set index: index + 1
         }
         var overall_length index + (1 as size_t) + length
         let own_page Page.get(this as pointer[void])
-        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
         set *(data + overall_length): 0
     }
@@ -207,11 +207,11 @@ define String (data: pointer[u8](null))
             if (byte & (0x80 as u8)) = 0
                 break
 
-            set bit_count: bit_count + (7 as size_t)
-            set index: index + (1 as size_t)
+            set bit_count: bit_count + 7
+            set index: index + 1
         }
 
-        data + index + (1 as size_t)
+        data + index + 1
     }
 
     ; Returns raw buffer pointer for C interop (cast of get_buffer)
@@ -235,8 +235,8 @@ define String (data: pointer[u8](null))
                 if (byte & (0x80 as u8)) = 0
                     break
 
-                set bit_count: bit_count + (7 as size_t)
-                set index: index + (1 as size_t)
+                set bit_count: bit_count + 7
+                set index: index + 1
             }
         }
 
@@ -270,8 +270,8 @@ define String (data: pointer[u8](null))
             if (byte & (0x80 as u8)) = 0
                 break
 
-            set bit_count: bit_count + (7 as size_t)
-            set index: index + (1 as size_t)
+            set bit_count: bit_count + 7
+            set index: index + 1
         }
         result
     }
@@ -311,8 +311,8 @@ define String (data: pointer[u8](null))
                 if (byte & (0x80 as u8)) = 0
                     break
 
-                set bit_count: bit_count + (7 as size_t)
-                set index: index + (1 as size_t)
+                set bit_count: bit_count + 7
+                set index: index + 1
             }
         }
 
@@ -342,8 +342,8 @@ define String (data: pointer[u8](null))
                 if (byte & (0x80 as u8)) = 0
                     break
 
-                set bit_count: bit_count + (7 as size_t)
-                set index: index + (1 as size_t)
+                set bit_count: bit_count + 7
+                set index: index + 1
             }
         }
 
@@ -371,8 +371,8 @@ define String (data: pointer[u8](null))
             if (byte & (0x80 as u8)) = 0
                 break
 
-            set bit_count: bit_count + (7 as size_t)
-            set index: index + (1 as size_t)
+            set bit_count: bit_count + 7
+            set index: index + 1
         }
 
         if length <> other.length
@@ -402,11 +402,11 @@ define String (data: pointer[u8](null))
             if (byte & (0x80 as u8)) = 0
                 break
 
-            set bit_count: bit_count + (7 as size_t)
-            set index: index + (1 as size_t)
+            set bit_count: bit_count + 7
+            set index: index + 1
         }
 
-        hashing.hash(data + index + (1 as size_t), length)
+        hashing.hash(data + index + 1, length)
     }
 
     function get_iterator(this: String) returns StringIterator
@@ -432,11 +432,11 @@ define String (data: pointer[u8](null))
             if (byte & (0x80 as u8)) = 0
                 break
 
-            set bit_count: bit_count + (7 as size_t)
-            set index: index + (1 as size_t)
+            set bit_count: bit_count + 7
+            set index: index + 1
         }
 
-        Slice[u8](data + index + (1 as size_t), string_length)
+        Slice[u8](data + index + 1, string_length)
     }
 
     ; Check if string contains a character
