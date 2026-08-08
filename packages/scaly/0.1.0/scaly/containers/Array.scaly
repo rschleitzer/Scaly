@@ -142,8 +142,17 @@ define Array[T]
             }
         }
 
+        ; ★`vector.data` is a `pointer[T]`, so `+` STRIDES BY sizeof T — the
+        ; destination is `data + length`, not `data + length * size`. The old
+        ; spelling multiplied the stride in a second time and so was correct
+        ; ONLY for a one-byte element; every caller in the tree was a
+        ; `Vector[char]` from StringBuilder, which is why it survived. The
+        ; single-element `add` two functions up has always had it right
+        ; (`let location vector.data + length`). Found 2026-08-08 by the first
+        ; caller with a wider element (opensp's follow sets, pointer[CmNode]):
+        ; an instant SIGSEGV, since the write lands sizeof-T times too far out.
         if items.length > 0
-            memcpy(vector.data + length * size, items.data, items.length * size)
+            memcpy(vector.data + length, items.data, items.length * size)
 
         set length: length + items.length
     }

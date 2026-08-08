@@ -1,0 +1,65 @@
+; Array.add(items: Vector[T]) with an element WIDER than one byte.
+;
+; `vector.data` is a pointer[T], so `+` strides by sizeof T. The bulk append
+; used to compute `vector.data + length * size`, multiplying the stride in a
+; second time — correct only for a one-byte element, and every caller in the
+; tree was a Vector[char] from StringBuilder, which is why it survived. The
+; first wider caller (opensp's content-model follow sets, pointer[CmNode])
+; SIGSEGVed at once.
+;
+; Two batches, so the second starts at a non-zero length — the only offset the
+; bug could get wrong — and 40 elements in total, which crosses the small
+; buffer's doubling so the grow path is exercised as well.
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var src Vector[int](20)
+    var k: size_t 0
+    while k < 20
+    {
+        src.put(k, (k as int) + 1)
+        set k: k + 1
+    }
+
+    var a Array[int]()
+    a.add(src)
+    a.add(src)
+
+    if a.get_length() <> 40
+    {
+        print "FAIL length"
+        return 1
+    }
+
+    var i: size_t 0
+    var sum: int 0
+    while i < a.get_length()
+    {
+        let e a[i]
+        set sum: sum + *e
+        set i: i + 1
+    }
+    ; 2 * (1 + ... + 20) = 420
+    if sum <> 420
+    {
+        print "FAIL sum"
+        return 1
+    }
+
+    ; the second batch must start exactly at index 20
+    let e20 a[20]
+    if *e20 <> 1
+    {
+        print "FAIL second batch offset"
+        return 1
+    }
+    let e39 a[39]
+    if *e39 <> 20
+    {
+        print "FAIL last element"
+        return 1
+    }
+
+    print "PASS"
+    0
+}
