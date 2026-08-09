@@ -835,9 +835,9 @@ declare i64 @fread(ptr, i64, i64, ptr)
 
 declare i64 @fwrite(ptr, i64, i64, ptr)
 
-declare i32 @fseek(ptr, i64, i64)
+declare i64 @scaly_eio_seek(ptr, i64, i64)
 
-declare i64 @ftell(ptr)
+declare i64 @scaly_eio_tell(ptr)
 
 declare void @rewind(ptr)
 
@@ -26962,9 +26962,9 @@ if.then4:                                         ; preds = %if.end
 
 if.end5:                                          ; preds = %if.end
   %file7 = load ptr, ptr %file, align 8
-  %call8 = call i32 @fseek(ptr %file7, i64 0, i64 2)
+  %call8 = call i64 @scaly_eio_seek(ptr %file7, i64 0, i64 2)
   %file9 = load ptr, ptr %file, align 8
-  %call10 = call i64 @ftell(ptr %file9)
+  %call10 = call i64 @scaly_eio_tell(ptr %file9)
   %file11 = load ptr, ptr %file, align 8
   call void @rewind(ptr %file11)
   %forced_page12 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
@@ -27177,9 +27177,9 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %file2 = load ptr, ptr %file, align 8
-  %call3 = call i32 @fseek(ptr %file2, i64 0, i64 2)
+  %call3 = call i64 @scaly_eio_seek(ptr %file2, i64 0, i64 2)
   %file4 = load ptr, ptr %file, align 8
-  %call5 = call i64 @ftell(ptr %file4)
+  %call5 = call i64 @scaly_eio_tell(ptr %file4)
   %file6 = load ptr, ptr %file, align 8
   call void @rewind(ptr %file6)
   %file7 = load ptr, ptr %file, align 8

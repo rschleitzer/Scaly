@@ -115104,7 +115104,7 @@ declare i32 @getrlimit(i32, ptr)
 
 declare ptr @getenv(ptr)
 
-declare i64 @atol(ptr)
+declare i64 @atoll(ptr)
 
 define linkonce_odr i64 @_ZN7Planner15not_implementedEP10const_char(ptr %0) {
 entry:
@@ -143343,7 +143343,7 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call1 = call i64 @atol(ptr %call)
+  %call1 = call i64 @atoll(ptr %call)
   %gt = icmp ugt i64 %call1, 0
   br i1 %gt, label %if.then2, label %if.end3
 

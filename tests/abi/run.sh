@@ -53,7 +53,14 @@ cd "$(dirname "$0")/../.." || exit 1
 
 # The parameter findings this tree is known to carry. Raise or lower ONLY
 # together with a note in CLAUDE.md saying which declaration changed and why.
-EXPECTED_PARAM_FINDINGS=9
+#
+# 9 -> 7 on 2026-08-09: `fseek` contributed two (`offset`, declared int against
+# C's `long`, and `origin`/`whence` against C's `int`) and is no longer declared
+# at all — the LLP64 sweep routed seeking through scaly_eio_seek, whose C side
+# is 64-bit on every parameter by design. The seven that remain are the
+# documented benign direction: fds, pids and modes, where the caller writes the
+# whole register and a 32-bit callee reads the low half it is entitled to.
+EXPECTED_PARAM_FINDINGS=7
 
 fail=0
 

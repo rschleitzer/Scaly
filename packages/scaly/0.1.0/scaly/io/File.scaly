@@ -22,8 +22,8 @@ procedure file_open_worker(arg: pointer[void]) returns pointer[void]
     var file fopen((*cell) as pointer[const_char], "rb")
     if file = null
         return null
-    fseek(file, 0, SEEK_END)
-    let size ftell file
+    scaly_eio_seek(file, 0, SEEK_END)
+    let size scaly_eio_tell file
     rewind file
     set *cell: file as size_t
     set *(((cell as size_t) + 8) as pointer[size_t]): size as size_t
@@ -102,8 +102,8 @@ define File
         if file = null
             return String()
 
-        fseek(file, 0, SEEK_END)
-        let size ftell file
+        scaly_eio_seek(file, 0, SEEK_END)
+        let size scaly_eio_tell file
         rewind file
         var ret String(size as size_t)
         let buffer ret.get_buffer()

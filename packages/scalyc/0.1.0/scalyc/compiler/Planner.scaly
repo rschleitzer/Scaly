@@ -60,7 +60,11 @@ define Rlimit
 
 function getrlimit(resource: i32, rlp: pointer[void]) returns i32 extern
 function getenv(name: pointer[const_char]) returns pointer[const_char] extern
-function atol(s: pointer[const_char]) returns i64 extern
+; atoll, not atol: `long atol(const char*)` is 32-bit on Win64 (LLP64) while
+; the one committed seed declares this once for every target, so a budget above
+; 2 GB would truncate or flip sign there. atoll is C99 and present on MSVC too,
+; so no shim is needed — see check 4 of tests/abi/run.sh.
+function atoll(s: pointer[const_char]) returns i64 extern
 
 ; ============================================================================
 ; Scope / binding machinery.
@@ -2475,7 +2479,7 @@ define Planner
             let override getenv("SCALYC_STACK_BUDGET")
             if override <> null
             {
-                let v atol(override) as size_t
+                let v atoll(override) as size_t
                 if v > 0
                     return v
             }

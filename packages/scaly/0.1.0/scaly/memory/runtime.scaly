@@ -23,8 +23,18 @@ function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns
 function fclose(stream: pointer[void]) returns i32 extern
 function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
 function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
-function fseek(stream: pointer[void], offset: int, origin: int) returns i32 extern
-function ftell(stream: pointer[void]) returns int extern
+; Seeking and telling go through the eio shim, NOT through libc's fseek/ftell.
+; Those carry `long` offsets — 64-bit on LP64, 32-bit on LLP64 (Win64) — and one
+; committed seed serves every target, so a single declaration cannot describe
+; both. `ftell` is how File.scaly measures a file's SIZE, so a 32-bit result
+; would cap every source file at 2 GB and turn the `< 0` error test into a coin
+; flip. The 64-bit variants exist everywhere but under OS-specific names
+; (ftello/fseeko vs _ftelli64/_fseeki64), which is containment rule (a).
+; See packages/scaly/0.1.0/scaly/fiber/eio.c and check 4 of tests/abi/run.sh.
+function scaly_eio_seek(stream: pointer[void], offset: int, whence: int) returns int extern
+function scaly_eio_tell(stream: pointer[void]) returns int extern
+; rewind() takes no offset and returns nothing, so it has no `long` to get
+; wrong and stays a direct extern.
 function rewind(stream: pointer[void]) extern
 
 ; Directory functions (dirent.h)

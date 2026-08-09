@@ -33,6 +33,40 @@ long long scaly_time_now(void)
   return (long long)time(0);
 }
 
+/* Process CPU time in MICROSECONDS — the JIT's compile-time accounting
+ * (dazzle/Jit.scaly, `--jit-stats`), which used to call `clock()` directly.
+ *
+ * It cannot stay a direct extern, and the width is only the first of three
+ * reasons. (1) `clock_t` is `long`: 64-bit on LP64, 32-bit on LLP64 (Win64),
+ * and ONE seed serves every target, so the Scaly declaration cannot be
+ * target-conditional — see check 4 of tests/abi/run.sh. (2) CLOCKS_PER_SEC is
+ * 1000000 on the LP64 targets, so the raw value already IS microseconds
+ * there, but it is 1000 on Windows — the caller's unit would be off by 1000x.
+ * (3) Windows' clock() measures WALL time since process start, not CPU time
+ * at all.
+ *
+ * Scaling here settles (1) and (2) for every target. (3) is semantic and
+ * belongs to the Windows arm, which is deliberately NOT written yet: it needs
+ * GetProcessTimes (user+kernel FILETIME in 100 ns units) and cannot be
+ * verified on an LP64 host, so writing it now would ship untested code and
+ * hide the gap. Stage 7 brocken 3 owns it; until then a Windows build gets
+ * wall time in correct microseconds, which is wrong in the same direction the
+ * reference is, and loudly documented rather than silently 1000x off.
+ *
+ * The identity branch is exact and cannot overflow; the general form is kept
+ * for the targets where the scale is not 1. Note this is a RUNTIME compare,
+ * not an `#if`: macOS defines CLOCKS_PER_SEC as `((clock_t)1000000)`, and the
+ * preprocessor cannot evaluate a cast, so `#if CLOCKS_PER_SEC == 1000000` is
+ * a hard error there. Both operands are constants, so -O2 folds it away. */
+long long scaly_time_cpu_usec(void)
+{
+  long long ticks = (long long)clock();
+  long long per_sec = (long long)CLOCKS_PER_SEC;
+  if (per_sec == 1000000LL)
+    return ticks;
+  return ticks * 1000000LL / per_sec;
+}
+
 /* `(time->string k gmt?)` — primitive.cxx:1571. Writes the ISO8601 form into
  * `out` (which must hold 64 bytes, as the reference's stack buffer does) and
  * returns its length. Nonzero `use_gmt` selects gmtime, as the reference's

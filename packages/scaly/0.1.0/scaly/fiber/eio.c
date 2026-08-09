@@ -592,3 +592,34 @@ long long scaly_eio_blksize_fd(int fd)
         return 8192;
     return (long long)sb.st_blksize;
 }
+
+/* 64-bit file position — replaces the direct `fseek`/`ftell` externs.
+ *
+ * C's fseek/ftell carry `long` offsets, i.e. 64-bit on LP64 and 32-bit on
+ * LLP64 (Win64), so ONE Scaly declaration cannot describe both (check 4 of
+ * tests/abi/run.sh). And the consequence is worse than a width: `ftell` is how
+ * scaly/io/File.scaly measures a FILE's SIZE, so a 32-bit result would cap
+ * every source file at 2 GB and turn the `< 0` error test into a coin flip —
+ * the sign-flip class check 1 of that suite exists for.
+ *
+ * The 64-bit variants exist on every target but under OS-SPECIFIC NAMES —
+ * ftello/fseeko on POSIX, _ftelli64/_fseeki64 on MSVC — which is containment
+ * rule (a) verbatim, hence a shim rather than a direct extern. The Windows arm
+ * is one #ifdef and two names; it is deliberately NOT written yet, because it
+ * cannot be verified on an LP64 host (stage 7 brocken 3 owns it).
+ *
+ * FILE* crosses as void* so the Scaly side keeps the `pointer[void]` it
+ * already used for the stream, and EVERY other value crosses 64-bit wide —
+ * `whence` included, though C's own fseek takes an `int` there. That is the
+ * rule ctime.c states in its header: a 64-bit boundary lets a Scaly `int`
+ * parameter match without an i32 declaration, so the call sites need no cast
+ * and the named SEEK_* constants (declared `int`) pass straight through. */
+long long scaly_eio_tell(void* stream)
+{
+    return (long long)ftello((FILE*)stream);
+}
+
+long long scaly_eio_seek(void* stream, long long offset, long long whence)
+{
+    return (long long)fseeko((FILE*)stream, (off_t)offset, (int)whence);
+}
