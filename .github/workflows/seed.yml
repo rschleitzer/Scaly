@@ -136,11 +136,17 @@ jobs:
   # cost. It installs NOTHING: the object is already emitted, and CLAUDE.md's
   # rule is that only `llc` must be LLVM-18 while any clang links.
   #
-  # What this rung deliberately does NOT prove: nothing of the runtime substrate
+  # What rung 1 deliberately does NOT prove: nothing of the runtime substrate
   # (no fibers, no evented I/O, no Win32 externs, no libscaly.a) and nothing
   # about the seed reproducing on Windows. Those are the later rungs; keeping
   # them separate is the same sequencing rule the roadmap applies to the port
   # itself — never debug two unknowns at once.
+  #
+  # Rung 2a (below, same job): COMPILE the Win64 POSIX-compat shim. It is the
+  # cheapest possible feedback on brocken 3 — the whole shim is written on a
+  # host that cannot compile a line of it, so "does it build against the real
+  # Windows SDK" is the first thing worth knowing and costs seconds. It does
+  # not link or run it yet; that needs the rest of the substrate.
   windows:
     name: x86_64-pc-windows-msvc (link + run)
     needs: seed
@@ -173,3 +179,23 @@ jobs:
           echo "--- want ---"; cat want.txt
           echo "--- got  ---"; cat got.txt
           diff -u want.txt got.txt
+
+      # Rung 2a — brocken 3. -Wall -Wextra -Werror on purpose: this shim is
+      # written blind on a POSIX host, so a warning here is the only signal
+      # that a Win32 contract was misread (a wrong VirtualFree argument, a
+      # WSAPOLLFD width, an implicit declaration from a missing header). It
+      # must never be downgraded to a plain build "because it is only a shim" —
+      # a shim nobody can run locally is exactly the code that needs the
+      # strictest compile it can get.
+      - name: Compile the Win64 POSIX-compat shim (brocken 3)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
+                -c packages/scaly/0.1.0/scaly/win32/posixcompat.c \
+                -o posixcompat.o
+          echo "--- symbols provided ---"
+          # Informative only: a missing llvm-nm must not fail the rung, whose
+          # claim is "it compiles", not "we can list it".
+          llvm-nm --defined-only posixcompat.o | sed 's/^/  /' \
+            || echo "  (llvm-nm unavailable — compile still succeeded)"
