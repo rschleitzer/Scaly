@@ -17567,9 +17567,12 @@ define Planner
             var element_type: PlannedType Planner.make_void_type()
             var get_iter_name: String ""
             var next_name: String ""
-            ; When true, `element_type` is `pointer[T]` with T a scalar
-            ; primitive: the loop var binds to the LOADED value, and
-            ; `loop_var_type` below is the scalar T (not the pointer).
+            ; When true, `element_type` is `pointer[T]` with T a VALUE the loop
+            ; var must be LOADED through — a scalar primitive, or (2026-08-09) a
+            ; pointer/ref, which is a value in exactly the same sense. The
+            ; alternative is T a record, where the loop var IS the element
+            ; pointer and a member access derefs it. `loop_var_type` below is T,
+            ; not pointer[T], in the loaded case.
             var element_is_scalar: bool false
 
             if is_integer
@@ -17599,11 +17602,24 @@ define Planner
                         set element_type: nm.return_type
                         ; next() returns `pointer[T]`. If T is a scalar
                         ; primitive, the loop var must be the loaded value.
+                        ; So must it when T is itself a POINTER or a ref
+                        ; (2026-08-09): `for e in <container of pointers>` bound
+                        ; the loop var to next()'s result, i.e. to the SLOT's
+                        ; address, and every use read the slot instead of the
+                        ; element — silently, since a slot address is a valid
+                        ; pointer. `for` over a List of pointers only worked
+                        ; because `&node.element` was itself a no-op for a
+                        ; pointer field; both halves are fixed together, because
+                        ; either one alone breaks the other.
                         let pointee Planner.get_pointer_element_type(element_type)
                         if pointee <> null
                         {
                             let pt (*pointee)
                             if Planner.is_scalar_value_type_name(pt.name)
+                                set element_is_scalar: true
+                            if pt.name = "pointer"
+                                set element_is_scalar: true
+                            if pt.name = "ref"
                                 set element_is_scalar: true
                         }
                     }
@@ -19656,6 +19672,30 @@ define Planner
                 if this.operand_is_string_constant(collapsed)
                     set collapsed: this.fold_string_operand_to_char(collapsed, binding_type)
 
+            ; String literal in a pointer[const_char]-annotated binding
+            ; (`var s: pointer[const_char] "text"`): wrap in PlannedAs so
+            ; emit_as lowers the constant to the plain .str global pointer —
+            ; the argument-side coerce_string_args_to_cstr shape, and the same
+            ; wrap plan_return# already does in return position. Without it
+            ; the initializer stayed a String VALUE, the slot was alloca'd as
+            ; the `{ ptr }` String struct, and passing the binding on to a
+            ; pointer[const_char] parameter handed over the struct's ADDRESS:
+            ; a C callee then read the String header as characters (2026-08-06,
+            ; `unknown pass name ' \xd6j'` — an LLVM pass pipeline silently did
+            ; not run). Literal-directly-at-the-call worked, which is what made
+            ; it look like a rule about where literals may appear.
+            if Planner.type_is_cstr_pointer(binding_type)
+                if this.operand_is_string_constant(collapsed)
+                {
+                    let bcast PlannedAs(collapsed.loc, binding_type, &^this collapsed)
+                    set collapsed: PlannedOperand(
+                        collapsed.loc,
+                        PlannedExpression.As bcast,
+                        null,
+                        binding_type
+                    )
+                }
+
             ; Float literal in a float-annotated binding (`var x: float 1.5`):
             ; retype the default-f64 literal to the annotated width so the
             ; alloca, the store and every later load agree on the slot type.
@@ -19903,6 +19943,25 @@ define Planner
             if a.target.length > 0
                 if this.operand_retypes_to_integer(planned_source_collapsed, planned_target_collapsed.result_type)
                     set planned_source_collapsed: this.retype_integer_operand(planned_source_collapsed, planned_target_collapsed.result_type)
+
+            ; String literal assigned into a pointer[const_char]-like target
+            ; (`set s: "text"` with s a pointer[const_char]): wrap in PlannedAs
+            ; so the store writes the .str global pointer, not a String value.
+            ; The binding-side counterpart is in plan_binding#; both close the
+            ; same silent gap — only a literal DIRECTLY in argument position
+            ; used to reach the C string constant.
+            if a.target.length > 0
+                if Planner.type_is_cstr_pointer(planned_target_collapsed.result_type)
+                    if this.operand_is_string_constant(planned_source_collapsed)
+                    {
+                        let scast PlannedAs(planned_source_collapsed.loc, planned_target_collapsed.result_type, &^this planned_source_collapsed)
+                        set planned_source_collapsed: PlannedOperand(
+                            planned_source_collapsed.loc,
+                            PlannedExpression.As scast,
+                            null,
+                            planned_target_collapsed.result_type
+                        )
+                    }
 
             ; For -g line info: take the location from the FIRST flat source
             ; operand, which carries the authoritative source span. The

@@ -2306,24 +2306,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorIcE %deref81, 1
   %load.struct83 = load %_Z5ArrayIcE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayIcE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds i8, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorIcE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorIcE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorIcE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds i8, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorIcE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorIcE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorIcE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayIcE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorIcE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorIcE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayIcE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorIcE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorIcE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -2544,7 +2543,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListIcE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeIcE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeIcE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -3658,7 +3658,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI10JsonMemberE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI10JsonMemberE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI10JsonMemberE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -3804,7 +3805,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI9JsonValueE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI9JsonValueE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI9JsonValueE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -6143,24 +6145,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6StringE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6StringE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6StringE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds { ptr }, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6StringE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6StringE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds { ptr }, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6StringE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6StringE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6StringE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6StringE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6StringE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6StringE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6StringE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -6380,7 +6381,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6StringE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -7447,24 +7449,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6VectorI6StringEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z6VectorI6StringE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -7684,7 +7685,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6VectorI6StringEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI6StringEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI6StringEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -8022,7 +8024,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z11BuilderListI6StringE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6StringE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -8261,7 +8264,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -9085,24 +9089,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -9322,7 +9325,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -9585,7 +9589,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI4SlotI6StringEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI4SlotI6StringEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -10684,7 +10689,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String12LocalBindingEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String12LocalBindingEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String12LocalBindingEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -11258,24 +11264,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String12LocalBindingE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String12LocalBindingE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -11950,7 +11955,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListImE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeImE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeImE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -12556,24 +12562,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorImE %deref81, 1
   %load.struct83 = load %_Z5ArrayImE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayImE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds i64, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorImE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorImE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorImE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds i64, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorImE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorImE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorImE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayImE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayImE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorImE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorImE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayImE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayImE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorImE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorImE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -13248,7 +13253,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String11PlannedTypeEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String11PlannedTypeEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String11PlannedTypeEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -13822,24 +13828,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String11PlannedTypeE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String11PlannedTypeE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -14515,7 +14520,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI14TypeConstraintE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI14TypeConstraintE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI14TypeConstraintE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -15089,24 +15095,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI14TypeConstraintE %deref81, 1
   %load.struct83 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z14TypeConstraint, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI14TypeConstraintE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI14TypeConstraintE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI14TypeConstraintE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z14TypeConstraint, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI14TypeConstraintE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI14TypeConstraintE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI14TypeConstraintE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI14TypeConstraintE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI14TypeConstraintE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI14TypeConstraintE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI14TypeConstraintE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -15782,7 +15787,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairIm11PlannedTypeEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairIm11PlannedTypeEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairIm11PlannedTypeEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -16356,24 +16362,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairIm11PlannedTypeE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairIm11PlannedTypeE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -17391,24 +17396,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6VectorI7OperandEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6VectorI7OperandEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6VectorI7OperandEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z6VectorI7OperandE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6VectorI7OperandEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6VectorI7OperandEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6VectorI7OperandEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z6VectorI7OperandE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6VectorI7OperandEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6VectorI7OperandEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6VectorI7OperandEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6VectorI7OperandEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6VectorI7OperandEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6VectorI7OperandEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6VectorI7OperandEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6VectorI7OperandEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6VectorI7OperandEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6VectorI7OperandEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6VectorI7OperandEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -17628,7 +17632,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6VectorI7OperandEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI7OperandEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI7OperandEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -18658,24 +18663,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI9StatementE %deref81, 1
   %load.struct83 = load %_Z5ArrayI9StatementE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI9StatementE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z9Statement, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI9StatementE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI9StatementE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI9StatementE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z9Statement, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI9StatementE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI9StatementE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI9StatementE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI9StatementE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI9StatementE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI9StatementE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI9StatementE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI9StatementE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI9StatementE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI9StatementE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI9StatementE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -18895,7 +18899,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI9StatementE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI9StatementE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI9StatementE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -19925,24 +19930,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI4CaseE %deref81, 1
   %load.struct83 = load %_Z5ArrayI4CaseE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI4CaseE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z4Case, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z4Case, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI4CaseE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI4CaseE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI4CaseE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z4Case, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z4Case, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI4CaseE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI4CaseE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI4CaseE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z4Case, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI4CaseE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI4CaseE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI4CaseE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI4CaseE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI4CaseE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI4CaseE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI4CaseE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI4CaseE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -20162,7 +20166,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI4CaseE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI4CaseE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI4CaseE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -21192,24 +21197,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6BranchE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6BranchE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6BranchE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z6Branch, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z6Branch, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6BranchE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6BranchE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6BranchE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z6Branch, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z6Branch, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6BranchE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6BranchE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6BranchE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z6Branch, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6BranchE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6BranchE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6BranchE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6BranchE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6BranchE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6BranchE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6BranchE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6BranchE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -21429,7 +21433,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6BranchE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6BranchE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6BranchE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -22459,24 +22464,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI4WhenE %deref81, 1
   %load.struct83 = load %_Z5ArrayI4WhenE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI4WhenE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z4When, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z4When, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI4WhenE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI4WhenE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI4WhenE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z4When, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z4When, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI4WhenE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI4WhenE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI4WhenE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z4When, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI4WhenE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI4WhenE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI4WhenE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI4WhenE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI4WhenE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI4WhenE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI4WhenE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI4WhenE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -22696,7 +22700,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI4WhenE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI4WhenE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI4WhenE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -23726,24 +23731,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI4ItemE %deref81, 1
   %load.struct83 = load %_Z5ArrayI4ItemE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI4ItemE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z4Item, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z4Item, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI4ItemE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI4ItemE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI4ItemE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z4Item, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z4Item, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI4ItemE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI4ItemE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI4ItemE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z4Item, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI4ItemE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI4ItemE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI4ItemE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI4ItemE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI4ItemE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI4ItemE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI4ItemE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI4ItemE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -23963,7 +23967,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI4ItemE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI4ItemE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI4ItemE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -24993,24 +24998,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI7OperandE %deref81, 1
   %load.struct83 = load %_Z5ArrayI7OperandE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI7OperandE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z7Operand, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z7Operand, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI7OperandE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI7OperandE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI7OperandE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z7Operand, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z7Operand, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI7OperandE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI7OperandE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI7OperandE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z7Operand, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI7OperandE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI7OperandE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI7OperandE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI7OperandE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI7OperandE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI7OperandE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI7OperandE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI7OperandE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -25230,7 +25234,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI7OperandE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI7OperandE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI7OperandE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -26260,24 +26265,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI9ComponentE %deref81, 1
   %load.struct83 = load %_Z5ArrayI9ComponentE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI9ComponentE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z9Component, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z9Component, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI9ComponentE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI9ComponentE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI9ComponentE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z9Component, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z9Component, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI9ComponentE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI9ComponentE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI9ComponentE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z9Component, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI9ComponentE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI9ComponentE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI9ComponentE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI9ComponentE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI9ComponentE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI9ComponentE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI9ComponentE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI9ComponentE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -26497,7 +26501,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI9ComponentE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI9ComponentE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI9ComponentE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -27527,24 +27532,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI9AttributeE %deref81, 1
   %load.struct83 = load %_Z5ArrayI9AttributeE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI9AttributeE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z9Attribute, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z9Attribute, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI9AttributeE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI9AttributeE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI9AttributeE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z9Attribute, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z9Attribute, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI9AttributeE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI9AttributeE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI9AttributeE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z9Attribute, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI9AttributeE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI9AttributeE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI9AttributeE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI9AttributeE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI9AttributeE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI9AttributeE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI9AttributeE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI9AttributeE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -27764,7 +27768,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI9AttributeE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI9AttributeE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI9AttributeE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -28794,24 +28799,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI16GenericParameterE %deref81, 1
   %load.struct83 = load %_Z5ArrayI16GenericParameterE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI16GenericParameterE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z16GenericParameter, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z16GenericParameter, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI16GenericParameterE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI16GenericParameterE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI16GenericParameterE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z16GenericParameter, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z16GenericParameter, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI16GenericParameterE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI16GenericParameterE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI16GenericParameterE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z16GenericParameter, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI16GenericParameterE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI16GenericParameterE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI16GenericParameterE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI16GenericParameterE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI16GenericParameterE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI16GenericParameterE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI16GenericParameterE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI16GenericParameterE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -29031,7 +29035,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI16GenericParameterE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI16GenericParameterE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI16GenericParameterE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -30061,24 +30066,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI3UseE %deref81, 1
   %load.struct83 = load %_Z5ArrayI3UseE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI3UseE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z3Use, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z3Use, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI3UseE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI3UseE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI3UseE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z3Use, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z3Use, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI3UseE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI3UseE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI3UseE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z3Use, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI3UseE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI3UseE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI3UseE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI3UseE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI3UseE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI3UseE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI3UseE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI3UseE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -30298,7 +30302,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI3UseE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI3UseE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI3UseE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -31328,24 +31333,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6MemberE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6MemberE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6MemberE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z6Member, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z6Member, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6MemberE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6MemberE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6MemberE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z6Member, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z6Member, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6MemberE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6MemberE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6MemberE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z6Member, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6MemberE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6MemberE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6MemberE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6MemberE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6MemberE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6MemberE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6MemberE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6MemberE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -31565,7 +31569,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6MemberE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6MemberE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6MemberE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -32595,24 +32600,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI8FunctionE %deref81, 1
   %load.struct83 = load %_Z5ArrayI8FunctionE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI8FunctionE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z8Function, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z8Function, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI8FunctionE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI8FunctionE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI8FunctionE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z8Function, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z8Function, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI8FunctionE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI8FunctionE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI8FunctionE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z8Function, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI8FunctionE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI8FunctionE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI8FunctionE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI8FunctionE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI8FunctionE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI8FunctionE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI8FunctionE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI8FunctionE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -32832,7 +32836,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI8FunctionE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI8FunctionE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI8FunctionE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -33529,7 +33534,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z11BuilderListI8FunctionE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI8FunctionE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI8FunctionE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -34796,24 +34802,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -35033,7 +35038,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -36063,24 +36069,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI8Nameable8NameableEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI8Nameable8NameableE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI8Nameable8NameableE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI8Nameable8NameableEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI8Nameable8NameableE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI8Nameable8NameableE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI8Nameable8NameableEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI8Nameable8NameableE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI8Nameable8NameableEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI8Nameable8NameableEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI8Nameable8NameableEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -36300,7 +36305,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI8Nameable8NameableEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI8Nameable8NameableEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI8Nameable8NameableEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -37340,24 +37346,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6String8NameableEEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -37577,7 +37582,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6VectorI12KeyValuePairI6String8NameableEEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI12KeyValuePairI6String8NameableEEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6VectorI12KeyValuePairI6String8NameableEEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -38607,24 +38613,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String8NameableEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8NameableE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8NameableE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8NameableE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8NameableE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String8NameableEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String8NameableEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -38844,7 +38849,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String8NameableEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String8NameableEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String8NameableEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -39319,7 +39325,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -40143,24 +40150,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -40380,7 +40386,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -40643,7 +40650,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -41670,7 +41678,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String7ConceptEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String7ConceptEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String7ConceptEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -42244,24 +42253,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String7ConceptE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String7ConceptE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -42937,7 +42945,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI16PlannedStructureE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI16PlannedStructureE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI16PlannedStructureE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -43511,24 +43520,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI16PlannedStructureE %deref81, 1
   %load.struct83 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z16PlannedStructure, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI16PlannedStructureE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI16PlannedStructureE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z16PlannedStructure, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI16PlannedStructureE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI16PlannedStructureE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI16PlannedStructureE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI16PlannedStructureE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -44204,7 +44212,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12PlannedUnionE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12PlannedUnionE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12PlannedUnionE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -44778,24 +44787,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12PlannedUnionE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12PlannedUnion, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12PlannedUnionE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12PlannedUnionE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12PlannedUnion, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12PlannedUnionE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12PlannedUnionE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12PlannedUnionE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12PlannedUnionE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -45471,7 +45479,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI15PlannedFunctionE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI15PlannedFunctionE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI15PlannedFunctionE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -46045,24 +46054,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI15PlannedFunctionE %deref81, 1
   %load.struct83 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z15PlannedFunction, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI15PlannedFunctionE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI15PlannedFunctionE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z15PlannedFunction, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI15PlannedFunctionE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI15PlannedFunctionE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI15PlannedFunctionE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI15PlannedFunctionE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -46738,7 +46746,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI13PlannedGlobalE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI13PlannedGlobalE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI13PlannedGlobalE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -47312,24 +47321,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI13PlannedGlobalE %deref81, 1
   %load.struct83 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z13PlannedGlobal, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI13PlannedGlobalE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI13PlannedGlobalE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z13PlannedGlobal, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI13PlannedGlobalE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI13PlannedGlobalE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI13PlannedGlobalE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI13PlannedGlobalE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -48005,7 +48013,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String8FunctionEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String8FunctionEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String8FunctionEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -48579,24 +48588,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8FunctionE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8FunctionE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -49272,7 +49280,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String6LambdaEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String6LambdaEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String6LambdaEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -49846,24 +49855,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6LambdaE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6LambdaE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -50539,7 +50547,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String8OperatorEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String8OperatorEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String8OperatorEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -51113,24 +51122,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8OperatorE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8OperatorE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -52148,24 +52156,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI11PlannedTypeE %deref81, 1
   %load.struct83 = load %_Z5ArrayI11PlannedTypeE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI11PlannedTypeE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z11PlannedType, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI11PlannedTypeE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI11PlannedTypeE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI11PlannedTypeE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z11PlannedType, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI11PlannedTypeE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI11PlannedTypeE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI11PlannedTypeE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI11PlannedTypeE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI11PlannedTypeE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI11PlannedTypeE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI11PlannedTypeE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI11PlannedTypeE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI11PlannedTypeE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI11PlannedTypeE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI11PlannedTypeE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -52385,7 +52392,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI11PlannedTypeE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI11PlannedTypeE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11PlannedTypeE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -53073,7 +53081,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12KeyValuePairI6String6ModuleEE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String6ModuleEE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12KeyValuePairI6String6ModuleEE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -53647,24 +53656,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6ModuleE, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6ModuleE, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -54340,7 +54348,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI17PlannerDiagnosticE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI17PlannerDiagnosticE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI17PlannerDiagnosticE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -54914,24 +54923,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref81, 1
   %load.struct83 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z17PlannerDiagnostic, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI17PlannerDiagnosticE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI17PlannerDiagnosticE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI17PlannerDiagnosticE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z17PlannerDiagnostic, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI17PlannerDiagnosticE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI17PlannerDiagnosticE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI17PlannerDiagnosticE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI17PlannerDiagnosticE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI17PlannerDiagnosticE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI17PlannerDiagnosticE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI17PlannerDiagnosticE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -55949,24 +55957,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI6ModuleE %deref81, 1
   %load.struct83 = load %_Z5ArrayI6ModuleE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI6ModuleE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z6Module, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z6Module, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI6ModuleE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI6ModuleE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI6ModuleE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z6Module, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z6Module, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI6ModuleE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI6ModuleE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI6ModuleE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z6Module, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI6ModuleE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI6ModuleE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI6ModuleE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI6ModuleE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI6ModuleE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI6ModuleE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI6ModuleE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI6ModuleE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -56186,7 +56193,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI6ModuleE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI6ModuleE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI6ModuleE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -56874,7 +56882,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI7ProgramE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI7ProgramE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI7ProgramE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -57448,24 +57457,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI7ProgramE %deref81, 1
   %load.struct83 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI7ProgramE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z7Program, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI7ProgramE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI7ProgramE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI7ProgramE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z7Program, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI7ProgramE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI7ProgramE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI7ProgramE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI7ProgramE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI7ProgramE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI7ProgramE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI7ProgramE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI7ProgramE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI7ProgramE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -58141,7 +58149,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12EscapeRecordE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12EscapeRecordE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12EscapeRecordE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -58715,24 +58724,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12EscapeRecordE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12EscapeRecord, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12EscapeRecordE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12EscapeRecordE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12EscapeRecordE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12EscapeRecord, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12EscapeRecordE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12EscapeRecordE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12EscapeRecordE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12EscapeRecordE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12EscapeRecordE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12EscapeRecordE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12EscapeRecordE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -61268,24 +61276,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI17DeclarationSyntaxE %deref81, 1
   %load.struct83 = load %_Z5ArrayI17DeclarationSyntaxE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI17DeclarationSyntaxE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z17DeclarationSyntax, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI17DeclarationSyntaxE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI17DeclarationSyntaxE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z17DeclarationSyntax, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI17DeclarationSyntaxE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI17DeclarationSyntaxE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z17DeclarationSyntax, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI17DeclarationSyntaxE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI17DeclarationSyntaxE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI17DeclarationSyntaxE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI17DeclarationSyntaxE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI17DeclarationSyntaxE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI17DeclarationSyntaxE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -61505,7 +61512,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI17DeclarationSyntaxE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI17DeclarationSyntaxE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI17DeclarationSyntaxE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -63586,24 +63594,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI12MemberSyntaxE %deref81, 1
   %load.struct83 = load %_Z5ArrayI12MemberSyntaxE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI12MemberSyntaxE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z12MemberSyntax, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI12MemberSyntaxE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI12MemberSyntaxE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z12MemberSyntax, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI12MemberSyntaxE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI12MemberSyntaxE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI12MemberSyntaxE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI12MemberSyntaxE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI12MemberSyntaxE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI12MemberSyntaxE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI12MemberSyntaxE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI12MemberSyntaxE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -63823,7 +63830,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI12MemberSyntaxE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI12MemberSyntaxE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI12MemberSyntaxE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -64990,24 +64998,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI13VariantSyntaxE %deref81, 1
   %load.struct83 = load %_Z5ArrayI13VariantSyntaxE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI13VariantSyntaxE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z13VariantSyntax, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z13VariantSyntax, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI13VariantSyntaxE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI13VariantSyntaxE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z13VariantSyntax, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z13VariantSyntax, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI13VariantSyntaxE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI13VariantSyntaxE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z13VariantSyntax, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI13VariantSyntaxE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI13VariantSyntaxE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI13VariantSyntaxE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI13VariantSyntaxE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI13VariantSyntaxE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI13VariantSyntaxE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -65227,7 +65234,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI13VariantSyntaxE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI13VariantSyntaxE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI13VariantSyntaxE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -69906,24 +69914,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI10ItemSyntaxE %deref81, 1
   %load.struct83 = load %_Z5ArrayI10ItemSyntaxE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI10ItemSyntaxE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z10ItemSyntax, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI10ItemSyntaxE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI10ItemSyntaxE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z10ItemSyntax, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI10ItemSyntaxE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI10ItemSyntaxE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI10ItemSyntaxE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI10ItemSyntaxE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI10ItemSyntaxE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI10ItemSyntaxE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI10ItemSyntaxE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI10ItemSyntaxE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -70143,7 +70150,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI10ItemSyntaxE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI10ItemSyntaxE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI10ItemSyntaxE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -72145,24 +72153,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI10PartSyntaxE %deref81, 1
   %load.struct83 = load %_Z5ArrayI10PartSyntaxE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI10PartSyntaxE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z10PartSyntax, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI10PartSyntaxE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI10PartSyntaxE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI10PartSyntaxE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z10PartSyntax, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI10PartSyntaxE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI10PartSyntaxE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI10PartSyntaxE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z10PartSyntax, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI10PartSyntaxE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI10PartSyntaxE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI10PartSyntaxE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI10PartSyntaxE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI10PartSyntaxE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI10PartSyntaxE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI10PartSyntaxE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI10PartSyntaxE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -72382,7 +72389,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI10PartSyntaxE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI10PartSyntaxE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI10PartSyntaxE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -95145,24 +95153,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI15ExtensionSyntaxE %deref81, 1
   %load.struct83 = load %_Z5ArrayI15ExtensionSyntaxE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI15ExtensionSyntaxE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z15ExtensionSyntax, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z15ExtensionSyntax, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI15ExtensionSyntaxE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI15ExtensionSyntaxE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI15ExtensionSyntaxE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z15ExtensionSyntax, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z15ExtensionSyntax, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI15ExtensionSyntaxE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI15ExtensionSyntaxE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI15ExtensionSyntaxE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z15ExtensionSyntax, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI15ExtensionSyntaxE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI15ExtensionSyntaxE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI15ExtensionSyntaxE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI15ExtensionSyntaxE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI15ExtensionSyntaxE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI15ExtensionSyntaxE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI15ExtensionSyntaxE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI15ExtensionSyntaxE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -95382,7 +95389,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI15ExtensionSyntaxE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI15ExtensionSyntaxE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI15ExtensionSyntaxE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -96412,24 +96420,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %deref81, 1
   %load.struct83 = load %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI21GenericArgumentSyntaxE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z21GenericArgumentSyntax, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z21GenericArgumentSyntax, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI21GenericArgumentSyntaxE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI21GenericArgumentSyntaxE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z21GenericArgumentSyntax, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z21GenericArgumentSyntax, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI21GenericArgumentSyntaxE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI21GenericArgumentSyntaxE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z21GenericArgumentSyntax, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI21GenericArgumentSyntaxE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI21GenericArgumentSyntaxE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI21GenericArgumentSyntaxE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI21GenericArgumentSyntaxE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -96649,7 +96656,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI21GenericArgumentSyntaxE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI21GenericArgumentSyntaxE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI21GenericArgumentSyntaxE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -98590,24 +98598,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI16PlannedStatementE %deref81, 1
   %load.struct83 = load %_Z5ArrayI16PlannedStatementE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI16PlannedStatementE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z16PlannedStatement, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI16PlannedStatementE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI16PlannedStatementE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z16PlannedStatement, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI16PlannedStatementE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI16PlannedStatementE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI16PlannedStatementE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI16PlannedStatementE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI16PlannedStatementE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI16PlannedStatementE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI16PlannedStatementE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI16PlannedStatementE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -98827,7 +98834,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI16PlannedStatementE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI16PlannedStatementE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI16PlannedStatementE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -100353,24 +100361,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI14PlannedOperandE %deref81, 1
   %load.struct83 = load %_Z5ArrayI14PlannedOperandE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI14PlannedOperandE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z14PlannedOperand, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI14PlannedOperandE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI14PlannedOperandE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI14PlannedOperandE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z14PlannedOperand, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI14PlannedOperandE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI14PlannedOperandE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI14PlannedOperandE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI14PlannedOperandE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI14PlannedOperandE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI14PlannedOperandE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI14PlannedOperandE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI14PlannedOperandE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI14PlannedOperandE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI14PlannedOperandE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI14PlannedOperandE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -100590,7 +100597,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI14PlannedOperandE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI14PlannedOperandE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI14PlannedOperandE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -101675,24 +101683,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI18PlannedInitializerE %deref81, 1
   %load.struct83 = load %_Z5ArrayI18PlannedInitializerE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI18PlannedInitializerE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z18PlannedInitializer, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI18PlannedInitializerE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI18PlannedInitializerE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z18PlannedInitializer, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI18PlannedInitializerE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI18PlannedInitializerE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI18PlannedInitializerE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI18PlannedInitializerE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI18PlannedInitializerE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI18PlannedInitializerE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI18PlannedInitializerE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI18PlannedInitializerE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -101912,7 +101919,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI18PlannedInitializerE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI18PlannedInitializerE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI18PlannedInitializerE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -102942,24 +102950,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI15PlannedOperatorE %deref81, 1
   %load.struct83 = load %_Z5ArrayI15PlannedOperatorE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI15PlannedOperatorE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z15PlannedOperator, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI15PlannedOperatorE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI15PlannedOperatorE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z15PlannedOperator, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI15PlannedOperatorE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI15PlannedOperatorE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI15PlannedOperatorE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI15PlannedOperatorE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI15PlannedOperatorE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI15PlannedOperatorE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI15PlannedOperatorE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI15PlannedOperatorE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -103179,7 +103186,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI15PlannedOperatorE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI15PlannedOperatorE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI15PlannedOperatorE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -105706,24 +105714,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI16PlannedComponentE %deref81, 1
   %load.struct83 = load %_Z5ArrayI16PlannedComponentE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI16PlannedComponentE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z16PlannedComponent, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z16PlannedComponent, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI16PlannedComponentE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI16PlannedComponentE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI16PlannedComponentE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z16PlannedComponent, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z16PlannedComponent, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI16PlannedComponentE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI16PlannedComponentE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI16PlannedComponentE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z16PlannedComponent, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI16PlannedComponentE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI16PlannedComponentE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI16PlannedComponentE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI16PlannedComponentE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI16PlannedComponentE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI16PlannedComponentE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI16PlannedComponentE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI16PlannedComponentE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -105943,7 +105950,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI16PlannedComponentE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI16PlannedComponentE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI16PlannedComponentE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -106973,24 +106981,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI13PlannedBranchE %deref81, 1
   %load.struct83 = load %_Z5ArrayI13PlannedBranchE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI13PlannedBranchE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z13PlannedBranch, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z13PlannedBranch, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI13PlannedBranchE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI13PlannedBranchE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI13PlannedBranchE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z13PlannedBranch, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z13PlannedBranch, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI13PlannedBranchE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI13PlannedBranchE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI13PlannedBranchE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z13PlannedBranch, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI13PlannedBranchE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI13PlannedBranchE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI13PlannedBranchE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI13PlannedBranchE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI13PlannedBranchE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI13PlannedBranchE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI13PlannedBranchE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI13PlannedBranchE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -107210,7 +107217,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI13PlannedBranchE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI13PlannedBranchE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI13PlannedBranchE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -108240,24 +108248,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI11PlannedWhenE %deref81, 1
   %load.struct83 = load %_Z5ArrayI11PlannedWhenE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI11PlannedWhenE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z11PlannedWhen, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI11PlannedWhenE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI11PlannedWhenE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z11PlannedWhen, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI11PlannedWhenE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI11PlannedWhenE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI11PlannedWhenE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI11PlannedWhenE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI11PlannedWhenE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI11PlannedWhenE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI11PlannedWhenE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI11PlannedWhenE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -108477,7 +108484,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI11PlannedWhenE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI11PlannedWhenE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI11PlannedWhenE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 
@@ -109507,24 +109515,23 @@ if.then77:                                        ; preds = %if.end20
   %data82 = extractvalue %_Z6VectorI19PlannedMemberAccessE %deref81, 1
   %load.struct83 = load %_Z5ArrayI19PlannedMemberAccessE, ptr %0, align 8
   %length84 = extractvalue %_Z5ArrayI19PlannedMemberAccessE %load.struct83, 0
-  %mul85 = mul i64 %length84, ptrtoint (ptr getelementptr (%_Z19PlannedMemberAccess, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %data82, i64 %mul85
-  %field.inplace86 = getelementptr inbounds %_Z6VectorI19PlannedMemberAccessE, ptr %1, i32 0, i32 1
-  %deref.recv87 = load ptr, ptr %field.inplace86, align 8
-  %load.struct88 = load %_Z6VectorI19PlannedMemberAccessE, ptr %1, align 8
-  %length89 = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct88, 0
-  %mul90 = mul i64 %length89, ptrtoint (ptr getelementptr (%_Z19PlannedMemberAccess, ptr null, i32 1) to i64)
-  %call91 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv87, i64 %mul90)
+  %ptr.add = getelementptr inbounds %_Z19PlannedMemberAccess, ptr %data82, i64 %length84
+  %field.inplace85 = getelementptr inbounds %_Z6VectorI19PlannedMemberAccessE, ptr %1, i32 0, i32 1
+  %deref.recv86 = load ptr, ptr %field.inplace85, align 8
+  %load.struct87 = load %_Z6VectorI19PlannedMemberAccessE, ptr %1, align 8
+  %length88 = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct87, 0
+  %mul89 = mul i64 %length88, ptrtoint (ptr getelementptr (%_Z19PlannedMemberAccess, ptr null, i32 1) to i64)
+  %call90 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv86, i64 %mul89)
   br label %if.end78
 
 if.end78:                                         ; preds = %if.then77, %if.end20
-  %load.struct92 = load %_Z5ArrayI19PlannedMemberAccessE, ptr %0, align 8
-  %length93 = extractvalue %_Z5ArrayI19PlannedMemberAccessE %load.struct92, 0
-  %load.struct94 = load %_Z6VectorI19PlannedMemberAccessE, ptr %1, align 8
-  %length95 = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct94, 0
-  %add96 = add i64 %length93, %length95
-  %length97 = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 0
-  store i64 %add96, ptr %length97, align 8
+  %load.struct91 = load %_Z5ArrayI19PlannedMemberAccessE, ptr %0, align 8
+  %length92 = extractvalue %_Z5ArrayI19PlannedMemberAccessE %load.struct91, 0
+  %load.struct93 = load %_Z6VectorI19PlannedMemberAccessE, ptr %1, align 8
+  %length94 = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct93, 0
+  %add95 = add i64 %length92, %length94
+  %length96 = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 0
+  store i64 %add95, ptr %length96, align 8
   ret void
 }
 
@@ -109744,7 +109751,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds %_Z4ListI19PlannedMemberAccessE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeI19PlannedMemberAccessE, ptr %addr.gep, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds %_Z4NodeI19PlannedMemberAccessE, ptr %addr.hop, i32 0, i32 0
   ret ptr %addr.gep1
 }
 

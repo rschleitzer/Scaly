@@ -1,0 +1,48 @@
+; Regression: a string literal bound to a `pointer[const_char]` name reaches
+; the callee as a C string, not as a String value (2026-08-09).
+;
+; Before: only a literal sitting DIRECTLY in argument position was lowered to
+; the plain `.str` global — coerce_string_args_to_cstr wraps a String argument
+; whose matched parameter is pointer[const_char]-like, and plan_return# does
+; the same in return position. A BINDING with that annotation had no such
+; wrap, so the initializer stayed a String value, the slot was alloca'd as the
+; `{ ptr }` String struct, and handing the binding on passed the struct's
+; ADDRESS. The C callee then read the String header as characters. Found
+; 2026-08-06 while building dazzle's JIT: an LLVM pass pipeline built that way
+; reported `unknown pass name ' \xd6j'` and silently did not run — the pointer
+; was non-null and pointed at readable memory, so nothing crashed.
+;
+; The `set` counterpart had the same hole (`set s: "text"` on such a target).
+;
+; strlen is the oracle because it reads the bytes the callee would read: over
+; a String value it sees the header, never the characters.
+;
+; Expected: PASS
+
+function strlen(s: pointer[const_char]) returns size_t extern
+
+; A literal reaching a pointer[const_char] PARAMETER through a binding must be
+; the same string the direct call sees.
+function measure(p: pointer[const_char]) returns size_t
+    strlen(p)
+
+let ok_direct strlen("hello") = 5
+
+let t: pointer[const_char] "abcdefgh"
+let ok_let strlen(t) = 8
+
+var s: pointer[const_char] "xyz"
+let ok_var_init strlen(s) = 3
+
+set s: "0123456789"
+let ok_var_set strlen(s) = 10
+
+let u: pointer[const_char] "wxyz"
+let ok_param measure(u) = 4
+
+if ok_direct
+    if ok_let
+        if ok_var_init
+            if ok_var_set
+                if ok_param
+                    print "PASS"

@@ -1,0 +1,108 @@
+; Regression: `&x.field` answers the field's ADDRESS even when the field is
+; itself a pointer, a member-access chain FOLLOWS an intermediate pointer hop,
+; and a `for` over a container of pointers binds the ELEMENT (2026-08-09).
+;
+; Three faces of one convention, and they had to be fixed together.
+;
+;   * `&x.ptrfield` fell through the member-access GEP path and returned the
+;     emitted operand — the field's VALUE. Measured while building dazzle's
+;     JIT: `&probe.sp` (an i64 field) gave the correct offset while
+;     `&probe.sbase` and `&probe.closure` beside it both answered the loaded
+;     null. The carried-over stage-0 rule reads as a statement about
+;     indirection; what it actually did was compensate for the for-loop.
+;
+;   * `for e in <container of pointers>` bound its variable to next()'s result
+;     — the SLOT's address — instead of loading the element. Silent, since a
+;     slot address is a perfectly good pointer. It only worked over a List
+;     because `&node.element` was itself a no-op there; over a Vector or an
+;     Array it yielded slot addresses, `Vector[pointer[X]](list)` SIGSEGVed
+;     dereferencing them in its copy loop, and `List[pointer[X]].get_head()`
+;     returned a value that dereferenced to garbage.
+;
+;   * a chain hop THROUGH a pointer field kept adding offsets inside the outer
+;     struct instead of following the pointer, so `&o.ip.b` addressed whatever
+;     sat b bytes past `ip`. Pre-existing and independent of the other two; it
+;     became load-bearing the moment `&head.element` started GEPing.
+;
+; Expected: PASS
+
+define Box (v: i64)
+
+define Rec (x: i64  p: pointer[i64]  y: i64)
+
+define Inner (a: i64  b: i64)
+
+define Outer (ip: pointer[Inner]  z: i64)
+
+let host Page.allocate_page()
+
+; --- the address of a pointer field is an ADDRESS ---------------------------
+var r Rec^host()
+let pr &r
+let a_x &pr.x as size_t
+let a_p &pr.p as size_t
+let a_y &pr.y as size_t
+let ok_offsets (a_p - a_x = 8) and (a_y - a_x = 16)
+
+; ... and writing through it reaches the field.
+let slot &pr.p
+set *slot: &pr.x
+let ok_store (*(*slot)) = 0
+
+; --- a chain hop follows the pointer ----------------------------------------
+let inn Inner^host(7, 9)
+var o Outer^host(inn, 5)
+let bp &o.ip.b
+let ok_chain (*bp) = 9
+
+let b1 Box^host(11)
+let b2 Box^host(22)
+
+; --- a for-loop over pointers binds the element ------------------------------
+var arr Array[pointer[Box]]^host()
+arr.add(b1)
+arr.add(b2)
+var arr_sum: i64 0
+for e in arr
+    set arr_sum: arr_sum + e.v
+let ok_array = arr_sum = 33
+
+let vec Vector[pointer[Box]]^host(arr)
+var vec_sum: i64 0
+for e in vec
+    set vec_sum: vec_sum + e.v
+let ok_vector = vec_sum = 33
+
+var lst List[pointer[Box]]^host()
+lst.add(b1)
+lst.add(b2)
+var lst_sum: i64 0
+for e in lst
+    set lst_sum: lst_sum + e.v
+let ok_list = lst_sum = 33
+
+; --- Vector-from-List copies the elements, not what they point at ------------
+let frozen Vector[pointer[Box]]^host(lst)
+var frozen_sum: i64 0
+for e in frozen
+    set frozen_sum: frozen_sum + e.v
+let ok_frozen = frozen_sum = 33
+
+; --- get_head hands back a ref TO the element --------------------------------
+var ok_head false
+let h lst.get_head()
+if h <> null
+{
+    let hb *h
+    set ok_head: hb.v = 22
+}
+
+if ok_offsets
+    if ok_store
+        if ok_chain
+            if ok_array
+                if ok_vector
+                    if ok_list
+                        if ok_frozen
+                            if ok_head
+                                print "PASS"

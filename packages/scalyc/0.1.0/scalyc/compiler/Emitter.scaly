@@ -10141,21 +10141,24 @@ define Emitter
                 {
                     let ma_ref arg_op.member_access.unwrap()
                     let ma_chain (*ma_ref)
-                    ; Stage-0 (Emitter.cpp:3513): if the addressed field is
-                    ; itself a pointer, the emitted operand value already IS
-                    ; that pointer — fall through to the fallback below
-                    ; (emit_intrinsic_unary_op("&") returns it directly).
-                    ; GEPing here yields &field (pointer[pointer[T]], one
-                    ; indirection too many). PageList's page: pointer[Page]
-                    ; field made PageListIterator.next return &node.page, and
-                    ; deallocate_extensions's for-loop then deref'd garbage
-                    ; (seed-only crash; fixpoint-invisible).
-                    let af_field_ty map_type arg_op.result_type
-                    var af_is_ptr: bool false
-                    if af_field_ty.handle <> null
-                        set af_is_ptr: LLVMGetTypeKind(af_field_ty) = LLVMTypeKind.Pointer()
-                    if af_is_ptr = false
-                    {
+                    ; 2026-08-09: a POINTER-typed field is GEPed like every
+                    ; other one. It used to fall through to the fallback below,
+                    ; which returns the emitted operand — the field's VALUE —
+                    ; so `&probe.sbase` answered the loaded null while
+                    ; `&probe.sp` beside it answered the correct offset. The
+                    ; carried-over stage-0 rule (Emitter.cpp:3513) reads as a
+                    ; statement about indirection, but what it really did was
+                    ; compensate for the for-loop: PageListIterator.next
+                    ; returns `&node.page`, declared pointer[pointer[Page]],
+                    ; and the loop bound its variable to that result WITHOUT
+                    ; loading, so a lying `&` and a missing load cancelled.
+                    ; The load is now in plan_for# (element_is_scalar covers a
+                    ; pointer element), and the two halves must land together.
+                    ; What the compensation cost everywhere it did NOT apply,
+                    ; all silent: `for e in <Vector/Array of pointers>` yielded
+                    ; slot addresses, `Vector[pointer[X]](list)` SIGSEGVed in
+                    ; its `*item` copy, and `List[pointer[X]].get_head()`
+                    ; returned a value that dereferenced to garbage.
                     if ma_chain.length > 0
                     {
                         let base_ptr emit_expression arg_op.expr
@@ -10180,6 +10183,29 @@ define Emitter
                                             {
                                                 set gep_ptr: LLVMBuildStructGEP2(builder, gsty, gep_ptr, gacc.field_index as u32, "addr.gep")
                                                 set gep_advanced: true
+                                                ; A hop THROUGH a pointer field must follow it: the
+                                                ; next hop's struct starts where the field POINTS,
+                                                ; not where it sits. Without the load the walk kept
+                                                ; adding offsets inside the outer struct, so
+                                                ; `&o.ip.b` addressed the field b bytes past `ip` —
+                                                ; `&head.element` in List.get_head answered a
+                                                ; pointer into the List, and the value read back
+                                                ; was whatever field happened to sit at that
+                                                ; offset. Only for an INTERMEDIATE hop: the last
+                                                ; field's address is the answer, never its target.
+                                                if gi + 1 < ma_chain.length
+                                                {
+                                                    var gacc_follows: bool false
+                                                    if gacc.result_type.name = "pointer"
+                                                        set gacc_follows: true
+                                                    if gacc.result_type.name = "ref"
+                                                        set gacc_follows: true
+                                                    if gacc_follows
+                                                    {
+                                                        let gptr_ty LLVMPointerTypeInContext(context, 0)
+                                                        set gep_ptr: LLVMBuildLoad2(builder, gptr_ty, gep_ptr, "addr.hop")
+                                                    }
+                                                }
                                             }
                                             if LLVMGetTypeKind(gsty) <> LLVMTypeKind.Struct()
                                                 set gep_stop: true
@@ -10191,7 +10217,6 @@ define Emitter
                                     return gep_ptr
                             }
                         }
-                    }
                     }
                 }
             }
