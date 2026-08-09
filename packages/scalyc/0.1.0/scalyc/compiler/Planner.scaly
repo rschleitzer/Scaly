@@ -19923,6 +19923,15 @@ define Planner
                         if Planner.type_is_float_like(trt)
                             if this.operand_is_float_constant(planned_source_collapsed)
                                 set planned_source_collapsed: this.retype_float_operand(planned_source_collapsed, trt)
+                        ; The same three conversions once more, this time
+                        ; THROUGH a block or an arm — the body action is often
+                        ; a Block and then the literal that reaches `ret` is
+                        ; its last statement, not this operand. A no-op after
+                        ; any of the three above has fired (the leaf is no
+                        ; longer a literal). See convert_tail_literal#.
+                        let tail_conv this.convert_tail_literal(planned_source_collapsed, trt)
+                        if tail_conv <> null
+                            set planned_source_collapsed: (*tail_conv)
                     }
 
             ; Float literal assigned into a float-typed target (`set x: 2.5`
@@ -23630,6 +23639,244 @@ define Planner
             null
         }
 
+        ; ================================================================
+        ; convert_tail_literal: the three RETURN-POSITION literal
+        ; conversions, applied through a block or an arm (2026-08-09).
+        ;
+        ; plan_action# reads its tail flag ONCE, for the function's body
+        ; ACTION. When that action is a Block — or an if/choose/match — the
+        ; literal that actually reaches `ret` sits nested in the tail
+        ; STATEMENT, and all three conversions were skipped alike: the
+        ; pointer[const_char] wrap, the char fold and the float retype.
+        ; `{ if i = 0  return "Latin"  "Greek" }` emitted `ret ptr null`,
+        ; and the same body shape returned 0 from a char- and from a
+        ; float-returning function. Silent in every case, which is why the
+        ; old rule was written down as "a function must not RETURN a
+        ; pointer[const_char] literal" — the shape it named (an explicit
+        ; `return`) was in fact the one that always worked.
+        ;
+        ; Same traversal as promote_tail_operand#/promote_tail_statement#,
+        ; minus the variant payload (not a literal position) and minus the
+        ; call/tuple arms (nothing to convert inside an argument — a call
+        ; argument gets its own conversion at the call site). A `Return`
+        ; statement inside an arm is plan_return#'s job; recursing into it
+        ; would convert twice. Returns null when nothing applies, so it is
+        ; a no-op after a direct conversion has already fired.
+        ; ================================================================
+        function convert_tail_literal(this: Planner, op: PlannedOperand, rt: PlannedType) returns ref[PlannedOperand]?
+        {
+            var rt_is_charlike: bool false
+            if rt.name = "char"
+                set rt_is_charlike: true
+            if rt.name = "u8"
+                set rt_is_charlike: true
+            if rt_is_charlike
+                if this.operand_is_string_constant(op)
+                {
+                    let folded this.fold_string_operand_to_char(op, rt)
+                    return PlannedOperand^this(folded.loc, folded.expr, folded.member_access, folded.result_type)
+                }
+            if Planner.type_is_cstr_pointer(rt)
+                if this.operand_is_string_constant(op)
+                {
+                    let ccast PlannedAs(op.loc, rt, &^this op)
+                    return PlannedOperand^this(op.loc, PlannedExpression.As ccast, null, rt)
+                }
+            if Planner.type_is_float_like(rt)
+                if this.operand_is_float_constant(op)
+                    return PlannedOperand^this(op.loc, op.expr, null, rt)
+
+            choose op.expr
+                when ch: PlannedChoose
+                {
+                    var changed false
+                    var new_cases: ref[Vector[PlannedWhen]]? ch.cases
+                    if ch.cases <> null
+                    {
+                        let cases_in (*ch.cases)
+                        var out_cases Vector[PlannedWhen](cases_in.length)
+                        var i: size_t 0
+                        while i < cases_in.length
+                        {
+                            let cp cases_in.get i
+                            if cp <> null
+                            {
+                                let cw (*cp)
+                                var new_cons: ref[PlannedStatement]? cw.consequent
+                                if cw.consequent <> null
+                                {
+                                    let pc this.convert_tail_literal_statement((*cw.consequent), rt)
+                                    if pc <> null
+                                    {
+                                        set new_cons: pc
+                                        set changed: true
+                                    }
+                                }
+                                out_cases.put(i, PlannedWhen(cw.loc, cw.name, cw.variant_type, cw.variant_index, new_cons))
+                            }
+                            set i: i + 1
+                        }
+                        var ch_holder Vector[PlannedWhen](out_cases)
+                        set new_cases: &ch_holder
+                    }
+                    var new_alt: ref[PlannedStatement]? ch.alternative
+                    if ch.alternative <> null
+                    {
+                        let pa this.convert_tail_literal_statement((*ch.alternative), rt)
+                        if pa <> null
+                        {
+                            set new_alt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nch PlannedChoose(ch.loc, ch.condition, new_cases, new_alt)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Choose nch, op.member_access, op.result_type)
+                }
+                when iff: PlannedIf
+                {
+                    var changed false
+                    var new_cons: ref[PlannedStatement]? iff.consequent
+                    if iff.consequent <> null
+                    {
+                        let pc this.convert_tail_literal_statement((*iff.consequent), rt)
+                        if pc <> null
+                        {
+                            set new_cons: pc
+                            set changed: true
+                        }
+                    }
+                    var new_alt: ref[PlannedStatement]? iff.alternative
+                    if iff.alternative <> null
+                    {
+                        let pa this.convert_tail_literal_statement((*iff.alternative), rt)
+                        if pa <> null
+                        {
+                            set new_alt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nif PlannedIf(iff.loc, iff.condition, iff.prop, new_cons, new_alt)
+                    return PlannedOperand^this(op.loc, PlannedExpression.If nif, op.member_access, op.result_type)
+                }
+                when mt: PlannedMatch
+                {
+                    var changed false
+                    var new_branches: ref[Vector[PlannedBranch]]? mt.branches
+                    if mt.branches <> null
+                    {
+                        let brs_in (*mt.branches)
+                        var out_brs Vector[PlannedBranch](brs_in.length)
+                        var i: size_t 0
+                        while i < brs_in.length
+                        {
+                            let bp brs_in.get i
+                            if bp <> null
+                            {
+                                let br (*bp)
+                                var new_cons: ref[PlannedStatement]? br.consequent
+                                if br.consequent <> null
+                                {
+                                    let pc this.convert_tail_literal_statement((*br.consequent), rt)
+                                    if pc <> null
+                                    {
+                                        set new_cons: pc
+                                        set changed: true
+                                    }
+                                }
+                                out_brs.put(i, PlannedBranch(br.loc, br.cases, new_cons))
+                            }
+                            set i: i + 1
+                        }
+                        var mb_holder Vector[PlannedBranch](out_brs)
+                        set new_branches: &mb_holder
+                    }
+                    var new_malt: ref[PlannedStatement]? mt.alternative
+                    if mt.alternative <> null
+                    {
+                        let pa this.convert_tail_literal_statement((*mt.alternative), rt)
+                        if pa <> null
+                        {
+                            set new_malt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nmt PlannedMatch(mt.loc, mt.condition, new_branches, new_malt)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Match nmt, op.member_access, op.result_type)
+                }
+                when blk: PlannedBlock
+                {
+                    if blk.statements = null
+                        return null
+                    let stmts (*blk.statements)
+                    if stmts.length = 0
+                        return null
+                    let last_ptr stmts.get(stmts.length - 1)
+                    if last_ptr = null
+                        return null
+                    let pl this.convert_tail_literal_statement((*last_ptr), rt)
+                    if pl = null
+                        return null
+                    var out_stmts Vector[PlannedStatement](stmts.length)
+                    var i: size_t 0
+                    while i < stmts.length
+                    {
+                        let sp stmts.get i
+                        if sp <> null
+                        {
+                            if i = stmts.length - 1
+                                out_stmts.put(i, (*pl))
+                            else
+                                out_stmts.put(i, (*sp))
+                        }
+                        set i: i + 1
+                    }
+                    var sh Vector[PlannedStatement](out_stmts)
+                    let nblk PlannedBlock(blk.loc, &sh)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type)
+                }
+                else
+                    return null
+            null
+        }
+
+        ; The statement half of convert_tail_literal#. Only an Action with no
+        ; store target carries an implicit value; a Return is plan_return#'s.
+        function convert_tail_literal_statement(this: Planner, stmt: PlannedStatement, rt: PlannedType) returns ref[PlannedStatement]?
+        {
+            choose stmt
+                when a: PlannedAction
+                {
+                    if a.target <> null
+                        return null
+                    if a.source = null
+                        return null
+                    let src (*a.source)
+                    if src.length = 0
+                        return null
+                    let s0_ptr src.get 0
+                    if s0_ptr = null
+                        return null
+                    let converted this.convert_tail_literal((*s0_ptr), rt)
+                    if converted = null
+                        return null
+                    var srch Vector[PlannedOperand](1)
+                    srch.put(0, (*converted))
+                    let na PlannedAction(a.loc, &srch, a.target, a.result_type)
+                    var h Vector[PlannedStatement](1)
+                    h.put(0, PlannedStatement.Action na)
+                    return h.get(0)
+                }
+                else
+                    return null
+            null
+        }
+
         ; Hole-1 (2026-07-02f): diagnostic-only mirror of plan_return#'s
         ; reference-escape check for IMPLICIT tail returns. Recurses over
         ; return-position subexpressions exactly like promote_tail_operand#
@@ -23899,6 +24146,12 @@ define Planner
                 if Planner.type_is_float_like(rrt)
                     if this.operand_is_float_constant(planned_collapsed)
                         set planned_collapsed: this.retype_float_operand(planned_collapsed, rrt)
+                ; ... and through a block or an arm, for the shapes where an
+                ; explicit `return` still hands back a nested literal
+                ; (`return if c  "a"  else  "b"`). See convert_tail_literal#.
+                let ret_conv this.convert_tail_literal(planned_collapsed, rrt)
+                if ret_conv <> null
+                    set planned_collapsed: (*ret_conv)
             }
 
             ; A returned value/ref whose lifetime is the Local ($) page would

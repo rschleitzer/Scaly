@@ -1,0 +1,115 @@
+; Regression: a literal in the TAIL position of a block or an arm is converted
+; to the function's return type (2026-08-09).
+;
+; plan_action# reads its tail flag ONCE, for the function's body ACTION. When
+; that action is a Block — or an if/choose/match — the literal that actually
+; reaches `ret` sits nested in the tail STATEMENT, and all three return-position
+; conversions were skipped alike: the pointer[const_char] wrap, the char fold
+; and the float retype. `{ if i = 0  return "Latin"  "Greek" }` emitted
+; `ret ptr null`, and the same body shape returned 0 from a char- and from a
+; float-returning function. Silent in every case.
+;
+; That silence is why the trap was written down as "a function must not RETURN
+; a pointer[const_char] literal": the shape it named — an explicit `return` —
+; is in fact the one that always worked, as is a single-expression body. Only
+; the nested tail was broken, and it was never string-specific.
+;
+; Expected: PASS
+
+function strlen(s: pointer[const_char]) returns size_t extern
+
+define Shape union (circle: int  square: int)
+
+; --- the shape that was broken: a block tail after an if --------------------
+function cstr_block(i: int) returns pointer[const_char]
+{
+    if i = 0
+        return "Latin"
+    "Greek!"
+}
+
+function char_block(i: int) returns char
+{
+    if i = 0
+        return "a"
+    "b"
+}
+
+function float_block(i: int) returns float
+{
+    if i = 0
+        return 1.5
+    2.5
+}
+
+; --- a nested block ---------------------------------------------------------
+function cstr_nested(i: int) returns pointer[const_char]
+{
+    if i = 0
+        return "x"
+    {
+        let unused i + 1
+        "nested!!"
+    }
+}
+
+; --- an if/else in tail position: both arms convert --------------------------
+function char_arms(i: int) returns char
+{
+    let base i
+    if base = 0
+        "y"
+    else
+        "z"
+}
+
+; --- choose and match arms: the other two traversal arms ---------------------
+function char_choose(s: Shape) returns char
+{
+    choose s
+        when c: circle
+            "c"
+        when q: square
+            "s"
+}
+
+function char_match(i: int) returns char
+{
+    match i
+        case 1
+            "A"
+        else
+            "F"
+}
+
+; --- the shapes that always worked, kept as controls -------------------------
+function cstr_explicit(i: int) returns pointer[const_char]
+{
+    if i = 0
+        return "Latin"
+    return "Greek!"
+}
+
+function cstr_single() returns pointer[const_char]
+    "Tail"
+
+let ok_cstr_block (strlen(cstr_block(0)) = 5) and (strlen(cstr_block(1)) = 6)
+let ok_char_block (char_block(0) = "a") and (char_block(1) = "b")
+let ok_float_block (float_block(0) < 1.6) and (float_block(1) > 2.4)
+let ok_nested (strlen(cstr_nested(0)) = 1) and (strlen(cstr_nested(1)) = 8)
+let ok_arms (char_arms(0) = "y") and (char_arms(1) = "z")
+let ok_choose (char_choose(Shape.circle(1)) = "c") and (char_choose(Shape.square(2)) = "s")
+let ok_match (char_match(1) = "A") and (char_match(9) = "F")
+let ok_explicit (strlen(cstr_explicit(0)) = 5) and (strlen(cstr_explicit(1)) = 6)
+let ok_single strlen(cstr_single()) = 4
+
+if ok_cstr_block
+    if ok_char_block
+        if ok_float_block
+            if ok_nested
+                if ok_arms
+                    if ok_choose
+                        if ok_match
+                            if ok_explicit
+                                if ok_single
+                                    print "PASS"
