@@ -199,3 +199,21 @@ jobs:
           # claim is "it compiles", not "we can list it".
           llvm-nm --defined-only posixcompat.o | sed 's/^/  /' \
             || echo "  (llvm-nm unavailable — compile still succeeded)"
+
+      # Rung 2b — brocken 1. Assembling proves the ABI-mechanical half: the
+      # register names exist, the SEH pseudo-ops are well-formed, the segment
+      # overrides assemble, and every offset is in range. It proves NOTHING
+      # about whether the switch is correct — a wrong TIB offset or a
+      # misaligned XMM save assembles perfectly and crashes at run time. That
+      # is the item CI cannot debug (see the roadmap), so it is worth being
+      # explicit about what this rung does and does not buy.
+      - name: Assemble the Win64 fiber context switch (brocken 1)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc \
+                -c packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_win.S \
+                -o fcontext_win.o
+          echo "--- symbols provided ---"
+          llvm-nm --defined-only fcontext_win.o | sed 's/^/  /' \
+            || echo "  (llvm-nm unavailable — assemble still succeeded)"

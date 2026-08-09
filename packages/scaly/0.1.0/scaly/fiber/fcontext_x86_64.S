@@ -13,7 +13,13 @@
 //   0x30  rbp  (fresh context: address of the never-return trap)
 //   0x38  pc   (resume address; fresh context: the trampoline)
 //
-// scaly_make_context(stack_top, fn) -> ctx
+// scaly_make_context(stack_top, fn, stack_base) -> ctx
+//   stack_base (rdx) is IGNORED here and read only by the Win64 file, which
+//   needs the stack's low address for the TIB bounds it has to swap on every
+//   switch. One declaration serves every target because one seed does, so the
+//   argument is passed unconditionally; on SysV that costs a register nothing
+//   reads. See fcontext_x86_64_win.S.
+//
 //   Carves a fresh frame below stack_top. The first jump lands on the
 //   trampoline, which pushes the trap address as fn's return address (also
 //   restoring the ABI's entry alignment, rsp % 16 == 8) and enters fn with

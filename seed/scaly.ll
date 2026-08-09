@@ -23387,7 +23387,7 @@ entry:
   ret void
 }
 
-declare ptr @scaly_make_context(ptr, ptr)
+declare ptr @scaly_make_context(ptr, ptr, ptr)
 
 declare ptr @scaly_jump_context(ptr)
 
@@ -23785,12 +23785,13 @@ if.end6:                                          ; preds = %if.end15, %if.end
   %as.ptrtoint17 = ptrtoint ptr %base16 to i64
   %add = add i64 %as.ptrtoint17, %2
   %as.inttoptr = inttoptr i64 %add to ptr
-  %call18 = call ptr @scaly_make_context(ptr %as.inttoptr, ptr %1)
+  %base18 = load ptr, ptr %base, align 8
+  %call19 = call ptr @scaly_make_context(ptr %as.inttoptr, ptr %1, ptr %base18)
   %ctx = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 0
-  store ptr %call18, ptr %ctx, align 8
-  %base19 = load ptr, ptr %base, align 8
+  store ptr %call19, ptr %ctx, align 8
+  %base20 = load ptr, ptr %base, align 8
   %stack_base = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 1
-  store ptr %base19, ptr %stack_base, align 8
+  store ptr %base20, ptr %stack_base, align 8
   %stack_size = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 2
   store i64 %2, ptr %stack_size, align 8
   %saved_head = getelementptr inbounds %_Z5Fiber, ptr %call, i32 0, i32 3

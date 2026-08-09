@@ -297,7 +297,16 @@
 use scaly.memory.Page
 use scaly.memory.root_pages.StackBucketHeader
 
-function scaly_make_context(stack_top: pointer[void], fn: pointer[void]) returns pointer[void] extern
+; The third argument is the stack's LOW address, and it exists for Windows
+; alone (stage 7, brocken 1): Win64 keeps the running stack's bounds in TIB
+; fields that the OS itself reads — stack-overflow dispatch, guard-page growth,
+; RtlUnwind's frame validation — so a fiber on its own stack has to swap them
+; with the rest of the context, and they cannot be derived from the stack TOP.
+; Boost's make_fcontext takes a size for the same reason. The SysV and AAPCS64
+; files ignore it, which costs them a register they never read; passing it
+; unconditionally is what keeps ONE declaration serving every target, and one
+; seed with it.
+function scaly_make_context(stack_top: pointer[void], fn: pointer[void], stack_base: pointer[void]) returns pointer[void] extern
 procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern
 
 ; Evented-I/O backend shim (fiber/eio.c — kqueue/epoll behind one C API).
@@ -698,7 +707,7 @@ define Fiber
                 exit 104
         }
         let top ((base as size_t) + size) as pointer[void]
-        set f.ctx: scaly_make_context(top, fn)
+        set f.ctx: scaly_make_context(top, fn, base)
         set f.stack_base: base
         set f.stack_size: size
         set f.saved_head: null    ; fresh region: the fiber's first local page

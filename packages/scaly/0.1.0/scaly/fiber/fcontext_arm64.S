@@ -14,7 +14,13 @@
 //   0xa0       pc  (resume address; for a fresh context: the entry function)
 //   0xa8       (padding)
 //
-// scaly_make_context(stack_top, fn) -> ctx
+// scaly_make_context(stack_top, fn, stack_base) -> ctx
+//   stack_base (x2) is IGNORED here and read only by the Win64 file, which
+//   needs the stack's low address for the TIB bounds it has to swap on every
+//   switch. One declaration serves every target because one seed does, so the
+//   argument is passed unconditionally; here it costs a register nothing
+//   reads. See fcontext_x86_64_win.S.
+//
 //   Carves a fresh frame below stack_top. The first jump into it enters fn
 //   with x0 = the jumper's context. fn must never return (lr is a trap).
 //
