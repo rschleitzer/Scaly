@@ -25,6 +25,19 @@
  * OS-specific (darwin leads with a sin_len byte, linux with a 16-bit
  * sin_family), so Scaly code cannot fill one portably; and accept needs
  * the same errno mapping as read/write (EAGAIN/EWOULDBLOCK -> -2).
+ *
+ * NO BARE `long` IN AN EXPORTED SIGNATURE (LLP64 rule, 2026-08-09).
+ * The same argument that puts this file in C at all applies to its widths:
+ * ONE seed serves every target, so a Scaly extern declaration cannot be
+ * target-conditional — it says `i64` and `size_t` once, for all of them.
+ * C's `long` is 64-bit on LP64 (mac/linux) and 32-bit on LLP64 (Win64),
+ * so a `long` here would silently disagree with its own declaration on
+ * exactly one target, and the RESULT direction is the dangerous half:
+ * a 32-bit return read as i64 leaves the upper half unspecified, which
+ * flips the sign and turns every `if r < 0` into a coin flip (the class
+ * tests/abi/run.sh exists for). Use `long long` for results and `size_t`
+ * for counts — both are 64-bit on every target we ship. tests/abi/run.sh
+ * gates this; ctime.c was written this way from the start.
  */
 
 #include <arpa/inet.h>
@@ -282,9 +295,9 @@ int scaly_eio_set_nonblocking(int fd)
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-long scaly_eio_read(int fd, void* buf, unsigned long count)
+long long scaly_eio_read(int fd, void* buf, size_t count)
 {
-    long r;
+    long long r;
     do
         r = read(fd, buf, count);
     while (r < 0 && errno == EINTR);
@@ -301,9 +314,9 @@ int scaly_eio_errno(void)
     return errno;
 }
 
-long scaly_eio_write(int fd, const void* buf, unsigned long count)
+long long scaly_eio_write(int fd, const void* buf, size_t count)
 {
-    long r;
+    long long r;
     do
         r = write(fd, buf, count);
     while (r < 0 && errno == EINTR);
@@ -445,9 +458,9 @@ int scaly_eio_tcp_connect_host(const char* host, int port)
  * linux; darwin lacks the flag, so sockets carry SO_NOSIGPIPE from
  * scaly_eio_sock_init and plain send() suffices. Same EINTR retry and
  * EAGAIN/EWOULDBLOCK -> -2 mapping as scaly_eio_write. */
-long scaly_eio_tcp_write(int fd, const void* buf, unsigned long count)
+long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
 {
-    long r;
+    long long r;
 #ifdef __APPLE__
     int flags = 0;
 #else
@@ -546,11 +559,11 @@ int scaly_eio_ncpu(void)
  * calibration source (stage-4 milestone 4.2). Shim rule (a): the
  * CLOCK_MONOTONIC clockid VALUE is OS-specific (glibc 1, darwin 6),
  * so a Scaly extern cannot pass it portably. */
-long scaly_eio_now_ns(void)
+long long scaly_eio_now_ns(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000000000L + ts.tv_nsec;
+    return ts.tv_sec * 1000000000LL + ts.tv_nsec;
 }
 
 /* Filesystem block size of a file — OpenSP's
@@ -560,22 +573,22 @@ long scaly_eio_now_ns(void)
  * grove) needs the exact per-file value. Shim rule (a): struct stat's
  * layout is OS-specific. */
 #include <sys/stat.h>
-long scaly_eio_blksize_path(const char *path)
+long long scaly_eio_blksize_path(const char *path)
 {
     struct stat sb;
     if (stat(path, &sb) < 0)
         return 8192;
     if (!S_ISREG(sb.st_mode))
         return 8192;
-    return (long)sb.st_blksize;
+    return (long long)sb.st_blksize;
 }
 
-long scaly_eio_blksize_fd(int fd)
+long long scaly_eio_blksize_fd(int fd)
 {
     struct stat sb;
     if (fstat(fd, &sb) < 0)
         return 8192;
     if (!S_ISREG(sb.st_mode))
         return 8192;
-    return (long)sb.st_blksize;
+    return (long long)sb.st_blksize;
 }

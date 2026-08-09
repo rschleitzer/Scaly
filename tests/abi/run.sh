@@ -32,10 +32,23 @@
 #      64-bit result from a function returning 32. Comparison is on the LLVM
 #      shape, so a handle struct and `pointer[void]` count as equal.
 #
+#   4. LLP64 — no bare `long` in an exported signature of our own C shims.
+#      Checks 1-3 can only judge what is declared on THIS host; this one asks
+#      whether a signature changes width on a target we do not compile here.
+#      ONE seed serves every target, so a Scaly extern cannot be
+#      target-conditional — it says `i64`/`size_t` once, for all of them. C's
+#      `long` is 64-bit on LP64 (mac/linux) and 32-bit on LLP64 (Win64), so a
+#      `long` in a shim contradicts its own declaration on exactly one target,
+#      silently, and the RESULT direction flips the sign exactly as in check 1.
+#      Six of these were fixed in eio.c on 2026-08-09 (ctime.c was written
+#      portable from the start); zero is the only acceptable number. Fix on the
+#      C SIDE — `long long` for results, `size_t` for counts — which leaves the
+#      Scaly declaration alone and needs no seed refresh.
+#
 # Usage: tests/abi/run.sh
 #
 # Checks 1 and 2 need C headers; without them they SKIP and say so rather than
-# passing quietly. Check 3 needs nothing and always runs.
+# passing quietly. Checks 3 and 4 need nothing and always run.
 cd "$(dirname "$0")/../.." || exit 1
 
 # The parameter findings this tree is known to carry. Raise or lower ONLY
@@ -84,6 +97,16 @@ else
     python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly') | head -40
     fail=1
   fi
+fi
+
+echo
+echo "abi: 4) LLP64 — bare \`long\` in exportierten Shim-Signaturen"
+out=$(python3 tools/llp64-audit.py --quiet) || fail=1
+echo "$out" | sed 's/^/    /'
+if ! echo "$out" | grep -q "^LLP64-BEFUNDE: 0$"; then
+  echo "abi: FAIL — \`long\` ist auf Win64 32 Bit; auf der C-Seite beheben" \
+       "(\`long long\` für Ergebnisse, \`size_t\` für Zählungen)"
+  fail=1
 fi
 
 echo
