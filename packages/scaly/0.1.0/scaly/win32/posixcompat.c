@@ -28,7 +28,8 @@
 
 #include <winsock2.h>   /* before windows.h — it defines the socket API */
 #include <windows.h>
-#include <io.h>
+#include <io.h>         /* _pipe */
+#include <fcntl.h>      /* _O_BINARY — NOT in io.h, despite _pipe living there */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
