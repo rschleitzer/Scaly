@@ -1,22 +1,31 @@
 name: seed
 
-# Mint + fixed-point-verify the seed on x86_64-linux-gnu.
+# Mint + fixed-point-verify the seed on x86_64-linux-gnu, then link + run a
+# cross-emitted object on Windows.
 #
-# ONE runner on purpose (2026-08-04). The committed seed .ll is target-neutral
-# (no triple/datalayout, LP64 sizes baked in), so one seed serves all four
-# "fabulous four" LP64 targets — but the toolchain is host-only for LINKING +
-# RUNNING, so a target is only natively verified by a runner of that target.
-# This repo is private, where GitHub bills macOS minutes at 10x the Linux rate
-# and every push ran three legs; that bill, not a technical limit, is why the
-# matrix is gone. x86_64-linux is the cheapest leg and the one whose codegen
-# most needs a native check (the dev box is arm64-apple-darwin, so Linux/x86_64
-# is what nobody exercises locally).
+# ONE BUILDING runner on purpose (2026-08-04). The committed seed .ll is
+# target-neutral (no triple; the datalayout is stamped per invocation, LP64
+# sizes baked in), so one seed serves all four "fabulous four" LP64 targets —
+# but the toolchain is host-only for LINKING + RUNNING, so a target is only
+# natively verified by a runner of that target. This repo is private, where
+# GitHub bills macOS minutes at 10x the Linux rate and every push ran three
+# legs; that bill, not a technical limit, is why the matrix is gone.
+# x86_64-linux is the cheapest leg and the one whose codegen most needs a
+# native check (the dev box is arm64-apple-darwin, so Linux/x86_64 is what
+# nobody exercises locally).
 #
-# What the other three targets still get: OBJECT emission for all four is
-# checked by tests/target/run.sh (--target cross-emit) in this leg, and
-# arm64-apple-darwin is covered by the full local bar on the dev box before
-# every push. To verify another target natively, run `tools/seed.sh` on a host
-# of that target, or add a leg back here.
+# ★ "ONE runner" is no longer literally true (2026-08-09): a second, tiny
+# `windows` job was added for stage 7. It does not BUILD anything — it links
+# one object this leg emitted and runs it — and Windows bills at 2x, not
+# macOS's 10x, so the cost argument above is intact rather than overridden.
+# The details are in the job's own comment.
+#
+# What the other three LP64 targets still get: OBJECT emission for all of them
+# is checked by tests/target/run.sh (--target cross-emit) in this leg — which
+# since 2026-08-09 also covers the two Windows targets — and arm64-apple-darwin
+# is covered by the full local bar on the dev box before every push. To verify
+# another target natively, run `tools/seed.sh` on a host of that target, or add
+# a leg back here.
 #
 # tools/seed.sh auto-bootstraps stage-2 from the committed seed (no C++, no
 # cmake, no openjade — LLVM 18 + clang only), emits the seed, links it clean,
@@ -64,8 +73,29 @@ jobs:
       - name: Build + verify seed (bootstrap, link, hello, AOT, fixed point)
         run: tools/seed.sh
 
-      - name: Cross-emit sanity (--target all four object formats)
+      - name: Cross-emit sanity (--target all six object formats)
         run: tests/target/run.sh dist/seed/scalyc_seed
+
+      # Stage 7 (Windows port), first rung. The suite above proves we EMIT a
+      # COFF object for Win64; this hands one to a real Windows runner to prove
+      # it LINKS and RUNS. hello.scaly is the one AOT test that pulls nothing
+      # from libscaly.a — its only undefined symbol is `puts` (MSVC CRT) — so
+      # this rung needs NONE of the four substrate brocken (fcontext-Win64,
+      # IOCP, Win32 externs, COFF toolchain). Emitting here rather than on the
+      # Windows runner is deliberate: only `llc` must be LLVM-18, and that is
+      # already installed in this leg, so the Windows job needs no LLVM at all.
+      - name: Cross-emit hello.o for x86_64-pc-windows-msvc
+        run: |
+          dist/seed/scalyc_seed -c --target x86_64-pc-windows-msvc \
+            -o hello.o tests/aot/hello.scaly
+          ls -l hello.o
+
+      - name: Upload the Windows object
+        uses: actions/upload-artifact@v7
+        with:
+          name: hello-x86_64-pc-windows-msvc
+          path: hello.o
+          if-no-files-found: error
 
       # OpenSP port REALPASS gate (dazzle epic, Part I). AOT-compiles the opensp
       # package into an archive and links + runs its unit harness so
@@ -96,3 +126,50 @@ jobs:
           name: scalyc-x86_64-linux-gnu
           path: dist/seed/scalyc_seed
           if-no-files-found: error
+
+  # Stage 7, rung 1: link + run the cross-emitted object on real Windows.
+  #
+  # A SECOND leg is back, and the cost note above is why it is this one and not
+  # a macOS leg: for private repos GitHub bills Windows at 2x the Linux rate and
+  # macOS at 10x. This job downloads one object, links it and runs it — a couple
+  # of minutes, so ~4 billed minutes, against the ~30 a macOS bootstrap would
+  # cost. It installs NOTHING: the object is already emitted, and CLAUDE.md's
+  # rule is that only `llc` must be LLVM-18 while any clang links.
+  #
+  # What this rung deliberately does NOT prove: nothing of the runtime substrate
+  # (no fibers, no evented I/O, no Win32 externs, no libscaly.a) and nothing
+  # about the seed reproducing on Windows. Those are the later rungs; keeping
+  # them separate is the same sequencing rule the roadmap applies to the port
+  # itself — never debug two unknowns at once.
+  windows:
+    name: x86_64-pc-windows-msvc (link + run)
+    needs: seed
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download the Windows object
+        uses: actions/download-artifact@v7
+        with:
+          name: hello-x86_64-pc-windows-msvc
+
+      - name: Toolchain
+        shell: bash
+        run: clang --version
+
+      - name: Link against the MSVC CRT and run
+        shell: bash
+        run: |
+          set -e
+          # clang's MSVC toolchain detection locates Visual Studio and the
+          # Windows SDK itself, which is why this is a clang driver call rather
+          # than a bare lld-link: the CRT search paths come for free.
+          clang --target=x86_64-pc-windows-msvc hello.o -o hello.exe
+          # `puts` writes CRLF on Windows; strip the CR or the compare fails on
+          # an invisible byte. The expected line is read from the test source so
+          # the two cannot drift apart.
+          ./hello.exe | tr -d '\r' > got.txt
+          sed -n 's/^; Expected: //p' tests/aot/hello.scaly > want.txt
+          echo "--- want ---"; cat want.txt
+          echo "--- got  ---"; cat got.txt
+          diff -u want.txt got.txt
