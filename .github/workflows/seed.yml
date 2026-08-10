@@ -500,23 +500,57 @@ jobs:
           # on both sides. Bytes rather than text because every candidate cause
           # here — a stray CR, a checkout that rewrote the golden, a path
           # separator — is invisible in a plain diff.
+          # The probe reads the entry's own manifest, so it reproduces what the
+          # harness ran rather than an approximation of it — including RAST=1,
+          # which is the whole point below.
           probe() {
-            local e=$1
-            echo "=== probe $e ==="
-            ( cd "tests/sgml/corpus/$e" \
-              && "$root/tests/win32/onsgmls-lf.sh" doc.sgm ) > /tmp/p.esis 2> /tmp/p.err || true
-            echo "--- got esis (od) ---";      od -c /tmp/p.esis | head -6
-            echo "--- want esis (od) ---";     od -c "tests/sgml/corpus/$e/expected.esis" | head -6
-            echo "--- got stderr, normalised ---"
-            sed 's/^[^:]*://' /tmp/p.err | od -c | head -6
-            echo "--- want stderr (od) ---"
-            [ -f "tests/sgml/corpus/$e/expected.err" ] \
-              && od -c "tests/sgml/corpus/$e/expected.err" | head -6
+            local e=$1 d="tests/sgml/corpus/$1"
+            local DOC="" SP_ENV="" EXTRA_ARGS="" RAST=0
+            . "$d/manifest"
+            echo "=== probe $e (RAST=$RAST) ==="
+            local rf="$root/probe.rast"; rm -f "$rf"
+            local ra=""; [ "$RAST" = "1" ] && ra="-t $rf"
+            local prc=0
+            ( cd "$d" && env $SP_ENV "$root/tests/win32/onsgmls-lf.sh" \
+                $ra $EXTRA_ARGS "$DOC" ) > /tmp/p.esis 2> /tmp/p.err || prc=$?
+            echo "  exit: $prc  (want $(cat "$d/expected.exit" 2>/dev/null))"
+            echo "--- got esis (od) ---";   od -c /tmp/p.esis | head -4
+            echo "--- want esis (od) ---";  od -c "$d/expected.esis" | head -4
+            echo "--- got stderr ---";      head -c 400 /tmp/p.err
+            if [ "$RAST" = "1" ]; then
+              echo "--- rast file created? ---"; ls -l "$rf" 2>&1 | head -2
+            fi
           }
           rc=0
-          tests/sgml/run.sh "$PWD/tests/win32/onsgmls-lf.sh" || rc=$?
+          tests/sgml/run.sh "$PWD/tests/win32/onsgmls-lf.sh" > corpus.log 2>&1 || rc=$?
+          cat corpus.log
           if [ "$rc" != 0 ]; then
-            probe synth-basic
-            probe synth-after-docelement
+            # Whichever entries actually failed — not two hardcoded guesses.
+            for e in $(sed -n 's/^failed: *//p' corpus.log | tr ' ' '\n' \
+                       | grep . | head -3); do
+              probe "$e"
+            done
+            # ★A NAMED HYPOTHESIS, answered in the same round rather than in the
+            # next one: the harness hands `-t` a path from `mktemp`, which under
+            # Git Bash is a POSIX path (/tmp/…). Our onsgmls.exe is a NATIVE
+            # program — it never sees the msys mount table, so `/tmp/x` reaches
+            # `creat` as a path relative to the current DRIVE. The two runs
+            # below differ ONLY in how that one path is spelled; if the Windows
+            # spelling works and the POSIX one does not, that is the answer and
+            # no further round is needed to find it.
+            echo "=== -t path spelling experiment ==="
+            p="$(mktemp -d)/x.rast"
+            ( cd tests/sgml/corpus/synth-rast-basic \
+              && "$root/onsgmls.exe" -t "$p" doc.sgm ) > /dev/null 2>&1
+            echo "  posix  '$p' -> exit $?  exists: $([ -f "$p" ] && echo yes || echo no)"
+            if command -v cygpath > /dev/null 2>&1; then
+              w="$(cygpath -w "$p")"
+              rm -f "$p"
+              ( cd tests/sgml/corpus/synth-rast-basic \
+                && "$root/onsgmls.exe" -t "$w" doc.sgm ) > /dev/null 2>&1
+              echo "  windows '$w' -> exit $?  exists: $([ -f "$p" ] && echo yes || echo no)"
+            else
+              echo "  (no cygpath on this runner)"
+            fi
           fi
           exit $rc
