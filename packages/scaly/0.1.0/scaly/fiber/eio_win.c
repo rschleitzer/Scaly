@@ -616,24 +616,45 @@ static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
             DWORD written = 0;
             WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg,
                       (DWORD)(sizeof msg - 1), &written, NULL);
-            /* ★`_exit`, and the two attempts before it are the argument.
-             * TerminateProcess is ASYNCHRONOUS — it starts the termination and
-             * returns — so the faulting thread stayed runnable; the message
-             * came out and the process still died of an access violation (139
-             * through the shell) rather than with 108. Following it with
-             * WaitForSingleObject on the current process, the documented way
-             * to not continue, changed nothing, which says the thread was
-             * never parked: a guard-page violation inside the range the TIB
-             * declares as this thread's stack is what the OS resumes from by
-             * design, so the recursion carried on past the cleared page into
-             * unmapped memory and faulted for real, all in less time than an
-             * asynchronous termination needs.
+            /* ★Reporting the overflow was never the hard part — the message
+             * above has come out on the first try every time. ENDING the
+             * process with 108 is, and three attempts have failed the same
+             * way: the exit code stayed the access violation's (139 through
+             * the shell). `TerminateProcess` is ASYNCHRONOUS, so the faulting
+             * thread stays runnable; adding `WaitForSingleObject` on the
+             * current process changed nothing; and `_exit` — the very call
+             * the POSIX handler makes — did not end it either, which on
+             * Windows is not the raw syscall it is there but a CRT path down
+             * to ExitProcess, loader lock and DLL detach, on a stack that has
+             * just run out.
              *
-             * The cure is to not RETURN from the handler at all. `_exit` is
-             * exactly what the POSIX side calls, it is declared noreturn, and
-             * it skips the atexit and DLL-detach machinery that plain `exit`
-             * would run on a stack that has just overflowed. */
-            _exit(108);
+             * What is being fought is the OS's own design: a guard-page
+             * violation inside the range the TIB declares as this thread's
+             * stack is a RESUMABLE event — it is how Windows grows its own
+             * stacks — and `scaly_make_context` sets those TIB fields
+             * faithfully, so our fiber stack qualifies. Resumption re-enters
+             * the recursion, which then runs past the cleared page into
+             * unmapped memory and faults for real.
+             *
+             * So: ask the KERNEL to end the process (no user-mode stack
+             * needed), then park this thread where the faulting instruction
+             * can never be reached again. `Sleep` is a bare syscall with no
+             * pseudo-handle question attached, unlike the wait that failed.
+             *
+             * The second message is a PROBE, not decoration: reaching it is
+             * expected (TerminateProcess returns), but if the exit code is
+             * still not 108 next time, its presence or absence says whether
+             * the terminator was even called — the previous three rounds each
+             * cost a full CI cycle to a guess that a printed line would have
+             * settled. The stderr expectation is a substring match, so it
+             * cannot break the test. */
+            TerminateProcess(GetCurrentProcess(), 108);
+            {
+                static const char after[] = "fiber guard: termination requested\n";
+                WriteFile(GetStdHandle(STD_ERROR_HANDLE), after,
+                          (DWORD)(sizeof after - 1), &written, NULL);
+            }
+            Sleep(INFINITE);
         }
     }
     return EXCEPTION_CONTINUE_SEARCH;
