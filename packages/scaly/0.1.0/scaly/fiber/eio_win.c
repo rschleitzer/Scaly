@@ -641,13 +641,29 @@ static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
              * can never be reached again. `Sleep` is a bare syscall with no
              * pseudo-handle question attached, unlike the wait that failed.
              *
-             * The second message is a PROBE, not decoration: reaching it is
-             * expected (TerminateProcess returns), but if the exit code is
-             * still not 108 next time, its presence or absence says whether
-             * the terminator was even called — the previous three rounds each
-             * cost a full CI cycle to a guess that a printed line would have
-             * settled. The stderr expectation is a substring match, so it
-             * cannot break the test. */
+             * ★★★THE PROBE BELOW ANSWERED IT, AND THE ANSWER IS THAT NOTHING
+             * AFTER THE FIRST WriteFile RUNS AT ALL. Its line never appears —
+             * so TerminateProcess was never called, `_exit` was never called,
+             * and the wait was never reached: all three "fixes" were attempts
+             * to repair code that does not execute. **The handler itself dies
+             * on the stack it is diagnosing.** PAGE_GUARD clears exactly ONE
+             * page, the exception dispatch has already spent much of it on the
+             * CONTEXT record, and WriteFile reaches deeper than what is left —
+             * far enough to emit the bytes (which is why the message always
+             * arrives) and then to touch unmapped memory below the allocation
+             * base, which is the access violation that ends the process.
+             *
+             * So the open item is not WHICH terminator to call. It is that the
+             * handler needs room to run in, the way the POSIX side gets it
+             * from sigaltstack — and a VEH cannot switch stacks. The candidates
+             * (an emergency band reserved below the guard page, a wider guard
+             * region, SetThreadStackGuarantee, handing the work to a thread
+             * that has its own stack) all need measuring on a real machine
+             * rather than another blind round; see tests/win32/WINDOWS-BOX.md.
+             *
+             * The probe stays. Its ABSENCE is the measurement, and the next
+             * person needs it to see that for themselves. The stderr
+             * expectation is a substring match, so it cannot break the test. */
             TerminateProcess(GetCurrentProcess(), 108);
             {
                 static const char after[] = "fiber guard: termination requested\n";
