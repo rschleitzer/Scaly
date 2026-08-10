@@ -105,7 +105,16 @@ jobs:
           # tree that drives IOCP from the SCHEDULER at scale.
           $S -c --target x86_64-pc-windows-msvc \
              -o http10k.o tests/fiber/bench/http10k.scaly
-          ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o http10k.o
+          # rung 7: the PRODUCT. Everything above is substrate; this is the
+          # onsgmls drop-in itself — the opensp package as a library object
+          # (--no-prelude, plain -c for the same GlobalDCE reason as the
+          # runtime) plus the CLI that links against it.
+          $S -c --target x86_64-pc-windows-msvc --no-prelude \
+             -o opensp_win.o packages/opensp/0.1.0/opensp.scaly
+          $S -c --target x86_64-pc-windows-msvc \
+             -o onsgmls_win.o packages/opensp/0.1.0/onsgmls.scaly
+          ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o http10k.o \
+                opensp_win.o onsgmls_win.o
           # rung 5: breadth. One object per test that carries its own ground
           # truth; the two that need a reference binary are skipped and counted.
           tests/win32/corpus.sh emit "$S" winobj
@@ -120,6 +129,8 @@ jobs:
             page_chain_depth.o
             pingpong.o
             http10k.o
+            opensp_win.o
+            onsgmls_win.o
             winobj/*.o
           if-no-files-found: error
 
@@ -440,3 +451,45 @@ jobs:
           echo "--- want ---"; cat want.txt
           echo "--- got  ---"; cat got.txt
           diff -u want.txt got.txt
+
+      # Rung 7 — THE PRODUCT, and the half of the stage's exit criterion that
+      # stood at zero: every rung above tests substrate (fibers, poller, page
+      # allocator), and none of them parses a line of SGML. This links the
+      # onsgmls drop-in and runs the SAME corpus harness, against the SAME
+      # goldens, that the POSIX legs use — no second copy of the oracle, and
+      # the harness's own discovery gate (tests/sgml/expected-models) still
+      # applies, so a tier that silently stops being found fails here too.
+      # Only the public tier exists on a runner: corpus-private/ is gitignored.
+      #
+      # It is also the hardest workload the substrate has carried — the parser
+      # is the tree's biggest allocator, so this exercises regions, bump arenas
+      # and the page allocator far past what 90 small AOT programs reach.
+      #
+      # ★The binary is entered through tests/win32/onsgmls-lf.sh, and both
+      # things that wrapper does are load-bearing (its header has the full
+      # reasoning): Windows' CRT hands us a TEXT-mode stdout, so every `\n`
+      # leaves as `\r\n` while the goldens are LF — the same normalisation
+      # rungs 3, 4, 6 and the corpus driver already do — and argv[0] is forced
+      # to a bare `onsgmls`, because the drop-in prefixes each diagnostic with
+      # argv[0] and the harness strips that prefix with `sed 's/^[^:]*://'`
+      # under the assumption that "program paths carry no colon" — true on
+      # POSIX, false for `C:\…`.
+      # ★Proven neutral before it was pushed: the same wrapper over the NATIVE
+      # binary on macOS reports 483 of 483, identical to the unwrapped run, so
+      # where there are no CRs it changes nothing.
+      - name: Run the SGML corpus through the drop-in (rung 7)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc \
+                onsgmls_win.o opensp_win.o libscaly.lib -lws2_32 -o onsgmls.exe
+          ls -l onsgmls.exe
+          # One parse before the corpus: if the drop-in cannot start at all,
+          # 380 identical failures say that far less clearly than one does.
+          # `|| true` because the interesting output is what it PRINTS here;
+          # the corpus below is what judges it.
+          root=$PWD
+          ( cd tests/sgml/corpus/synth-after-docelement \
+            && "$root/onsgmls.exe" doc.sgm ) || true
+          export ONSGMLS="$root/onsgmls.exe"
+          tests/sgml/run.sh "$PWD/tests/win32/onsgmls-lf.sh"

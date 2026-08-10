@@ -94,6 +94,31 @@ $("$NM" -u "$POUT/bench__$b.o" | sed 's/^ *U //')"
 bench emit: cross-emit failure fiber/bench/$b"
   fi
 done
+
+# ★And the PRODUCT (2026-08-10, rung 7). The corpus and the bench directory are
+# both TEST programs; the onsgmls drop-in is the thing the stage exists for, and
+# it owes symbols neither of them does — `creat` is the one that showed up. The
+# opensp package object is a LIBRARY (--no-prelude), so what it defines is
+# subtracted the same way the runtime's definitions are: at the link the two
+# objects resolve each other, and only what NEITHER provides is owed.
+ndropin=0
+if "$SC" -c --target "$TRIPLE" --no-prelude -o "$POUT/opensp.o" \
+        packages/opensp/0.1.0/opensp.scaly > /dev/null 2>&1 \
+   && "$SC" -c --target "$TRIPLE" -o "$POUT/onsgmls.o" \
+        packages/opensp/0.1.0/onsgmls.scaly > /dev/null 2>&1; then
+  ndropin=1
+  RT_DEFINED="$RT_DEFINED
+$("$NM" --defined-only --extern-only "$POUT/opensp.o" \
+   | sed 's/^[0-9a-f]* [A-Za-z] //')"
+  RT_DEFINED=$(printf '%s\n' "$RT_DEFINED" | sort -u)
+  ALL="$ALL
+$("$NM" -u "$POUT/opensp.o" | sed 's/^ *U //')
+$("$NM" -u "$POUT/onsgmls.o" | sed 's/^ *U //')"
+else
+  nemitfail=$((nemitfail+1))
+  EMITLOG="$EMITLOG
+dropin emit: cross-emit failure opensp/onsgmls"
+fi
 rm -rf "$POUT"
 ALL=$(printf '%s\n' "$ALL" | grep . | sort -u)
 ALL=$(printf '%s\n' "$ALL" | while read -r s
@@ -101,7 +126,19 @@ ALL=$(printf '%s\n' "$ALL" | while read -r s
 
 # Present in the MSVC CRT under this exact name, or under an underscore alias
 # the CRT also exports — no work beyond linking.
-CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strlen|strdup|write|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index)$'
+# ★Three of these are POSIX SPELLINGS that MSVC ships only in `oldnames.lib`,
+# which maps them to the underscore forms (`creat` -> `_creat`, and likewise
+# write/access/mkdir/rmdir/unlink). It reaches the link through the
+# `/defaultlib:oldnames.lib` directive the CRT headers put in our C shim
+# objects — the Scaly-emitted objects carry no such directive — and rung 5's
+# 90 green programs are the standing proof that it does.
+# ★`creat` carries a caveat the name hides: `_creat` opens in TEXT mode unless
+# `_fmode` says otherwise, so a file the drop-in writes through it gets CRLF
+# where POSIX gives LF. It is the `-o`/error-file and RAST path; rung 7's
+# wrapper normalises the RAST file for exactly this reason.
+# ★`__chkstk` is not a library call anyone wrote: the compiler emits it to probe
+# a stack frame larger than a page, and the CRT defines it.
+CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strerror|strlen|strdup|write|creat|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index|__chkstk)$'
 HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
 
 # What our own Windows sources DEFINE. Read by grep rather than by compiling
@@ -157,8 +194,9 @@ COVERED=$(printf '%s\n' "$OWED" | while read -r s
 n() { printf '%s\n' "$1" | grep -c . ; }
 
 echo "win-undef: $(n "$ALL") undefined symbols for $TRIPLE"
-echo "  (runtime root + $nprog corpus programs + $nbench bench programs;"
-echo "   symbols the runtime defines are resolved by the archive)"
+echo "  (runtime root + $nprog corpus programs + $nbench bench programs"
+echo "   + $ndropin onsgmls drop-in; symbols the runtime or the opensp package"
+echo "   defines are resolved at the link)"
 if [ "$nemitfail" -gt 0 ]; then
   echo "  WARNING — $nemitfail corpus program(s) did not cross-emit and were NOT scanned"
   printf '%s\n' "$EMITLOG" | sed 's/^/    /'
