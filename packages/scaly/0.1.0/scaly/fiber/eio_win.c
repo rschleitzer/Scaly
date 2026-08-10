@@ -351,6 +351,19 @@ int scaly_eio_wake_close(int q, int w)
     return 0;
 }
 
+/* ★Close the poller QUEUE. This is the half the wake close had and the queue
+ * did not: `Io.close_poller` used to call POSIX `close` on it directly, which
+ * is right for a kqueue/epoll fd and wrong here twice over — an IOCP HANDLE is
+ * not a CRT descriptor, so the CRT either rejects the number through its
+ * invalid-parameter handler (which TERMINATES the process, and that is what
+ * ate the last line of a cross-thread test: the reclaim runs at thread exit,
+ * after the work is done and before main's final print) or, if the number
+ * happens to match a live descriptor, closes an UNRELATED file. */
+int scaly_eio_close(int q)
+{
+    return CloseHandle((HANDLE)(intptr_t)q) ? 0 : -1;
+}
+
 /* ---- byte transfer ----------------------------------------------------
  *
  * ★★★ TWO NAMESPACES, and this is the trap that cost rung 4 a red run.
@@ -450,8 +463,17 @@ static int sc_listen_at(unsigned int ip_host_order, int port)
     a.sin_family = AF_INET;
     a.sin_port = htons((unsigned short)port);
     a.sin_addr.s_addr = htonl(ip_host_order);
+    /* ★NON-BLOCKING, like the POSIX file's listen_at — and it is the whole
+     * accept path, not a detail. Io.accept calls scaly_eio_accept FIRST and
+     * only parks when it answers -2 ("nothing pending"); a blocking listener
+     * never answers that, so the plain accept() below sits in the kernel and
+     * takes the ENTIRE OS THREAD with it. In a cooperative scheduler that is
+     * fatal: the client task that would create the connection can no longer
+     * be scheduled, so the wait is for something that can never arrive. The
+     * symptom is a test that prints nothing and hits the harness timeout. */
     if (bind(s, (struct sockaddr*)&a, sizeof a) == SOCKET_ERROR
-        || listen(s, SOMAXCONN) == SOCKET_ERROR) {
+        || listen(s, SOMAXCONN) == SOCKET_ERROR
+        || scaly_eio_set_nonblocking((int)(intptr_t)s) < 0) {
         closesocket(s);
         return -1;
     }
@@ -542,18 +564,60 @@ int scaly_eio_accept(int fd)
  * stack has to be arranged. EXCEPTION_CONTINUE_SEARCH on anything the
  * classifier does not recognise reproduces the POSIX file's "reset to the
  * default action and return" exactly: the process dies as it would have.
+ *
+ * ★THE CLASSIFIER DOES NOT EXIT — the handler does. `fiber_guard_hit` is a
+ * pure predicate (it reads two globals and answers 1/0, so that it can be
+ * async-signal-safe on the POSIX side); the reporting half belongs to the
+ * shim, where `scaly_guard_handler` writes the message and `_exit(108)`s.
+ * The first version of this function returned CONTINUE_SEARCH in BOTH arms
+ * with a comment claiming the classifier exits, so the answer was computed
+ * and thrown away and a fiber overflow died anonymously. When a port splits
+ * a decision from its consequence, both halves have to cross.
+ *
+ * WriteFile + TerminateProcess rather than fprintf + exit, for the same
+ * reason the POSIX file uses write(2) + _exit(2): this runs on the stack that
+ * just overflowed, so anything that buffers, locks or runs atexit handlers is
+ * a second fault waiting to happen.
  */
+#ifndef STATUS_GUARD_PAGE_VIOLATION
+#define STATUS_GUARD_PAGE_VIOLATION ((DWORD)0x80000001L)
+#endif
+
+/* The guard region itself, and the mechanism is the whole point. POSIX makes
+ * it PROT_NONE; doing the same here (PAGE_NOACCESS) would be a faithful
+ * translation of the SPELLING and a broken translation of the CONTRACT: when
+ * the overflow hits, the kernel builds the exception record on the very stack
+ * that just ran out, the push lands in the inaccessible page, and the process
+ * dies with STATUS_STACK_OVERFLOW before ntdll ever calls a handler — no
+ * message, no exit 108, nothing to read.
+ *
+ * PAGE_GUARD is what Windows uses for its own thread stacks: the first touch
+ * raises STATUS_GUARD_PAGE_VIOLATION and CLEARS the attribute, so the page is
+ * ordinary memory by the time the dispatcher needs room. One fault, then
+ * space to report it in. */
+int scaly_stack_guard(void* base, size_t len)
+{
+    DWORD old = 0;
+    return VirtualProtect(base, len, PAGE_READWRITE | PAGE_GUARD, &old) ? 0 : -1;
+}
+
 static int (*scaly_guard_classify)(void*);
 
 static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
 {
     DWORD code = ep->ExceptionRecord->ExceptionCode;
-    if ((code == EXCEPTION_ACCESS_VIOLATION || code == EXCEPTION_STACK_OVERFLOW)
+    if ((code == STATUS_GUARD_PAGE_VIOLATION
+         || code == EXCEPTION_ACCESS_VIOLATION || code == EXCEPTION_STACK_OVERFLOW)
         && scaly_guard_classify != NULL
         && ep->ExceptionRecord->NumberParameters >= 2) {
         void* addr = (void*)ep->ExceptionRecord->ExceptionInformation[1];
-        if (scaly_guard_classify(addr))
-            return EXCEPTION_CONTINUE_SEARCH;   /* classifier exits the process */
+        if (scaly_guard_classify(addr)) {
+            static const char msg[] = "fiber stack overflow (guard page hit)\n";
+            DWORD written = 0;
+            WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg,
+                      (DWORD)(sizeof msg - 1), &written, NULL);
+            TerminateProcess(GetCurrentProcess(), 108);
+        }
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }

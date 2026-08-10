@@ -148,7 +148,7 @@
 ; Stage-2 warm-up (milestone 2.0): stack pooling, sized spawns, and
 ; overflow diagnostics. Fiber.dispose returns a DEFAULT-SIZED stack to a
 ; process-global pool instead of munmapping it; Fiber.create reuses a
-; pooled stack (guard page already in place — no mmap, no mprotect), so
+; pooled stack (guard page already in place — no mmap, no guard call), so
 ; sequential fiber churn stops paying two syscalls plus VMA bookkeeping
 ; per fiber. Custom-sized stacks (Scheduler.spawn_sized for tasks known
 ; to run flat or deep) bypass the pool and munmap as before. The pool
@@ -287,7 +287,7 @@
 ;   TaskGroup.dispose(g)
 ;   TaskPool.shutdown(pool)           ; drain queued work, join workers
 ;
-; Exit codes: 103 mmap, 104 mprotect, 105 munmap, 106 scheduler
+; Exit codes: 103 mmap, 104 stack guard, 105 munmap, 106 scheduler
 ; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
 ; a join), 107 poller failure (create/arm/wait or
 ; set_nonblocking), 108 fiber stack overflow (guard page hit), 109
@@ -338,6 +338,13 @@ procedure scaly_eio_wake(q: i32, w: i32) returns i32 extern
 ; event is deregistered; it dies with the queue anyway).
 procedure scaly_eio_wake_close(q: i32, w: i32) returns i32 extern
 
+; Close the poller QUEUE — same argument as the wake close one line up, and
+; it was missing for the queue itself: a kqueue/epoll queue is a real fd,
+; an IOCP completion port is a HANDLE, and POSIX close(2) on the latter is
+; not a leak but a fatal call (the CRT's invalid-parameter handler ends the
+; process). Shim-owned by rule (a).
+procedure scaly_eio_close(q: i32) returns i32 extern
+
 ; Online CPU count (milestone 3.3, shim rule (a): the _SC_NPROCESSORS_ONLN
 ; constant's value is OS-specific). The ncpu-based worker default for
 ; TaskPool.default_pool. Never less than 1.
@@ -384,6 +391,12 @@ procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) return
 ; reads globals only) decides whether the fault address is a fiber guard
 ; hit: 1 = report + exit 108, 0 = default action (plain crash).
 procedure scaly_guard_install(classify: pointer[void]) returns i32 extern
+
+; Establish the guard region at the low end of a fiber stack (shim rule (a),
+; and the sharper form of it: the call exports the QUESTION because the two
+; platforms answer it with different MECHANISMS — PROT_NONE on POSIX,
+; PAGE_GUARD on Windows). Returns 0 on success.
+procedure scaly_stack_guard(base: pointer[void], len: size_t) returns i32 extern
 
 ; Thread primitive (milestone 2.1). Direct externs per the containment
 ; rule: fixed prototypes, POSIX-uniform, no errno. pthread_t is opaque
@@ -682,7 +695,7 @@ define Fiber
 
     ; Create a suspended fiber. The record lives on the given page; the
     ; entry function fn (take it with &my_fiber) runs on a pooled or
-    ; freshly mmap'd stack with a PROT_NONE guard page at the low end,
+    ; freshly mmap'd stack with a guard page at the low end,
     ; and allocates into its own region. The first create installs the
     ; guard-page overflow handler (best-effort diagnostic — a failed
     ; install just keeps the plain-crash behavior).
@@ -702,7 +715,13 @@ define Fiber
             set base: mmap(null, size, PROT_READ_WRITE, MAP_ANON_PRIVATE, (0 - 1) as i32, 0 as i64)
             if (base as i64) = ((0 - 1) as i64)
                 exit 103
-            let grc mprotect(base, guard_size, PROT_NONE)
+            ; Through the shim, not mprotect directly: "make this the stack's
+            ; overflow guard" is the QUESTION, and the two platforms answer it
+            ; with different mechanisms — PROT_NONE on POSIX, PAGE_GUARD on
+            ; Windows, where an inaccessible page would leave the kernel no
+            ; room to build the exception record and the overflow would die
+            ; before the handler could name it.
+            let grc scaly_stack_guard(base, guard_size)
             if grc <> 0
                 exit 104
         }
@@ -1811,7 +1830,11 @@ define Io
             scaly_eio_wake_close((q - 1) as i32, (w - 1) as i32)
             set io_wake_fd: 0
         }
-        close(q - 1)
+        ; Through the shim, for the reason the comment above gives about the
+        ; WAKE handle — which holds for the queue itself just as much and was
+        ; overlooked here: on Windows the queue is an IOCP HANDLE and POSIX
+        ; close(2) on it kills the process.
+        scaly_eio_close((q - 1) as i32)
         set io_poller_fd: 0
     }
 }

@@ -287,6 +287,16 @@ int scaly_eio_wake_close(int q, int w)
 
 #endif
 
+/* Close the poller QUEUE itself. Both POSIX backends make it a real file
+ * descriptor (a kqueue fd, an epoll fd), so this is one line here — it exists
+ * for the same reason scaly_eio_wake_close does: what the queue IS differs per
+ * OS, and on Windows it is an IOCP HANDLE that the CRT's close() knows nothing
+ * about. The caller (Io.close_poller) must not have to know which. */
+int scaly_eio_close(int q)
+{
+    return close(q);
+}
+
 int scaly_eio_set_nonblocking(int fd)
 {
     int flags = fcntl(fd, F_GETFL, 0);
@@ -497,6 +507,19 @@ static void scaly_guard_handler(int sig, siginfo_t* si, void* ctx)
         _exit(108);
     }
     signal(sig, SIG_DFL);
+}
+
+/* Establish the guard region at the LOW end of a fiber stack. It is a shim
+ * call rather than a plain mprotect at the call site because it exports the
+ * QUESTION ("make this the stack's overflow guard") and the two platforms
+ * answer it with different MECHANISMS, not just different spellings — see the
+ * Windows file, where PAGE_NOACCESS would leave the kernel nowhere to build
+ * the exception record and the overflow would die before any handler ran. */
+#include <sys/mman.h>
+
+int scaly_stack_guard(void* base, size_t len)
+{
+    return mprotect(base, len, PROT_NONE);
 }
 
 int scaly_guard_install(int (*classify)(void*))
