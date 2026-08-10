@@ -27,6 +27,7 @@ define LLVMDIBuilderRef(handle: pointer[void])
 define LLVMMetadataRef(handle: pointer[void])
 define LLVMAttributeRef(handle: pointer[void])
 define LLVMUseRef(handle: pointer[void])
+define LLVMComdatRef(handle: pointer[void])
 
 ; ============================================================================
 ; LLVM Enums
@@ -259,6 +260,13 @@ function LLVMCountParams(func: LLVMValueRef) returns u32 extern
 ; Set linkage
 procedure LLVMSetLinkage(global: LLVMValueRef, linkage: i32) extern
 function LLVMGetLinkage(global: LLVMValueRef) returns i32 extern
+
+; Comdats (stage 7). A `linkonce_odr` function needs one on COFF and MUST NOT
+; have one on Mach-O — see Emitter.set_linkonce_odr for the whole argument.
+; A freshly inserted comdat has selection kind `Any`, which is what ODR needs,
+; so no LLVMSetComdatSelectionKind call belongs here.
+function LLVMGetOrInsertComdat(mod: LLVMModuleRef, name: pointer[const_char]) returns LLVMComdatRef extern
+procedure LLVMSetComdat(global: LLVMValueRef, comdat: LLVMComdatRef) extern
 
 ; Set the alignment (in bytes) of a load, store, or alloca instruction.
 ; Used for the s149 Result-wrapper { i8, [N x i8] } whose struct alignment

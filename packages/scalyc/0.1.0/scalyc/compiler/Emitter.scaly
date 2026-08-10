@@ -156,6 +156,11 @@ define Emitter
     ; -S/-c/-o path (byte-identical emission preserved).
     external_context: LLVMContextRef
     has_external_context: bool
+    ; Stage 7: does the emission triple use COFF? Decided once in
+    ; apply_target_layout, read by set_linkonce_odr. It is a property of the
+    ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
+    ; must set it and a native Mac build must not.
+    target_is_coff: bool
     llvm_module: LLVMModuleRef
     builder: LLVMBuilderRef
     ; Debug info (DWARF) — populated only when config.emit_debug_info.
@@ -373,6 +378,7 @@ define Emitter
         set context: LLVMContextRef(null)
         set external_context: LLVMContextRef(null)
         set has_external_context: false
+        set target_is_coff: false
         set llvm_module: LLVMModuleRef(null)
         set builder: LLVMBuilderRef(null)
         set di_builder: LLVMDIBuilderRef(null)
@@ -502,6 +508,12 @@ define Emitter
                 return
         }
 
+        ; Stage 7: the object format decides whether a linkonce_odr function
+        ; needs a comdat. This is the only place the emission triple is
+        ; resolved before any function is emitted, so it is where the question
+        ; gets answered — once, not per function.
+        set target_is_coff: triple_is_coff(triple)
+
         var target LLVMTargetRef(null)
         let lookup_err LLVMGetTargetFromTriple(triple, &target, null as pointer[pointer[char]])
         if lookup_err <> 0
@@ -526,6 +538,63 @@ define Emitter
             LLVMDisposeTargetData td
         }
         LLVMDisposeTargetMachine tm
+    }
+
+    ; Does this triple emit COFF? The OS component is the whole answer: every
+    ; Windows triple carries `windows` (x86_64-pc-windows-msvc,
+    ; aarch64-pc-windows-gnu, …) and no ELF or Mach-O triple does. Asked of
+    ; the TRIPLE rather than of the host, because `--target` cross-emits.
+    function triple_is_coff(this, t: pointer[const_char]) returns bool
+    {
+        if t = null
+            return false
+        ; The page-hosted constructions bind POINTERS, and a method call on
+        ; the pointer would hand `contains` the address where it expects the
+        ; String value — the deref-receiver class. Bind the values first.
+        let sp String^this(t)
+        let np String^this("windows")
+        let s *sp
+        let needle *np
+        s.contains(needle)
+    }
+
+    ; Give a body-carrying, non-private function its LinkOnceODR linkage —
+    ; and, on COFF only, the comdat that linkage REQUIRES there.
+    ;
+    ; ★Stage 7. Mach-O and ELF lower `linkonce_odr` on their own (weak
+    ; symbols), so four targets have never needed this. COFF has no weak
+    ; definition in the ELF sense: the assembler answers a bare `.weak` by
+    ; INVENTING a default symbol named after that object's anchor
+    ; (`.weak.<sym>.default.<anchor>`), so two objects carrying the same
+    ; inline body disagree about the default and `link.exe` gives up with
+    ; LNK1227. With a comdat the body lands in
+    ; `.section .text,"xr",discard,<sym>` — real ODR selection, and the
+    ; linker discards the duplicates silently.
+    ;
+    ; ★It must NOT be unconditional: `llc` refuses a comdat on Mach-O
+    ; outright ("MachO doesn't support COMDATs"), so an unguarded version
+    ; breaks both Apple targets. Guarding on the object format keeps the
+    ; emission SEMANTICS of the four existing targets exactly as they were.
+    ;
+    ; The comdat's name is read back off the VALUE rather than taken from
+    ; `func.mangled_name`, because a non-extern name collision is
+    ; auto-renamed by LLVM (`name.1` — see the s187 note in
+    ; emit_function_decl) and on COFF the comdat name must be the leader
+    ; SYMBOL's name. A freshly inserted comdat selects `Any`, which is what
+    ; ODR wants, so nothing sets a selection kind.
+    procedure set_linkonce_odr(this, fn: LLVMValueRef)
+    {
+        LLVMSetLinkage(fn, LLVMLinkage.LinkOnceODR())
+        if target_is_coff = false
+            return
+        var name_len: size_t 0
+        let name LLVMGetValueName2(fn, &name_len)
+        if name = null
+            return
+        if name_len = 0
+            return
+        let cd LLVMGetOrInsertComdat(llvm_module, name as pointer[const_char])
+        LLVMSetComdat(fn, cd)
     }
 
     ; Record the source file path + contents for -g. Must be called
@@ -4004,7 +4073,7 @@ define Emitter
             if has_body
             {
                 if func.is_private = false
-                    LLVMSetLinkage(cached, LLVMLinkage.LinkOnceODR())
+                    set_linkonce_odr(cached)
             }
             return cached
         }
@@ -4260,7 +4329,7 @@ define Emitter
                 if is_entry_main
                     LLVMSetLinkage(llvm_func, LLVMLinkage.External())
                 else
-                    LLVMSetLinkage(llvm_func, LLVMLinkage.LinkOnceODR())
+                    set_linkonce_odr(llvm_func)
             }
         }
 
@@ -6043,7 +6112,7 @@ define Emitter
             return
 
         let saved_block LLVMGetInsertBlock(builder)
-        LLVMSetLinkage(free_get, LLVMLinkage.LinkOnceODR())
+        set_linkonce_odr(free_get)
         let block LLVMAppendBasicBlockInContext(context, free_get, "entry")
         LLVMPositionBuilderAtEnd(builder, block)
         let arg0 LLVMGetParam(free_get, 0)
@@ -6291,10 +6360,20 @@ define Emitter
                         ; verifies (Step D seed round-trip); unreferenced, the
                         ; linker drops it. External (not an empty body) avoids
                         ; shadowing a real libscaly.a definition (s17 lesson).
+                        ; Stage 7: the comdat set_linkonce_odr attached on a
+                        ; COFF target must come off WITH the linkage — "a
+                        ; declaration may not be in a comdat" is its own
+                        ; verifier error, so demoting only the linkage
+                        ; exchanges one invalid `declare` for another.
+                        ; Clearing it unconditionally is right: a function
+                        ; that is not linkonce_odr never had one.
                         if has_marker = false
                         {
                             if LLVMGetLinkage(func) = LLVMLinkage.LinkOnceODR()
+                            {
                                 LLVMSetLinkage(func, LLVMLinkage.External())
+                                LLVMSetComdat(func, LLVMComdatRef(null))
+                            }
                         }
                     }
                 }
@@ -7389,7 +7468,7 @@ define Emitter
         }
         let thunk_ty LLVMFunctionType(ret_ty, tptys.data, n_tp as u32, 0)
         let thunk LLVMAddFunction(llvm_module, clo.thunk_name.c_data(), thunk_ty)
-        LLVMSetLinkage(thunk, LLVMLinkage.LinkOnceODR())
+        set_linkonce_odr(thunk)
 
         let saved_block LLVMGetInsertBlock(builder)
         let entry LLVMAppendBasicBlockInContext(context, thunk, "entry")
@@ -8987,7 +9066,7 @@ define Emitter
         var fn LLVMGetNamedFunction(llvm_module, sym.c_data())
         if fn.handle = null
             set fn: LLVMAddFunction(llvm_module, sym.c_data(), region_walker_fn_type())
-        LLVMSetLinkage(fn, LLVMLinkage.LinkOnceODR())
+        set_linkonce_odr(fn)
 
         let saved_block LLVMGetInsertBlock(builder)
         let entry LLVMAppendBasicBlockInContext(context, fn, "entry")
