@@ -7,10 +7,16 @@
 ; path took both operations; the main-context re-read after the run
 ; proves the blocking leg of the same API.
 ; Expected: b content-ok offloads main-ok done
+;
+; The file lives in the CURRENT DIRECTORY, not in /tmp, and that is a
+; portability fact rather than a preference: on Windows an absolute POSIX
+; path like "/tmp/x" resolves against the current DRIVE root, so the write
+; silently fails where no \tmp directory exists. Both writers unlink at the
+; end; a run that dies early leaves one small file behind.
 
 procedure task_a()
 {
-    let path String("/tmp/scaly_m25_file.txt")
+    let path String("scaly_m25_file.tmp")
     let content String("colorless file i/o via worker threads")
     if File.write_from_string(path, content) = false
         exit 1
@@ -32,7 +38,7 @@ let ta Scheduler.spawn(&task_a)
 let tb Scheduler.spawn(&task_b)
 Scheduler.run()
 ; The blocking leg: same call, no task — runs in place.
-let path String("/tmp/scaly_m25_file.txt")
+let path String("scaly_m25_file.tmp")
 let expected String("colorless file i/o via worker threads")
 let back File.read_to_string(path)
 if back = expected

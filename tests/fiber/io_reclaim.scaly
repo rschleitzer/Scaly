@@ -7,10 +7,16 @@
 ; and wake fds (3-4 per thread) would blow the default open-file limit
 ; (256 on darwin, 1024 on linux) long before the loop ends.
 ; Expected: drained reused threads-ok done
+;
+; The file lives in the CURRENT DIRECTORY, not in /tmp, and that is a
+; portability fact rather than a preference: on Windows an absolute POSIX
+; path like "/tmp/x" resolves against the current DRIVE root, so the write
+; silently fails where no \tmp directory exists. Both writers unlink at the
+; end; a run that dies early leaves one small file behind.
 
 procedure reader_task()
 {
-    let path String("/tmp/scaly_m25_reclaim.txt")
+    let path String("scaly_m25_reclaim.tmp")
     let back File.read_to_string(path)
     let expected String("reclaim me")
     if back <> expected
@@ -27,7 +33,7 @@ procedure thread_entry(arg: pointer[void]) returns pointer[void]
     null
 }
 
-let path String("/tmp/scaly_m25_reclaim.txt")
+let path String("scaly_m25_reclaim.tmp")
 let content String("reclaim me")
 File.write_from_string(path, content)
 
