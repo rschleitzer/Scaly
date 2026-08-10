@@ -100,6 +100,9 @@ jobs:
           $S -c --target x86_64-pc-windows-msvc \
              -o pingpong.o tests/fiber/pingpong.scaly
           ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o
+          # rung 5: breadth. One object per test that carries its own ground
+          # truth; the two that need a reference binary are skipped and counted.
+          tests/win32/corpus.sh emit "$S" winobj
 
       - name: Upload the Windows objects
         uses: actions/upload-artifact@v7
@@ -110,6 +113,7 @@ jobs:
             libscaly_win.o
             page_chain_depth.o
             pingpong.o
+            winobj/*.o
           if-no-files-found: error
 
       # OpenSP port REALPASS gate (dazzle epic, Part I). AOT-compiles the opensp
@@ -339,3 +343,17 @@ jobs:
           echo "--- want ---"; cat want.txt
           echo "--- got  ---"; cat got.txt
           diff -u want.txt got.txt
+
+      # Rung 5 — BREADTH. Every rung above ran one program per mechanism; this
+      # runs the whole AOT and fiber corpora — 90 programs, each linked against
+      # the archive rung 3 built and checked against the ground truth in its own
+      # source. It is where the fiber suite's threads, channels, guard page and
+      # deadlock detectors meet Windows for the first time, and therefore the
+      # first place the write-readiness caveat of a zero-byte WSASend could
+      # surface. Every run is under a 60 s timeout: a hang would stall the job to
+      # its six-hour limit and teach nothing. Two tests are skipped and counted —
+      # they have no self-contained ground truth and are cross-checked against a
+      # reference binary on POSIX, which cannot exist here.
+      - name: Run the AOT + fiber corpora (rung 5)
+        shell: bash
+        run: tests/win32/corpus.sh run winobj libscaly.lib
