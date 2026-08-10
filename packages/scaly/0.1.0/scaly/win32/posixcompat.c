@@ -78,7 +78,45 @@
  * munmap maps to MEM_RELEASE, which requires the exact base VirtualAlloc
  * returned and a size of 0; both callers pass the original base, so that
  * holds. The `length` argument is therefore ignored, as MEM_RELEASE demands.
+ *
+ * ★★★AND ONE EXTRA PAGE IS RESERVED BELOW WHAT THIS RETURNS — the emergency
+ * band for the stack-overflow handler (2026-08-10). Read this together with the
+ * guard-page note in eio_win.c; the two halves only make sense as a pair.
+ *
+ * Windows delivers a fiber stack overflow by building a CONTEXT record on the
+ * stack that just ran out — measured at ~2600 bytes, against a 4096-byte guard
+ * page. If the faulting access landed low in that page there is nothing below it
+ * to spill into, and the process dies with NO handler run at all: no diagnostic,
+ * and the raw fault as the exit status. POSIX does not have the problem because
+ * `sigaltstack` puts the signal frame on a different stack, and a vectored
+ * handler cannot switch stacks. Measured with tests/win32/guard_probe.c over 64
+ * recursion frame sizes: 20 of 32 reported without a band, 32 of 32 with one.
+ *
+ * ★So the band is bought HERE, where it costs the other three targets nothing —
+ * not a page, not a line, not a seed refresh. Three earlier answers were worse:
+ * making `fiber.scaly` place the guard one page up costs an emission change plus
+ * a re-converged cycle on EVERY target and moves the stack pool's free list with
+ * it, and doing the same inside `scaly_stack_guard` silently breaks that list
+ * (built, measured, reverted — fifteen fiber tests). Over-allocating here leaves
+ * the guard exactly where `fiber.scaly` believes it is (`stack_base`), so the
+ * pool's node, `fiber_guard_hit`'s range and every address the Scaly side
+ * computes stay untouched.
+ *
+ * ★What makes it legitimate rather than a lie: this is not a general-purpose
+ * allocator. `mmap`/`munmap` have exactly ONE caller in this tree — the fiber
+ * stack pool (one mmap, two munmaps) — so "the returned mapping has a private
+ * page below it" is a property of the fiber stack allocator, which is what this
+ * function IS on Windows. A second caller would need to know that; hence this
+ * paragraph, and hence the offset lives in ONE constant used by both halves.
+ * The caller's `length` still spans exactly what it asked for, from the address
+ * it was given, so nothing it computes from base and size changes.
  */
+static size_t sc_band_bytes(void)
+{
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return si.dwPageSize;
+}
 #define SC_PROT_NONE  0
 #define SC_PROT_READ  1
 #define SC_PROT_WRITE 2
@@ -94,17 +132,34 @@ static DWORD sc_prot_to_win(int prot)
 
 void* mmap(void* addr, size_t length, int prot, int flags, int fd, long long offset)
 {
+    size_t band = sc_band_bytes();
+    char* p;
     (void)flags;
     (void)offset;
     if (fd != -1 || addr != NULL)
         return (void*)-1;   /* MAP_FAILED — see the refusal note above */
-    return VirtualAlloc(NULL, length, MEM_RESERVE | MEM_COMMIT, sc_prot_to_win(prot));
+    /* The band is committed READWRITE whatever `prot` says: it exists for the
+     * kernel's exception dispatch, which must be able to write there even when
+     * the caller asked for a read-only mapping. */
+    p = (char*)VirtualAlloc(NULL, length + band, MEM_RESERVE | MEM_COMMIT,
+                            PAGE_READWRITE);
+    if (p == NULL)
+        return (void*)-1;
+    if (prot != (SC_PROT_READ | SC_PROT_WRITE)) {
+        DWORD old = 0;
+        if (!VirtualProtect(p + band, length, sc_prot_to_win(prot), &old)) {
+            VirtualFree(p, 0, MEM_RELEASE);
+            return (void*)-1;
+        }
+    }
+    return p + band;
 }
 
 int munmap(void* addr, size_t length)
 {
     (void)length;   /* MEM_RELEASE requires 0 */
-    return VirtualFree(addr, 0, MEM_RELEASE) ? 0 : -1;
+    /* Back to the true allocation base: the band sits below what mmap returned. */
+    return VirtualFree((char*)addr - sc_band_bytes(), 0, MEM_RELEASE) ? 0 : -1;
 }
 
 int mprotect(void* addr, size_t len, int prot)

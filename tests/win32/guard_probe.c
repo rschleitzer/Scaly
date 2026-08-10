@@ -43,6 +43,13 @@
 
 int scaly_stack_guard(void *base, size_t len);
 int scaly_guard_install(int (*classify)(void *));
+/* ★The stack comes from the SHIM's mmap, not from VirtualAlloc directly, because
+ * on Windows that shim IS the fiber stack allocator — it is where the emergency
+ * band below the guard page is bought. Allocating here would test a layout no
+ * fiber ever has. */
+void *mmap(void *addr, size_t length, int prot, int flags, int fd,
+           long long offset);
+int munmap(void *addr, size_t length);
 
 extern void switch_stack(void *stack_top, void (*entry)(void));
 extern void recurse_asm(SIZE_T frame_bytes);
@@ -216,9 +223,9 @@ int main(int argc, char **argv)
     band = arg_num(argc, argv, 2) != 0;
     g_measure = arg_num(argc, argv, 3) != 0;
 
-    g_base = (char *)VirtualAlloc(NULL, STACK_SIZE, MEM_RESERVE | MEM_COMMIT,
-                                  PAGE_READWRITE);
-    if (g_base == NULL)
+    /* PROT_READ|PROT_WRITE and MAP_ANON|MAP_PRIVATE as fiber.scaly spells them. */
+    g_base = (char *)mmap(NULL, STACK_SIZE, 3, 0x1022, -1, 0);
+    if (g_base == (char *)-1 || g_base == NULL)
         return 2;
     g_guard = g_base + (band ? g_page : 0);
 
@@ -241,13 +248,20 @@ int main(int argc, char **argv)
     emit_dec((ULONG_PTR)band);
     emit(" mapping=");
     emit_hex((ULONG_PTR)g_base);
-    emit(" asked=");
-    emit_hex((ULONG_PTR)g_guard);
     emit(" guard=");
     emit_hex((ULONG_PTR)g_real);
-    emit(" band=");
-    emit_dec((ULONG_PTR)(g_real - g_base));
-    emit(" bytes\n");
+    /* The band the ALLOCATOR bought, read back from the OS: everything between
+     * the true allocation base and the guard page is writable spill room. An
+     * assumed number here would be the one thing this file must not print. */
+    {
+        MEMORY_BASIC_INFORMATION mbi;
+        emit(" band=");
+        if (VirtualQuery(g_base, &mbi, sizeof mbi) == sizeof mbi)
+            emit_dec((ULONG_PTR)(g_real - (char *)mbi.AllocationBase));
+        else
+            emit("?");
+        emit(" bytes\n");
+    }
     flush();
 
     /* The TIB fields scaly_make_context writes, so the kernel sees this exactly
