@@ -1,0 +1,28 @@
+# This repository is compared BYTE FOR BYTE, so git must never rewrite a file
+# on its way into or out of the working tree.
+#
+# `* -text` disables end-of-line conversion for everything. It is a no-op on
+# Linux and macOS — nothing converts there — and on Windows it switches off the
+# `core.autocrlf=true` that the GitHub runner image (and the Git for Windows
+# installer, by default) sets globally.
+#
+# ★MEASURED, not assumed (2026-08-10, stage 7 rung 7). The Windows leg linked
+# the onsgmls drop-in and ran the SGML corpus through tests/sgml/run.sh: 4 of
+# 380 models. Byte probes on both sides of the comparison said the whole story
+# in two lines —
+#
+#     got  esis:  A I D  T O K E N  D 1 \n ( D O C \n …     <- our output
+#     want esis:  A I D  T O K E N  D 1 \r \n ( D O C \r \n …  <- the GOLDEN
+#
+# — so the parser was right and the checked-out golden had been rewritten. The
+# same applies to the fixtures themselves, which is worse than a failed diff:
+# an SGML parser treats a record boundary as data, so a converted doc.sgm makes
+# the port answer a DIFFERENT question than the goldens were taken for. (One
+# fixture already carried `doc.xml -text` for exactly this reason — the rule was
+# known in the small and missing in the large.)
+#
+# It is deliberately repo-wide rather than scoped to tests/sgml/, because the
+# same comparison runs elsewhere and each place would otherwise rediscover this:
+# the seed's SHA256SUMS over the committed .ll files, the dazzle codegen
+# goldens, the ESIS corpus, every `; Expected:` line read from a .scaly source.
+* -text
