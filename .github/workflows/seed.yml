@@ -492,4 +492,31 @@ jobs:
           ( cd tests/sgml/corpus/synth-after-docelement \
             && "$root/onsgmls.exe" doc.sgm ) || true
           export ONSGMLS="$root/onsgmls.exe"
-          tests/sgml/run.sh "$PWD/tests/win32/onsgmls-lf.sh"
+
+          # ★THE DIAGNOSIS IS BUILT IN, not added after a red round. The harness
+          # reports MISMATCH per entry and nothing about WHY, which on a first
+          # port means 380 lines that all say the same nothing. So: one entry
+          # WITHOUT diagnostics (pure ESIS) and one WITH, each dumped as BYTES
+          # on both sides. Bytes rather than text because every candidate cause
+          # here — a stray CR, a checkout that rewrote the golden, a path
+          # separator — is invisible in a plain diff.
+          probe() {
+            local e=$1
+            echo "=== probe $e ==="
+            ( cd "tests/sgml/corpus/$e" \
+              && "$root/tests/win32/onsgmls-lf.sh" doc.sgm ) > /tmp/p.esis 2> /tmp/p.err || true
+            echo "--- got esis (od) ---";      od -c /tmp/p.esis | head -6
+            echo "--- want esis (od) ---";     od -c "tests/sgml/corpus/$e/expected.esis" | head -6
+            echo "--- got stderr, normalised ---"
+            sed 's/^[^:]*://' /tmp/p.err | od -c | head -6
+            echo "--- want stderr (od) ---"
+            [ -f "tests/sgml/corpus/$e/expected.err" ] \
+              && od -c "tests/sgml/corpus/$e/expected.err" | head -6
+          }
+          rc=0
+          tests/sgml/run.sh "$PWD/tests/win32/onsgmls-lf.sh" || rc=$?
+          if [ "$rc" != 0 ]; then
+            probe synth-basic
+            probe synth-after-docelement
+          fi
+          exit $rc
