@@ -70,6 +70,30 @@ for o in "$POUT"/*.o; do
   ALL="$ALL
 $("$NM" -u "$o" | sed 's/^ *U //')"
 done
+
+# ★And the programs the Windows job links from OUTSIDE the corpus (2026-08-10,
+# rung 6). tests/fiber/bench/ is deliberately out of tests/fiber/run.sh's glob —
+# and therefore out of the corpus's — because the 10k demo is one long program
+# under load rather than a corpus entry; but CI links it just the same, so its
+# externs are owed exactly like any other program's. Widened by DIRECTORY rather
+# than by naming http10k: a list would go stale the day a second bench program
+# lands, and a scope that silently stops short is the one failure this
+# instrument exists to prevent. A cross-emit failure here is reported rather
+# than skipped, for the same reason.
+nbench=0
+for f in tests/fiber/bench/*.scaly; do
+  [ -f "$f" ] || continue
+  b=$(basename "$f" .scaly)
+  if "$SC" -c --target "$TRIPLE" -o "$POUT/bench__$b.o" "$f" > /dev/null 2>&1; then
+    nbench=$((nbench+1))
+    ALL="$ALL
+$("$NM" -u "$POUT/bench__$b.o" | sed 's/^ *U //')"
+  else
+    nemitfail=$((nemitfail+1))
+    EMITLOG="$EMITLOG
+bench emit: cross-emit failure fiber/bench/$b"
+  fi
+done
 rm -rf "$POUT"
 ALL=$(printf '%s\n' "$ALL" | grep . | sort -u)
 ALL=$(printf '%s\n' "$ALL" | while read -r s
@@ -133,7 +157,8 @@ COVERED=$(printf '%s\n' "$OWED" | while read -r s
 n() { printf '%s\n' "$1" | grep -c . ; }
 
 echo "win-undef: $(n "$ALL") undefined symbols for $TRIPLE"
-echo "  (runtime root + $nprog corpus programs; symbols the runtime defines are resolved by the archive)"
+echo "  (runtime root + $nprog corpus programs + $nbench bench programs;"
+echo "   symbols the runtime defines are resolved by the archive)"
 if [ "$nemitfail" -gt 0 ]; then
   echo "  WARNING — $nemitfail corpus program(s) did not cross-emit and were NOT scanned"
   printf '%s\n' "$EMITLOG" | sed 's/^/    /'

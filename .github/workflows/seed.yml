@@ -99,7 +99,13 @@ jobs:
           # rung 4: the fiber context switch, which no earlier rung RUNS.
           $S -c --target x86_64-pc-windows-msvc \
              -o pingpong.o tests/fiber/pingpong.scaly
-          ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o
+          # rung 6: the 10k demo. It lives in tests/fiber/bench/, OUTSIDE the
+          # corpus glob, so rung 5 never emitted it — one long program under
+          # load rather than a corpus entry, and it is the only thing in the
+          # tree that drives IOCP from the SCHEDULER at scale.
+          $S -c --target x86_64-pc-windows-msvc \
+             -o http10k.o tests/fiber/bench/http10k.scaly
+          ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o http10k.o
           # rung 5: breadth. One object per test that carries its own ground
           # truth; the two that need a reference binary are skipped and counted.
           tests/win32/corpus.sh emit "$S" winobj
@@ -113,6 +119,7 @@ jobs:
             libscaly_win.o
             page_chain_depth.o
             pingpong.o
+            http10k.o
             winobj/*.o
           if-no-files-found: error
 
@@ -372,3 +379,64 @@ jobs:
       - name: Run the AOT + fiber corpora (rung 5)
         shell: bash
         run: tests/win32/corpus.sh run winobj libscaly.lib
+
+      # Rung 6 — the 10k demo, and the unknown it adds is LOAD. Rung 5 ran 90
+      # programs, but each one drives the poller with a handful of fds; this is
+      # 10,000 connections through one single-threaded scheduler, so it is the
+      # first time IOCP is driven BY THE SCHEDULER at scale rather than by a
+      # test that happens to do I/O. Two things can only show up here:
+      #
+      #   * the write-readiness caveat documented at scaly_eio_arm — a zero-byte
+      #     WSASend is armed for writability and Winsock generally completes it
+      #     at once, which degrades to a spin where kqueue/epoll would block.
+      #     One connection cannot show that; 10,000 parked handlers can, and it
+      #     would show up as TIME rather than as a wrong answer, which is why
+      #     the elapsed seconds are printed even on success (POSIX: ~1 s).
+      #   * AcceptEx's inverted accept path under repetition — the setup loop
+      #     pairs connect+accept 10,000 times against ONE listener, where the
+      #     completion table holds one slot per listener.
+      #
+      # NOT reusing tests/fiber/bench/run.sh: its whole preamble is POSIX
+      # (raising RLIMIT_NOFILE to 20,500 and gating on kern.maxfilesperproc,
+      # plus topping up /tmp/libscaly.a with `ar`). None of it has a counterpart
+      # here — Windows sockets are handles, not CRT descriptors, so no soft
+      # limit governs them, and the archive is the one rung 3 built. What is
+      # left of that script once the POSIX half is removed is link, run,
+      # compare — which is what this step is.
+      #
+      # ★If it fails, the demo's own exit codes are the diagnosis map, which is
+      # why the code is printed and the run is NOT piped: 1 = listen/local_port,
+      # 2 = accept, 3 = a handler's read, 4 = connect, 5 = write, 6 = the
+      # read-back. Exit 4 has a Windows-specific first suspect — 10,000
+      # CONCURRENT outbound loopback connections against a default dynamic port
+      # range of 49152-65535, i.e. 16,384 ports shared with whatever TIME_WAIT
+      # the earlier rungs left behind.
+      - name: Run the 10k demo (rung 6)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc \
+                http10k.o libscaly.lib -lws2_32 -o http10k.exe
+          # A hang is the one outcome worse than a failure: without a guard it
+          # would stall the job to its six-hour limit and teach nothing. 300 s
+          # against a POSIX runtime of about one second is not a performance
+          # bar, it is a liveness bar.
+          set +e
+          SECONDS=0
+          timeout 300 ./http10k.exe > got_raw.txt 2> err.txt
+          rc=$?
+          elapsed=$SECONDS
+          set -e
+          echo "http10k.exe exit code: $rc after ${elapsed}s"
+          if [ -s err.txt ]; then
+            echo "--- stderr ---"; head -c 600 err.txt
+          fi
+          if [ "$rc" = 124 ]; then
+            echo "TIMEOUT: the demo did not finish in 300 s"
+            exit 1
+          fi
+          tr -d '\r' < got_raw.txt > got.txt
+          sed -n 's/^; Expected: //p' tests/fiber/bench/http10k.scaly > want.txt
+          echo "--- want ---"; cat want.txt
+          echo "--- got  ---"; cat got.txt
+          diff -u want.txt got.txt
