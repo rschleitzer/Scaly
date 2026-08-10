@@ -478,7 +478,10 @@ int scaly_eio_tcp_connect_host(const char* host, int port)
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    sprintf(portstr, "%d", port);
+    /* snprintf, not sprintf: bounded, and it sidesteps the same MSVC
+     * deprecation that ctime.c has to silence with a macro (there the
+     * functions are the reference's own and cannot be swapped). */
+    snprintf(portstr, sizeof portstr, "%d", port);
     if (getaddrinfo(host, portstr, &hints, &res) != 0)
         return -1;
     for (p = res; p != NULL; p = p->ai_next) {

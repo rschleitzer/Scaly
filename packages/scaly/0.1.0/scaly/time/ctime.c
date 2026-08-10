@@ -1,3 +1,22 @@
+#ifdef _WIN32
+/* MSVC deprecates gmtime, localtime and sscanf in favour of its own _s
+ * variants and, under -Werror, refuses to compile them at all. That
+ * deprecation is a Microsoft opinion, not a C one: all three are standard C,
+ * and this file is a verbatim port of style/primitive.cxx, so switching to the
+ * _s forms on Windows alone would make ONE target behave differently from the
+ * reference and from the other three — exactly what rule zero forbids.
+ *
+ * The substance behind the warning is real but not ours: gmtime/localtime
+ * return a pointer into a static buffer, so they are not thread-safe. The
+ * POSIX build has the identical property, the callers are the DSSSL time
+ * primitives on a single evaluation thread, and making Windows the only safe
+ * one would hide the shared limitation rather than fix it.
+ *
+ * Defined here rather than in tools/ctime.sh so that every build path gets it
+ * — the CI rungs compile this file directly. It must precede every include. */
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 /* Civil-time shim (the DSSSL time primitives, COMPLETENESS.md package 22).
  *
  * Three functions, compiled by tools/ctime.sh into ctime.o and linked beside
