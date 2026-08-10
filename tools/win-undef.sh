@@ -126,19 +126,18 @@ ALL=$(printf '%s\n' "$ALL" | while read -r s
 
 # Present in the MSVC CRT under this exact name, or under an underscore alias
 # the CRT also exports — no work beyond linking.
-# ★Three of these are POSIX SPELLINGS that MSVC ships only in `oldnames.lib`,
-# which maps them to the underscore forms (`creat` -> `_creat`, and likewise
-# write/access/mkdir/rmdir/unlink). It reaches the link through the
-# `/defaultlib:oldnames.lib` directive the CRT headers put in our C shim
-# objects — the Scaly-emitted objects carry no such directive — and rung 5's
-# 90 green programs are the standing proof that it does.
-# ★`creat` carries a caveat the name hides: `_creat` opens in TEXT mode unless
-# `_fmode` says otherwise, so a file the drop-in writes through it gets CRLF
-# where POSIX gives LF. It is the `-o`/error-file and RAST path; rung 7's
-# wrapper normalises the RAST file for exactly this reason.
+# ★Several of these are POSIX SPELLINGS that MSVC ships only in `oldnames.lib`,
+# which maps them to the underscore forms (write/access/mkdir/rmdir/unlink). It
+# reaches the link through the `/defaultlib:oldnames.lib` directive the CRT
+# headers put in our C shim objects — the Scaly-emitted objects carry no such
+# directive — and rung 5's 90 green programs are the standing proof that it does.
+# ★`creat` is deliberately NOT in this list even though the CRT has it: reaching
+# `_creat` through oldnames ENDS THE PROCESS on a POSIX 0666 mode, so
+# win32/posixcompat.c defines `creat` itself and it must be attributed there.
+# A name being present in the CRT is not the same as it being usable.
 # ★`__chkstk` is not a library call anyone wrote: the compiler emits it to probe
 # a stack frame larger than a page, and the CRT defines it.
-CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strerror|strlen|strdup|write|creat|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index|__chkstk)$'
+CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strerror|strlen|strdup|write|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index|__chkstk)$'
 HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
 
 # What our own Windows sources DEFINE. Read by grep rather than by compiling

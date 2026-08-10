@@ -61,6 +61,7 @@
 #include <windows.h>
 #include <io.h>         /* _pipe */
 #include <fcntl.h>      /* _O_BINARY — NOT in io.h, despite _pipe living there */
+#include <sys/stat.h>   /* _S_IREAD/_S_IWRITE for creat's pmode */
 #include <errno.h>      /* setenv's EINVAL */
 #include <stdio.h>
 #include <stdlib.h>
@@ -393,6 +394,38 @@ int close(int fd)
     if (sc_pc_is_socket(s))
         return closesocket(s) == SOCKET_ERROR ? -1 : 0;
     return _close(fd);
+}
+
+/* POSIX creat(). The CRT has `_creat`, and reaching it through oldnames.lib
+ * compiles, links and then ENDS THE PROCESS — which is how it was found: every
+ * one of the ten RAST corpus entries died with no ESIS, no diagnostic and no
+ * file, while the same binary on the same document without `-t` exits 0. That
+ * silence is the whole diagnosis: the drop-in prints `cannot open output file`
+ * when creat answers -1, so a call that neither fails nor creates anything did
+ * not RETURN at all. Measured across three spellings of the path (relative,
+ * POSIX-absolute, Windows-absolute) with identical results, so it is the call
+ * and not the argument's form.
+ *
+ * Two things differ from POSIX, and only the first is fatal:
+ *
+ *   (a) `_creat`'s pmode accepts _S_IREAD/_S_IWRITE and nothing else. POSIX
+ *       code passes 0666, whose extra bits reach the CRT's invalid-parameter
+ *       handler — and the default handler terminates the process rather than
+ *       returning an error. Same class as `close` on a socket handle above:
+ *       the symbol resolves, and only its behaviour is wrong, which is why
+ *       tools/win-undef.sh can never find it.
+ *   (b) `_creat` opens in TEXT mode unless _fmode says otherwise, so every
+ *       '\n' written to the fd would become "\r\n". POSIX gives the bytes as
+ *       written, and the RAST goldens are compared byte for byte.
+ *
+ * Going through `_open` fixes both: explicit _O_BINARY, and a pmode the CRT
+ * accepts. The POSIX mode argument is honoured where Windows can honour it at
+ * all — the write bit is the only one with a meaning here (a file without it
+ * becomes read-only), and the execute/group/other bits have no counterpart. */
+int creat(const char* path, unsigned mode)
+{
+    int pmode = (mode & 0200u) ? (_S_IREAD | _S_IWRITE) : _S_IREAD;
+    return _open(path, _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY, pmode);
 }
 
 int poll(void* fds, unsigned long long nfds, int timeout)
