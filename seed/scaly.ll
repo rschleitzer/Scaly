@@ -23411,6 +23411,8 @@ declare i32 @scaly_eio_wake(i32, i32)
 
 declare i32 @scaly_eio_wake_close(i32, i32)
 
+declare i32 @scaly_eio_close(i32)
+
 declare i32 @scaly_eio_ncpu()
 
 declare i64 @scaly_eio_now_ns()
@@ -23436,6 +23438,8 @@ declare i32 @scaly_eio_tcp_connect_host(ptr, i32)
 declare i64 @scaly_eio_tcp_write(i32, ptr, i64)
 
 declare i32 @scaly_guard_install(ptr)
+
+declare i32 @scaly_stack_guard(ptr, i64)
 
 declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 
@@ -23572,7 +23576,8 @@ if.then2:                                         ; preds = %if.end
 
 if.end3:                                          ; preds = %if.then2, %if.end
   %sub6 = sub i64 %global.load, 1
-  %call7 = call i32 @close(i64 %sub6)
+  %as.trunc7 = trunc i64 %sub6 to i32
+  %call8 = call i32 @scaly_eio_close(i32 %as.trunc7)
   store i64 0, ptr @io_poller_fd, align 8
   ret void
 }
@@ -23808,7 +23813,7 @@ if.then10:                                        ; preds = %if.then5
 
 if.end11:                                         ; preds = %if.then10, %if.then5
   %base12 = load ptr, ptr %base, align 8
-  %call13 = call i32 @mprotect(ptr %base12, i64 %as.zext, i32 0)
+  %call13 = call i32 @scaly_stack_guard(ptr %base12, i64 %as.zext)
   %ne = icmp ne i32 %call13, 0
   br i1 %ne, label %if.then14, label %if.end15
 
