@@ -217,3 +217,23 @@ jobs:
           echo "--- symbols provided ---"
           llvm-nm --defined-only fcontext_win.o | sed 's/^/  /' \
             || echo "  (llvm-nm unavailable — assemble still succeeded)"
+
+      # Rung 2c — brocken 2, and this one RUNS. The IOCP backend is the only
+      # part of the port that had to manufacture semantics instead of
+      # translating them (kqueue/epoll report readiness, IOCP reports
+      # completion), so "it compiles" would be worth very little. The harness
+      # links two objects and no Scaly runtime, which is what lets it run now
+      # rather than after the whole substrate is done — the riskiest piece
+      # tested first instead of last.
+      - name: Build and RUN the IOCP smoke test (brocken 2)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
+                -c packages/scaly/0.1.0/scaly/fiber/eio_win.c -o eio_win.o
+          clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
+                -c packages/scaly/0.1.0/scaly/win32/posixcompat.c -o pc.o
+          clang --target=x86_64-pc-windows-msvc -O2 \
+                tests/win32/eio_smoke.c eio_win.o pc.o \
+                -o eio_smoke.exe -lws2_32
+          ./eio_smoke.exe
