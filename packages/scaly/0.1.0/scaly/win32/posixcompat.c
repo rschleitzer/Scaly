@@ -37,6 +37,25 @@
 
 #ifdef _WIN32
 
+/* TWO CRT knobs, both required before any include, and for DIFFERENT reasons.
+ *
+ * _CRT_SECURE_NO_WARNINGS — `setenv` asks `getenv` whether a variable already
+ * exists, and MSVC deprecates `getenv` in favour of `_dupenv_s`, which under
+ * -Werror is a compile error. The hazard the deprecation warns about is
+ * reading the returned buffer; this call never reads it, it tests it against
+ * NULL, so the replacement would allocate a copy that has to be freed in order
+ * to answer a yes/no question. Same knob as ctime.c, different argument: there
+ * it protects a word-for-word port from diverging on one target, here it keeps
+ * a presence test from becoming an allocation.
+ *
+ * _CRT_DECLARE_NONSTDC_NAMES 0 — this file DEFINES `close`, and <io.h> would
+ * otherwise declare that POSIX alias `__declspec(dllimport)`, which clang
+ * refuses to see defined ("definition of dllimport function not allowed").
+ * Suppressing the alias declarations costs nothing here because every CRT call
+ * below uses the underscore form (_close, _pipe, _putenv_s) already. */
+#define _CRT_SECURE_NO_WARNINGS 1
+#define _CRT_DECLARE_NONSTDC_NAMES 0
+
 #include <winsock2.h>   /* before windows.h — it defines the socket API */
 #include <ws2tcpip.h>   /* IPPROTO_TCP/TCP_NODELAY for the socketpair emulation */
 #include <windows.h>
@@ -460,8 +479,8 @@ int socketpair(int domain, int sotype, int protocol, int sv[2])
     sc_pc_nodelay(client);
     sc_pc_nodelay(accepted);
 
-    sv[0] = (int)accepted;
-    sv[1] = (int)client;
+    sv[0] = (int)(intptr_t)accepted;
+    sv[1] = (int)(intptr_t)client;
     return 0;
 
 fail:
