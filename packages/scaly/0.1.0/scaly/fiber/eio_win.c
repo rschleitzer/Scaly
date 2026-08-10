@@ -609,6 +609,26 @@ int scaly_eio_accept(int fd)
  * exhausted stack rather than a guard page it could move. The handler's
  * three-code test looks redundant and is not: EXCEPTION_STACK_OVERFLOW is the
  * arm that actually fires. Do not prune it to the "obvious" one. */
+/* ★★★DO NOT MOVE THIS GUARD, and the reason is a contract you cannot see from
+ * here (tried and reverted 2026-08-10).
+ *
+ * The emergency band that section 5.2 of tests/win32/WINDOWS-BOX.md asks for —
+ * one ordinary writable page BELOW the guard page, so the exception dispatch has
+ * somewhere to spill — looks like it could live entirely in this file: this shim
+ * already owns the QUESTION "where is this stack's overflow guard", so it could
+ * place the guard one page up, keep the lowest page as the band, and translate
+ * every fault address back into the classifier's coordinates on the way out.
+ * That was built. It works — guard_probe's sweep goes from 41/64 to 64/64 — and
+ * it BREAKS FIFTEEN fiber tests, because `fiber.scaly` reserves the two words
+ * immediately above the guard page for the stack pool's free list ("the entry is
+ * two size_t slots [next, size] at stack_base + guard page"). Moving the guard
+ * onto that node turns every fiber DISPOSAL into a guard-page write.
+ *
+ * So the position of this guard is an implicit contract between two files, and
+ * the band has to move BOTH halves — which means fiber.scaly, a re-converged
+ * cycle and a seed refresh. It is not a shim-local fix, however much it looks
+ * like one. ★The lesson generalises past this page: a shim that owns a QUESTION
+ * does not thereby own the ADDRESS SPACE around its answer. */
 int scaly_stack_guard(void* base, size_t len)
 {
     DWORD old = 0;

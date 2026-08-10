@@ -20,12 +20,14 @@
  *
  *     frame_bytes  0 (default) = ~512-byte C frames, what tests/fiber's
  *                  guard_overflow has; otherwise an exact frame step.
- *     band         1 = keep the LOWEST page writable and guard the page above
- *                  it, so the dispatch has somewhere to spill. This is the
- *                  candidate that closes the anonymous-death class, and the
- *                  driver can try it because WHERE the guard sits is the
- *                  caller's decision — proving it out here costs no stdlib
- *                  change and no seed refresh.
+ *     band         1 = ask for the guard one page HIGHER than the mapping's
+ *                  bottom, keeping the lowest page writable as an emergency band
+ *                  for the exception dispatch. ★This is the knob that PROVED the
+ *                  band before anyone built it — the sweep goes from 41/64 to
+ *                  64/64 — and it is still the checksum for the rung that will
+ *                  land it. It cannot be done in the shim: `fiber.scaly` keeps
+ *                  the stack pool's free-list node right above the guard page,
+ *                  so both halves have to move together (see scaly_stack_guard).
  *     measure      1 = install a second handler AHEAD of the shim's that prints
  *                  the geometry (fault rsp, handler rsp, what the dispatch
  *                  spent) and then falls through to it. ★It PERTURBS: its own
@@ -49,16 +51,38 @@ extern void recurse_asm(SIZE_T frame_bytes);
 #define STACK_SIZE 0x20000u
 
 static char *g_base;   /* the mapping's low address */
-static char *g_guard;  /* the guarded page — g_base, or one page up with band */
+static char *g_guard;  /* what we ASK the shim to guard */
+static char *g_real;   /* where the guard actually ended up — see find_guard */
 static SIZE_T g_page;
 static SIZE_T g_frame;
 static int g_measure;
 static HANDLE g_err;
 
-/* fiber_guard_hit, in C. */
+/* fiber_guard_hit, in C: the range the SCALY side believes in — the page it
+ * asked the shim to guard. The shim may have put the real guard elsewhere and
+ * then owes the translation; that is exactly what this predicate must NOT know
+ * about, or the test would stop testing it. */
 static int classify(void *addr)
 {
     return (char *)addr >= g_guard && (char *)addr < g_guard + g_page;
+}
+
+/* ★Where the guard REALLY is, read back from the OS rather than assumed. The
+ * shim is free to place it away from the page it was handed (Win64 keeps a
+ * writable band below it for the exception dispatch), so an instrument that
+ * assumed `g_guard` would mislabel every number it prints — and, worse, would
+ * silently stop noticing if the band disappeared. Scanning for PAGE_GUARD makes
+ * the placement a MEASUREMENT: `guard=` in the banner is the shim's answer. */
+static char *find_guard(void)
+{
+    MEMORY_BASIC_INFORMATION mbi;
+    char *p;
+    for (p = g_base; p < g_base + 8 * g_page; p += g_page) {
+        if (VirtualQuery(p, &mbi, sizeof mbi) == sizeof mbi
+            && (mbi.Protect & PAGE_GUARD) != 0)
+            return p;
+    }
+    return NULL;
 }
 
 /* ---- writing without a stack buffer or the CRT ------------------------ */
@@ -115,7 +139,10 @@ static LONG CALLBACK measure_veh(EXCEPTION_POINTERS *ep)
     if (ep->ExceptionRecord->NumberParameters < 2)
         return EXCEPTION_CONTINUE_SEARCH;
     addr = ep->ExceptionRecord->ExceptionInformation[1];
-    if (!classify((void *)addr))
+    /* Against the REAL guard, not the requested one: this handler measures the
+     * machine, while `classify` above plays the Scaly side. */
+    if (g_real == NULL || addr < (ULONG_PTR)g_real
+        || addr >= (ULONG_PTR)g_real + g_page)
         return EXCEPTION_CONTINUE_SEARCH;
 
     g_len = 0;
@@ -124,7 +151,7 @@ static LONG CALLBACK measure_veh(EXCEPTION_POINTERS *ep)
     emit(" fault=");
     emit_hex(addr);
     emit(" (");
-    emit_dec(addr - (ULONG_PTR)g_guard);
+    emit_dec(addr - (ULONG_PTR)g_real);
     emit(" into the guarded page)\n  rsp at fault=");
     emit_dec(ep->ContextRecord->Rsp - (ULONG_PTR)g_base);
     emit(" above the mapping, rsp in handler=");
@@ -197,6 +224,9 @@ int main(int argc, char **argv)
 
     if (scaly_stack_guard(g_guard, g_page) != 0)
         return 3;
+    g_real = find_guard();
+    if (g_real == NULL)
+        return 6;
     if (scaly_guard_install(classify) != 0)
         return 4;
     /* First in the chain, so it runs BEFORE the shim's and can fall through. */
@@ -211,9 +241,13 @@ int main(int argc, char **argv)
     emit_dec((ULONG_PTR)band);
     emit(" mapping=");
     emit_hex((ULONG_PTR)g_base);
-    emit(" guard=");
+    emit(" asked=");
     emit_hex((ULONG_PTR)g_guard);
-    emit("\n");
+    emit(" guard=");
+    emit_hex((ULONG_PTR)g_real);
+    emit(" band=");
+    emit_dec((ULONG_PTR)(g_real - g_base));
+    emit(" bytes\n");
     flush();
 
     /* The TIB fields scaly_make_context writes, so the kernel sees this exactly
