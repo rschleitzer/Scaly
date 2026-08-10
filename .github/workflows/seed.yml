@@ -517,8 +517,14 @@ jobs:
             echo "--- got esis (od) ---";   od -c /tmp/p.esis | head -4
             echo "--- want esis (od) ---";  od -c "$d/expected.esis" | head -4
             echo "--- got stderr ---";      head -c 400 /tmp/p.err
+            # ★NO PIPELINE OFF A COMMAND THAT IS ALLOWED TO FAIL. The step runs
+            # under `bash -e -o pipefail` (GitHub's default for `shell: bash`),
+            # so `ls missing | head` reports 2 and kills the whole step — which
+            # is what happened here: exactly ONE probe printed and the
+            # experiment below never ran at all.
             if [ "$RAST" = "1" ]; then
-              echo "--- rast file created? ---"; ls -l "$rf" 2>&1 | head -2
+              if [ -f "$rf" ]; then echo "  rast: created, $(wc -c < "$rf") bytes"
+              else echo "  rast: NOT created"; fi
             fi
           }
           rc=0
@@ -528,7 +534,8 @@ jobs:
             # Whichever entries actually failed — not two hardcoded guesses.
             for e in $(sed -n 's/^failed: *//p' corpus.log | tr ' ' '\n' \
                        | grep . | head -3); do
-              probe "$e"
+              # A probe must never be able to end the run it is diagnosing.
+              probe "$e" || echo "  (probe $e itself failed: $?)"
             done
             # ★A NAMED HYPOTHESIS, answered in the same round rather than in the
             # next one: the harness hands `-t` a path from `mktemp`, which under
@@ -538,19 +545,50 @@ jobs:
             # below differ ONLY in how that one path is spelled; if the Windows
             # spelling works and the POSIX one does not, that is the answer and
             # no further round is needed to find it.
+            # ★TWO HYPOTHESES, AND THE STDERR IS WHAT SEPARATES THEM. The probe
+            # above says the -t runs die with exit 127 and print NOTHING — no
+            # ESIS, no diagnostic, no file. That silence already argues against
+            # the obvious explanation (a POSIX `/tmp/…` path a native .exe
+            # resolves drive-relative), because a `creat` that merely FAILS
+            # makes the drop-in print `cannot open output file` and exit 1 —
+            # that path is right there in onsgmls.scaly. Silence instead points
+            # at the process dying inside the call, which on this platform is
+            # the CRT's invalid-parameter handler (the class CLAUDE.md records
+            # for `close`). So: same document, same binary, only the SPELLING
+            # of the -t path varies — and stderr is KEPT this time, because
+            # throwing it away is what made the last round inconclusive.
             echo "=== -t path spelling experiment ==="
-            p="$(mktemp -d)/x.rast"
-            ( cd tests/sgml/corpus/synth-rast-basic \
-              && "$root/onsgmls.exe" -t "$p" doc.sgm ) > /dev/null 2>&1
-            echo "  posix  '$p' -> exit $?  exists: $([ -f "$p" ] && echo yes || echo no)"
-            if command -v cygpath > /dev/null 2>&1; then
-              w="$(cygpath -w "$p")"
-              rm -f "$p"
+            try_t() {
+              local label=$1 path=$2 trc=0
+              rm -f "$path" 2>/dev/null || true
               ( cd tests/sgml/corpus/synth-rast-basic \
-                && "$root/onsgmls.exe" -t "$w" doc.sgm ) > /dev/null 2>&1
-              echo "  windows '$w' -> exit $?  exists: $([ -f "$p" ] && echo yes || echo no)"
+                && "$root/onsgmls.exe" -t "$path" doc.sgm ) \
+                > /tmp/t.out 2> /tmp/t.err || trc=$?
+              local made=no; [ -f "$path" ] && made=yes
+              echo "  $label -> exit $trc  file:$made  '$path'"
+              if [ -s /tmp/t.err ]; then echo "      stderr: $(head -c 200 /tmp/t.err)"
+              else echo "      stderr: (empty)"; fi
+            }
+            # relative: no path translation can be involved at all, so if this
+            # ALSO dies silently the spelling is not the cause.
+            ( cd tests/sgml/corpus/synth-rast-basic \
+              && "$root/onsgmls.exe" -t out.rast doc.sgm ) > /tmp/t.out 2> /tmp/t.err \
+              && rel_rc=0 || rel_rc=$?
+            echo "  relative(cwd) -> exit $rel_rc  file:$([ -f tests/sgml/corpus/synth-rast-basic/out.rast ] && echo yes || echo no)"
+            if [ -s /tmp/t.err ]; then echo "      stderr: $(head -c 200 /tmp/t.err)"
+            else echo "      stderr: (empty)"; fi
+            rm -f tests/sgml/corpus/synth-rast-basic/out.rast
+            td="$(mktemp -d)"
+            try_t "posix-abs  " "$td/x.rast"
+            if command -v cygpath > /dev/null 2>&1; then
+              try_t "windows-abs" "$(cygpath -w "$td")\\y.rast"
             else
               echo "  (no cygpath on this runner)"
             fi
+            # And the control that says the binary is fine without -t at all.
+            ( cd tests/sgml/corpus/synth-rast-basic \
+              && "$root/onsgmls.exe" doc.sgm ) > /tmp/t.out 2> /tmp/t.err \
+              && not_rc=0 || not_rc=$?
+            echo "  no -t at all -> exit $not_rc  stdout bytes: $(wc -c < /tmp/t.out)"
           fi
           exit $rc
