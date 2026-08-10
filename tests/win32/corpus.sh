@@ -133,12 +133,28 @@ run)
 
   # The undefined symbols AGGREGATED across every failed link. Individually the
   # logs are noise; the distinct set is the actual work list, and it is short.
+  #
+  # ★BOTH message formats, because assuming one cost a CI round: the clang
+  # driver on Windows uses MSVC's link.exe when Visual Studio is present
+  # ("error LNK2019: unresolved external symbol X referenced in ...") and
+  # lld-link otherwise ("undefined symbol: X"). And if neither matches, the head
+  # of one log is dumped verbatim — a diagnostic that silently finds nothing is
+  # the failure this whole harness keeps re-learning.
   if ls "$OUT"/*.link > /dev/null 2>&1; then
-    undef=$(grep -ho "undefined symbol: [^ ]*" "$OUT"/*.link 2>/dev/null \
-            | sed 's/^undefined symbol: //' | sort -u)
+    undef=$( { grep -ho "undefined symbol: [^ ]*" "$OUT"/*.link 2>/dev/null \
+                 | sed 's/^undefined symbol: //'
+               grep -ho "unresolved external symbol [^ ]*" "$OUT"/*.link 2>/dev/null \
+                 | sed 's/^unresolved external symbol //'
+             } | sed 's/[",]*$//' | sort -u )
     if [ -n "$undef" ]; then
       echo "  --- distinct undefined symbols across all failed links ---"
       printf '%s\n' "$undef" | sed 's/^/      /'
+    else
+      first=$(grep -l . "$OUT"/*.link 2>/dev/null | head -1)
+      if [ -n "$first" ]; then
+        echo "  --- no symbol pattern matched; raw head of $first ---"
+        head -12 "$first" | sed 's/^/      /'
+      fi
     fi
   fi
 
