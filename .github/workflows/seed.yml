@@ -54,21 +54,7 @@ jobs:
       # needs them, not on principle.
       - uses: actions/checkout@v5
 
-      - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y llvm-18 llvm-18-dev clang-18 lld-18 python3
-          # seed.sh links with $CLANG; Ubuntu ships clang-18, not a bare `clang`.
-          echo "CLANG=clang-18" >> "$GITHUB_ENV"
-          # libLLVM-18.so lives under the versioned prefix; put it on the loader
-          # path so the freshly-linked scalyc_seed can start.
-          echo "LD_LIBRARY_PATH=$(llvm-config-18 --libdir)" >> "$GITHUB_ENV"
-          # Make lld the default linker: stock GNU BFD ld fails to link
-          # libLLVM-18 ("failed to set dynamic section sizes"), and the
-          # compiler's own -o bootstrap link (cli.run) invokes plain `clang`
-          # (default ld) — so `ld` itself must be lld, not just seed.sh's links.
-          sudo update-alternatives --install /usr/bin/ld ld \
-            "$(command -v ld.lld-18 || command -v ld.lld)" 100
+      - uses: ./.github/actions/llvm18
 
       - name: Build + verify seed (bootstrap, link, hello, AOT, fixed point)
         run: tools/seed.sh
@@ -113,8 +99,15 @@ jobs:
              -o opensp_win.o packages/opensp/0.1.0/opensp.scaly
           $S -c --target x86_64-pc-windows-msvc \
              -o onsgmls_win.o packages/opensp/0.1.0/onsgmls.scaly
+          # rung 8: the DSSSL engine on top of it. Same shape — package as a
+          # library object, CLI as the program — and the package is the biggest
+          # object in the tree.
+          $S -c --target x86_64-pc-windows-msvc --no-prelude \
+             -o dazzle_win.o packages/dazzle/0.1.0/dazzle.scaly
+          $S -c --target x86_64-pc-windows-msvc \
+             -o dazzle_cli_win.o packages/dazzle/0.1.0/dazzle_cli.scaly
           ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o http10k.o \
-                opensp_win.o onsgmls_win.o
+                opensp_win.o onsgmls_win.o dazzle_win.o dazzle_cli_win.o
           # rung 5: breadth. One object per test that carries its own ground
           # truth; the two that need a reference binary are skipped and counted.
           tests/win32/corpus.sh emit "$S" winobj
@@ -131,8 +124,50 @@ jobs:
             http10k.o
             opensp_win.o
             onsgmls_win.o
+            dazzle_win.o
+            dazzle_cli_win.o
             winobj/*.o
           if-no-files-found: error
+
+      - name: Upload native compiler
+        # v7, not v5: upload-artifact@v5 still declares `using: node20` and kept
+        # warning about the Node-20 deprecation (checkout@v5 is already node24).
+        # node24 arrives here only with v6; v7 is the current major.
+        uses: actions/upload-artifact@v7
+        with:
+          name: scalyc-x86_64-linux-gnu
+          path: dist/seed/scalyc_seed
+          if-no-files-found: error
+
+  # ★THE SUITES ARE A SEPARATE JOB, and the reason is latency, not tidiness
+  # (split 2026-08-10). `needs:` waits for a whole JOB, not for the artifact it
+  # consumes — so while the Windows objects were ready and uploaded at ~7:10 of
+  # the seed job, the Windows leg went on waiting through `Verify committed
+  # seed`, whose output it does not use: 241 s of dead time on every single
+  # Windows round. Measured per step before the split (408 s seed, 19 s
+  # cross-emit + upload, 22 s suites, 241 s verify).
+  #
+  # Nothing is skipped or weakened by this: the same four steps run, on the same
+  # compiler binary, downloaded as the artifact the seed job already published.
+  # They are self-sufficient on a fresh runner — verify-seed.sh works from the
+  # COMMITTED seed/ directory in the checkout, and each suite rebuilds
+  # /tmp/libscaly.a when it is absent, which it now always is.
+  suites:
+    name: x86_64-linux-gnu (suites)
+    runs-on: ubuntu-latest
+    needs: seed
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/llvm18
+
+      - name: Download the native compiler
+        uses: actions/download-artifact@v7
+        with:
+          name: scalyc-x86_64-linux-gnu
+          path: dist/seed
+      - name: Make it executable
+        # An artifact round-trip does not preserve the mode bit.
+        run: chmod +x dist/seed/scalyc_seed
 
       # OpenSP port REALPASS gate (dazzle epic, Part I). AOT-compiles the opensp
       # package into an archive and links + runs its unit harness so
@@ -147,22 +182,12 @@ jobs:
       - name: The 10k demo (fiber-per-connection HTTP, milestone 1.6)
         run: tests/fiber/bench/run.sh dist/seed/scalyc_seed
 
-      # tools/seed.sh above links scalyls from FRESHLY emitted IR; this is the
-      # only place the COMMITTED seed/scalyls*.ll get linked and served — and
-      # it keeps verify-seed.sh itself from silently going stale (its scalyls
-      # link recipe once drifted for months because nothing executed it).
+      # tools/seed.sh links scalyls from FRESHLY emitted IR; this is the only
+      # place the COMMITTED seed/scalyls*.ll get linked and served — and it
+      # keeps verify-seed.sh itself from silently going stale (its scalyls link
+      # recipe once drifted for months because nothing executed it).
       - name: Verify committed seed (hello, AOT, regress, scalyls link+smoke)
         run: tools/verify-seed.sh dist/seed/scalyc_seed
-
-      - name: Upload native compiler
-        # v7, not v5: upload-artifact@v5 still declares `using: node20` and kept
-        # warning about the Node-20 deprecation (checkout@v5 is already node24).
-        # node24 arrives here only with v6; v7 is the current major.
-        uses: actions/upload-artifact@v7
-        with:
-          name: scalyc-x86_64-linux-gnu
-          path: dist/seed/scalyc_seed
-          if-no-files-found: error
 
   # Stage 7, rung 1: link + run the cross-emitted object on real Windows.
   #
@@ -465,7 +490,7 @@ jobs:
       # is the tree's biggest allocator, so this exercises regions, bump arenas
       # and the page allocator far past what 90 small AOT programs reach.
       #
-      # ★The binary is entered through tests/win32/onsgmls-lf.sh, and both
+      # ★The binary is entered through tests/win32/lf-wrapper.sh, and both
       # things that wrapper does are load-bearing (its header has the full
       # reasoning): Windows' CRT hands us a TEXT-mode stdout, so every `\n`
       # leaves as `\r\n` while the goldens are LF — the same normalisation
@@ -491,7 +516,7 @@ jobs:
           root=$PWD
           ( cd tests/sgml/corpus/synth-after-docelement \
             && "$root/onsgmls.exe" doc.sgm ) || true
-          export ONSGMLS="$root/onsgmls.exe"
+          export LFW_BIN="$root/onsgmls.exe"
 
           # ★THE DIAGNOSIS IS BUILT IN, not added after a red round. The harness
           # reports MISMATCH per entry and nothing about WHY, which on a first
@@ -511,7 +536,7 @@ jobs:
             local rf="$root/probe.rast"; rm -f "$rf"
             local ra=""; [ "$RAST" = "1" ] && ra="-t $rf"
             local prc=0
-            ( cd "$d" && env $SP_ENV "$root/tests/win32/onsgmls-lf.sh" \
+            ( cd "$d" && env $SP_ENV "$root/tests/win32/lf-wrapper.sh" \
                 $ra $EXTRA_ARGS "$DOC" ) > /tmp/p.esis 2> /tmp/p.err || prc=$?
             echo "  exit: $prc  (want $(cat "$d/expected.exit" 2>/dev/null))"
             echo "--- got esis (od) ---";   od -c /tmp/p.esis | head -4
@@ -528,7 +553,7 @@ jobs:
             fi
           }
           rc=0
-          tests/sgml/run.sh "$PWD/tests/win32/onsgmls-lf.sh" > corpus.log 2>&1 || rc=$?
+          tests/sgml/run.sh "$PWD/tests/win32/lf-wrapper.sh" > corpus.log 2>&1 || rc=$?
           cat corpus.log
           if [ "$rc" != 0 ]; then
             # Whichever entries actually failed — not two hardcoded guesses.
@@ -592,3 +617,62 @@ jobs:
             echo "  no -t at all -> exit $not_rc  stdout bytes: $(wc -c < /tmp/t.out)"
           fi
           exit $rc
+
+      # Rung 8 — the DSSSL ENGINE, i.e. the other half of the product. Rung 7
+      # proved the parser; this links dazzle_cli and runs ELEVEN of its suites
+      # through the SAME drivers the POSIX legs use. That reuse is the point:
+      # a suite reimplemented for one platform is a second oracle, and this tree
+      # does not allow one. It is possible because tests/dazzle/build-cli.sh —
+      # the single place that produces the CLI — accepts DAZZLE_PREBUILT and
+      # then publishes tests/win32/lf-wrapper.sh at the path the suites invoke.
+      #
+      # ★THE ENGINE DRAGS libLLVM ONTO EVERY TARGET, and that is a finding, not
+      # a build detail: the JIT lives IN the dazzle package (dazzle/Jit.scaly),
+      # so the package object owes 61 LLVM-C symbols — measured — even though
+      # `--jit` is opt-in and nothing here enables it. The archive is one object
+      # with one .text section, so a COFF linker can discard none of it. Hence
+      # the -lLLVM-C below, satisfied from the LLVM the runner image already
+      # ships for clang. ★Caveat written down rather than discovered later: that
+      # LLVM is version 20 while the reference build uses 18, so this binary's
+      # JIT is linked but NOT validated — which is exactly why no step here
+      # passes --jit.
+      - name: Link the dazzle engine and run its suites (rung 8)
+        shell: bash
+        run: |
+          set -e
+          # Locate LLVM-C. Reported rather than assumed: if the runner image
+          # ever stops shipping it, the message should name that, not leave a
+          # linker error to be decoded.
+          llvmlib=""
+          for d in "/c/Program Files/LLVM/lib" "/c/Program Files (x86)/LLVM/lib"; do
+            [ -f "$d/LLVM-C.lib" ] && { llvmlib="$d"; break; }
+          done
+          if [ -z "$llvmlib" ]; then
+            echo "rung 8: no LLVM-C.lib found — the dazzle package needs it for"
+            echo "        the 61 LLVM-C symbols its JIT references. Looked in:"
+            echo "        /c/Program Files/LLVM/lib, /c/Program Files (x86)/LLVM/lib"
+            ls "/c/Program Files/LLVM/lib" 2>&1 | head -20
+            exit 1
+          fi
+          echo "rung 8: linking against $llvmlib/LLVM-C.lib"
+          clang --target=x86_64-pc-windows-msvc \
+                dazzle_cli_win.o dazzle_win.o opensp_win.o libscaly.lib \
+                -lws2_32 -L"$llvmlib" -lLLVM-C -o dazzle.exe
+          ls -l dazzle.exe
+
+          # One transform before the suites: if the engine cannot start, eleven
+          # suites failing say that far less clearly than one invocation does.
+          ./dazzle.exe -v 2>&1 | head -3 || true
+
+          export DAZZLE_PREBUILT="$PWD/dazzle.exe"
+          fail=0
+          for s in engine fot cli prims grove flowobj coding rtf html mif tex; do
+            if tests/dazzle/$s/run.sh > "dz-$s.log" 2>&1; then
+              echo "  $s: $(tail -1 "dz-$s.log")"
+            else
+              fail=1
+              echo "  $s: FAIL"
+              tail -20 "dz-$s.log" | sed 's/^/      /'
+            fi
+          done
+          exit $fail
