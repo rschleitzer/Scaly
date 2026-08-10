@@ -1,15 +1,17 @@
 /* POSIX compatibility shim for Win64 (stage 7, brocken 3).
  *
- * Provides the fourteen POSIX symbols the Scaly runtime and its test corpus
+ * Provides the fifteen POSIX symbols the Scaly runtime and its test corpus
  * reference that Windows does not have. Compiled ONLY on Windows
  * (tools/win32compat.sh); everywhere else the platform provides these itself
  * and this file is not built.
  *
- * ★It was twelve until 2026-08-10, and the two that were missing say something
- * about the instrument rather than about Windows: `setenv` and `socketpair` are
- * declared `extern` in TEST sources, not in `packages/`, so a completeness
- * check scoped to the runtime root could not see them. `tools/win-undef.sh`
- * now unions the runtime with every program the Windows corpus links.
+ * ★It was twelve until 2026-08-10, and how each of the three arrived is worth
+ * more than the count. `setenv` and `socketpair` say something about the
+ * INSTRUMENT rather than about Windows: they are declared `extern` in TEST
+ * sources, not in `packages/`, so a completeness check scoped to the runtime
+ * root could not see them (`tools/win-undef.sh` now unions the runtime with
+ * every program the Windows corpus links). `close` is not a missing symbol at
+ * all — the CRT has one — but a WRONG one: see its own note below.
  *
  * Why it provides the POSIX NAMES rather than changing the Scaly side: the
  * committed seed ships ONE scaly.ll for every target, so the runtime's extern
@@ -19,8 +21,10 @@
  *
  * The list is not a guess — `tools/win-undef.sh` measures it by cross-emitting
  * the runtime for the Windows triple and classifying every undefined symbol.
- * Run it; class B is exactly what this file owes. It is 12 rather than 13
- * because `aligned_alloc` could not be faked: Windows has `_aligned_malloc`,
+ * Run it; class B is exactly what this file owes — plus the `close` case,
+ * which no undefined-symbol count can ever report, because the symbol
+ * resolves and only its BEHAVIOUR is wrong. `aligned_alloc` is not here at
+ * all and could not be faked: Windows has `_aligned_malloc`,
  * whose memory must be released with `_aligned_free`, and plain `free()` on it
  * is undefined — so alloc and free had to move together, as the
  * scaly_aligned_alloc/scaly_aligned_free pair on the Scaly side.
@@ -245,6 +249,61 @@ int pipe(int fds[2])
     return _pipe(fds, 65536, _O_BINARY);
 }
 
+/* ---- close ------------------------------------------------------------
+ *
+ * ★POSIX `close` closes a SOCKET as readily as a file, and code written
+ * against POSIX does exactly that (every socketpair and TCP test here ends in
+ * `close(fd)`). On Windows the two are unrelated namespaces — see the long
+ * note in eio_win.c — and the CRT's `close` knows only its own descriptor
+ * table. Handed a socket handle it does not merely fail: it reports an
+ * invalid parameter, whose DEFAULT handler ends the process, so a POSIX-shaped
+ * teardown kills the program after all its work is done. And if the handle
+ * NUMBER happens to match a live descriptor, it closes an unrelated file
+ * instead, which is worse for being quiet.
+ *
+ * SO_TYPE decides, exactly as `scaly_eio_read`/`write` decide: it succeeds for
+ * a socket, fails for anything else, and moves nothing. Winsock is started
+ * first so the answer means what it says — probing an error code instead would
+ * read WSANOTINITIALISED and take the wrong branch, which is the trap that
+ * once made every Console.print return -1.
+ *
+ * This DEFINES the name `close`, so the linker resolves it here and never
+ * reaches the CRT's alias — deliberate, and the reason the file may do it is
+ * the same one that justifies the rest of it: the Scaly side cannot be made
+ * target-conditional, so the POSIX name has to mean the POSIX thing here.
+ */
+/* Winsock startup for this file. WSAStartup is refcounted, so eio_win.c's own
+ * INIT_ONCE and this one coexist; neither file may assume the other ran, since
+ * either can be the first to touch a socket. */
+static INIT_ONCE sc_pc_ws_once = INIT_ONCE_STATIC_INIT;
+
+static BOOL CALLBACK sc_pc_ws_init(PINIT_ONCE o, PVOID p, PVOID* c)
+{
+    WSADATA d;
+    (void)o; (void)p; (void)c;
+    return WSAStartup(MAKEWORD(2, 2), &d) == 0;
+}
+
+static void sc_pc_ws_start(void)
+{
+    InitOnceExecuteOnce(&sc_pc_ws_once, sc_pc_ws_init, NULL, NULL);
+}
+
+static int sc_pc_is_socket(SOCKET s)
+{
+    int t = 0, len = (int)sizeof t;
+    sc_pc_ws_start();
+    return getsockopt(s, SOL_SOCKET, SO_TYPE, (char*)&t, &len) != SOCKET_ERROR;
+}
+
+int close(int fd)
+{
+    SOCKET s = (SOCKET)(intptr_t)fd;
+    if (sc_pc_is_socket(s))
+        return closesocket(s) == SOCKET_ERROR ? -1 : 0;
+    return _close(fd);
+}
+
 int poll(void* fds, unsigned long long nfds, int timeout)
 {
     /* The Scaly-side struct: { int fd; short events; short revents; } */
@@ -332,25 +391,12 @@ int setenv(const char* name, const char* value, int overwrite)
  * would make a small-message ping-pong depend on the ack timing of a loopback
  * connection. That is fidelity to the emulated contract, not a tuning knob.
  *
- * ★KNOWN HAZARD at the far end, recorded because it is not fixable HERE: POSIX
- * code closes a socketpair descriptor with `close`, and on Windows `close` is
- * the CRT's, which knows nothing of socket handles — it validates the number
- * against its own descriptor table and terminates the process through the
- * invalid-parameter handler when it does not match. If echo/echo_main now fail
- * at their `close` calls rather than at the link, that is this, and the fix is
- * a `close` in THIS file that decides with SO_TYPE exactly as eio_win.c's
- * read/write do — a separate rung, because it changes a symbol every caller
- * uses and not just these two.
+ * ★The far end of this — POSIX code closes such a descriptor with `close` —
+ * is what the `close` above exists for. It was written here as a known hazard
+ * before it was fixed, and the fix turned out to belong to the same class as
+ * the poller queue's close in `Io.close_poller`: a POSIX name whose argument
+ * is not a CRT descriptor on this target.
  */
-static INIT_ONCE sc_pc_ws_once = INIT_ONCE_STATIC_INIT;
-
-static BOOL CALLBACK sc_pc_ws_init(PINIT_ONCE o, PVOID p, PVOID* c)
-{
-    WSADATA d;
-    (void)o; (void)p; (void)c;
-    return WSAStartup(MAKEWORD(2, 2), &d) == 0;
-}
-
 static void sc_pc_nodelay(SOCKET s)
 {
     int on = 1;
@@ -372,7 +418,7 @@ int socketpair(int domain, int sotype, int protocol, int sv[2])
     if (sv == NULL)
         return -1;
 
-    InitOnceExecuteOnce(&sc_pc_ws_once, sc_pc_ws_init, NULL, NULL);
+    sc_pc_ws_start();
 
     memset(&addr, 0, sizeof addr);
     addr.sin_family = AF_INET;

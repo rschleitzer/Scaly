@@ -77,7 +77,7 @@ ALL=$(printf '%s\n' "$ALL" | while read -r s
 
 # Present in the MSVC CRT under this exact name, or under an underscore alias
 # the CRT also exports — no work beyond linking.
-CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strlen|strdup|write|close|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index)$'
+CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strlen|strdup|write|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index)$'
 HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
 
 # What our own Windows sources DEFINE. Read by grep rather than by compiling
