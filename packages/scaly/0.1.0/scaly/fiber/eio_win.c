@@ -594,7 +594,21 @@ int scaly_eio_accept(int fd)
  * PAGE_GUARD is what Windows uses for its own thread stacks: the first touch
  * raises STATUS_GUARD_PAGE_VIOLATION and CLEARS the attribute, so the page is
  * ordinary memory by the time the dispatcher needs room. One fault, then
- * space to report it in. */
+ * space to report it in.
+ *
+ * ★And "space" is 4096 bytes MINUS what the dispatch spends, i.e. a few hundred
+ * — measured, not assumed; whether it is enough depends on where in the page the
+ * faulting access landed. The consequences of that number are at
+ * scaly_guard_die and in the handler.
+ *
+ * ★★A second correction from the same measurement, and it is load-bearing for
+ * the handler below: on a FIBER stack the exception does not arrive as
+ * STATUS_GUARD_PAGE_VIOLATION at all but as **STATUS_STACK_OVERFLOW**, because
+ * scaly_make_context sets the TIB's DeallocationStack equal to its StackLimit —
+ * there is nothing below the mapping to grow into, so the kernel reports an
+ * exhausted stack rather than a guard page it could move. The handler's
+ * three-code test looks redundant and is not: EXCEPTION_STACK_OVERFLOW is the
+ * arm that actually fires. Do not prune it to the "obvious" one. */
 int scaly_stack_guard(void* base, size_t len)
 {
     DWORD old = 0;
@@ -602,6 +616,45 @@ int scaly_stack_guard(void* base, size_t len)
 }
 
 static int (*scaly_guard_classify)(void*);
+
+/* ★THE TERMINATOR HAS TO BE A SYSCALL STUB, AND THAT IS THE WHOLE FIX (measured
+ * on a Windows box 2026-08-10; the reproduction and its numbers are in
+ * tests/win32/WINDOWS-BOX.md section 5).
+ *
+ * The handler is entered with only a few HUNDRED bytes of stack: the guard page
+ * is 4096 bytes, the exception dispatch spends ~2600 of them on the CONTEXT
+ * record and ntdll's own frames, and what is left is everything the handler and
+ * everything it calls may use before it runs off the bottom of the mapping into
+ * unmapped memory. Measured across a sweep of recursion frame sizes: 240 to
+ * 1520 bytes.
+ *
+ * WriteFile fits in that (it is a thin path down to NtWriteFile). kernel32's
+ * TerminateProcess does NOT: it faults, the access violation becomes the
+ * process's exit status, and the whole failure looked like "nothing after the
+ * first WriteFile runs" — which was true, and whose cause was misattributed to
+ * WriteFile for three rounds. NtTerminateProcess, ntdll's syscall stub for the
+ * same operation, fits with room to spare and ends the process with the code we
+ * asked for.
+ *
+ * Resolved once at install time, never in the handler: a fault is no place to
+ * be walking export tables. GetProcAddress rather than a link against
+ * ntdll.lib, so no target's link line changes. If it ever fails, the fallback
+ * is today's behaviour — a correct message and the wrong exit code — which is
+ * the same best-effort posture as a failed handler install. */
+typedef LONG(NTAPI* scaly_nt_terminate_t)(HANDLE, LONG);
+static scaly_nt_terminate_t scaly_nt_terminate;
+
+static void scaly_guard_die(void)
+{
+    if (scaly_nt_terminate != NULL)
+        scaly_nt_terminate((HANDLE)(LONG_PTR)-1, 108); /* NtCurrentProcess */
+    else
+        TerminateProcess(GetCurrentProcess(), 108);
+    /* Unreachable in practice, and it must not RESUME: a guard-page violation
+     * inside the range the TIB declares as this thread's stack is a resumable
+     * event, and resuming re-enters the recursion that overflowed. */
+    Sleep(INFINITE);
+}
 
 static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
 {
@@ -616,61 +669,25 @@ static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
             DWORD written = 0;
             WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg,
                       (DWORD)(sizeof msg - 1), &written, NULL);
-            /* ★Reporting the overflow was never the hard part — the message
-             * above has come out on the first try every time. ENDING the
-             * process with 108 is, and three attempts have failed the same
-             * way: the exit code stayed the access violation's (139 through
-             * the shell). `TerminateProcess` is ASYNCHRONOUS, so the faulting
-             * thread stays runnable; adding `WaitForSingleObject` on the
-             * current process changed nothing; and `_exit` — the very call
-             * the POSIX handler makes — did not end it either, which on
-             * Windows is not the raw syscall it is there but a CRT path down
-             * to ExitProcess, loader lock and DLL detach, on a stack that has
-             * just run out.
+            /* ★The message was never the hard part — it has come out on the
+             * first try every time. Ending the process with 108 was, and the
+             * reason is stack, not the choice of API: see scaly_guard_die.
+             * Everything the handler calls has a few hundred bytes to work in.
              *
-             * What is being fought is the OS's own design: a guard-page
-             * violation inside the range the TIB declares as this thread's
-             * stack is a RESUMABLE event — it is how Windows grows its own
-             * stacks — and `scaly_make_context` sets those TIB fields
-             * faithfully, so our fiber stack qualifies. Resumption re-enters
-             * the recursion, which then runs past the cleared page into
-             * unmapped memory and faults for real.
-             *
-             * So: ask the KERNEL to end the process (no user-mode stack
-             * needed), then park this thread where the faulting instruction
-             * can never be reached again. `Sleep` is a bare syscall with no
-             * pseudo-handle question attached, unlike the wait that failed.
-             *
-             * ★★★THE PROBE BELOW ANSWERED IT, AND THE ANSWER IS THAT NOTHING
-             * AFTER THE FIRST WriteFile RUNS AT ALL. Its line never appears —
-             * so TerminateProcess was never called, `_exit` was never called,
-             * and the wait was never reached: all three "fixes" were attempts
-             * to repair code that does not execute. **The handler itself dies
-             * on the stack it is diagnosing.** PAGE_GUARD clears exactly ONE
-             * page, the exception dispatch has already spent much of it on the
-             * CONTEXT record, and WriteFile reaches deeper than what is left —
-             * far enough to emit the bytes (which is why the message always
-             * arrives) and then to touch unmapped memory below the allocation
-             * base, which is the access violation that ends the process.
-             *
-             * So the open item is not WHICH terminator to call. It is that the
-             * handler needs room to run in, the way the POSIX side gets it
-             * from sigaltstack — and a VEH cannot switch stacks. The candidates
-             * (an emergency band reserved below the guard page, a wider guard
-             * region, SetThreadStackGuarantee, handing the work to a thread
-             * that has its own stack) all need measuring on a real machine
-             * rather than another blind round; see tests/win32/WINDOWS-BOX.md.
-             *
-             * The probe stays. Its ABSENCE is the measurement, and the next
-             * person needs it to see that for themselves. The stderr
-             * expectation is a substring match, so it cannot break the test. */
-            TerminateProcess(GetCurrentProcess(), 108);
-            {
-                static const char after[] = "fiber guard: termination requested\n";
-                WriteFile(GetStdHandle(STD_ERROR_HANDLE), after,
-                          (DWORD)(sizeof after - 1), &written, NULL);
-            }
-            Sleep(INFINITE);
+             * ★★★WHAT IS STILL NOT SOLVED, because it is one level below this
+             * function: if the recursion's first touch inside the guard page
+             * lands lower than the ~2600 bytes the exception dispatch needs,
+             * there is no room to build the CONTEXT record and the process dies
+             * with NO handler at all — no message, and the raw fault as the
+             * exit code. Measured over 64 recursion frame sizes: 20 of them.
+             * The POSIX side is immune because sigaltstack puts the signal
+             * frame on a different stack, and a VEH cannot switch stacks. What
+             * closes it is one WRITABLE page below the guard page for the
+             * dispatch to spill into (64 of 64 with it, measured the same way),
+             * and that is a stack-LAYOUT change in fiber.scaly, not a shim
+             * change. tests/win32/WINDOWS-BOX.md section 5 has the numbers and
+             * the shape. */
+            scaly_guard_die();
         }
     }
     return EXCEPTION_CONTINUE_SEARCH;
@@ -678,7 +695,13 @@ static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
 
 int scaly_guard_install(int (*classify)(void*))
 {
+    HMODULE ntdll = GetModuleHandleA("ntdll.dll");
     scaly_guard_classify = classify;
+    if (ntdll != NULL)
+        /* Through void*, not directly: a function-pointer-to-function-pointer
+         * cast is what -Wcast-function-type objects to. */
+        scaly_nt_terminate = (scaly_nt_terminate_t)(void*)
+            GetProcAddress(ntdll, "NtTerminateProcess");
     return AddVectoredExceptionHandler(1, scaly_guard_veh) == NULL ? -1 : 0;
 }
 
