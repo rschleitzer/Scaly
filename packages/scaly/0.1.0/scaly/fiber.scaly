@@ -398,7 +398,7 @@ procedure pthread_join(thread: size_t, retval: pointer[void]) returns i32 extern
 ; first argument).
 function scaly_call_ptr(fn: pointer[void], arg: pointer[void]) returns pointer[void] extern
 
-function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+function scaly_aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
 
 ; ---- Cross-thread deadlock detection (milestone 2.4 residual) ----
 ;
@@ -447,7 +447,7 @@ procedure ensure_deadlock_state()
 {
     if deadlock_state <> null
         return
-    let d aligned_alloc(8, (sizeof DeadlockState) as i64) as pointer[DeadlockState]
+    let d scaly_aligned_alloc(8, (sizeof DeadlockState) as i64) as pointer[DeadlockState]
     set d.threads: 1
     set d.blocked: 0
     set d.epoch: 0
@@ -803,7 +803,7 @@ define Fiber
                 }
             }
             let next_bucket bucket.next
-            free(bucket as pointer[void])
+            scaly_aligned_free(bucket as pointer[void])
             set fiber_buckets_freed: fiber_buckets_freed + 1
             set bucket: next_bucket
         }

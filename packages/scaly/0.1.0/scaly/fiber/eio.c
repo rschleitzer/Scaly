@@ -623,3 +623,53 @@ long long scaly_eio_seek(void* stream, long long offset, long long whence)
 {
     return (long long)fseeko((FILE*)stream, (off_t)offset, (int)whence);
 }
+
+/* ---- OS facts the runtime cannot ask for directly ----------------------
+ *
+ * These are not evented I/O, and putting them here stretches this file's name.
+ * The alternative was a fourth shim, which would have to be threaded through
+ * every archive build and every explicit object list (build-from-seed.sh,
+ * seed.sh, verify-seed.sh, install.sh, link-lto.sh and two suites) for two
+ * functions apiece. This file is already where the runtime's OS questions land
+ * — ncpu, the monotonic clock, st_blksize — so they join those.
+ *
+ * ALIGNED ALLOCATION comes in a PAIR, and the pairing is the whole point
+ * (stage 7, brocken 5). POSIX pairs aligned_alloc with plain free(); Windows
+ * has no aligned_alloc at all, only _aligned_malloc, whose memory MUST be
+ * released with _aligned_free — passing it to free() is undefined. So the two
+ * halves cannot be split across the C boundary: a Scaly side that called
+ * aligned_alloc and free would be correct on three targets and corrupt the
+ * heap on the fourth. Every allocation in the runtime that is later freed goes
+ * through this pair; a `grep -c 'malloc\|free' packages/scaly` that finds
+ * anything else is the signal that the invariant broke.
+ *
+ * THE STACK LIMIT replaces a direct getrlimit(RLIMIT_STACK), which Windows
+ * does not have — and the difference is not only the spelling: POSIX reports a
+ * PROCESS resource limit, Windows reports the CURRENT THREAD's bounds. Asking
+ * "how big is the stack I am running on" is the question the caller
+ * (Planner.check_nesting_stack) actually has, and it is the one that survives
+ * the translation. 0 means "cannot tell", and the caller falls back.
+ */
+
+#include <sys/resource.h>
+#include <stdlib.h>
+
+long long scaly_stack_limit(void)
+{
+    struct rlimit rl;
+    if (getrlimit(RLIMIT_STACK, &rl) != 0)
+        return 0;
+    if (rl.rlim_cur == RLIM_INFINITY)
+        return 0;
+    return (long long)rl.rlim_cur;
+}
+
+void* scaly_aligned_alloc(size_t alignment, size_t size)
+{
+    return aligned_alloc(alignment, size);
+}
+
+void scaly_aligned_free(void* p)
+{
+    free(p);
+}

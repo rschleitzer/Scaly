@@ -577,6 +577,41 @@ long long scaly_eio_seek(void* stream, long long offset, long long whence)
     return _fseeki64((FILE*)stream, offset, (int)whence);
 }
 
+/* ---- OS facts the runtime cannot ask for directly ----------------------
+ *
+ * The Windows halves of the pair eio.c documents at the same place.
+ *
+ * _aligned_malloc takes its arguments in the OPPOSITE order to aligned_alloc
+ * (size first, then alignment) — a silent swap here would ask for a 4096-byte
+ * alignment of 16 bytes on one call and the reverse on another, and both
+ * succeed often enough to look fine.
+ *
+ * GetCurrentThreadStackLimits answers for the CALLING THREAD, which is the
+ * better fit for what the caller wants than POSIX's process-wide limit — but
+ * it means the answer legitimately differs between threads, so it must not be
+ * cached across them. The caller derives its budget once per compilation on
+ * the thread that plans, which holds.
+ */
+
+long long scaly_stack_limit(void)
+{
+    ULONG_PTR low = 0, high = 0;
+    GetCurrentThreadStackLimits(&low, &high);
+    if (high <= low)
+        return 0;
+    return (long long)(high - low);
+}
+
+void* scaly_aligned_alloc(size_t alignment, size_t size)
+{
+    return _aligned_malloc(size, alignment);   /* note the argument order */
+}
+
+void scaly_aligned_free(void* p)
+{
+    _aligned_free(p);
+}
+
 #else
 typedef int scaly_eio_win_not_needed_on_this_target;
 #endif /* _WIN32 */

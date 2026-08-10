@@ -81,7 +81,7 @@ define Page
         ; allocate_oversized) carry next_object == null. They go back via free.
         if p.next_object = null
         {
-            free(p as pointer[void])
+            scaly_aligned_free(p as pointer[void])
             return
         }
 
@@ -315,7 +315,7 @@ define Page
     {
         ; We allocate oversized objects directly.
         let rounded (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1))
-        let address aligned_alloc(PAGE_SIZE, rounded)
+        let address scaly_aligned_alloc(PAGE_SIZE, rounded)
         if address = null
             exit 1
 

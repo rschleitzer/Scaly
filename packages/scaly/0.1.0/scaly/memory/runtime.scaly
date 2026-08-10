@@ -1,9 +1,16 @@
 ; C runtime functions for memory management
 ; These are external functions from libc
 
+; Aligned allocation is a PAIR through the shim, never libc's aligned_alloc +
+; free (stage 7, brocken 5). Windows has no aligned_alloc at all — only
+; _aligned_malloc, whose memory must be released with _aligned_free, and
+; passing it to free() is undefined. One committed seed serves every target, so
+; a Scaly side that named the libc pair would be right on three targets and
+; corrupt the heap on the fourth. The two halves therefore travel together;
+; see the block at the end of scaly/fiber/eio.c.
 ; Note: Using i64 for size parameters since Scaly integer literals are signed
-function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
-function free(ptr: pointer[void]) extern
+function scaly_aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+function scaly_aligned_free(ptr: pointer[void]) extern
 function exit(code: i32) extern
 procedure abort() extern
 

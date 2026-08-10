@@ -44,21 +44,21 @@ function exit(code: i32) extern
 ;
 ; Without a guard the failure is a bare SIGSEGV with ONE frame in the lldb
 ; backtrace (the guard page) and no file, line, or hint — an hour of looking in
-; the wrong place, twice now. `getrlimit` gives the live limit, so the guard
+; the wrong place, twice now. The live limit is what the guard reads, so it
 ; adapts to whatever `ulimit -s` the run actually has instead of hard-coding a
 ; nesting count that would be either unsafe at 8 MB or wrong at 64 MB.
 ;
-; Containment rule (CLAUDE.md): getrlimit is a direct extern, not a C shim —
-; no OS-specific struct layout beyond "two u64" (rlim_t is uint64 on all four
-; LP64 targets), not variadic, no errno needed. RLIMIT_STACK is 3 on both
-; darwin and linux.
-define Rlimit
-(
-    cur: size_t
-    max: size_t
-)
-
-function getrlimit(resource: i32, rlp: pointer[void]) returns i32 extern
+; ★It goes through a SHIM since 2026-08-10 (stage 7, brocken 5), where it used
+; to be a direct `getrlimit(RLIMIT_STACK)` extern with a local two-u64 struct.
+; Windows has no getrlimit, and the difference is not just the spelling: POSIX
+; answers with a PROCESS resource limit, Windows with the CURRENT THREAD's
+; bounds (GetCurrentThreadStackLimits). "How big is the stack I am running on"
+; is the question this caller actually has, and it is the one that survives the
+; translation — so the shim exports that question rather than either platform's
+; answer to a different one. 0 means "cannot tell" and takes the fallback,
+; which also absorbs the old RLIM_INFINITY case. This is the one place the
+; Windows port reaches into the COMPILER rather than the runtime substrate.
+function scaly_stack_limit() returns size_t extern
 function getenv(name: pointer[const_char]) returns pointer[const_char] extern
 ; atoll, not atol: `long atol(const char*)` is 32-bit on Win64 (LLP64) while
 ; the one committed seed declares this once for every target, so a budget above
@@ -788,7 +788,7 @@ define Planner
         ; designated entry point, so it needs no knowledge of who starts the
         ; walk and self-recalibrates if planning ever runs on another stack
         ; (a promoted `for` worker). stack_budget is the byte budget derived
-        ; ONCE from getrlimit; 0 in both means "not yet established".
+        ; ONCE from scaly_stack_limit; 0 in both means "not yet established".
         ; Declared LAST (field-index stability).
         stack_base: size_t
         stack_budget: size_t
@@ -2464,7 +2464,7 @@ define Planner
 
         ; ====================================================================
         ; Stack guard — the measurements it rests on are at module scope
-        ; (see `define Rlimit`).
+        ; (see the `scaly_stack_limit` declaration and the note above it).
         ;
         ; Byte budget for the planner's recursive descent, derived ONCE.
         ; ====================================================================
@@ -2484,21 +2484,22 @@ define Planner
                     return v
             }
 
-            var r Rlimit(0, 0)
-            let rc getrlimit(3, &r as pointer[void]) as int
-            ; Unreadable, unlimited (RLIM_INFINITY) or absurd: use the fixed
-            ; fallback rather than never firing / firing immediately.
-            if rc <> 0
+            let limit scaly_stack_limit()
+            ; Unreadable, unlimited or absurd: use the fixed fallback rather
+            ; than never firing / firing immediately. The shim reports 0 for
+            ; both "the call failed" and "unlimited", which are the same thing
+            ; to this caller.
+            if limit = 0
                 return fallback
-            if r.cur < (1024 * 1024) as size_t
+            if limit < (1024 * 1024) as size_t
                 return fallback
-            if r.cur > (1024 * 1024 * 1024) as size_t
+            if limit > (1024 * 1024 * 1024) as size_t
                 return fallback
 
             ; 80 %. The guard runs at a nesting ENTRY, so the remaining fifth
             ; must cover the rest of this level's frames — 5 per `else if` arm,
             ; ~180 KB with the unoptimized bootstrap stages.
-            r.cur / 5 * 4
+            limit / 5 * 4
         }
 
         ; Called at the top of plan_operand#, which the lldb backtrace of a real

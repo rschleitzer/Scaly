@@ -613,7 +613,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @free(ptr %0)
+  call void @scaly_aligned_free(ptr %0)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -813,9 +813,9 @@ entry:
   ret ptr %as.inttoptr
 }
 
-declare ptr @aligned_alloc(i64, i64)
+declare ptr @scaly_aligned_alloc(i64, i64)
 
-declare void @free(ptr)
+declare void @scaly_aligned_free(ptr)
 
 declare void @exit(i32)
 
@@ -1088,7 +1088,7 @@ entry:
   %add = add i64 %1, 4096
   %sub = sub i64 %add, 1
   %and = and i64 %sub, -4096
-  %call = call ptr @aligned_alloc(i64 4096, i64 %and)
+  %call = call ptr @scaly_aligned_alloc(i64 4096, i64 %and)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -1194,7 +1194,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @aligned_alloc(i64 16, i64 32)
+  %call = call ptr @scaly_aligned_alloc(i64 16, i64 32)
   store ptr %call, ptr @fmt_scratch, align 8
   br label %if.end
 
@@ -1429,7 +1429,7 @@ if.end3:                                          ; preds = %if.end
   %global.load = load i64, ptr @dead_buckets_reclaimed, align 8
   %add = add i64 %global.load, 1
   store i64 %add, ptr @dead_buckets_reclaimed, align 8
-  call void @free(ptr %0)
+  call void @scaly_aligned_free(ptr %0)
   ret i1 true
 }
 
@@ -1451,7 +1451,7 @@ while.body:                                       ; preds = %while.cond
   %load.struct = load %_Z17StackBucketHeader, ptr %sb2, align 8
   %next = extractvalue %_Z17StackBucketHeader %load.struct, 1
   %sb3 = load ptr, ptr %sb, align 8
-  call void @free(ptr %sb3)
+  call void @scaly_aligned_free(ptr %sb3)
   store ptr %next, ptr %sb, align 1
   br label %while.cond
 
@@ -1503,7 +1503,7 @@ if.end:                                           ; preds = %if.then, %while.bod
 
 if.then21:                                        ; preds = %if.end
   %hb23 = load ptr, ptr %hb, align 8
-  call void @free(ptr %hb23)
+  call void @scaly_aligned_free(ptr %hb23)
   br label %if.end22
 
 if.end22:                                         ; preds = %if.then21, %if.end
@@ -1548,7 +1548,7 @@ entry:
 
 define linkonce_odr ptr @_Z19create_stack_bucketP17StackBucketHeader(ptr %0) {
 entry:
-  %call = call ptr @aligned_alloc(i64 262144, i64 262144)
+  %call = call ptr @scaly_aligned_alloc(i64 262144, i64 262144)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -1575,7 +1575,7 @@ if.end2:                                          ; preds = %if.then1, %if.end
 
 define linkonce_odr ptr @_Z18create_heap_bucketv() {
 entry:
-  %call = call ptr @aligned_alloc(i64 262144, i64 262144)
+  %call = call ptr @scaly_aligned_alloc(i64 262144, i64 262144)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -1927,7 +1927,7 @@ if.then1:                                         ; preds = %if.end
 
 if.end2:                                          ; preds = %if.end
   store i64 1, ptr @trace_enabled, align 8
-  %call3 = call ptr @aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
+  %call3 = call ptr @scaly_aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
   store ptr %call3, ptr @trace_entries, align 8
   %call4 = call i32 @atexit(ptr @_Z16scaly_trace_dumpv)
   ret void
@@ -2136,12 +2136,12 @@ if.then1:                                         ; preds = %if.end
   ret void
 
 if.end2:                                          ; preds = %if.end
-  %call3 = call ptr @aligned_alloc(i64 8, i64 ptrtoint (ptr getelementptr (%_Z15HeapTraceHeader, ptr null, i32 1) to i64))
+  %call3 = call ptr @scaly_aligned_alloc(i64 8, i64 ptrtoint (ptr getelementptr (%_Z15HeapTraceHeader, ptr null, i32 1) to i64))
   %lock = getelementptr inbounds %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 0
   store i64 0, ptr %lock, align 8
   %count = getelementptr inbounds %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 1
   store i64 0, ptr %count, align 8
-  %call4 = call ptr @aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
+  %call4 = call ptr @scaly_aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
   %entries = getelementptr inbounds %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 2
   store ptr %call4, ptr %entries, align 8
   store ptr %call3, ptr @heap_trace, align 8
@@ -2862,7 +2862,7 @@ if.then42:                                        ; preds = %while.body27
   br label %if.end43
 
 if.else:                                          ; preds = %while.body27
-  %call45 = call ptr @aligned_alloc(i64 4096, i64 %deref38)
+  %call45 = call ptr @scaly_aligned_alloc(i64 4096, i64 %deref38)
   %eq46 = icmp eq ptr %call45, null
   br i1 %eq46, label %if.then47, label %if.end48
 
@@ -23453,7 +23453,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call ptr @aligned_alloc(i64 8, i64 ptrtoint (ptr getelementptr (%_Z13DeadlockState, ptr null, i32 1) to i64))
+  %call = call ptr @scaly_aligned_alloc(i64 8, i64 ptrtoint (ptr getelementptr (%_Z13DeadlockState, ptr null, i32 1) to i64))
   %threads = getelementptr inbounds %_Z13DeadlockState, ptr %call, i32 0, i32 0
   store i64 1, ptr %threads, align 8
   %blocked = getelementptr inbounds %_Z13DeadlockState, ptr %call, i32 0, i32 1
@@ -23945,7 +23945,7 @@ if.end5:                                          ; preds = %while.exit18, %whil
   %load.struct28 = load %_Z17StackBucketHeader, ptr %bucket27, align 8
   %next = extractvalue %_Z17StackBucketHeader %load.struct28, 1
   %bucket29 = load ptr, ptr %bucket, align 8
-  call void @free(ptr %bucket29)
+  call void @scaly_aligned_free(ptr %bucket29)
   %global.load = load i64, ptr @fiber_buckets_freed, align 8
   %add30 = add i64 %global.load, 1
   store i64 %add30, ptr @fiber_buckets_freed, align 8

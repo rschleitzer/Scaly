@@ -101,11 +101,11 @@ mutable fmt_scratch: pointer[char] null
 
 function scaly_fmt_scratch_ptr() returns pointer[char]
 {
-    ; alignment must be a valid power-of-two >= sizeof(void*): aligned_alloc(1,
+    ; alignment must be a valid power-of-two >= sizeof(void*): scaly_aligned_alloc(1,
     ; ...) returns NULL on macOS/Apple libc (and is UB per C11), which made a
     ; deref of this scratch buffer SIGSEGV. 16 is safe; 32 is a multiple of it.
     if fmt_scratch = null
-        set fmt_scratch: aligned_alloc(16, 32) as pointer[char]
+        set fmt_scratch: scaly_aligned_alloc(16, 32) as pointer[char]
     fmt_scratch
 }
 
@@ -254,7 +254,7 @@ function drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
         return false
     bucket_unlock b
     set dead_buckets_reclaimed: dead_buckets_reclaimed + 1
-    free(b as pointer[void])
+    scaly_aligned_free(b as pointer[void])
     true
 }
 
@@ -278,7 +278,7 @@ procedure scaly_thread_release_buckets()
     while sb <> null
     {
         let nxt sb.next
-        free(sb as pointer[void])
+        scaly_aligned_free(sb as pointer[void])
         set sb: nxt
     }
     set stack_head: null
@@ -298,7 +298,7 @@ procedure scaly_thread_release_buckets()
         }
         bucket_unlock hb
         if empty
-            free(hb as pointer[void])
+            scaly_aligned_free(hb as pointer[void])
         set hb: nxt
     }
     set heap_head: null
@@ -338,7 +338,7 @@ procedure reset_page(p: pointer[Page])
 
 function create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
 {
-    let mem aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
+    let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
         exit 101
 
@@ -353,7 +353,7 @@ function create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[S
 
 function create_heap_bucket() returns pointer[HeapBucketHeader]
 {
-    let mem aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
+    let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
         exit 102
 
@@ -633,7 +633,7 @@ procedure scaly_rt_register_trace()
     ; Lazy-allocate the trace table. Scaly can't express a fixed-size
     ; array at module-global scope, so we heap-allocate on first arm.
     let bytes TRACE_MAX * (sizeof TraceEntry)
-    set trace_entries: aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
+    set trace_entries: scaly_aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
     atexit(&scaly_trace_dump)
 }
 
@@ -774,11 +774,11 @@ procedure scaly_rt_register_heap_trace()
         set heap_trace_state: 1
         return
     }
-    let hdr aligned_alloc(8, (sizeof HeapTraceHeader) as i64) as pointer[HeapTraceHeader]
+    let hdr scaly_aligned_alloc(8, (sizeof HeapTraceHeader) as i64) as pointer[HeapTraceHeader]
     set hdr.lock: 0
     set hdr.count: 0
     let bytes TRACE_MAX * (sizeof TraceEntry)
-    set hdr.entries: aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
+    set hdr.entries: scaly_aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
     set heap_trace: hdr
     set heap_trace_state: 2
     atexit(&scaly_heap_trace_dump)

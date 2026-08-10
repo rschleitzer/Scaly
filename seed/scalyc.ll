@@ -935,7 +935,6 @@ target datalayout = "e-m:o-i64:64-i128:128-n32:64-S128"
 %_Z6VectorI13PlannedModuleE = type { i64, ptr }
 %_Z6VectorI14PlannedConceptE = type { i64, ptr }
 %_Z6VectorI15PlannedOperatorE = type { i64, ptr }
-%_Z6Rlimit = type { i64, i64 }
 %_Z6VectorI14PlannedOperandE = type { i64, ptr }
 %_Z14VectorIteratorI14PlannedOperandE = type { ptr, i64 }
 %_Z5SliceI14PlannedOperandE = type { ptr, i64 }
@@ -115100,7 +115099,7 @@ if.end5:                                          ; preds = %if.then
 
 declare void @exit(i32)
 
-declare i32 @getrlimit(i32, ptr)
+declare i64 @scaly_stack_limit()
 
 declare ptr @getenv(ptr)
 
@@ -143336,8 +143335,6 @@ entry:
 
 define linkonce_odr i64 @_ZN7Planner18stack_budget_bytesEv() {
 entry:
-  %r = alloca %_Z6Rlimit, align 8
-  %tuple = alloca %_Z6Rlimit, align 8
   %call = call ptr @getenv(ptr @.str.416)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
@@ -143348,16 +143345,9 @@ if.then:                                          ; preds = %entry
   br i1 %gt, label %if.then2, label %if.end3
 
 if.end:                                           ; preds = %if.end3, %entry
-  %tuple.field = getelementptr inbounds %_Z6Rlimit, ptr %tuple, i32 0, i32 0
-  store i64 0, ptr %tuple.field, align 1
-  %tuple.field4 = getelementptr inbounds %_Z6Rlimit, ptr %tuple, i32 0, i32 1
-  store i64 0, ptr %tuple.field4, align 1
-  %tuple.val = load %_Z6Rlimit, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %r, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z6Rlimit, ptr null, i32 1) to i64), i1 false)
-  %call5 = call i32 @getrlimit(i32 3, ptr %r)
-  %as.zext = zext i32 %call5 to i64
-  %ne6 = icmp ne i64 %as.zext, 0
-  br i1 %ne6, label %if.then7, label %if.end8
+  %call4 = call i64 @scaly_stack_limit()
+  %eq = icmp eq i64 %call4, 0
+  br i1 %eq, label %if.then5, label %if.end6
 
 if.then2:                                         ; preds = %if.then
   ret i64 %call1
@@ -143365,31 +143355,25 @@ if.then2:                                         ; preds = %if.then
 if.end3:                                          ; preds = %if.then
   br label %if.end
 
-if.then7:                                         ; preds = %if.end
+if.then5:                                         ; preds = %if.end
   ret i64 67108864
 
-if.end8:                                          ; preds = %if.end
-  %r9 = load %_Z6Rlimit, ptr %r, align 8
-  %cur = extractvalue %_Z6Rlimit %r9, 0
-  %lt = icmp ult i64 %cur, 1048576
-  br i1 %lt, label %if.then10, label %if.end11
+if.end6:                                          ; preds = %if.end
+  %lt = icmp ult i64 %call4, 1048576
+  br i1 %lt, label %if.then7, label %if.end8
+
+if.then7:                                         ; preds = %if.end6
+  ret i64 67108864
+
+if.end8:                                          ; preds = %if.end6
+  %gt9 = icmp ugt i64 %call4, 1073741824
+  br i1 %gt9, label %if.then10, label %if.end11
 
 if.then10:                                        ; preds = %if.end8
   ret i64 67108864
 
 if.end11:                                         ; preds = %if.end8
-  %r12 = load %_Z6Rlimit, ptr %r, align 8
-  %cur13 = extractvalue %_Z6Rlimit %r12, 0
-  %gt14 = icmp ugt i64 %cur13, 1073741824
-  br i1 %gt14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end11
-  ret i64 67108864
-
-if.end16:                                         ; preds = %if.end11
-  %r17 = load %_Z6Rlimit, ptr %r, align 8
-  %cur18 = extractvalue %_Z6Rlimit %r17, 0
-  %udiv = udiv i64 %cur18, 5
+  %udiv = udiv i64 %call4, 5
   %mul = mul i64 %udiv, 4
   ret i64 %mul
 }
