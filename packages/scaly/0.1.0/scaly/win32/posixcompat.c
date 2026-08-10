@@ -1,8 +1,15 @@
 /* POSIX compatibility shim for Win64 (stage 7, brocken 3).
  *
- * Provides the twelve POSIX symbols the Scaly runtime references that Windows
- * does not have. Compiled ONLY on Windows (tools/win32compat.sh); everywhere
- * else the platform provides these itself and this file is not built.
+ * Provides the fourteen POSIX symbols the Scaly runtime and its test corpus
+ * reference that Windows does not have. Compiled ONLY on Windows
+ * (tools/win32compat.sh); everywhere else the platform provides these itself
+ * and this file is not built.
+ *
+ * ★It was twelve until 2026-08-10, and the two that were missing say something
+ * about the instrument rather than about Windows: `setenv` and `socketpair` are
+ * declared `extern` in TEST sources, not in `packages/`, so a completeness
+ * check scoped to the runtime root could not see them. `tools/win-undef.sh`
+ * now unions the runtime with every program the Windows corpus links.
  *
  * Why it provides the POSIX NAMES rather than changing the Scaly side: the
  * committed seed ships ONE scaly.ll for every target, so the runtime's extern
@@ -27,9 +34,11 @@
 #ifdef _WIN32
 
 #include <winsock2.h>   /* before windows.h — it defines the socket API */
+#include <ws2tcpip.h>   /* IPPROTO_TCP/TCP_NODELAY for the socketpair emulation */
 #include <windows.h>
 #include <io.h>         /* _pipe */
 #include <fcntl.h>      /* _O_BINARY — NOT in io.h, despite _pipe living there */
+#include <errno.h>      /* setenv's EINVAL */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -262,6 +271,158 @@ int poll(void* fds, unsigned long long nfds, int timeout)
     if (w != stackbuf)
         free(w);
     return rc;
+}
+
+/* ---- Environment ------------------------------------------------------
+ *
+ * `_putenv_s` is the CRT's writer; the only thing it does not carry is
+ * `overwrite`, which POSIX defines as "leave an existing value alone when 0" —
+ * and the callers rely on it (tests/fiber/{taskpool_default,trace_balance}
+ * arm SCALY_TRACE_HEAP), so it is implemented rather than dropped.
+ *
+ * TWO documented narrowings, neither of them a guess:
+ *
+ *  - `getenv` reads the CRT's copy of the environment, which is the same copy
+ *    `_putenv_s` writes and the same one the Scaly side reads back, so the
+ *    overwrite test is consistent with itself. It is NOT consistent with a
+ *    value set through `SetEnvironmentVariableA` behind the CRT's back; no
+ *    caller in this tree does that.
+ *  - an EMPTY value DELETES the variable on Windows (that is `_putenv_s`'s
+ *    documented contract) where POSIX would define it as empty. There is no
+ *    CRT call that sets an empty value, so this cannot be fixed here — it is
+ *    recorded rather than approximated. Every caller passes a non-empty value.
+ */
+int setenv(const char* name, const char* value, int overwrite)
+{
+    if (name == NULL || *name == '\0' || strchr(name, '=') != NULL || value == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (!overwrite && getenv(name) != NULL)
+        return 0;
+    return _putenv_s(name, value) == 0 ? 0 : -1;
+}
+
+/* ---- Socket pairs -----------------------------------------------------
+ *
+ * Windows has no `socketpair` and no usable AF_UNIX stream socket, so the pair
+ * is manufactured over the loopback interface: listen on 127.0.0.1:0, connect
+ * to the port the kernel picked, accept, drop the listener. Both callers
+ * (tests/fiber/echo.scaly, echo_main.scaly) ask for AF_UNIX/SOCK_STREAM, i.e.
+ * (1, 1, 0), and what they need from it is a connected byte-stream pair — which
+ * loopback TCP is. Anything else is REFUSED rather than approximated: a
+ * datagram or raw request would get a stream socket and misbehave later, far
+ * from here.
+ *
+ * The descriptors are raw SOCKET handles carried in an int, which is the
+ * convention the whole Windows I/O side already uses — `eio_win.c` decides
+ * socket-vs-CRT-descriptor with SO_TYPE on exactly this representation, and
+ * `scaly_eio_tcp_connect` hands its sockets back the same way. Winsock is
+ * started here as well as there; WSAStartup is refcounted, so a second start
+ * is free and neither file may assume the other ran first.
+ *
+ * SECURITY: an ephemeral loopback listener is connectable by any process on
+ * the machine for the instant it exists, so the accepted peer is VERIFIED to
+ * be our own client — its remote address and port must equal the client's
+ * local address and port — and the pair is torn down if it is not. Without
+ * that check the "pair" could quietly be a stranger's socket.
+ *
+ * TCP_NODELAY is set on both ends because the contract being emulated is a
+ * local stream socket, which has no write-coalescing delay; leaving Nagle on
+ * would make a small-message ping-pong depend on the ack timing of a loopback
+ * connection. That is fidelity to the emulated contract, not a tuning knob.
+ *
+ * ★KNOWN HAZARD at the far end, recorded because it is not fixable HERE: POSIX
+ * code closes a socketpair descriptor with `close`, and on Windows `close` is
+ * the CRT's, which knows nothing of socket handles — it validates the number
+ * against its own descriptor table and terminates the process through the
+ * invalid-parameter handler when it does not match. If echo/echo_main now fail
+ * at their `close` calls rather than at the link, that is this, and the fix is
+ * a `close` in THIS file that decides with SO_TYPE exactly as eio_win.c's
+ * read/write do — a separate rung, because it changes a symbol every caller
+ * uses and not just these two.
+ */
+static INIT_ONCE sc_pc_ws_once = INIT_ONCE_STATIC_INIT;
+
+static BOOL CALLBACK sc_pc_ws_init(PINIT_ONCE o, PVOID p, PVOID* c)
+{
+    WSADATA d;
+    (void)o; (void)p; (void)c;
+    return WSAStartup(MAKEWORD(2, 2), &d) == 0;
+}
+
+static void sc_pc_nodelay(SOCKET s)
+{
+    int on = 1;
+    setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char*)&on, (int)sizeof on);
+}
+
+int socketpair(int domain, int sotype, int protocol, int sv[2])
+{
+    SOCKET listener = INVALID_SOCKET;
+    SOCKET client   = INVALID_SOCKET;
+    SOCKET accepted = INVALID_SOCKET;
+    struct sockaddr_in addr, bound, mine, theirs;
+    int len;
+
+    /* AF_UNIX (1) and AF_INET (2) are both served by the loopback pair; the
+     * stream type is not negotiable, see the refusal note above. */
+    if ((domain != 1 && domain != AF_INET) || sotype != SOCK_STREAM || protocol != 0)
+        return -1;
+    if (sv == NULL)
+        return -1;
+
+    InitOnceExecuteOnce(&sc_pc_ws_once, sc_pc_ws_init, NULL, NULL);
+
+    memset(&addr, 0, sizeof addr);
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;                      /* let the kernel pick */
+
+    listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (listener == INVALID_SOCKET)
+        goto fail;
+    if (bind(listener, (struct sockaddr*)&addr, (int)sizeof addr) == SOCKET_ERROR)
+        goto fail;
+    len = (int)sizeof bound;
+    if (getsockname(listener, (struct sockaddr*)&bound, &len) == SOCKET_ERROR)
+        goto fail;
+    if (listen(listener, 1) == SOCKET_ERROR)
+        goto fail;
+
+    client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (client == INVALID_SOCKET)
+        goto fail;
+    if (connect(client, (struct sockaddr*)&bound, (int)sizeof bound) == SOCKET_ERROR)
+        goto fail;
+
+    len = (int)sizeof theirs;
+    accepted = accept(listener, (struct sockaddr*)&theirs, &len);
+    if (accepted == INVALID_SOCKET)
+        goto fail;
+
+    /* Is the connection we accepted the one we made? */
+    len = (int)sizeof mine;
+    if (getsockname(client, (struct sockaddr*)&mine, &len) == SOCKET_ERROR)
+        goto fail;
+    if (mine.sin_port != theirs.sin_port
+        || mine.sin_addr.s_addr != theirs.sin_addr.s_addr)
+        goto fail;
+
+    closesocket(listener);
+    listener = INVALID_SOCKET;
+    sc_pc_nodelay(client);
+    sc_pc_nodelay(accepted);
+
+    sv[0] = (int)accepted;
+    sv[1] = (int)client;
+    return 0;
+
+fail:
+    if (listener != INVALID_SOCKET) closesocket(listener);
+    if (client   != INVALID_SOCKET) closesocket(client);
+    if (accepted != INVALID_SOCKET) closesocket(accepted);
+    return -1;
 }
 
 #else
