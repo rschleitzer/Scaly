@@ -431,10 +431,26 @@ long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
     return scaly_eio_write(fd, buf, count);
 }
 
+/* ★A WSA ERROR AND A C errno ARE UNRELATED NUMBERINGS, and preferring the
+ * former mislabelled every file diagnostic in the product. This used to answer
+ * `WSAGetLastError()` when that was non-zero — but on Windows WSAGetLastError
+ * IS GetLastError (they share the thread's last-error slot), so after a failed
+ * `_open` it holds a WIN32 code, not an errno: ERROR_PATH_NOT_FOUND is 3, and
+ * every caller feeds this straight to `strerror`, which reads 3 as ESRCH.
+ * Measured on the corpus: `cannot open output file "no_such_dir/out.txt"
+ * (No such process)` where POSIX says `(No such file or directory)`.
+ *
+ * Every consumer in this tree is a FILE error going to `strerror` — the whole
+ * list is opensp's Storage/Parser/EntityCatalog/onsgmls and dazzle's four FOT
+ * builders plus the CLI — so the C errno is what this accessor owes them, and
+ * eio.c answers exactly that on POSIX. Same shape as `close` and `creat`: the
+ * Windows name resolves and its ANSWER belongs to a different namespace.
+ *
+ * If a socket path ever needs the Winsock code, it must ask for it separately
+ * and MAP it — WSAECONNRESET is 10054 and there is no errno that means it. */
 int scaly_eio_errno(void)
 {
-    int e = WSAGetLastError();
-    return e != 0 ? e : errno;
+    return errno;
 }
 
 int scaly_eio_set_nonblocking(int fd)

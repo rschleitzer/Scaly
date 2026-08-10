@@ -664,7 +664,8 @@ jobs:
           # suites failing say that far less clearly than one invocation does.
           ./dazzle.exe -v 2>&1 | head -3 || true
 
-          export DAZZLE_PREBUILT="$PWD/dazzle.exe"
+          root=$PWD
+          export DAZZLE_PREBUILT="$root/dazzle.exe"
           fail=0
           for s in engine fot cli prims grove flowobj coding rtf html mif tex; do
             if tests/dazzle/$s/run.sh > "dz-$s.log" 2>&1; then
@@ -672,7 +673,32 @@ jobs:
             else
               fail=1
               echo "  $s: FAIL"
-              tail -20 "dz-$s.log" | sed 's/^/      /'
+              # ★60, not 20: a suite stops at its FIRST failure, so the useful
+              # line is the one naming the case — and a byte-level diff pushed
+              # it out of a 20-line tail, which cost a round.
+              tail -60 "dz-$s.log" | sed 's/^/      /'
             fi
           done
+
+          if [ "$fail" != 0 ]; then
+            # ★A DECOMPOSITION, not a dump. prims/time1 came back with exit 0
+            # and an EMPTY stdout — so the process neither crashed nor
+            # complained, and the suite's own report cannot say more. The two
+            # runs below differ only in TZ, which splits the two candidates:
+            # the CRT's handling of the POSIX TZ string `EST5`, and the time
+            # conversion itself (the expected output covers 1969 dates, i.e.
+            # NEGATIVE time_t, which MSVC's gmtime/localtime refuse outright).
+            echo "=== probe prims/time1 ==="
+            for tz in EST5 ""; do
+              prc=0
+              ( cd tests/dazzle/prims \
+                && TZ="$tz" SCALY_HOME="$root" "$root/dazzle.exe" \
+                     -t sgml -d time1.dsl langdoc.sgml ) \
+                > /tmp/pt.out 2> /tmp/pt.err || prc=$?
+              echo "  TZ='$tz' -> exit $prc  stdout $(wc -c < /tmp/pt.out) bytes"
+              if [ -s /tmp/pt.err ]; then echo "      stderr: $(head -c 300 /tmp/pt.err)"
+              else echo "      stderr: (empty)"; fi
+              if [ -s /tmp/pt.out ]; then echo "      stdout: $(head -c 200 /tmp/pt.out)"; fi
+            done
+          fi
           exit $fail
