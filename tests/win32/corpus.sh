@@ -112,7 +112,17 @@ run)
       continue
     fi
     # shellcheck disable=SC2086
-    got=$($TO "$exe" 2> "$OUT/$base.err" | tr -d '\r'); rc=$?
+    # ★NO PIPELINE HERE. `got=$(cmd | tr -d '\r'); rc=$?` reads the status of
+    # `tr`, not of the program — so `rc` was 0 for EVERY test, no matter what
+    # the program returned, and the timeout guard below (rc = 124) was blind
+    # with it. That silently broke all three exit-code expectations
+    # (guard_overflow 108, both deadlock detectors 106) and, worse, hid the
+    # exit code of every failing test, which is the one number that says WHERE
+    # a program stopped. Same class as the `| tail` trap CLAUDE.md records for
+    # tools/aot_corpus.sh; the fix here is to have no pipeline at all rather
+    # than to remember PIPESTATUS.
+    $TO "$exe" > "$OUT/$base.out" 2> "$OUT/$base.err"; rc=$?
+    got=$(tr -d '\r' < "$OUT/$base.out")
     # WHY each check is reported separately: the first version printed only
     # "rc=N", which collapsed "wrong output", "wrong exit code" and "missing
     # stderr text" into one indistinguishable label and made 27 failures
