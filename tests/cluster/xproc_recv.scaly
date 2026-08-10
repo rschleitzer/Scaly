@@ -57,7 +57,7 @@ if fd < (0 as i32)
 ; ==== read the frame: 32-byte header first, then the rest ====
 
 let host Page.allocate_page()
-let hdr aligned_alloc(8 as i64, 32 as i64) as pointer[u8]
+let hdr scaly_aligned_alloc(8 as i64, 32 as i64) as pointer[u8]
 if read_exact(fd, hdr as pointer[void], 32 as size_t) = false
     exit 4
 let flen Region.frame_length(hdr)
@@ -68,7 +68,7 @@ memcpy(frame as pointer[void], hdr as pointer[void], 32 as size_t)
 let rest ((frame as size_t) + (32 as size_t)) as pointer[void]
 if read_exact(fd, rest, flen - (32 as size_t)) = false
     exit 4
-free(hdr as pointer[void])
+scaly_aligned_free(hdr as pointer[void])
 
 ; ==== materialize, walk, verify ====
 

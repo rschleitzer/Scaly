@@ -157,7 +157,7 @@ while i < (400 as size_t)
 ; One oversized payload: 100000 content bytes -> the String buffer
 ; leaves the page chain via allocate_oversized (gross 100036 rounded
 ; to 102400 = 25 pages, page-aligned, next_object = null).
-let bigbuf aligned_alloc(4096 as i64, 131072 as i64) as pointer[u8]
+let bigbuf scaly_aligned_alloc(4096 as i64, 131072 as i64) as pointer[u8]
 var bi 0 as size_t
 while bi < (100000 as size_t)
 {
@@ -169,7 +169,7 @@ let bs String^mp(bigbuf as pointer[const_char], 100000 as size_t)
 set bnd.content: bs
 set bnd.next: root.head
 set root.head: bnd
-free(bigbuf as pointer[void])
+scaly_aligned_free(bigbuf as pointer[void])
 
 set root.count: 401 as size_t
 
@@ -196,8 +196,8 @@ while n <> null
 
 ; ==== enumerate the region's pages ====
 
-set pg_old: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
-set pg_len: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+set pg_old: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+set pg_len: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
 walk_region(mp as size_t)
 report("S: pages ", pg_cnt as i64, "")
 report("S: items ", items as i64, "")
@@ -220,7 +220,7 @@ while fd < (0 as i32)
 
 ; ==== ship the frame: header, then each page verbatim ====
 
-let hdr aligned_alloc(8 as i64, 64 as i64) as pointer[u64]
+let hdr scaly_aligned_alloc(8 as i64, 64 as i64) as pointer[u64]
 set hdr[0]: 0x53434c59 as u64
 set hdr[1]: pg_cnt as u64
 set hdr[2]: (root as size_t) as u64
@@ -262,8 +262,8 @@ if ack[0] <> (80 as u8)
 
 ; ==== memcpy baseline (in-process ceiling) ====
 
-let src aligned_alloc(4096 as i64, 1048576 as i64)
-let dst aligned_alloc(4096 as i64, 1048576 as i64)
+let src scaly_aligned_alloc(4096 as i64, 1048576 as i64)
+let dst scaly_aligned_alloc(4096 as i64, 1048576 as i64)
 var mi 0 as i64
 let m0 scaly_eio_now_ns()
 while mi < (256 as i64)

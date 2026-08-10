@@ -18,7 +18,7 @@ procedure fiber_main(first_ctx: pointer[void])
     }
 }
 
-let stack_mem aligned_alloc(4096, 65536)
+let stack_mem scaly_aligned_alloc(4096, 65536)
 let stack_top ((stack_mem as size_t) + (65536 as size_t)) as pointer[void]
 let fiber_fn &fiber_main
 var fctx scaly_make_context(stack_top, fiber_fn, stack_mem)

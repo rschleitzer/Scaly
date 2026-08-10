@@ -123,7 +123,7 @@ if fd < (0 as i32)
 
 ; ==== read the frame ====
 
-let hdr aligned_alloc(8 as i64, 64 as i64) as pointer[u64]
+let hdr scaly_aligned_alloc(8 as i64, 64 as i64) as pointer[u64]
 if read_exact(fd, hdr as pointer[void], 40 as size_t) = false
     exit 4
 if hdr[0] <> (0x53434c59 as u64)
@@ -136,9 +136,9 @@ let root_old hdr[2] as size_t
 let want_chk hdr[3]
 let want_items hdr[4] as size_t
 
-set po: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
-set pn: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
-set pl: aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+set po: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+set pn: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+set pl: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
 
 var pi 0 as size_t
 while pi < page_count
@@ -147,7 +147,7 @@ while pi < page_count
         exit 4
     let obase hdr[0] as size_t
     let len hdr[1] as size_t
-    let buf aligned_alloc(4096 as i64, len as i64)
+    let buf scaly_aligned_alloc(4096 as i64, len as i64)
     if read_exact(fd, buf, len) = false
         exit 4
     let o po
@@ -252,7 +252,7 @@ Io.write_all(fd, verdict as pointer[void], 1 as size_t)
 
 ; ==== drain the throughput phase, ack with 'T' ====
 
-let scratch aligned_alloc(4096 as i64, 1048576 as i64)
+let scratch scaly_aligned_alloc(4096 as i64, 1048576 as i64)
 var ti 0 as i64
 while ti < (256 as i64)
 {

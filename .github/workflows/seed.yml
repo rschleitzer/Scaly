@@ -96,7 +96,10 @@ jobs:
              -o libscaly_win.o packages/scaly/0.1.0/scaly.scaly
           $S -c --target x86_64-pc-windows-msvc \
              -o page_chain_depth.o tests/aot/page_chain_depth.scaly
-          ls -l hello.o libscaly_win.o page_chain_depth.o
+          # rung 4: the fiber context switch, which no earlier rung RUNS.
+          $S -c --target x86_64-pc-windows-msvc \
+             -o pingpong.o tests/fiber/pingpong.scaly
+          ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o
 
       - name: Upload the Windows objects
         uses: actions/upload-artifact@v7
@@ -106,6 +109,7 @@ jobs:
             hello.o
             libscaly_win.o
             page_chain_depth.o
+            pingpong.o
           if-no-files-found: error
 
       # OpenSP port REALPASS gate (dazzle epic, Part I). AOT-compiles the opensp
@@ -276,6 +280,29 @@ jobs:
                 page_chain_depth.o libscaly.lib -lws2_32 -o pcd.exe
           ./pcd.exe | tr -d '\r' > got.txt
           sed -n 's/^; Expected: //p' tests/aot/page_chain_depth.scaly > want.txt
+          echo "--- want ---"; cat want.txt
+          echo "--- got  ---"; cat got.txt
+          diff -u want.txt got.txt
+
+      # Rung 4 — brocken 1, RUN at last. Everything before this only assembled
+      # and linked fcontext_x86_64_win.S; nothing called it. pingpong is the
+      # milestone-1.1 demonstrator and drives scaly_make_context /
+      # scaly_jump_context directly, six switches deep, so it is the first
+      # thing that exercises the Win64 half of the ABI the file had to get
+      # right blind: RCX/RDX/R8 arguments, the 32-byte shadow space the
+      # trampoline reserves before entering the fiber, XMM6-15 across the
+      # switch, and the TIB stack bounds swapped on every jump.
+      #
+      # This is the rung the roadmap says CI cannot debug — a wrong offset here
+      # is a bare crash, not a message. It can only tell us THAT it is wrong.
+      - name: Run the fiber context switch (rung 4, brocken 1)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc \
+                pingpong.o libscaly.lib -lws2_32 -o pingpong.exe
+          ./pingpong.exe | tr -d '\r' > got.txt
+          sed -n 's/^; Expected: //p' tests/fiber/pingpong.scaly > want.txt
           echo "--- want ---"; cat want.txt
           echo "--- got  ---"; cat got.txt
           diff -u want.txt got.txt
