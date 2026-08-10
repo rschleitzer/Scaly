@@ -253,6 +253,28 @@ jobs:
                 -o eio_smoke.exe -lws2_32
           ./eio_smoke.exe
 
+      # Rung 4a — brocken 1, the half rung 4 cannot see. pingpong proves the
+      # switch WORKS; it holds no live float or vector state across a jump, so a
+      # switch that had forgotten XMM6-15 entirely would still print the right
+      # thing. Those ten registers plus RSI and RDI are exactly what Win64 adds
+      # to the SysV callee-saved set: the likeliest place for a mistake, and the
+      # one whose failure is a wrong NUMBER rather than a crash.
+      #
+      # Both halves of the harness are assembly on purpose — a C driver cannot
+      # guarantee the compiler keeps anything in a callee-saved register, and
+      # the fiber has to DESTROY them or a missing save and a missing restore
+      # cancel into a green test. The reasoning is written out in xmm_check.S.
+      - name: Check callee-saved preservation across the switch (rung 4a)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc \
+                -c tests/win32/xmm_check.S -o xmm_check.o
+          clang --target=x86_64-pc-windows-msvc -O2 \
+                tests/win32/fcontext_smoke.c xmm_check.o fcontext_win.o \
+                eio_win.o pc.o -o fcontext_smoke.exe -lws2_32
+          ./fcontext_smoke.exe
+
       # Rung 3 — brocken 4, and the one that finally links the RUNTIME. Every
       # rung so far tested a piece in isolation; this one puts all five brocken
       # in one binary, because the archive is a single object with a single
