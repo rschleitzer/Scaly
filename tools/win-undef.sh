@@ -1,10 +1,15 @@
 #!/bin/bash
-# The Windows substrate work list, MEASURED — every symbol a Win64 link of the
-# Scaly runtime must resolve, classified by who owes it.
+# The Windows substrate completeness check — every symbol a Win64 link of the
+# Scaly runtime must resolve, and whether anything in this tree provides it.
 #
-# Why this exists as an instrument rather than a paragraph: the list is the
-# stage-7 backlog, it shrinks as brocken land, and a number in a document goes
-# stale silently. Run it to see what is left.
+# It began (2026-08-09) as a work LIST: cross-emit the runtime for the Windows
+# triple, classify the undefined symbols by who owes them, and watch the count
+# fall. With all five brocken built it became the check it is now — the useful
+# question stopped being "what is left" and became "is anything unprovided".
+# Both readings come from the same measurement.
+#
+# Why an instrument rather than a paragraph: a number in a document goes stale
+# in silence. Run it.
 #
 # What it measures, and the constraint that makes the number large: the runtime
 # archive is ONE object with ONE .text section (no per-function COMDATs), so a
@@ -32,27 +37,76 @@ command -v llvm-nm > /dev/null 2>&1 && NM=$(command -v llvm-nm)
 ALL=$("$NM" -u "$OBJ" | sed 's/^ *U //' | sort -u)
 rm -f "$OBJ"
 
-# Ours: the shim symbols, owed by brocken 1 (fcontext) and 2 (IOCP).
-OURS=$(printf '%s\n' "$ALL" | grep '^scaly_')
 # Present in the MSVC CRT under this exact name, or under an underscore alias
 # the CRT also exports — no work beyond linking.
 CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|memcmp|memcpy|memset|rewind|strcmp|strlen|strdup|write|close|access|mkdir|rmdir|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index)$'
-NEEDS=$(printf '%s\n' "$ALL" | grep -v '^scaly_' | grep -vE "$CRT")
-HAVE=$(printf '%s\n' "$ALL" | grep -v '^scaly_' | grep -E "$CRT")
+HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
+
+# What our own Windows sources DEFINE. Read by grep rather than by compiling
+# them, because the host that runs this cannot: posixcompat.c and eio_win.c
+# need the Windows SDK. That makes this an advisory answer, not a linker's —
+# but it answers "is anything unprovided" NOW, before the archive plumbing
+# exists, and a symbol missing here is missing either way.
+WIN_C="packages/scaly/0.1.0/scaly/fiber/eio_win.c
+packages/scaly/0.1.0/scaly/win32/posixcompat.c
+packages/scaly/0.1.0/scaly/time/ctime.c"
+WIN_S="packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_win.S"
+
+# A definition is a non-indented line naming a function, whose body opens
+# either on the SAME line or on the next non-blank one. Both shapes are
+# required, not just Allman: eio_win.c writes its two tcp_listen wrappers as
+# one-liners, and a detector that missed them reported them MISSING — a false
+# alarm that would send the next reader implementing something that exists.
+# Prototypes (ending in ';') are excluded, as are control-flow keywords, which
+# is what keeps `if (...)` at column 0 out.
+defs_of_c() {
+  awk '
+    /^[A-Za-z_][A-Za-z0-9_ \t*]*\(/ {
+      if ($0 ~ /;[ \t]*$/) next
+      if ($0 ~ /^(if|for|while|switch|return|typedef)\b/) next
+      cand = $0
+      ok = 0
+      if ($0 ~ /\{/) ok = 1
+      else if ($0 ~ /\)[ \t]*$/) {
+        if ((getline nx) > 0) {
+          while (nx ~ /^[ \t]*$/) { if ((getline nx) <= 0) break }
+          if (nx ~ /^[ \t]*\{/) ok = 1
+        }
+      }
+      if (ok) { sub(/\(.*/, "", cand); sub(/.*[ \t*]/, "", cand); print cand }
+    }' "$1"
+}
+
+PROVIDED=$( { for f in $WIN_C; do [ -f "$f" ] && defs_of_c "$f"; done
+              for f in $WIN_S; do [ -f "$f" ] && sed -n 's/^\.globl[ \t]*//p' "$f"; done
+            } | sort -u )
+
+# Emitted into every PROGRAM module by the compiler itself (Emitter.scaly's
+# build-stamp function), so no shim owes it and it resolves at the program
+# link. Listing it as missing would send the next reader hunting.
+EMITTED='^(scaly_build_stamp)$'
+
+OWED=$(printf '%s\n' "$ALL" | grep -vE "$CRT" | grep -vE "$EMITTED")
+MISSING=$(printf '%s\n' "$OWED" | while read -r s
+          do [ -n "$s" ] && { printf '%s\n' "$PROVIDED" | grep -qx "$s" || echo "$s"; }; done)
+COVERED=$(printf '%s\n' "$OWED" | while read -r s
+          do [ -n "$s" ] && { printf '%s\n' "$PROVIDED" | grep -qx "$s" && echo "$s"; }; done)
 
 n() { printf '%s\n' "$1" | grep -c . ; }
 
 echo "win-undef: $(n "$ALL") undefined symbols for $TRIPLE"
 echo
-echo "  A. ours — brocken 1 (fcontext) + 2 (IOCP):  $(n "$OURS")"
-printf '%s\n' "$OURS" | sed 's/^/       /'
+echo "  provided by our Windows sources:   $(n "$COVERED")"
+echo "  provided by the MSVC CRT:          $(n "$HAVE")"
+echo "  emitted per program (build stamp): 1"
 echo
-echo "  B. POSIX-only, need a Win32 equivalent — brocken 3:  $(n "$NEEDS")"
-printf '%s\n' "$NEEDS" | sed 's/^/       /'
-echo
-echo "  C. in the MSVC CRT already, nothing owed:  $(n "$HAVE")"
-printf '%s\n' "$HAVE" | tr '\n' ' ' | fold -s -w 68 | sed 's/^/       /'
-echo
-echo "  NOTE aligned_alloc is class B and carries a trap: MSVC has no"
-echo "       aligned_alloc, only _aligned_malloc, and its memory must be"
-echo "       released with _aligned_free — free() on it is undefined."
+if [ -n "$MISSING" ]; then
+  echo "  MISSING — nothing in this tree defines these:  $(n "$MISSING")"
+  printf '%s\n' "$MISSING" | sed 's/^/       /'
+  echo
+  echo "win-undef: INCOMPLETE"
+  exit 1
+fi
+echo "win-undef: every symbol has a provider"
+echo "  (advisory — the definitions are read by grep, not by a linker;"
+echo "   rung 3 of the roadmap is what proves it for real)"
