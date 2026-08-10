@@ -616,7 +616,17 @@ static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
             DWORD written = 0;
             WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg,
                       (DWORD)(sizeof msg - 1), &written, NULL);
+            /* ★TerminateProcess is ASYNCHRONOUS — it starts the termination
+             * and returns, so without the wait this handler fell through to
+             * CONTINUE_SEARCH and the process died of the unhandled fault
+             * FIRST: the message came out but the exit code was the access
+             * violation's (139 through the shell), not 108. Waiting on our own
+             * process is the documented way to not continue; it never returns.
+             * ExitProcess would run DLL detach handlers on a stack that just
+             * overflowed, which is the risk the POSIX side avoids by using
+             * _exit rather than exit. */
             TerminateProcess(GetCurrentProcess(), 108);
+            WaitForSingleObject(GetCurrentProcess(), INFINITE);
         }
     }
     return EXCEPTION_CONTINUE_SEARCH;
