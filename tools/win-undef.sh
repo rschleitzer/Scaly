@@ -19,6 +19,16 @@
 # CLAUDE.md, and it is why "link something that uses the runtime" is not a
 # single rung: it forces brocken 1, 2 and 3 at once.
 #
+# ★SCOPE, and why it is wider than the runtime root (2026-08-10): it used to
+# emit ONLY packages/scaly/0.1.0/scaly.scaly while claiming "every symbol has a
+# provider" — and so it never saw `setenv` and `socketpair`, which are declared
+# `extern` in TEST sources (tests/fiber/{taskpool_default,trace_balance,echo,
+# echo_main}.scaly), not in packages/. An instrument whose scope is narrower
+# than its claim is exactly the trap it exists to prevent. The undefined sets of
+# the runtime root AND of every program the Windows corpus links are therefore
+# UNIONED here; symbols the runtime object itself defines are subtracted, since
+# for a program object those resolve at the archive.
+#
 # Usage: tools/win-undef.sh [compiler] [triple]
 cd "$(dirname "$0")/.." || exit 1
 SC=${1:-scalyc/build/scalyc}
@@ -35,11 +45,39 @@ command -v llvm-nm > /dev/null 2>&1 && NM=$(command -v llvm-nm)
   || { echo "win-undef: FAIL — cross-emit for $TRIPLE failed"; exit 1; }
 
 ALL=$("$NM" -u "$OBJ" | sed 's/^ *U //' | sort -u)
+
+# What the runtime object DEFINES. A program's reference to Page.allocate is
+# not owed to anyone — it is resolved by the archive at the program link, so it
+# must not appear as missing when the test programs are folded in below.
+RT_DEFINED=$("$NM" --defined-only --extern-only "$OBJ" \
+             | sed 's/^[0-9a-f]* [A-Za-z] //' | sort -u)
 rm -f "$OBJ"
+
+# The programs the Windows corpus links — emitted BY the corpus script rather
+# than by a second copy of its selection rule here. Two scripts deciding
+# separately which tests are eligible is how a scope drifts apart again; asking
+# the corpus makes "what win-undef checks" and "what CI links" the same set by
+# construction. It also keeps `scalyc_test_exit.scaly` out for the right reason
+# — the corpus skips it (its ground truth is a reference binary, not its own
+# source), so its `_ZN6scalyc4testEv` is not a symbol any Windows link owes.
+POUT=/tmp/win_undef_progs_$$
+EMITLOG=$(tests/win32/corpus.sh emit "$SC" "$POUT" 2>&1)
+nprog=$(printf '%s\n' "$EMITLOG" | sed -n 's/^corpus emit: \([0-9]*\) objects.*/\1/p')
+nemitfail=$(printf '%s\n' "$EMITLOG" | sed -n 's/.*, \([0-9]*\) cross-emit failures.*/\1/p')
+nprog=${nprog:-0}; nemitfail=${nemitfail:-0}
+for o in "$POUT"/*.o; do
+  [ -f "$o" ] || continue
+  ALL="$ALL
+$("$NM" -u "$o" | sed 's/^ *U //')"
+done
+rm -rf "$POUT"
+ALL=$(printf '%s\n' "$ALL" | grep . | sort -u)
+ALL=$(printf '%s\n' "$ALL" | while read -r s
+      do printf '%s\n' "$RT_DEFINED" | grep -qx "$s" || echo "$s"; done)
 
 # Present in the MSVC CRT under this exact name, or under an underscore alias
 # the CRT also exports — no work beyond linking.
-CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|memcmp|memcpy|memset|rewind|strcmp|strlen|strdup|write|close|access|mkdir|rmdir|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index)$'
+CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strlen|strdup|write|close|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index)$'
 HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
 
 # What our own Windows sources DEFINE. Read by grep rather than by compiling
@@ -95,6 +133,11 @@ COVERED=$(printf '%s\n' "$OWED" | while read -r s
 n() { printf '%s\n' "$1" | grep -c . ; }
 
 echo "win-undef: $(n "$ALL") undefined symbols for $TRIPLE"
+echo "  (runtime root + $nprog corpus programs; symbols the runtime defines are resolved by the archive)"
+if [ "$nemitfail" -gt 0 ]; then
+  echo "  WARNING — $nemitfail corpus program(s) did not cross-emit and were NOT scanned"
+  printf '%s\n' "$EMITLOG" | sed 's/^/    /'
+fi
 echo
 echo "  provided by our Windows sources:   $(n "$COVERED")"
 echo "  provided by the MSVC CRT:          $(n "$HAVE")"
