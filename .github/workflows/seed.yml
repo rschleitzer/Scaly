@@ -84,17 +84,28 @@ jobs:
       # IOCP, Win32 externs, COFF toolchain). Emitting here rather than on the
       # Windows runner is deliberate: only `llc` must be LLVM-18, and that is
       # already installed in this leg, so the Windows job needs no LLVM at all.
-      - name: Cross-emit hello.o for x86_64-pc-windows-msvc
+      - name: Cross-emit the Windows objects
         run: |
-          dist/seed/scalyc_seed -c --target x86_64-pc-windows-msvc \
-            -o hello.o tests/aot/hello.scaly
-          ls -l hello.o
+          S=dist/seed/scalyc_seed
+          # rung 1: pulls nothing from the runtime (only `puts`).
+          $S -c --target x86_64-pc-windows-msvc -o hello.o tests/aot/hello.scaly
+          # rung 3: the runtime itself, and a program that leans on it. Plain
+          # -c, never -c -O2: with no main to anchor them, GlobalDCE deletes
+          # every linkonce_odr body and the object comes out empty (CLAUDE.md).
+          $S -c --target x86_64-pc-windows-msvc --no-prelude --no-tests \
+             -o libscaly_win.o packages/scaly/0.1.0/scaly.scaly
+          $S -c --target x86_64-pc-windows-msvc \
+             -o page_chain_depth.o tests/aot/page_chain_depth.scaly
+          ls -l hello.o libscaly_win.o page_chain_depth.o
 
-      - name: Upload the Windows object
+      - name: Upload the Windows objects
         uses: actions/upload-artifact@v7
         with:
-          name: hello-x86_64-pc-windows-msvc
-          path: hello.o
+          name: win-objects
+          path: |
+            hello.o
+            libscaly_win.o
+            page_chain_depth.o
           if-no-files-found: error
 
       # OpenSP port REALPASS gate (dazzle epic, Part I). AOT-compiles the opensp
@@ -154,10 +165,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Download the Windows object
+      - name: Download the Windows objects
         uses: actions/download-artifact@v7
         with:
-          name: hello-x86_64-pc-windows-msvc
+          name: win-objects
 
       - name: Toolchain
         shell: bash
@@ -237,3 +248,34 @@ jobs:
                 tests/win32/eio_smoke.c eio_win.o pc.o \
                 -o eio_smoke.exe -lws2_32
           ./eio_smoke.exe
+
+      # Rung 3 — brocken 4, and the one that finally links the RUNTIME. Every
+      # rung so far tested a piece in isolation; this one puts all five brocken
+      # in one binary, because the archive is a single object with a single
+      # .text section and a COFF linker can discard nothing — a program that
+      # touches the runtime at all must resolve every symbol it references.
+      # tools/win-undef.sh answers that by grep; this answers it with a linker.
+      #
+      # page_chain_depth is the payload on purpose: it hammers the page
+      # allocator, which is exactly what the scaly_aligned_alloc/free pair
+      # feeds, and it is the first thing here that RUNS the fiber context
+      # switch's neighbourhood rather than just assembling it.
+      - name: Archive the runtime and RUN a program on it (rung 3)
+        shell: bash
+        run: |
+          set -e
+          clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
+                -c packages/scaly/0.1.0/scaly/time/ctime.c -o ctime.o
+          # eio_win.o, pc.o and fcontext_win.o come from the rungs above.
+          llvm-ar rcs libscaly.lib libscaly_win.o eio_win.o ctime.o pc.o fcontext_win.o
+          echo "--- archive members ---"
+          llvm-ar t libscaly.lib | sed 's/^/  /'
+          # No -lm: the math the tensor kernels need is in the MSVC CRT, so the
+          # rule that -lm must come LAST on ELF has no counterpart here.
+          clang --target=x86_64-pc-windows-msvc \
+                page_chain_depth.o libscaly.lib -lws2_32 -o pcd.exe
+          ./pcd.exe | tr -d '\r' > got.txt
+          sed -n 's/^; Expected: //p' tests/aot/page_chain_depth.scaly > want.txt
+          echo "--- want ---"; cat want.txt
+          echo "--- got  ---"; cat got.txt
+          diff -u want.txt got.txt
