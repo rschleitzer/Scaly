@@ -84,6 +84,9 @@ run)
     echo "corpus run: WARNING — no timeout(1); a hanging test will stall the job"
   fi
   pass=0; fail=0; failures=""
+  # Detail is printed for the first few run failures only. A corpus of 90 can
+  # fail wide, and an unbounded dump buries the aggregate below it.
+  verbose_left=6
   for o in "$OUT"/*.o; do
     [ -f "$o" ] || continue
     base=$(basename "$o" .o)
@@ -101,21 +104,44 @@ run)
     fi
     # shellcheck disable=SC2086
     got=$($TO "$exe" 2> "$OUT/$base.err" | tr -d '\r'); rc=$?
-    ok=1
-    [ "$rc" = "$want_rc" ] || ok=0
-    [ "$got" = "$want" ] || ok=0
-    if [ -n "$want_err" ] && ! grep -q "$want_err" "$OUT/$base.err"; then ok=0; fi
-    if [ "$ok" = 1 ]; then
+    # WHY each check is reported separately: the first version printed only
+    # "rc=N", which collapsed "wrong output", "wrong exit code" and "missing
+    # stderr text" into one indistinguishable label and made 27 failures
+    # undiagnosable. A harness that cannot say WHICH expectation broke costs a
+    # whole CI round per question.
+    why=""
+    [ "$rc" = "$want_rc" ] || why="$why,exit(want $want_rc got $rc)"
+    [ "$got" = "$want" ] || why="$why,stdout"
+    if [ -n "$want_err" ] && ! grep -q "$want_err" "$OUT/$base.err"; then
+      why="$why,stderr"
+    fi
+    if [ -z "$why" ]; then
       pass=$((pass+1))
     else
       fail=$((fail+1))
-      if [ "$rc" = 124 ]; then
-        failures="$failures $base(TIMEOUT)"
-      else
-        failures="$failures $base(rc=$rc)"
+      [ "$rc" = 124 ] && why=",TIMEOUT"
+      failures="$failures $base(${why#,})"
+      if [ "${why#,}" != "TIMEOUT" ] && [ "$verbose_left" -gt 0 ]; then
+        verbose_left=$((verbose_left-1))
+        echo "  --- $base ---"
+        echo "      want stdout: $want"
+        echo "      got  stdout: $got"
+        [ -s "$OUT/$base.err" ] && echo "      stderr: $(head -c 300 "$OUT/$base.err" | tr -d '\r' | tr '\n' ' ')"
       fi
     fi
   done
+
+  # The undefined symbols AGGREGATED across every failed link. Individually the
+  # logs are noise; the distinct set is the actual work list, and it is short.
+  if ls "$OUT"/*.link > /dev/null 2>&1; then
+    undef=$(grep -ho "undefined symbol: [^ ]*" "$OUT"/*.link 2>/dev/null \
+            | sed 's/^undefined symbol: //' | sort -u)
+    if [ -n "$undef" ]; then
+      echo "  --- distinct undefined symbols across all failed links ---"
+      printf '%s\n' "$undef" | sed 's/^/      /'
+    fi
+  fi
+
   echo "corpus run: $pass PASS, $fail FAIL$failures"
   [ "$fail" -eq 0 ]
   ;;
