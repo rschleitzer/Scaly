@@ -74,7 +74,15 @@ emit)
 
 run)
   OUT=${2:?usage: corpus.sh run <outdir> <archive>}
-  LIB=${3:?usage: corpus.sh run <outdir> <archive>}
+  # ★NOT named LIB, and that is not cosmetic (2026-08-10). `LIB` is MSVC's
+  # library search path, and vcvars64.bat EXPORTS it — so on any box where the
+  # caller has a developer environment (which on Windows is how clang finds the
+  # SDK at all), assigning to `LIB` here inherits the export attribute and
+  # replaces those search paths with this one archive. Every one of the 90 links
+  # then fails with `could not open 'ws2_32.lib'`, pointing at the SDK rather
+  # than at the harness. CI never saw it because its runner has a registered VS
+  # install that clang detects on its own, with no LIB in the environment.
+  ARCHIVE=${3:?usage: corpus.sh run <outdir> <archive>}
   # Git Bash usually ships coreutils' timeout; without it the guard degrades to
   # "no guard", which is said out loud rather than assumed.
   TO=""
@@ -100,7 +108,7 @@ run)
     want_err=$(sed -n 's/^; ExpectedErr: //p' "$src")
 
     exe="$OUT/$base.exe"
-    if ! clang --target="$TRIPLE" "$o" "$LIB" -lws2_32 -o "$exe" > "$OUT/$base.link" 2>&1; then
+    if ! clang --target="$TRIPLE" "$o" "$ARCHIVE" -lws2_32 -o "$exe" > "$OUT/$base.link" 2>&1; then
       fail=$((fail+1)); failures="$failures $base(link)"
       # The first error line of every failed link, collected for the distinct
       # summary below. Aggregating SYMBOLS alone was not enough: it reported two
