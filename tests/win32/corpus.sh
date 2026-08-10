@@ -84,6 +84,7 @@ run)
     echo "corpus run: WARNING — no timeout(1); a hanging test will stall the job"
   fi
   pass=0; fail=0; failures=""
+  rm -f "$OUT/.linkerrs"
   # Detail is printed for the first few run failures only. A corpus of 90 can
   # fail wide, and an unbounded dump buries the aggregate below it.
   verbose_left=6
@@ -100,7 +101,15 @@ run)
 
     exe="$OUT/$base.exe"
     if ! clang --target="$TRIPLE" "$o" "$LIB" -lws2_32 -o "$exe" > "$OUT/$base.link" 2>&1; then
-      fail=$((fail+1)); failures="$failures $base(link)"; continue
+      fail=$((fail+1)); failures="$failures $base(link)"
+      # The first error line of every failed link, collected for the distinct
+      # summary below. Aggregating SYMBOLS alone was not enough: it reported two
+      # names while twenty-two links had failed, so eighteen failures carried a
+      # message of a shape nothing was looking for. Distinct MESSAGES cannot
+      # have that blind spot.
+      grep -i -m1 "error" "$OUT/$base.link" >> "$OUT/.linkerrs" 2>/dev/null \
+        || echo "(no line matching 'error' in $base.link)" >> "$OUT/.linkerrs"
+      continue
     fi
     # shellcheck disable=SC2086
     got=$($TO "$exe" 2> "$OUT/$base.err" | tr -d '\r'); rc=$?
@@ -149,13 +158,17 @@ run)
     if [ -n "$undef" ]; then
       echo "  --- distinct undefined symbols across all failed links ---"
       printf '%s\n' "$undef" | sed 's/^/      /'
-    else
-      first=$(grep -l . "$OUT"/*.link 2>/dev/null | head -1)
-      if [ -n "$first" ]; then
-        echo "  --- no symbol pattern matched; raw head of $first ---"
-        head -12 "$first" | sed 's/^/      /'
-      fi
     fi
+  fi
+
+  # The distinct first-error lines, with how many links each accounts for.
+  # This is the diagnosis that cannot go blind: whatever the message looks
+  # like, it appears here with a count, and the counts must add up to the
+  # number of (link) failures.
+  if [ -f "$OUT/.linkerrs" ]; then
+    echo "  --- distinct link errors (count x message) ---"
+    sed 's/^.*: error/error/' "$OUT/.linkerrs" | sort | uniq -c \
+      | sort -rn | head -12 | sed 's/^/      /'
   fi
 
   echo "corpus run: $pass PASS, $fail FAIL$failures"
