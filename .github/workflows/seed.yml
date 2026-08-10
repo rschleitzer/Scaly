@@ -206,14 +206,29 @@ jobs:
       # must never be downgraded to a plain build "because it is only a shim" —
       # a shim nobody can run locally is exactly the code that needs the
       # strictest compile it can get.
-      - name: Compile the Win64 POSIX-compat shim (brocken 3)
+      #
+      # ★It compiles ALL THREE Windows C files, not just brocken 3's, and
+      # keeps going past the first failure (2026-08-10). "Does it compile" is
+      # not a per-rung fact: the later rungs compile eio_win.c and ctime.c, so
+      # with `set -e` and one file per step a job reports ONE compile error per
+      # CI round — and a round is 12-16 minutes. Since none of these files can
+      # be compiled on the host that writes them, the round IS the compiler,
+      # and it should answer every question it can in one pass.
+      - name: Compile the Win64 C shims (brocken 3, and every other shim)
         shell: bash
         run: |
-          set -e
-          clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
-                -c packages/scaly/0.1.0/scaly/win32/posixcompat.c \
-                -o posixcompat.o
-          echo "--- symbols provided ---"
+          set -u
+          rc=0
+          for f in packages/scaly/0.1.0/scaly/win32/posixcompat.c \
+                   packages/scaly/0.1.0/scaly/fiber/eio_win.c \
+                   packages/scaly/0.1.0/scaly/time/ctime.c; do
+            o=$(basename "$f" .c).o
+            echo "--- $f ---"
+            clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
+                  -c "$f" -o "$o" || rc=1
+          done
+          [ "$rc" = 0 ] || { echo "one or more shims failed to compile"; exit 1; }
+          echo "--- symbols provided by posixcompat ---"
           # Informative only: a missing llvm-nm must not fail the rung, whose
           # claim is "it compiles", not "we can list it".
           llvm-nm --defined-only posixcompat.o | sed 's/^/  /' \
