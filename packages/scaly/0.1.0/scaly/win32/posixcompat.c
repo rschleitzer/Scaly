@@ -262,6 +262,23 @@ char* basename(char* path)
  * POSIX `struct pollfd.fd` is a 32-bit int, WSAPOLLFD's is a 64-bit SOCKET, so
  * the arrays are NOT layout-compatible and the entries are translated one by
  * one rather than cast.
+ *
+ * ★AND THE NARROWING WAS CHECKED AGAINST THE CALL GRAPH RATHER THAN LEFT AS A
+ * RISK (2026-08-10). Every `poll` in this tree polls a SOCKET: `Io.wait_ready`
+ * is reached only from `Io.park`, whose four callers are Io.read/write/… on
+ * connection fds, and `cluster.scaly`'s poll waits on a peer socket. The pipe
+ * pairs that DO exist — the IoPool, node and task-pool wake pipes, all from
+ * `pipe()` and therefore CRT descriptors — are only ever handed to
+ * `scaly_eio_read`/`scaly_eio_write` and to `close`, each of which decides by
+ * SO_TYPE. So no caller is in the failing case today.
+ *
+ * What that sentence does NOT say: nothing ENFORCES it. `poll` is the one
+ * function here whose contract narrows silently — WSAENOTSOCK, and a scheduler
+ * that waits for a readiness that can never be reported. A future caller that
+ * polls a wake pipe would be correct POSIX and broken here, and no undefined
+ * symbol and no golden output would say so. If one appears, the answer is not
+ * to widen this function by guessing (see above) but to route the wake pipes
+ * through sockets, the way `socketpair` below already builds them.
  */
 int pipe(int fds[2])
 {
