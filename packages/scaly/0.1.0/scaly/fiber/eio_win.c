@@ -616,17 +616,24 @@ static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
             DWORD written = 0;
             WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg,
                       (DWORD)(sizeof msg - 1), &written, NULL);
-            /* ★TerminateProcess is ASYNCHRONOUS — it starts the termination
-             * and returns, so without the wait this handler fell through to
-             * CONTINUE_SEARCH and the process died of the unhandled fault
-             * FIRST: the message came out but the exit code was the access
-             * violation's (139 through the shell), not 108. Waiting on our own
-             * process is the documented way to not continue; it never returns.
-             * ExitProcess would run DLL detach handlers on a stack that just
-             * overflowed, which is the risk the POSIX side avoids by using
-             * _exit rather than exit. */
-            TerminateProcess(GetCurrentProcess(), 108);
-            WaitForSingleObject(GetCurrentProcess(), INFINITE);
+            /* ★`_exit`, and the two attempts before it are the argument.
+             * TerminateProcess is ASYNCHRONOUS — it starts the termination and
+             * returns — so the faulting thread stayed runnable; the message
+             * came out and the process still died of an access violation (139
+             * through the shell) rather than with 108. Following it with
+             * WaitForSingleObject on the current process, the documented way
+             * to not continue, changed nothing, which says the thread was
+             * never parked: a guard-page violation inside the range the TIB
+             * declares as this thread's stack is what the OS resumes from by
+             * design, so the recursion carried on past the cleared page into
+             * unmapped memory and faulted for real, all in less time than an
+             * asynchronous termination needs.
+             *
+             * The cure is to not RETURN from the handler at all. `_exit` is
+             * exactly what the POSIX side calls, it is declared noreturn, and
+             * it skips the atexit and DLL-detach machinery that plain `exit`
+             * would run on a stack that has just overflowed. */
+            _exit(108);
         }
     }
     return EXCEPTION_CONTINUE_SEARCH;
