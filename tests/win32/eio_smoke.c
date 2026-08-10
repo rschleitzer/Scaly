@@ -38,6 +38,7 @@ int       scaly_eio_tcp_connect(int port);
 int       scaly_eio_accept(int fd);
 int       scaly_eio_ncpu(void);
 long long scaly_eio_now_ns(void);
+int       pipe(int fds[2]);
 
 /* From the POSIX-compat shim — exercised here too, since the wake is only
  * meaningful across threads. */
@@ -138,6 +139,23 @@ int main(void)
 
     check(scaly_eio_ncpu() > 0, "ncpu");
     check(scaly_eio_now_ns() > 0, "now_ns");
+
+    /* ★ The regression that rung 4 paid for. read/write take an `int` that may
+     * be a SOCKET or a CRT descriptor — two unrelated namespaces on Windows —
+     * and the first version guessed by probing an error code, so every write
+     * to fd 1 failed and Console.print produced nothing at all, silently. A
+     * pipe is a CRT descriptor pair, so it exercises exactly the half that was
+     * broken without writing to the harness's own stdout. */
+    {
+        int fds[2];
+        char rb[8];
+        check(pipe(fds) == 0, "pipe (a CRT descriptor pair, not a socket)");
+        r = scaly_eio_write(fds[1], "abc", 3);
+        check(r == 3, "write to a CRT descriptor");
+        memset(rb, 0, sizeof rb);
+        r = scaly_eio_read(fds[0], rb, sizeof rb);
+        check(r == 3 && memcmp(rb, "abc", 3) == 0, "read from a CRT descriptor");
+    }
 
     printf(failures ? "eio_smoke: %d FAIL\n" : "eio_smoke: PASS\n", failures);
     return failures ? 1 : 0;

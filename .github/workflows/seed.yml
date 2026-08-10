@@ -301,7 +301,18 @@ jobs:
           set -e
           clang --target=x86_64-pc-windows-msvc \
                 pingpong.o libscaly.lib -lws2_32 -o pingpong.exe
-          ./pingpong.exe | tr -d '\r' > got.txt
+          # The exit code is reported explicitly, and the run is NOT piped:
+          # the first red run here exited 0 with empty output, and a pipeline
+          # hides which of the two facts is the surprising one. A Windows
+          # exception surfaces as its code (0xC0000005 access violation,
+          # 0xC000001D illegal instruction from the never-return trap), which
+          # is the only diagnosis CI can offer for this rung.
+          set +e
+          ./pingpong.exe > got_raw.txt 2>&1
+          rc=$?
+          set -e
+          echo "pingpong.exe exit code: $rc"
+          tr -d '\r' < got_raw.txt > got.txt
           sed -n 's/^; Expected: //p' tests/fiber/pingpong.scaly > want.txt
           echo "--- want ---"; cat want.txt
           echo "--- got  ---"; cat got.txt

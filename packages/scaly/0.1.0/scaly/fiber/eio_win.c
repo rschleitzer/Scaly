@@ -353,13 +353,35 @@ int scaly_eio_wake_close(int q, int w)
 
 /* ---- byte transfer ----------------------------------------------------
  *
- * recv/send, not _read/_write: a Windows SOCKET is not a CRT file descriptor
- * and the CRT calls fail on it. The fallback the other way round is real
- * though — the same API is used on pipes by the worker pool — so a
- * WSAENOTSOCK is retried through the CRT rather than reported.
+ * ★★★ TWO NAMESPACES, and this is the trap that cost rung 4 a red run.
+ * On POSIX a socket IS a file descriptor and read/write serve both. On
+ * Windows they are unrelated kinds of value: fd 1 is a CRT descriptor,
+ * a SOCKET is a kernel handle, and the API here carries either in one `int`.
+ * Both really do arrive — Console.print writes to fd 1 through this very
+ * function, while the TCP helpers hand back sockets — so the kind has to be
+ * DECIDED, not guessed.
+ *
+ * The first version guessed: it called send() and fell back to _write() when
+ * the error was WSAENOTSOCK. That is wrong twice over. Winsock may not be
+ * started yet, in which case the error is WSANOTINITIALISED and the fallback
+ * never fires — which is exactly what happened: every Console.print returned
+ * -1, write_all gave up quietly, and the program exited 0 having printed
+ * nothing. And even started, calling send() on a CRT descriptor whose number
+ * happens to match a live socket handle would send to the wrong place.
+ *
+ * SO_TYPE is the decision: it succeeds for a socket and fails for anything
+ * else, and it moves nothing. Winsock is started first so the answer means
+ * what it says.
  *
  * -2 for "would block" and -1 for a hard error, as the POSIX file does.
  */
+static int sc_is_socket(SOCKET s)
+{
+    int t = 0, len = (int)sizeof t;
+    scaly_ws_start();
+    return getsockopt(s, SOL_SOCKET, SO_TYPE, (char*)&t, &len) != SOCKET_ERROR;
+}
+
 static long long sc_map_rw(int r)
 {
     if (r >= 0)
@@ -375,19 +397,17 @@ static long long sc_map_rw(int r)
 long long scaly_eio_read(int fd, void* buf, size_t count)
 {
     SOCKET s = (SOCKET)(intptr_t)fd;
-    int r = recv(s, (char*)buf, (int)count, 0);
-    if (r == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK)
+    if (!sc_is_socket(s))
         return _read(fd, buf, (unsigned int)count);
-    return sc_map_rw(r);
+    return sc_map_rw(recv(s, (char*)buf, (int)count, 0));
 }
 
 long long scaly_eio_write(int fd, const void* buf, size_t count)
 {
     SOCKET s = (SOCKET)(intptr_t)fd;
-    int r = send(s, (const char*)buf, (int)count, 0);
-    if (r == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK)
+    if (!sc_is_socket(s))
         return _write(fd, buf, (unsigned int)count);
-    return sc_map_rw(r);
+    return sc_map_rw(send(s, (const char*)buf, (int)count, 0));
 }
 
 /* There is no SIGPIPE on Windows, so the darwin/linux split that exists in
