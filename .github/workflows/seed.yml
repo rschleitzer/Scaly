@@ -106,8 +106,18 @@ jobs:
              -o dazzle_win.o packages/dazzle/0.1.0/dazzle.scaly
           $S -c --target x86_64-pc-windows-msvc \
              -o dazzle_cli_win.o packages/dazzle/0.1.0/dazzle_cli.scaly
+          # rung 9: the COMPILER. Same two-object shape (package as a library,
+          # main as the program) and the same flags tools/seed.sh emits with —
+          # --no-tests, and NOT --no-prelude, because main.scaly's print/println
+          # come from it. Everything above is something scalyc BUILT; this is
+          # scalyc itself, which is what stage 7's exit criterion is about.
+          $S -c --target x86_64-pc-windows-msvc --no-tests \
+             -o scalyc_win.o packages/scalyc/0.1.0/scalyc.scaly
+          $S -c --target x86_64-pc-windows-msvc --no-tests \
+             -o scalyc_main_win.o packages/scalyc/0.1.0/main.scaly
           ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o http10k.o \
-                opensp_win.o onsgmls_win.o dazzle_win.o dazzle_cli_win.o
+                opensp_win.o onsgmls_win.o dazzle_win.o dazzle_cli_win.o \
+                scalyc_win.o scalyc_main_win.o
           # rung 5: breadth. One object per test that carries its own ground
           # truth; the two that need a reference binary are skipped and counted.
           tests/win32/corpus.sh emit "$S" winobj
@@ -126,6 +136,8 @@ jobs:
             onsgmls_win.o
             dazzle_win.o
             dazzle_cli_win.o
+            scalyc_win.o
+            scalyc_main_win.o
             winobj/*.o
           if-no-files-found: error
 
@@ -702,3 +714,121 @@ jobs:
             done
           fi
           exit $fail
+
+      # ★Rung 9 — the COMPILER on Windows. Every rung so far ran something
+      # scalyc BUILT; this runs scalyc. It is the prerequisite for the stage's
+      # formal exit criterion (`tools/seed.sh` reproducing byte-identically
+      # here), and it adds one unknown: the compiler binary itself — its
+      # libLLVM linkage, its file and path handling, and its emitter, on a
+      # platform where none of the three has ever executed.
+      #
+      # ★TWO Windows-specific conditions, both known BEFORE the first run
+      # rather than after it:
+      #
+      # (1) libLLVM must be **18**, and the runner's is 20. Everywhere else in
+      #     this workflow "any clang links" holds, because a linker does not
+      #     care — but the compiler CALLS this library, and what it emits is a
+      #     function of the version. Rung 8 links dazzle against the runner's
+      #     LLVM-C precisely because it never switches the JIT on; here the
+      #     version is load-bearing, so 18 is installed into its own directory
+      #     and the runner's stays where it is. Mixing the two questions into
+      #     one round is what the rung discipline exists to prevent.
+      # (2) ★The default stack is **1 MB on Windows against 8 on POSIX**, and
+      #     `Planner.check_nesting_stack` is bound in NESTING DEPTH — CLAUDE.md
+      #     measures ~15 KB of planner stack per `else if` arm with an
+      #     optimised compiler and ~110 KB with an unoptimised one, and this
+      #     binary is the unoptimised kind (plain `-c` objects; `-c -O2` on a
+      #     library object is what GlobalDCE empties). tools/seed.sh runs its
+      #     emission under `ulimit -s 65520`; the COFF equivalent is a /STACK
+      #     reserve on the link, which costs address space and no memory.
+      - name: Link the compiler and RUN it (rung 9)
+        shell: bash
+        run: |
+          set -e
+          # --- LLVM 18, into its own prefix -------------------------------
+          # The official Windows release is an NSIS installer: /S is silent and
+          # /D= must come LAST and unquoted. Driven through `cmd //c` because
+          # MSYS argument conversion would turn `/S` into a path.
+          url=https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/LLVM-18.1.8-win64.exe
+          curl -sSL -o llvm18.exe "$url"
+          # MSYS2_ARG_CONV_EXCL: without it the MSYS runtime rewrites anything
+          # that looks like a path, and `/S` becomes `S:\`. Cheap insurance —
+          # a wrong variable name here is a no-op, a converted flag is a
+          # non-silent installer that hangs the job.
+          MSYS2_ARG_CONV_EXCL='*' cmd //c "llvm18.exe /S /D=C:\llvm18"
+          lib18="/c/llvm18/lib"; bin18="/c/llvm18/bin"
+          if [ ! -f "$lib18/LLVM-C.lib" ] || [ ! -f "$bin18/LLVM-C.dll" ]; then
+            echo "rung 9: LLVM 18 did not deliver the C library."
+            echo "        want $lib18/LLVM-C.lib and $bin18/LLVM-C.dll"
+            ls "$lib18" 2>&1 | head -20
+            ls "$bin18" 2>&1 | head -20
+            exit 1
+          fi
+          echo "rung 9: LLVM-C 18 at $lib18"
+
+          # --- link ---------------------------------------------------------
+          # libscaly.lib is the archive rung 3 built in this same job. The DLL
+          # is COPIED beside the binary rather than put on PATH: prepending
+          # /c/llvm18/bin would shadow the runner's clang with LLVM 18's for
+          # the rest of this step, which is a second change nobody asked for.
+          cp "$bin18/LLVM-C.dll" .
+          clang --target=x86_64-pc-windows-msvc \
+                scalyc_main_win.o scalyc_win.o libscaly.lib \
+                -lws2_32 -L"$lib18" -lLLVM-C \
+                -Xlinker /STACK:67108864,1048576 \
+                -o scalyc.exe
+          ls -l scalyc.exe
+
+          # --- it RUNS, and it emits ---------------------------------------
+          # No --target: the natural invocation, and the one tools/seed.sh will
+          # make. The compiler reads its host triple at runtime, so this also
+          # asks whether that answer is the same string the Linux leg was given.
+          export SCALY_HOME="$PWD"
+          rc=0
+          ./scalyc.exe -c -o hello_native.o tests/aot/hello.scaly || rc=$?
+          if [ "$rc" != 0 ]; then
+            echo "rung 9: the compiler exited $rc emitting hello.scaly"
+            exit 1
+          fi
+          ls -l hello_native.o
+
+          # --- the checksum, and it is stronger than "it ran" ---------------
+          # hello.o was cross-emitted on the Linux leg for this exact triple by
+          # a compiler built from the same sources. The build stamp is hashed
+          # over the IR with ModuleID, source_filename and datalayout SKIPPED,
+          # so it does not depend on the checkout path or on --target — which
+          # is what makes a byte comparison meaningful rather than optimistic.
+          if cmp -s hello_native.o hello.o; then
+            echo "rung 9: emitted object BYTE-IDENTICAL to the cross-emitted one"
+          else
+            # ★A decomposition, not a dump: the explicit --target run separates
+            # "the host triple resolves to a different string" from "the
+            # emission differs", and only the first is a one-line fix.
+            echo "rung 9: objects DIFFER"
+            echo "  native $(wc -c < hello_native.o) bytes, cross-emitted $(wc -c < hello.o)"
+            cmp -l hello_native.o hello.o | head -5 || true
+            ./scalyc.exe -c --target x86_64-pc-windows-msvc \
+                         -o hello_triple.o tests/aot/hello.scaly || true
+            if cmp -s hello_triple.o hello.o; then
+              echo "  ...but WITH an explicit --target it is identical:"
+              echo "     the host triple string is what differs, not the emitter."
+            else
+              echo "  ...and with an explicit --target too: the emitter differs."
+            fi
+            exit 1
+          fi
+
+          # --- and the object is a real one --------------------------------
+          # Same shape as rung 1, deliberately: the expected line is read from
+          # the test SOURCE so the two cannot drift apart, and LC_ALL=C guards
+          # the CR strip — `tr` is not a byte filter in a UTF-8 locale (rung 7
+          # paid a round for that one).
+          clang --target=x86_64-pc-windows-msvc hello_native.o -o hello_native.exe
+          rc=0
+          ./hello_native.exe > got_raw.txt || rc=$?
+          echo "rung 9: hello exited $rc"
+          LC_ALL=C tr -d '\r' < got_raw.txt > got9.txt
+          sed -n 's/^; Expected: //p' tests/aot/hello.scaly > want9.txt
+          diff -u want9.txt got9.txt
+          [ "$rc" = 0 ] || exit 1
+          echo "rung 9: OK — scalyc runs on Windows and reproduces the object"
