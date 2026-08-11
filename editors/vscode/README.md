@@ -3,8 +3,8 @@
 VS Code language support for [Scaly](https://scaly.io), backed by
 [scalyls](../../packages/scalyls/0.1.0) — the Scaly language server, itself
 written in Scaly. The extension registers the `.scaly` language, provides
-TextMate syntax highlighting, launches the server over stdio, and declares
-breakpoint support so the CodeLLDB debugger can stop in Scaly sources.
+TextMate syntax highlighting, launches the server over stdio, and ships a
+debugger backed by `lldb-dap`.
 
 What you get:
 
@@ -23,12 +23,8 @@ What you get:
   the project (Cmd+T).
 - **Inlay hints** — inferred types inline.
 - **Folding ranges**.
-- **Breakpoints in `.scaly` files** — the extension declares the language for
-  debugging, so the editor accepts gutter breakpoints without any settings
-  workaround (debugging itself is provided by the
-  [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
-  extension and the compiler's `-g` DWARF output; see the tutorial chapter
-  "Using Scaly with VS Code" on scaly.io).
+- **Debugging** — gutter breakpoints, stepping, call stack, and a Variables
+  view with arguments, `let` bindings and readable containers. See below.
 
 ## Install (users)
 
@@ -93,3 +89,69 @@ Package a `.vsix` for distribution:
 ```bash
 npm run package                 # runs vsce package
 ```
+
+## Debugging
+
+The extension contributes a `scaly` debug type backed by **`lldb-dap`**, the DAP
+server that ships with LLVM and with Xcode — so there is no separate debugger
+extension to install and nothing to build. Compile with `-g` and press F5:
+
+```bash
+scalyc -g -o build/program src/main.scaly
+```
+
+`.vscode/launch.json` (the extension offers this as the initial configuration,
+and as a "Scaly: Launch" snippet):
+
+```json
+{
+  "type": "scaly",
+  "request": "launch",
+  "name": "Debug Scaly program",
+  "program": "${workspaceFolder}/build/program",
+  "cwd": "${workspaceFolder}"
+}
+```
+
+**Without `-g` there are no line tables, so breakpoints cannot bind** — that is
+the first thing to check when a breakpoint stays hollow.
+
+What the Variables view shows:
+
+| | |
+|---|---|
+| Function **arguments** | by name and type, including by-value structs |
+| **`let`** bindings | including a program's top-level statements |
+| `var` bindings | as before |
+| `String` | as text — `name = "probe"` |
+| `Vector` / `Array` / `List` | element count plus the elements as children |
+| tagged unions | `tag = Chosen` — the variant NAME, not a number |
+
+The last two rows come from two different places, which is worth knowing when
+something looks wrong. The union tag is in the **DWARF itself** (its tag is an
+enumeration over the variants), so it works in any debugger. `String`, `Vector`,
+`Array` and `List` need the **data formatters** in
+[`tools/lldb/scaly.py`](../../tools/lldb/scaly.py), which the extension loads for
+you: `resolveDebugConfiguration` injects a
+`command script import …/tools/lldb/scaly.py` into `initCommands` when your
+launch config does not set that key itself. Set `"initCommands": []` to opt out.
+
+Settings:
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `scaly.debugAdapter.path` | *(auto)* | Path to `lldb-dap`. Auto-detection tries `PATH`, then the LLVM 20 prefix, then Xcode's copy. |
+| `scaly.formatters.path` | *(auto)* | Path to `tools/lldb/scaly.py`. Derived from `scaly.home`, then `SCALY_HOME`, then the first workspace folder. |
+
+Outside the editor the same thing works from a terminal, which is often the
+faster loop:
+
+```bash
+lldb -o "command script import <scaly>/tools/lldb/scaly.py" \
+     -o "b main.scaly:42" -o run -o "frame variable" ./build/program
+```
+
+The whole path is gated by [`tests/debuginfo/run.sh`](../../tests/debuginfo),
+which drives `lldb-dap` over the protocol with the same launch attributes and the
+same `initCommands` this extension sends — so a wrong key here fails in CI rather
+than in your editor.

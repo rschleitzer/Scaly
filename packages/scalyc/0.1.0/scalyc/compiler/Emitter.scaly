@@ -930,27 +930,34 @@ define Emitter
     ; Silently WRONG VALUES, not a cosmetic complaint — and it hits every generic
     ; (Vector, Array, List, Node, Slice, the iterators).
     ;
-    ; The uniqueness has to come from the MANGLED name, which is the only place
-    ; the type arguments survive to here. `InstantiationInfo.type_args` exists in
-    ; Plan.scaly and says "the concrete type arguments (readable)" — but nothing
-    ; in the tree ever CONSTRUCTS an InstantiationInfo, so `origin` is null on
-    ; every structure and union (checked by grep: the type has no writer). If
-    ; someone ever populates it, this should switch to `Vector[int]`, which is
-    ; both unique and what the source says.
+    ; The READABLE form comes from the PlannedType the caller already holds:
+    ; Planner.get_readable_name renders `Vector[int]`, and plain `Point` when
+    ; there are no arguments. That is both unique and what the source says.
     ;
-    ; So: use the mangled name only when it carries an Itanium argument list —
-    ; `_Z6VectorIiE` has an `I` and ends in `E`, while a plain `_Z5Point` has
-    ; neither, and a non-generic concept keeps its readable name. A concept
-    ; literally spelled like `TRIE` trips the test and gets its mangled name;
-    ; that is cosmetic noise, never a wrong type.
-    function di_display_name(this, name: String, mangled: String) returns String
+    ; ★The fallback is the safety property, not a nicety. When the PlannedType
+    ; arrives WITHOUT its generics the readable form is the bare `Vector`, which
+    ; is exactly the name collapse this function exists to prevent — so in that
+    ; case the mangled name wins over prettiness. Detected on the mangled side:
+    ; `_Z6VectorIiE` has an `I` and ends in `E`, a plain `_Z5Point` has neither.
+    ; A concept literally spelled like `TRIE` trips the test and gets its mangled
+    ; name; that is cosmetic noise, never a wrong type.
+    ;
+    ; (`InstantiationInfo.type_args` in Plan.scaly is the field that LOOKS like
+    ; the right source here and is not: nothing in the tree ever constructs an
+    ; InstantiationInfo, so `origin` is null on every structure and union. Filling
+    ; it would mean a new page-hosted allocation inside plan_structure, where the
+    ; surrounding idiom takes `&` of stack locals — a dangling-pointer risk paid
+    ; for a cosmetic gain. The PlannedType already has the answer.)
+    function di_display_name(this, readable: String, mangled: String) returns String
     {
+        if readable.contains("[" as u8)
+            return readable
         if mangled.get_length() = 0
-            return name
+            return readable
         if mangled.ends_with("E") = false
-            return name
+            return readable
         if mangled.contains("I" as u8) = false
-            return name
+            return readable
         mangled
     }
 
@@ -1108,6 +1115,10 @@ define Emitter
         if basic.handle <> null
             return basic
 
+        ; The DWARF name for whatever composite this resolves to. Computed here
+        ; because THIS is where the type arguments are still available.
+        var dname Planner.get_readable_name pt
+
         ; struct — prefer the specialised mangled name, else the bare name.
         if current_plan.structures <> null
         {
@@ -1122,7 +1133,7 @@ define Emitter
                     {
                         let s (*sp)
                         if s.mangled_name = pt.mangled_name
-                            return di_struct_type s
+                            return di_struct_type(s, dname)
                     }
                     set i: i + 1
                 }
@@ -1135,7 +1146,7 @@ define Emitter
                 {
                     let s (*sp)
                     if s.name = pt.name
-                        return di_struct_type s
+                        return di_struct_type(s, dname)
                 }
                 set k: k + 1
             }
@@ -1155,7 +1166,7 @@ define Emitter
                     {
                         let u (*up)
                         if u.mangled_name = pt.mangled_name
-                            return di_union_type u
+                            return di_union_type(u, dname)
                     }
                     set j: j + 1
                 }
@@ -1168,7 +1179,7 @@ define Emitter
                 {
                     let u (*up)
                     if u.name = pt.name
-                        return di_union_type u
+                        return di_union_type(u, dname)
                 }
                 set m: m + 1
             }
@@ -1183,7 +1194,7 @@ define Emitter
     ; Member sizes/offsets come from the planner's already-computed
     ; PlannedProperty.offset (size = next field's offset - this offset, or
     ; struct size for the last field), so no type-size re-derivation needed.
-    function di_struct_type(this, s: PlannedStructure) returns LLVMMetadataRef
+    function di_struct_type(this, s: PlannedStructure, readable: String) returns LLVMMetadataRef
     {
         let cached lookup_di_cache s.mangled_name
         if cached.handle <> null
@@ -1193,7 +1204,7 @@ define Emitter
         let size_bits (s.size * 8)
         var empty ""
         ; Unique per INSTANTIATION — see di_display_name.
-        var dname di_display_name(s.name, s.mangled_name)
+        var dname di_display_name(readable, s.mangled_name)
 
         ; Forward decl FIRST, cached, so a back-pointer member resolves here.
         let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
@@ -1251,7 +1262,7 @@ define Emitter
 
     ; A tagged union: outer struct { tag @ 0, payload @ tag_size }, where the
     ; payload is a DWARF union of the variant payload types (each at offset 0).
-    function di_union_type(this, u: PlannedUnion) returns LLVMMetadataRef
+    function di_union_type(this, u: PlannedUnion, readable: String) returns LLVMMetadataRef
     {
         let cached lookup_di_cache u.mangled_name
         if cached.handle <> null
@@ -1261,7 +1272,7 @@ define Emitter
         let size_bits (u.size * 8)
         var empty ""
         ; Unique per INSTANTIATION — see di_display_name.
-        var dname di_display_name(u.name, u.mangled_name)
+        var dname di_display_name(readable, u.mangled_name)
 
         ; Forward decl (emitted as a struct, tag 19), cached for cycle-break.
         let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
@@ -3507,6 +3518,18 @@ define Emitter
                 }
             }
         }
+        ; ★MEASURED 2026-08-11, because this table looks far more load-bearing
+        ; than it is: with a probe on every arm, the names that actually reach
+        ; here across all five package roots are `T`, `V`, `K`, `Option` and the
+        ; empty string (unresolved type variables, which match nothing below and
+        ; fall through) plus — from dazzle and opensp, i.e. across a package
+        ; boundary — `Page` (5 hits) and `PageNode` (2). **No container name is
+        ; ever selected.** So the twelve container entries are unexercised in
+        ; this tree and only the two runtime-opaque ones do work, which is
+        ; exactly the case the paragraph below describes. Correct them when they
+        ; disagree with their source definition, but do not expect a regression
+        ; test to be able to catch a mistake in one.
+        ;
         ; Fallback: hardcoded layouts for stdlib generic containers
         ; (stage-1 doesn't fully instantiate generics, so Vector[T] etc.
         ; aren't in plan.structures). The layouts below match the
@@ -3558,12 +3581,21 @@ define Emitter
         }
         if name = "List"
         {
-            ; List[T]: { head: ptr, tail: ptr, length }
-            var fields Vector[LLVMTypeRef](3)
+            ; List[T] (packages/scaly/0.1.0/scaly/containers/List.scaly):
+            ; `define List[T] (head: pointer[Node[T]] (null))` — ONE field, 8
+            ; bytes. It is a chain, and Node carries (element, next); there is no
+            ; tail and no cached length.
+            ;
+            ; ★Corrected 2026-08-11. This entry used to claim { head, tail,
+            ; length } = 24 bytes, exactly the class the Array comment above
+            ; records for pre-s121: a hardcoded layout that does not match the
+            ; real stdlib definition, so wherever a List field access falls back
+            ; to this table (cross-package, no plan layout) sizeof was 24 instead
+            ; of 8 and every field following a by-value List member sat at the
+            ; wrong offset.
+            var fields Vector[LLVMTypeRef](1)
             fields.put(0, ptr_ty)
-            fields.put(1, ptr_ty)
-            fields.put(2, i64_ty)
-            return LLVMStructTypeInContext(context, fields.data, 3, 0)
+            return LLVMStructTypeInContext(context, fields.data, 1, 0)
         }
         if name = "HashMapBuilder"
         {

@@ -119,6 +119,99 @@ async function stopClient(): Promise<void> {
   }
 }
 
+// ---------------------------------------------------------------- debugging
+//
+// Scaly programs are debugged through lldb-dap, the DAP server that ships with
+// LLVM and with Xcode — so there is no adapter to write and nothing extra to
+// install. The compiler's `-g` emits the line tables, the variables and the
+// container types; this side only has to find the adapter and load the data
+// formatters.
+
+// Where lldb-dap tends to live, in the order we prefer it. The configured
+// setting wins over all of them.
+function lldbDapCandidates(): string[] {
+  return [
+    "lldb-dap",
+    "lldb-dap-20",
+    "/opt/homebrew/opt/llvm@20/bin/lldb-dap",
+    "/usr/lib/llvm-20/bin/lldb-dap",
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-dap",
+  ];
+}
+
+function resolveDebugAdapter(): string | undefined {
+  const configured = vscode.workspace
+    .getConfiguration("scaly")
+    .get<string>("debugAdapter.path");
+  if (configured && configured.length > 0) {
+    return configured;
+  }
+  return lldbDapCandidates().find((c) => onPath(c));
+}
+
+// The formatters turn a String from a raw pointer into text and give
+// Vector/Array/List their elements as children. They live in the Scaly repo, so
+// resolve them the way the language server's SCALY_HOME is resolved.
+function resolveFormatterScript(): string | undefined {
+  const cfg = vscode.workspace.getConfiguration("scaly");
+  const configured = cfg.get<string>("formatters.path");
+  if (configured && configured.length > 0) {
+    return fs.existsSync(configured) ? configured : undefined;
+  }
+  const roots = [
+    cfg.get<string>("home"),
+    process.env.SCALY_HOME,
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+  ];
+  for (const root of roots) {
+    if (!root) {
+      continue;
+    }
+    const p = path.join(root, "tools", "lldb", "scaly.py");
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  return undefined;
+}
+
+class ScalyDebugAdapterFactory
+  implements vscode.DebugAdapterDescriptorFactory
+{
+  createDebugAdapterDescriptor(): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+    const adapter = resolveDebugAdapter();
+    if (!adapter) {
+      void vscode.window.showErrorMessage(
+        "Scaly: lldb-dap not found. Install LLVM 20 (or Xcode), or set scaly.debugAdapter.path."
+      );
+      return undefined;
+    }
+    return new vscode.DebugAdapterExecutable(adapter, []);
+  }
+}
+
+class ScalyDebugConfigurationProvider
+  implements vscode.DebugConfigurationProvider
+{
+  resolveDebugConfiguration(
+    _folder: vscode.WorkspaceFolder | undefined,
+    config: vscode.DebugConfiguration
+  ): vscode.ProviderResult<vscode.DebugConfiguration> {
+    // An EXPLICIT initCommands is honoured as given, including an empty array —
+    // that is how a user opts out of the formatters.
+    if (config.initCommands === undefined) {
+      const script = resolveFormatterScript();
+      if (script) {
+        config.initCommands = [`command script import ${script}`];
+      }
+    }
+    if (config.cwd === undefined) {
+      config.cwd = "${workspaceFolder}";
+    }
+    return config;
+  }
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   void startClient();
 
@@ -127,7 +220,15 @@ export function activate(context: vscode.ExtensionContext): void {
       await stopClient();
       await startClient();
       void vscode.window.showInformationMessage("Scaly language server restarted.");
-    })
+    }),
+    vscode.debug.registerDebugAdapterDescriptorFactory(
+      "scaly",
+      new ScalyDebugAdapterFactory()
+    ),
+    vscode.debug.registerDebugConfigurationProvider(
+      "scaly",
+      new ScalyDebugConfigurationProvider()
+    )
   );
 }
 

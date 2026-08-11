@@ -122,7 +122,14 @@ need "tag enumeration lacks the PAYLOAD-LESS variant" '"Nothing"' /tmp/debuginfo
 #     survivor's element type is used for both — elements then read at the wrong
 #     stride, silently. The fixture instantiates Vector over int AND (via String)
 #     over char, so two distinct names must exist.
-vnames=$(grep -c 'DW_AT_name.*VectorI' /tmp/debuginfo_all.txt)
+#
+#     ★The pattern must pin Vector EXACTLY. `VectorI` also matches
+#     "VectorIterator[char]", so an unanchored count passed against a compiler
+#     that collapsed every Vector into one — it was counting the iterators.
+#     Accept both spellings: the readable `Vector[T]` di_display_name normally
+#     produces, and the mangled `_Z6VectorI...E` it falls back to when a
+#     PlannedType arrives without its generics.
+vnames=$(grep -oE 'DW_AT_name[^"]*"(Vector\[[^]]*\]|_Z6VectorI[^"]*E)"' /tmp/debuginfo_all.txt | sort -u | wc -l | tr -d ' ')
 if [ "$vnames" -ge 2 ]; then ok; else bad "only $vnames distinct Vector instantiation names, expected >= 2"; fi
 
 # 5. -g must be GATED: a non-g compile carries no debug metadata whatsoever.
@@ -184,6 +191,27 @@ if command -v lldb >/dev/null 2>&1; then
   need "formatter: Vector count missing"       '3 element(s)'       /tmp/debuginfo_fmt.txt
   need "formatter: Vector element 0 is not 7"  '\[0\] = 7'          /tmp/debuginfo_fmt.txt
   need "formatter: Vector element 2 is not 9"  '\[2\] = 9'          /tmp/debuginfo_fmt.txt
+fi
+
+# 8. The EDITOR path: lldb-dap driven over the protocol, with the same launch
+#    attributes and the same initCommands the VS Code extension sends. A wrong
+#    key in editors/vscode/package.json cannot be caught by a typecheck and would
+#    otherwise fail at debug time in someone's editor.
+DAP=""
+for c in lldb-dap lldb-dap-20 /opt/homebrew/opt/llvm@20/bin/lldb-dap \
+         /usr/lib/llvm-20/bin/lldb-dap \
+         /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-dap; do
+  p=$(command -v "$c" 2>/dev/null || true)
+  [ -n "$p" ] && { DAP="$p"; break; }
+done
+if [ -n "$DAP" ] && command -v python3 >/dev/null 2>&1; then
+  if python3 tests/debuginfo/dap_smoke.py "$DAP" "$OUT" \
+       "$PWD/$SRC" 45 "$PWD/tools/lldb/scaly.py" >/tmp/debuginfo_dap.txt 2>&1; then
+    ok
+  else
+    while read -r l; do bad "${l#dap: FAIL }"; done < <(grep '^dap: FAIL' /tmp/debuginfo_dap.txt)
+    grep -q '^dap: FAIL' /tmp/debuginfo_dap.txt || bad "lldb-dap smoke test failed: $(tail -1 /tmp/debuginfo_dap.txt)"
+  fi
 fi
 
 if [ "$fail" = 0 ]; then

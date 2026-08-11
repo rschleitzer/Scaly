@@ -1,8 +1,8 @@
 {
   "name": "scaly",
   "displayName": "Scaly",
-  "description": "Scaly language support (LSP client for scalyls)",
-  "version": "0.1.1",
+  "description": "Scaly language support (LSP client for scalyls, debugger via lldb-dap)",
+  "version": "0.2.0",
   "publisher": "scaly",
   "license": "MIT",
   "repository": {
@@ -65,9 +65,118 @@
           "type": "string",
           "default": "",
           "description": "SCALY_HOME passed to the server (prelude/packages search root). If empty, the first workspace folder is used."
+        },
+        "scaly.debugAdapter.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the lldb-dap debug adapter. Empty auto-detects: PATH, then the LLVM 20 prefix, then Xcode's copy. lldb-dap ships with LLVM and with Xcode \u2014 nothing extra to install."
+        },
+        "scaly.formatters.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to tools/lldb/scaly.py (the String/Vector/Array/List data formatters). Empty derives it from scaly.home, then SCALY_HOME, then the first workspace folder."
         }
       }
-    }
+    },
+    "debuggers": [
+      {
+        "type": "scaly",
+        "label": "Scaly (lldb-dap)",
+        "languages": [
+          "scaly"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to the executable. Compile it with `scalyc -g` \u2014 without -g there are no line tables, so breakpoints cannot bind.",
+                "default": "${workspaceFolder}/build/program"
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Command-line arguments passed to the program.",
+                "default": []
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory.",
+                "default": "${workspaceFolder}"
+              },
+              "env": {
+                "type": "object",
+                "description": "Environment variables for the debuggee.",
+                "default": {}
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Stop at the program's entry point.",
+                "default": false
+              },
+              "initCommands": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "lldb commands run before the target is created. Left unset, the extension injects `command script import <scaly>/tools/lldb/scaly.py` so String renders as text and Vector/Array/List show their elements. Set it to [] to opt out.",
+                "default": []
+              }
+            }
+          },
+          "attach": {
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the executable of the running process (for symbols)."
+              },
+              "pid": {
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "description": "Process id to attach to."
+              },
+              "initCommands": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "scaly",
+            "request": "launch",
+            "name": "Debug Scaly program",
+            "program": "${workspaceFolder}/build/program",
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Scaly: Launch",
+            "description": "Debug a Scaly executable compiled with -g",
+            "body": {
+              "type": "scaly",
+              "request": "launch",
+              "name": "Debug Scaly program",
+              "program": "^\"\\${workspaceFolder}/build/program\"",
+              "cwd": "^\"\\${workspaceFolder}\""
+            }
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run bundle",
