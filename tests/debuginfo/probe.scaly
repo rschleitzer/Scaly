@@ -10,13 +10,21 @@
 ;           whole program's variables were invisible.
 ;   name    a String, whose DIType has to come from di_stdlib_struct_type: the
 ;           type is absent from plan.structures in every user root.
+;   pick    a union whose SECOND variant carries no payload. That is the shape
+;           that makes the tag ENUMERATION load-bearing: the payload union holds
+;           a member only for variants that have a payload, so its member index
+;           stops being the tag value and no reader can map one to the other.
+;   items   a Vector, for the lldb synthetic-children formatter.
 ;
 ; Expected stdout: 34
 package scaly 0.1.0
 
 use scaly.containers.String
+use scaly.containers.Vector
 
 define Point(x: int, y: int)
+
+define Pick union(Chosen: int, Nothing)
 
 function shift(p: Point, dx: int, flag: bool) returns int
 {
@@ -29,6 +37,11 @@ function shift(p: Point, dx: int, flag: bool) returns int
 let pt Point(10, 20)
 let base 7
 let name String("probe")
+var pick Pick.Chosen(41)
+var items Vector[int](3)
+items.put(0, 7)
+items.put(1, 8)
+items.put(2, 9)
 let out shift(pt, base, true)
 if out = 34
     print("34")

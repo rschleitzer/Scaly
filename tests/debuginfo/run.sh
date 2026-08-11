@@ -104,6 +104,27 @@ else
   bad "String local 'name' has no DW_OP_deref in its location"
 fi
 
+# 4b. The SIGNATURE: element 0 of the DISubroutineType is the return type, and
+#     without it lldb's `finish` cannot report a returned value.
+need "shift has no DW_AT_type (return type)" 'DW_AT_type' /tmp/debuginfo_shift.txt
+
+# 4c. A union's TAG is an enumeration over ALL variants, including the
+#     payload-less ones — the payload union holds members only for variants that
+#     HAVE a payload, so its member index is not the tag and no reader can
+#     reconstruct the mapping. Nothing/1 is the entry that proves it.
+"$DWARFDUMP" --name=Pick --show-children "$TARGET" >/tmp/debuginfo_pick.txt 2>/dev/null
+need "no DW_TAG_enumeration_type for the union tag" 'DW_TAG_enumeration_type' /tmp/debuginfo_pick.txt
+need "tag enumeration lacks the Chosen variant"     '"Chosen"'  /tmp/debuginfo_pick.txt
+need "tag enumeration lacks the PAYLOAD-LESS variant" '"Nothing"' /tmp/debuginfo_pick.txt
+
+# 4d. Every generic INSTANTIATION needs its own DW_AT_name. lldb uniques types
+#     by name, so two Vector[T] both called "Vector" collapse into one and the
+#     survivor's element type is used for both — elements then read at the wrong
+#     stride, silently. The fixture instantiates Vector over int AND (via String)
+#     over char, so two distinct names must exist.
+vnames=$(grep -c 'DW_AT_name.*VectorI' /tmp/debuginfo_all.txt)
+if [ "$vnames" -ge 2 ]; then ok; else bad "only $vnames distinct Vector instantiation names, expected >= 2"; fi
+
 # 5. -g must be GATED: a non-g compile carries no debug metadata whatsoever.
 "$STAGE" -S -o /tmp/debuginfo_nog.ll "$SRC" >/dev/null 2>&1
 for pat in '#dbg_declare' 'DILocalVariable' 'DISubprogram' '!dbg'; do
@@ -117,23 +138,52 @@ done
 # 6. Optional: read the VALUES. A location that resolves to garbage is worse
 #    than a missing variable, and only a debugger can tell the difference.
 if command -v lldb >/dev/null 2>&1; then
-  # Line 25 is `set running: ...` inside shift — both parameters and `inner`
-  # are bound there. Line 33 is `if out = 34`, after all four top-level lets.
-  lldb -b -o "b probe.scaly:25" -o run -o "frame variable" "$OUT" \
+  # Line 33 is `set running: ...` inside shift — the parameters and `inner` are
+  # all bound there. Line 45 is `let out shift(...)`, after every top-level
+  # binding. Keep both in step with probe.scaly; a breakpoint on a comment or on
+  # the declaration line itself reads UNINITIALIZED memory and looks like a
+  # compiler defect.
+  lldb -b -o "b probe.scaly:33" -o run -o "frame variable" -o finish "$OUT" \
     >/tmp/debuginfo_lldb.txt 2>&1
   need "lldb: parameter p.x is not 10"  'x = 10'   /tmp/debuginfo_lldb.txt
   need "lldb: parameter p.y is not 20"  'y = 20'   /tmp/debuginfo_lldb.txt
   need "lldb: parameter dx is not 7"    'dx = 7'   /tmp/debuginfo_lldb.txt
   need "lldb: parameter flag is not true" 'flag = true' /tmp/debuginfo_lldb.txt
   need "lldb: let inner is not 17"      'inner = 17' /tmp/debuginfo_lldb.txt
-  lldb -b -o "b probe.scaly:33" -o run -o "frame variable" "$OUT" \
+  need "lldb: finish reports no return value" 'Return value' /tmp/debuginfo_lldb.txt
+
+  lldb -b -o "b probe.scaly:45" -o run -o "frame variable" "$OUT" \
     >/tmp/debuginfo_lldb2.txt 2>&1
   need "lldb: let base is not 7"        'base = 7' /tmp/debuginfo_lldb2.txt
   need "lldb: let out is not 34"        'out = 34' /tmp/debuginfo_lldb2.txt
-  # The buffer is varint-prefixed, so the text is preceded by a length byte —
-  # decoding it into a plain string is a FORMATTER's job, not DWARF's. What the
-  # gate asserts is that the bytes are reachable and correct.
+  # Bare DWARF: the buffer is varint-prefixed, so the text arrives with a length
+  # byte in front. Decoding it is the FORMATTER's job (checked below); here the
+  # gate only asserts the bytes are reachable and correct.
   need "lldb: String local does not read as 'probe'" 'probe' /tmp/debuginfo_lldb2.txt
+  # The union tag prints its VARIANT NAME with no formatter involved.
+  need "lldb: union tag does not print as Chosen" 'tag = Chosen' /tmp/debuginfo_lldb2.txt
+  # ★A region-allocated `var` keeps a POINTER slot while its DIType is the
+  #  OBJECT, so the declare needs DW_OP_deref. Without it the debugger reads the
+  #  slot holding the pointer AS the object — measured: length = 31092379704.
+  #  `length = 3` is the whole assertion.
+  #  ★Anchored: an unanchored `length = 3` is a SUBSTRING of the very garbage it
+  #  is meant to catch (the pre-fix reading was length = 31092379704), so the
+  #  check passed against a compiler that had the defect. An assertion that
+  #  cannot fail is worse than none.
+  need "lldb: region-allocated var reads through one indirection too few" \
+       'length = 3$' /tmp/debuginfo_lldb2.txt
+
+  # 7. The FORMATTERS (tools/lldb/scaly.py): a String reads as text with the
+  #    length prefix gone, and a Vector's elements become children at the right
+  #    stride. The stride half is what caught the type-name collapse.
+  lldb -b -o "command script import tools/lldb/scaly.py" \
+       -o "b probe.scaly:45" -o run -o "frame variable name items" "$OUT" \
+    >/tmp/debuginfo_fmt.txt 2>&1
+  need "formatter: not loaded"                 'formatters loaded'  /tmp/debuginfo_fmt.txt
+  need "formatter: String is not decoded"      'name = "probe"'     /tmp/debuginfo_fmt.txt
+  need "formatter: Vector count missing"       '3 element(s)'       /tmp/debuginfo_fmt.txt
+  need "formatter: Vector element 0 is not 7"  '\[0\] = 7'          /tmp/debuginfo_fmt.txt
+  need "formatter: Vector element 2 is not 9"  '\[2\] = 9'          /tmp/debuginfo_fmt.txt
 fi
 
 if [ "$fail" = 0 ]; then

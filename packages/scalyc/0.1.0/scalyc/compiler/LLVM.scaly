@@ -738,6 +738,11 @@ function LLVMDIBuilderCreateStructType(builder: LLVMDIBuilderRef, scope: LLVMMet
 function LLVMDIBuilderCreateUnionType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
 function LLVMDIBuilderCreateMemberType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, size_in_bits: size_t, align_in_bits: i32, offset_in_bits: size_t, flags: i32, ty: LLVMMetadataRef) returns LLVMMetadataRef extern
 function LLVMDIBuilderCreatePointerType(builder: LLVMDIBuilderRef, pointee_ty: LLVMMetadataRef, size_in_bits: size_t, align_in_bits: i32, address_space: i32, name: pointer[const_char], name_len: size_t) returns LLVMMetadataRef extern
+; A union's TAG is typed as an enumeration whose enumerators are the variant
+; names, so a debugger prints `tag = Some` instead of `tag = 1` with no
+; formatter involved. `value` is int64_t and `is_unsigned` an LLVMBool.
+function LLVMDIBuilderCreateEnumerator(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, value: i64, is_unsigned: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateEnumerationType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, class_ty: LLVMMetadataRef) returns LLVMMetadataRef extern
 ; Forward declaration + RAUW: breaks self-referential cycles (Node →
 ; pointer[Node]). Create the replaceable temp, cache it, build members
 ; (a back-pointer resolves to the temp), then replace it with the final type.

@@ -707,11 +707,76 @@ define Emitter
     {
         let pos compute_debug_pos func.loc.start
 
-        ; Subroutine type with an empty parameter list: enough for
-        ; breakpoints + stepping, not a full signature. A single null
-        ; element (the usual "void return" form) SIGSEGVs in LLVM's
-        ; getOrCreateTypeArray, so pass an empty array instead.
-        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], 0, 0)
+        ; Signature for the DISubprogram: element 0 is the RETURN type, elements
+        ; 1..n the parameters, read from func.input — so a method's `this` is
+        ; included and the positions line up with the arg_no values
+        ; emit_function_body gives the DW_TAG_formal_parameter DIEs.
+        ;
+        ; What it buys, measured 2026-08-11: without a return type lldb's
+        ; `finish` reports only "stop reason = step out" and NO `Return value:`
+        ; line, where clang-built code prints one.
+        ;
+        ; ★A NULL element — the canonical "void return" spelling — SIGSEGVs
+        ; inside LLVM's getOrCreateTypeArray, because the C shim casts every
+        ; element to DIType. So "void" cannot be SAID through this API at all:
+        ; a function whose return type does not resolve keeps the empty array it
+        ; always had (breakpoints and stepping never needed one), and a single
+        ; unresolvable PARAMETER degrades to the return type alone rather than
+        ; risk a null in the middle. Both fallbacks are exactly today's
+        ; behaviour, so this can only add information, never lose it.
+        var ret_dty LLVMMetadataRef(null)
+        if func.return_type <> null
+        {
+            let rt_ref func.return_type.unwrap()
+            set ret_dty: di_type_for((*rt_ref))
+        }
+        var sig_input_count: size_t 0
+        if func.input <> null
+        {
+            let sig_in_ref func.input.unwrap()
+            set sig_input_count: (*sig_in_ref).length
+        }
+        var sig_vec Vector[LLVMMetadataRef](sig_input_count + 1)
+        var sig_ptr (null as pointer[LLVMMetadataRef])
+        var sig_count: size_t 0
+        if ret_dty.handle <> null
+        {
+            sig_vec.put(0, ret_dty)
+            set sig_count: 1
+            var sig_complete: bool true
+            if func.input <> null
+            {
+                let sig_items_ref func.input.unwrap()
+                let sig_items (*sig_items_ref)
+                var si: size_t 0
+                while si < sig_items.length
+                {
+                    var sig_pdty LLVMMetadataRef(null)
+                    let sig_ip sig_items.get si
+                    if sig_ip <> null
+                    {
+                        let sig_item (*sig_ip)
+                        if sig_item.item_type <> null
+                        {
+                            let sig_itt sig_item.item_type.unwrap()
+                            set sig_pdty: di_type_for((*sig_itt))
+                        }
+                    }
+                    if sig_pdty.handle = null
+                        set sig_complete: false
+                    if sig_complete
+                    {
+                        sig_vec.put(sig_count, sig_pdty)
+                        set sig_count: sig_count + 1
+                    }
+                    set si: si + 1
+                }
+            }
+            if sig_complete = false
+                set sig_count: 1
+            set sig_ptr: sig_vec.data
+        }
+        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, sig_ptr, (sig_count as i32), 0)
 
         var name func.name
         var mangled func.mangled_name
@@ -853,6 +918,42 @@ define Emitter
     ; change NON-`-g` emission. This table is read only under -g.
     ; The generic containers need no entry — their instantiations DO reach
     ; plan.structures (`%_Z6VectorIcE` and friends appear in the IR).
+    ; -g only: the DW_AT_name for a struct or union. A generic INSTANTIATION must
+    ; not reuse the bare concept name.
+    ;
+    ; ★lldb uniques types BY NAME across a module, so `Vector[char]` and
+    ; `Vector[int]` both emitted as "Vector" collapse into ONE type and one
+    ; survivor's member types win for both. Measured 2026-08-11: a `Vector[int]`
+    ; whose own DIE says `data: int *` resolved in lldb to `char *`
+    ; (`target.FindTypes("Vector")` returned a single type), so every element was
+    ; read one byte at a time and a vector of 7, 8, 9 printed as '\a', 0, 0.
+    ; Silently WRONG VALUES, not a cosmetic complaint — and it hits every generic
+    ; (Vector, Array, List, Node, Slice, the iterators).
+    ;
+    ; The uniqueness has to come from the MANGLED name, which is the only place
+    ; the type arguments survive to here. `InstantiationInfo.type_args` exists in
+    ; Plan.scaly and says "the concrete type arguments (readable)" — but nothing
+    ; in the tree ever CONSTRUCTS an InstantiationInfo, so `origin` is null on
+    ; every structure and union (checked by grep: the type has no writer). If
+    ; someone ever populates it, this should switch to `Vector[int]`, which is
+    ; both unique and what the source says.
+    ;
+    ; So: use the mangled name only when it carries an Itanium argument list —
+    ; `_Z6VectorIiE` has an `I` and ends in `E`, while a plain `_Z5Point` has
+    ; neither, and a non-generic concept keeps its readable name. A concept
+    ; literally spelled like `TRIE` trips the test and gets its mangled name;
+    ; that is cosmetic noise, never a wrong type.
+    function di_display_name(this, name: String, mangled: String) returns String
+    {
+        if mangled.get_length() = 0
+            return name
+        if mangled.ends_with("E") = false
+            return name
+        if mangled.contains("I" as u8) = false
+            return name
+        mangled
+    }
+
     function di_stdlib_struct_type(this, name: String) returns LLVMMetadataRef
     {
         if name <> "String"
@@ -1091,9 +1192,11 @@ define Emitter
         let pos compute_debug_pos s.loc.start
         let size_bits (s.size * 8)
         var empty ""
+        ; Unique per INSTANTIATION — see di_display_name.
+        var dname di_display_name(s.name, s.mangled_name)
 
         ; Forward decl FIRST, cached, so a back-pointer member resolves here.
-        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, s.name.c_data(), s.name.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
+        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
         let idx di_type_cache_names.length
         di_type_cache_names.add s.mangled_name
         di_type_cache_types.add fwd
@@ -1140,7 +1243,7 @@ define Emitter
             }
         }
 
-        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, s.name.c_data(), s.name.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, LLVMMetadataRef null, members_ptr, (added as i32), 0, LLVMMetadataRef null, empty.c_data(), 0)
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, LLVMMetadataRef null, members_ptr, (added as i32), 0, LLVMMetadataRef null, empty.c_data(), 0)
         LLVMMetadataReplaceAllUsesWith(fwd, final)
         di_type_cache_types.put(idx, final)
         final
@@ -1157,9 +1260,11 @@ define Emitter
         let pos compute_debug_pos u.loc.start
         let size_bits (u.size * 8)
         var empty ""
+        ; Unique per INSTANTIATION — see di_display_name.
+        var dname di_display_name(u.name, u.mangled_name)
 
         ; Forward decl (emitted as a struct, tag 19), cached for cycle-break.
-        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, u.name.c_data(), u.name.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
+        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
         let idx di_type_cache_names.length
         di_type_cache_names.add u.mangled_name
         di_type_cache_types.add fwd
@@ -1204,14 +1309,51 @@ define Emitter
                     set vi: vi + 1
                 }
                 if vadded > 0
-                    set payload_ty: LLVMDIBuilderCreateUnionType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, 0, var_vec.data, (vadded as i32), 0, empty.c_data(), 0)
+                    set payload_ty: LLVMDIBuilderCreateUnionType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (payload_bits as size_t), 0, 0, var_vec.data, (vadded as i32), 0, empty.c_data(), 0)
             }
         }
+
+        ; The TAG gets an ENUMERATION type whose enumerators are the variant
+        ; names at their tag values, so a debugger prints `tag = Some` on its
+        ; own — no formatter, no mapping table on the reader's side.
+        ;
+        ; ★This is the only place the mapping can live. The payload union above
+        ; holds a member ONLY for variants that carry a payload, so its member
+        ; INDEX is not the tag value as soon as one variant is payload-less —
+        ; which is why "index the payload union by tag" is not a thing a reader
+        ; can do, and why the enumeration is built over ALL variants.
+        var tag_dty LLVMMetadataRef(null)
+        if u.variants <> null
+        {
+            let enum_variants (*u.variants)
+            if enum_variants.length > 0
+            {
+                var enum_vec Vector[LLVMMetadataRef](enum_variants.length)
+                var eadded: size_t 0
+                var ei: size_t 0
+                while ei < enum_variants.length
+                {
+                    let evp enum_variants.get ei
+                    if evp <> null
+                    {
+                        let evariant (*evp)
+                        let enumerator LLVMDIBuilderCreateEnumerator(di_builder, evariant.name.c_data(), evariant.name.get_length(), (ei as i64), 1)
+                        enum_vec.put(eadded, enumerator)
+                        set eadded: eadded + 1
+                    }
+                    set ei: ei + 1
+                }
+                if eadded > 0
+                    set tag_dty: LLVMDIBuilderCreateEnumerationType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (tag_size * 8), 0, enum_vec.data, (eadded as i32), LLVMMetadataRef null)
+            }
+        }
+        if tag_dty.handle = null
+            set tag_dty: di_placeholder_type(tag_size * 8)
 
         ; Outer struct members: tag, then payload (if any).
         var tag_name "tag"
         var pay_name "payload"
-        let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8), 0, 0, 0, di_placeholder_type(tag_size * 8))
+        let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8), 0, 0, 0, tag_dty)
         var out_vec Vector[LLVMMetadataRef](2)
         out_vec.put(0, tag_member)
         var out_count: size_t 1
@@ -1222,7 +1364,7 @@ define Emitter
             set out_count: 2
         }
 
-        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, LLVMMetadataRef null, out_vec.data, (out_count as i32), 0, LLVMMetadataRef null, empty.c_data(), 0)
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, LLVMMetadataRef null, out_vec.data, (out_count as i32), 0, LLVMMetadataRef null, empty.c_data(), 0)
         LLVMMetadataReplaceAllUsesWith(fwd, final)
         di_type_cache_types.put(idx, final)
         final
@@ -17721,14 +17863,38 @@ define Emitter
                                     }
                                 }
                         }
-                        if dty.handle <> null
+                        ; ★A REGION-ALLOCATED `var` keeps a POINTER slot (s27:
+                        ; its planned type is pointer[T], so store_ty is `ptr`)
+                        ; while the DIType above is the OBJECT — so the declare
+                        ; needs DW_OP_deref, exactly as debug_declare_value's
+                        ; indirect case does. Without it the debugger reads the
+                        ; slot holding the pointer AS the object: measured
+                        ; 2026-08-11, `var items Vector[int](3)` reported
+                        ; length = 1073741824 and a nonsense data pointer. Only
+                        ; ever visible once a DIType resolves at all, which for
+                        ; String and friends it did not until today.
+                        var var_indirect: bool false
+                        if LLVMGetTypeKind(store_ty) = LLVMTypeKind.Pointer()
                         {
-                            let dvar LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, 0, 0, 0)
-                            let dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], 0)
-                            let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef null)
-                            let dblk LLVMGetInsertBlock(builder)
-                            let ddecl LLVMDIBuilderInsertDeclareRecordAtEnd(di_builder, alloca, dvar, dexpr, dloc, dblk)
+                            if binding.binding_item.item_type <> null
+                            {
+                                let vi_ref binding.binding_item.item_type
+                                set var_indirect: di_planned_type_is_composite((*vi_ref))
+                            }
+                            if binding.binding_item.item_type = null
+                                if binding.operation <> null
+                                {
+                                    let vi_ops_ref binding.operation
+                                    let vi_ops (*vi_ops_ref)
+                                    if vi_ops.length > 0
+                                    {
+                                        let vi_op0 vi_ops.get 0
+                                        if vi_op0 <> null
+                                            set var_indirect: di_planned_type_is_composite((*vi_op0).result_type)
+                                    }
+                                }
                         }
+                        debug_declare_at(name, alloca, dty, dpos, 0, var_indirect)
                     }
                 }
                 else
