@@ -1018,11 +1018,27 @@ jobs:
           ( cd seed && sha256sum -c SHA256SUMS ) | tail -1
 
           # --- seed text -> bitcode objects --------------------------------
-          # -O2 to match what tools/build-from-seed.sh hands to `opt`; the link
-          # step optimises again at its own default, exactly as that pipeline's
-          # `opt -O2 | llc` does.
+          # ★NO -O2 here, and the reason is the trap CLAUDE.md already names
+          # ("never -c -O2 a library: no main anchor + linkonce_odr = GlobalDCE
+          # deletes every body"). It cost this rung its first round, so here is
+          # the sharper form of it: a DCE that runs per MODULE cannot know about
+          # a reference from another module. `cli::main` is linkonce_odr in
+          # scalyc.ll and reachable from main.ll — but nothing inside its own
+          # module refers to it, so -O2 discarded it and the link failed with
+          # `undefined symbol: cli::main(int, char**)`. Measured both ways on
+          # the dev box for this exact triple: scalyc.obj is 1864 bytes with
+          # -O2 and 4409480 without, and llvm-nm finds cli::main in exactly one
+          # of them. The optimisation is not lost, it MOVES to the link, where
+          # the whole program is visible — which is what -flto means and what
+          # makes this the analogue of build-from-seed.sh's `opt -O2` over the
+          # llvm-link'ed module rather than a weaker build.
+          # ★So the weak_odr promotion that pipeline does is deliberately NOT
+          # copied: it exists to keep stdlib bodies visible to the in-process
+          # ORC JIT, and the JIT does not work on Windows anyway (GetProcAddress
+          # searches an export table, and an .exe exports nothing). Discarding
+          # what an executable cannot reach is correct here.
           for f in main scalyc scaly; do
-            clang --target=x86_64-pc-windows-msvc -O2 -flto=full \
+            clang --target=x86_64-pc-windows-msvc -flto=full \
                   -c "seed/$f.ll" -o "seed_$f.obj"
           done
           ls -l seed_*.obj
@@ -1036,7 +1052,11 @@ jobs:
           # the very thing this rung builds from the seed instead — pulling it
           # in would resolve the runtime twice and quietly measure nothing.
           # LLVM-C.dll/.lib are the ones rung 9 unpacked in this same job.
-          clang --target=x86_64-pc-windows-msvc -fuse-ld=lld -flto=full \
+          # ★-O2 sits HERE, on the link, because with -flto that is what sets
+          # the LTO pipeline's level — the driver would otherwise hand the
+          # backend O0 and the compiler would come out unoptimised, which is a
+          # difference no byte comparison in this rung could see.
+          clang --target=x86_64-pc-windows-msvc -O2 -fuse-ld=lld -flto=full \
                 seed_main.obj seed_scalyc.obj seed_scaly.obj \
                 pc.o eio_win.o ctime.o fcontext_win.o \
                 -lws2_32 -Lllvm18/lib -lLLVM-C \
