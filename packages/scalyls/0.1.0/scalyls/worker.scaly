@@ -72,9 +72,31 @@ define POLLIN i16 1
 define SIGKILL int 9
 define SIGPIPE int 13
 
-; Wait at most this long for the worker to answer one analysis before
-; declaring it hung and killing it (milliseconds).
+; Wait at most this long for the worker to answer one PER-DOCUMENT request
+; before declaring it hung and killing it (milliseconds). Sized for the
+; single-document pipeline (parse -> model -> plan), which is well under a
+; second even on the largest file in this tree.
 define ANALYZE_TIMEOUT_MS i32 8000
+
+; The whole-tree searches ("w" = workspace/symbol, and the cross-package
+; definition / signatureHelp scans that share its index) get their own, far
+; larger budget: on a COLD worker they parse every .scaly file under the root
+; to build the symindex — measured 6.4-7.4s over this tree's 747 files / 11.6
+; MB, i.e. INSIDE the 8s per-document budget but with no margin, so ordinary
+; machine jitter pushed them over it.
+;
+; Sharing one budget was a correctness bug, not just a slow path. Exceeding it
+; kills the worker (worker.shutdown#), and the symindex lives ONLY in the
+; worker (symindex.scaly), so the kill threw away the very index the request
+; was building: the next query started cold, timed out again, and the search
+; never completed while every OTHER request paid a fresh worker's respawn. The
+; empty `[]` fallback made it silent — the editor sees a valid, successful
+; empty result, not an error.
+;
+; Kept finite so a genuinely hung pipeline is still reaped (that is the whole
+; point of the isolation); it only has to exceed a legitimate cold scan by
+; enough that jitter cannot reach it.
+define WORKSPACE_TIMEOUT_MS i32 60000
 
 ; Worker process state, owned by the PARENT. worker_pid <= 0 means "no
 ; live worker"; the fds are the parent's ends of the two pipes.
@@ -471,8 +493,15 @@ define worker
             rpc.write_message_fd(worker_in, position)
 
             ; Wait for the answer with a timeout (catches a hung pipeline).
+            ; The budget is per REQUEST KIND: a whole-tree scan legitimately
+            ; takes seconds on a cold worker, where a per-document request
+            ; never does. See WORKSPACE_TIMEOUT_MS for why one shared budget
+            ; made the search unable to ever complete.
+            var budget: i32 ANALYZE_TIMEOUT_MS
+            if kind_str = "w"
+                set budget: WORKSPACE_TIMEOUT_MS
             var pfd pollfd(worker_out as i32, POLLIN, 0)
-            let pr poll(&pfd, 1 as u64, ANALYZE_TIMEOUT_MS)
+            let pr poll(&pfd, 1 as u64, budget)
 
             ; poll == 0 (timeout) or < 0 (error): the pipeline hung. Kill it
             ; and give up — retrying would just hang again.
