@@ -153,7 +153,21 @@ run)
         echo "  --- $base ---"
         echo "      want stdout: $want"
         echo "      got  stdout: $got"
-        [ -s "$OUT/$base.err" ] && echo "      stderr: $(head -c 300 "$OUT/$base.err" | tr -d '\r' | tr '\n' ' ')"
+        # ★stderr is printed UNCONDITIONALLY, and says `(empty)` when it is
+        # (2026-08-11). It used to be guarded by `[ -s ]`, so an empty stderr
+        # and an unprinted one looked identical — and for the one test whose
+        # entire content is a stderr message, `guard_overflow`, the EMPTINESS
+        # is the finding: it separates "the handler ran and the terminator
+        # failed" from "no handler ran at all", which are different defects
+        # with different fixes. A flake that leaves no evidence behind costs a
+        # CI round every time it fires. The wanted substring rides along for
+        # the same reason: a mismatch is unreadable without both halves.
+        if [ -n "$want_err" ]; then echo "      want stderr: $want_err"; fi
+        if [ -s "$OUT/$base.err" ]; then
+          echo "      got  stderr: $(head -c 300 "$OUT/$base.err" | tr -d '\r' | tr '\n' ' ')"
+        else
+          echo "      got  stderr: (empty)"
+        fi
       fi
     fi
   done
