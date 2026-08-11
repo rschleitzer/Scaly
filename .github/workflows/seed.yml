@@ -1037,9 +1037,32 @@ jobs:
           # ORC JIT, and the JIT does not work on Windows anyway (GetProcAddress
           # searches an export table, and an .exe exports nothing). Discarding
           # what an executable cannot reach is correct here.
+          # ★And one thing `opt` did for the POSIX pipeline has to be done by
+          # hand here, because it is the SECOND round this rung cost. A
+          # `declare` nothing calls leaves no trace in a real object file — but
+          # a BITCODE module's symbol table keeps it, so under LTO every dead
+          # declaration becomes an undefined symbol and the link dies on names
+          # that no code refers to (`Option<int>::unwrap()`, `scaly_atomic_*`:
+          # each occurs exactly ONCE in the seed, on its own declare line).
+          # `opt -O2` drops them before llc, which is why the POSIX seed links
+          # with zero undefined symbols and why this was invisible until now.
+          # Dropping a declaration whose name occurs once in its own module is
+          # safe by construction — nothing in that module can refer to it, and
+          # a declaration is inert in every other one. Measured: 58 of 406 go
+          # (main 4→2, scalyc 323→279, scaly 79→67), and the link's undefined
+          # count falls 360 → 304 with every remaining one real (LLVM-C, the
+          # CRT, our shims).
           for f in main scalyc scaly; do
+            grep -o '@[A-Za-z0-9_.$]*' "seed/$f.ll" | sort | uniq -c \
+              | awk '$1==1{print $2}' > "dead_$f.txt"
+            awk 'NR==FNR{dead[$0]=1;next}
+                 /^declare/ { if (match($0,/@[A-Za-z0-9_.$]+/) \
+                              && (substr($0,RSTART,RLENGTH) in dead)) next }
+                 {print}' "dead_$f.txt" "seed/$f.ll" > "live_$f.ll"
+            echo "  $f.ll: $(grep -c '^declare' "seed/$f.ll") declares ->" \
+                 "$(grep -c '^declare' "live_$f.ll") live"
             clang --target=x86_64-pc-windows-msvc -flto=full \
-                  -c "seed/$f.ll" -o "seed_$f.obj"
+                  -c "live_$f.ll" -o "seed_$f.obj"
           done
           ls -l seed_*.obj
 
@@ -1052,6 +1075,10 @@ jobs:
           # the very thing this rung builds from the seed instead — pulling it
           # in would resolve the runtime twice and quietly measure nothing.
           # LLVM-C.dll/.lib are the ones rung 9 unpacked in this same job.
+          # ★-errorlimit:0 because lld-link stops at 20 and that truncation
+          # reads like a clean, short answer: this rung's diagnosis cost an
+          # extra step to the same trap locally, where "20 errors, all memcpy"
+          # hid 340 more — among them the ones that named the actual defect.
           # ★-O2 sits HERE, on the link, because with -flto that is what sets
           # the LTO pipeline's level — the driver would otherwise hand the
           # backend O0 and the compiler would come out unoptimised, which is a
@@ -1061,6 +1088,7 @@ jobs:
                 pc.o eio_win.o ctime.o fcontext_win.o \
                 -lws2_32 -Lllvm18/lib -lLLVM-C \
                 -Xlinker -stack:67108864,1048576 \
+                -Xlinker -errorlimit:0 \
                 -o scalyc_seed.exe
           ls -l scalyc_seed.exe
 
