@@ -1,7 +1,10 @@
 {
-    // Scaly has no bundled VS Code grammar yet; treat .scaly as plain text
-    // so the editor stops guessing. Comments start with ';'.
+    // The Scaly extension (editors/vscode) contributes the `scaly` language and
+    // its grammar, so no association is needed here. Do NOT map *.scaly to
+    // plaintext: files.associations OVERRIDES the extension's own extension
+    // mapping, which kills both the highlighting and the LSP client (its only
+    // activation event is onLanguage:scaly).
     "files.associations": {
-        "*.scaly": "plaintext"
+        "*.scaly": "scaly"
     }
 }
