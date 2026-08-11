@@ -927,13 +927,12 @@ jobs:
       #
       # ★What it is and what it is NOT, said plainly. It is two independently
       # built binaries of the same sources — one hosted on Linux, one on
-      # Windows — agreeing on the whole compiler image, which is the strongest
-      # statement available without an LLVM toolchain on this runner. It is NOT
-      # yet the stage's exit criterion: that one builds a compiler FROM this
-      # seed HERE and has it re-emit, and it needs `llc`/`opt`/`llvm-link` at
-      # 18, none of which the official Windows installer ships (measured: of
-      # its 90 binaries only `llvm-ar` and `llvm-nm` are in that family). That
-      # is the next rung and it has its own unknown; this one has none.
+      # Windows — agreeing on the whole compiler image. It is NOT the stage's
+      # exit criterion: that one builds a compiler FROM this seed HERE and has
+      # it re-emit. ★The note that stood here — "and it needs `llc`/`opt`/
+      # `llvm-link` at 18, none of which the official Windows installer ships"
+      # — was half right and wholly misleading, and rung 12 below says which
+      # half: the three tools are indeed absent, and they are also not needed.
       #
       # ★It also settles by MEASUREMENT something that was only settled by
       # reading: our File API opens every output `"wb"`, so `-S` writes LF
@@ -968,3 +967,122 @@ jobs:
           done
           [ "$bad" = 0 ] || exit 1
           echo "rung 11: OK — the compiler reproduces its own seed on Windows"
+
+      # ★Rung 12 — the stage's EXIT: a compiler built FROM THE COMMITTED SEED
+      # on this machine, re-emitting that seed byte for byte. Every rung up to
+      # and including 11 ran a binary whose object code was made on Linux; this
+      # one makes it here, out of the committed text, so the last thing the
+      # Windows leg takes from the Linux leg is the file it compares against.
+      #
+      # ★It installs no toolchain, and that rests on two measurements taken on
+      # the dev box before a line of this was written.
+      #   * The VERSION requirement is obsolete for today's seed. The rule
+      #     ("llc must be LLVM 18 — it accepts the seed's mul/ptrtoint-GEP
+      #     constexprs") predates the removals it fears: of the three constant
+      #     expressions LLVM 19 actually removed — icmp, fcmp, shl — the seed
+      #     contains ZERO, and its four `mul` ones were never removed. Checked
+      #     against LLVM 20.1.8, which is the version this runner has
+      #     preinstalled: a compiler built from the committed seed with 20's
+      #     llc/opt/llvm-link re-emits all three roots byte-identically
+      #     (~19.5 MB) and passes regress 164/164 and the AOT corpus 54/54.
+      #     ★A tool version and a LIBRARY version are separate questions —
+      #     `llc` only translates the seed text, while the compiler's own
+      #     emission comes out of LLVM-C, which stays at 18 here. Rung 11
+      #     already proved that split harmless across a PATCH level (apt's
+      #     18.1.3 against this leg's 18.1.8); the measurement above extends it
+      #     across a GENERATION, `opt -O2` of another LLVM over our IR included
+      #     — which is the one place the datalayout-UB class would show.
+      #   * The three tools are not needed at all. `clang -flto=full` writes
+      #     bitcode objects and `lld-link` does the merge, the optimisation and
+      #     the codegen in one step — that IS llvm-link + opt + llc, under two
+      #     names the installer does ship. (Counted in the LLVM 20 NSIS archive
+      #     the runner installs from: 64 binaries, with clang, lld-link,
+      #     llvm-ar, llvm-nm, llvm-lib present and llc, opt, llvm-link absent.)
+      #
+      # ★And LTO is not a convenience here, it is the only route: the committed
+      # seed carries no COMDATs and cannot — one text serves every target and
+      # Mach-O refuses them — so on COFF every `linkonce_odr` lowers to a bare
+      # `.weak` plus a default symbol named after that object's anchor, which
+      # differs per object. Measured over the real cross-emitted objects: 257
+      # symbols defined in BOTH scalyc.obj and scaly.obj, and lld-link stops at
+      # its error limit on duplicates. With -flto there is one module at link
+      # time and the question never arises. Cost, measured: 23 s of LTO for the
+      # whole 20 MB image on the dev box, single-threaded.
+      - name: Build the compiler FROM THE SEED and re-emit (rung 12)
+        shell: bash
+        run: |
+          set -e
+          # The seed's own gate first: it is the INPUT of this rung, and a
+          # checkout that differs from what was committed would make everything
+          # below a statement about the wrong bytes.
+          ( cd seed && sha256sum -c SHA256SUMS ) | tail -1
+
+          # --- seed text -> bitcode objects --------------------------------
+          # -O2 to match what tools/build-from-seed.sh hands to `opt`; the link
+          # step optimises again at its own default, exactly as that pipeline's
+          # `opt -O2 | llc` does.
+          for f in main scalyc scaly; do
+            clang --target=x86_64-pc-windows-msvc -O2 -flto=full \
+                  -c "seed/$f.ll" -o "seed_$f.obj"
+          done
+          ls -l seed_*.obj
+
+          # --- link ---------------------------------------------------------
+          # ★-fuse-ld=lld is load-bearing, not a preference: link.exe cannot
+          # read LLVM bitcode, so the default MSVC linker would report every
+          # symbol in the image as undefined.
+          # ★The C shims go in as OBJECTS, not through libscaly.lib: that
+          # archive also holds the Linux-cross-emitted Scaly runtime, which is
+          # the very thing this rung builds from the seed instead — pulling it
+          # in would resolve the runtime twice and quietly measure nothing.
+          # LLVM-C.dll/.lib are the ones rung 9 unpacked in this same job.
+          clang --target=x86_64-pc-windows-msvc -fuse-ld=lld -flto=full \
+                seed_main.obj seed_scalyc.obj seed_scaly.obj \
+                pc.o eio_win.o ctime.o fcontext_win.o \
+                -lws2_32 -Lllvm18/lib -lLLVM-C \
+                -Xlinker -stack:67108864,1048576 \
+                -o scalyc_seed.exe
+          ls -l scalyc_seed.exe
+
+          # --- the fixed point ---------------------------------------------
+          # Compared against winseed/, NOT against seed/: a COFF-hosted
+          # emission carries the Windows datalayout and 2756 comdat lines that
+          # the committed text cannot have (measured on the dev box — the two
+          # differ by 5972 lines, all of them that). winseed/ is the same
+          # emission from the Linux leg, so this asks the one question that is
+          # actually open: do a seed-BUILT compiler and a cross-built one agree?
+          export SCALY_HOME="$PWD"
+          mkdir -p seedemit
+          for f in main scalyc; do
+            ./scalyc_seed.exe -S --no-tests -o "seedemit/$f.ll" \
+                              "packages/scalyc/0.1.0/$f.scaly"
+          done
+          ./scalyc_seed.exe -S --no-tests -o seedemit/scaly.ll \
+                            packages/scaly/0.1.0/scaly.scaly
+          ls -l seedemit/*.ll
+          bad=0
+          for f in main scalyc scaly; do
+            if cmp -s "seedemit/$f.ll" "winseed/$f.ll"; then
+              echo "  $f.ll: identical"
+            else
+              bad=1
+              echo "  $f.ll: DIFFERS — $(wc -c < "seedemit/$f.ll") vs $(wc -c < "winseed/$f.ll") bytes"
+              diff "winseed/$f.ll" "seedemit/$f.ll" | head -6 | sed 's/^/      /'
+            fi
+          done
+          [ "$bad" = 0 ] || exit 1
+
+          # --- and it is a COMPILER, not only an emitter --------------------
+          # One end-to-end program through the seed-built binary: it drives the
+          # link (rung 10's path) and the result runs. Cheap, and it separates
+          # "emits the same bytes" from "works".
+          rc=0
+          ./scalyc_seed.exe -o hello_seed.exe tests/aot/hello.scaly || rc=$?
+          [ "$rc" = 0 ] || { echo "rung 12: the seed-built compiler exited $rc"; exit 1; }
+          ./hello_seed.exe > got12_raw.txt || rc=$?
+          echo "rung 12: hello exited $rc"
+          LC_ALL=C tr -d '\r' < got12_raw.txt > got12.txt
+          sed -n 's/^; Expected: //p' tests/aot/hello.scaly > want12.txt
+          diff -u want12.txt got12.txt
+          [ "$rc" = 0 ] || exit 1
+          echo "rung 12: OK — the committed seed builds a compiler here that reproduces it"
