@@ -323,23 +323,68 @@ define cli
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
     }
 
+    ; The directory for the compiler's own scratch object. POSIX has /tmp;
+    ; Windows has no such directory and a native binary resolves the string
+    ; "/tmp/..." against the CURRENT DRIVE root (C:\tmp\...), which does not
+    ; exist — so the object write fails and the link never happens. The CRT
+    ; always sets TMP, and TEMP is its long-standing twin; the current
+    ; directory is the last resort so the compiler can still work rather than
+    ; refuse. Forward slashes are fine: every Windows API accepts them.
+    ;
+    ; ★POSIX is untouched by construction — the caller only asks when the
+    ; resolved target is COFF, so every existing path stays the literal
+    ; "/tmp/..." string it has always been.
+    function windows_scratch_dir() returns String
+    {
+        var dir getenv "TMP"
+        if dir = null
+            set dir: getenv("TEMP")
+        if dir = null
+            return "."
+        var s String(dir)
+        if s.get_length() = 0
+            return "."
+        ; The construction is the RETURN EXPRESSION, not the local `s` — a
+        ; String built into a local and then handed up lands its buffer
+        ; through `Page.get(this)` on the caller's return slot. Same shape as
+        ; `link_compiler` two functions down, and for the same reason.
+        String(dir)
+    }
+
     ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
     ; is set (the installed `scalyc` wrapper sets it), the archive lives at a
     ; PERSISTENT path under the install tree, $SCALY_HOME/lib/libscaly.a, so it
     ; survives reboots — unlike /tmp, which is cleared on boot. With SCALY_HOME
     ; unset (CI, bootstrap, AOT harness) it stays /tmp/libscaly.a exactly as
     ; before, so those paths are byte-for-byte unchanged.
-    function runtime_archive_path() returns String
+    ;
+    ; ★Stage 7: on a COFF target the archive is `libscaly.lib` and the scratch
+    ; directory is the one above. The suffix is not cosmetic — that is the name
+    ; `llvm-ar` gives it there and the name the MSVC-driver link expects.
+    function runtime_archive_path(coff: bool) returns String
     {
+        var leaf "/libscaly.a"
+        if coff
+            set leaf: "/libscaly.lib"
         let home getenv "SCALY_HOME"
-        if home = null
-            return "/tmp/libscaly.a"
-        var home_str String(home)
-        if home_str.get_length() = 0
-            return "/tmp/libscaly.a"
+        var base "/tmp"
+        if coff
+            set base: windows_scratch_dir()
+        if home <> null
+        {
+            var home_str String(home)
+            if home_str.get_length() > 0
+            {
+                var hb StringBuilder()
+                hb.append home_str
+                hb.append "/lib"
+                hb.append leaf
+                return hb.to_string()
+            }
+        }
         var sb StringBuilder()
-        sb.append home_str
-        sb.append "/lib/libscaly.a"
+        sb.append base
+        sb.append leaf
         sb.to_string()
     }
 
@@ -663,8 +708,22 @@ define cli
             return 7
         }
 
+        ; ★Stage 7: the link step is the one place the compiler has to know
+        ; which PLATFORM it is building for, and the emitter already resolved
+        ; that question once for the comdat decision. Asking it here keeps a
+        ; single source of truth; every branch below leaves the POSIX command
+        ; byte-for-byte as it was, because POSIX never takes one.
+        let coff emitter.target_is_coff_format()
+
         ; Emit object file to fixed temp path, link with clang, then unlink temp.
         var tmp_obj "/tmp/scalyc_out.o"
+        if coff
+        {
+            var tb StringBuilder()
+            tb.append(windows_scratch_dir())
+            tb.append "/scalyc_out.o"
+            set tmp_obj: tb.to_string()
+        }
         let obj_ok emitter.write_object_to_file tmp_obj
         if obj_ok = false
         {
@@ -712,7 +771,7 @@ define cli
         ; whose members reference get/Page::allocate/String. macOS ld64 is
         ; order-insensitive, so this reorder is a no-op there (fixpoint-safe).
         cmd_builder.append " "
-        cmd_builder.append(runtime_archive_path())
+        cmd_builder.append(runtime_archive_path(coff))
 
         ; Forward -L<path> entries.
         var li: size_t 0
@@ -749,7 +808,17 @@ define cli
         ; entries. Without it every Linux AOT link that touches the runtime
         ; failed with undefined math symbols (the whole tests/aot corpus minus
         ; the few programs that pull nothing from the archive).
-        cmd_builder.append " -lm"
+        ;
+        ; ★Stage 7: Windows has NO libm — the MSVC CRT carries that math, so
+        ; `-lm` there is not a no-op but a hard `cannot open file 'm.lib'`. What
+        ; it does need instead is Winsock, because the same one-object archive
+        ; drags in the IOCP backend: every `scaly_eio_*` entry point, the
+        ; socket-vs-descriptor test in `close`, and the socketpair emulation
+        ; live in ws2_32. Same argument, opposite library.
+        if coff
+            cmd_builder.append " -lws2_32"
+        else
+            cmd_builder.append " -lm"
 
         cmd_builder.append " -o "
         cmd_builder.append opts.output_file

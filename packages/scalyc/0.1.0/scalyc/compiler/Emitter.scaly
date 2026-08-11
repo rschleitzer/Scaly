@@ -582,6 +582,24 @@ define Emitter
     ; emit_function_decl) and on COFF the comdat name must be the leader
     ; SYMBOL's name. A freshly inserted comdat selects `Any`, which is what
     ; ODR wants, so nothing sets a selection kind.
+    ; The resolved target's object format, answered for a caller OUTSIDE the
+    ; emitter — `cli.run`'s link step, which has to know whether it is building
+    ; a POSIX or a Windows command line (no `-lm` there, `-lws2_32` instead, a
+    ; `.lib` archive and a temp directory that exists).
+    ;
+    ; ★It is a getter rather than a second `LLVMGetDefaultTargetTriple()` in
+    ; cli.scaly on purpose: `apply_target_layout` is the ONE place the emission
+    ; triple is resolved (`--target` override included), and a second copy of
+    ; the "is this Windows" test is a second thing to keep in agreement. Same
+    ; reasoning as the comdat below — the OBJECT FORMAT decides, asked once.
+    ; ★For the six targets this compiler emits for, COFF and Windows are the
+    ; same set, which is why one predicate can serve a linkage question and a
+    ; link-command question at the same time.
+    function target_is_coff_format(this) returns bool
+    {
+        target_is_coff
+    }
+
     procedure set_linkonce_odr(this, fn: LLVMValueRef)
     {
         LLVMSetLinkage(fn, LLVMLinkage.LinkOnceODR())
