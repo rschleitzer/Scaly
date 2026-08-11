@@ -856,3 +856,53 @@ jobs:
           diff -u want9.txt got9.txt
           [ "$rc" = 0 ] || exit 1
           echo "rung 9: OK — scalyc runs on Windows and reproduces the object"
+
+      # ★Rung 10 — the compiler DRIVES A LINK. Rung 9 stopped at `-c`, which is
+      # the half of the compiler that needs no platform knowledge; this is the
+      # other half, and it is the one place in the whole product where the
+      # compiler has to know what OS it is standing on. Three POSIX assumptions
+      # lived in `cli.run` and are now asked of the resolved TRIPLE — the same
+      # question, and the same single answering site, as the comdat gate:
+      #   * the scratch object went to `/tmp/scalyc_out.o`, which a native
+      #     binary resolves against the current DRIVE root (C:\tmp\…);
+      #   * the runtime archive was `/tmp/libscaly.a`, here `libscaly.lib`;
+      #   * the command ended in `-lm`, which is not a no-op on MSVC but a hard
+      #     `cannot open file 'm.lib'` — and what it does need is `-lws2_32`,
+      #     for exactly the reason it needs libm on Linux: the archive is ONE
+      #     object, so every program drags in the IOCP backend.
+      # POSIX takes none of those branches, which is why `tools/cycle.sh` came
+      # back IDENTICAL and only `seed/scalyc.ll` moved.
+      #
+      # ★SCALY_HOME does double duty and that is deliberate: it is where the
+      # compiler looks for `packages/` AND for `lib/libscaly.<ext>`. Pointing it
+      # at the checkout and dropping the archive into `lib/` exercises the
+      # INSTALLED layout — the one a Windows user gets — rather than a temp
+      # path only CI would ever use.
+      - name: Let the compiler link a program (rung 10)
+        shell: bash
+        run: |
+          set -e
+          mkdir -p lib
+          cp libscaly.lib lib/libscaly.lib
+          export SCALY_HOME="$PWD"
+          rc=0
+          ./scalyc.exe -o pcd_native.exe tests/aot/page_chain_depth.scaly || rc=$?
+          if [ "$rc" != 0 ]; then
+            echo "rung 10: the compiler exited $rc linking page_chain_depth"
+            exit 1
+          fi
+          ls -l pcd_native.exe
+          # The scratch object must be GONE: `cli.run` unlinks it, and a
+          # leftover would mean the temp path it chose is not the one it
+          # deleted — a difference no output would ever show.
+          if [ -n "${TMP:-}" ] && [ -f "$TMP/scalyc_out.o" ]; then
+            echo "rung 10: scratch object left behind in $TMP"; exit 1
+          fi
+          rc=0
+          ./pcd_native.exe > got10_raw.txt || rc=$?
+          echo "rung 10: program exited $rc"
+          LC_ALL=C tr -d '\r' < got10_raw.txt > got10.txt
+          sed -n 's/^; Expected: //p' tests/aot/page_chain_depth.scaly > want10.txt
+          diff -u want10.txt got10.txt
+          [ "$rc" = 0 ] || exit 1
+          echo "rung 10: OK — scalyc links and the program runs"
