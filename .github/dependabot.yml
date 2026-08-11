@@ -12,10 +12,37 @@
 # updates untouched — that is the whole policy here. Both npm manifests belong to
 # auxiliary tooling (the VS Code extension, the docs watcher) whose
 # devDependencies nobody ships; version churn there produced PRs like
-# "typescript ^5.4 -> ^7.0.2" that no security finding asked for. Alerts still
-# arrive and still get a grouped PR. NOTHING in either manifest is part of the
-# compiler, which has no npm dependencies at all (LLVM 18 + clang + openjade,
-# see CLAUDE.md).
+# "typescript ^5.4 -> ^7.0.2" that no security finding asked for. NOTHING in
+# either manifest is part of the compiler, which has no npm dependencies at all
+# (LLVM 20 + clang; openjade optional since stage 8, see CLAUDE.md).
+#
+# ★★★THIS FILE IS INERT since 2026-08-11, and the reason is not in this file:
+# **vulnerability alerts are DISABLED for the repository**
+# (`gh api -X DELETE repos/rschleitzer/Scaly/vulnerability-alerts`, reversible
+# with `-X PUT`). Security updates are TRIGGERED BY ALERTS, and version updates
+# are already off via the limit above — so with alerts off, neither kind of
+# update can fire and nothing below runs. The file is kept as the restore point:
+# re-enable alerts and this policy is live again, unchanged.
+#
+# Why it was switched off, on Ralf's instruction: the alert MAIL channel is the
+# one thing this file cannot control (GitHub raises it as soon as an advisory
+# matches the dependency graph), and it had become pure noise. The 16 advisories
+# of the last wave (21.07.–04.08., all fixed) were DoS/parser class in the VS
+# Code extension's lockfile — the compiler cannot be reached by any of them.
+# Four of the six packages left the tree entirely with the @vscode/vsce → npx
+# move (undici, fast-uri, js-yaml, linkify-it: 0 occurrences now, lockfile 329 →
+# 41 entries); of the two that remain, `brace-expansion` (via minimatch, via
+# vscode-languageclient) is a treadmill that produced 6 alerts and 3 CVEs in 14
+# days, one of them an explicit bypass of another's mitigation. That is the noise
+# that would keep coming, and it is not removable without dropping the LSP
+# client.
+#
+# ★What the repo gives up, stated plainly so nobody rediscovers it as a
+# surprise: nothing warns any more if an extension dependency gets something
+# genuinely serious. The replacement is manual and belongs to the extension
+# RELEASE step — `npm audit` in `editors/vscode` (and in `docs/`, which has no
+# lockfile in the tree, so generate one in a scratch dir first). Both were 0 in
+# every severity when this was switched off.
 #
 # github-actions is deliberately NOT configured: each such PR would spend a full
 # bootstrap in CI, and the two pinned actions were bumped to v5 by hand once the
