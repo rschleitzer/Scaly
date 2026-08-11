@@ -1,0 +1,36 @@
+; -g / DWARF fixture. Every binding here is load-bearing for tests/debuginfo/
+; run.sh — do not rename one without updating the expectations there.
+;
+;   shift   a function with three parameters of three shapes: a by-value STRUCT
+;           (arrives as a pointer), a scalar, and a bool. Before 2026-08-11 the
+;           whole tree emitted ZERO DW_TAG_formal_parameter.
+;   inner   a `let` INSIDE a function — an SSA value with no slot of its own.
+;   pt/base/name/out  top-level `let`s, i.e. the synthetic main's scope. A
+;           program's entire top level is `let` bindings, so before the fix a
+;           whole program's variables were invisible.
+;   name    a String, whose DIType has to come from di_stdlib_struct_type: the
+;           type is absent from plan.structures in every user root.
+;
+; Expected stdout: 34
+package scaly 0.1.0
+
+use scaly.containers.String
+
+define Point(x: int, y: int)
+
+function shift(p: Point, dx: int, flag: bool) returns int
+{
+    let inner p.x + dx
+    var running inner
+    set running: running * 2
+    running
+}
+
+let pt Point(10, 20)
+let base 7
+let name String("probe")
+let out shift(pt, base, true)
+if out = 34
+    print("34")
+else
+    print("WRONG")

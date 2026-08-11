@@ -715,6 +715,11 @@ procedure LLVMSetCurrentDebugLocation2(builder: LLVMBuilderRef, loc: LLVMMetadat
 ; Local variables (Phase B).
 function LLVMDIBuilderCreateBasicType(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, size_in_bits: size_t, encoding: i32, flags: i32) returns LLVMMetadataRef extern
 function LLVMDIBuilderCreateAutoVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32, align_in_bits: i32) returns LLVMMetadataRef extern
+; Same as CreateAutoVariable but produces a DW_TAG_formal_parameter, so the
+; debugger lists it as an ARGUMENT rather than a local. `arg_no` is 1-based and
+; is the position in the SOURCE signature, not the LLVM argument index — the
+; sret and caller-page slots must not be counted (see the call site).
+function LLVMDIBuilderCreateParameterVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, arg_no: i32, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32) returns LLVMMetadataRef extern
 function LLVMDIBuilderCreateExpression(builder: LLVMDIBuilderRef, addr: pointer[size_t], length: size_t) returns LLVMMetadataRef extern
 ; ★The one entry point that did NOT survive 18 -> 20, and the reason the move
 ; is a hard cut: LLVM 19's RemoveDIs work replaced the dbg.declare intrinsic

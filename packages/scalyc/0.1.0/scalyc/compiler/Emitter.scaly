@@ -840,6 +840,148 @@ define Emitter
         LLVMDIBuilderCreateBasicType(di_builder, nm.c_data(), nm.get_length(), b, 7, 0)
     }
 
+    ; -g only: DIType for a non-generic stdlib struct that the compilation ROOT
+    ; never lays out, so it is absent from BOTH current_plan.structures and
+    ; current_plan.unions and di_type_for's two scans answer null. That null is
+    ; not a cosmetic loss: the `if dty <> null` guards at the declare sites drop
+    ; the variable from the DWARF ENTIRELY, which is why every String local and
+    ; parameter used to be invisible in the debugger (measured: `var name
+    ; String("x")` emitted alloca + store and no #dbg_declare at all).
+    ;
+    ; Deliberately NOT folded into synthesize_literal_struct#: that function
+    ; steers member-access GEP/extract emission, so a new name there would
+    ; change NON-`-g` emission. This table is read only under -g.
+    ; The generic containers need no entry — their instantiations DO reach
+    ; plan.structures (`%_Z6VectorIcE` and friends appear in the IR).
+    function di_stdlib_struct_type(this, name: String) returns LLVMMetadataRef
+    {
+        if name <> "String"
+            return LLVMMetadataRef null
+
+        let cached lookup_di_cache name
+        if cached.handle <> null
+            return cached
+
+        ; `define String (data: pointer[u8](null))` — a single-pointer HANDLE
+        ; (packages/scaly/0.1.0/scaly/containers/String.scaly). The bytes it
+        ; points at carry a varint length prefix, so this member is only the
+        ; buffer ADDRESS; decoding it into text is a debugger FORMATTER's job,
+        ; not DWARF's.
+        var empty ""
+        var u8_name "u8"
+        let u8_ty di_basic_type u8_name
+        var data_name "data"
+        let data_ty LLVMDIBuilderCreatePointerType(di_builder, u8_ty, 64, 64, 0, empty.c_data(), 0)
+        let member LLVMDIBuilderCreateMemberType(di_builder, di_cu, data_name.c_data(), data_name.get_length(), di_file, 0, 64, 0, 0, 0, data_ty)
+        var member_vec Vector[LLVMMetadataRef](1)
+        member_vec.put(0, member)
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, name.c_data(), name.get_length(), di_file, 0, 64, 0, 0, LLVMMetadataRef null, member_vec.data, 1, 0, LLVMMetadataRef null, empty.c_data(), 0)
+
+        let idx di_type_cache_names.length
+        di_type_cache_names.add name
+        di_type_cache_types.add final
+        if final.handle <> null
+            di_index.insert_if_absent(name, idx)
+        final
+    }
+
+    ; Does this planned type denote an object that a POINTER-typed value points
+    ; AT, rather than a pointer the debugger should show as a pointer? Decides
+    ; direct-vs-shadow at the declare sites below: for a composite, a `ptr`
+    ; value IS the object's address, so #dbg_declare goes straight on it; for
+    ; anything else the value must be spilled to a shadow slot first. Getting
+    ; this backwards is silently wrong by one indirection.
+    function di_planned_type_is_composite(this, pt: PlannedType) returns bool
+    {
+        if pt.name = "pointer"
+            return false
+        if pt.name = "ref"
+            return false
+        let basic di_basic_type pt.name
+        if basic.handle <> null
+            return false
+        true
+    }
+
+    ; -g only: attach a DWARF variable to STORAGE at the current insertion
+    ; point. arg_no = 0 yields a local (DW_TAG_variable); arg_no > 0 yields a
+    ; DW_TAG_formal_parameter at that 1-based SOURCE position.
+    procedure debug_declare_at(this, name: String, storage: LLVMValueRef, dty: LLVMMetadataRef, dpos: DebugPos, arg_no: size_t, indirect: bool)
+    {
+        if config.emit_debug_info = false
+            return
+        if dty.handle = null
+            return
+        if storage.handle = null
+            return
+        if current_di_scope.handle = null
+            return
+        var dvar LLVMMetadataRef(null)
+        if arg_no > 0
+            set dvar: LLVMDIBuilderCreateParameterVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), (arg_no as i32), di_file, dpos.line, dty, 0, 0)
+        if arg_no = 0
+            set dvar: LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, 0, 0, 0)
+        if dvar.handle = null
+            return
+        ; `indirect` = the slot holds a POINTER to the object rather than the
+        ; object, so the location is one dereference away (DW_OP_deref = 0x06).
+        ; This is the same shape clang gives an indirect parameter.
+        var dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], 0)
+        if indirect
+        {
+            var deref_ops size_t[1]
+            set deref_ops[0]: 6
+            set dexpr: LLVMDIBuilderCreateExpression(di_builder, deref_ops, 1)
+        }
+        let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef null)
+        let dblk LLVMGetInsertBlock(builder)
+        let ddecl LLVMDIBuilderInsertDeclareRecordAtEnd(di_builder, storage, dvar, dexpr, dloc, dblk)
+    }
+
+    ; -g only: give an SSA VALUE a DWARF variable. A `let` binding and a
+    ; function parameter are plain SSA values — define_variable binds the VALUE,
+    ; not a slot — so there was no storage for #dbg_declare to point at and both
+    ; were absent from the DWARF entirely (measured: 0 DW_TAG_formal_parameter
+    ; across 49 subprograms, and a program's whole top level invisible because
+    ; every top-level statement binds with `let`).
+    ;
+    ; The value is ALWAYS spilled to a dedicated shadow slot, because
+    ; #dbg_declare's address operand must be an alloca (or an argument) — hand
+    ; it any other SSA value and the DWARF emitter drops the variable SILENTLY
+    ; while the IR metadata still looks perfect. Measured: declaring
+    ; `let s String("x")` straight on the region-allocate call result produced a
+    ; well-formed !DILocalVariable with a well-formed !DICompositeType and NO
+    ; DW_TAG_variable in the .dSYM at all.
+    ;
+    ; So the only question the planned type decides is the EXPRESSION: when the
+    ; value is a `ptr` to a composite (the region-allocated case, and a
+    ; by-pointer by-value struct parameter) the slot holds the object's ADDRESS,
+    ; so the declare carries DW_OP_deref. Getting that backwards is silently
+    ; wrong by one indirection.
+    ;
+    ; The shadow is an entry_alloca, NOT acquire_temp: a pooled slot may be
+    ; handed to another binding while the debugger still believes it holds this
+    ; one. Nothing ever READS the shadow, so define_variable keeps binding the
+    ; SSA value and not one of lookup_variable's ~40 consumers changes.
+    procedure debug_declare_value(this, name: String, value: LLVMValueRef, pt: PlannedType, dpos: DebugPos, arg_no: size_t)
+    {
+        if config.emit_debug_info = false
+            return
+        if value.handle = null
+            return
+        let dty di_type_for pt
+        if dty.handle = null
+            return
+        let vty LLVMTypeOf value
+        var indirect: bool false
+        if LLVMGetTypeKind(vty) = LLVMTypeKind.Pointer()
+            if di_planned_type_is_composite pt
+                set indirect: true
+        let shadow entry_alloca(vty, name.c_data())
+        let copied copy_struct_value(shadow, value, vty)
+        debug_declare_at(name, shadow, dty, dpos, arg_no, indirect)
+    }
+
     function di_type_for(this, pt: PlannedType) returns LLVMMetadataRef
     {
         ; pointer[T] / ref[T] — both lower to ptr; point at the pointee's
@@ -931,7 +1073,9 @@ define Emitter
             }
         }
 
-        LLVMMetadataRef null
+        ; Last resort before giving up: a non-generic stdlib struct this root
+        ; never laid out (String). Answering null here LOSES the variable.
+        di_stdlib_struct_type pt.name
     }
 
     ; Build a DICompositeType (DW_TAG_structure_type = 19) for a struct.
@@ -5385,6 +5529,25 @@ define Emitter
                                         set param_value: (*phi_ptr)
                                 }
                                 define_variable(param_name, param_value)
+
+                                ; -g: declare the parameter so the debugger
+                                ; lists it as an ARGUMENT. arg_no is the 1-based
+                                ; position in func.input, i.e. the SOURCE
+                                ; signature — never the LLVM argument index,
+                                ; which the sret and caller-page slots shift by
+                                ; page_offset + sret_offset. With a tail loop
+                                ; param_value is the header PHI, so the shadow
+                                ; store lands in the header and tracks the
+                                ; CURRENT iteration, which is what a debugger
+                                ; should show.
+                                if config.emit_debug_info
+                                    if item.item_type <> null
+                                    {
+                                        let pit_ref item.item_type.unwrap()
+                                        let pdpos compute_debug_pos func.loc.start
+                                        debug_declare_value(param_name, param_value, (*pit_ref), pdpos, i + 1)
+                                    }
+
                                 ; Record the receiver concept so resolve_reference_page
                                 ; can lower `^field` page sigils (opensp Parser's `^host`).
                                 if param_name = "this"
@@ -17572,6 +17735,32 @@ define Emitter
                 {
                     ; Immutable binding: just use the value directly
                     define_variable(name, value)
+
+                    ; -g: a `let` owns no slot, so debug_declare_value gives it
+                    ; a shadow. Same type resolution as the `var` path above:
+                    ; the annotated item_type first, else the collapsed
+                    ; initializer's result_type.
+                    if config.emit_debug_info
+                    {
+                        let ldpos compute_debug_pos binding.loc.start
+                        if binding.binding_item.item_type <> null
+                        {
+                            let lit_ref binding.binding_item.item_type
+                            debug_declare_value(name, value, (*lit_ref), ldpos, 0)
+                        }
+                        if binding.binding_item.item_type = null
+                            if binding.operation <> null
+                            {
+                                let lops_ref binding.operation
+                                let lops (*lops_ref)
+                                if lops.length > 0
+                                {
+                                    let lop0_ptr lops.get 0
+                                    if lop0_ptr <> null
+                                        debug_declare_value(name, value, (*lop0_ptr).result_type, ldpos, 0)
+                                }
+                            }
+                    }
                 }
             }
             else
