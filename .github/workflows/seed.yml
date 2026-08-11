@@ -750,46 +750,51 @@ jobs:
         shell: bash
         run: |
           set -e
-          # --- LLVM 18, into its own prefix -------------------------------
-          # The official Windows release is an NSIS installer: /S is silent and
-          # /D= must come LAST and unquoted. Driven through `cmd //c` because
-          # MSYS argument conversion would turn `/S` into a path.
+          # --- LLVM 18: EXTRACTED, never installed --------------------------
+          # ★Running the official NSIS installer silently WORKS and then breaks
+          # the runner: it delivered both files in 85 s and the very next line
+          # died with `clang: command not found`. Installing a second LLVM on
+          # Windows is not additive — the installer either truncates the system
+          # PATH (the old NSIS env-plugin 1024-char bug) or uninstalls the LLVM
+          # already there, and the machine-wide damage lands on a step that has
+          # nothing to do with it. Which of the two it was is a question this
+          # rung does not have to answer: unpacking asks neither.
+          # What we actually need is TWO FILES out of a 2.5 GB payload, and 7z
+          # reads NSIS archives directly. Measured locally: 9 s, and the import
+          # library exports all 224 LLVM-C symbols the compiler references
+          # (checked name by name against the cross-emitted object — 0 missing),
+          # so the link below has no LLVM-shaped unknown left in it.
+          command -v 7z > /dev/null || { echo "rung 9: no 7z on this runner"; exit 1; }
           url=https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/LLVM-18.1.8-win64.exe
           # -f, not just -sSL: without it curl answers 0 on an HTTP error and
           # writes the error PAGE into llvm18.exe, so a moved asset would look
-          # like a broken installer. 356 MB is the expected size.
+          # like a broken archive. ~357 MB is the expected size.
           curl -fsSL -o llvm18.exe "$url"
           ls -l llvm18.exe
-          # ★`cmd //c` and NOTHING around it. The `//c` -> `/c` rewrite IS the
-          # MSYS argument conversion, so an `MSYS2_ARG_CONV_EXCL='*'` meant to
-          # protect `/S` from that same conversion disables the rewrite too:
-          # cmd then sees `//c`, does not recognise it as a switch, opens an
-          # INTERACTIVE shell, prints its banner, reads EOF and exits 0 — the
-          # installer never runs and the failure surfaces two checks later as
-          # "LLVM 18 did not deliver the C library". Measured, first run of this
-          # rung. The plain idiom is safe because the second argument is one
-          # quoted string that does not begin with `/`, so nothing rewrites it.
-          cmd //c "llvm18.exe /S /D=C:\llvm18"
-          lib18="/c/llvm18/lib"; bin18="/c/llvm18/bin"
+          # ★Two spellings that are load-bearing under Git Bash. The extraction
+          # target is RELATIVE: an argument like `-o/c/llvm18` does not begin
+          # with `/`, so MSYS leaves it alone and 7z then reads the POSIX path
+          # as `C:\c\llvm18`. And the two members are named with `-r` plus a
+          # bare filename rather than `bin/LLVM-C.dll`, which keeps any
+          # separator question out of it while still preserving their paths.
+          7z x -bso0 -bsp0 llvm18.exe -ollvm18 -r "LLVM-C.dll" "LLVM-C.lib"
+          lib18="llvm18/lib"; bin18="llvm18/bin"
           if [ ! -f "$lib18/LLVM-C.lib" ] || [ ! -f "$bin18/LLVM-C.dll" ]; then
-            echo "rung 9: LLVM 18 did not deliver the C library."
+            echo "rung 9: the archive did not yield the C library."
             echo "        want $lib18/LLVM-C.lib and $bin18/LLVM-C.dll"
-            # Three questions the next reader would otherwise ask CI for:
-            # did the installer create anything at all, what is in the two
-            # directories, and was the download a real PE.
-            ls -d /c/llvm18 2>&1
-            ls "$lib18" 2>&1 | head -20
-            ls "$bin18" 2>&1 | head -20
+            find llvm18 -type f | head -20
             head -c 2 llvm18.exe | od -c | head -1
             exit 1
           fi
+          ls -l "$lib18/LLVM-C.lib" "$bin18/LLVM-C.dll"
           echo "rung 9: LLVM-C 18 at $lib18"
 
           # --- link ---------------------------------------------------------
           # libscaly.lib is the archive rung 3 built in this same job. The DLL
           # is COPIED beside the binary rather than put on PATH: prepending
-          # /c/llvm18/bin would shadow the runner's clang with LLVM 18's for
-          # the rest of this step, which is a second change nobody asked for.
+          # llvm18/bin would shadow the runner's clang with LLVM 18's for the
+          # rest of this step, which is a second change nobody asked for — and
+          # the paragraph above is what that class of side effect costs.
           cp "$bin18/LLVM-C.dll" .
           clang --target=x86_64-pc-windows-msvc \
                 scalyc_main_win.o scalyc_win.o libscaly.lib \
