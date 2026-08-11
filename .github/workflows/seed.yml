@@ -115,9 +115,20 @@ jobs:
              -o scalyc_win.o packages/scalyc/0.1.0/scalyc.scaly
           $S -c --target x86_64-pc-windows-msvc --no-tests \
              -o scalyc_main_win.o packages/scalyc/0.1.0/main.scaly
+          # rung 11: the compiler SEED for this target, as TEXT. Exactly the
+          # three roots and exactly the flags tools/seed.sh emits with, only
+          # cross-targeted — so the Windows leg can re-emit them with its own
+          # binary and compare byte for byte.
+          mkdir -p winseed
+          for f in main scalyc; do
+            $S -S --target x86_64-pc-windows-msvc --no-tests \
+               -o winseed/$f.ll packages/scalyc/0.1.0/$f.scaly
+          done
+          $S -S --target x86_64-pc-windows-msvc --no-tests \
+             -o winseed/scaly.ll packages/scaly/0.1.0/scaly.scaly
           ls -l hello.o libscaly_win.o page_chain_depth.o pingpong.o http10k.o \
                 opensp_win.o onsgmls_win.o dazzle_win.o dazzle_cli_win.o \
-                scalyc_win.o scalyc_main_win.o
+                scalyc_win.o scalyc_main_win.o winseed/*.ll
           # rung 5: breadth. One object per test that carries its own ground
           # truth; the two that need a reference binary are skipped and counted.
           tests/win32/corpus.sh emit "$S" winobj
@@ -138,6 +149,7 @@ jobs:
             dazzle_cli_win.o
             scalyc_win.o
             scalyc_main_win.o
+            winseed/*.ll
             winobj/*.o
           if-no-files-found: error
 
@@ -906,3 +918,53 @@ jobs:
           diff -u want10.txt got10.txt
           [ "$rc" = 0 ] || exit 1
           echo "rung 10: OK — scalyc links and the program runs"
+
+      # ★Rung 11 — the compiler emits ITS OWN SEED here, and it matches the
+      # Linux leg's cross-emission byte for byte. Rung 9 made that comparison
+      # over a 1.4 KB hello object; this makes it over the ~20 MB of IR that
+      # IS the compiler, with the same three roots and the same flags
+      # `tools/seed.sh` uses.
+      #
+      # ★What it is and what it is NOT, said plainly. It is two independently
+      # built binaries of the same sources — one hosted on Linux, one on
+      # Windows — agreeing on the whole compiler image, which is the strongest
+      # statement available without an LLVM toolchain on this runner. It is NOT
+      # yet the stage's exit criterion: that one builds a compiler FROM this
+      # seed HERE and has it re-emit, and it needs `llc`/`opt`/`llvm-link` at
+      # 18, none of which the official Windows installer ships (measured: of
+      # its 90 binaries only `llvm-ar` and `llvm-nm` are in that family). That
+      # is the next rung and it has its own unknown; this one has none.
+      #
+      # ★It also settles by MEASUREMENT something that was only settled by
+      # reading: our File API opens every output `"wb"`, so `-S` writes LF
+      # here too. A CRLF file could not match a byte comparison — rung 7's CRs
+      # came from the CRT's TEXT-mode stdout, never from us.
+      - name: Re-emit the compiler seed and compare (rung 11)
+        shell: bash
+        run: |
+          set -e
+          export SCALY_HOME="$PWD"
+          mkdir -p reseed
+          for f in main scalyc; do
+            ./scalyc.exe -S --no-tests -o "reseed/$f.ll" \
+                         "packages/scalyc/0.1.0/$f.scaly"
+          done
+          ./scalyc.exe -S --no-tests -o reseed/scaly.ll \
+                       packages/scaly/0.1.0/scaly.scaly
+          ls -l reseed/*.ll
+          bad=0
+          for f in main scalyc scaly; do
+            if cmp -s "reseed/$f.ll" "winseed/$f.ll"; then
+              echo "  $f.ll: identical"
+            else
+              bad=1
+              echo "  $f.ll: DIFFERS — $(wc -c < "reseed/$f.ll") vs $(wc -c < "winseed/$f.ll") bytes"
+              # ★The first differing line, not the first differing BYTE: a
+              # datalayout or a stray CR shows up as a readable line, and a
+              # real emission difference names a function. Three lines of
+              # context is what tells those two apart at a glance.
+              diff "winseed/$f.ll" "reseed/$f.ll" | head -6 | sed 's/^/      /'
+            fi
+          done
+          [ "$bad" = 0 ] || exit 1
+          echo "rung 11: OK — the compiler reproduces its own seed on Windows"
