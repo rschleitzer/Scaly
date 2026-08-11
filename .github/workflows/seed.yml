@@ -739,8 +739,13 @@ jobs:
       #     optimised compiler and ~110 KB with an unoptimised one, and this
       #     binary is the unoptimised kind (plain `-c` objects; `-c -O2` on a
       #     library object is what GlobalDCE empties). tools/seed.sh runs its
-      #     emission under `ulimit -s 65520`; the COFF equivalent is a /STACK
+      #     emission under `ulimit -s 65520`; the COFF equivalent is a stack
       #     reserve on the link, which costs address space and no memory.
+      #     ★Spelled `-stack:` and not `/STACK:` on purpose: an argument
+      #     beginning with `/` is what the MSYS runtime rewrites into a path on
+      #     its way to a native program, and both MSVC's link and lld-link
+      #     accept either prefix. Same class as the `cmd //c` note below —
+      #     under Git Bash a leading slash is never just a leading slash.
       - name: Link the compiler and RUN it (rung 9)
         shell: bash
         run: |
@@ -750,18 +755,32 @@ jobs:
           # /D= must come LAST and unquoted. Driven through `cmd //c` because
           # MSYS argument conversion would turn `/S` into a path.
           url=https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/LLVM-18.1.8-win64.exe
-          curl -sSL -o llvm18.exe "$url"
-          # MSYS2_ARG_CONV_EXCL: without it the MSYS runtime rewrites anything
-          # that looks like a path, and `/S` becomes `S:\`. Cheap insurance —
-          # a wrong variable name here is a no-op, a converted flag is a
-          # non-silent installer that hangs the job.
-          MSYS2_ARG_CONV_EXCL='*' cmd //c "llvm18.exe /S /D=C:\llvm18"
+          # -f, not just -sSL: without it curl answers 0 on an HTTP error and
+          # writes the error PAGE into llvm18.exe, so a moved asset would look
+          # like a broken installer. 356 MB is the expected size.
+          curl -fsSL -o llvm18.exe "$url"
+          ls -l llvm18.exe
+          # ★`cmd //c` and NOTHING around it. The `//c` -> `/c` rewrite IS the
+          # MSYS argument conversion, so an `MSYS2_ARG_CONV_EXCL='*'` meant to
+          # protect `/S` from that same conversion disables the rewrite too:
+          # cmd then sees `//c`, does not recognise it as a switch, opens an
+          # INTERACTIVE shell, prints its banner, reads EOF and exits 0 — the
+          # installer never runs and the failure surfaces two checks later as
+          # "LLVM 18 did not deliver the C library". Measured, first run of this
+          # rung. The plain idiom is safe because the second argument is one
+          # quoted string that does not begin with `/`, so nothing rewrites it.
+          cmd //c "llvm18.exe /S /D=C:\llvm18"
           lib18="/c/llvm18/lib"; bin18="/c/llvm18/bin"
           if [ ! -f "$lib18/LLVM-C.lib" ] || [ ! -f "$bin18/LLVM-C.dll" ]; then
             echo "rung 9: LLVM 18 did not deliver the C library."
             echo "        want $lib18/LLVM-C.lib and $bin18/LLVM-C.dll"
+            # Three questions the next reader would otherwise ask CI for:
+            # did the installer create anything at all, what is in the two
+            # directories, and was the download a real PE.
+            ls -d /c/llvm18 2>&1
             ls "$lib18" 2>&1 | head -20
             ls "$bin18" 2>&1 | head -20
+            head -c 2 llvm18.exe | od -c | head -1
             exit 1
           fi
           echo "rung 9: LLVM-C 18 at $lib18"
@@ -775,7 +794,7 @@ jobs:
           clang --target=x86_64-pc-windows-msvc \
                 scalyc_main_win.o scalyc_win.o libscaly.lib \
                 -lws2_32 -L"$lib18" -lLLVM-C \
-                -Xlinker /STACK:67108864,1048576 \
+                -Xlinker -stack:67108864,1048576 \
                 -o scalyc.exe
           ls -l scalyc.exe
 
