@@ -1,4 +1,10 @@
 #!/bin/bash
-openjade -G -t sgml -d codegen/test-expressions.dsl tests/expressions.sgm
-openjade -G -t sgml -d codegen/test-definitions.dsl tests/definitions.sgm
-openjade -G -t sgml -d codegen/test-choose.dsl tests/choose.sgm
+# Regenerate the literate tests. This used to be three openjade lines of its
+# own — a strict subset of ./mkp that had silently gone stale: the
+# controlflow suite was added later and never reached this script, so anyone
+# running it regenerated three of the four and left the fourth behind.
+#
+# Stage 8 made keeping a second copy pointless twice over: the engine is now
+# ours and is selected (and built) in one place, and a duplicate would be a
+# second place to forget a generator. Delegate.
+exec "$(dirname "$0")/mkp" "$@"

@@ -99,8 +99,13 @@ result into the committed `seed/`.
 
 | Target | Install dependencies |
 |---|---|
-| macOS (arm64 or Intel) | `brew install llvm@18 cmake openjade` |
-| Linux (x86-64 or arm64) | `apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev` |
+| macOS (arm64 or Intel) | `brew install llvm@18` |
+| Linux (x86-64 or arm64) | `apt install llvm-18-dev clang-18 zlib1g-dev libzstd-dev` |
+
+Neither `cmake` nor `openjade` appears here any more: cmake went with the
+retired C++ stage-0, and openjade became optional with stage 8 — `./mkp` drives
+the DSSSL codegen with our own engine and skips it entirely when none is
+available, since the generated files are committed.
 
 ```sh
 git checkout v<version>          # the release tag

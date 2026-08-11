@@ -1,18 +1,28 @@
 #!/bin/bash
 set -e
 
-# Content-stable codegen. openjade rewrites every generated file on each run
+# Content-stable codegen. The DSSSL engine rewrites every generated file on each run
 # with a fresh mtime even when the output is byte-identical. Snapshot the
 # generated files first, then after generation restore any file whose content
 # is unchanged (keeping its old mtime) so downstream tooling only sees what
 # truly changed. (The C++ outputs Parser.cpp/Syntax.h died with the retired
 # stage-0; rules.scm no longer emits them.)
 
+# ★The four compiler-side outputs joined this list on 2026-08-11. They had
+# always been rewritten with a fresh mtime on every run, so every ./build.sh
+# looked to any mtime-based cache like a changed front end — and stage 8 made
+# that visible rather than merely wasteful: the engine's own staleness check
+# compares sources against the engine binary, and a tree that touches its
+# sources on every run rebuilds it on every run (measured: 31 s, every time).
 GENERATED=(
     docs/scaly/generated-expressions.xml
     docs/scaly/generated-definitions.xml
     docs/scaly/generated-choose.xml
     docs/scaly/generated-controlflow.xml
+    packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly
+    packages/scalyc/0.1.0/scalyc/compiler/parser.scaly
+    packages/scalyls/0.1.0/scalyls/grammar.scaly
+    editors/vscode/syntaxes/scaly.tmLanguage.json
 )
 
 SNAP=$(mktemp -d)
@@ -21,14 +31,67 @@ for f in "${GENERATED[@]}"; do
     [ -f "$f" ] && cp -p "$f" "$SNAP/$(snap_name "$f")"
 done
 
-# Generate Parser.cpp, Syntax.h from grammar
-openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm
+# --- the DSSSL engine (stage 8: Scaly eats its own tail) -------------------
+# These five lines used to call openjade. They call OUR engine now, and the
+# claim that this is the same thing is not a hope: tests/dazzle/codegen/run.sh
+# regenerates every file below with dazzle and asserts byte-identity against
+# the committed openjade output, and it runs in CI.
+#
+# ★The `-G` that stood on each openjade line is gone because it does nothing
+# here — measured, both ways, on scaly.sgm: identical bytes with and without.
+#
+# ★Engine selection is explicit and LOUD, never silent. dazzle is preferred;
+# openjade is the fallback that makes it an optional dependency rather than a
+# removed one; and if neither is available the codegen is SKIPPED with a
+# message, because the generated files are committed and stay valid — the same
+# posture the opensp message tables below take. That last case is not
+# hypothetical: ./build.sh runs this script BEFORE it builds the compiler, so
+# a fresh checkout genuinely has no engine to offer yet.
+DAZZLE="${DAZZLE:-scalyc/build/dazzle}"
+SCALYC="${SCALYC:-scalyc/build/scalyc}"
 
-# Generate test files from literate test documents
-openjade -G -t sgml -d codegen/test-expressions.dsl tests/expressions.sgm
-openjade -G -t sgml -d codegen/test-definitions.dsl tests/definitions.sgm
-openjade -G -t sgml -d codegen/test-choose.dsl tests/choose.sgm
-openjade -G -t sgml -d codegen/test-controlflow.dsl tests/controlflow.sgm
+# Build the engine when a compiler exists and the binary is missing or older
+# than its sources. ★Not on every run: it costs ~31 s, and this script is on
+# the ./build.sh path.
+if [ ! -x "$DAZZLE" ] || [ -n "$(find packages/dazzle packages/opensp packages/scaly \
+        -name '*.scaly' -newer "$DAZZLE" -print -quit 2>/dev/null)" ]; then
+    if [ -x "$SCALYC" ]; then
+        echo "mkp: building the DSSSL engine ($DAZZLE)"
+        tests/dazzle/build-cli.sh "$DAZZLE" "$SCALYC" > /tmp/mkp-dazzle-build.log 2>&1 \
+            || { echo "mkp: engine build FAILED — see /tmp/mkp-dazzle-build.log"; tail -5 /tmp/mkp-dazzle-build.log; }
+    fi
+fi
+
+if [ -x "$DAZZLE" ]; then
+    ENGINE=("$DAZZLE" -t sgml -d)
+    echo "mkp: codegen via $DAZZLE (dazzle)"
+elif command -v openjade > /dev/null 2>&1; then
+    ENGINE=(openjade -t sgml -d)
+    echo "mkp: codegen via openjade (dazzle unavailable)"
+else
+    ENGINE=()
+    echo "mkp: skipping codegen — no DSSSL engine (the committed generated files stay valid)"
+fi
+
+# ★SCALY_HOME per INVOCATION, never exported. dazzle resolves its DSSSL
+# builtins prolog and its bundled catalog under it (falling back cwd-relative,
+# which is where this script already stands) — and a missing builtins file is a
+# SILENT no-op that yields a different document, so making the base explicit is
+# worth one word. Exporting it would be wrong in the other direction: scalyc
+# then looks for its runtime archive under $SCALY_HOME/lib instead of /tmp,
+# which is exactly what the engine build above needs not to happen.
+gen() { SCALY_HOME="$PWD" "${ENGINE[@]}" "$@"; }
+
+if [ ${#ENGINE[@]} -ne 0 ]; then
+    # Generate parser.scaly, Syntax.scaly, scalyls' grammar, the tmLanguage
+    gen codegen/scaly.dsl scaly.sgm
+
+    # Generate test files from literate test documents
+    gen codegen/test-expressions.dsl tests/expressions.sgm
+    gen codegen/test-definitions.dsl tests/definitions.sgm
+    gen codegen/test-choose.dsl tests/choose.sgm
+    gen codegen/test-controlflow.dsl tests/controlflow.sgm
+fi
 
 # Generate opensp message tables from the OpenSP .msg catalogs (single source of
 # truth: James Clark's OpenSP, ~/repos/openjade-net/upstream/opensp/lib). Skipped
@@ -36,16 +99,24 @@ openjade -G -t sgml -d codegen/test-controlflow.dsl tests/controlflow.sgm
 # contributor with the checkout re-runs and diffs (output is byte-exact).
 MSGDIR="${OPENSP_MSG_DIR:-$HOME/repos/openjade-net/upstream/opensp/lib}"
 if [ -d "$MSGDIR" ]; then
+    # ★Content-stable, like the codegen above: write to a temporary and replace
+    # the target only when the BYTES differ. Redirecting straight onto the
+    # target gave 20-odd package sources a fresh mtime on every run even though
+    # the tables have not changed in months.
+    msggen() {  # msggen <msg-file> <target>
+        python3 tools/msggen.py "$1" > "$SNAP/msg.tmp" || return 1
+        cmp -s "$SNAP/msg.tmp" "$2" || mv "$SNAP/msg.tmp" "$2"
+    }
     for m in "$MSGDIR"/*.msg; do
         base=$(basename "$m" .msg)
-        python3 tools/msggen.py "$m" > "packages/opensp/0.1.0/opensp/$base.scaly"
+        msggen "$m" "packages/opensp/0.1.0/opensp/$base.scaly"
     done
     # nsgmls's own app-level table (unknownOutputOption + the -h help texts)
     # and the RAST handler's table (the -t axis).
-    python3 tools/msggen.py "$MSGDIR/../nsgmls/NsgmlsMessages.msg" \
-        > "packages/opensp/0.1.0/opensp/NsgmlsMessages.scaly"
-    python3 tools/msggen.py "$MSGDIR/../nsgmls/RastEventHandlerMessages.msg" \
-        > "packages/opensp/0.1.0/opensp/RastEventHandlerMessages.scaly"
+    msggen "$MSGDIR/../nsgmls/NsgmlsMessages.msg" \
+           "packages/opensp/0.1.0/opensp/NsgmlsMessages.scaly"
+    msggen "$MSGDIR/../nsgmls/RastEventHandlerMessages.msg" \
+           "packages/opensp/0.1.0/opensp/RastEventHandlerMessages.scaly"
 else
     echo "mkp: skipping opensp message tables ($MSGDIR not found)"
 fi

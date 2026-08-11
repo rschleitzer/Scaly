@@ -24,9 +24,11 @@
 # `tools/seed.sh` (no args) -> bootstraps stage-2 -> emits + verifies the seed
 # for THIS host's target triple (the compiler is host-only; one seed per box).
 #   The "fabulous four" LP64 targets and how to install deps:
-#     arm64-apple-darwin   brew install llvm@18 cmake openjade
-#     x86_64-apple-darwin  (Intel Mac)  same brew formulae
-#     x86_64-linux-gnu     apt install llvm-18-dev clang-18 cmake openjade \
+#     (cmake went with the retired C++ stage-0; openjade became optional with
+#      stage 8 — ./mkp uses our own DSSSL engine and skips when none exists.)
+#     arm64-apple-darwin   brew install llvm@18
+#     x86_64-apple-darwin  (Intel Mac)  same brew formula
+#     x86_64-linux-gnu     apt install llvm-18-dev clang-18 \
 #                                      zlib1g-dev libzstd-dev
 #     aarch64-linux-gnu    same apt packages (arm64 Ubuntu)
 # Override LLVM detection with LLVM18=/path; see tools/llvm-env.sh.
