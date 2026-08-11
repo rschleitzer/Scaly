@@ -49,10 +49,18 @@ run_case() {
 fail=0
 run_case codegen/test-choose.dsl tests/choose.sgm \
   docs/scaly/generated-choose.xml tests/selfhosted/choose__*.scaly || fail=1
+# ★The tmLanguage.json is the FOURTH output of this spec and was missing from
+# this list until 2026-08-11 — generated on every run, compared on none. It
+# went unnoticed because it is the one output nothing else reads: a wrong
+# parser.scaly fails to compile, a wrong grammar.scaly fails the LSP suite,
+# but a wrong syntax-highlighting table is only ever seen by a human in an
+# editor. **An output whose only consumer is a person needs a byte gate more
+# than the others, not less.**
 run_case codegen/scaly.dsl scaly.sgm \
   packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly \
   packages/scalyc/0.1.0/scalyc/compiler/parser.scaly \
-  packages/scalyls/0.1.0/scalyls/grammar.scaly || fail=1
+  packages/scalyls/0.1.0/scalyls/grammar.scaly \
+  editors/vscode/syntaxes/scaly.tmLanguage.json || fail=1
 run_case codegen/test-expressions.dsl tests/expressions.sgm \
   docs/scaly/generated-expressions.xml tests/selfhosted/expressions__*.scaly || fail=1
 run_case codegen/test-definitions.dsl tests/definitions.sgm \

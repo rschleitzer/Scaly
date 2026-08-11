@@ -200,6 +200,19 @@ jobs:
       - name: OpenSP unit suite (dazzle port REALPASS)
         run: tests/opensp/run.sh dist/seed/scalyc_seed
 
+      # Stage 8's safety net, wired up BEFORE ./mkp was switched over to it.
+      # This gate regenerates every file the five `mkp` codegen lines produce
+      # — the compiler's own parser.scaly and Syntax.scaly, scalyls' grammar,
+      # the literate tests, the docs XML, the highlighting table — with OUR
+      # engine and asserts each comes back byte-identical to the committed
+      # openjade output. Once mkp uses dazzle, this is the only thing standing
+      # between a dazzle regression and a silently rewritten compiler front
+      # end, so it belongs in CI rather than in a developer's habits: it had
+      # been runnable-by-hand only, and nothing ran it.
+      # ★It needs no openjade — the goldens ARE openjade's output, committed.
+      - name: DSSSL codegen drop-in (the five mkp generators, byte-exact)
+        run: tests/dazzle/codegen/run.sh dist/seed/scalyc_seed
+
       - name: Fiber suite (context-switch ping-pong, milestone 1.1)
         run: tests/fiber/run.sh dist/seed/scalyc_seed
 
