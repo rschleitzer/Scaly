@@ -9,6 +9,7 @@
 ; feeds the dotted-call extern-decl gate (typed declaration for the
 ; cross-package Console.println call instead of a varargs fallback).
 use scaly.io.Console
+use scaly.io.File
 use scalyc.compiler.Modeler
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.TaskPlanner.TaskPlanner
@@ -6762,14 +6763,31 @@ define Emitter
     }
 
     ; Write module IR to file
+    ; ★★★The IR is written through OUR file API, not LLVM's, and the reason is
+    ; ONE BYTE PER LINE. `LLVMPrintModuleToFile` opens its output in the HOST's
+    ; text mode, so on Windows every `\n` leaves as `\r\n`: the same compiler,
+    ; from the same sources, wrote a 38-line `main.ll` as 734 bytes on POSIX and
+    ; 772 there. **The seed is an artifact this project compares BYTE for byte,
+    ; so its line endings may not be a property of the machine that emitted
+    ; it.** `File.write_from_string` opens `"wb"` on every target.
+    ;
+    ; ★Found only because a SECOND host emitted the seed (stage 7, rung 11) —
+    ; one host can never see this, and reading our own File API said the
+    ; opposite, because `-S` never went through it. A claim about bytes needs a
+    ; second producer, not a closer read.
+    ;
+    ; The extra copy (print-to-string, then write) is what it costs: ~18 MB for
+    ; the compiler's own module, against a build that already works in
+    ; hundreds. `-c` is untouched — an object file has no line endings.
     function write_module_to_file(this, filename: String) returns bool
     {
-        ; filename.c_data() returns a pointer into the String's varint-prefixed
-        ; buffer — NOT null-terminated. The C API reads past the end. Use
-        ; to_c_string# to get a proper null-terminated copy allocated on rp.
-        let c_name filename.to_c_string()
-        let result LLVMPrintModuleToFile(llvm_module, c_name, null as pointer[pointer[char]])
-        result = 0
+        let ir LLVMPrintModuleToString(llvm_module)
+        if ir = null
+            return false
+        let text String(ir as pointer[const_char])
+        let ok File.write_from_string(filename, text)
+        LLVMDisposeMessage(ir)
+        ok
     }
 
     ; Write bitcode to file

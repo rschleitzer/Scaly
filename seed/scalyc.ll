@@ -279471,20 +279471,33 @@ entry:
   ret ptr %call
 }
 
+declare i1 @_ZN4File17write_from_stringE6String6String(ptr, ptr)
+
 define linkonce_odr i1 @_ZN7Emitter20write_module_to_fileE6String(ptr %0, ptr %1) {
 entry:
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
-  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %1)
   %load.struct = load %_Z7Emitter, ptr %0, align 8
   %llvm_module = extractvalue %_Z7Emitter %load.struct, 5
   %handle = extractvalue %_Z13LLVMModuleRef %llvm_module, 0
-  %call1 = call i32 @LLVMPrintModuleToFile(ptr %handle, ptr %call, ptr null)
-  %eq = icmp eq i32 %call1, 0
+  %call = call ptr @LLVMPrintModuleToString(ptr %handle)
+  %eq = icmp eq ptr %call, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 %eq
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EP10const_char(ptr %struct.region, ptr %call)
+  %call1 = call i1 @_ZN4File17write_from_stringE6String6String(ptr %1, ptr %struct.region)
+  call void @LLVMDisposeMessage(ptr %call)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 %call1
 }
 
 define linkonce_odr i1 @_ZN7Emitter21write_bitcode_to_fileE6String(ptr %0, ptr %1) {
