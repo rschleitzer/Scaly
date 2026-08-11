@@ -18,8 +18,20 @@ if [ -z "$LLVM_PREFIX" ]; then
   fi
 fi
 
-# 2. llc — must be LLVM 18 (it accepts the seed's mul/ptrtoint-GEP constexprs
-#    that some system clangs reject). Prefer the prefix's own llc.
+# 2. llc — prefer the prefix's own (i.e. LLVM 18).
+#    ★The rule used to read "must be LLVM 18: it accepts the seed's
+#    mul/ptrtoint-GEP constexprs that some system clangs reject". MEASURED
+#    obsolete for today's seed (2026-08-11): of the three constant expressions
+#    LLVM 19 actually removed — icmp, fcmp, shl — the seed contains ZERO, and
+#    its four `mul` ones were never removed. A compiler built from the
+#    committed seed with LLVM 20.1.8's llc/opt/llvm-link re-emits all three
+#    roots byte-identically and passes regress 164/164 + AOT 54/54; stage 7's
+#    rung 12 relies on that on Windows. The preference below stays as it is —
+#    18 is what every leg has and what the numbers were taken with — but a
+#    newer llc is no longer a reason to stop.
+#    ★It is a separate question from the LIBRARY version: llc only translates
+#    the seed text, while emission comes out of libLLVM/LLVM-C, which is what
+#    -lLLVM-18 below pins.
 if [ -z "$LLC" ]; then
   for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-18" llc-18; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLC="$cand"; break; fi

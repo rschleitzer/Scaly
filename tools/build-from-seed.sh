@@ -14,9 +14,20 @@
 #                   and the tutorial expect)
 #
 # Requirements:
-#   - llc from LLVM 18 (it accepts the seed's mul/ptrtoint-GEP constexprs that
-#     some system clangs reject). Override detection with LLVM18=/path.
+#   - llc, normally LLVM 18. Override detection with LLVM18=/path. ★The "must
+#     be 18" part is measured obsolete for today's seed — see tools/llvm-env.sh
+#     for the count; LLVM 20.1.8 builds a byte-identical compiler from it.
 #   - any clang/cc for the final object link.
+#
+# ★A Windows leg exists and takes a different route, because that toolchain
+# ships no llc/opt/llvm-link: `clang -flto=full` per seed root plus `lld-link`
+# is the same pipeline (merge, optimise, codegen) under the names it does ship.
+# Two things bite there and are worth knowing before porting this script:
+# per-module -O2 is fatal (a DCE that runs per module cannot see a reference
+# from another module — it deletes cli::main), and a `declare` nothing calls,
+# invisible in a real object file, becomes an undefined symbol in a bitcode
+# module's symbol table (the `opt` step below is what hides that on POSIX).
+# The worked recipe is stage 7 rung 12 in .github/workflows/seed.yml.
 set -e
 cd "$(dirname "$0")/.."
 source tools/llvm-env.sh
