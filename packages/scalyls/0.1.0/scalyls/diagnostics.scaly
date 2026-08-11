@@ -26,6 +26,8 @@
 ; deref to a local first.
 
 use scaly.memory.runtime
+use scaly.io.File
+use scaly.io.Path
 use scalyls.json
 
 ; Compiler pipeline (scalyc package).
@@ -85,26 +87,56 @@ define diagnostics
             }
             when program: Success
             {
-                let prog_name "document"
-                let model Modeler.build_program(path, prog_name, program, true)
-
-                var planner Planner.Planner(path)
-                diagnostics.register_packages(&planner, &model)
-                let plan planner.plan_program model
-
-                var di: size_t 0
-                while di < planner.diagnostics.length
+                ; A file that BELONGS TO A PACKAGE cannot be planned on its
+                ; own. Modeling the bare document builds a one-module program,
+                ; so every name defined in a SIBLING module of the same package
+                ; is simply absent and each call to one is reported as
+                ; "function not found" — a false positive, and a flood of them:
+                ; opensp/Dtd.scaly produced 56 while the package itself
+                ; compiles clean. The file's own `use opensp.StringC.StringC`
+                ; clauses cannot help, because the module they name was never
+                ; walked. Names from the file itself and from the prelude
+                ; resolve, which is what makes the failure look selective.
+                ;
+                ; So plan through the package ROOT instead, and keep only the
+                ; diagnostics that belong to THIS file (PlannerDiagnostic
+                ; carries its file for exactly this reason). A standalone
+                ; program has no root and keeps the buffer-based path below.
+                let root diagnostics.package_root path
+                if root.get_length() > 0
                 {
-                    let dp planner.diagnostics.get di
-                    if dp <> null
+                    let body diagnostics.package_diagnostics(root, path)
+                    if body.get_length() > 0
                     {
                         if first = false
                             sb.append("," as char)
-
-                        sb.append(diagnostics.diag_object(text, dp.start, dp.message))
+                        sb.append body
                         set first: false
                     }
-                    set di: di + 1
+                }
+                if root.get_length() = 0
+                {
+                    let prog_name "document"
+                    let model Modeler.build_program(path, prog_name, program, true)
+
+                    var planner Planner.Planner(path)
+                    diagnostics.register_packages(&planner, &model)
+                    let plan planner.plan_program model
+
+                    var di: size_t 0
+                    while di < planner.diagnostics.length
+                    {
+                        let dp planner.diagnostics.get di
+                        if dp <> null
+                        {
+                            if first = false
+                                sb.append("," as char)
+
+                            sb.append(diagnostics.diag_object(text, dp.start, dp.message))
+                            set first: false
+                        }
+                        set di: di + 1
+                    }
                 }
             }
 
@@ -138,6 +170,146 @@ define diagnostics
         sb.append("]" as char)
         sb.append("}" as char)                    ; } params
         sb.append("}" as char)                    ; } root
+        sb.to_string()
+    }
+
+    ; The package root file that owns `path` as a (possibly nested) module,
+    ; or "" when `path` is not a package member.
+    ;
+    ; A module file at <dir>/<name>.scaly is owned by <dir>.scaly — the module
+    ; declarations of X.scaly resolve against the sibling directory X/ (see
+    ; Modeler.build_program's ns_path join). So walking up means: take the
+    ; directory, append ".scaly", and keep going while that file exists.
+    ; packages/opensp/0.1.0/opensp/Dtd.scaly -> packages/opensp/0.1.0/opensp.scaly
+    ; and no further, since packages/opensp/0.1.0.scaly does not exist.
+    ;
+    ; The depth bound is a loop guard, not a semantic limit: nesting in this
+    ; tree is 2 (scalyc/compiler/Planner.scaly), and a symlink cycle in the
+    ; path must not be able to spin the worker.
+    function package_root(rp, path: String) returns String
+    {
+        var found String("")
+        var current: String path
+        var depth 0
+        while depth < 16
+        {
+            let dir Path.get_directory_name(current)
+            if dir.get_length() = 0
+                return found
+
+            var sb StringBuilder()
+            sb.append dir
+            sb.append ".scaly"
+            let candidate sb.to_string()
+
+            if File.exists(candidate) = false
+                return found
+
+            set found: candidate
+            set current: candidate
+            set depth: depth + 1
+        }
+        found
+    }
+
+    ; The program name the compiler would use for `root`: its file name minus
+    ; the .scaly extension (mirrors cli.extract_program_name#).
+    ;
+    ; It NAMES THE ROOT MODULE, so it is part of every module path the strict
+    ; use-visibility check compares against. Passing a placeholder is not
+    ; cosmetic: the sibling modules load and their names resolve, but every one
+    ; of them reports as `defined in <placeholder>.opensp.StringC but not
+    ; visible here` because the file's own `use opensp.StringC.StringC` cannot
+    ; match a path with a foreign root segment. The false positives change
+    ; wording and stay.
+    function root_program_name(rp, root: String) returns String
+    {
+        let base Path.get_file_name(root)
+        let len base.get_length()
+
+        ; 6 == length of ".scaly"
+        var cut: size_t 0
+        if len > 6
+        {
+            let tail base.substring(len - 6, 6)
+            if tail = ".scaly"
+                set cut: len - 6
+        }
+        if cut = 0
+            return base
+
+        ; Trailing implicit return: an explicit `return base.substring(...)`
+        ; trips the escape checker's return-of-page-call false positive (see
+        ; strip_uri# for the same shape).
+        base.substring(0, cut)
+    }
+
+    ; Planner diagnostics for `path`, obtained by planning the package root
+    ; `root` so that sibling modules resolve. Returns the comma-separated
+    ; diagnostic objects (no enclosing brackets), or "" when there are none.
+    ;
+    ; SAVED-STATE NOTE: the modeler reads every module from DISK, so the byte
+    ; offsets these diagnostics carry are relative to the SAVED text of `path`
+    ; — they are mapped to line/character with that same text, never with the
+    ; editor buffer, or an unsaved edit would shift every reported line. The
+    ; consequence is that semantic diagnostics for a package member reflect the
+    ; file as last saved. That is the same bargain symindex.scaly already
+    ; documents for workspace/symbol ("unsaved editor edits, which never touch
+    ; disk, are not reflected"). Parse errors are unaffected: publish_
+    ; diagnostics# still takes those from the live buffer.
+    function package_diagnostics(rp, root: String, path: String) returns String
+    {
+        var sb StringBuilder()
+
+        ; The document as the planner saw it. Empty = unreadable; nothing can
+        ; be said about offsets into a text we do not have.
+        let disk File.read_to_string(path)
+        if disk.get_length() = 0
+            return sb.to_string()
+
+        let root_text File.read_to_string(root)
+        if root_text.get_length() = 0
+            return sb.to_string()
+
+        var first true
+        var p parser.Parser(root_text)
+        choose p.parse_program()
+            when err: Error
+            {
+                ; The package root itself does not parse. Nothing to report
+                ; against THIS document — its own parse errors were already
+                ; taken from the buffer by publish_diagnostics#.
+            }
+            when program: Success
+            {
+                let prog_name diagnostics.root_program_name(root)
+                let model Modeler.build_program(root, prog_name, program, true)
+
+                var planner Planner.Planner(root)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program model
+
+                var di: size_t 0
+                while di < planner.diagnostics.length
+                {
+                    let dp planner.diagnostics.get di
+                    if dp <> null
+                    {
+                        ; Keep only what belongs to this document; the other
+                        ; modules' offsets are in their own coordinate space.
+                        if dp.file = path
+                        {
+                            if first = false
+                                sb.append("," as char)
+
+                            sb.append(diagnostics.diag_object(disk, dp.start, dp.message))
+                            set first: false
+                        }
+                    }
+                    set di: di + 1
+                }
+            }
+
         sb.to_string()
     }
 
