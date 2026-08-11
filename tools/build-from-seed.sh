@@ -6,7 +6,7 @@
 # little-endian LP64 target: the IR carries no target triple and bakes layout in
 # from fixed LP64 constants, so llc retargets it and the built compiler reads its
 # host triple at runtime. This script turns that IR into a working `scalyc` using
-# only LLVM 18 and a C compiler for the final link — the C++ stage-0 (build.sh) is
+# only LLVM 20 and a C compiler for the final link — the C++ stage-0 (build.sh) is
 # not involved.
 #
 # Usage: tools/build-from-seed.sh [output-binary]
@@ -14,9 +14,9 @@
 #                   and the tutorial expect)
 #
 # Requirements:
-#   - llc, normally LLVM 18. Override detection with LLVM18=/path. ★The "must
-#     be 18" part is measured obsolete for today's seed — see tools/llvm-env.sh
-#     for the count; LLVM 20.1.8 builds a byte-identical compiler from it.
+#   - LLVM 20 (llc + libLLVM). Override detection with LLVM20=/path. The
+#     LIBRARY version is the binding one — it prints the IR, so it decides
+#     emission; llc's may differ (see tools/llvm-env.sh).
 #   - any clang/cc for the final object link.
 #
 # ★A Windows leg exists and takes a different route, because that toolchain
@@ -31,7 +31,7 @@
 set -e
 cd "$(dirname "$0")/.."
 source tools/llvm-env.sh
-[ "$llvm_env_ok" = "1" ] || { echo "build-from-seed: FAIL — LLVM 18 not found"; exit 1; }
+[ "$llvm_env_ok" = "1" ] || { echo "build-from-seed: FAIL — LLVM 20 not found"; exit 1; }
 
 OUT=${1:-scalyc/build/scalyc}
 SEED="seed"
@@ -51,7 +51,7 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 # Whole-program `opt -O2` between the seed IR and llc (~20% faster compiler).
-# Requires llvm-link + opt (both ship with LLVM 18) and the seed's external
+# Requires llvm-link + opt (both ship with LLVM 20) and the seed's external
 # @main (every other function is linkonce_odr — discardable — so the entry
 # anchors GlobalDCE; the modules carry a `target datalayout` line so opt's
 # constant folding agrees with llc). Set SCALYC_NO_OPT=1 to skip, and the
@@ -115,12 +115,12 @@ else
     SCALYC_OBJS=("$WORK/main.o" "$WORK/scalyc.o" "$WORK/scaly.o")
 fi
 
-# On Linux, stock GNU ld (BFD) fails to link libLLVM-18 ("failed to set dynamic
+# On Linux, stock GNU ld (BFD) fails to link libLLVM-20 ("failed to set dynamic
 # section sizes: bad value"); lld handles it. Use lld when present. macOS ld64
 # links fine, so leave it alone there.
 LINKARGS=()
 if [ "$(uname -s)" = "Linux" ]; then
-    for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-18; do
+    for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
         p=$(command -v "$c" 2>/dev/null || true)
         [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
     done

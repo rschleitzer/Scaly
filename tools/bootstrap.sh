@@ -14,12 +14,12 @@
 # no committed seed is present (valid while the source still uses #).
 #
 # Requires (install per platform — see tools/seed.sh header):
-#   LLVM 18 (+dev), clang/clang++, ar — plus cmake + openjade ONLY for the
+#   LLVM 20 (+dev), clang/clang++, ar — plus cmake + openjade ONLY for the
 #   C++ stage-0 fallback (no committed seed).
 set -e
 cd "$(dirname "$0")/.."
 source tools/llvm-env.sh
-[ "$llvm_env_ok" = "1" ] || { echo "bootstrap: FAIL — LLVM 18 not found"; exit 1; }
+[ "$llvm_env_ok" = "1" ] || { echo "bootstrap: FAIL — LLVM 20 not found"; exit 1; }
 
 # -lm: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/logf/powf, which
 # live in a separate libm on Linux (macOS has them in libSystem). Forwarded to

@@ -39,13 +39,13 @@ Install
 -------
 
 Scaly ships as its own LLVM IR and is built into a native binary on your
-machine, so you need **LLVM 18** and a C compiler first:
+machine, so you need **LLVM 20** and a C compiler first:
 
 ```sh
 # macOS
-brew install llvm@18
+brew install llvm@20
 # Ubuntu / Debian
-sudo apt install llvm-18 clang
+sudo apt install llvm-20 clang
 ```
 
 Then run the installer — it puts `scalyc` on your `PATH` under `~/.scaly`, no
@@ -75,7 +75,7 @@ Building from source
 --------------------
 
 With a source checkout you can build the compiler directly from the committed
-seed (no C++ toolchain needed — just LLVM 18 + a C compiler):
+seed (no C++ toolchain needed — just LLVM 20 + a C compiler):
 
 ```sh
 tools/build-from-seed.sh        # -> scalyc/build/scalyc

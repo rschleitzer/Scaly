@@ -54,7 +54,7 @@ jobs:
       # needs them, not on principle.
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/llvm18
+      - uses: ./.github/actions/llvm20
 
       - name: Build + verify seed (bootstrap, link, hello, AOT, fixed point)
         run: tools/seed.sh
@@ -68,8 +68,9 @@ jobs:
       # from libscaly.a — its only undefined symbol is `puts` (MSVC CRT) — so
       # this rung needs NONE of the four substrate brocken (fcontext-Win64,
       # IOCP, Win32 externs, COFF toolchain). Emitting here rather than on the
-      # Windows runner is deliberate: only `llc` must be LLVM-18, and that is
-      # already installed in this leg, so the Windows job needs no LLVM at all.
+      # Windows runner is deliberate: cross-emission needs a compiler linked
+      # against libLLVM 20, and that is already installed in this leg, so the
+      # Windows job needs no LLVM toolchain of its own.
       - name: Cross-emit the Windows objects
         run: |
           S=dist/seed/scalyc_seed
@@ -182,7 +183,7 @@ jobs:
     needs: seed
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/llvm18
+      - uses: ./.github/actions/llvm20
 
       - name: Download the native compiler
         uses: actions/download-artifact@v7
@@ -233,7 +234,7 @@ jobs:
   # macOS at 10x. This job downloads one object, links it and runs it — a couple
   # of minutes, so ~4 billed minutes, against the ~30 a macOS bootstrap would
   # cost. It installs NOTHING: the object is already emitted, and CLAUDE.md's
-  # rule is that only `llc` must be LLVM-18 while any clang links.
+  # rule is that any clang links an already-emitted object.
   #
   # What rung 1 deliberately does NOT prove: nothing of the runtime substrate
   # (no fibers, no evented I/O, no Win32 externs, no libscaly.a) and nothing
@@ -775,7 +776,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          # --- LLVM 18: EXTRACTED, never installed --------------------------
+          # --- LLVM 20: EXTRACTED, never installed --------------------------
           # ★Running the official NSIS installer silently WORKS and then breaks
           # the runner: it delivered both files in 85 s and the very next line
           # died with `clang: command not found`. Installing a second LLVM on
@@ -790,40 +791,40 @@ jobs:
           # (checked name by name against the cross-emitted object — 0 missing),
           # so the link below has no LLVM-shaped unknown left in it.
           command -v 7z > /dev/null || { echo "rung 9: no 7z on this runner"; exit 1; }
-          url=https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/LLVM-18.1.8-win64.exe
+          url=https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-win64.exe
           # -f, not just -sSL: without it curl answers 0 on an HTTP error and
-          # writes the error PAGE into llvm18.exe, so a moved asset would look
+          # writes the error PAGE into llvm20.exe, so a moved asset would look
           # like a broken archive. ~357 MB is the expected size.
-          curl -fsSL -o llvm18.exe "$url"
-          ls -l llvm18.exe
+          curl -fsSL -o llvm20.exe "$url"
+          ls -l llvm20.exe
           # ★Two spellings that are load-bearing under Git Bash. The extraction
-          # target is RELATIVE: an argument like `-o/c/llvm18` does not begin
+          # target is RELATIVE: an argument like `-o/c/llvm20` does not begin
           # with `/`, so MSYS leaves it alone and 7z then reads the POSIX path
-          # as `C:\c\llvm18`. And the two members are named with `-r` plus a
+          # as `C:\c\llvm20`. And the two members are named with `-r` plus a
           # bare filename rather than `bin/LLVM-C.dll`, which keeps any
           # separator question out of it while still preserving their paths.
-          7z x -bso0 -bsp0 llvm18.exe -ollvm18 -r "LLVM-C.dll" "LLVM-C.lib"
-          lib18="llvm18/lib"; bin18="llvm18/bin"
-          if [ ! -f "$lib18/LLVM-C.lib" ] || [ ! -f "$bin18/LLVM-C.dll" ]; then
+          7z x -bso0 -bsp0 llvm20.exe -ollvm20 -r "LLVM-C.dll" "LLVM-C.lib"
+          lib20="llvm20/lib"; bin20="llvm20/bin"
+          if [ ! -f "$lib20/LLVM-C.lib" ] || [ ! -f "$bin20/LLVM-C.dll" ]; then
             echo "rung 9: the archive did not yield the C library."
-            echo "        want $lib18/LLVM-C.lib and $bin18/LLVM-C.dll"
-            find llvm18 -type f | head -20
-            head -c 2 llvm18.exe | od -c | head -1
+            echo "        want $lib20/LLVM-C.lib and $bin20/LLVM-C.dll"
+            find llvm20 -type f | head -20
+            head -c 2 llvm20.exe | od -c | head -1
             exit 1
           fi
-          ls -l "$lib18/LLVM-C.lib" "$bin18/LLVM-C.dll"
-          echo "rung 9: LLVM-C 18 at $lib18"
+          ls -l "$lib20/LLVM-C.lib" "$bin20/LLVM-C.dll"
+          echo "rung 9: LLVM-C 20 at $lib20"
 
           # --- link ---------------------------------------------------------
           # libscaly.lib is the archive rung 3 built in this same job. The DLL
           # is COPIED beside the binary rather than put on PATH: prepending
-          # llvm18/bin would shadow the runner's clang with LLVM 18's for the
+          # llvm20/bin would shadow the runner's clang with LLVM 18's for the
           # rest of this step, which is a second change nobody asked for — and
           # the paragraph above is what that class of side effect costs.
-          cp "$bin18/LLVM-C.dll" .
+          cp "$bin20/LLVM-C.dll" .
           clang --target=x86_64-pc-windows-msvc \
                 scalyc_main_win.o scalyc_win.o libscaly.lib \
-                -lws2_32 -L"$lib18" -lLLVM-C \
+                -lws2_32 -L"$lib20" -lLLVM-C \
                 -Xlinker -stack:67108864,1048576 \
                 -o scalyc.exe
           ls -l scalyc.exe
@@ -1099,7 +1100,7 @@ jobs:
           clang --target=x86_64-pc-windows-msvc -O2 -fuse-ld=lld -flto=full \
                 seed_main.obj seed_scalyc.obj seed_scaly.obj \
                 pc.o eio_win.o ctime.o fcontext_win.o \
-                -lws2_32 -Lllvm18/lib -lLLVM-C \
+                -lws2_32 -Lllvm20/lib -lLLVM-C \
                 -Xlinker -stack:67108864,1048576 \
                 -Xlinker -errorlimit:0 \
                 -o scalyc_seed.exe

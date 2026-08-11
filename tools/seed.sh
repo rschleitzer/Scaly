@@ -26,12 +26,12 @@
 #   The "fabulous four" LP64 targets and how to install deps:
 #     (cmake went with the retired C++ stage-0; openjade became optional with
 #      stage 8 — ./mkp uses our own DSSSL engine and skips when none exists.)
-#     arm64-apple-darwin   brew install llvm@18
+#     arm64-apple-darwin   brew install llvm@20
 #     x86_64-apple-darwin  (Intel Mac)  same brew formula
-#     x86_64-linux-gnu     apt install llvm-18-dev clang-18 \
+#     x86_64-linux-gnu     apt install llvm-20-dev clang-20 \
 #                                      zlib1g-dev libzstd-dev
 #     aarch64-linux-gnu    same apt packages (arm64 Ubuntu)
-# Override LLVM detection with LLVM18=/path; see tools/llvm-env.sh.
+# Override LLVM detection with LLVM20=/path; see tools/llvm-env.sh.
 #
 # .ll artifacts are NOT checked into the repo: ~12MB, target DataLayout + LLVM
 # version baked in (union payload sizes computed at emission). One .ll set per
@@ -39,19 +39,19 @@
 set -e
 cd "$(dirname "$0")/.."
 source tools/llvm-env.sh
-[ "$llvm_env_ok" = "1" ] || { echo "SEED: FAIL — LLVM 18 not found"; exit 1; }
+[ "$llvm_env_ok" = "1" ] || { echo "SEED: FAIL — LLVM 20 not found"; exit 1; }
 
 CC=${1:-/tmp/scalyc_stage2}
 OUT=${2:-dist/seed}
 CLANG=${CLANG:-clang}
 
-# On Linux, stock GNU ld (BFD) fails to link libLLVM-18 ("failed to set dynamic
+# On Linux, stock GNU ld (BFD) fails to link libLLVM-20 ("failed to set dynamic
 # section sizes: bad value"); lld handles it. Mirror tools/build-from-seed.sh so
 # seed.sh's OWN link steps (scalyc_seed, scalyls) work on Linux too. macOS ld64
 # links fine, so LINKARGS stays empty there.
 LINKARGS=()
 if [ "$(uname -s)" = "Linux" ]; then
-  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-18; do
+  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
     p=$(command -v "$c" 2>/dev/null || true)
     [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
   done
@@ -75,16 +75,16 @@ echo "seed: emitting .ll with $CC --no-tests"
   "$CC" -S --no-tests -o "$OUT/scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
 ) || fail "emission"
 
-echo "seed: llc -> obj (LLVM 18) + link ($CLANG, no dynamic_lookup)"
+echo "seed: llc -> obj (LLVM 20) + link ($CLANG, no dynamic_lookup)"
 for f in main scalyc scaly; do
   # -relocation-model=pic: x86-64 Linux PIE rejects llc's default R_X86_64_32
   # abs relocations; PIC is the Mach-O default, so this is a no-op on macOS.
   "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
 done
 # NO -Wl,-undefined,dynamic_lookup — a clean link proves zero undefined.
-# (LLVM-18 llc is required: some system clangs reject the seed's
-# mul/ptrtoint-getelementptr constexprs; llc-18 accepts them. The final link
-# is plain object linking, so any clang/cc works.)
+# (The final link is plain object linking, so any clang/cc works. What is NOT
+# free is -lLLVM-20 below: libLLVM prints the IR, so its major must match the
+# one the seed was minted with. llc's own version is looser — see llvm-env.sh.)
 # fcontext.o supplies the fiber context-switch primitives that scaly.ll's
 # Fiber procedures reference (vendored assembly, host-arch-selected);
 # eio.o the evented-I/O backend (kqueue/epoll, cpp-selected C shim); ctime.o

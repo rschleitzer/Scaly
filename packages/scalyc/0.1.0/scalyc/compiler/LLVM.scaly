@@ -26,6 +26,10 @@ define LLVMMemoryBufferRef(handle: pointer[void])
 define LLVMDIBuilderRef(handle: pointer[void])
 define LLVMMetadataRef(handle: pointer[void])
 define LLVMAttributeRef(handle: pointer[void])
+; The debug-record handle of LLVM's "new debug format" (RemoveDIs, LLVM 19).
+; It replaced the LLVMValueRef that the old dbg.declare INTRINSIC was, which is
+; why the insert entry point below both changed its name and its result type.
+define LLVMDbgRecordRef(handle: pointer[void])
 define LLVMUseRef(handle: pointer[void])
 define LLVMComdatRef(handle: pointer[void])
 
@@ -712,7 +716,14 @@ procedure LLVMSetCurrentDebugLocation2(builder: LLVMBuilderRef, loc: LLVMMetadat
 function LLVMDIBuilderCreateBasicType(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, size_in_bits: size_t, encoding: i32, flags: i32) returns LLVMMetadataRef extern
 function LLVMDIBuilderCreateAutoVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32, align_in_bits: i32) returns LLVMMetadataRef extern
 function LLVMDIBuilderCreateExpression(builder: LLVMDIBuilderRef, addr: pointer[size_t], length: size_t) returns LLVMMetadataRef extern
-function LLVMDIBuilderInsertDeclareAtEnd(builder: LLVMDIBuilderRef, storage: LLVMValueRef, var_info: LLVMMetadataRef, expr: LLVMMetadataRef, debug_loc: LLVMMetadataRef, block: LLVMBasicBlockRef) returns LLVMValueRef extern
+; ★The one entry point that did NOT survive 18 -> 20, and the reason the move
+; is a hard cut: LLVM 19's RemoveDIs work replaced the dbg.declare intrinsic
+; with a debug RECORD, renaming this function and changing its result type.
+; The two names are DISJOINT — `…InsertDeclareAtEnd` exists only up to 18,
+; `…InsertDeclareRecordAtEnd` only from 19 — and ONE seed carries ONE
+; declaration, so there is no version window in which both work. The parameter
+; list is unchanged. It was 1 of the 253 LLVM-C symbols this compiler uses.
+function LLVMDIBuilderInsertDeclareRecordAtEnd(builder: LLVMDIBuilderRef, storage: LLVMValueRef, var_info: LLVMMetadataRef, expr: LLVMMetadataRef, debug_loc: LLVMMetadataRef, block: LLVMBasicBlockRef) returns LLVMDbgRecordRef extern
 
 ; Aggregate types (struct/union/pointer) — for debugging struct/union locals.
 ; size_in_bits/offset_in_bits are uint64_t (size_t, 64-bit); line/align/flags/

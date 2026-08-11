@@ -17564,7 +17564,7 @@ define Emitter
                             let dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], 0)
                             let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef null)
                             let dblk LLVMGetInsertBlock(builder)
-                            let ddecl LLVMDIBuilderInsertDeclareAtEnd(di_builder, alloca, dvar, dexpr, dloc, dblk)
+                            let ddecl LLVMDIBuilderInsertDeclareRecordAtEnd(di_builder, alloca, dvar, dexpr, dloc, dblk)
                         }
                     }
                 }

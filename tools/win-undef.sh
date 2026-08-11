@@ -37,7 +37,7 @@ OBJ=/tmp/win_undef_$$.o
 
 # shellcheck disable=SC1091
 source tools/llvm-env.sh > /dev/null 2>&1
-NM="${LLVM18:-/opt/homebrew/opt/llvm@18}/bin/llvm-nm"
+NM="${LLVM20:-/opt/homebrew/opt/llvm@20}/bin/llvm-nm"
 command -v llvm-nm > /dev/null 2>&1 && NM=$(command -v llvm-nm)
 
 "$SC" -c --target "$TRIPLE" --no-prelude --no-tests -o "$OBJ" \
@@ -181,8 +181,9 @@ HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
 
 # ★A third provider class, added with the compiler (2026-08-11): the LLVM-C API.
 # It is neither a shim nor the CRT but a LIBRARY the link must be given — on
-# Windows `LLVM-C.lib`/`LLVM-C.dll` from an LLVM **18** install, because the
-# version is not free: the compiler needs 18 for the same reason `llc` does.
+# Windows `LLVM-C.lib`/`LLVM-C.dll` from an LLVM **20** install, and the
+# version is not free: libLLVM is what prints the IR, so it has to match the
+# major the seed was minted with — unlike `llc`, whose version may differ.
 # Two binaries owe it, and only one of them obviously: scalyc calls it, and the
 # dazzle package carries the JIT (`dazzle/Jit.scaly`) so its object owes these
 # even though `--jit` is opt-in and nothing on this platform switches it on —
@@ -254,7 +255,7 @@ fi
 echo
 echo "  provided by our Windows sources:   $(n "$COVERED")"
 echo "  provided by the MSVC CRT:          $(n "$HAVE")"
-echo "  provided by libLLVM 18 (LLVM-C):   $(n "$HAVE_LLVM")"
+echo "  provided by libLLVM 20 (LLVM-C):   $(n "$HAVE_LLVM")"
 echo "  emitted per program (build stamp): 1"
 echo
 if [ -n "$MISSING" ]; then

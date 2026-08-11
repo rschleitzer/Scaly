@@ -78,8 +78,8 @@ echo "abi: 1+2) Breiten gegen die echten Header"
 # shellcheck disable=SC1091
 source tools/llvm-env.sh > /dev/null 2>&1
 hdrs=()
-for cand in "$LLVM18/include/llvm-c" "$llvm_env_prefix/include/llvm-c" \
-            /opt/homebrew/opt/llvm@18/include/llvm-c /usr/lib/llvm-18/include/llvm-c; do
+for cand in "$LLVM20/include/llvm-c" "$llvm_env_prefix/include/llvm-c" \
+            /opt/homebrew/opt/llvm@20/include/llvm-c /usr/lib/llvm-20/include/llvm-c; do
   [ -n "$cand" ] && [ -d "$cand" ] && { hdrs+=(--headers "$cand"); break; }
 done
 for cand in /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include /usr/include; do

@@ -30,7 +30,7 @@ constants.
 
 ## Rebuilding the compiler from the seed
 
-With LLVM 18 and a C compiler, from the repository root:
+With LLVM 20 and a C compiler, from the repository root:
 
 ```sh
 tools/build-from-seed.sh        # -> scalyc/build/scalyc, no C++ toolchain

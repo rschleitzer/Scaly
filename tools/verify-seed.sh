@@ -59,7 +59,7 @@ tests/regress/run.sh "$SC" || fail "regression suite"
 # from the committed seed IR — scalyls' own main + root plus the scalyc and
 # scaly packages it depends on, and the fcontext/eio runtime objects — the
 # same objects tools/seed.sh links a fresh mint from. Smoke-test an LSP
-# initialize round-trip. Best-effort: skipped if LLVM 18 is not resolvable.
+# initialize round-trip. Best-effort: skipped if LLVM 20 is not resolvable.
 if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ]; then
   echo "verify: scalyls language server"
   # shellcheck disable=SC1091
@@ -67,7 +67,7 @@ if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ]; then
   if [ "$llvm_env_ok" = "1" ]; then
     LD_ARG=""
     if [ "$(uname -s)" = "Linux" ]; then
-      for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-18; do
+      for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
         command -v "$c" >/dev/null 2>&1 && { LD_ARG="-fuse-ld=$c"; break; }
       done
     fi
@@ -105,7 +105,7 @@ sys.exit(0 if (f0.get("id") == 1 and "capabilities" in f0.get("result", {})) els
 PY
     echo "verify: scalyls OK (links + serves on this target)"
   else
-    echo "verify: scalyls SKIP (LLVM 18 not resolved)"
+    echo "verify: scalyls SKIP (LLVM 20 not resolved)"
   fi
 fi
 

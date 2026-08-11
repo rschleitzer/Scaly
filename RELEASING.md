@@ -23,8 +23,11 @@ its fixed point, and publish the artifacts.
 
 ### One seed for all LP64 little-endian targets
 
-The emitted `.ll` carries **no `target triple` and no `datalayout` line**, and the
-compiler computes every size and alignment from **fixed LP64 constants** at
+The emitted `.ll` carries **no `target triple`**; it does carry a `target
+datalayout` line (stamped from the TargetMachine — removing it miscompiles
+DL-dependent sizeof-GEPs under `opt`), and that line is the one part of the seed
+that changes with the LLVM major. The compiler computes every size and alignment
+from **fixed LP64 constants** at
 emission (union payload sizes, `align 8`, `ptrtoint`/`mul i64` sizeof
 constexprs) — it never consults the host `DataLayout`. So the IR is
 host-independent: a mint on any LP64-LE host emits the same `.ll`, `llc`
@@ -81,11 +84,14 @@ generalized off their hardcoded 64-bit constants.
 
 ### Pinned toolchain
 
-- **LLVM 18.** IR text compatibility across LLVM major versions is not
-  guaranteed; pin every seed to LLVM 18.
-- `llc` **must** be LLVM-18 (it accepts the seed's `mul`/`ptrtoint`-GEP
-  constexprs that some system clangs reject). The final link is plain object
-  linking, so any `clang`/`cc` works.
+- **LLVM 20.** IR text compatibility across LLVM major versions is not
+  guaranteed; pin every seed to LLVM 20.
+- **`libLLVM` is the binding half, not `llc`.** libLLVM prints the IR, so its
+  major decides emission; measured across the 18→20 move, the whole seed diff
+  was the `target datalayout` line plus `getelementptr inbounds` gaining `nuw`.
+  `llc` only translates the seed TEXT and may be a different major (stage 7's
+  Windows rung 12 builds with llc 20 against libLLVM 18). The final link is
+  plain object linking, so any `clang`/`cc` works.
 
 ---
 
@@ -99,8 +105,8 @@ result into the committed `seed/`.
 
 | Target | Install dependencies |
 |---|---|
-| macOS (arm64 or Intel) | `brew install llvm@18` |
-| Linux (x86-64 or arm64) | `apt install llvm-18-dev clang-18 zlib1g-dev libzstd-dev` |
+| macOS (arm64 or Intel) | `brew install llvm@20` |
+| Linux (x86-64 or arm64) | `apt install llvm-20-dev clang-20 zlib1g-dev libzstd-dev` |
 
 Neither `cmake` nor `openjade` appears here any more: cmake went with the
 retired C++ stage-0, and openjade became optional with stage 8 — `./mkp` drives
@@ -118,8 +124,8 @@ A successful run ends with:
 SEED: OK — links clean, runs hello + AOT, reproduces itself byte-identical
 ```
 
-and leaves the artifacts in `dist/seed/` (gitignored). If LLVM-18 lives in a
-non-standard location, prefix with `LLVM18=/path/to/llvm-18`.
+and leaves the artifacts in `dist/seed/` (gitignored). If LLVM 20 lives in a
+non-standard location, prefix with `LLVM20=/path/to/llvm-20`.
 
 **Note:** if `build.sh` complains about a cmake generator mismatch (only happens
 when re-running on an existing tree, never a fresh clone), `rm -rf scalyc/build`
@@ -149,15 +155,15 @@ The tarball is ~10–11 MB (mostly `scalyc.ll`). Record the LLVM version used
 
 ## 4. Rebuild + verify from a tarball (what a consumer does)
 
-A consumer needs only LLVM 18 and a C compiler — no Scaly source:
+A consumer needs only LLVM 20 and a C compiler — no Scaly source:
 
 ```sh
 shasum -a 256 -c SHA256SUMS                         # integrity
-LLC=$(command -v llc-18 || echo "$(brew --prefix llvm@18)/bin/llc")
+LLC=$(command -v llc-20 || echo "$(brew --prefix llvm@20)/bin/llc")
 LIB="$(dirname "$(dirname "$LLC")")/lib"
 
 for f in main scalyc scaly; do "$LLC" -relocation-model=pic -filetype=obj "$f.ll" -o "$f.o"; done
-clang main.o scalyc.o scaly.o -L"$LIB" -lLLVM-18 -o scalyc
+clang main.o scalyc.o scaly.o -L"$LIB" -lLLVM-20 -o scalyc
 
 ./scalyc -o hello <path>/tests/aot/hello.scaly && ./hello   # -> Hello, World!
 ```
@@ -238,6 +244,6 @@ curl -fsSL -I https://scaly.io/downloads/scaly-<version>.tar.gz
 - Tooling reference: `tools/seed.sh` (mint + verify), `tools/install-seed.sh`
   (promote a mint into `seed/`), `tools/build-from-seed.sh` (rebuild scalyc from
   `seed/`, no C++), `tools/bootstrap.sh` (stage-0 → stage1 → stage2),
-  `tools/llvm-env.sh` (LLVM-18 detection), `tools/make-dist.sh` (bundle the
+  `tools/llvm-env.sh` (LLVM-20 detection), `tools/make-dist.sh` (bundle the
   scaly.io installer tarball), `tools/publish-install.sh` (upload `install.sh` +
   tarball to scaly.io).

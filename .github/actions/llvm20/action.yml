@@ -1,6 +1,6 @@
-name: LLVM 18 toolchain
+name: LLVM 20 toolchain
 description: >
-  Install and configure the LLVM 18 toolchain the seed pipeline needs, and
+  Install and configure the LLVM 20 toolchain the seed pipeline needs, and
   export the environment the scripts read. Extracted 2026-08-10 when the Linux
   leg was split into an emit job and a verify job: both need this block, and a
   second copy is a second thing to get wrong — the reasoning below was paid for
@@ -11,15 +11,15 @@ runs:
     - shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y llvm-18 llvm-18-dev clang-18 lld-18 python3
-        # seed.sh links with $CLANG; Ubuntu ships clang-18, not a bare `clang`.
-        echo "CLANG=clang-18" >> "$GITHUB_ENV"
-        # libLLVM-18.so lives under the versioned prefix; put it on the loader
+        sudo apt-get install -y llvm-20 llvm-20-dev clang-20 lld-20 python3
+        # seed.sh links with $CLANG; Ubuntu ships clang-20, not a bare `clang`.
+        echo "CLANG=clang-20" >> "$GITHUB_ENV"
+        # libLLVM-20.so lives under the versioned prefix; put it on the loader
         # path so the freshly-linked scalyc_seed can start.
-        echo "LD_LIBRARY_PATH=$(llvm-config-18 --libdir)" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=$(llvm-config-20 --libdir)" >> "$GITHUB_ENV"
         # Make lld the default linker: stock GNU BFD ld fails to link
-        # libLLVM-18 ("failed to set dynamic section sizes"), and the
+        # libLLVM-20 ("failed to set dynamic section sizes"), and the
         # compiler's own -o bootstrap link (cli.run) invokes plain `clang`
         # (default ld) — so `ld` itself must be lld, not just seed.sh's links.
         sudo update-alternatives --install /usr/bin/ld ld \
-          "$(command -v ld.lld-18 || command -v ld.lld)" 100
+          "$(command -v ld.lld-20 || command -v ld.lld)" 100

@@ -23,7 +23,7 @@
 # 13.7 MB parse, binary 5.17 MB → 2.57 MB, output byte-identical.
 #
 # Exit 3 = llvm-link or opt unavailable; the caller falls back to its
-# per-archive path (this is not a failure — LLVM 18's opt is optional in
+# per-archive path (this is not a failure — LLVM 20's opt is optional in
 # tools/llvm-env.sh).
 
 set -u
@@ -62,7 +62,7 @@ sed 's/^define linkonce_odr /define linkonce_odr hidden /' "$WORK/whole.ll" > "$
 # macOS treats "${arr[@]}" of an empty array as unbound).
 LINKARGS=()
 if [ "$(uname -s)" = "Linux" ]; then
-  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-18; do
+  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
     p=$(command -v "$c" 2>/dev/null || true)
     [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
   done
@@ -74,7 +74,7 @@ mkdir -p "$(dirname "$OUT")"
 # that reference it.
 # LINK_EXTRA: additional libraries the program needs, appended before -lm.
 # dazzle's Stage-6b JIT calls LLVM-C/ORC, so its build passes
-# -L<llvm-libdir> -lLLVM-18 here; nothing else uses it.
+# -L<llvm-libdir> -lLLVM-20 here; nothing else uses it.
 EXTRA=()
 if [ -n "${LINK_EXTRA:-}" ]; then
   # shellcheck disable=SC2206
