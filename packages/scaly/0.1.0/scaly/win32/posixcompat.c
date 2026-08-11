@@ -1,17 +1,20 @@
 /* POSIX compatibility shim for Win64 (stage 7, brocken 3).
  *
- * Provides the fifteen POSIX symbols the Scaly runtime and its test corpus
- * reference that Windows does not have. Compiled ONLY on Windows
- * (tools/win32compat.sh); everywhere else the platform provides these itself
- * and this file is not built.
+ * Provides the eighteen POSIX symbols the Scaly runtime, its test corpus and
+ * the three product binaries reference that Windows does not have. Compiled
+ * ONLY on Windows (tools/win32compat.sh); everywhere else the platform
+ * provides these itself and this file is not built.
  *
- * ★It was twelve until 2026-08-10, and how each of the three arrived is worth
- * more than the count. `setenv` and `socketpair` say something about the
- * INSTRUMENT rather than about Windows: they are declared `extern` in TEST
- * sources, not in `packages/`, so a completeness check scoped to the runtime
- * root could not see them (`tools/win-undef.sh` now unions the runtime with
- * every program the Windows corpus links). `close` is not a missing symbol at
- * all — the CRT has one — but a WRONG one: see its own note below.
+ * ★It was twelve until 2026-08-10, and how each later one arrived is worth
+ * more than the count — every single time it was the INSTRUMENT's scope, not
+ * Windows, that had been the limit. `setenv` and `socketpair` are declared
+ * `extern` in TEST sources, not in `packages/`, so a completeness check scoped
+ * to the runtime root could not see them; `creat` came with the onsgmls
+ * drop-in; and `dlopen`/`dlsym` came with the COMPILER — the binary the whole
+ * stage exists to reproduce, and the one `tools/win-undef.sh` had never
+ * scanned. It now unions the runtime with every corpus program, the bench
+ * directory and all three products. `close` is not a missing symbol at all —
+ * the CRT has one — but a WRONG one: see its own note below.
  *
  * Why it provides the POSIX NAMES rather than changing the Scaly side: the
  * committed seed ships ONE scaly.ll for every target, so the runtime's extern
@@ -65,6 +68,7 @@
 #include <errno.h>      /* setenv's EINVAL */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>     /* uintptr_t — dlsym's function-to-object cast */
 #include <string.h>
 
 /* ---- Virtual memory ---------------------------------------------------
@@ -237,6 +241,59 @@ void* opendir(const char* name)
 int closedir(void* dirp)
 {
     return (dirp == &sc_dir_sentinel) ? 0 : -1;
+}
+
+/* ---- Dynamic loading, and the one entry whose ANSWER is narrower here ----
+ *
+ * Added 2026-08-11 with the compiler in scope: `scalyc` is the only binary in
+ * the tree that calls these, from exactly one place — Emitter.scaly's JIT stub
+ * pass, which asks whether a declared-only symbol is already defined in the
+ * running image. `dlopen(NULL, RTLD_NOW)` is how POSIX answers that; the
+ * question is "does the host define this", not "open a library".
+ *
+ * ★AND WINDOWS ANSWERS IT NARROWER, which is written here rather than left to
+ * be discovered: `GetProcAddress` searches a module's EXPORT TABLE, and an .exe
+ * exports nothing unless it is asked to (a .def file or dllexport). The Scaly
+ * runtime is linked into `scalyc.exe` as ordinary internal symbols, so this
+ * pair answers NULL for every `_Z…` name the stub pass asks about — where the
+ * POSIX side finds them all. The consequence is stated plainly: **the
+ * in-process JIT (`--jit` / `--run`) does not work on Windows**; every runtime
+ * symbol would be null-stubbed and the first region allocation would return a
+ * null page. The AOT path — which is what compiling, the seed and the whole of
+ * stage 7 use — never reaches emit_jit_stubs and is unaffected.
+ *
+ * Two things deliberately NOT done, both of which would read as a fix:
+ *  - Answering a non-NULL sentinel from dlsym so nothing gets stubbed. That
+ *    trades a silent wrong for a loud one (ORC then fails to materialise the
+ *    genuinely absent symbols) and, worse, makes this file claim the JIT works.
+ *  - Exporting the runtime from the executable. That is a LINK-side change
+ *    (a .def listing the runtime bodies, or a dllexport pass in the emitter),
+ *    it belongs with whoever validates the JIT on this platform, and it is not
+ *    needed by anything the stage requires. This shim is not the place.
+ *
+ * For a REAL library path both functions are exact, so the file is honest
+ * about what it can serve rather than stubbed out: dlopen(path) is
+ * LoadLibraryA, dlsym on that handle is GetProcAddress. The `flag` argument
+ * (RTLD_NOW/RTLD_LAZY) has no Win32 counterpart — LoadLibrary always resolves
+ * eagerly, which is RTLD_NOW, i.e. the stricter of the two — so ignoring it
+ * narrows nothing.
+ */
+void* dlopen(const char* filename, int flag)
+{
+    (void)flag;
+    if (filename == NULL)
+        return (void*)GetModuleHandleW(NULL);   /* the running image */
+    return (void*)LoadLibraryA(filename);
+}
+
+void* dlsym(void* handle, const char* symbol)
+{
+    if (handle == NULL || symbol == NULL)
+        return NULL;
+    /* GetProcAddress returns FARPROC, a FUNCTION pointer; the round trip
+     * through uintptr_t is what keeps -Wextra -Werror quiet about casting one
+     * to an object pointer. The conversion is the whole point of dlsym. */
+    return (void*)(uintptr_t)GetProcAddress((HMODULE)handle, symbol);
 }
 
 /* ---- Path splitting ---------------------------------------------------

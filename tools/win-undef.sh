@@ -95,30 +95,63 @@ bench emit: cross-emit failure fiber/bench/$b"
   fi
 done
 
-# ★And the PRODUCT (2026-08-10, rung 7). The corpus and the bench directory are
-# both TEST programs; the onsgmls drop-in is the thing the stage exists for, and
-# it owes symbols neither of them does — `creat` is the one that showed up. The
-# opensp package object is a LIBRARY (--no-prelude), so what it defines is
-# subtracted the same way the runtime's definitions are: at the link the two
-# objects resolve each other, and only what NEITHER provides is owed.
+# ★And the PRODUCTS (2026-08-10 rung 7, widened 2026-08-11 rung 9). The corpus
+# and the bench directory are both TEST programs; these three are the binaries
+# the stage exists for, and each owes symbols the test programs do not — `creat`
+# was the onsgmls one, `dlopen`/`dlsym` the compiler's. A package object is a
+# LIBRARY (--no-prelude), so what it defines is subtracted the same way the
+# runtime's definitions are: at the link the objects resolve each other, and
+# only what NEITHER provides is owed.
+#
+# ★The compiler is the entry the FOURTH widening added, and it is the one the
+# instrument had the least excuse to miss: `scalyc` is the reason the other four
+# targets have a seed at all, and stage 7's exit criterion is that seed
+# reproducing HERE. Its flags mirror `tools/seed.sh` exactly (--no-tests, no
+# --no-prelude) so that what this scans is what that script emits.
+# ★dazzle joined in the same pass. Rung 8 linked it on Windows while nothing
+# checked its symbol debt, which is how its 61 LLVM-C symbols had to be counted
+# by hand; the LLVM class below is the answer to that.
+#
+# One row per binary: name, library root + its flags, program root + its flags.
+# A row whose library field is empty has no package object of its own.
+PRODUCTS=(
+  "opensp|packages/opensp/0.1.0/opensp.scaly|--no-prelude|packages/opensp/0.1.0/onsgmls.scaly|"
+  "dazzle|packages/dazzle/0.1.0/dazzle.scaly|--no-prelude|packages/dazzle/0.1.0/dazzle_cli.scaly|"
+  "scalyc|packages/scalyc/0.1.0/scalyc.scaly|--no-tests|packages/scalyc/0.1.0/main.scaly|--no-tests"
+)
 ndropin=0
-if "$SC" -c --target "$TRIPLE" --no-prelude -o "$POUT/opensp.o" \
-        packages/opensp/0.1.0/opensp.scaly > /dev/null 2>&1 \
-   && "$SC" -c --target "$TRIPLE" -o "$POUT/onsgmls.o" \
-        packages/opensp/0.1.0/onsgmls.scaly > /dev/null 2>&1; then
-  ndropin=1
-  RT_DEFINED="$RT_DEFINED
-$("$NM" --defined-only --extern-only "$POUT/opensp.o" \
-   | sed 's/^[0-9a-f]* [A-Za-z] //')"
-  RT_DEFINED=$(printf '%s\n' "$RT_DEFINED" | sort -u)
-  ALL="$ALL
-$("$NM" -u "$POUT/opensp.o" | sed 's/^ *U //')
-$("$NM" -u "$POUT/onsgmls.o" | sed 's/^ *U //')"
-else
-  nemitfail=$((nemitfail+1))
-  EMITLOG="$EMITLOG
-dropin emit: cross-emit failure opensp/onsgmls"
-fi
+for row in "${PRODUCTS[@]}"; do
+  IFS='|' read -r pname lib libflags prog progflags <<< "$row"
+  ok=1
+  if [ -n "$lib" ]; then
+    # shellcheck disable=SC2086
+    "$SC" -c --target "$TRIPLE" $libflags -o "$POUT/p_$pname.o" "$lib" > /dev/null 2>&1 || ok=0
+  fi
+  # shellcheck disable=SC2086
+  [ "$ok" = 1 ] && { "$SC" -c --target "$TRIPLE" $progflags -o "$POUT/pm_$pname.o" "$prog" > /dev/null 2>&1 || ok=0; }
+  if [ "$ok" = 1 ]; then
+    ndropin=$((ndropin+1))
+    # Only the LIBRARY object's definitions are subtracted, never the program's.
+    # A program defines `main` and its own build stamp and nothing anyone else
+    # links against, so folding those in could only ever mask a symbol some
+    # OTHER program owes — and masking is the one direction this instrument
+    # must not err in.
+    if [ -f "$POUT/p_$pname.o" ]; then
+      RT_DEFINED=$(printf '%s\n%s\n' "$RT_DEFINED" \
+        "$("$NM" --defined-only --extern-only "$POUT/p_$pname.o" \
+           | sed 's/^[0-9a-f]* [A-Za-z] //')" | sort -u)
+    fi
+    for o in "$POUT/p_$pname.o" "$POUT/pm_$pname.o"; do
+      [ -f "$o" ] || continue
+      ALL="$ALL
+$("$NM" -u "$o" | sed 's/^ *U //')"
+    done
+  else
+    nemitfail=$((nemitfail+1))
+    EMITLOG="$EMITLOG
+product emit: cross-emit failure $pname"
+  fi
+done
 rm -rf "$POUT"
 ALL=$(printf '%s\n' "$ALL" | grep . | sort -u)
 ALL=$(printf '%s\n' "$ALL" | while read -r s
@@ -137,8 +170,26 @@ ALL=$(printf '%s\n' "$ALL" | while read -r s
 # A name being present in the CRT is not the same as it being usable.
 # ★`__chkstk` is not a library call anyone wrote: the compiler emits it to probe
 # a stack frame larger than a page, and the CRT defines it.
-CRT='^(abort|atexit|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memset|puts|rewind|strcmp|strerror|strlen|strdup|write|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index|__chkstk)$'
+# ★The second block arrived with dazzle and scalyc in scope (2026-08-11): the
+# DOUBLE-precision math the DSSSL numeric primitives call (the `f` suffixed ones
+# above are the tensor kernels'), plus `calloc` (dazzle/FrameMark.scaly's state
+# block), `raise`, and the four the compiler itself adds — `atoll`, `strtod`,
+# `system`, `memmove`. Nothing here needs a shim; they are listed because a
+# provider class with no entry reads as an unprovided symbol.
+CRT='^(abort|atexit|atoll|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memmove|memset|puts|rewind|strcmp|strerror|strlen|strdup|strtod|system|write|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index|__chkstk)$|^(acos|asin|atan|atan2|calloc|ceil|cos|exp|floor|log|log10|pow|raise|sin|sqrt|tan)$'
 HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
+
+# ★A third provider class, added with the compiler (2026-08-11): the LLVM-C API.
+# It is neither a shim nor the CRT but a LIBRARY the link must be given — on
+# Windows `LLVM-C.lib`/`LLVM-C.dll` from an LLVM **18** install, because the
+# version is not free: the compiler needs 18 for the same reason `llc` does.
+# Two binaries owe it, and only one of them obviously: scalyc calls it, and the
+# dazzle package carries the JIT (`dazzle/Jit.scaly`) so its object owes these
+# even though `--jit` is opt-in and nothing on this platform switches it on —
+# the archive is ONE object with ONE .text, so a COFF linker can discard
+# nothing. That fact was measured by hand at rung 8; here it is a column.
+LLVMLIB='^LLVM'
+HAVE_LLVM=$(printf '%s\n' "$ALL" | grep -E "$LLVMLIB")
 
 # What our own Windows sources DEFINE. Read by grep rather than by compiling
 # them, because the host that runs this cannot: posixcompat.c and eio_win.c
@@ -184,7 +235,7 @@ PROVIDED=$( { for f in $WIN_C; do [ -f "$f" ] && defs_of_c "$f"; done
 # link. Listing it as missing would send the next reader hunting.
 EMITTED='^(scaly_build_stamp)$'
 
-OWED=$(printf '%s\n' "$ALL" | grep -vE "$CRT" | grep -vE "$EMITTED")
+OWED=$(printf '%s\n' "$ALL" | grep -vE "$CRT" | grep -vE "$LLVMLIB" | grep -vE "$EMITTED")
 MISSING=$(printf '%s\n' "$OWED" | while read -r s
           do [ -n "$s" ] && { printf '%s\n' "$PROVIDED" | grep -qx "$s" || echo "$s"; }; done)
 COVERED=$(printf '%s\n' "$OWED" | while read -r s
@@ -194,8 +245,8 @@ n() { printf '%s\n' "$1" | grep -c . ; }
 
 echo "win-undef: $(n "$ALL") undefined symbols for $TRIPLE"
 echo "  (runtime root + $nprog corpus programs + $nbench bench programs"
-echo "   + $ndropin onsgmls drop-in; symbols the runtime or the opensp package"
-echo "   defines are resolved at the link)"
+echo "   + $ndropin products of ${#PRODUCTS[@]} (onsgmls, dazzle, scalyc);"
+echo "   symbols a package object defines are resolved at the link)"
 if [ "$nemitfail" -gt 0 ]; then
   echo "  WARNING — $nemitfail corpus program(s) did not cross-emit and were NOT scanned"
   printf '%s\n' "$EMITLOG" | sed 's/^/    /'
@@ -203,6 +254,7 @@ fi
 echo
 echo "  provided by our Windows sources:   $(n "$COVERED")"
 echo "  provided by the MSVC CRT:          $(n "$HAVE")"
+echo "  provided by libLLVM 18 (LLVM-C):   $(n "$HAVE_LLVM")"
 echo "  emitted per program (build stamp): 1"
 echo
 if [ -n "$MISSING" ]; then
