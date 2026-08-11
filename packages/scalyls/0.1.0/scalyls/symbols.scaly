@@ -1153,6 +1153,16 @@ define symbols
                 }
                 if grammar.is_keyword(word)
                     set t: 0                ; keyword wins (grammar-derived)
+                ; The four word operators. An operator is normally an identifier
+                ; made exclusively of operator characters, which the run below
+                ; already classifies; these are the only ones spelled in letters
+                ; and so the only ones reachable here. Without this they read as
+                ; `variable`, i.e. as bindings.
+                if grammar.is_word_operator(word)
+                    set t: 4                ; operator
+                ; true/false/null/this resolve to a VALUE, not to a binding.
+                if grammar.is_value_word(word)
+                    set t: 0                ; keyword
                 set tok_type: t
                 ; set pending for the NEXT identifier off this keyword, else clear
                 if t = 0
@@ -1176,14 +1186,17 @@ define symbols
                     set pending: 0 - 1
             }
 
-            ; operator: a run of + - * / = % & | ^ ~ < >
-            if symbols.is_op_char(c)
+            ; operator: a run of operator characters. The class is generated
+            ; from ONE table (codegen/highlight-scaly.scm) and must match the
+            ; lexer's; note it excludes '^', which is the lifetime sigil and
+            ; never an operator character (lexer.scaly:330).
+            if grammar.is_op_char(c)
             {
                 var j i + 1
                 while j < n
                 {
                     let cc source.get j
-                    if symbols.is_op_char(cc) = false
+                    if grammar.is_op_char(cc) = false
                         break
                     set j: j + 1
                 }
@@ -1290,36 +1303,6 @@ define symbols
         if c = 46
             return true
         if c = 95
-            return true
-        false
-    }
-
-    ; Operator chars: + - * / = % & | ^ ~ < > (lexer scan_operator set + ^).
-    function is_op_char(c: u8) returns bool
-    {
-        if c = 43
-            return true
-        if c = 45
-            return true
-        if c = 42
-            return true
-        if c = 47
-            return true
-        if c = 61
-            return true
-        if c = 37
-            return true
-        if c = 38
-            return true
-        if c = 124
-            return true
-        if c = 94
-            return true
-        if c = 126
-            return true
-        if c = 60
-            return true
-        if c = 62
             return true
         false
     }

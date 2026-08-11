@@ -6,6 +6,9 @@
     { "include": "#strings" },
     { "include": "#numbers" },
     { "include": "#keywords" },
+    { "include": "#wordoperators" },
+    { "include": "#constants" },
+    { "include": "#self" },
     { "include": "#types" },
     { "include": "#operators" }
   ],
@@ -29,11 +32,20 @@
     "keywords": {
       "patterns": [ { "name": "keyword.control.scaly", "match": "\\b(alignof|as|break|case|choose|continue|define|deinit|delegate|else|extends|extern|for|function|if|implement|in|init|instruction|intrinsic|is|label|let|loop|macro|match|module|mutable|operator|private|procedure|repeat|return|returns|set|sizeof|throw|throws|trait|try|union|use|var|when|while|package|shared)\\b" } ]
     },
+    "wordoperators": {
+      "patterns": [ { "name": "keyword.operator.word.scaly", "match": "\\b(and|not|or|xor)\\b" } ]
+    },
+    "constants": {
+      "patterns": [ { "name": "constant.language.scaly", "match": "\\b(false|null|true)\\b" } ]
+    },
+    "self": {
+      "patterns": [ { "name": "variable.language.scaly", "match": "\\b(this)\\b" } ]
+    },
     "types": {
       "patterns": [ { "name": "entity.name.type.scaly", "match": "\\b[A-Z][A-Za-z0-9_]*\\b" } ]
     },
     "operators": {
-      "patterns": [ { "name": "keyword.operator.scaly", "match": "[-+*/=%&|\\^~<>]+" } ]
+      "patterns": [ { "name": "keyword.operator.scaly", "match": "[-+*/=%&|~<>]+" } ]
     }
   }
 }

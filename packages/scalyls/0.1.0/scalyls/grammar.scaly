@@ -4,6 +4,8 @@
 ; Grammar-derived classification for the scalyls semantic-token highlighter.
 ; The keyword set comes straight from the grammar's <keyword> elements, so new
 ; keywords flow into syntax highlighting automatically as the language grows.
+; The other three predicates cover what the grammar does NOT carry: see the
+; header of codegen/highlight-scaly.scm for why each word is where it is.
 
 define grammar
 {
@@ -103,6 +105,68 @@ define grammar
         if word = "package"
             return true
         if word = "shared"
+            return true
+        false
+    }
+
+    ; True for an operator CHARACTER. An operator is an identifier consisting
+    ; exclusively of these, so this predicate is the whole definition and no
+    ; operator list exists. Must agree with lexer.scaly:131 and :335 -- note
+    ; that '^' (94) is deliberately absent (it is the lifetime sigil).
+    function is_op_char(c: u8) returns bool
+    {
+        if c = 45
+            return true
+        if c = 43
+            return true
+        if c = 42
+            return true
+        if c = 47
+            return true
+        if c = 61
+            return true
+        if c = 37
+            return true
+        if c = 38
+            return true
+        if c = 124
+            return true
+        if c = 126
+            return true
+        if c = 60
+            return true
+        if c = 62
+            return true
+        false
+    }
+
+    ; True for a WORD operator -- the only identifiers that are operators
+    ; without being spelled in operator characters. Authoritative list:
+    ; Planner.mangled_operator_name.
+    function is_word_operator(word: String) returns bool
+    {
+        if word = "and"
+            return true
+        if word = "not"
+            return true
+        if word = "or"
+            return true
+        if word = "xor"
+            return true
+        false
+    }
+
+    ; True for a lone identifier that resolves to a VALUE, not to a binding:
+    ; true/false (Modeler), null (Planner), this (the receiver parameter).
+    function is_value_word(word: String) returns bool
+    {
+        if word = "false"
+            return true
+        if word = "null"
+            return true
+        if word = "true"
+            return true
+        if word = "this"
             return true
         false
     }

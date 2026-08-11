@@ -2259,6 +2259,103 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semanticTokens"; else bad "lsp semanticTokens"; fi
 
+# ---- semanticTokens: word operators, value words, and the caret ----
+# Scaly has no operator token class: an operator IS an identifier, one made
+# exclusively of operator characters (lexer.scaly:326,:338 return
+# Token.Identifier from scan_operator). So the character class IS the
+# definition, and it is generated into grammar.is_op_char by
+# codegen/highlight-scaly.scm; the four WORD operators are the only exceptions
+# to it and the only ones that need a name test.
+#
+# Three ways this used to be wrong, all silent, all fixed 2026-08-11:
+#   * and/or/not/xor          -> `variable`, i.e. painted as bindings
+#   * true/false/null/this    -> `variable`, i.e. painted as bindings
+#   * '^'                     -> `operator`, though the lexer excludes it from
+#                                the operator characters ON PURPOSE
+#                                (lexer.scaly:330 — the caret is the lifetime
+#                                sigil, so `&^this v` must tokenize as
+#                                `& ^this v`). Both highlighter layers pulled it
+#                                back in, so `&^` came out as ONE operator run.
+# The caret assertion is a NEGATIVE one and that is the point: the sigil must
+# produce no token at all, so a regression shows up as a token appearing rather
+# than as a wrong colour.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+src = ("define Probe\n"                              # 0
+       "{\n"                                        # 1
+       "    function pick(this, a: bool, b: bool) returns bool\n"  # 2
+       "    {\n"                                    # 3
+       "        let t true\n"                       # 4
+       "        let n null\n"                       # 5
+       "        if a and b\n"                       # 6
+       "            return not a\n"                 # 7
+       "        if a or b\n"                        # 8
+       "            return false\n"                 # 9
+       "        let x 1 xor 2\n"                    # 10
+       "        let r &^this a\n"                   # 11 <- the real shape from
+       "        a\n"                                # 12    Planner.scaly:4635
+       "    }\n"                                    # 13
+       "}\n")                                       # 14
+d = tempfile.mkdtemp(prefix="lsp_words_")
+path = os.path.join(d, "w.scaly")
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full",
+              "params":{"textDocument":{"uri":"file://"+path}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+TYPES = ["keyword","type","function","variable","operator","string","number","comment","parameter","property"]
+r = next((f for f in frames if f.get("id") == 2), None)
+data = (r or {}).get("result",{}).get("data") or []
+lines = src.split("\n")
+line = col = 0
+toks = []
+for k in range(0, len(data), 5):
+    dl, dc, ln, ty, mod = data[k:k+5]
+    if dl > 0: line += dl; col = dc
+    else:      col += dc
+    toks.append((line, col, lines[line][col:col+ln], TYPES[ty]))
+def kinds(text): return sorted(set(t[3] for t in toks if t[2] == text))
+# The word operators. `variable` here means they were read as bindings.
+for w in ("and", "or", "not", "xor"):
+    check(kinds(w) == ["operator"], "word operator `%s` -> operator (got %s)" % (w, kinds(w) or "no token"))
+# The value words. `this` is asserted at BOTH its positions - the parameter on
+# line 2 and the sigil use on line 11 - because param_in_scope would otherwise
+# claim it as a parameter; `this` is never a user binding.
+for w in ("true", "false", "null"):
+    check(kinds(w) == ["keyword"], "value word `%s` -> keyword (got %s)" % (w, kinds(w) or "no token"))
+this_toks = [t for t in toks if t[2] == "this"]
+check(len(this_toks) == 2 and all(t[3] == "keyword" for t in this_toks),
+      "`this` -> keyword at both the parameter and the sigil (got %s)" % [t[3] for t in this_toks])
+# The caret produces NO token: it is punctuation (the lifetime sigil), never an
+# operator character. A token whose TEXT contains '^' catches both the lone
+# sigil and the `&^` run that the old character class merged into one operator.
+carets = [t for t in toks if "^" in t[2]]
+check(carets == [], "'^' produces no token - it is the sigil, not an operator (got %s)" % carets)
+# The '&' on line 11 is still an operator, and it stands ALONE: length 1, so the
+# run stopped at the caret exactly as the lexer's does.
+amp = [t for t in toks if t[0] == 11 and t[3] == "operator"]
+check(len(amp) == 1 and amp[0][2] == "&", "`&^` scans as a lone `&` operator (got %s)" % amp)
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semanticTokens word operators"; else bad "lsp semanticTokens word operators"; fi
+
 # ---- semanticTokens: cross-file declared-kind resolution ----
 # An identifier USE resolves to function/type by its DECLARATION even when the
 # declaration lives in a SIBLING file (harvested via the symindex). Both probe
