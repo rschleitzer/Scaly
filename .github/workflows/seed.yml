@@ -32,16 +32,47 @@ name: seed
 # runs hello + the AOT corpus, checks byte-identical self-reproduction, and
 # builds + smoke-tests the scalyls language server.
 
-# editors/** is the VS Code extension (TypeScript + npm deps): nothing the seed
-# pipeline compiles, links or runs. Skipping it keeps Dependabot's npm bumps —
-# the bulk of this repo's PR traffic — from spending minutes on a full bootstrap.
+# ★ OFF THE PUSH TRIGGER since 2026-08-11 — MANUAL ONLY. Nothing here is
+# retired: every job below still runs, and `gh workflow run seed` (or the Run
+# workflow button) starts the full bar on demand.
+#
+# Why: the account's 2000 included Actions minutes ran to 90 % on 11.08. with
+# 21 days left, and 85 % of that (1495 of 1759 billed minutes) was burned on
+# two days — the Windows-port endgame, where the runner WAS the compiler
+# because none of the three Win64 C files can be built on the dev box. That
+# phase closed with rung 12 (the seed reproduces itself on Windows), so the
+# argument for paying it on every push closed with it. A full push cost ~46
+# billed minutes: 6 (seed) + 4 (suites) + 18x2 (windows, billed at 2x).
+#
+# TO BRING IT BACK, restore exactly this — it is the state that was measured
+# above, and the paths-ignore is load-bearing (editors/** is the VS Code
+# extension: TypeScript + npm deps, nothing the seed pipeline compiles, links
+# or runs, so skipping it keeps Dependabot's npm bumps — the bulk of this
+# repo's PR traffic — from spending minutes on a full bootstrap):
+#
+#   push:
+#     branches: [master]
+#     paths-ignore: ['editors/**']
+#   pull_request:
+#     branches: [master]
+#     paths-ignore: ['editors/**']
+#
+# ★ Before restoring it as-is, read the cheaper shapes that were costed on the
+# same day and NOT taken, because manual-only made them moot rather than wrong:
+# the windows job is 47 % of the bill from a job that builds nothing, and 75 %
+# of ITS time is two steps (rung 8 dazzle suites 483 s, rung 7 SGML corpus
+# 291 s) against 170 s for link + run + re-emit. Moving those two to a nightly
+# cron and keeping rungs 9/11/12 on the push takes a round from 46 to ~16
+# billed minutes at unchanged daily coverage. Worth adding whichever way:
+# `concurrency` with cancel-in-progress, and a `timeout-minutes` per job — the
+# windows leg spiked to 17.9 min once, i.e. 36 billed minutes from one run.
+#
+# ★ What manual-only costs, stated plainly: x86_64-linux is the leg nobody
+# exercises locally (the dev box is arm64-apple-darwin), so a Linux-only
+# breakage is now invisible until someone dispatches a run. Reproduce it in a
+# container as the header of CLAUDE.md describes, or dispatch before pushing
+# anything that touches emission.
 on:
-  push:
-    branches: [master]
-    paths-ignore: ['editors/**']
-  pull_request:
-    branches: [master]
-    paths-ignore: ['editors/**']
   workflow_dispatch:
 
 jobs:
