@@ -2041,6 +2041,181 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp module-vs-define definition"; else bad "lsp module-vs-define definition"; fi
 
+# ---- LSP server: a hover must not report ANOTHER FILE's type --------------
+# Model.Span is a bare (start, end) byte pair with no file in it, and the plan
+# built for a document also holds every routine the planner instantiated on its
+# behalf — the prelude's, and every method of every generic the document's types
+# pull in. Their spans index THOSE files and collide with the document's own
+# offsets, so a walk comparing numbers alone reports one of them. Measured on
+# packages/scaly/0.1.0/scaly/containers/Vector.scaly: EVERY hover in the file
+# answered `bool`, the return type of Slice[T].equals, whose span 1328..2073 in
+# containers/Slice.scaly covers most of `define Vector[T]`. The file is nothing
+# but generic templates, so its own bodies plan to empty stubs and no local node
+# competed. PlannedFunction.file cannot decide this — an instantiation carries
+# the REQUESTING file — so semantic.is_routine_start# joins on the span START,
+# which Modeler.build_function# copies verbatim from the routine's own syntax.
+#
+# The file is a real tree file, so the lines are found by CONTENT, not number.
+# Both directions are asserted: nothing may come from another file (1-3), and
+# the semantic layer must still ANSWER inside this file (4-5) — deleting the
+# walk would satisfy the first three on its own.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os
+
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+path = os.path.join(os.getcwd(), "packages/scaly/0.1.0/scaly/containers/Vector.scaly")
+uri  = "file://" + path
+doc  = open(path).read()
+lines = doc.split("\n")
+
+def line_of(needle):
+    return next(i for i, l in enumerate(lines) if l.strip() == needle)
+
+probes = [
+    (line_of("define Vector[T]"),        "Vector",  "Vector"),
+    (line_of("length: size_t"),          "length",  "Vector"),
+    (line_of("define VectorIterator[T]"), "VectorIterator", "VectorIterator"),
+    (line_of("set length: len"),         "len",     "size_t"),
+    (line_of("set position: position + 1"), "position", "size_t"),
+]
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+for k, (ln, word, _) in enumerate(probes):
+    inp += frame({"jsonrpc":"2.0","id":100+k,"method":"textDocument/hover","params":{
+            "textDocument":{"uri":uri},
+            "position":{"line":ln,"character":lines[ln].index(word)+1}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+res, d = {}, out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if isinstance(f.get("id"), int) and f["id"] >= 100: res[f["id"]] = f.get("result")
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+for k, (ln, word, expect) in enumerate(probes):
+    r = res.get(100+k)
+    v = (r or {}).get("contents", {}).get("value") if r else None
+    check(v is not None and expect in v,
+          "hover on `%s` (line %d) reports %r, got %r" % (word, ln+1, expect, v))
+
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp hover stays inside the document"; else bad "lsp hover stays inside the document"; fi
+
+# ---- LSP server: hover resolves PER TOKEN, with generic arguments ---------
+# Three defects that made a whole line report one wrong type, all on
+# containers/Vector.scaly line 69, `let own_page Page.get(this as pointer[void])`:
+#
+#  1. type_name# returned PlannedType.name, the BARE name — the resolved
+#     arguments sit beside it in .generics — so a `pointer[Page]` printed as
+#     `pointer` and a `Vector[int]` as `Vector`. Planner.get_readable_name# is
+#     the compiler's own renderer and recurses into nested arguments.
+#  2. walk_operand# pruned the descent unless the operand's own span contained
+#     the offset, on the premise that children nest inside their parent. Planner
+#     operands are NOT a containment hierarchy: an `As` operand spans only its
+#     trailing `as <type>`, a Call operand stops after the callee name, and the
+#     arguments lie outside both. The walk therefore never got below block/if
+#     level and answered the enclosing block's type for every token of the line.
+#  3. That block type is not `void` (an init body carries `pointer[void]`), so
+#     the "skip void wrappers" guard never fired — a Block is now suppressed
+#     structurally, and a cursor on an UNTYPED binding's name (item_type is null,
+#     and no initializer operand covers the name) answers with the type its
+#     initializer produces.
+#
+# Asserted EXACTLY: a substring check would pass `pointer` for `pointer[Page]`,
+# which is the bug. Lines are found by CONTENT, the file is a real tree file.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os
+
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+path = os.path.join(os.getcwd(), "packages/scaly/0.1.0/scaly/containers/Vector.scaly")
+uri  = "file://" + path
+doc  = open(path).read()
+lines = doc.split("\n")
+
+def line_of(needle):
+    return next(i for i, l in enumerate(lines) if l.strip() == needle)
+
+bind = line_of("let own_page Page.get(this as pointer[void])")
+alloc = line_of("set data: own_page.allocate(len * sizeof T, alignof T) as pointer[T]")
+cond = line_of("if len > 0")
+
+# (line, token, occurrence index, expected type)
+probes = [
+    (bind,  "own_page", 0, "pointer[Page]"),       # untyped binding NAME
+    (bind,  "Page",     0, "pointer[Page]"),       # the call it is bound to
+    (bind,  "this",     0, "pointer[Vector[T]]"),  # nested generic argument
+    (alloc, "len",      0, "size_t"),              # an argument INSIDE the call
+    (alloc, "data",     0, "pointer[T]"),          # the assignment target
+    # An OPERATOR call's span covers its LEFT operand's text alone, so the
+    # operand and the operator tie on width. Preferring the outer one — right
+    # for `recv.method()`, where the receiver carries the call's span — reported
+    # the comparison's `bool` here. PlannedCall.is_operator breaks the tie.
+    (cond,  "len",      0, "size_t"),
+]
+
+def col_of(ln, token, nth):
+    i, l = -1, lines[ln]
+    for _ in range(nth + 1):
+        i = l.index(token, i + 1)
+    return i + 1
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+for k, (ln, token, nth, _) in enumerate(probes):
+    inp += frame({"jsonrpc":"2.0","id":100+k,"method":"textDocument/hover","params":{
+            "textDocument":{"uri":uri},
+            "position":{"line":ln,"character":col_of(ln, token, nth)}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+res, d = {}, out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if isinstance(f.get("id"), int) and f["id"] >= 100: res[f["id"]] = f.get("result")
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+for k, (ln, token, nth, expect) in enumerate(probes):
+    r = res.get(100+k)
+    v = (r or {}).get("contents", {}).get("value") if r else None
+    check(v == expect,
+          "hover on `%s` (line %d) is exactly %r, got %r" % (token, ln+1, expect, v))
+
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp hover per token + generic arguments"; else bad "lsp hover per token + generic arguments"; fi
 
 # ---- LSP server: cross-package member completion -------------------------
 # SCALY_HOME points at the repo so member completion scans packages/scaly when

@@ -160,12 +160,199 @@ define semantic
                 if plan <> null
                 {
                     let pl (*plan)
-                    let rr semantic.walk_plan(pl, mode, offset)
+                    ; `program.file` is the SAME parse the Modeler above was
+                    ; handed, so its routine starts are the very numbers the
+                    ; plan's spans carry — see is_routine_start#, which is what
+                    ; keeps a foreign file's span out of the answer.
+                    let rr semantic.walk_plan(pl, mode, offset, program.file)
                     if rr.found
                         set result: String(rr.type_name)
                 }
             }
         result
+    }
+
+    ; ====================================================================
+    ; FILE IDENTITY for planner spans.
+    ;
+    ; A Span is a bare pair of BYTE OFFSETS (Model.scaly: `define Span(start,
+    ; end)`) — it does not say which file it indexes. The plan built for this
+    ; document also holds every routine the planner instantiated on its behalf:
+    ; the prelude's, and every method of every generic the document's own types
+    ; pull in. Those spans index THOSE files, so they overlap the document's own
+    ; offsets, and a walk that compares numbers alone will happily report one of
+    ; them. Measured 2026-08-12 on packages/scaly/0.1.0/scaly/containers/
+    ; Vector.scaly: EVERY hover answered `bool` — the return type of
+    ; `Slice[T].equals`, whose span 1328..2073 in containers/Slice.scaly covers
+    ; most of Vector.scaly's `define Vector[T]` (1614..4831). The file reads as
+    ; a generic container, so its own bodies plan to empty template stubs and
+    ; nothing local competed.
+    ;
+    ; PlannedFunction.file CANNOT decide this, which is the trap: a generic
+    ; instantiated for this document is stamped with the file that REQUESTED it
+    ; (Planner passes `this.file`, its current module — Plan.scaly's own comment
+    ; on the field calls that the "stale entry file"), so those Slice methods
+    ; report Vector.scaly. Only the prelude's honestly-stamped entries would be
+    ; caught by a path comparison.
+    ;
+    ; What IS exact is the span START. Modeler.build_function# builds the model
+    ; span as `Span(func.start, func.end)` straight off the routine's own
+    ; FunctionSyntax, and every PlannedFunction — instantiations included —
+    ; copies it verbatim. So a planned routine belongs to the document iff its
+    ; loc.start is the start of a routine the DOCUMENT declares, and
+    ; resolve_at# feeds the collector the same parse tree the Modeler consumed,
+    ; so both sides are literally the same numbers. A rejected walk yields ""
+    ; and the server falls back to the lexical hover — which is what a file of
+    ; uninstantiated generic templates should answer anyway.
+    ; ====================================================================
+
+    ; Does the document declare a routine (function / procedure / operator /
+    ; init / deinit) or a module-level global starting exactly at `start`?
+    function is_routine_start(rp, file: FileSyntax, start: size_t) returns bool
+    {
+        if file.declarations = null
+            return false
+        let decls (*file.declarations)
+        var i: size_t 0
+        while i < decls.length
+        {
+            let dptr decls.get i
+            if dptr <> null
+                if semantic.decl_has_start(*dptr, start)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
+    function decl_has_start(rp, decl: DeclarationSyntax, start: size_t) returns bool
+    {
+        choose decl
+            when f: FunctionSyntax
+                return f.start = start
+            when pr: ProcedureSyntax
+                return pr.start = start
+            when o: OperatorSyntax
+                return o.start = start
+            when mut: MutableSyntax
+                return mut.start = start
+            when sh: SharedSyntax
+                return sh.start = start
+            when def: DefinitionSyntax
+                return semantic.definition_has_start(def, start)
+            when priv: PrivateSyntax
+                return semantic.export_has_start(priv.export_, start)
+            when m: ModuleSyntax
+                return false
+            when e: EmptySyntax
+                return false
+            when pkg: PackageSyntax
+                return false
+            when u: UseSyntax
+                return false
+            when t: TraitSyntax
+                return false
+            when mac: MacroSyntax
+                return false
+    }
+
+    function export_has_start(rp, export_: ExportSyntax, start: size_t) returns bool
+    {
+        choose export_
+            when f: FunctionSyntax
+                return f.start = start
+            when pr: ProcedureSyntax
+                return pr.start = start
+            when o: OperatorSyntax
+                return o.start = start
+            when def: DefinitionSyntax
+                return semantic.definition_has_start(def, start)
+            when t: TraitSyntax
+                return false
+            when m: ModuleSyntax
+                return false
+    }
+
+    function definition_has_start(rp, def: DefinitionSyntax, start: size_t) returns bool
+    {
+        choose def.concept_
+            when c: ClassSyntax
+                return semantic.body_has_start(c.body, start)
+            when n: NamespaceSyntax
+                return semantic.namespace_has_start(n, start)
+            when un: UnionSyntax
+                return semantic.union_has_start(un, start)
+            else
+                return false
+    }
+
+    function namespace_has_start(rp, ns: NamespaceSyntax, start: size_t) returns bool
+    {
+        if ns.declarations = null
+            return false
+        let decls (*ns.declarations)
+        var i: size_t 0
+        while i < decls.length
+        {
+            let dptr decls.get i
+            if dptr <> null
+                if semantic.decl_has_start(*dptr, start)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
+    function union_has_start(rp, un: UnionSyntax, start: size_t) returns bool
+    {
+        semantic.body_has_start(un.body, start)
+    }
+
+    function body_has_start(rp, body: ref[BodySyntax]?, start: size_t) returns bool
+    {
+        if body = null
+            return false
+        let b (*body)
+        if b.members = null
+            return false
+        let members (*b.members)
+        var i: size_t 0
+        while i < members.length
+        {
+            let mptr members.get i
+            if mptr <> null
+                if semantic.member_has_start(*mptr, start)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
+    function member_has_start(rp, member: MemberSyntax, start: size_t) returns bool
+    {
+        choose member
+            when f: FunctionSyntax
+                return f.start = start
+            when pr: ProcedureSyntax
+                return pr.start = start
+            when o: OperatorSyntax
+                return o.start = start
+            when ini: InitSyntax
+                return ini.start = start
+            when dei: DeInitSyntax
+                return dei.start = start
+            when def: DefinitionSyntax
+                return semantic.definition_has_start(def, start)
+            when e: EmptySyntax
+                return false
+            when im: ImplementSyntax
+                return false
+            when t: TraitSyntax
+                return false
+            when mac: MacroSyntax
+                return false
+            when m: ModuleSyntax
+                return false
     }
 
     ; 0-based (line, character) -> byte offset (self-contained copy of
@@ -202,10 +389,27 @@ define semantic
     function none(rp) returns ResolveResult
         ResolveResult(false, 0, "")
 
+    ; Keep the TIGHTER of two candidates. With the containment prune gone
+    ; (walk_operand#), sibling subtrees are all traversed and more than one can
+    ; report a hit, so "first found wins" would hand back whichever sibling the
+    ; loop reached first rather than the one that actually sits under the
+    ; cursor. On a tie the FIRST/outer one is kept, matching walk_operand#'s
+    ; equal-width preference.
+    function tighter(rp, a: ResolveResult, b: ResolveResult) returns ResolveResult
+    {
+        if b.found = false
+            return a
+        if a.found = false
+            return b
+        if b.width < a.width
+            return b
+        a
+    }
+
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.
     ; ====================================================================
-    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t, file: FileSyntax) returns ResolveResult
     {
         var result semantic.none()
 
@@ -224,7 +428,8 @@ define semantic
                     {
                         let fp fns.get i
                         if fp <> null
-                            set result: semantic.walk_impl((*fp).impl, mode, offset)
+                            if semantic.is_routine_start(file, (*fp).loc.start)
+                                set result: semantic.walk_impl((*fp).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -243,7 +448,7 @@ define semantic
                     {
                         let sp sts.get i
                         if sp <> null
-                            set result: semantic.walk_structure(*sp, mode, offset)
+                            set result: semantic.walk_structure(*sp, mode, offset, file)
                     }
                     set i: i + 1
                 }
@@ -262,7 +467,7 @@ define semantic
                     {
                         let up uns.get i
                         if up <> null
-                            set result: semantic.walk_union(*up, mode, offset)
+                            set result: semantic.walk_union(*up, mode, offset, file)
                     }
                     set i: i + 1
                 }
@@ -284,7 +489,8 @@ define semantic
                         {
                             let g (*gp)
                             if g.value <> null
-                                set result: semantic.walk_operands(*g.value, mode, offset)
+                                if semantic.is_routine_start(file, g.loc.start)
+                                    set result: semantic.walk_operands(*g.value, mode, offset)
                         }
                     }
                     set i: i + 1
@@ -295,7 +501,7 @@ define semantic
         result
     }
 
-    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax) returns ResolveResult
     {
         var result semantic.none()
 
@@ -309,7 +515,8 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null
-                        set result: semantic.walk_impl((*mp).impl, mode, offset)
+                        if semantic.is_routine_start(file, (*mp).loc.start)
+                            set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
@@ -327,7 +534,8 @@ define semantic
                     {
                         let ip inits.get i
                         if ip <> null
-                            set result: semantic.walk_impl((*ip).impl, mode, offset)
+                            if semantic.is_routine_start(file, (*ip).loc.start)
+                                set result: semantic.walk_impl((*ip).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -346,7 +554,8 @@ define semantic
                     {
                         let op ops.get i
                         if op <> null
-                            set result: semantic.walk_impl((*op).impl, mode, offset)
+                            if semantic.is_routine_start(file, (*op).loc.start)
+                                set result: semantic.walk_impl((*op).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -356,13 +565,14 @@ define semantic
         if result.found = false
         {
             if st.deinitializer <> null
-                set result: semantic.walk_impl((*st.deinitializer).impl, mode, offset)
+                if semantic.is_routine_start(file, (*st.deinitializer).loc.start)
+                    set result: semantic.walk_impl((*st.deinitializer).impl, mode, offset)
         }
 
         result
     }
 
-    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax) returns ResolveResult
     {
         var result semantic.none()
 
@@ -376,7 +586,8 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null
-                        set result: semantic.walk_impl((*mp).impl, mode, offset)
+                        if semantic.is_routine_start(file, (*mp).loc.start)
+                            set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
@@ -394,7 +605,8 @@ define semantic
                     {
                         let op ops.get i
                         if op <> null
-                            set result: semantic.walk_impl((*op).impl, mode, offset)
+                            if semantic.is_routine_start(file, (*op).loc.start)
+                                set result: semantic.walk_impl((*op).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -422,10 +634,10 @@ define semantic
         var result semantic.none()
         if act.source <> null
             set result: semantic.walk_operands(*act.source, mode, offset)
-        if result.found = false
+        if act.target <> null
         {
-            if act.target <> null
-                set result: semantic.walk_operands(*act.target, mode, offset)
+            let t semantic.walk_operands(*act.target, mode, offset)
+            set result: semantic.tighter(result, t)
         }
         result
     }
@@ -439,11 +651,11 @@ define semantic
         var i: size_t 0
         while i < stmts.length
         {
-            if result.found = false
+            let sp stmts.get i
+            if sp <> null
             {
-                let sp stmts.get i
-                if sp <> null
-                    set result: semantic.walk_statement(*sp, mode, offset)
+                let r semantic.walk_statement(*sp, mode, offset)
+                set result: semantic.tighter(result, r)
             }
             set i: i + 1
         }
@@ -469,24 +681,53 @@ define semantic
 
     function walk_binding(rp, bnd: PlannedBinding, mode: size_t, offset: size_t) returns ResolveResult
     {
+        var op_result semantic.none()
         if bnd.operation <> null
-        {
-            let r semantic.walk_operands(*bnd.operation, mode, offset)
-            if r.found
-                return r
-        }
-        ; Cursor on the binding NAME -> the binding item's inferred type.
+            set op_result: semantic.walk_operands(*bnd.operation, mode, offset)
         let bi bnd.binding_item
-        if bi.item_type <> null
+        if semantic.contains(bi.loc, offset)
         {
-            if semantic.contains(bi.loc, offset)
+            ; Cursor on the binding NAME -> the binding item's declared type.
+            if bi.item_type <> null
             {
                 let tn semantic.type_name(*bi.item_type)
                 if tn.get_length() > 0
-                    return ResolveResult(true, bi.loc.end - bi.loc.start, tn)
+                {
+                    let name_hit ResolveResult(true, bi.loc.end - bi.loc.start, tn)
+                    return semantic.tighter(op_result, name_hit)
+                }
+            }
+            ; An UNTYPED `let`/`var` records no item_type at all (measured:
+            ; `let own_page Page.get(this as pointer[void])` has item_type null),
+            ; and no initializer operand covers the name either — their spans
+            ; start at the initializer. Answer what the binding IS: the type its
+            ; initializer produces. Without this the cursor on the name has
+            ; nothing to match and falls through to the lexical hover, which can
+            ; only name the enclosing routine.
+            if op_result.found = false
+            {
+                let init_tn semantic.operation_type bnd
+                if init_tn.get_length() > 0
+                    return ResolveResult(true, bi.loc.end - bi.loc.start, init_tn)
             }
         }
-        semantic.none()
+        op_result
+    }
+
+    ; The type a binding's initializer produces: the LAST operand of the
+    ; operation sequence, read through operand_final_type# so a member chain
+    ; reports what the chain ends in rather than its receiver.
+    function operation_type(rp, bnd: PlannedBinding) returns String
+    {
+        if bnd.operation = null
+            return ""
+        let ops (*bnd.operation)
+        if ops.length = 0
+            return ""
+        let lp ops.get(ops.length - 1)
+        if lp = null
+            return ""
+        semantic.operand_final_type(*lp)
     }
 
     ; ====================================================================
@@ -498,11 +739,11 @@ define semantic
         var i: size_t 0
         while i < ops.length
         {
-            if result.found = false
+            let op ops.get i
+            if op <> null
             {
-                let op ops.get i
-                if op <> null
-                    set result: semantic.walk_operand(*op, mode, offset)
+                let r semantic.walk_operand(*op, mode, offset)
+                set result: semantic.tighter(result, r)
             }
             set i: i + 1
         }
@@ -518,11 +759,25 @@ define semantic
 
     function walk_operand(rp, op: PlannedOperand, mode: size_t, offset: size_t) returns ResolveResult
     {
-        ; Prune: children spans nest inside the operand's span.
-        if semantic.contains(op.loc, offset) = false
-            return semantic.none()
+        ; NO PRUNE. This used to return early unless the operand's own span
+        ; contained the offset, on the premise that "children spans nest inside
+        ; the operand's span" — and that premise is FALSE for planner operands.
+        ; They are not a containment hierarchy: an operand's span covers its own
+        ; tokens only, and its children lie BESIDE it. Measured 2026-08-12 in
+        ; containers/Vector.scaly line 73
+        ; (`set data: own_page.allocate(len * sizeof T, alignof T) as pointer[T]`):
+        ; the `As` operand spans 2333..2359 = the trailing `as pointer[T]`, while
+        ; its value — the whole call, and the `len` the cursor is on at 2311 —
+        ; sits before it; a Call operand's span likewise stops after the callee
+        ; name (`memset` = 2359..2366), leaving every argument outside. So the
+        ; prune cut the descent at the first non-containing link and the walk
+        ; never got below block/if level: hovering ANY token of that line
+        ; answered the enclosing block's type, `pointer`, all the way across.
+        ; Descend always; the operand's own type is offered only when its span
+        ; does contain the offset, and the smallest containing span still wins.
         let self_width op.loc.end - op.loc.start
         let child semantic.walk_expr(op.expr, mode, offset)
+        let self_covers semantic.contains(op.loc, offset)
         ; RECEIVER mode (completion): the innermost expression's OWN base type
         ; (ignoring member access / the enclosing call) — `g.member` reports
         ; g's type, not the member-access result.
@@ -530,16 +785,47 @@ define semantic
         {
             if child.found
                 return child
+            if self_covers = false
+                return semantic.none()
             let bt semantic.expr_type(op.expr, op.result_type)
             if bt.get_length() > 0
                 return ResolveResult(true, self_width, bt)
             return semantic.none()
         }
-        let self_type semantic.operand_final_type op
+        ; Not on this operand: only what lies below it can answer.
+        if self_covers = false
+            return child
+        ; A BLOCK is a statement wrapper, not an expression the cursor can be
+        ; "on" — only its statements can answer. The module header assumed a
+        ; block types as `void` and is dropped by type_name#, but a body block's
+        ; result_type is whatever the planner left there: the `init (len:
+        ; size_t)` body in containers/Vector.scaly carries `pointer[void]`, so
+        ; every offset no statement covered — a binding NAME, above all —
+        ; bubbled up and answered with it. Suppress it structurally instead of
+        ; relying on the type it happens to hold.
+        var self_type semantic.operand_final_type op
+        if semantic.is_block op.expr
+            set self_type: ""
         ; A strictly-tighter deeper match wins (genuine nesting f(g x)).
         if child.found
         {
             if child.width < self_width
+                return child
+        }
+        ; EQUAL-WIDTH TIE — two shapes share a span and want OPPOSITE answers:
+        ;   `own_page.allocate(…)`: the receiver operand carries the CALL's own
+        ;     span, and mode 0 reports what the call yields (the documented
+        ;     "call over its same-span receiver").
+        ;   `len > 0`: an OPERATOR call's span covers its LEFT operand's text
+        ;     ALONE — measured `    if len` = 2245..2254, with `>` and `0`
+        ;     outside it — so the tie is between the operator's `bool` and the
+        ;     operand the cursor is genuinely on, and hovering `len` answered
+        ;     `bool`.
+        ; PlannedCall.is_operator separates them exactly, which is why the tie
+        ; is broken on the CALL KIND and not on the span.
+        if child.found
+        {
+            if semantic.is_operator_call op.expr
                 return child
         }
         ; Otherwise this operand, when it has a usable (non-void) type. On an
@@ -608,6 +894,27 @@ define semantic
                 return semantic.walk_operand_opt(vc.value, mode, offset)
     }
 
+    ; Is this expression a plain statement block? (see walk_operand#)
+    function is_block(rp, expr: PlannedExpression) returns bool
+    {
+        choose expr
+            when b: Block
+                return true
+            else
+                return false
+    }
+
+    ; Is this expression a call of an OPERATOR (`>`, `+`, …) rather than of a
+    ; function or method? Breaks the equal-width tie in walk_operand#.
+    function is_operator_call(rp, expr: PlannedExpression) returns bool
+    {
+        choose expr
+            when c: Call
+                return c.is_operator
+            else
+                return false
+    }
+
     function walk_call(rp, c: PlannedCall, mode: size_t, offset: size_t) returns ResolveResult
     {
         if c.args <> null
@@ -624,14 +931,14 @@ define semantic
             var i: size_t 0
             while i < comps.length
             {
-                if result.found = false
+                let cp comps.get i
+                if cp <> null
                 {
-                    let cp comps.get i
-                    if cp <> null
+                    let comp (*cp)
+                    if comp.value <> null
                     {
-                        let comp (*cp)
-                        if comp.value <> null
-                            set result: semantic.walk_operands(*comp.value, mode, offset)
+                        let r semantic.walk_operands(*comp.value, mode, offset)
+                        set result: semantic.tighter(result, r)
                     }
                 }
                 set i: i + 1
@@ -652,15 +959,15 @@ define semantic
         var result semantic.none()
         if iff.condition <> null
             set result: semantic.walk_operands(*iff.condition, mode, offset)
-        if result.found = false
+        if iff.consequent <> null
         {
-            if iff.consequent <> null
-                set result: semantic.walk_statement(*iff.consequent, mode, offset)
+            let c semantic.walk_statement(*iff.consequent, mode, offset)
+            set result: semantic.tighter(result, c)
         }
-        if result.found = false
+        if iff.alternative <> null
         {
-            if iff.alternative <> null
-                set result: semantic.walk_statement(*iff.alternative, mode, offset)
+            let a semantic.walk_statement(*iff.alternative, mode, offset)
+            set result: semantic.tighter(result, a)
         }
         result
     }
@@ -670,32 +977,29 @@ define semantic
         var result semantic.none()
         if m.condition <> null
             set result: semantic.walk_operands(*m.condition, mode, offset)
-        if result.found = false
+        if m.branches <> null
         {
-            if m.branches <> null
+            let brs (*m.branches)
+            var i: size_t 0
+            while i < brs.length
             {
-                let brs (*m.branches)
-                var i: size_t 0
-                while i < brs.length
+                let bp brs.get i
+                if bp <> null
                 {
-                    if result.found = false
+                    let br (*bp)
+                    if br.consequent <> null
                     {
-                        let bp brs.get i
-                        if bp <> null
-                        {
-                            let br (*bp)
-                            if br.consequent <> null
-                                set result: semantic.walk_statement(*br.consequent, mode, offset)
-                        }
+                        let r semantic.walk_statement(*br.consequent, mode, offset)
+                        set result: semantic.tighter(result, r)
                     }
-                    set i: i + 1
                 }
+                set i: i + 1
             }
         }
-        if result.found = false
+        if m.alternative <> null
         {
-            if m.alternative <> null
-                set result: semantic.walk_statement(*m.alternative, mode, offset)
+            let a semantic.walk_statement(*m.alternative, mode, offset)
+            set result: semantic.tighter(result, a)
         }
         result
     }
@@ -705,32 +1009,29 @@ define semantic
         var result semantic.none()
         if ch.condition <> null
             set result: semantic.walk_operands(*ch.condition, mode, offset)
-        if result.found = false
+        if ch.cases <> null
         {
-            if ch.cases <> null
+            let cs (*ch.cases)
+            var i: size_t 0
+            while i < cs.length
             {
-                let cs (*ch.cases)
-                var i: size_t 0
-                while i < cs.length
+                let wp cs.get i
+                if wp <> null
                 {
-                    if result.found = false
+                    let wh (*wp)
+                    if wh.consequent <> null
                     {
-                        let wp cs.get i
-                        if wp <> null
-                        {
-                            let wh (*wp)
-                            if wh.consequent <> null
-                                set result: semantic.walk_statement(*wh.consequent, mode, offset)
-                        }
+                        let r semantic.walk_statement(*wh.consequent, mode, offset)
+                        set result: semantic.tighter(result, r)
                     }
-                    set i: i + 1
                 }
+                set i: i + 1
             }
         }
-        if result.found = false
+        if ch.alternative <> null
         {
-            if ch.alternative <> null
-                set result: semantic.walk_statement(*ch.alternative, mode, offset)
+            let a semantic.walk_statement(*ch.alternative, mode, offset)
+            set result: semantic.tighter(result, a)
         }
         result
     }
@@ -740,48 +1041,43 @@ define semantic
         var result semantic.none()
         if fr.expr <> null
             set result: semantic.walk_operands(*fr.expr, mode, offset)
-        if result.found = false
-            set result: semantic.walk_action(fr.body, mode, offset)
-        result
+        let body semantic.walk_action(fr.body, mode, offset)
+        semantic.tighter(result, body)
     }
 
     function walk_while(rp, wh: PlannedWhile, mode: size_t, offset: size_t) returns ResolveResult
     {
-        var result semantic.walk_binding(wh.cond, mode, offset)
-        if result.found = false
-            set result: semantic.walk_action(wh.body, mode, offset)
-        result
+        let cond semantic.walk_binding(wh.cond, mode, offset)
+        let body semantic.walk_action(wh.body, mode, offset)
+        semantic.tighter(cond, body)
     }
 
     function walk_try(rp, tr: PlannedTry, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.walk_binding(tr.cond, mode, offset)
-        if result.found = false
+        if tr.catches <> null
         {
-            if tr.catches <> null
+            let cs (*tr.catches)
+            var i: size_t 0
+            while i < cs.length
             {
-                let cs (*tr.catches)
-                var i: size_t 0
-                while i < cs.length
+                let wp cs.get i
+                if wp <> null
                 {
-                    if result.found = false
+                    let wh (*wp)
+                    if wh.consequent <> null
                     {
-                        let wp cs.get i
-                        if wp <> null
-                        {
-                            let wh (*wp)
-                            if wh.consequent <> null
-                                set result: semantic.walk_statement(*wh.consequent, mode, offset)
-                        }
+                        let r semantic.walk_statement(*wh.consequent, mode, offset)
+                        set result: semantic.tighter(result, r)
                     }
-                    set i: i + 1
                 }
+                set i: i + 1
             }
         }
-        if result.found = false
+        if tr.alternative <> null
         {
-            if tr.alternative <> null
-                set result: semantic.walk_statement(*tr.alternative, mode, offset)
+            let a semantic.walk_statement(*tr.alternative, mode, offset)
+            set result: semantic.tighter(result, a)
         }
         result
     }
@@ -847,6 +1143,14 @@ define semantic
     ; report "void", masking the lexical fallback. Suppressing a type variable
     ; (a generic param `T` the planner left unsubstituted) avoids a meaningless
     ; `: T` hint.
+    ;
+    ; `pt.name` is the BARE name — the resolved generic arguments sit beside it
+    ; in `pt.generics`, so reading the field alone reported `pointer` for a
+    ; `pointer[Page]` and `Vector` for a `Vector[int]`, i.e. it dropped exactly
+    ; the part a hover is asked for. Planner.get_readable_name# is the
+    ; compiler's own renderer for this (the DWARF type names go through it) and
+    ; recurses into nested arguments; the emptiness tests stay on `pt.name`,
+    ; which is what they were written against.
     function type_name(rp, pt: PlannedType) returns String
     {
         if pt.variable <> null
@@ -855,6 +1159,6 @@ define semantic
             return ""
         if pt.name = "void"
             return ""
-        String(pt.name)
+        Planner.get_readable_name pt
     }
 }
