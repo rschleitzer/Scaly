@@ -1204,6 +1204,84 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp this-receiver in a package module"; else bad "lsp this-receiver in a package module"; fi
 
+# ---- mid-edit: an unfinished line must not take the whole file down --------
+# Every walk in symbols.scaly starts with parse_program# and answers ""/"[]" on
+# Error, so ONE half-typed line killed every parse-based answer in the document —
+# and typing is exactly when they are wanted. Measured with `set this.` typed
+# into a method body: documentSymbol 0, foldingRange 0, hover null, definition
+# null, completion 0, on healthy lines far from the edit too.
+#
+# symbols.repaired_source# blanks the line the parse error points at (bytes ->
+# spaces, so every offset still indexes the same byte) and re-parses. The last
+# two checks are the guards that matter: the repair must NOT reach diagnostics
+# (the parse error IS that answer), and completion must still see the RAW line —
+# the receiver being typed lives on the very line the repair blanks.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("define Point\n(\n    x: int\n)\n{\n"
+       "    function get_x(this: Point) returns int\n    {\n"
+       "        set this.\n"                     # line 7: unfinished
+       "        return x\n    }\n}\n")
+path = "/tmp/lsp_midedit_test.scaly"
+open(path, "w").write(src)
+uri = "file://" + path
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def req(idn, method, params):
+    return frame({"jsonrpc":"2.0","id":idn,"method":method,"params":params})
+lines = src.split("\n")
+bl = next(i for i, l in enumerate(lines) if l.strip() == "set this.")
+bc = len(lines[bl])                                  # cursor right after the dot
+gl = next(i for i, l in enumerate(lines) if "function get_x" in l)
+gc = lines[gl].index("get_x") + 1
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+inp += req(2, "textDocument/documentSymbol", {"textDocument":{"uri":uri}})
+inp += req(3, "textDocument/foldingRange",   {"textDocument":{"uri":uri}})
+inp += req(4, "textDocument/hover",          {"textDocument":{"uri":uri},
+                                              "position":{"line":gl,"character":gc}})
+inp += req(5, "textDocument/completion",     {"textDocument":{"uri":uri},
+                                              "position":{"line":bl,"character":bc}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+
+syms = res(2) or []
+check([s["name"] for s in syms] == ["Point"], "documentSymbol survives an unfinished line")
+check(len(res(3) or []) > 0, "foldingRange survives an unfinished line")
+hv = res(4)
+check(hv is not None and hv.get("contents", {}).get("value") == "method get_x(this: Point) returns int",
+      "hover survives an unfinished line")
+labels = [it["label"] for it in (res(5) or [])]
+check(labels == ["x","get_x"], "completion at `set this.|` -> the enclosing concept's members")
+diags = next((f["params"]["diagnostics"] for f in frames
+              if f.get("method") == "textDocument/publishDiagnostics"), None)
+check(diags is not None and len(diags) == 1,
+      "diagnostics still REPORT the parse error (not repaired away)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp mid-edit parse repair"; else bad "lsp mid-edit parse repair"; fi
+
 # ---- cross-file go-to-definition (workspace) ----
 # When the cursor identifier is not declared in the current file, the worker
 # enumerates sibling .scaly files (via `find`) and returns the declaration

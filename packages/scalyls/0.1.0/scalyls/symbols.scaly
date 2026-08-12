@@ -2499,7 +2499,14 @@ define symbols
     ; ====================================================================
 
     ; Decide member-context vs flat completion from the packed cursor position.
-    function completion_packed(rp, source: String, uri: String, packed: String) returns String
+    ;
+    ; TWO texts, and which one each lookup gets is load-bearing (see
+    ; repaired_source#): `source` is the RAW buffer, the only place the receiver
+    ; being typed exists, and every byte scan here reads it; `parse_source` is the
+    ; repaired copy, and every lookup that PARSES reads that one, or a single
+    ; unfinished line answers nothing at all. Blanking preserves length, so one
+    ; cursor offset is valid in both.
+    function completion_packed(rp, source: String, parse_source: String, uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -2532,14 +2539,14 @@ define symbols
         if chain.get_length() > 0
             if symbols.has_dot(chain)
             {
-                let ctype symbols.resolve_chain_type(source, uri, chain)
+                let ctype symbols.resolve_chain_type(parse_source, uri, chain)
                 if ctype.get_length() > 0
                 {
-                    let cmem symbols.members_for_type(source, uri, ctype)
+                    let cmem symbols.members_for_type(parse_source, uri, ctype)
                     if cmem.get_length() > 0
                         return cmem
                 }
-                return symbols.completion_items source
+                return symbols.completion_items parse_source
             }
 
         let receiver symbols.receiver_before_cursor(source, offset)
@@ -2547,7 +2554,7 @@ define symbols
         {
             ; Case 1: the receiver token itself names a declared concept in this
             ; file (Type. / namespace. / union.) -> that concept's members.
-            let direct symbols.member_completions(source, receiver)
+            let direct symbols.member_completions(parse_source, receiver)
             if direct.get_length() > 0
                 return direct
 
@@ -2568,10 +2575,10 @@ define symbols
             let kw_this "this"
             if receiver = kw_this
             {
-                let this_type symbols.enclosing_concept_name(source, offset)
+                let this_type symbols.enclosing_concept_name(parse_source, offset)
                 if this_type.get_length() > 0
                 {
-                    let tmem symbols.members_for_type(source, uri, this_type)
+                    let tmem symbols.members_for_type(parse_source, uri, this_type)
                     if tmem.get_length() > 0
                         return tmem
                 }
@@ -2600,13 +2607,13 @@ define symbols
             ; below, exactly as before.
             if tname.get_length() = 0
             {
-                let own_type symbols.enclosing_concept_name(source, offset)
+                let own_type symbols.enclosing_concept_name(parse_source, offset)
                 if own_type.get_length() > 0
                 {
-                    let ftype symbols.member_type(source, own_type, receiver)
+                    let ftype symbols.member_type(parse_source, own_type, receiver)
                     if ftype.get_length() > 0
                     {
-                        let fmem symbols.member_completions(source, ftype)
+                        let fmem symbols.member_completions(parse_source, ftype)
                         if fmem.get_length() > 0
                             return fmem
                     }
@@ -2622,11 +2629,11 @@ define symbols
             let recv_off symbols.receiver_last_offset(source, offset)
             if recv_off < source.get_length()
             {
-                let stype semantic.receiver_type_at_offset(source, uri, recv_off)
+                let stype semantic.receiver_type_at_offset(parse_source, uri, recv_off)
                 if stype.get_length() > 0
                 {
                     let sbase symbols.simple_base_name stype
-                    let smem symbols.members_for_type(source, uri, sbase)
+                    let smem symbols.members_for_type(parse_source, uri, sbase)
                     if smem.get_length() > 0
                         return smem
                 }
@@ -2636,16 +2643,16 @@ define symbols
             ; .scaly files in the dir tree).
             if tname.get_length() > 0
             {
-                let mem symbols.members_for_type(source, uri, tname)
+                let mem symbols.members_for_type(parse_source, uri, tname)
                 if mem.get_length() > 0
                     return mem
                 ; The receiver was bound from a CALL (`let r foo(x)`): the lexical
                 ; resolver returns the callee name, which is a function, not a
                 ; concept. Use the function's declared return type instead.
-                let rt symbols.function_return_type_ws(source, uri, tname)
+                let rt symbols.function_return_type_ws(parse_source, uri, tname)
                 if rt.get_length() > 0
                 {
-                    let rmem symbols.members_for_type(source, uri, rt)
+                    let rmem symbols.members_for_type(parse_source, uri, rt)
                     if rmem.get_length() > 0
                         return rmem
                 }
@@ -2657,7 +2664,125 @@ define symbols
             if xpkg.get_length() > 0
                 return xpkg
         }
-        symbols.completion_items source
+        symbols.completion_items parse_source
+    }
+
+    ; ====================================================================
+    ; Parse repair for the read-only requests
+    ;
+    ; Every walk in this file starts with parse_program# and answers ""/"[]" on
+    ; Error, so ONE unfinished line takes the WHOLE document down — and mid-edit
+    ; is the normal state of a buffer, i.e. exactly when these are asked for.
+    ; Measured 2026-08-12 with `        set this.` typed into a method body of
+    ; opensp/ContentState.scaly: documentSymbol 0, foldingRange 0, inlayHint 0,
+    ; and hover / definition / signatureHelp / completion all null — the hover and
+    ; definition probes were on a HEALTHY line far from the edit. Only
+    ; references / documentHighlight / semanticTokens survived, being byte scans.
+    ;
+    ; The repair blanks the line the parse error points at — its bytes become
+    ; SPACES, so the length is preserved and every offset in the document still
+    ; indexes the same byte (the walks, the syntax spans and position_to_offset#
+    ; all agree with the caller's cursor) — and re-parses.
+    ;
+    ; It needs no cursor, because the error offset lands ON the offending line
+    ; (measured: "expected identifier" at the typed line, character 12). That is
+    ; what lets documentSymbol and foldingRange, which carry no position at all,
+    ; be repaired by the same code.
+    ;
+    ; Bounded to TWO blanked lines: a repair is a guess, and a file broken in
+    ; more places than that is more honestly answered by the empty result than by
+    ; a document with its lines erased one by one.
+    ;
+    ; NOT for everyone: diagnostics keep the raw text (the parse error IS the
+    ; answer), rename / prepareRename rewrite the real buffer, and semanticTokens
+    ; is a lexer pass that already works — repairing it would blank a line's
+    ; colours. And the completion path must keep the RAW buffer for its byte
+    ; scans: the receiver it needs is the one being typed, on the very line this
+    ; blanks, which is why completion_packed# takes both texts.
+    ; ====================================================================
+
+    ; `source` when it parses; else a copy with the offending line (or two)
+    ; blanked out, if that parses; else `source` unchanged.
+    function repaired_source(rp, source: String) returns String
+    {
+        var current source
+        var rounds: size_t 0
+        while rounds < 3
+        {
+            let off symbols.parse_error_offset current
+            if off > current.get_length()
+                return current
+            if rounds = 2
+                return source
+            set current: symbols.blank_line_at(current, off)
+            set rounds: rounds + 1
+        }
+        source
+    }
+
+    ; The byte offset the parser stopped at, or a value PAST the end when the
+    ; source parses. A `Different` error carries no offset — the construct was
+    ; not recognised at all — and answers "no repair" rather than have
+    ; blank_line_at# guess a line.
+    function parse_error_offset(rp, source: String) returns size_t
+    {
+        let no_error source.get_length() + 1
+        var p parser.Parser(source)
+        choose p.parse_program()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        return i.start
+                    when d: Different
+                        return no_error
+            }
+            when program: Success
+                return no_error
+        no_error
+    }
+
+    ; `source` with the bytes of the line containing `offset` replaced by spaces
+    ; (the LF is kept). Length-preserving by construction — that is the whole
+    ; point, see the note above.
+    function blank_line_at(rp, source: String, offset: size_t) returns String
+    {
+        let len source.get_length()
+        var start: size_t 0
+        var i: size_t 0
+        while i < offset
+        {
+            if i >= len
+                break
+            if source.get(i) = ("\n" as char)
+                set start: i + 1
+            set i: i + 1
+        }
+        var end start
+        while end < len
+        {
+            if source.get(end) = ("\n" as char)
+                break
+            set end: end + 1
+        }
+        var sb StringBuilder()
+        var k: size_t 0
+        while k < start
+        {
+            sb.append(source.get(k) as char)
+            set k: k + 1
+        }
+        while k < end
+        {
+            sb.append(" " as char)
+            set k: k + 1
+        }
+        while k < len
+        {
+            sb.append(source.get(k) as char)
+            set k: k + 1
+        }
+        sb.to_string()
     }
 
     ; The name of the innermost `define` whose [start,end) contains `offset`, or

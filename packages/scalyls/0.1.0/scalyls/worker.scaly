@@ -180,10 +180,21 @@ define worker
         if source.get_length() = 0
             set source: File.read_to_string(path)
 
+        ; PARSE REPAIR (symbols.repaired_source#): every parse-based walk answers
+        ; nothing on a source that does not parse, so ONE unfinished line — the
+        ; normal state of a buffer being typed into — took documentSymbol,
+        ; foldingRange, inlayHint, hover, definition, signatureHelp and completion
+        ; down together, on healthy lines too. Each read-only branch below repairs
+        ; its own copy; the ones NOT repaired are deliberate: "d" diagnostics (the
+        ; parse error IS the answer), "n"/"p" rename (they rewrite the real
+        ; buffer), "t" semanticTokens (a lexer pass that already works — blanking
+        ; a line would take its colours), and "r"/"l" references/highlight (byte
+        ; scans, measured working mid-edit).
+
         ; documentSymbol: outline of the resolved source.
         if kind = "s"
         {
-            rpc.write_message_fd(out_fd, symbols.document_symbols(source))
+            rpc.write_message_fd(out_fd, symbols.document_symbols(symbols.repaired_source(source)))
             return true
         }
 
@@ -192,14 +203,14 @@ define worker
         ; all-names list (the editor prefix-filters either way).
         if kind = "c"
         {
-            rpc.write_message_fd(out_fd, symbols.completion_packed(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.completion_packed(source, symbols.repaired_source(source), uri, position))
             return true
         }
 
         ; hover: symbol under the packed "<line> <char>" cursor position.
         if kind = "h"
         {
-            rpc.write_message_fd(out_fd, symbols.hover_packed(source, position))
+            rpc.write_message_fd(out_fd, symbols.hover_packed(symbols.repaired_source(source), position))
             return true
         }
 
@@ -208,7 +219,7 @@ define worker
         ; sibling .scaly files in the same directory tree (cross-file).
         if kind = "g"
         {
-            rpc.write_message_fd(out_fd, symbols.definition_workspace_packed(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.definition_workspace_packed(symbols.repaired_source(source), uri, position))
             return true
         }
 
@@ -246,7 +257,7 @@ define worker
         ; signatureHelp: the parameter list of the call enclosing the cursor.
         if kind = "f"
         {
-            rpc.write_message_fd(out_fd, symbols.signature_packed(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.signature_packed(symbols.repaired_source(source), uri, position))
             return true
         }
 
@@ -254,7 +265,7 @@ define worker
         ; "<sl> <sc> <el> <ec>" range.
         if kind = "y"
         {
-            rpc.write_message_fd(out_fd, symbols.inlay_hints_packed(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.inlay_hints_packed(symbols.repaired_source(source), uri, position))
             return true
         }
 
@@ -262,7 +273,7 @@ define worker
         ; no position).
         if kind = "o"
         {
-            rpc.write_message_fd(out_fd, symbols.folding_ranges(source))
+            rpc.write_message_fd(out_fd, symbols.folding_ranges(symbols.repaired_source(source)))
             return true
         }
 
@@ -281,7 +292,7 @@ define worker
         ; the server falls back to the lexical hover on an empty reply.
         if kind = "x"
         {
-            rpc.write_message_fd(out_fd, semantic.semantic_type_framed(source, uri, position))
+            rpc.write_message_fd(out_fd, semantic.semantic_type_framed(symbols.repaired_source(source), uri, position))
             return true
         }
 
