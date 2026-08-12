@@ -464,6 +464,88 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp references"; else bad "lsp references"; fi
 
+# ---- references/rename: what the scan must and must not see ----
+# The scan behind references and rename is lexical, so its whole value is in
+# what it EXCLUDES. Four properties, each of which was once wrong:
+#   * a `set NAME:` assignment target is a WRITE, not a binding — reading it as
+#     one made the whole routine count as shadowing NAME, and every write site
+#     of a `mutable` global silently vanished from references AND rename (F2
+#     renamed the declaration and left the assignments behind = broken code)
+#   * `for NAME in ...` DOES bind NAME, so an unrelated loop variable must not
+#     be renamed along with a module-wide name
+#   * `let NAME` shadows (Step 38, already covered above — pinned here too so
+#     the two directions are read together)
+#   * comments and string literals are never occurrences
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("; counter is mentioned in this comment\n"          # 0
+       "mutable counter: int 0\n"                          # 1
+       "\n"
+       "function bump() returns int\n"                     # 3
+       "{\n"
+       "    set counter: counter + 1\n"                    # 5
+       "    counter\n"                                     # 6
+       "}\n"
+       "\n"
+       "function noise() returns int\n"                    # 9
+       "{\n"
+       "    let s \"counter in a string\"\n"               # 11
+       "    var total: int 0\n"
+       "    for counter in 3\n"                            # 13
+       "        set total: total + counter\n"              # 14
+       "    total\n"
+       "}\n"
+       "\n"
+       "function shadowed() returns int\n"                 # 18
+       "{\n"
+       "    let counter 7\n"                               # 20
+       "    counter\n"                                     # 21
+       "}\n")
+path = "/tmp/lsp_scan_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+uri = "file://"+path
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{
+        "textDocument":{"uri":uri},"position":{"line":1,"character":8},
+        "context":{"includeDeclaration":True}}})
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/rename","params":{
+        "textDocument":{"uri":uri},"position":{"line":1,"character":8},"newName":"tally"}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return None if f is None else f.get("result")
+lines = sorted(l["range"]["start"]["line"] for l in (res(2) or []))
+check(lines == [1, 5, 5, 6], "references -> decl + both `set` occurrences + the read")
+check(0 not in lines, "the comment mentioning `counter` is not an occurrence")
+check(11 not in lines, "`counter` inside a string literal is not an occurrence")
+check(13 not in lines and 14 not in lines, "`for counter in` binds: the loop var is excluded")
+check(20 not in lines and 21 not in lines, "`let counter` shadows: that routine is excluded")
+edits = (res(3) or {}).get("changes", {}).get(uri, [])
+check(len(edits) == 4, "rename edits exactly the 4 real occurrences")
+check(all(e["newText"] == "tally" for e in edits), "each edit carries the new name")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp reference scan boundaries"; else bad "lsp reference scan boundaries"; fi
+
 # ---- documentHighlight: occurrences in the current document (no uri) ----
 # Same lexical scan as references, but each result is a range-only
 # DocumentHighlight (the editor knows the current document).

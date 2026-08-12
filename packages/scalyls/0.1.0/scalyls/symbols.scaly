@@ -7225,11 +7225,12 @@ define symbols
     ;
     ; Extract the identifier under the cursor and return an LSP Location[]
     ; for EVERY whole-token occurrence of that identifier in the document.
-    ; This is a purely LEXICAL scan — no parse tree, no scope resolution — so
-    ; it matches the name wherever it appears as a complete identifier token
-    ; (declarations and all uses, including unrelated same-named locals; it
-    ; does NOT look inside comments only in the sense that a `;`-comment's text
-    ; is still scanned — a known limitation of the naive approach). The result
+    ; This is a LEXICAL scan — no type resolution — but not a naive one:
+    ; comments and string literals are skipped wholesale (is_noncode_start#),
+    ; a local/parameter is confined to its declaring routine, and a
+    ; module-wide name skips any routine that binds it locally (shadow
+    ; exclusion, below). What remains unresolved is the TYPE: two same-named
+    ; members of different concepts are one name to this scan. The result
     ; is the bare JSON array `[ <location>... ]`; the server wraps it in a
     ; Response envelope. No identifier under the cursor -> `[]`.
     ;
@@ -7442,12 +7443,15 @@ define symbols
     ; one `scope_table#` parse, params from its P records, `let`/`var` locals
     ; from a lexical sub-scan of each routine range. A cheap byte pre-gate
     ; (`has_local_binding_candidate`) skips the parse for the common file that
-    ; cannot bind N at all. Residual limit: a `when`/`for`-pattern binding of N
-    ; (not `let`/`var`/param) is not detected, so such a routine is NOT skipped.
+    ; cannot bind N at all. Binders recognised: `let`/`var`/`for`, a parameter
+    ; `N: T` and a `when N: T` pattern. Residual limit: a lambda parameter
+    ; (`\N y: ...`) is not detected, so such a routine is NOT skipped.
 
-    ; True when source[k,j) is the keyword `let` or `var` (byte compare, no
-    ; allocation — usable from a non-# scanner).
-    function token_is_decl_kw(source: String, k: size_t, j: size_t) returns bool
+    ; True when source[k,j) is a keyword that BINDS the token following it:
+    ; `let`, `var` or `for` (`for name in seq` binds `name` for the loop body —
+    ; without it a module-wide rename rewrote unrelated loop variables). Byte
+    ; compare, no allocation — usable from a non-# scanner.
+    function token_is_binder_kw(source: String, k: size_t, j: size_t) returns bool
     {
         if (j - k) <> 3
             return false
@@ -7462,22 +7466,77 @@ define symbols
             if c1 = 0x61                 ; 'a'
                 if c2 = 0x72             ; 'r'
                     return true
+        if c0 = 0x66                     ; 'f'
+            if c1 = 0x6F                 ; 'o'
+                if c2 = 0x72             ; 'r'
+                    return true
+        false
+    }
+
+    ; True when source[k,j) is the keyword `set`. `set name: value` WRITES an
+    ; already-bound name, so the `name:` after it is not a binding — see the
+    ; colon rule in range_binds_name#.
+    function token_is_set_kw(source: String, k: size_t, j: size_t) returns bool
+    {
+        if (j - k) <> 3
+            return false
+        let c0 source.get k
+        let c1 source.get(k + 1)
+        let c2 source.get(k + 2)
+        if c0 = 0x73                     ; 's'
+            if c1 = 0x65                 ; 'e'
+                if c2 = 0x74             ; 't'
+                    return true
+        false
+    }
+
+    ; True when the token starting at `k` is reached through a member access —
+    ; the nearest non-blank byte before it is a `.`. `set r.field: v` writes a
+    ; FIELD, so `field:` there is not a binding of `field` either.
+    function preceded_by_dot(source: String, k: size_t) returns bool
+    {
+        var p k
+        while p > 0
+        {
+            let pc source.get(p - 1)
+            if pc = 0x20
+            {
+                set p: p - 1
+                continue
+            }
+            if pc = 0x09
+            {
+                set p: p - 1
+                continue
+            }
+            if pc = 0x2E                 ; '.'
+                return true
+            return false
+        }
         false
     }
 
     ; True when `name` is bound as a local within the byte range [lo,hi): it
-    ; occurs as a whole token either right after a `let`/`var` keyword OR
+    ; occurs as a whole token either right after a `let`/`var`/`for` keyword OR
     ; immediately followed (past spaces/tabs) by a `:` (a parameter `name: T`, a
-    ; `set name:` target, a `when name:` pattern, etc.). Comments/strings are
-    ; skipped. The colon form over-approximates in the SAFE direction (a stray
-    ; `name:` only causes a routine to be skipped, never an unrelated rename).
+    ; `when name:` pattern). Comments/strings are skipped.
+    ;
+    ; The colon form used to include a `set name:` ASSIGNMENT target, on the
+    ; argument that over-approximating only skips a routine and never renames
+    ; something unrelated. That argument is wrong in the other direction: a
+    ; skipped routine drops its occurrences from references AND rename, so a
+    ; `mutable` global — the very shape that carries `set NAME:` — lost every
+    ; write site, and F2 renamed the declaration while leaving the assignments
+    ; behind. A partial rename is broken code, so the assignment target and the
+    ; `set r.field:` member write are both excluded now.
     function range_binds_name(source: String, name: String, lo: size_t, hi: size_t) returns bool
     {
         let len source.get_length()
         var bound hi
         if bound > len
             set bound: len
-        var prev_is_decl false
+        var prev_is_binder false
+        var prev_is_set false
         var k lo
         while k < bound
         {
@@ -7501,29 +7560,39 @@ define symbols
             }
             if symbols.token_equals(source, k, j, name)
             {
-                if prev_is_decl
+                if prev_is_binder
                     return true
-                var p j
-                while p < len
+                ; `set name:` / `set r.name:` write an already-bound name.
+                var colon_binds true
+                if prev_is_set
+                    set colon_binds: false
+                if symbols.preceded_by_dot(source, k)
+                    set colon_binds: false
+                if colon_binds
                 {
-                    let pc source.get p
-                    if pc = 0x20
+                    var p j
+                    while p < len
                     {
-                        set p: p + 1
-                        continue
+                        let pc source.get p
+                        if pc = 0x20
+                        {
+                            set p: p + 1
+                            continue
+                        }
+                        if pc = 0x09
+                        {
+                            set p: p + 1
+                            continue
+                        }
+                        break
                     }
-                    if pc = 0x09
-                    {
-                        set p: p + 1
-                        continue
-                    }
-                    break
+                    if p < len
+                        if source.get(p) = 0x3A    ; ':'
+                            return true
                 }
-                if p < len
-                    if source.get(p) = 0x3A    ; ':'
-                        return true
             }
-            set prev_is_decl: symbols.token_is_decl_kw(source, k, j)
+            set prev_is_binder: symbols.token_is_binder_kw(source, k, j)
+            set prev_is_set: symbols.token_is_set_kw(source, k, j)
             set k: j
         }
         false
@@ -8358,11 +8427,12 @@ define symbols
     ; identifier under the cursor and rewrite EVERY whole-token occurrence of
     ; it in the document to the new name. The result is an LSP WorkspaceEdit
     ; ({"changes":{"<uri>":[ <TextEdit>... ]}}), each TextEdit replacing one
-    ; token span with the new name. Like references this is purely lexical —
-    ; no scope resolution — so it renames the name wherever it appears as a
-    ; complete identifier (including unrelated same-named locals and comment
-    ; text), a known limitation of the naive approach. No identifier under the
-    ; cursor (or an empty new name) -> "" (the server maps "" to result:null).
+    ; token span with the new name. It inherits references' scan and therefore
+    ; its guarantees: comments and string literals are never rewritten, a local
+    ; stays inside its routine, and a routine that binds the name locally is
+    ; skipped. It also inherits the one open limit — no TYPE resolution, so
+    ; same-named members of different concepts rename together. No identifier
+    ; under the cursor (or an empty new name) -> "" (server maps "" to null).
     ;
     ; prepareRename returns just the Range of the identifier under the cursor
     ; so the editor can pre-fill + validate the rename box; "" when the cursor
