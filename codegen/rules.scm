@@ -18,6 +18,9 @@
         (file "editors/vscode/syntaxes/scaly.tmLanguage.json"
             (generate-textmate)
         )
+        (file "editors/vscode/language-configuration.json"
+            (generate-language-configuration)
+        )
     )
 )
 ]]>

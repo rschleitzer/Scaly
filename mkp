@@ -23,6 +23,7 @@ GENERATED=(
     packages/scalyc/0.1.0/scalyc/compiler/parser.scaly
     packages/scalyls/0.1.0/scalyls/grammar.scaly
     editors/vscode/syntaxes/scaly.tmLanguage.json
+    editors/vscode/language-configuration.json
 )
 
 SNAP=$(mktemp -d)

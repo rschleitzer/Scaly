@@ -55,12 +55,15 @@ run_case codegen/test-choose.dsl tests/choose.sgm \
 # parser.scaly fails to compile, a wrong grammar.scaly fails the LSP suite,
 # but a wrong syntax-highlighting table is only ever seen by a human in an
 # editor. **An output whose only consumer is a person needs a byte gate more
-# than the others, not less.**
+# than the others, not less.** language-configuration.json joined as the FIFTH
+# output for that same reason: it is read by the editor alone, and a broken
+# wordPattern degrades double-click and rename quietly rather than loudly.
 run_case codegen/scaly.dsl scaly.sgm \
   packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly \
   packages/scalyc/0.1.0/scalyc/compiler/parser.scaly \
   packages/scalyls/0.1.0/scalyls/grammar.scaly \
-  editors/vscode/syntaxes/scaly.tmLanguage.json || fail=1
+  editors/vscode/syntaxes/scaly.tmLanguage.json \
+  editors/vscode/language-configuration.json || fail=1
 run_case codegen/test-expressions.dsl tests/expressions.sgm \
   docs/scaly/generated-expressions.xml tests/selfhosted/expressions__*.scaly || fail=1
 run_case codegen/test-definitions.dsl tests/definitions.sgm \
