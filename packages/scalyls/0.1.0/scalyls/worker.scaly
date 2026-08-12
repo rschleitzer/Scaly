@@ -119,6 +119,26 @@ mutable worker_out: int 0      ; worker -> parent  (read end)
 
 define worker
 {
+    ; True when the CLIENT has already sent more input: a poll of stdin with a
+    ; ZERO timeout, so it never blocks. server.process_one# asks before running
+    ; the diagnostics it owes, which is what turns one analysis per keystroke
+    ; into one per typing burst (docstore.mark_dirty# has the measurement).
+    ;
+    ; It lives HERE because `poll` / `pollfd` / `POLLIN` are declared in this
+    ; module for the worker pipes, and a C symbol gets ONE declaration per tree —
+    ; two that disagree is precisely what tests/abi/run.sh check 3 exists to
+    ; catch. The answer is exact rather than approximate because rpc.read_byte#
+    ; reads stdin with a raw one-byte `read`, unbuffered: nothing can be sitting
+    ; in a userspace buffer where a poll of the fd would not see it.
+    function stdin_has_input() returns bool
+    {
+        var pfd pollfd(0 as i32, POLLIN, 0)
+        let pr poll(&pfd, 1 as u64, 0 as i32)
+        if pr > 0
+            return true
+        false
+    }
+
     ; ====================================================================
     ; Child side: read framed {uri,text} requests, emit framed payloads.
     ; ====================================================================

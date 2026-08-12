@@ -35,7 +35,8 @@ function malloc(size: size_t) returns pointer[void] extern
 define DOC_CAP int 256
 
 ; One tracked document: malloc'd uri + text byte copies (NOT page-owned).
-; `used` marks a live slot.
+; `used` marks a live slot; `dirty` marks a buffer whose diagnostics run is
+; still owed (see server.flush_dirty#).
 define DocSlot
 (
     uri_data:  pointer[u8]
@@ -43,6 +44,7 @@ define DocSlot
     text_data: pointer[u8]
     text_len:  size_t
     used:      bool
+    dirty:     bool
 )
 
 ; The slot array, lazily malloc'd. null until the first store access.
@@ -103,6 +105,7 @@ define docstore
             {
                 let s doc_slots + i
                 set s.used: false
+                set s.dirty: false
                 set s.uri_data: null
                 set s.uri_len: 0
                 set s.text_data: null
@@ -204,6 +207,7 @@ define docstore
                 docstore.set_uri(s, uri)
                 docstore.set_text(s, text)
                 set s.used: true
+                set s.dirty: false
                 return
             }
             set i: i + 1
@@ -227,7 +231,58 @@ define docstore
             set s.uri_data: null
             set s.uri_len: 0
             set s.used: false
+            set s.dirty: false
         }
+    }
+
+    ; Mark `uri`'s buffer as owing a diagnostics run. Set on didOpen/didChange
+    ; instead of analysing there: an analysis is a whole modeler+planner pass
+    ; over the package root (measured ~1-2 s on opensp/ContentState.scaly), the
+    ; server is single-threaded, and the editor sends ONE didChange PER
+    ; KEYSTROKE — so analysing on the spot put a second of work in front of every
+    ; request that followed. Typing `set this.` (17 keystrokes) queued 19 analysis
+    ; runs and the completion answer arrived 10.83 s later, long after the editor
+    ; had given up on it. server.flush_dirty# runs it when the input queue is
+    ; empty instead, i.e. once per typing burst.
+    procedure mark_dirty(uri: String)
+    {
+        let idx docstore.find uri
+        if idx >= 0
+        {
+            let s doc_slots + idx
+            set s.dirty: true
+        }
+    }
+
+    ; Clear `uri`'s owed-analysis mark.
+    procedure clear_dirty(uri: String)
+    {
+        let idx docstore.find uri
+        if idx >= 0
+        {
+            let s doc_slots + idx
+            set s.dirty: false
+        }
+    }
+
+    ; The uri of a live slot that still owes a diagnostics run (a fresh copy on
+    ; the caller's page), or "" when none does.
+    function dirty_uri(rp) returns String
+    {
+        if doc_slots <> null
+        {
+            var i 0
+            while i < DOC_CAP
+            {
+                let s doc_slots + i
+                if s.used
+                    if s.dirty
+                        if s.uri_data <> null
+                            return String(s.uri_data as pointer[const_char], s.uri_len)
+                set i: i + 1
+            }
+        }
+        ""
     }
 
     ; The stored text for `uri` (a fresh copy on the caller's page), or an

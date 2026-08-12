@@ -61,7 +61,31 @@ define server
             return false
 
         server.handle_message body
+        ; Diagnostics are the only work this server does that nobody is waiting
+        ; for, so it runs LAST: while the client still has messages queued, they
+        ; are dispatched first and the owed analysis waits. A typing burst
+        ; therefore costs ONE analysis instead of one per keystroke, and the
+        ; completion / hover requests inside the burst are answered immediately.
+        if worker.stdin_has_input() = false
+            server.flush_dirty()
         true
+    }
+
+    ; Run the owed diagnostics analyses, newest buffer first, and stop as soon as
+    ; the client speaks again — an answer it is waiting for outranks a diagnostic
+    ; it is not.
+    procedure flush_dirty()
+    {
+        var uri docstore.dirty_uri()
+        while uri.get_length() > 0
+        {
+            docstore.clear_dirty uri
+            let text docstore.get uri
+            server.publish_for(uri, text)
+            if worker.stdin_has_input()
+                return
+            set uri: docstore.dirty_uri()
+        }
     }
 
     function handle_message(body: String)
@@ -229,7 +253,7 @@ define server
         ; Remember the buffer so later navigation requests (which carry only a
         ; uri) see this text — including unsaved edits — instead of disk.
         docstore.put(uri, text)
-        server.publish_for(uri, text)
+        docstore.mark_dirty uri
     }
 
     function handle_did_change(msg: JsonValue)
@@ -255,9 +279,11 @@ define server
             set text: server.apply_change(text, change)
             set i: i + 1
         }
-        ; Store the rebuilt buffer so navigation sees this (unsaved) edit.
+        ; Store the rebuilt buffer so navigation sees this (unsaved) edit, and
+        ; only MARK the analysis as owed — see docstore.mark_dirty# for why
+        ; analysing per keystroke made every following request wait.
         docstore.put(uri, text)
-        server.publish_for(uri, text)
+        docstore.mark_dirty uri
     }
 
     ; Apply one LSP contentChange to `text`, returning the new full document.

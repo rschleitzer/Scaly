@@ -99,32 +99,56 @@ if [ "$echoed" = $'Content-Length: 5\r\n\r\nhello' ]; then ok "echo transport"; 
 # ---- LSP server: lifecycle + diagnostics ----------------------------------
 lsp_build_server /tmp/scalyls
 
+# Driven INTERACTIVELY (one message, then read its answer) because that is what
+# an editor does — and since server.process_one# defers an owed analysis while
+# more client input is pending, a batch of all six messages would legitimately
+# coalesce the didOpen and didChange analyses away and this test would be
+# asserting the batch behaviour instead of the editor one. See the
+# typing-burst group below, which asserts exactly that coalescing.
 python3 - "$@" <<'PY'
-import sys, json, subprocess
+import sys, json, subprocess, os, select, time
 def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
-inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
-inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
+fd = p.stdout.fileno()
+buf = bytearray()
+def next_frame(timeout=20.0):
+    deadline = time.time() + timeout
+    while True:
+        i = buf.find(b"\r\n\r\n")
+        if i >= 0:
+            n = int(bytes(buf[:i]).decode().split(":")[1].strip())
+            if len(buf) >= i + 4 + n:
+                body = bytes(buf[i+4:i+4+n]); del buf[:i+4+n]
+                return json.loads(body)
+        left = deadline - time.time()
+        if left <= 0: return None
+        if not select.select([fd], [], [], left)[0]: return None
+        chunk = os.read(fd, 65536)
+        if not chunk: return None
+        buf.extend(chunk)
+def send(o): p.stdin.write(frame(o))
+
+frames = []
+send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+frames.append(next_frame())
+send({"jsonrpc":"2.0","method":"initialized","params":{}})
+send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
         "uri":"file:///tmp/ok.scaly","languageId":"scaly","version":1,
         "text":"function answer() returns int\n{\n    return 42\n}\n"}}})
-inp += frame({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+frames.append(next_frame())
+send({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
         "textDocument":{"uri":"file:///tmp/ok.scaly","version":2},
         "contentChanges":[{"text":"function f() returns int\n{\n    return nope()\n}\n"}]}})
-inp += frame({"jsonrpc":"2.0","method":"textDocument/didClose","params":{
+frames.append(next_frame())
+send({"jsonrpc":"2.0","method":"textDocument/didClose","params":{
         "textDocument":{"uri":"file:///tmp/ok.scaly"}}})
-inp += frame({"jsonrpc":"2.0","id":2,"method":"shutdown"})
-inp += frame({"jsonrpc":"2.0","method":"exit"})
-
-out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
-frames, d = [], out
-while d:
-    i = d.find(b"\r\n\r\n")
-    if i < 0: break
-    n = int(d[:i].decode().split(":")[1].strip())
-    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+frames.append(next_frame())
+send({"jsonrpc":"2.0","id":2,"method":"shutdown"})
+frames.append(next_frame())
+send({"jsonrpc":"2.0","method":"exit"})
 
 failures = 0
 def check(cond, label):
@@ -132,7 +156,8 @@ def check(cond, label):
     print(("PASS  " if cond else "FAIL  ") + label)
     if not cond: failures += 1
 
-check(len(frames) == 5, "frame count == 5 (init, didOpen diag, didChange diag, didClose clear, shutdown)")
+check(all(f is not None for f in frames) and len(frames) == 5,
+      "frame count == 5 (init, didOpen diag, didChange diag, didClose clear, shutdown)")
 check(frames[0].get("id") == 1 and "capabilities" in frames[0].get("result", {}), "initialize -> capabilities")
 check(frames[0]["result"]["capabilities"].get("textDocumentSync") == 2, "textDocumentSync == 2 (incremental)")
 check(frames[1].get("method") == "textDocument/publishDiagnostics", "didOpen -> publishDiagnostics")
@@ -1217,7 +1242,7 @@ if [ $rc -eq 0 ]; then ok "lsp this-receiver in a package module"; else bad "lsp
 # (the parse error IS that answer), and completion must still see the RAW line —
 # the receiver being typed lives on the very line the repair blanks.
 python3 - <<'PY'
-import sys, json, subprocess
+import sys, json, subprocess, os, select, time
 src = ("define Point\n(\n    x: int\n)\n{\n"
        "    function get_x(this: Point) returns int\n    {\n"
        "        set this.\n"                     # line 7: unfinished
@@ -1227,34 +1252,52 @@ open(path, "w").write(src)
 uri = "file://" + path
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
-def req(idn, method, params):
-    return frame({"jsonrpc":"2.0","id":idn,"method":method,"params":params})
 lines = src.split("\n")
 bl = next(i for i, l in enumerate(lines) if l.strip() == "set this.")
 bc = len(lines[bl])                                  # cursor right after the dot
 gl = next(i for i, l in enumerate(lines) if "function get_x" in l)
 gc = lines[gl].index("get_x") + 1
 
-inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
-inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
-inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
-        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
-inp += req(2, "textDocument/documentSymbol", {"textDocument":{"uri":uri}})
-inp += req(3, "textDocument/foldingRange",   {"textDocument":{"uri":uri}})
-inp += req(4, "textDocument/hover",          {"textDocument":{"uri":uri},
-                                              "position":{"line":gl,"character":gc}})
-inp += req(5, "textDocument/completion",     {"textDocument":{"uri":uri},
-                                              "position":{"line":bl,"character":bc}})
-inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
-inp += frame({"jsonrpc":"2.0","method":"exit"})
+# Interactive, so the deferred diagnostics run is observed: server.process_one#
+# holds an owed analysis back while more client input is pending, and `exit` ends
+# the process — a single batch would therefore never show it.
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
+fd = p.stdout.fileno()
+buf = bytearray()
+def next_frame(timeout=20.0):
+    deadline = time.time() + timeout
+    while True:
+        i = buf.find(b"\r\n\r\n")
+        if i >= 0:
+            n = int(bytes(buf[:i]).decode().split(":")[1].strip())
+            if len(buf) >= i + 4 + n:
+                body = bytes(buf[i+4:i+4+n]); del buf[:i+4+n]
+                return json.loads(body)
+        left = deadline - time.time()
+        if left <= 0: return None
+        if not select.select([fd], [], [], left)[0]: return None
+        chunk = os.read(fd, 65536)
+        if not chunk: return None
+        buf.extend(chunk)
+def send(o): p.stdin.write(frame(o))
 
-out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
-frames, d = [], out
-while d:
-    i = d.find(b"\r\n\r\n")
-    if i < 0: break
-    n = int(d[:i].decode().split(":")[1].strip())
-    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+frames = []
+send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+frames.append(next_frame())
+send({"jsonrpc":"2.0","method":"initialized","params":{}})
+send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+frames.append(next_frame())                      # the analysis, once the queue drained
+for idn, method, params in [
+        (2, "textDocument/documentSymbol", {"textDocument":{"uri":uri}}),
+        (3, "textDocument/foldingRange",   {"textDocument":{"uri":uri}}),
+        (4, "textDocument/hover",          {"textDocument":{"uri":uri},
+                                            "position":{"line":gl,"character":gc}}),
+        (5, "textDocument/completion",     {"textDocument":{"uri":uri},
+                                            "position":{"line":bl,"character":bc}})]:
+    send({"jsonrpc":"2.0","id":idn,"method":method,"params":params})
+    frames.append(next_frame())
+send({"jsonrpc":"2.0","method":"exit"})
 
 failures = 0
 def check(cond, label):
@@ -1281,6 +1324,114 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp mid-edit parse repair"; else bad "lsp mid-edit parse repair"; fi
+
+# ---- typing burst: diagnostics must not queue ahead of the answers ---------
+# didOpen/didChange used to ANALYSE on the spot, and the editor sends one
+# didChange PER KEYSTROKE. The server is single-threaded, so every keystroke put
+# a whole modeler+planner pass over the package root (~1 s on a real file) in
+# front of everything that followed: typing `set this.` measured 19 analysis runs
+# and the completion answer 10.83 s later — long after the editor had cancelled
+# it. That is what "no suggestions at all" looked like from the outside.
+#
+# The handlers now only MARK the buffer (docstore.mark_dirty#) and
+# server.process_one# runs the analysis once the client's input queue has
+# drained. Both halves are asserted, and WITHOUT timing: the burst plus the
+# completion request are written in ONE go, so the server always has input
+# pending and must answer the request with NO analysis in front of it; then the
+# client goes quiet and the single owed analysis must arrive.
+python3 - <<'PY'
+import sys, json, subprocess, os, select, time
+src = ("define Point\n(\n    x: int\n)\n{\n"
+       "    function get_x(this: Point) returns int\n    {\n"
+       "        return x\n    }\n}\n")
+path = "/tmp/lsp_burst_test.scaly"
+open(path, "w").write(src)
+uri = "file://" + path
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+lines = src.split("\n")
+# type "\n        set this." at the start of the `return x` line
+ln = next(i for i, l in enumerate(lines) if l.strip() == "return x")
+typed = "\n        set this."
+
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
+fd = p.stdout.fileno()
+buf = bytearray()
+def next_frame(timeout=20.0):
+    deadline = time.time() + timeout
+    while True:
+        i = buf.find(b"\r\n\r\n")
+        if i >= 0:
+            n = int(bytes(buf[:i]).decode().split(":")[1].strip())
+            if len(buf) >= i + 4 + n:
+                body = bytes(buf[i+4:i+4+n]); del buf[:i+4+n]
+                return json.loads(body)
+        left = deadline - time.time()
+        if left <= 0: return None
+        if not select.select([fd], [], [], left)[0]: return None
+        chunk = os.read(fd, 65536)
+        if not chunk: return None
+        buf.extend(chunk)
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+p.stdin.write(frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}))
+next_frame()
+p.stdin.write(frame({"jsonrpc":"2.0","method":"initialized","params":{}}))
+p.stdin.write(frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}}))
+opened = next_frame()
+check(opened is not None and opened.get("method") == "textDocument/publishDiagnostics"
+      and opened["params"]["diagnostics"] == [],
+      "didOpen analysis runs (clean file, no diagnostics)")
+
+# ONE write: the keystrokes AND the completion request, so the server never sees
+# an empty input queue until it has answered.
+burst = b""
+ver, line, col = 2, ln, 0
+for ch in typed:
+    burst += frame({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+            "textDocument":{"uri":uri,"version":ver},
+            "contentChanges":[{"range":{"start":{"line":line,"character":col},
+                                        "end":{"line":line,"character":col}},"text":ch}]}})
+    ver += 1
+    if ch == "\n": line, col = line + 1, 0
+    else: col += 1
+burst += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{
+        "textDocument":{"uri":uri},"position":{"line":line,"character":col},
+        "context":{"triggerKind":2,"triggerCharacter":"."}}})
+p.stdin.write(burst)
+
+runs_before = 0
+comp = None
+while comp is None:
+    f = next_frame()
+    if f is None: break
+    if f.get("id") == 2: comp = f
+    elif f.get("method") == "textDocument/publishDiagnostics": runs_before += 1
+labels = [it["label"] for it in ((comp or {}).get("result") or [])]
+check(labels == ["x","get_x"], "completion answers inside a typing burst")
+check(runs_before == 0,
+      "%d keystrokes put NO analysis in front of the answer (got %d)"
+      % (len(typed), runs_before))
+
+# The client goes quiet: the one owed analysis must now arrive, and it must still
+# report the unfinished line (the parse repair is for the read-only requests, not
+# for diagnostics).
+tail = next_frame()
+check(tail is not None and tail.get("method") == "textDocument/publishDiagnostics",
+      "the owed analysis runs once the queue drains")
+check(tail is not None and len(tail["params"]["diagnostics"]) == 1,
+      "and it reports the unfinished line (1 diagnostic)")
+p.stdin.write(frame({"jsonrpc":"2.0","method":"exit"}))
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp typing-burst coalescing"; else bad "lsp typing-burst coalescing"; fi
 
 # ---- cross-file go-to-definition (workspace) ----
 # When the cursor identifier is not declared in the current file, the worker
