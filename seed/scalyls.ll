@@ -713,7 +713,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI19PlannedMemberAccessE = type { ptr }
 %_Z4NodeI19PlannedMemberAccessE = type { %_Z19PlannedMemberAccess, ptr }
 %_Z12ListIteratorI19PlannedMemberAccessE = type { ptr }
-%_Z7DocSlot = type { ptr, i64, ptr, i64, i1 }
+%_Z7DocSlot = type { ptr, i64, ptr, i64, i1, i1 }
 %_Z6pollfd = type { i32, i16, i16 }
 
 @"12RPC_STDIN_FD" = internal constant i64 0
@@ -113445,6 +113445,8 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load6, i64 %i7
   %used = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 4
   store i1 false, ptr %used, align 1
+  %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 5
+  store i1 false, ptr %dirty, align 1
   %uri_data = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 0
   store ptr null, ptr %uri_data, align 8
   %uri_len = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 1
@@ -113657,6 +113659,8 @@ if.then9:                                         ; preds = %while.body
   call void @_ZN8docstore8set_textEP7DocSlot6String(ptr %ptr.add7, ptr %1)
   %used11 = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add7, i32 0, i32 4
   store i1 true, ptr %used11, align 1
+  %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add7, i32 0, i32 5
+  store i1 false, ptr %dirty, align 1
   ret void
 
 if.end10:                                         ; preds = %while.body
@@ -113712,7 +113716,111 @@ if.end8:                                          ; preds = %if.then7, %if.end2
   store i64 0, ptr %uri_len, align 8
   %used = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 4
   store i1 false, ptr %used, align 1
+  %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 5
+  store i1 false, ptr %dirty, align 1
   br label %if.end
+}
+
+define linkonce_odr void @_ZN8docstore10mark_dirtyE6String(ptr %0) {
+entry:
+  %call = call i64 @_ZN8docstore4findE6String(ptr %0)
+  %ge = icmp sge i64 %call, 0
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %global.load = load ptr, ptr @doc_slots, align 8
+  %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load, i64 %call
+  %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 5
+  store i1 true, ptr %dirty, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  ret void
+}
+
+define linkonce_odr void @_ZN8docstore11clear_dirtyE6String(ptr %0) {
+entry:
+  %call = call i64 @_ZN8docstore4findE6String(ptr %0)
+  %ge = icmp sge i64 %call, 0
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %global.load = load ptr, ptr @doc_slots, align 8
+  %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load, i64 %call
+  %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 5
+  store i1 false, ptr %dirty, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  ret void
+}
+
+define linkonce_odr void @_ZN8docstore9dirty_uriEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
+entry:
+  %i = alloca i64, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  %global.load = load ptr, ptr @doc_slots, align 8
+  %ne = icmp ne ptr %global.load, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+if.end:                                           ; preds = %while.exit, %entry
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+while.cond:                                       ; preds = %if.end5, %if.then
+  %i1 = load i64, ptr %i, align 8
+  %lt = icmp slt i64 %i1, 256
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %global.load2 = load ptr, ptr @doc_slots, align 8
+  %i3 = load i64, ptr %i, align 8
+  %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load2, i64 %i3
+  %load.struct = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %used = extractvalue %_Z7DocSlot %load.struct, 4
+  br i1 %used, label %if.then4, label %if.end5
+
+while.exit:                                       ; preds = %while.cond
+  br label %if.end
+
+if.then4:                                         ; preds = %while.body
+  %load.struct6 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %dirty = extractvalue %_Z7DocSlot %load.struct6, 5
+  br i1 %dirty, label %if.then7, label %if.end8
+
+if.end5:                                          ; preds = %if.end8, %while.body
+  %i17 = load i64, ptr %i, align 8
+  %add = add i64 %i17, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+if.then7:                                         ; preds = %if.then4
+  %load.struct9 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %uri_data = extractvalue %_Z7DocSlot %load.struct9, 0
+  %ne10 = icmp ne ptr %uri_data, null
+  br i1 %ne10, label %if.then11, label %if.end12
+
+if.end8:                                          ; preds = %if.end12, %if.then4
+  br label %if.end5
+
+if.then11:                                        ; preds = %if.then7
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %load.struct14 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %uri_data15 = extractvalue %_Z7DocSlot %load.struct14, 0
+  %load.struct16 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %uri_len = extractvalue %_Z7DocSlot %load.struct16, 1
+  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %uri_data15, i64 %uri_len)
+  %sret.body = load { ptr }, ptr %struct.region, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+if.end12:                                         ; preds = %if.then7
+  br label %if.end8
 }
 
 define linkonce_odr void @_ZN8docstore3getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -113763,6 +113871,29 @@ declare i32 @kill(i64, i64)
 declare i32 @poll(ptr, i64, i32)
 
 declare ptr @signal(i64, ptr)
+
+define linkonce_odr i1 @_ZN6worker15stdin_has_inputEv() {
+entry:
+  %tuple = alloca %_Z6pollfd, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z6pollfd, ptr %tuple, i32 0, i32 0
+  store i32 0, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z6pollfd, ptr %tuple, i32 0, i32 1
+  store i16 1, ptr %tuple.field1, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z6pollfd, ptr %tuple, i32 0, i32 2
+  store i16 0, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z6pollfd, ptr %tuple, align 4
+  %pfd = alloca %_Z6pollfd, align 8
+  store %_Z6pollfd %tuple.val, ptr %pfd, align 1
+  %call = call i32 @poll(ptr %pfd, i64 1, i32 0)
+  %gt = icmp sgt i32 %call, 0
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 true
+
+if.end:                                           ; preds = %entry
+  ret i1 false
+}
 
 define linkonce_odr i1 @_ZN6worker9serve_oneEii(i64 %0, i64 %1) {
 entry:
@@ -114533,6 +114664,15 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN6server14handle_messageE6String(ptr %sret.result)
+  %call1 = call i1 @_ZN6worker15stdin_has_inputEv()
+  %eq2 = icmp eq i1 %call1, false
+  br i1 %eq2, label %if.then3, label %if.end4
+
+if.then3:                                         ; preds = %if.end
+  call void @_ZN6server11flush_dirtyEv()
+  br label %if.end4
+
+if.end4:                                          ; preds = %if.then3, %if.end
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 }
@@ -114896,6 +115036,65 @@ if.then125:                                       ; preds = %if.then122
   br label %if.end126
 
 if.end126:                                        ; preds = %if.then125, %if.then122
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+}
+
+define linkonce_odr void @_ZN6server11flush_dirtyEv() {
+entry:
+  %sret.result7 = alloca { ptr }, align 8
+  %sret.result3 = alloca { ptr }, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
+  %sret.result = alloca { ptr }, align 8
+  call void @_ZN8docstore9dirty_uriEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame)
+  %uri = alloca ptr, align 8
+  store ptr %sret.result, ptr %uri, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %uri1 = load ptr, ptr %uri, align 8
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %uri1)
+  %gt = icmp ugt i64 %call, 0
+  br i1 %gt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %uri2 = load ptr, ptr %uri, align 8
+  call void @_ZN8docstore11clear_dirtyE6String(ptr %uri2)
+  %uri4 = load ptr, ptr %uri, align 8
+  call void @_ZN8docstore3getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %frame, ptr %uri4)
+  %uri5 = load ptr, ptr %uri, align 8
+  call void @_ZN6server11publish_forE6String6String(ptr %uri5, ptr %sret.result3)
+  %call6 = call i1 @_ZN6worker15stdin_has_inputEv()
+  br i1 %call6, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.then:                                          ; preds = %while.body
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end:                                           ; preds = %while.body
+  call void @_ZN8docstore9dirty_uriEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result7, ptr %frame)
+  %set.dest = load ptr, ptr %uri, align 8
+  %set.thru = load { ptr }, ptr %sret.result7, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %while.cond
+}
+
+define linkonce_odr void @_ZN6server11publish_forE6String6String(ptr %0, ptr %1) {
+entry:
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
+  %sret.result = alloca { ptr }, align 8
+  call void @_ZN6worker7analyzeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %0, ptr %1)
+  call void @_ZN3rpc13write_messageE6String(ptr %sret.result)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -115393,7 +115592,7 @@ entry:
   call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %frame, ptr %sret.result1, ptr @.str.448)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result4, ptr %frame, ptr %sret.result3)
   call void @_ZN8docstore3putE6String6String(ptr %sret.result2, ptr %sret.result4)
-  call void @_ZN6server11publish_forE6String6String(ptr %sret.result2, ptr %sret.result4)
+  call void @_ZN8docstore10mark_dirtyE6String(ptr %sret.result2)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -115453,8 +115652,7 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %text11 = load ptr, ptr %text, align 8
   call void @_ZN8docstore3putE6String6String(ptr %sret.result2, ptr %text11)
-  %text12 = load ptr, ptr %text, align 8
-  call void @_ZN6server11publish_forE6String6String(ptr %sret.result2, ptr %text12)
+  call void @_ZN8docstore10mark_dirtyE6String(ptr %sret.result2)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -116150,19 +116348,6 @@ entry:
   %sret.result5 = alloca { ptr }, align 8
   call void @_ZN6server24document_symbol_responseEPN4scaly6memory4PageE3i646String(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, i64 %1, ptr %sret.result4)
   call void @_ZN3rpc13write_messageE6String(ptr %sret.result5)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret void
-}
-
-define linkonce_odr void @_ZN6server11publish_forE6String6String(ptr %0, ptr %1) {
-entry:
-  %frame = alloca { ptr, ptr }, align 8
-  store ptr null, ptr %frame, align 8
-  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr null, ptr %frame.parent, align 8
-  %sret.result = alloca { ptr }, align 8
-  call void @_ZN6worker7analyzeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %0, ptr %1)
-  call void @_ZN3rpc13write_messageE6String(ptr %sret.result)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
