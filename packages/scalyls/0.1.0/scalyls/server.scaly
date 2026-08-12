@@ -242,6 +242,13 @@ define server
             return
         }
 
+        if method = "textDocument/typeDefinition"
+        {
+            if has_id
+                server.handle_type_definition(msg, id)
+            return
+        }
+
         if method = "workspace/symbol"
         {
             if has_id
@@ -454,6 +461,25 @@ define server
             set i: i + 1
         }
         hn
+    }
+
+    ; textDocument/typeDefinition. Same request shape as definition; the worker
+    ; resolves the TYPE of the thing at the cursor and then looks THAT up.
+    function handle_type_definition(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string(json.get(doc, "uri"))
+        let position json.get(params, "position")
+        let line json.as_i64(json.get(position, "line"))
+        let character json.as_i64(json.get(position, "character"))
+        var pb StringBuilder()
+        pb.append(json.format_i64(line))
+        pb.append(" " as char)
+        pb.append(json.format_i64(character))
+        let text docstore.get uri
+        let result worker.type_definition(uri, text, pb.to_string())
+        rpc.write_message(server.definition_response(id, result))
     }
 
     ; textDocument/selectionRange. The request carries an ARRAY of positions
@@ -1013,6 +1039,9 @@ define server
         sb.append "true"
         sb.append("," as char)
         sb.append(server.key("selectionRangeProvider"))
+        sb.append "true"
+        sb.append("," as char)
+        sb.append(server.key("typeDefinitionProvider"))
         sb.append "true"
         sb.append("}" as char)                    ; } capabilities
         sb.append("," as char)

@@ -5840,6 +5840,86 @@ define symbols
         blob
     }
 
+    ; ====================================================================
+    ; textDocument/typeDefinition (lexical)
+    ;
+    ; "Go to the declaration of this thing's TYPE". Three cases, in the order a
+    ; reader means them:
+    ;   * the cursor is on a VARIABLE   -> its declared / constructed type
+    ;   * on a ROUTINE                  -> that routine's return type, because
+    ;     the type of `compute(x)` is what compute RETURNS
+    ;   * on anything else              -> the name itself, so asking on a type
+    ;     behaves like go-to-definition instead of answering nothing
+    ; The resolved type name is then looked up as a declaration: the current
+    ; file first, then the workspace and the package tree.
+    ;
+    ; Lexical, reusing resolve_variable_type# — the same resolver the inlay TYPE
+    ; hints run on. A planner-backed answer would be sharper (a reassigned var,
+    ; a mid-chain call), and the seam for it is the same one hover uses: ask the
+    ; semantic worker first and fall back to this. Not done here because the
+    ; lexical answer is the one already proven over this tree.
+    ; ====================================================================
+    function type_definition_packed(rp, source: String, uri: String, packed: String) returns String
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get i
+            if c = 0x20
+                set seen_space: true
+            if c <> 0x20
+            {
+                let digit (c - 0x30) as size_t
+                if seen_space = false
+                    set line: line * 10 + digit
+                if seen_space
+                    set character: character * 10 + digit
+            }
+            set i: i + 1
+        }
+        let offset symbols.position_to_offset(source, line, character)
+        let name symbols.identifier_at(source, offset)
+        if name.get_length() = 0
+            return ""
+
+        ; ★THE OPEN BUFFER FIRST, at both steps. `source` is the editor's copy;
+        ; the file at `uri` may be stale or — for a document never saved — not
+        ; exist at all. Asking the workspace first got all four probe cases
+        ; wrong in one run: a local `Point` answered with dazzle's, and a local
+        ; `make()` answered with the return type of some other `make` in the
+        ; tree. The workspace is the FALLBACK, never the first question.
+
+        ; 1. a variable's declared / constructed type (intra-file by nature)
+        var type_name symbols.resolve_variable_type(source, name)
+        ; ...but that resolver cannot tell `let p Point(2)` from `let q make()`:
+        ; both read as `let NAME WORD(...)`, so it answers `make` for the second.
+        ; If what it answered is itself a ROUTINE of this file, the binding was
+        ; initialised by a CALL and its type is what that routine RETURNS.
+        if type_name.get_length() > 0
+        {
+            let via_call symbols.function_return_type(source, type_name)
+            if via_call.get_length() > 0
+                set type_name: via_call
+        }
+        ; 2. a routine's return type — this file's routine before the tree's
+        if type_name.get_length() = 0
+            set type_name: symbols.function_return_type(source, name)
+        if type_name.get_length() = 0
+            set type_name: symbols.return_type_in_workspace(uri, name)
+        ; 3. the name itself — the cursor is already on a type
+        if type_name.get_length() = 0
+            set type_name: name
+
+        let here symbols.def_from_ws_blob(symbols.workspace_symbols_in_file(source, uri), type_name, false)
+        if here.get_length() > 0
+            return here
+        symbols.find_definition_in_workspace(uri, type_name)
+    }
+
     ; The Location of `name`'s own declaration in the single file `fpath` (a
     ; `module NAME` statement there does NOT count — see def_from_ws_blob#), or
     ; "" when the file is absent or declares no such name.

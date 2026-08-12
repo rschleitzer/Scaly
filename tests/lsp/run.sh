@@ -913,6 +913,67 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeAction use quickfix"; else bad "lsp codeAction use quickfix"; fi
 
+# ---- typeDefinition: go to the TYPE of the thing at the cursor ----
+# Four shapes, and the order they are tried in is the point: the OPEN BUFFER
+# before the workspace. Asking the workspace first got every case wrong in one
+# run — a local `Point` answered with dazzle's, a local `make()` with the return
+# type of some other `make` in the tree — because the document is the editor's
+# copy and the file at that path may be stale or absent.
+python3 - <<'PY'
+import sys, json, subprocess, os
+doc = ("define Point\n(\n    x: int\n)\n{\n}\n\n"
+       "function make() returns Point\n{\n    Point(1)\n}\n\n"
+       "function use_it() returns int\n{\n"
+       "    let p Point(2)\n"          # 14  construction
+       "    let q make()\n"            # 15  initialised by a CALL
+       "    var sb StringBuilder()\n"  # 16  stdlib, cross-package
+       "    p.x\n}\n")
+uri = "file:///tmp/lsp_typedef_test.scaly"
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+cases = [(14, 8), (15, 8), (15, 10), (9, 4), (16, 8)]
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+        "rootUri":"file://"+os.getcwd()}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+for i, (l, c) in enumerate(cases):
+    inp += frame({"jsonrpc":"2.0","id":10+i,"method":"textDocument/typeDefinition","params":{
+            "textDocument":{"uri":uri},"position":{"line":l,"character":c}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE,
+                     env=dict(os.environ, SCALY_HOME=os.getcwd())).stdout
+caps, res, d = None, {}, out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if f.get("id") == 1: caps = f["result"]["capabilities"]
+    if isinstance(f.get("id"), int) and f["id"] >= 10: res[f["id"]] = f.get("result")
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def at(i):
+    r = res.get(10+i)
+    if not r: return None
+    return (r["uri"], r["range"]["start"]["line"])
+check(caps.get("typeDefinitionProvider") is True, "initialize advertises typeDefinitionProvider")
+check(at(0) == (uri, 0), "a constructed binding -> its type in the SAME buffer")
+check(at(1) == (uri, 0), "a binding initialised by a call -> the callee's return type")
+check(at(2) == (uri, 0), "on the routine itself -> what it returns")
+check(at(3) == (uri, 0), "on a type name -> that type (never nothing)")
+tgt = at(4)
+check(tgt is not None and tgt[0].endswith("scaly/containers/StringBuilder.scaly"),
+      "a stdlib type resolves cross-package")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp typeDefinition"; else bad "lsp typeDefinition"; fi
+
 # ---- selectionRange: expand selection outward ----
 # Shift+Alt+Right. Lexical (a bracket walk), because the editor asks while the
 # buffer is being typed in and a parse-based answer would go silent exactly
