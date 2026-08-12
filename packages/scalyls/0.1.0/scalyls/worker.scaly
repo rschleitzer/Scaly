@@ -32,6 +32,7 @@ use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
 use scalyls.rpc
 use scalyls.diagnostics
+use scalyls.format
 use scalyls.symbols
 use scalyls.semantic
 
@@ -368,6 +369,15 @@ define worker
             return true
         }
 
+        ; formatting: re-indent the document and answer a TextEdit[]. Not
+        ; repaired and not parsed — the formatter is a token scan, which is the
+        ; whole point: `Format Document` is asked for on the buffer as typed.
+        if kind = "m"
+        {
+            rpc.write_message_fd(out_fd, format.format_edits(source))
+            return true
+        }
+
         ; semanticTokens: delta-encoded token classification of the source
         ; (uri-only, no position).
         if kind = "t"
@@ -550,6 +560,10 @@ define worker
     function folding(rp, uri: String, text: String) returns String
         worker.exchange("o", uri, text, "", "[]")
 
+    ; formatting: the TextEdit[] that re-indents the open document.
+    function formatting(rp, uri: String, text: String) returns String
+        worker.exchange("m", uri, text, "", "[]")
+
     ; typeDefinition at the packed "<line> <char>" position.
     function type_definition(rp, uri: String, text: String, packed: String) returns String
         worker.exchange("u", uri, text, packed, "")
@@ -718,6 +732,11 @@ define worker
             return COMPLETION_TIMEOUT_MS
         if kind = "x"
             return COMPLETION_TIMEOUT_MS
+        ; "m" formatting falls through to ANALYZE deliberately: it is a single
+        ; token scan over the open document — no parse, no modeler, no planner,
+        ; no other file — so it belongs with the per-document budgets and not
+        ; with the whole-tree ones. Giving it a branch of its own here would be
+        ; a line that says the same thing as the fallback.
         ANALYZE_TIMEOUT_MS
     }
 

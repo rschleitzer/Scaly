@@ -214,6 +214,13 @@ define server
             return
         }
 
+        if method = "textDocument/formatting"
+        {
+            if has_id
+                server.handle_formatting(msg, id)
+            return
+        }
+
         if method = "textDocument/semanticTokens/full"
         {
             if has_id
@@ -604,6 +611,22 @@ define server
         let uri json.as_string(json.get(doc, "uri"))
         let text docstore.get uri
         let result worker.folding(uri, text)
+        rpc.write_message(server.document_symbol_response(id, result))
+    }
+
+    ; formatting: `Format Document` / format on save. Like foldingRange the
+    ; request carries only a uri (plus FormattingOptions, which are ignored —
+    ; this tree's indentation is four spaces and the formatter's job is to
+    ; follow the house form, not the editor's preference). The result is a
+    ; TextEdit[]; it can be one edit per changed line, so the large-payload
+    ; response builder applies.
+    function handle_formatting(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string(json.get(doc, "uri"))
+        let text docstore.get uri
+        let result worker.formatting(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
     }
 
@@ -1072,6 +1095,9 @@ define server
         sb.append("}" as char)
         sb.append("," as char)
         sb.append(server.key("foldingRangeProvider"))
+        sb.append "true"
+        sb.append("," as char)
+        sb.append(server.key("documentFormattingProvider"))
         sb.append "true"
         sb.append("," as char)
         ; semanticTokensProvider: legend (token types, no modifiers) + full.

@@ -91,41 +91,41 @@ define FunctionIndex
     {
         if slots <> null
         {
-        if next <> null
-        {
-            if index >= entry_cap
+            if next <> null
             {
-                scaly_eputs "FunctionIndex: entry overflow\n"
+                if index >= entry_cap
+                {
+                    scaly_eputs "FunctionIndex: entry overflow\n"
+                    exit 14
+                }
+                set *(next + index): entry_cap
+                let h name.hash()
+                let mask cap - 1
+                var idx h & mask
+                var probes: size_t 0
+                while probes < cap
+                {
+                    let s slots + idx
+                    if s.used = false
+                    {
+                        set s.name: name
+                        set s.head: index
+                        set s.tail: index
+                        set s.used: true
+                        return
+                    }
+                    if s.name = name
+                    {
+                        set *(next + s.tail): index
+                        set s.tail: index
+                        return
+                    }
+                    set idx: (idx + 1) & mask
+                    set probes: probes + 1
+                }
+                scaly_eputs "FunctionIndex: table full\n"
                 exit 14
             }
-            set *(next + index): entry_cap
-            let h name.hash()
-            let mask cap - 1
-            var idx h & mask
-            var probes: size_t 0
-            while probes < cap
-            {
-                let s slots + idx
-                if s.used = false
-                {
-                    set s.name: name
-                    set s.head: index
-                    set s.tail: index
-                    set s.used: true
-                    return
-                }
-                if s.name = name
-                {
-                    set *(next + s.tail): index
-                    set s.tail: index
-                    return
-                }
-                set idx: (idx + 1) & mask
-                set probes: probes + 1
-            }
-            scaly_eputs "FunctionIndex: table full\n"
-            exit 14
-        }
         }
     }
 

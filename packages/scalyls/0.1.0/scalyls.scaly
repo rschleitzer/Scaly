@@ -35,6 +35,10 @@ define scalyls
     ; documentSymbol: text -> parse -> DocumentSymbol[] outline tree.
     module symbols
 
+    ; textDocument/formatting: token-based re-indentation. Line structure is
+    ; never touched — in Scaly an LF separates constructs.
+    module format
+
     ; Planner-based (semantic) type resolution: run the modeler+planner and
     ; map a byte offset to the innermost planned node's resolved type.
     module semantic

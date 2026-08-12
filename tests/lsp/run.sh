@@ -2028,6 +2028,201 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp diagnostics past a parse error"; else bad "lsp diagnostics past a parse error"; fi
 
+# ---- formatter: THE TREE IS THE CORPUS ------------------------------------
+# A formatter is only worth having if it agrees with the code that already
+# exists, so the gate is not a fixture: it is every packages/**/*.scaly. Two
+# claims are checked over all of them.
+#
+#   IDEMPOTENCE  format(format(x)) == format(x), everywhere. A formatter that
+#                oscillates makes every save a diff.
+#   HOUSE FORM   the formatter reproduces the committed file BYTE FOR BYTE,
+#                except for a named allow-list. That list is the point of this
+#                test: it makes the tree's remaining deviations explicit and
+#                bounded, so a newly added file that does not follow the house
+#                form turns the gate red instead of quietly widening it.
+#
+# The allow-list was established 2026-08-12 by running the formatter over the
+# whole tree: 162 of 172 files came back byte-identical and all ten others were
+# read. Two of those ten were DEFECTS the formatter found rather than caused,
+# and were fixed the same day instead of being excused here -- FunctionIndex.scaly
+# (a block whose body sat at the enclosing level) and one trailing-whitespace
+# line in Array.scaly. Both are compiler/stdlib sources, so the reformat was
+# checked the only way that settles it: scalyc.ll and scaly.ll re-emit
+# BYTE-IDENTICALLY to the committed seed, which proves the change was whitespace
+# and needed no new fixed point.
+#
+# The eight that remain are conventions, not defects:
+#
+#   * the outermost `define` body at column 0 (Emitter, parser, Modeler,
+#     hashing, StringIterator) -- a local convention, 5 files against the 47
+#     that indent it. parser.scaly is additionally GENERATED (byte-exact output
+#     of codegen/parser-scaly.scm), so reformatting it would be undone by ./mkp
+#     and would break the codegen byte-identity gate.
+#   * chained single-condition `if`s written at one indent (Planner).
+#   * comments aligned to a trailing comment's column (fiber, Plan), which no
+#     indent-based formatter can keep.
+#
+# Shrinking this list is a source change, never a formatter change: if a file
+# is reformatted into the house form, its line here must go -- which the last
+# check below enforces, so the list cannot rot into a list of excuses.
+lsp_build_prog tests/lsp/format_test.scaly /tmp/scalyls_format_test
+python3 - <<'PY'
+import sys, glob, os, subprocess
+
+BIN = "/tmp/scalyls_format_test"
+ALLOWED = {
+    "packages/scalyc/0.1.0/scalyc/compiler/Emitter.scaly",
+    "packages/scalyc/0.1.0/scalyc/compiler/parser.scaly",
+    "packages/scalyc/0.1.0/scalyc/compiler/Modeler.scaly",
+    "packages/scalyc/0.1.0/scalyc/compiler/Planner.scaly",
+    "packages/scaly/0.1.0/scaly/containers/hashing.scaly",
+    "packages/scaly/0.1.0/scaly/containers/StringIterator.scaly",
+    "packages/scaly/0.1.0/scaly/fiber.scaly",
+    "packages/scalyc/0.1.0/scalyc/compiler/Plan.scaly",
+}
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+files = sorted(glob.glob("packages/**/*.scaly", recursive=True))
+not_idem, unexpected, still_clean = [], [], []
+for f in files:
+    env = dict(os.environ, SCALYLS_FMT_FILE=f)
+    got = subprocess.run([BIN], env=env, stdout=subprocess.PIPE).stdout
+    env["SCALYLS_FMT_MODE"] = "i"
+    if subprocess.run([BIN], env=env, stdout=subprocess.PIPE).stdout.strip() != b"IDEMPOTENT":
+        not_idem.append(f)
+    same = got == open(f, "rb").read()
+    if not same and f not in ALLOWED:
+        unexpected.append(f)
+    if same and f in ALLOWED:
+        still_clean.append(f)
+
+check(len(files) > 150, "the corpus is the whole tree (%d files)" % len(files))
+check(not not_idem, "format(format(x)) == format(x) on every file"
+      + ("" if not not_idem else " -- %s" % not_idem[:3]))
+check(not unexpected, "every file outside the allow-list is reproduced BYTE-IDENTICALLY"
+      + ("" if not unexpected else " -- %s" % unexpected[:5]))
+check(not still_clean, "no allow-list entry is stale (a fixed file must be removed from it)"
+      + ("" if not still_clean else " -- %s" % still_clean))
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp formatter corpus"; else bad "lsp formatter corpus"; fi
+
+# ---- formatter over the LSP: capability, edits, and what it must NOT do ----
+# The last check is the load-bearing one. In Scaly a line break is SEMANTIC --
+# LFs separate constructs -- so a formatter that joins or splits lines changes
+# the meaning of the program. The line count is therefore an invariant of the
+# run, and format_edits# depends on it to pair source and result line by line.
+python3 - <<'PY'
+import sys, json, subprocess, os, select, time
+
+src = ("define Point\n"
+       "(\n"
+       "x: int\n"
+       ")\n"
+       "{\n"
+       "        function get_x(this: Point) returns int\n"
+       "    {\n"
+       "  if x > 0\n"
+       "            return x\n"
+       "        0\n"
+       "        }\n"
+       "}\n")
+want = ("define Point\n"
+        "(\n"
+        "    x: int\n"
+        ")\n"
+        "{\n"
+        "    function get_x(this: Point) returns int\n"
+        "    {\n"
+        "        if x > 0\n"
+        "            return x\n"
+        "        0\n"
+        "    }\n"
+        "}\n")
+path = "/tmp/lsp_format_doc.scaly"
+open(path, "w").write(src)
+uri = "file://" + path
+
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
+fd = p.stdout.fileno()
+buf = bytearray()
+def next_frame(timeout=30.0):
+    deadline = time.time() + timeout
+    while True:
+        i = buf.find(b"\r\n\r\n")
+        if i >= 0:
+            n = int(bytes(buf[:i]).decode().split(":")[1].strip())
+            if len(buf) >= i + 4 + n:
+                body = bytes(buf[i+4:i+4+n]); del buf[:i+4+n]
+                return json.loads(body)
+        left = deadline - time.time()
+        if left <= 0: return None
+        if not select.select([fd], [], [], left)[0]: return None
+        chunk = os.read(fd, 65536)
+        if not chunk: return None
+        buf.extend(chunk)
+
+frames = []
+p.stdin.write(frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}))
+frames.append(next_frame())
+p.stdin.write(frame({"jsonrpc":"2.0","method":"initialized","params":{}}))
+p.stdin.write(frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}}))
+next_frame()
+p.stdin.write(frame({"jsonrpc":"2.0","id":2,"method":"textDocument/formatting","params":{
+        "textDocument":{"uri":uri},
+        "options":{"tabSize":4,"insertSpaces":True}}}))
+frames.append(next_frame())
+p.stdin.write(frame({"jsonrpc":"2.0","method":"exit"}))
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+caps = (frames[0] or {}).get("result", {}).get("capabilities", {})
+check(caps.get("documentFormattingProvider") is True,
+      "initialize advertises documentFormattingProvider")
+
+r = next((f for f in frames[1:] if f and f.get("id") == 2), None)
+edits = (r or {}).get("result")
+check(isinstance(edits, list) and len(edits) > 0,
+      "textDocument/formatting answers a non-empty TextEdit[]")
+
+# Apply the edits the way a client does: per line, later edits first so an
+# earlier one cannot shift a later one's offsets.
+lines = src.split("\n")
+for e in sorted(edits or [], key=lambda e: (e["range"]["start"]["line"],
+                                            e["range"]["start"]["character"]),
+                reverse=True):
+    ln = e["range"]["start"]["line"]
+    a, b = e["range"]["start"]["character"], e["range"]["end"]["character"]
+    check_same_line = e["range"]["end"]["line"] == ln
+    if not check_same_line:
+        failures += 1
+        print("FAIL  every edit stays within ONE line")
+        break
+    lines[ln] = lines[ln][:a] + e["newText"] + lines[ln][b:]
+got = "\n".join(lines)
+check(got == want, "applying the edits yields the house form")
+check(len(got.split("\n")) == len(src.split("\n")),
+      "the line COUNT is unchanged -- an LF in Scaly separates constructs")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp formatting"; else bad "lsp formatting"; fi
+
 # ---- typing burst: diagnostics must not queue ahead of the answers ---------
 # didOpen/didChange used to ANALYSE on the spot, and the editor sends one
 # didChange PER KEYSTROKE. The server is single-threaded, so every keystroke put

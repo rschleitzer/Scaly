@@ -1,0 +1,79 @@
+; Corpus runner for the scalyls formatter (scalyls.format).
+;
+; Driven by two environment variables rather than argv, because a top-level
+; program in this tree reaches its arguments only through an explicit `main`,
+; and this needs neither:
+;   SCALYLS_FMT_FILE   the file to read (required)
+;   SCALYLS_FMT_MODE   ""  print the formatted text, byte for byte
+;                      "i" print IDEMPOTENT / NOT IDEMPOTENT
+;                      "e" print the TextEdit[] the LSP would send
+;
+; It exists because the formatter's real gate is THE TREE: format(format(x)) ==
+; format(x) must hold over every packages/**/*.scaly, and the diff against the
+; committed sources is the claim "this IS the house form" — a claim that can
+; only be checked by running it over all of them. tests/lsp/run.sh drives it.
+
+package scaly 0.1.0
+package scalyls 0.1.0
+
+use scaly.containers.String
+use scaly.fiber.Io
+use scaly.io.Console
+use scaly.io.File
+use scaly.memory.root_pages.getenv
+use scalyls.format
+
+; Write a String's bytes to stdout EXACTLY — no terminator, no added newline.
+; Console.print takes a cstring, and the formatted document has to come out
+; byte for byte or the corpus comparison means nothing.
+function emit(s: String)
+{
+    if s.get_length() > 0
+        Io.write_all(1, s.get_buffer() as pointer[void], s.get_length())
+}
+
+function run()
+{
+    let raw_path getenv "SCALYLS_FMT_FILE"
+    if raw_path = null
+    {
+        Console.println "SCALYLS_FMT_FILE is not set"
+        return
+    }
+    let path String(raw_path)
+    let src File.read_to_string(path)
+    if src.get_length() = 0
+    {
+        Console.println "cannot read input"
+        return
+    }
+
+    var mode String("")
+    let raw_mode getenv "SCALYLS_FMT_MODE"
+    if raw_mode <> null
+        set mode: String(raw_mode)
+
+    if mode = "i"
+    {
+        let once format.format_source src
+        let twice format.format_source once
+        if once = twice
+            Console.println "IDEMPOTENT"
+        else
+            Console.println "NOT IDEMPOTENT"
+        return
+    }
+    if mode = "e"
+    {
+        emit(format.format_edits(src))
+        Console.println ""
+        return
+    }
+
+    ; The formatted document and nothing else: format_source# keeps the
+    ; trailing newline the file already had, so an added one would make every
+    ; byte comparison fail on the last line.
+    emit(format.format_source(src))
+}
+
+run()

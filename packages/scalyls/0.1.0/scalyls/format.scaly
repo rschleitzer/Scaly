@@ -1,0 +1,988 @@
+; format.scaly - textDocument/formatting support.
+;
+; Re-indents a document and strips trailing whitespace. It NEVER touches the
+; line structure, because in Scaly a line break is not decoration: LFs separate
+; constructs (a colon can substitute for one), so a formatter that re-wraps or
+; joins lines changes the MEANING of the program. Only the leading whitespace of
+; a line is rewritten, and the number of lines is an invariant of the run —
+; format_edits# relies on it to pair source and result line by line.
+;
+; It is token-based, not parse-based, for the same reason the read-only requests
+; carry a repair: the buffer being typed into is the one a formatter is asked
+; about, and a parse-based formatter answers nothing there. Precedence is
+; resolved in the PLANNER, not the grammar, so a formatter could not break
+; expressions by precedence even with a parse in hand — and does not try.
+;
+; ---------------------------------------------------------------------------
+; The indent model. A stack of frames, one per open construct:
+;
+;   FK_BRACKET  { ( [  -- a line STARTING with a closer takes its opener's
+;               level; a line that merely ends in `))` keeps its own level and
+;               only unwinds the stack.
+;   FK_ONE      a BRACELESS block that consumes exactly ONE following statement:
+;               if / else / while / for / repeat / label / when / case, and the
+;               single-expression body of a routine. Scaly drops the braces for
+;               these, so nothing in the text marks the block but the indent.
+;   FK_MULTI    a braceless block holding ARMS (choose / match). It survives its
+;               arms and ends at the first line that is not when / case / else.
+;
+; Rules that were MEASURED against the tree (171 files, 249k lines) rather than
+; assumed — each one is here because a draft without it produced a large diff:
+;
+;   * A line that leaves N brackets open adds ONE level, not N. `f(g(` is a
+;     single continuation step in this tree's form.
+;   * `{` cancels exactly ONE pending FK_ONE (Allman: the brace belongs to its
+;     header and sits at the header's level). Cancelling ALL of them flattens a
+;     chain of braceless `if`s, which this tree writes.
+;   * `(` cancels a pending FK_ONE only when it came from a `define` — that is
+;     the property list. A routine's single-expression BODY may also begin with
+;     `(` (`(oi = OI_OPT) || (oi = OI_REP)`) and must stay indented.
+;   * A line whose first byte is an opener but which leaves NOTHING open is an
+;     ordinary statement, not a structural opener.
+;   * A routine header ending in `extern` / `intrinsic` / `instruction` declares
+;     and has no body, so it opens nothing.
+;   * A closer that ends a braced block also satisfies the braceless chain the
+;     block was the body of.
+;
+; COMMENTS carry no structure, so a comment line takes the level of the next
+; line that does — unless that line CLOSES the block the comment sits in, in
+; which case it keeps the level it was written at. A comment before a `}` belongs
+; to the block: the only content of an empty `when` arm is such a comment, and
+; dedenting it to the brace reads as if the arm were gone. Because the level of a
+; comment depends on a LATER line, comment (and blank) lines are held in
+; `pending` until the next structural line resolves them.
+;
+; The interior of a `;* *;` block comment is emitted verbatim — its lines are
+; prose, and their indentation is the author's.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; A StringBuilder mutated through a parameter does not propagate to the caller,
+; so every append is in place on a local.
+
+use scaly.memory.runtime
+use scalyls.json
+
+define format
+{
+    ; ---- frame kinds (packed into a size_t, see frame_make#) --------------
+    define FK_BRACKET: size_t 0
+    define FK_ONE: size_t 1
+    define FK_MULTI: size_t 2
+
+    ; ---- line kinds -------------------------------------------------------
+    define LK_COMMENT: size_t 0
+    define LK_CLOSER: size_t 1
+    define LK_OPENER: size_t 2
+    define LK_ARM: size_t 3
+    define LK_HEADER_ONE: size_t 4
+    define LK_HEADER_MULTI: size_t 5
+    define LK_STMT: size_t 6
+
+    define INDENT_WIDTH: size_t 4
+
+    ; What one scanned line is, structurally. Built ONCE at the end of
+    ; scan_line# — a small struct returned from several branches would
+    ; region-allocate per site and fail the phi (see CLAUDE.md).
+    define LineScan
+    (
+        kind: size_t
+        opened: size_t          ; brackets this line leaves OPEN
+        closes: size_t          ; brackets it closes that an EARLIER line opened
+        had_brace: bool         ; the line carries a `{` (its body starts here)
+        is_define: bool         ; the first word is `define`
+        first_open: u8          ; the leading bracket of an opener line
+        in_block: bool          ; block-comment state AFTER this line
+    )
+
+    ; A stack frame packed into one size_t so the stack is a plain
+    ; Array[size_t] (push = add, pop = set length - 1, the idiom TaskPlanner
+    ; uses). Layout: bits 0..1 kind, bit 2 paren_cancels, bits 8.. level.
+    function frame_make(kind: size_t, level: size_t, paren_cancels: bool) returns size_t
+    {
+        var f kind
+        if paren_cancels
+            set f: f | 4
+        f | (level << 8)
+    }
+
+    function frame_kind(f: size_t) returns size_t
+        f & 3
+
+    function frame_level(f: size_t) returns size_t
+        f >> 8
+
+    function frame_paren_cancels(f: size_t) returns bool
+        (f & 4) <> 0
+
+    ; ---- byte classification ----------------------------------------------
+
+    function is_opener(c: u8) returns bool
+    {
+        if c = ("{" as char)
+            return true
+        if c = ("(" as char)
+            return true
+        if c = ("[" as char)
+            return true
+        false
+    }
+
+    function is_closer(c: u8) returns bool
+    {
+        if c = ("}" as char)
+            return true
+        if c = (")" as char)
+            return true
+        if c = ("]" as char)
+            return true
+        false
+    }
+
+    function is_space(c: u8) returns bool
+    {
+        if c = (" " as char)
+            return true
+        if c = ("\t" as char)
+            return true
+        if c = ("\r" as char)
+            return true
+        false
+    }
+
+    function is_word_byte(c: u8) returns bool
+    {
+        if c >= 0x30
+            if c <= 0x39
+                return true
+        if c >= 0x41
+            if c <= 0x5A
+                return true
+        if c >= 0x61
+            if c <= 0x7A
+                return true
+        if c = 0x5F
+            return true
+        false
+    }
+
+    ; A routine header ending in one of these is a DECLARATION: it has no body,
+    ; so it must not open a braceless block (`operator +(...) returns i64
+    ; intrinsic`, one per line, would otherwise stair-step the whole file).
+    function is_bodyless_word(w: String) returns bool
+    {
+        if w = "extern"
+            return true
+        if w = "intrinsic"
+            return true
+        if w = "instruction"
+            return true
+        false
+    }
+
+    function is_one_word(w: String) returns bool
+    {
+        if w = "if"
+            return true
+        if w = "while"
+            return true
+        if w = "for"
+            return true
+        if w = "repeat"
+            return true
+        if w = "label"
+            return true
+        if w = "try"
+            return true
+        false
+    }
+
+    ; `else` is an ARM as well as an `if`'s alternative: a `choose` may end in
+    ; `else`, and treating it as an ordinary statement there would close the
+    ; choose block before its last arm.
+    function is_arm_word(w: String) returns bool
+    {
+        if w = "when"
+            return true
+        if w = "case"
+            return true
+        if w = "else"
+            return true
+        false
+    }
+
+    function is_routine_word(w: String) returns bool
+    {
+        if w = "function"
+            return true
+        if w = "procedure"
+            return true
+        if w = "operator"
+            return true
+        if w = "init"
+            return true
+        if w = "deinit"
+            return true
+        false
+    }
+
+    ; ---- scanning ----------------------------------------------------------
+
+    ; Classify the line `source[start, end)`. `in_block` is the block-comment
+    ; state on entry. Bytes inside string literals, char literals, string
+    ; identifiers and comments never count as brackets — that is the whole
+    ; reason this is a scan and not a character count.
+    function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) returns LineScan
+    {
+        var block in_block
+        var opened: size_t 0
+        var closes: size_t 0
+        var had_brace false
+        var first_kind: size_t 0        ; 0 none, 1 word, 2 symbol
+        var first_word_start: size_t 0
+        var first_word_end: size_t 0
+        var first_sym: u8 0
+        var first_open: u8 0
+        var last_word_start: size_t 0
+        var last_word_end: size_t 0
+        ; ALL tokens, not just words: `define JsonNull ()` carries two words and
+        ; is a complete data-class declaration, not a header that opens a body.
+        var token_count: size_t 0
+
+        var i start
+        while i < end
+        {
+            let c source.get i
+            if block
+            {
+                if c = ("*" as char)
+                {
+                    if i + 1 < end
+                    {
+                        if source.get(i + 1) = (";" as char)
+                        {
+                            set block: false
+                            set i: i + 2
+                            continue
+                        }
+                    }
+                }
+                set i: i + 1
+                continue
+            }
+            if c = (";" as char)
+            {
+                ; `;*` opens a block comment; a lone `;` runs to end of line.
+                if i + 1 < end
+                {
+                    if source.get(i + 1) = ("*" as char)
+                    {
+                        set block: true
+                        set i: i + 2
+                        continue
+                    }
+                }
+                break
+            }
+            if c = ("\"" as char)
+            {
+                set i: i + 1
+                while i < end
+                {
+                    let s source.get i
+                    if s = ("\\" as char)
+                    {
+                        set i: i + 2
+                        continue
+                    }
+                    if s = ("\"" as char)
+                    {
+                        set i: i + 1
+                        break
+                    }
+                    set i: i + 1
+                }
+                set token_count: token_count + 1
+                if first_kind = 0
+                {
+                    set first_kind: 2
+                    set first_sym: ("\"" as char)
+                }
+                continue
+            }
+            if c = ("'" as char)
+            {
+                set i: i + 1
+                while i < end
+                {
+                    if source.get(i) = ("'" as char)
+                    {
+                        set i: i + 1
+                        break
+                    }
+                    set i: i + 1
+                }
+                set token_count: token_count + 1
+                if first_kind = 0
+                {
+                    set first_kind: 2
+                    set first_sym: ("'" as char)
+                }
+                continue
+            }
+            if format.is_word_byte c
+            {
+                var j i
+                while j < end
+                {
+                    if format.is_word_byte(source.get j) = false
+                        break
+                    set j: j + 1
+                }
+                if first_kind = 0
+                {
+                    set first_kind: 1
+                    set first_word_start: i
+                    set first_word_end: j
+                }
+                set last_word_start: i
+                set last_word_end: j
+                set token_count: token_count + 1
+                set i: j
+                continue
+            }
+            if format.is_space c
+            {
+                set i: i + 1
+                continue
+            }
+            if format.is_opener c
+            {
+                if c = ("{" as char)
+                    set had_brace: true
+                if opened = 0
+                    set first_open: c
+                set opened: opened + 1
+            }
+            if format.is_closer c
+            {
+                if opened > 0
+                    set opened: opened - 1
+                else
+                    set closes: closes + 1
+            }
+            set token_count: token_count + 1
+            if first_kind = 0
+            {
+                set first_kind: 2
+                set first_sym: c
+            }
+            set i: i + 1
+        }
+
+        ; ---- decide the kind ------------------------------------------------
+        var kind LK_STMT
+        var is_define false
+
+        if first_kind = 0
+            set kind: LK_COMMENT
+        if first_kind = 2
+        {
+            if format.is_closer first_sym
+                set kind: LK_CLOSER
+            if format.is_opener first_sym
+            {
+                ; Only a line that actually leaves a bracket OPEN is a
+                ; structural opener; one that merely BEGINS with `(` and closes
+                ; it again is a statement (a single-expression routine body).
+                if opened > 0
+                    set kind: LK_OPENER
+                else
+                    set kind: LK_STMT
+            }
+        }
+        if first_kind = 1
+        {
+            let w source.substring(first_word_start, first_word_end - first_word_start)
+            if w = "define"
+                set is_define: true
+            if format.is_arm_word w
+                set kind: LK_ARM
+            else
+            {
+                if opened > 0
+                    set kind: LK_STMT
+                else
+                {
+                    if w = "choose"
+                        set kind: LK_HEADER_MULTI
+                    else
+                    {
+                        if w = "match"
+                            set kind: LK_HEADER_MULTI
+                        else
+                        {
+                            if format.is_one_word w
+                                set kind: LK_HEADER_ONE
+                            else
+                            {
+                                if format.is_routine_word w
+                                {
+                                    let last source.substring(last_word_start, last_word_end - last_word_start)
+                                    if format.is_bodyless_word last
+                                        set kind: LK_STMT
+                                    else
+                                        set kind: LK_HEADER_ONE
+                                }
+                                else
+                                {
+                                    ; `define NAME` opens a body. `define NAME: T ...`
+                                    ; is a constant and `define NAME delegate(...)` a
+                                    ; type alias — both complete statements.
+                                    if is_define
+                                    {
+                                        if token_count = 2
+                                            set kind: LK_HEADER_ONE
+                                        else
+                                            set kind: LK_STMT
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        LineScan(kind, opened, closes, had_brace, is_define, first_open, block)
+    }
+
+    ; ---- the formatter ------------------------------------------------------
+
+    ; `source` re-indented. The line count is preserved exactly.
+    function format_source(rp, source: String) returns String
+    {
+        var sb StringBuilder()
+        var stack Array[size_t]()
+        var level: size_t 0
+        var in_block false
+
+        ; Comment and blank lines whose level is not known yet (it is the level
+        ; of the next structural line). Held as their stripped text; a blank is
+        ; the empty string.
+        var pending Array[String]()
+        var pending_level: size_t 0
+
+        var wrote_line false
+        let len source.get_length()
+        var pos: size_t 0
+        var done false
+        while done = false
+        {
+            var eol pos
+            while eol < len
+            {
+                if source.get(eol) = ("\n" as char)
+                    break
+                set eol: eol + 1
+            }
+
+            ; [text_start, text_end) is the line without surrounding blanks.
+            var text_start pos
+            while text_start < eol
+            {
+                if format.is_space(source.get(text_start)) = false
+                    break
+                set text_start: text_start + 1
+            }
+            var text_end eol
+            while text_end > text_start
+            {
+                if format.is_space(source.get(text_end - 1)) = false
+                    break
+                set text_end: text_end - 1
+            }
+
+            if in_block
+            {
+                ; Inside a `;* *;` comment: emit the line verbatim (minus
+                ; trailing blanks). Its indentation is the author's prose.
+                let sc format.scan_line(source, pos, eol, in_block)
+                if wrote_line
+                    sb.append("\n" as char)
+                var k pos
+                while k < text_end
+                {
+                    sb.append(source.get(k) as char)
+                    set k: k + 1
+                }
+                set wrote_line: true
+                set in_block: sc.in_block
+            }
+            else
+            {
+                if text_start >= text_end
+                {
+                    ; A blank line. It has no level of its own, but it may sit
+                    ; between comments, so it queues with them to keep the order.
+                    if pending.get_length() > 0
+                        pending.add(String(""))
+                    else
+                    {
+                        if wrote_line
+                            sb.append("\n" as char)
+                        set wrote_line: true
+                    }
+                }
+                else
+                {
+                    let sc format.scan_line(source, text_start, eol, in_block)
+                    let stripped source.substring(text_start, text_end - text_start)
+
+                    if sc.kind = LK_COMMENT
+                    {
+                        if pending.get_length() = 0
+                            set pending_level: level
+                        pending.add stripped
+                    }
+                    else
+                    {
+                        ; ---- pre-pop: this may lower THIS line's own level ----
+                        var post_closes sc.closes
+                        if sc.kind = LK_CLOSER
+                        {
+                            var n: size_t 0
+                            while n < post_closes
+                            {
+                                set level: format.unwind_to_bracket(&stack, level)
+                                set n: n + 1
+                            }
+                            set post_closes: 0
+                        }
+                        else
+                        {
+                            if sc.kind = LK_OPENER
+                            {
+                                if sc.first_open = ("{" as char)
+                                {
+                                    ; Allman: the brace belongs to the INNERMOST
+                                    ; pending header — exactly one, so a chain of
+                                    ; braceless `if`s keeps its depth.
+                                    if format.top_kind(&stack) = FK_ONE
+                                        set level: format.pop_frame(&stack)
+                                }
+                                if sc.first_open = ("(" as char)
+                                {
+                                    ; `define Point` + `(` is the property list.
+                                    if format.top_kind(&stack) = FK_ONE
+                                    {
+                                        if format.top_paren_cancels(&stack)
+                                            set level: format.pop_frame(&stack)
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                ; A statement at arm level ends the choose block.
+                                if sc.kind <> LK_ARM
+                                {
+                                    while format.top_kind(&stack) = FK_MULTI
+                                        set level: format.pop_frame(&stack)
+                                }
+                            }
+                        }
+
+                        ; ---- flush the comments this line resolves ------------
+                        ; A comment before a CLOSER belongs to the block it sits
+                        ; in, not to the line that ends it.
+                        var flush_level level
+                        if sc.kind = LK_CLOSER
+                            set flush_level: pending_level
+                        var pi: size_t 0
+                        while pi < pending.get_length()
+                        {
+                            let pt pending.get pi
+                            if pt <> null
+                            {
+                                if wrote_line
+                                    sb.append("\n" as char)
+                                let ptv *pt
+                                if ptv.get_length() > 0
+                                {
+                                    var s: size_t 0
+                                    while s < flush_level * INDENT_WIDTH
+                                    {
+                                        sb.append(" " as char)
+                                        set s: s + 1
+                                    }
+                                    sb.append ptv
+                                }
+                                set wrote_line: true
+                            }
+                            set pi: pi + 1
+                        }
+                        pending.clear()
+
+                        ; ---- emit ---------------------------------------------
+                        if wrote_line
+                            sb.append("\n" as char)
+                        var s2: size_t 0
+                        while s2 < level * INDENT_WIDTH
+                        {
+                            sb.append(" " as char)
+                            set s2: s2 + 1
+                        }
+                        sb.append stripped
+                        set wrote_line: true
+
+                        ; ---- post: unwind trailing closers, then push ---------
+                        var m: size_t 0
+                        while m < post_closes
+                        {
+                            set level: format.unwind_to_bracket(&stack, level)
+                            set m: m + 1
+                        }
+                        if sc.kind = LK_CLOSER
+                        {
+                            ; The braced block was the body of a braceless
+                            ; chain; the chain is satisfied with it.
+                            while format.top_kind(&stack) = FK_ONE
+                                set level: format.pop_frame(&stack)
+                        }
+
+                        if sc.opened > 0
+                        {
+                            ; ONE level per line that leaves brackets open, not
+                            ; one per bracket. Every frame records the same
+                            ; level so a closer snaps back to it.
+                            let base level
+                            var o: size_t 0
+                            while o < sc.opened
+                            {
+                                stack.add(format.frame_make(FK_BRACKET, base, false))
+                                set o: o + 1
+                            }
+                            set level: base + 1
+                        }
+                        else
+                        {
+                            if sc.had_brace = false
+                            {
+                                if sc.kind = LK_HEADER_ONE
+                                {
+                                    stack.add(format.frame_make(FK_ONE, level, sc.is_define))
+                                    set level: level + 1
+                                }
+                                if sc.kind = LK_ARM
+                                {
+                                    stack.add(format.frame_make(FK_ONE, level, false))
+                                    set level: level + 1
+                                }
+                                if sc.kind = LK_HEADER_MULTI
+                                {
+                                    stack.add(format.frame_make(FK_MULTI, level, false))
+                                    set level: level + 1
+                                }
+                                if sc.kind = LK_STMT
+                                {
+                                    while format.top_kind(&stack) = FK_ONE
+                                        set level: format.pop_frame(&stack)
+                                }
+                            }
+                        }
+                        set in_block: sc.in_block
+                    }
+                }
+            }
+
+            if eol >= len
+                set done: true
+            else
+                set pos: eol + 1
+        }
+
+        ; Comments at the very end have no structural line after them, so they
+        ; keep the level they were written at.
+        var qi: size_t 0
+        while qi < pending.get_length()
+        {
+            let pt pending.get qi
+            if pt <> null
+            {
+                if wrote_line
+                    sb.append("\n" as char)
+                let ptv *pt
+                if ptv.get_length() > 0
+                {
+                    var s: size_t 0
+                    while s < pending_level * INDENT_WIDTH
+                    {
+                        sb.append(" " as char)
+                        set s: s + 1
+                    }
+                    sb.append ptv
+                }
+                set wrote_line: true
+            }
+            set qi: qi + 1
+        }
+
+        sb.to_string()
+    }
+
+    ; ---- stack helpers -------------------------------------------------------
+    ; The stack is an Array[size_t] of packed frames: push = add, pop = shorten
+    ; (the idiom TaskPlanner.scaly uses; Array has no remove_last).
+
+    function top_kind(stack: pointer[Array[size_t]]) returns size_t
+    {
+        let n stack.get_length()
+        if n = 0
+            return 99                              ; no frame: matches nothing
+        let f stack.get(n - 1)
+        if f = null
+            return 99
+        format.frame_kind(*f)
+    }
+
+    function top_paren_cancels(stack: pointer[Array[size_t]]) returns bool
+    {
+        let n stack.get_length()
+        if n = 0
+            return false
+        let f stack.get(n - 1)
+        if f = null
+            return false
+        format.frame_paren_cancels(*f)
+    }
+
+    ; Pop the top frame and answer the level it recorded.
+    function pop_frame(stack: pointer[Array[size_t]]) returns size_t
+    {
+        let n stack.get_length()
+        if n = 0
+            return 0
+        let f stack.get(n - 1)
+        set stack.length: n - 1
+        if f = null
+            return 0
+        format.frame_level(*f)
+    }
+
+    ; Drop frames until a bracket frame is popped; answer its level. Braceless
+    ; frames inside the bracket die with it — the block they were waiting for a
+    ; statement in has ended.
+    function unwind_to_bracket(stack: pointer[Array[size_t]], level: size_t) returns size_t
+    {
+        while stack.get_length() > 0
+        {
+            let n stack.get_length()
+            let f stack.get(n - 1)
+            set stack.length: n - 1
+            if f <> null
+            {
+                if format.frame_kind(*f) = FK_BRACKET
+                    return format.frame_level(*f)
+            }
+        }
+        if level > 0
+            return level - 1
+        0
+    }
+
+    ; ---- LSP TextEdit[] ------------------------------------------------------
+
+    ; The formatting result as a TextEdit[] array.
+    ;
+    ; Per-line edits rather than one whole-document replacement: the run only
+    ; ever rewrites a line's leading and trailing whitespace, so the edits are
+    ; small and the client keeps its cursor, folds and selection. format_source#
+    ; preserves the line count, which is what lets the two texts be paired line
+    ; by line at all.
+    ;
+    ; LSP character positions are UTF-16 code units. A line's LEADING whitespace
+    ; is ASCII so it needs no conversion, but the trailing-whitespace edit starts
+    ; after the line's content — which in this tree routinely contains non-ASCII
+    ; (an em dash in a comment) — so that offset goes through utf16_length#. An
+    ; edit at a wrong character offset does not fail, it CORRUPTS the document.
+    function format_edits(rp, source: String) returns String
+    {
+        let formatted format.format_source source
+        var sb StringBuilder()
+        sb.append("[" as char)
+        var first true
+
+        let slen source.get_length()
+        let flen formatted.get_length()
+        var spos: size_t 0
+        var fpos: size_t 0
+        var line: size_t 0
+        var done false
+        while done = false
+        {
+            var seol spos
+            while seol < slen
+            {
+                if source.get(seol) = ("\n" as char)
+                    break
+                set seol: seol + 1
+            }
+            var feol fpos
+            while feol < flen
+            {
+                if formatted.get(feol) = ("\n" as char)
+                    break
+                set feol: feol + 1
+            }
+
+            ; Leading whitespace of both lines.
+            var sind spos
+            while sind < seol
+            {
+                if format.is_space(source.get(sind)) = false
+                    break
+                set sind: sind + 1
+            }
+            var find fpos
+            while find < feol
+            {
+                if format.is_space(formatted.get(find)) = false
+                    break
+                set find: find + 1
+            }
+
+            ; The indent differs -> replace [0, old_indent) with the new one.
+            var same true
+            if (sind - spos) <> (find - fpos)
+                set same: false
+            else
+            {
+                var k: size_t 0
+                while k < sind - spos
+                {
+                    if source.get(spos + k) <> formatted.get(fpos + k)
+                    {
+                        set same: false
+                        break
+                    }
+                    set k: k + 1
+                }
+            }
+            if same = false
+            {
+                if first = false
+                    sb.append("," as char)
+                var ind StringBuilder()
+                var t fpos
+                while t < find
+                {
+                    ind.append(formatted.get(t) as char)
+                    set t: t + 1
+                }
+                sb.append(format.edit(line, 0, sind - spos, ind.to_string()))
+                set first: false
+            }
+
+            ; Trailing whitespace -> delete it.
+            var send seol
+            while send > sind
+            {
+                if format.is_space(source.get(send - 1)) = false
+                    break
+                set send: send - 1
+            }
+            if send < seol
+            {
+                if first = false
+                    sb.append("," as char)
+                sb.append(format.edit(line,
+                    format.utf16_length(source, spos, send),
+                    format.utf16_length(source, spos, seol),
+                    String("")))
+                set first: false
+            }
+
+            if seol >= slen
+                set done: true
+            else
+            {
+                set spos: seol + 1
+                set fpos: feol + 1
+                set line: line + 1
+            }
+        }
+
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; One TextEdit on `line`, replacing [from, to) (UTF-16 units) with `text`.
+    function edit(rp, line: size_t, from: size_t, to: size_t, text: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(format.key("range"))
+        sb.append("{" as char)
+        sb.append(format.key("start"))
+        sb.append(format.pos(line, from))
+        sb.append("," as char)
+        sb.append(format.key("end"))
+        sb.append(format.pos(line, to))
+        sb.append("}" as char)
+        sb.append("," as char)
+        sb.append(format.key("newText"))
+        sb.append(json.quote_string(text))
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    function pos(rp, line: size_t, character: size_t) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(format.key("line"))
+        sb.append(json.format_i64(line as i64))
+        sb.append("," as char)
+        sb.append(format.key("character"))
+        sb.append(json.format_i64(character as i64))
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    function key(rp, k: pointer[const_char]) returns String
+    {
+        var sb StringBuilder()
+        sb.append("\"" as char)
+        sb.append k
+        sb.append("\"" as char)
+        sb.append(":" as char)
+        sb.to_string()
+    }
+
+    ; The number of UTF-16 code units in source[start, end). A UTF-8 lead byte
+    ; of 0xF0 or above encodes a character outside the BMP, which is a SURROGATE
+    ; PAIR in UTF-16 and therefore counts twice; continuation bytes count for
+    ; nothing.
+    function utf16_length(source: String, start: size_t, end: size_t) returns size_t
+    {
+        var n: size_t 0
+        var i start
+        while i < end
+        {
+            let c source.get i
+            if c < 0x80
+                set n: n + 1
+            else
+            {
+                if c >= 0xF0
+                    set n: n + 2
+                else
+                {
+                    if c >= 0xC0
+                        set n: n + 1
+                }
+            }
+            set i: i + 1
+        }
+        n
+    }
+}
