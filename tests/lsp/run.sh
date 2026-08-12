@@ -2043,21 +2043,23 @@ if [ $rc -eq 0 ]; then ok "lsp diagnostics past a parse error"; else bad "lsp di
 #
 # The allow-list was established 2026-08-12 by running the formatter over the
 # whole tree: 162 of 172 files came back byte-identical and all ten others were
-# read. Two of those ten were DEFECTS the formatter found rather than caused,
-# and were fixed the same day instead of being excused here -- FunctionIndex.scaly
-# (a block whose body sat at the enclosing level) and one trailing-whitespace
-# line in Array.scaly. Both are compiler/stdlib sources, so the reformat was
-# checked the only way that settles it: scalyc.ll and scaly.ll re-emit
-# BYTE-IDENTICALLY to the committed seed, which proves the change was whitespace
-# and needed no new fixed point.
+# read. Four have since been brought into the house form instead of being
+# excused here -- FunctionIndex.scaly (a block whose body sat at the enclosing
+# level) and one trailing-whitespace line in Array.scaly, both DEFECTS the
+# formatter found rather than caused, then Emitter.scaly and Modeler.scaly
+# (19 372 lines, the outermost-define convention). Every one of them is a
+# compiler or stdlib source, so each reformat was checked the only way that
+# settles it: scalyc.ll and scaly.ll re-emit BYTE-IDENTICALLY to the committed
+# seed. That -- with `git diff -w` empty and the line count unchanged -- is what
+# proves a 19 372-line diff was whitespace and needed no new fixed point.
 #
-# The eight that remain are conventions, not defects:
+# The six that remain are conventions or losses no indent model can avoid:
 #
-#   * the outermost `define` body at column 0 (Emitter, parser, Modeler,
-#     hashing, StringIterator) -- a local convention, 5 files against the 47
-#     that indent it. parser.scaly is additionally GENERATED (byte-exact output
-#     of codegen/parser-scaly.scm), so reformatting it would be undone by ./mkp
-#     and would break the codegen byte-identity gate.
+#   * the outermost `define` body at column 0, still in parser.scaly, hashing
+#     and StringIterator. parser.scaly is GENERATED (byte-exact output of
+#     codegen/parser-scaly.scm), so reformatting it would be undone by ./mkp and
+#     would break the codegen byte-identity gate -- it can only change by
+#     changing the generator.
 #   * chained single-condition `if`s written at one indent (Planner).
 #   * comments aligned to a trailing comment's column (fiber, Plan), which no
 #     indent-based formatter can keep.
@@ -2071,9 +2073,7 @@ import sys, glob, os, subprocess
 
 BIN = "/tmp/scalyls_format_test"
 ALLOWED = {
-    "packages/scalyc/0.1.0/scalyc/compiler/Emitter.scaly",
     "packages/scalyc/0.1.0/scalyc/compiler/parser.scaly",
-    "packages/scalyc/0.1.0/scalyc/compiler/Modeler.scaly",
     "packages/scalyc/0.1.0/scalyc/compiler/Planner.scaly",
     "packages/scaly/0.1.0/scaly/containers/hashing.scaly",
     "packages/scaly/0.1.0/scaly/containers/StringIterator.scaly",
