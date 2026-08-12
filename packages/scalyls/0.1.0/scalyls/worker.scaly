@@ -317,6 +317,15 @@ define worker
             return true
         }
 
+        ; selectionRange: the cursor positions arrive in `position`, one
+        ; "<line> <char>" per line; the answer is one chain each. Not repaired —
+        ; it is a bracket walk, which answers on a buffer mid-edit too.
+        if kind = "e"
+        {
+            rpc.write_message_fd(out_fd, symbols.selection_ranges_packed(source, position))
+            return true
+        }
+
         ; codeAction: the `use` paths the parent lifted out of the request's
         ; own diagnostics arrive in `position`, one per line. No analysis runs
         ; here — the planner already decided, and this only places the line.
@@ -508,6 +517,10 @@ define worker
     function folding(rp, uri: String, text: String) returns String
         worker.exchange("o", uri, text, "", "[]")
 
+    ; selectionRange for the packed cursor positions (one per line).
+    function selection_ranges(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("e", uri, text, packed, "[]")
+
     ; codeAction for `uri`. `packed` is the newline-separated list of `use`
     ; paths the parent read out of the request's diagnostics. Returns the LSP
     ; CodeAction[] array.
@@ -588,6 +601,7 @@ define worker
     ;   d diagnostics   s documentSymbol   h hover (lexical fallback)
     ;   l documentHighlight   p prepareRename   o foldingRange
     ;   a codeAction (a line scan; the planner already did the thinking)
+    ;   e selectionRange (a bracket walk over the open document)
     ; `SCALYLS_BUDGET_MS=<n>` overrides EVERY budget below with n milliseconds.
     ; It exists for the same reason `SCALYC_STACK_BUDGET` does in the planner:
     ; the guard it tunes trips on a threshold no test can reach reliably on an

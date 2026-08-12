@@ -913,6 +913,87 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeAction use quickfix"; else bad "lsp codeAction use quickfix"; fi
 
+# ---- selectionRange: expand selection outward ----
+# Shift+Alt+Right. Lexical (a bracket walk), because the editor asks while the
+# buffer is being typed in and a parse-based answer would go silent exactly
+# then. Two properties are gated: the chain nests strictly outward from the
+# token, and a CALL is a step of its own — brackets alone would jump from
+# `inner` straight past `inner(a, 2)` to the enclosing argument list.
+python3 - <<'PY'
+import sys, json, subprocess
+doc = ("function outer(a: int) returns int\n"
+       "{\n"
+       "    let v compute(a + inner(a, 2), 7)\n"
+       "    v\n"
+       "}\n")
+uri = "file:///tmp/lsp_selrange_test.scaly"
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+positions = [{"line":2,"character":28}, {"line":3,"character":4}]
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/selectionRange","params":{
+        "textDocument":{"uri":uri},"positions":positions}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+caps, res, d = None, None, out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if f.get("id") == 1: caps = f["result"]["capabilities"]
+    if f.get("id") == 2: res = f.get("result")
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+lines = doc.split("\n")
+def texts(chain):
+    out, node = [], chain
+    while node:
+        r = node["range"]; s, e = r["start"], r["end"]
+        if s["line"] == e["line"]:
+            out.append(lines[s["line"]][s["character"]:e["character"]])
+        else:
+            out.append("<multiline>")
+        node = node.get("parent")
+    return out
+check(caps.get("selectionRangeProvider") is True, "initialize advertises selectionRangeProvider")
+check(isinstance(res, list) and len(res) == 2, "one chain per requested position, in order")
+# A server that does not answer leaves res None; report that as a failure
+# rather than dying in a traceback three lines later.
+if not isinstance(res, list) or len(res) != 2:
+    print("FAIL  selectionRange returned nothing to inspect"); sys.exit(1)
+c0 = texts(res[0])
+check(c0[0] == "a", "innermost is the token under the cursor")
+check(c0[1] == "(a, 2)", "then its enclosing argument list")
+check(c0[2] == "inner(a, 2)", "then the CALL — not a bracket level, added on purpose")
+check(c0[3] == "(a + inner(a, 2), 7)", "then the enclosing argument list")
+check(c0[4] == "compute(a + inner(a, 2), 7)", "then the outer call")
+check(c0[-1] == "<multiline>", "outermost is the whole file")
+def spans(chain):
+    out, node = [], chain
+    while node:
+        r = node["range"]
+        out.append((r["start"]["line"], r["start"]["character"], r["end"]["line"], r["end"]["character"]))
+        node = node.get("parent")
+    return out
+sp = spans(res[0])
+ok = True
+for a, b in zip(sp, sp[1:]):
+    if not ((b[0], b[1]) <= (a[0], a[1]) and (a[2], a[3]) <= (b[2], b[3])): ok = False
+check(ok, "every range strictly contains the one below it")
+check(texts(res[1])[0] == "v", "the second position gets its own chain")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp selectionRange"; else bad "lsp selectionRange"; fi
+
 # ---- incremental sync (textDocumentSync: 2): ranged edits ----
 # The client sends deltas (a range + replacement text), not the whole doc.
 # Apply two sequential ranged edits to the in-memory buffer and confirm a

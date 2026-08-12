@@ -471,6 +471,248 @@ define symbols
         sb.to_string()
     }
 
+    ; ====================================================================
+    ; textDocument/selectionRange (lexical)
+    ;
+    ; Smart-expand (Shift+Alt+Right): from the token under the cursor outward
+    ; through every enclosing bracket pair, ending at the whole file. The reply
+    ; is a nest of {"range":R,"parent":{...}} with the INNERMOST range at the
+    ; top, one chain per requested position.
+    ;
+    ; Lexical rather than parse-based on purpose: the editor asks for this while
+    ; the buffer is being typed in, i.e. usually while it does not parse, and a
+    ; bracket walk still answers. Comments and string literals are skipped, so a
+    ; brace inside either opens no level.
+    ; ====================================================================
+
+    ; True for `(`, `[`, `{`.
+    function is_open_bracket(c: u8) returns bool
+    {
+        if c = 0x28
+            return true
+        if c = 0x5B
+            return true
+        if c = 0x7B
+            return true
+        false
+    }
+
+    ; True for `)`, `]`, `}`.
+    function is_close_bracket(c: u8) returns bool
+    {
+        if c = 0x29
+            return true
+        if c = 0x5D
+            return true
+        if c = 0x7D
+            return true
+        false
+    }
+
+    ; The offset just PAST the bracket matching the one at `open_pos` (an
+    ; exclusive end), or `len` when it is unbalanced. Counts every bracket kind
+    ; together, which is right for balanced source and cannot mis-nest here:
+    ; the walk that produced `open_pos` counted the same way.
+    function matching_close(source: String, open_pos: size_t, len: size_t) returns size_t
+    {
+        var depth: int 0
+        var p open_pos
+        while p < len
+        {
+            let c source.get p
+            if symbols.is_noncode_start(c)
+            {
+                set p: symbols.skip_noncode(source, p, len)
+                continue
+            }
+            if symbols.is_open_bracket(c)
+                set depth: depth + 1
+            if symbols.is_close_bracket(c)
+            {
+                set depth: depth - 1
+                if depth <= 0
+                    return p + 1
+            }
+            set p: p + 1
+        }
+        len
+    }
+
+    ; {"range":R} — plus "parent" when `parent` is non-empty.
+    function selection_object(rp, source: String, start: size_t, end: size_t, parent: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("range"))
+        sb.append(symbols.range_for(source, start, end))
+        if parent.get_length() > 0
+        {
+            sb.append("," as char)
+            sb.append(symbols.key("parent"))
+            symbols.append_fragment(&sb, parent)
+        }
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    ; The chain for ONE cursor offset, innermost first.
+    function selection_chain(rp, source: String, off: size_t) returns String
+    {
+        let len source.get_length()
+        ; Enclosing bracket opens, outermost at index 0. `nest` counts every
+        ; level so the stack stays aligned past the recorded depth; only the
+        ; first BRACKET_DEPTH are kept, which is far past any real nesting.
+        var open_at size_t[64]
+        var nest: size_t 0
+        var p: size_t 0
+        while p < off
+        {
+            let c source.get p
+            if symbols.is_noncode_start(c)
+            {
+                set p: symbols.skip_noncode(source, p, len)
+                continue
+            }
+            if symbols.is_open_bracket(c)
+            {
+                if nest < 64
+                    set open_at[nest]: p
+                set nest: nest + 1
+            }
+            if symbols.is_close_bracket(c)
+                if nest > 0
+                    set nest: nest - 1
+            set p: p + 1
+        }
+        var kept nest
+        if kept > 64
+            set kept: 64
+
+        ; Outermost first: the whole file, then each enclosing pair inward.
+        var acc symbols.selection_object(source, 0, len, "")
+        var k: size_t 0
+        while k < kept
+        {
+            let opos open_at[k]
+            let cpos symbols.matching_close(source, opos, len)
+            ; A `(` directly after an identifier is a CALL's argument list, and
+            ; the call itself is a step the brackets alone do not give: without
+            ; it `inner` expands straight past `inner(a, 2)` to the enclosing
+            ; argument list, which is never what the reader means by "one more".
+            ; It wraps the bracket range, so it is pushed first (outer).
+            if source.get(opos) = 0x28
+                if opos > 0
+                    if symbols.is_ident_byte(source.get(opos - 1))
+                    {
+                        var s opos - 1
+                        while s > 0
+                        {
+                            if symbols.is_ident_byte(source.get(s - 1)) = false
+                                break
+                            set s: s - 1
+                        }
+                        set acc: symbols.selection_object(source, s, cpos, acc)
+                    }
+            set acc: symbols.selection_object(source, opos, cpos, acc)
+            set k: k + 1
+        }
+
+        ; Innermost: the identifier under the cursor, when there is one.
+        var tstart off
+        var tend off
+        var have false
+        if len > 0
+        {
+            var anchor off
+            if anchor >= len
+                set anchor: len - 1
+            var ok true
+            if symbols.is_ident_byte(source.get anchor) = false
+            {
+                set ok: false
+                if anchor > 0
+                    if symbols.is_ident_byte(source.get(anchor - 1))
+                    {
+                        set anchor: anchor - 1
+                        set ok: true
+                    }
+            }
+            if ok
+            {
+                var s anchor
+                while s > 0
+                {
+                    if symbols.is_ident_byte(source.get(s - 1)) = false
+                        break
+                    set s: s - 1
+                }
+                var e anchor + 1
+                while e < len
+                {
+                    if symbols.is_ident_byte(source.get e) = false
+                        break
+                    set e: e + 1
+                }
+                set tstart: s
+                set tend: e
+                set have: true
+            }
+        }
+        if have
+            return symbols.selection_object(source, tstart, tend, acc)
+        acc
+    }
+
+    ; One chain per packed "<line> <char>" line; the LSP SelectionRange[].
+    function selection_ranges_packed(rp, source: String, packed: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("[" as char)
+        var first true
+        var i: size_t 0
+        let n packed.get_length()
+        while i < n
+        {
+            var end i
+            while end < n
+            {
+                if packed.get(end) = 0x0A
+                    break
+                set end: end + 1
+            }
+            if end > i
+            {
+                var line: size_t 0
+                var character: size_t 0
+                var seen_space false
+                var k i
+                while k < end
+                {
+                    let c packed.get k
+                    if c = 0x20
+                        set seen_space: true
+                    if c <> 0x20
+                    {
+                        let digit (c - 0x30) as size_t
+                        if seen_space = false
+                            set line: line * 10 + digit
+                        if seen_space
+                            set character: character * 10 + digit
+                    }
+                    set k: k + 1
+                }
+                let off symbols.position_to_offset(source, line, character)
+                if first = false
+                    sb.append("," as char)
+                symbols.append_fragment(&sb, symbols.selection_chain(source, off))
+                set first: false
+            }
+            set i: end + 1
+        }
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
     ; {"start":<pos>,"end":<pos>}
     function range_for(rp, source: String, start: size_t, end: size_t) returns String
     {

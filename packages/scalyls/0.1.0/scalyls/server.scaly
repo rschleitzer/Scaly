@@ -235,6 +235,13 @@ define server
             return
         }
 
+        if method = "textDocument/selectionRange"
+        {
+            if has_id
+                server.handle_selection_range(msg, id)
+            return
+        }
+
         if method = "workspace/symbol"
         {
             if has_id
@@ -447,6 +454,33 @@ define server
             set i: i + 1
         }
         hn
+    }
+
+    ; textDocument/selectionRange. The request carries an ARRAY of positions
+    ; (a multi-cursor selection asks for all of them at once) and the reply must
+    ; hold one chain per position, in the same order. They are packed as one
+    ; "<line> <char>" per line, the same shape every other position frame uses.
+    function handle_selection_range(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string(json.get(doc, "uri"))
+        let positions json.get(params, "positions")
+        let n json.array_length positions
+        var pb StringBuilder()
+        var i: size_t 0
+        while i < n
+        {
+            let pos json.array_get(positions, i)
+            pb.append(json.format_i64(json.as_i64(json.get(pos, "line"))))
+            pb.append(" " as char)
+            pb.append(json.format_i64(json.as_i64(json.get(pos, "character"))))
+            pb.append("\n" as char)
+            set i: i + 1
+        }
+        let text docstore.get uri
+        let result worker.selection_ranges(uri, text, pb.to_string())
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     function handle_folding_range(msg: JsonValue, id: i64)
@@ -976,6 +1010,9 @@ define server
         ; advertise no codeActionKinds filter, so the client asks on every
         ; position and we answer [] where there is nothing to fix.
         sb.append(server.key("codeActionProvider"))
+        sb.append "true"
+        sb.append("," as char)
+        sb.append(server.key("selectionRangeProvider"))
         sb.append "true"
         sb.append("}" as char)                    ; } capabilities
         sb.append("," as char)
