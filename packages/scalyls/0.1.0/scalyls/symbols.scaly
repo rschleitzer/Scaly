@@ -3714,11 +3714,11 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.hover_leaf(f.start, f.end, offset, "function", symbols.target_name(f.target))
+                return symbols.hover_routine(source, f.start, f.end, offset, "function", f.target)
             when pr: ProcedureSyntax
-                return symbols.hover_leaf(pr.start, pr.end, offset, "procedure", symbols.target_name(pr.target))
+                return symbols.hover_routine(source, pr.start, pr.end, offset, "procedure", pr.target)
             when o: OperatorSyntax
-                return symbols.hover_leaf(o.start, o.end, offset, "operator", symbols.target_name(o.target))
+                return symbols.hover_routine(source, o.start, o.end, offset, "operator", o.target)
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
             when m: ModuleSyntax
@@ -3746,11 +3746,11 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.hover_leaf(f.start, f.end, offset, "function", symbols.target_name(f.target))
+                return symbols.hover_routine(source, f.start, f.end, offset, "function", f.target)
             when pr: ProcedureSyntax
-                return symbols.hover_leaf(pr.start, pr.end, offset, "procedure", symbols.target_name(pr.target))
+                return symbols.hover_routine(source, pr.start, pr.end, offset, "procedure", pr.target)
             when o: OperatorSyntax
-                return symbols.hover_leaf(o.start, o.end, offset, "operator", symbols.target_name(o.target))
+                return symbols.hover_routine(source, o.start, o.end, offset, "operator", o.target)
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
             when t: TraitSyntax
@@ -3838,15 +3838,15 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.hover_leaf(f.start, f.end, offset, "method", symbols.target_name(f.target))
+                return symbols.hover_routine(source, f.start, f.end, offset, "method", f.target)
             when pr: ProcedureSyntax
-                return symbols.hover_leaf(pr.start, pr.end, offset, "method", symbols.target_name(pr.target))
+                return symbols.hover_routine(source, pr.start, pr.end, offset, "method", pr.target)
             when o: OperatorSyntax
-                return symbols.hover_leaf(o.start, o.end, offset, "operator", symbols.target_name(o.target))
+                return symbols.hover_routine(source, o.start, o.end, offset, "operator", o.target)
             when ini: InitSyntax
-                return symbols.hover_leaf(ini.start, ini.end, offset, "init", "init")
+                return symbols.hover_init(source, ini, offset)
             when dei: DeInitSyntax
-                return symbols.hover_leaf(dei.start, dei.end, offset, "deinit", "deinit")
+                return symbols.hover_word(dei.start, dei.end, offset, "deinit")
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
             when e: EmptySyntax
@@ -3916,14 +3916,347 @@ define symbols
     {
         if offset >= start
             if offset < end
+                return symbols.kind_name_text(kind, name)
+        ""
+    }
+
+    ; `text` when start <= offset < end, else "" — for a construct whose hover
+    ; has no name to add (init / deinit).
+    function hover_word(rp, start: size_t, end: size_t, offset: size_t, text: pointer[const_char]) returns String
+    {
+        if offset >= start
+            if offset < end
             {
                 var sb StringBuilder()
-                sb.append kind
-                sb.append(" " as char)
-                sb.append name
+                sb.append text
                 return sb.to_string()
             }
         ""
+    }
+
+    ; `kind name`.
+    function kind_name_text(rp, kind: pointer[const_char], name: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append kind
+        sb.append(" " as char)
+        sb.append name
+        sb.to_string()
+    }
+
+    ; --------------------------------------------------------------------
+    ; Hovering a routine DECLARATION: its signature, and its constituents
+    ;
+    ; `kind name` alone answers the question "what am I inside of", which is all
+    ; a body offset needs (there the semantic hover answers with a type when it
+    ; can, and this is only its fallback). On the DECLARATION LINE itself that
+    ; answer throws away everything that is written there, so a header offset
+    ; reports the CONSTITUENT under the cursor — `parameter k: size_t`,
+    ; `returns pointer[OpenElement]`, `generic T` — and the whole reconstructed
+    ; signature anywhere else in the header (the name, the keyword, the parens).
+    ;
+    ; Every boundary here is a `start`, never an `end`: the lexer reads one token
+    ; ahead, so every syntax node's `end` overshoots into the next token (the
+    ; same reason param_label#/type_text# rebuild from `name` fields instead of
+    ; slicing the source). Hence "the header" is everything before the
+    ; implementation's first token, and the constituents are tested from the
+    ; LAST one backwards — the last parameter item that starts at or before the
+    ; cursor is the one it is on. A cursor on the closing paren therefore reports
+    ; the last parameter, which is where it sits.
+    ; --------------------------------------------------------------------
+
+    ; Hover for a function / procedure / operator (top level or a member).
+    function hover_routine(rp, source: String, start: size_t, end: size_t, offset: size_t, kind: pointer[const_char], target: TargetSyntax) returns String
+    {
+        if offset < start
+            return ""
+        if offset >= end
+            return ""
+        choose target
+            when named: NamedSyntax
+                return symbols.hover_signature(source, offset, kind, String(named.name), named.routine)
+            when r: RoutineSyntax
+                return symbols.hover_signature(source, offset, kind, "[]", r)
+    }
+
+    ; The constituent under `offset`, or the whole signature; inside the body the
+    ; bare `kind name`.
+    function hover_signature(rp, source: String, offset: size_t, kind: pointer[const_char], name: String, routine: RoutineSyntax) returns String
+    {
+        let body_start symbols.implementation_start(routine.implementation)
+        if offset >= body_start
+            return symbols.kind_name_text(kind, name)
+        if routine.throws_ <> null
+        {
+            let t (*routine.throws_)
+            if offset >= t.start
+                return symbols.labeled_type_text("throws", source, t.type)
+        }
+        if routine.returns_ <> null
+        {
+            let r (*routine.returns_)
+            if offset >= r.start
+                return symbols.labeled_type_text("returns", source, r.type)
+        }
+        let param symbols.hover_parameter_at(source, offset, routine.parameters)
+        if param.get_length() > 0
+            return param
+        var generic_limit body_start
+        let params_start symbols.parameter_set_start(routine.parameters)
+        if params_start > 0
+            set generic_limit: params_start
+        let generic symbols.hover_generic_at(source, offset, routine.generics, generic_limit)
+        if generic.get_length() > 0
+            return generic
+        symbols.routine_signature_text(source, kind, name, routine)
+    }
+
+    ; Hover for an `init` member: it has no name, no return and no generics, so
+    ; the parameter half of hover_signature# is all of it.
+    function hover_init(rp, source: String, ini: InitSyntax, offset: size_t) returns String
+    {
+        if offset < ini.start
+            return ""
+        if offset >= ini.end
+            return ""
+        let body_start symbols.action_start(ini.action)
+        if offset >= body_start
+            return "init"
+        let param symbols.hover_parameter_at(source, offset, ini.parameters)
+        if param.get_length() > 0
+            return param
+        var sb StringBuilder()
+        sb.append "init"
+        sb.append(symbols.parameter_set_text(source, ini.parameters))
+        sb.to_string()
+    }
+
+    ; `kind name[G](p: T, q: U) returns R throws E`, rebuilt from the tree's
+    ; name/type fields. The receiver `this` is KEPT: this renders a DECLARATION,
+    ; so the hover says what the line says (unlike signature_param_labels#,
+    ; which feeds SignatureHelp at a CALL site, where the receiver is written
+    ; before the dot and counting it would misalign activeParameter).
+    function routine_signature_text(rp, source: String, kind: pointer[const_char], name: String, routine: RoutineSyntax) returns String
+    {
+        var sb StringBuilder()
+        sb.append kind
+        sb.append(" " as char)
+        sb.append name
+        if routine.generics <> null
+        {
+            let g (*routine.generics)
+            sb.append(symbols.generic_arguments_text(source, g))
+        }
+        sb.append(symbols.parameter_set_text(source, routine.parameters))
+        if routine.returns_ <> null
+        {
+            let r (*routine.returns_)
+            sb.append " returns "
+            sb.append(symbols.type_text(source, r.type))
+        }
+        if routine.throws_ <> null
+        {
+            let t (*routine.throws_)
+            sb.append " throws "
+            sb.append(symbols.type_text(source, t.type))
+        }
+        sb.to_string()
+    }
+
+    ; `role Type` — `returns pointer[OpenElement]`, `throws Error`. (`label` is
+    ; a reserved word, hence `role`.)
+    function labeled_type_text(rp, role: pointer[const_char], source: String, ty: TypeSyntax) returns String
+    {
+        var sb StringBuilder()
+        sb.append role
+        sb.append(" " as char)
+        sb.append(symbols.type_text(source, ty))
+        sb.to_string()
+    }
+
+    ; `(p: T, q: U)`, `(T)` for a bare unnamed type, `()` for none.
+    function parameter_set_text(rp, source: String, parameters: ref[ParameterSetSyntax]?) returns String
+    {
+        var sb StringBuilder()
+        sb.append("(" as char)
+        if parameters <> null
+        {
+            let ps (*parameters)
+            choose ps
+                when params: ParametersSyntax
+                {
+                    if params.items <> null
+                    {
+                        let items (*params.items)
+                        var first true
+                        var i: size_t 0
+                        while i < items.length
+                        {
+                            let iptr items.get i
+                            if iptr <> null
+                            {
+                                let it (*iptr)
+                                if first = false
+                                {
+                                    sb.append("," as char)
+                                    sb.append(" " as char)
+                                }
+                                sb.append(symbols.param_label(source, it))
+                                set first: false
+                            }
+                            set i: i + 1
+                        }
+                    }
+                }
+                when ty: TypeSyntax
+                    sb.append(symbols.type_text(source, ty))
+        }
+        sb.append(")" as char)
+        sb.to_string()
+    }
+
+    ; `[T]`, `[K, V]`, or "" when the routine is not generic.
+    function generic_arguments_text(rp, source: String, g: GenericArgumentsSyntax) returns String
+    {
+        var sb StringBuilder()
+        if g.generics <> null
+        {
+            let gs (*g.generics)
+            sb.append("[" as char)
+            var first true
+            var i: size_t 0
+            while i < gs.length
+            {
+                let gptr gs.get i
+                if gptr <> null
+                {
+                    let ga (*gptr)
+                    if first = false
+                    {
+                        sb.append("," as char)
+                        sb.append(" " as char)
+                    }
+                    sb.append(symbols.type_text(source, ga.type))
+                    set first: false
+                }
+                set i: i + 1
+            }
+            sb.append("]" as char)
+        }
+        sb.to_string()
+    }
+
+    ; `parameter name: Type` for the parameter the cursor is on (the bare type
+    ; for an unnamed single-type parameter set), or "" when it is on none.
+    function hover_parameter_at(rp, source: String, offset: size_t, parameters: ref[ParameterSetSyntax]?) returns String
+    {
+        var result ""
+        if parameters <> null
+        {
+            let ps (*parameters)
+            choose ps
+                when params: ParametersSyntax
+                {
+                    if params.items <> null
+                    {
+                        let items (*params.items)
+                        var i: size_t 0
+                        while i < items.length
+                        {
+                            let iptr items.get i
+                            if iptr <> null
+                            {
+                                let it (*iptr)
+                                if offset >= it.start
+                                {
+                                    var sb StringBuilder()
+                                    sb.append "parameter "
+                                    sb.append(symbols.param_label(source, it))
+                                    set result: sb.to_string()
+                                }
+                            }
+                            set i: i + 1
+                        }
+                    }
+                }
+                when ty: TypeSyntax
+                {
+                    if offset >= ty.start
+                        set result: symbols.labeled_type_text("parameter", source, ty)
+                }
+        }
+        result
+    }
+
+    ; `generic T` for the generic parameter the cursor is on, or "". `limit` is
+    ; the start of the parameter list (the generics end where it begins).
+    function hover_generic_at(rp, source: String, offset: size_t, generics: ref[GenericArgumentsSyntax]?, limit: size_t) returns String
+    {
+        var result ""
+        if offset < limit
+            if generics <> null
+            {
+                let g (*generics)
+                if g.generics <> null
+                {
+                    let gs (*g.generics)
+                    var i: size_t 0
+                    while i < gs.length
+                    {
+                        let gptr gs.get i
+                        if gptr <> null
+                        {
+                            let ga (*gptr)
+                            if offset >= ga.start
+                                set result: symbols.labeled_type_text("generic", source, ga.type)
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    ; The `start` of a parameter set, 0 when there is none.
+    function parameter_set_start(rp, parameters: ref[ParameterSetSyntax]?) returns size_t
+    {
+        var result: size_t 0
+        if parameters <> null
+        {
+            let ps (*parameters)
+            choose ps
+                when params: ParametersSyntax
+                    set result: params.start
+                when ty: TypeSyntax
+                    set result: ty.start
+        }
+        result
+    }
+
+    ; The offset of an implementation's first token — the end of the header.
+    function implementation_start(rp, implementation: ImplementationSyntax) returns size_t
+    {
+        choose implementation
+            when act: ActionSyntax
+                return symbols.action_start(act)
+            when ext: ExternSyntax
+                return ext.start
+            when inst: InstructionSyntax
+                return inst.start
+            when intr: IntrinsicSyntax
+                return intr.start
+    }
+
+    ; The offset of an action's first token.
+    function action_start(rp, action: ActionSyntax) returns size_t
+    {
+        choose action
+            when op: OperationSyntax
+                return op.start
+            when st: SetSyntax
+                return st.start
+            when blk: BlockSyntax
+                return blk.start
     }
 
     ; ====================================================================

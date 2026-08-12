@@ -247,12 +247,21 @@ if [ $rc -eq 0 ]; then ok "lsp documentSymbol outline"; else bad "lsp documentSy
 # Like documentSymbol, the request carries only a uri + position; the worker
 # re-reads the file. Exercises a top-level function, a method inside a struct
 # (innermost wins), a module-level mutable, and an empty result off any symbol.
+#
+# A DECLARATION HEADER answers with the signature, or with the constituent under
+# the cursor (a parameter, the return type) — `method get_x` alone throws away
+# everything the line says. Inside the BODY it stays `kind name`: there the
+# semantic hover answers with a type when it can, and the enclosing declaration
+# is all its fallback owes. Both halves are asserted (ids 2/3/7/8 header, 9 body).
 python3 - <<'PY'
 import sys, json, subprocess
 src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "mutable counter: int 0\n\n"
        "define Point\n(\n    x: int\n)\n{\n"
-       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n")
+       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n"
+       # Line 18: a GENERIC routine — nothing in the tree declares one, so this
+       # fixture is the only cover for the `[T]` half of the rendering.
+       "\nfunction pick[T](a: T, b: T) returns T\n{\n    return a\n}\n")
 path = "/tmp/lsp_hover_test.scaly"
 open(path, "w").write(src)
 def frame(o):
@@ -263,13 +272,18 @@ def hov(idn, line, char):
                             "position":{"line":line,"character":char}}})
 inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
 inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
-inp += hov(2, 0, 10)     # inside `add`
-inp += hov(3, 12, 18)    # inside Point.get_x (innermost)
+inp += hov(2, 0, 10)     # the name `add`
+inp += hov(3, 12, 13)    # the name Point.get_x (innermost declaration wins)
 inp += hov(4, 5, 10)     # inside `counter`
 inp += hov(5, 100, 0)    # past EOF -> no symbol (declaration ranges run to
                          # the next token, so blank lines between decls still
                          # report the preceding one; past-EOF is the reliable
                          # null case)
+inp += hov(7, 0, 13)     # a PARAMETER of `add`
+inp += hov(8, 0, 30)     # the RETURN TYPE of `add`
+inp += hov(9, 13, 4)     # get_x's `{` -> body, so the bare `method get_x`
+inp += hov(10, 18, 10)   # the name `pick` -> a generic signature
+inp += hov(11, 18, 14)   # its generic parameter `T`
 inp += frame({"jsonrpc":"2.0","id":6,"method":"shutdown"})
 inp += frame({"jsonrpc":"2.0","method":"exit"})
 out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
@@ -291,10 +305,18 @@ def val(idn):
     r = (f or {}).get("result")
     if r is None: return None
     return r.get("contents", {}).get("value")
-check(val(2) == "function add", "hover on function -> 'function add'")
-check(val(3) == "method get_x", "hover in method (innermost) -> 'method get_x'")
+check(val(2) == "function add(a: int, b: int) returns int",
+      "hover on a function name -> its signature")
+check(val(3) == "method get_x(this: Point) returns int",
+      "hover on a method name (innermost) -> its signature")
 check(val(4) == "mutable counter", "hover on mutable -> 'mutable counter'")
 check(val(5) is None, "hover off any symbol -> null result")
+check(val(7) == "parameter a: int", "hover on a parameter -> 'parameter a: int'")
+check(val(8) == "returns int", "hover on the return type -> 'returns int'")
+check(val(9) == "method get_x", "hover in a method BODY -> 'method get_x'")
+check(val(10) == "function pick[T](a: T, b: T) returns T",
+      "hover on a generic routine -> signature with its generics")
+check(val(11) == "generic T", "hover on a generic parameter -> 'generic T'")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
@@ -566,7 +588,8 @@ names = [s["name"] for s in ((sym or {}).get("result") or [])]
 check(names == ["beta_renamed"], "ranged edit rebuilt the doc (alpha -> beta_renamed)")
 hov = next((f for f in frames if f.get("id") == 3), None)
 val = ((hov or {}).get("result") or {}).get("contents", {}).get("value")
-check(val == "function beta_renamed", "second ranged edit applied on top (sequential)")
+check(val == "function beta_renamed() returns int",
+      "second ranged edit applied on top (sequential)")
 check(open(path).read() == src, "disk file untouched (edits are in-memory)")
 sys.exit(1 if failures else 0)
 PY
@@ -2830,7 +2853,8 @@ check(val(2) == "int", "generic element type b.get() -> int (lexical sees T)")
 check(val(3) == "int", "call result make() -> int")
 check(val(4) == "int", "pointer inner *p -> int")
 check(val(5) == "int", "mid-chain o.gi().z -> int (lexical stops at '(')")
-check(val(6) == "function make", "declaration name falls back to lexical hover")
+check(val(6) == "function make() returns int",
+      "declaration name falls back to the lexical hover (its signature)")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
@@ -2854,7 +2878,7 @@ def hov(idn, p, line, char):
 inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
 inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
 inp += hov(2, bad, 0, 12)                  # parse-error doc -> null, no crash
-inp += hov(3, good, 0, 9)                  # server still alive -> lexical "function fine"
+inp += hov(3, good, 0, 9)                  # server still alive -> lexical signature
 inp += frame({"jsonrpc":"2.0","id":4,"method":"shutdown"})
 inp += frame({"jsonrpc":"2.0","method":"exit"})
 out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
@@ -2875,7 +2899,8 @@ check(f2 is not None and f2.get("result") is None, "parse-error hover -> null (n
 f3 = get(3)
 v3 = (f3 or {}).get("result", {})
 v3 = v3.get("contents", {}).get("value") if v3 else None
-check(v3 == "function fine", "server alive after parse error -> lexical hover answers")
+check(v3 == "function fine(a: int) returns int",
+      "server alive after parse error -> lexical hover answers")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
