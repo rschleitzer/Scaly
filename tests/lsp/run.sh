@@ -652,6 +652,86 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp completion"; else bad "lsp completion"; fi
 
+# ---- completion `detail`: the grey text beside the label ----
+# A list of bare names cannot be read: `append` says nothing about whether it
+# takes a String, a char or an int. detail carries the signature (minus the
+# name, which IS the label) or the type. Two decisions pinned here:
+#   * the routine WORD is kept — the CompletionItemKind icon is Function(3) for
+#     both, so nothing else distinguishes a pure `function` from a `procedure`
+#   * a leading `this` is DROPPED, so the detail agrees with the SignatureHelp
+#     that pops up one keystroke later (hover keeps it — it renders the
+#     declaration, not the call)
+python3 - <<'PY'
+import sys, json, subprocess
+doc = ("mutable counter: int 0\n"
+       "\n"
+       "define Point\n(\n    x: int\n    y: double\n)\n{\n"
+       "    init(x: int, y: double)\n    {\n    }\n"
+       "    function distance(this, other: Point) returns double\n"
+       "    {\n"
+       "        this.\n"
+       "        0.0\n"
+       "    }\n"
+       "    procedure move(this, dx: int)\n    {\n    }\n}\n"
+       "\n"
+       "function pick[T](a: T, b: T) returns T\n{\n    a\n}\n"
+       "\n"
+       "procedure emit(text: String)\n{\n}\n")
+uri = "file:///tmp/lsp_detail_test.scaly"
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def items_at(line, ch):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{
+            "textDocument":{"uri":uri},"position":{"line":line,"character":ch}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    d = out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+        if f.get("id") == 2: return f.get("result") or []
+    return []
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+flat = {it["label"]: it for it in items_at(24, 5)}
+check(flat.get("pick", {}).get("detail") == "function[T](a: T, b: T) returns T",
+      "function detail carries generics, params and return")
+check(flat.get("emit", {}).get("detail") == "procedure(text: String)",
+      "procedure detail says `procedure`, not `function`")
+check(flat.get("counter", {}).get("detail") == "int",
+      "a typed mutable gets its type as detail")
+check(flat.get("Point", {}).get("detail") is None,
+      "a type has no detail — the icon already says Struct")
+members = {it["label"]: it for it in items_at(13, 13)}
+# `init` rides along after `this.` — pre-existing and pinned, not endorsed: a
+# Scaly value is constructed as `Point(x, y)`, never as `this.init(...)`, so
+# this entry is noise. Pinned so that removing it is a visible decision.
+check(set(members) == {"x", "y", "init", "distance", "move"},
+      "`this.` -> the enclosing type's fields, init and methods")
+check(members.get("init", {}).get("detail") == "(x: int, y: double)",
+      "init's detail is its parameter list (it has no name of its own)")
+check(members.get("x", {}).get("detail") == "int"
+      and members.get("y", {}).get("detail") == "double",
+      "a field gets its declared type as detail")
+check(members.get("distance", {}).get("detail") == "function(other: Point) returns double",
+      "a method's detail DROPS the `this` receiver")
+check(members.get("move", {}).get("detail") == "procedure(dx: int)",
+      "a mutating member reads as `procedure`")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp completion detail"; else bad "lsp completion detail"; fi
+
 # ---- incremental sync (textDocumentSync: 2): ranged edits ----
 # The client sends deltas (a range + replacement text), not the whole doc.
 # Apply two sequential ranged edits to the in-memory buffer and confirm a

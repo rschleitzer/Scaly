@@ -2129,6 +2129,20 @@ define symbols
     ; A {"label":<name>,"kind":<int>} item. Small -> plain append is fine.
     function completion_item(rp, name: String, kind: i64) returns String
     {
+        symbols.completion_item_detail(name, kind, "")
+    }
+
+    ; The same item plus LSP's `detail` — the grey text the editor shows beside
+    ; the label and in the details pane. An empty `detail` is OMITTED rather
+    ; than sent as "", so an item without one looks exactly as it did before.
+    ;
+    ; What goes in there: for a routine the signature minus its name (the label
+    ; already carries that), for a field or a typed binding its type. The point
+    ; is that a completion list of bare names cannot be read — `append` says
+    ; nothing about whether it takes a String, a char or an int, and Scaly
+    ; overloads that name six ways.
+    function completion_item_detail(rp, name: String, kind: i64, detail: String) returns String
+    {
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("label"))
@@ -2136,8 +2150,133 @@ define symbols
         sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append(json.format_i64(kind))
+        if detail.get_length() > 0
+        {
+            sb.append("," as char)
+            sb.append(symbols.key("detail"))
+            sb.append(json.quote_string(detail))
+        }
         sb.append("}" as char)
         sb.to_string()
+    }
+
+    ; A routine's completion detail: `function(p: T) returns R`. The routine WORD
+    ; is kept because the CompletionItemKind icon cannot tell a `function` from a
+    ; `procedure`, and in Scaly that distinction is the difference between a pure
+    ; call and one that may mutate its inputs or do I/O — exactly what a reader
+    ; needs before picking an entry. The NAME is dropped: it is the label.
+    ;
+    ; A leading `this` is dropped, unlike in hover's routine_signature_text#: a
+    ; hover renders the DECLARATION, so it says what the line says, while an
+    ; accepted completion is about to be WRITTEN as a call, where the receiver
+    ; stands before the dot. Counting it here would also disagree with the
+    ; SignatureHelp that pops up one keystroke later (signature_param_labels#
+    ; drops it for the same reason), and two surfaces disagreeing about the
+    ; arity of the same call is worse than either answer alone.
+    function routine_detail_text(rp, source: String, kind: pointer[const_char], routine: RoutineSyntax) returns String
+    {
+        var sb StringBuilder()
+        sb.append kind
+        if routine.generics <> null
+        {
+            let g (*routine.generics)
+            sb.append(symbols.generic_arguments_text(source, g))
+        }
+        sb.append(symbols.call_parameter_set_text(source, routine.parameters))
+        if routine.returns_ <> null
+        {
+            let r (*routine.returns_)
+            sb.append " returns "
+            sb.append(symbols.type_text(source, r.type))
+        }
+        if routine.throws_ <> null
+        {
+            let t (*routine.throws_)
+            sb.append " throws "
+            sb.append(symbols.type_text(source, t.type))
+        }
+        sb.to_string()
+    }
+
+    ; `(p: T, q: U)` as parameter_set_text#, but WITHOUT a leading `this` — the
+    ; call-site view of the same parameter list. Same receiver test as
+    ; signature_param_labels#, so completion detail and SignatureHelp agree.
+    function call_parameter_set_text(rp, source: String, parameters: ref[ParameterSetSyntax]?) returns String
+    {
+        var sb StringBuilder()
+        sb.append("(" as char)
+        if parameters <> null
+        {
+            let ps (*parameters)
+            choose ps
+                when params: ParametersSyntax
+                {
+                    if params.items <> null
+                    {
+                        let items (*params.items)
+                        var first true
+                        var i: size_t 0
+                        if items.length > 0
+                        {
+                            let i0 items.get(0)
+                            if i0 <> null
+                            {
+                                let it0 (*i0)
+                                let kw_this "this"
+                                if it0.name = kw_this
+                                    set i: 1
+                            }
+                        }
+                        while i < items.length
+                        {
+                            let iptr items.get i
+                            if iptr <> null
+                            {
+                                let it (*iptr)
+                                if first = false
+                                {
+                                    sb.append("," as char)
+                                    sb.append(" " as char)
+                                }
+                                sb.append(symbols.param_label(source, it))
+                                set first: false
+                            }
+                            set i: i + 1
+                        }
+                    }
+                }
+                when ty: TypeSyntax
+                    sb.append(symbols.type_text(source, ty))
+        }
+        sb.append(")" as char)
+        sb.to_string()
+    }
+
+    ; The same, reached through a TargetSyntax (a named routine or a bare one).
+    function target_detail_text(rp, source: String, kind: pointer[const_char], target: TargetSyntax) returns String
+    {
+        choose target
+            when named: NamedSyntax
+                return symbols.routine_detail_text(source, kind, named.routine)
+            when r: RoutineSyntax
+                return symbols.routine_detail_text(source, kind, r)
+    }
+
+    ; A binding's declared type, or "" when it has none (`var i 0` — the type is
+    ; inferred and the parse tree cannot name it; that is the planner's answer,
+    ; and completion is deliberately parse-only).
+    function binding_detail_text(rp, source: String, binding: BindingSyntax) returns String
+    {
+        if binding.annotation = null
+            return ""
+        let ann (*binding.annotation)
+        choose ann.spec
+            when ty: TypeSyntax
+                return symbols.type_text(source, ty)
+            when st: StructureSyntax
+                return ""
+            when ar: ArraySyntax
+                return ""
     }
 
     ; One top-level declaration -> a fragment (its own item, plus the members
@@ -2146,19 +2285,19 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.completion_item(symbols.target_name(f.target), 3)
+                return symbols.completion_item_detail(symbols.target_name(f.target), 3, symbols.target_detail_text(source, "function", f.target))
             when pr: ProcedureSyntax
-                return symbols.completion_item(symbols.target_name(pr.target), 3)
+                return symbols.completion_item_detail(symbols.target_name(pr.target), 3, symbols.target_detail_text(source, "procedure", pr.target))
             when o: OperatorSyntax
-                return symbols.completion_item(symbols.target_name(o.target), 24)
+                return symbols.completion_item_detail(symbols.target_name(o.target), 24, symbols.target_detail_text(source, "operator", o.target))
             when def: DefinitionSyntax
                 return symbols.completion_definition(source, def)
             when m: ModuleSyntax
                 return symbols.completion_item(m.name, 9)
             when mut: MutableSyntax
-                return symbols.completion_item(mut.binding.name, 6)
+                return symbols.completion_item_detail(mut.binding.name, 6, symbols.binding_detail_text(source, mut.binding))
             when sh: SharedSyntax
-                return symbols.completion_item(sh.binding.name, 6)
+                return symbols.completion_item_detail(sh.binding.name, 6, symbols.binding_detail_text(source, sh.binding))
             when priv: PrivateSyntax
                 return symbols.completion_export(source, priv.export_)
             when e: EmptySyntax
@@ -2178,11 +2317,11 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.completion_item(symbols.target_name(f.target), 3)
+                return symbols.completion_item_detail(symbols.target_name(f.target), 3, symbols.target_detail_text(source, "function", f.target))
             when pr: ProcedureSyntax
-                return symbols.completion_item(symbols.target_name(pr.target), 3)
+                return symbols.completion_item_detail(symbols.target_name(pr.target), 3, symbols.target_detail_text(source, "procedure", pr.target))
             when o: OperatorSyntax
-                return symbols.completion_item(symbols.target_name(o.target), 24)
+                return symbols.completion_item_detail(symbols.target_name(o.target), 24, symbols.target_detail_text(source, "operator", o.target))
             when def: DefinitionSyntax
                 return symbols.completion_definition(source, def)
             when t: TraitSyntax
@@ -2321,7 +2460,7 @@ define symbols
                     {
                         if first = false
                             sb.append("," as char)
-                        symbols.append_fragment(&sb, symbols.completion_item(name, 5))
+                        symbols.append_fragment(&sb, symbols.completion_item_detail(name, 5, symbols.part_detail_text(source, part)))
                         set first: false
                     }
                 }
@@ -2339,6 +2478,17 @@ define symbols
                 return String(fld.property.name)
             when prop: PropertySyntax
                 return String(prop.name)
+    }
+
+    ; A field's declared type, for its completion `detail`. Unlike a binding's,
+    ; a property's annotation is not optional — a field always names its type.
+    function part_detail_text(rp, source: String, part: PartSyntax) returns String
+    {
+        choose part
+            when fld: FieldSyntax
+                return symbols.type_text(source, fld.property.annotation.type)
+            when prop: PropertySyntax
+                return symbols.type_text(source, prop.annotation.type)
     }
 
     ; Append `fragment` to `sb` ONE BYTE AT A TIME — see the STRING/JSON NOTE at
@@ -2361,13 +2511,13 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.completion_item(symbols.target_name(f.target), 2)
+                return symbols.completion_item_detail(symbols.target_name(f.target), 2, symbols.target_detail_text(source, "function", f.target))
             when pr: ProcedureSyntax
-                return symbols.completion_item(symbols.target_name(pr.target), 2)
+                return symbols.completion_item_detail(symbols.target_name(pr.target), 2, symbols.target_detail_text(source, "procedure", pr.target))
             when o: OperatorSyntax
-                return symbols.completion_item(symbols.target_name(o.target), 24)
+                return symbols.completion_item_detail(symbols.target_name(o.target), 24, symbols.target_detail_text(source, "operator", o.target))
             when ini: InitSyntax
-                return symbols.completion_item("init", 4)
+                return symbols.completion_item_detail("init", 4, symbols.parameter_set_text(source, ini.parameters))
             when dei: DeInitSyntax
                 return symbols.completion_item("deinit", 4)
             when def: DefinitionSyntax
