@@ -68,8 +68,50 @@ use scalyc.compiler.Syntax.*
 use scalyls.nameset.*
 use scalyls.json.*
 
+mutable prof_list: int 0
+mutable prof_read: int 0
+mutable prof_fresh: int 0
+mutable prof_sig: int 0
+mutable prof_bytes: int 0
+
 define symbols
 {
+    procedure prof_reset()
+    {
+        set prof_list: 0
+        set prof_read: 0
+        set prof_fresh: 0
+        set prof_sig: 0
+        set prof_bytes: 0
+    }
+
+    ; `SCALYLS_PROF=1` reports, per request, what the cross-file scans cost:
+    ; how many directory listings were taken (each is a `find` through popen,
+    ; i.e. a shell process), how many files were read and hashed, how many of
+    ; those reads a cached listing/blob spared, and how much blob TEXT the
+    ; signature lookups scanned. Measured on an inlayHint over
+    ; packages/opensp/ContentState.scaly (2026-08-12), which is why the knob
+    ; exists: find=2 read=170 fresh=6479 sigscan=4949 scanKB=128035 — the reads
+    ; and the shell spawns are handled, and the 128 MB of blob scanning is not.
+    procedure prof_dump()
+    {
+        let raw getenv "SCALYLS_PROF"
+        if raw = null
+            return
+        scaly_eputs "PROF"
+        scaly_eputs " find="
+        scaly_eputi(prof_list as i64)
+        scaly_eputs " read="
+        scaly_eputi(prof_read as i64)
+        scaly_eputs " fresh="
+        scaly_eputi(prof_fresh as i64)
+        scaly_eputs " sigscan="
+        scaly_eputi(prof_sig as i64)
+        scaly_eputs " scanKB="
+        scaly_eputi((prof_bytes / 1024) as i64)
+        scaly_eputs "\n"
+    }
+
     ; Build the documentSymbol result ARRAY from `source`. On a parse error
     ; the array is empty (the diagnostics path reports the error separately).
     function document_symbols(rp, source: String) returns String
@@ -3332,17 +3374,7 @@ define symbols
                         if fpath <> self_path
                             if File.exists(fpath)
                             {
-                                let fsrc File.read_to_string(fpath)
-                                let chash fsrc.hash()
-                                var blob ""
-                                if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob fpath
-                                if symindex.valid(fpath, chash) = false
-                                {
-                                    let furi symbols.path_to_uri fpath
-                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                    symindex.put(fpath, chash, blob)
-                                }
+                                let blob symbols.blob_for_file(fpath)
                                 set result: symbols.members_from_ws_blob(blob, type_name)
                             }
                 }
@@ -3806,17 +3838,7 @@ define symbols
                         if fpath <> self_path
                             if File.exists(fpath)
                             {
-                                let fsrc File.read_to_string(fpath)
-                                let chash fsrc.hash()
-                                var blob ""
-                                if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob fpath
-                                if symindex.valid(fpath, chash) = false
-                                {
-                                    let furi symbols.path_to_uri fpath
-                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                    symindex.put(fpath, chash, blob)
-                                }
+                                let blob symbols.blob_for_file(fpath)
                                 set result: symbols.member_type_from_ws_blob(blob, type_name, member_name)
                             }
                 }
@@ -5543,17 +5565,36 @@ define symbols
     ; The content-hash-cached ws symbol blob of `fpath` — the SAME blob
     ; workspace/symbol and semanticTokens build (parse-once, shared), built and
     ; stored here on a cache miss. "" when the file does not exist.
+    ;
+    ; ★The read is skipped entirely for a file this REQUEST already validated
+    ; (symindex.fresh#). That matters because the cross-file scans ask per CALL
+    ; SITE, not once: an inlayHint over a file in packages/opensp resolved ~40
+    ; callees and each resolution re-read and re-hashed all 56 files of the
+    ; directory — 2.54 MB × 40 ≈ 100 MB per request, with every blob already
+    ; cached. Eight call sites carried this read+hash+valid+put dance inline;
+    ; they all built the identical blob and now route through here, so the
+    ; freshness rule holds for every cross-file feature rather than one.
     function blob_for_file(rp, fpath: String) returns String
     {
+        if symindex.fresh(fpath)
+        {
+            set prof_fresh: prof_fresh + 1
+            return symindex.get_blob fpath
+        }
+        set prof_read: prof_read + 1
         if File.exists(fpath) = false
             return ""
         let fsrc File.read_to_string(fpath)
         let chash fsrc.hash()
         if symindex.valid(fpath, chash)
+        {
+            symindex.touch fpath
             return symindex.get_blob fpath
+        }
         let furi symbols.path_to_uri fpath
         let blob symbols.workspace_symbols_in_file(fsrc, furi)
         symindex.put(fpath, chash, blob)
+        symindex.touch fpath
         blob
     }
 
@@ -5853,6 +5894,8 @@ define symbols
     ; via build_signature_from_labels#. "" on no match.
     function sig_from_ws_blob(rp, blob: String, name: String, active: size_t) returns String
     {
+        set prof_sig: prof_sig + 1
+        set prof_bytes: prof_bytes + (blob.get_length() as int)
         let r symbols.detail_payload(blob, name, 0x53)
         if r.get_length() > 0
         {
@@ -6141,17 +6184,7 @@ define symbols
                         if fpath <> self_path
                             if File.exists(fpath)
                             {
-                                let fsrc File.read_to_string(fpath)
-                                let chash fsrc.hash()
-                                var blob ""
-                                if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob fpath
-                                if symindex.valid(fpath, chash) = false
-                                {
-                                    let furi symbols.path_to_uri fpath
-                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                    symindex.put(fpath, chash, blob)
-                                }
+                                let blob symbols.blob_for_file(fpath)
                                 if symbols.concept_in_ws_blob(blob, name)
                                     set found: true
                             }
@@ -6201,17 +6234,7 @@ define symbols
                         if fpath <> self_path
                             if File.exists(fpath)
                             {
-                                let fsrc File.read_to_string(fpath)
-                                let chash fsrc.hash()
-                                var blob ""
-                                if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob fpath
-                                if symindex.valid(fpath, chash) = false
-                                {
-                                    let furi symbols.path_to_uri fpath
-                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                    symindex.put(fpath, chash, blob)
-                                }
+                                let blob symbols.blob_for_file(fpath)
                                 set result: symbols.return_type_from_ws_blob(blob, name)
                             }
                 }
@@ -6306,17 +6329,7 @@ define symbols
                     if fpath <> self_path
                         if File.exists(fpath)
                         {
-                            let fsrc File.read_to_string(fpath)
-                            let chash fsrc.hash()
-                            var blob ""
-                            if symindex.valid(fpath, chash)
-                                set blob: symindex.get_blob fpath
-                            if symindex.valid(fpath, chash) = false
-                            {
-                                let furi symbols.path_to_uri fpath
-                                set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                symindex.put(fpath, chash, blob)
-                            }
+                            let blob symbols.blob_for_file(fpath)
                             let frag symbols.tagged_names_from_ws_blob blob
                             var ci: size_t 0
                             let cn frag.get_length()
@@ -6731,6 +6744,17 @@ define symbols
     ; of a string-identifier token, so it must not appear in a "..." literal).
     function list_scaly_files(rp, dir: String) returns String
     {
+        ; ★Answered from this request's cache when possible. The body below
+        ; runs `find` through popen, i.e. it forks a SHELL — and the cross-file
+        ; scans call this per CALL SITE, for two directories each. Measured
+        ; 2026-08-12 on an inlayHint over packages/opensp: ~80 shell spawns per
+        ; request, which was the bulk of its 4.7 s, not the file reading it
+        ; looked like. One request sees one snapshot of the tree, so listing a
+        ; directory twice within it cannot answer anything new.
+        if symindex.has_listing(dir)
+            return symindex.get_listing dir
+
+        set prof_list: prof_list + 1
         var cmd StringBuilder()
         cmd.append "find "
         cmd.append("'" as char)
@@ -6765,7 +6789,9 @@ define symbols
         }
         pclose f
         sb.append("\n" as char)                    ; trailing LF
-        sb.to_string()
+        let listing sb.to_string()
+        symindex.put_listing(dir, listing)
+        listing
     }
 
     ; Bytes [start,end) of `s` as a new String.
@@ -6870,17 +6896,7 @@ define symbols
                 if fpath.get_length() > 0
                     if File.exists(fpath)
                     {
-                        let fsrc File.read_to_string(fpath)
-                        let chash fsrc.hash()
-                        var blob ""
-                        if symindex.valid(fpath, chash)
-                            set blob: symindex.get_blob fpath
-                        if symindex.valid(fpath, chash) = false
-                        {
-                            let furi symbols.path_to_uri fpath
-                            set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                            symindex.put(fpath, chash, blob)
-                        }
+                        let blob symbols.blob_for_file(fpath)
                         let frag symbols.filter_ws_blob(blob, query)
                         if frag.get_length() > 0
                         {
@@ -11078,17 +11094,7 @@ define symbols
                         if fpath <> self_path
                             if File.exists(fpath)
                             {
-                                let fsrc File.read_to_string(fpath)
-                                let chash fsrc.hash()
-                                var blob ""
-                                if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob fpath
-                                if symindex.valid(fpath, chash) = false
-                                {
-                                    let furi symbols.path_to_uri fpath
-                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                    symindex.put(fpath, chash, blob)
-                                }
+                                let blob symbols.blob_for_file(fpath)
                                 set result: symbols.sig_from_ws_blob(blob, name, active)
                             }
                 }
@@ -11146,17 +11152,7 @@ define symbols
                         if fpath <> self_path
                             if File.exists(fpath)
                             {
-                                let fsrc File.read_to_string(fpath)
-                                let chash fsrc.hash()
-                                var blob ""
-                                if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob fpath
-                                if symindex.valid(fpath, chash) = false
-                                {
-                                    let furi symbols.path_to_uri fpath
-                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                    symindex.put(fpath, chash, blob)
-                                }
+                                let blob symbols.blob_for_file(fpath)
                                 if symbols.members_from_ws_blob(blob, concept).get_length() > 0
                                     set result: symbols.sig_from_ws_blob(blob, name, active)
                             }

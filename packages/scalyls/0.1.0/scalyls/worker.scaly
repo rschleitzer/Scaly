@@ -173,7 +173,19 @@ define worker
     ; parent closed its end). A plain (non-#) helper so its local page —
     ; holding the request frames AND the whole diagnostics-pipeline working
     ; set — is reclaimed on return, every iteration.
+    ; One request: read it, answer it, and — when SCALYLS_PROF is set — report
+    ; what answering it cost. The counters are dumped HERE rather than in the
+    ; per-kind branches so the instrument covers every request kind instead of
+    ; the one it was built for; an instrument whose scope is narrower than its
+    ; name is the trap it exists to prevent.
     function serve_one(in_fd: int, out_fd: int) returns bool
+    {
+        let more worker.serve_request(in_fd, out_fd)
+        symbols.prof_dump()
+        more
+    }
+
+    function serve_request(in_fd: int, out_fd: int) returns bool
     {
         let kind rpc.read_message_fd in_fd
         if kind.get_length() = 0
@@ -182,6 +194,13 @@ define worker
         let uri rpc.read_message_fd in_fd
         let doctext rpc.read_message_fd in_fd
         let position rpc.read_message_fd in_fd
+
+        ; One request = one epoch = one consistent view of the tree on disk.
+        ; Cached file blobs are re-validated (read + hashed) at most once per
+        ; request instead of once per lookup — symindex.idx_epoch has the
+        ; measurement that made this necessary.
+        symindex.begin_request()
+        symbols.prof_reset()
 
         ; workspace/symbol: the `uri` frame carries the workspace ROOT path and
         ; `position` the query; there is no single document. Handle it before

@@ -57,10 +57,45 @@ define IdxSlot
     blob_data: pointer[u8]
     blob_len:  size_t
     used:      bool
+    epoch:     size_t
 )
 
-; The slot array, lazily malloc'd. null until the first index access.
+; One cached directory listing: malloc'd path + listing byte copies, and the
+; request epoch it was taken in.
+define DirSlot
+(
+    path_data: pointer[u8]
+    path_len:  size_t
+    list_data: pointer[u8]
+    list_len:  size_t
+    used:      bool
+    epoch:     size_t
+)
+
+; How many directories one request may have listed at once. A cross-file scan
+; asks about the file's own directory and its package root, so two is the live
+; number; the headroom costs nothing.
+define DIR_CAP int 16
+
+; The slot arrays, lazily malloc'd. null until the first access.
 mutable idx_slots: pointer[IdxSlot] null
+mutable dir_slots: pointer[DirSlot] null
+
+; The current REQUEST epoch. The header above says reading and hashing a file
+; is cheap next to parsing it — true for one query, and false the moment one
+; request asks the same question per call site. Measured 2026-08-12: an
+; inlayHint over packages/opensp/ContentState.scaly resolves ~40 callees
+; cross-file, and each resolution re-read and re-hashed all 56 files (2.54 MB)
+; of that directory — ~100 MB per request, which is the 4.7 s it took even with
+; every blob already cached.
+;
+; So validation is now per REQUEST rather than per lookup: a slot stamped with
+; the current epoch is taken as fresh without touching the disk again. Across
+; requests nothing changes — the next epoch re-reads and re-hashes, so a save,
+; a git checkout or an external edit still invalidates exactly as before. What
+; is given up is noticing a change made DURING one request, which is not a loss
+; worth having: one request should see one consistent snapshot of the tree.
+mutable idx_epoch: size_t 0
 
 define symindex
 {
@@ -85,9 +120,43 @@ define symindex
                 set s.chash: 0
                 set s.blob_data: null
                 set s.blob_len: 0
+                set s.epoch: 0
                 set i: i + 1
             }
         }
+    }
+
+    ; Start a new request epoch. Called once per worker request, which is what
+    ; makes `fresh` mean "already validated in THIS request" — see idx_epoch.
+    procedure begin_request()
+    {
+        set idx_epoch: idx_epoch + 1
+    }
+
+    ; True when `path`'s cached blob was already validated during this request,
+    ; so the caller may use it WITHOUT reading and hashing the file again.
+    function fresh(path: String) returns bool
+    {
+        if idx_epoch = 0
+            return false
+        let idx symindex.find path
+        if idx < 0
+            return false
+        let s idx_slots + idx
+        if s.epoch <> idx_epoch
+            return false
+        true
+    }
+
+    ; Record that `path`'s cached blob is valid as of this request. Called
+    ; after a read+hash confirmed (or refreshed) the slot.
+    procedure touch(path: String)
+    {
+        let idx symindex.find path
+        if idx < 0
+            return
+        let s idx_slots + idx
+        set s.epoch: idx_epoch
     }
 
     ; Index of the live slot whose path matches, or -1.
@@ -217,5 +286,150 @@ define symindex
             set i: i + 1
         }
         ; Table full: drop silently — that file is re-parsed every query.
+    }
+
+    ; ----- directory listing cache (per request) -----
+    ; symbols.list_scaly_files# answers by running `find` through popen — a
+    ; SHELL PROCESS per call. The cross-file scans call it per CALL SITE and for
+    ; two directories each, so one inlayHint over a file in packages/opensp
+    ; spawned ~80 of them, and that — not the file reading — was the bulk of the
+    ; 4.7 s. A directory's contents cannot change meaningfully inside one
+    ; request, and one request already means one snapshot (see idx_epoch), so
+    ; the listing is taken once per directory per request.
+    ;
+    ; Small and separate from the file table on purpose: a request touches one
+    ; or two directories, while the file table holds thousands of entries and is
+    ; searched linearly.
+    procedure ensure_dirs()
+    {
+        if dir_slots = null
+        {
+            let bytes (DIR_CAP as size_t) * sizeof DirSlot
+            set dir_slots: malloc(bytes) as pointer[DirSlot]
+            if dir_slots = null
+                return
+            var i 0
+            while i < DIR_CAP
+            {
+                let s dir_slots + i
+                set s.used: false
+                set s.path_data: null
+                set s.path_len: 0
+                set s.list_data: null
+                set s.list_len: 0
+                set s.epoch: 0
+                set i: i + 1
+            }
+        }
+    }
+
+    ; Index of the live dir slot for `dir` that was filled in THIS request, or -1.
+    function find_dir(dir: String) returns int
+    {
+        if dir_slots = null
+            return 0 - 1
+        var i 0
+        while i < DIR_CAP
+        {
+            let s dir_slots + i
+            if s.used
+                if s.epoch = idx_epoch
+                {
+                    let sp String(s.path_data as pointer[const_char], s.path_len)
+                    if sp = dir
+                        return i
+                }
+            set i: i + 1
+        }
+        0 - 1
+    }
+
+    ; True when this request already listed `dir`.
+    function has_listing(dir: String) returns bool
+    {
+        if idx_epoch = 0
+            return false
+        symindex.find_dir(dir) >= 0
+    }
+
+    ; The listing cached for `dir` in this request ("" when there is none).
+    function get_listing(rp, dir: String) returns String
+    {
+        let idx symindex.find_dir dir
+        if idx < 0
+            return ""
+        let s dir_slots + idx
+        if s.list_len = 0
+            return ""
+        String(s.list_data as pointer[const_char], s.list_len)
+    }
+
+    ; Cache `listing` for `dir` for the rest of this request. Slots are reused
+    ; round-robin: an entry from an earlier epoch is dead by definition, so the
+    ; first stale slot is always free to take.
+    procedure put_listing(dir: String, listing: String)
+    {
+        symindex.ensure_dirs()
+        if dir_slots = null
+            return
+        var target 0 - 1
+        var i 0
+        while i < DIR_CAP
+        {
+            let s dir_slots + i
+            if s.used = false
+                if target < 0
+                    set target: i
+            if s.used
+                if s.epoch <> idx_epoch
+                    if target < 0
+                        set target: i
+            set i: i + 1
+        }
+        if target < 0
+            set target: 0
+        let s dir_slots + target
+        symindex.set_dir_path(s, dir)
+        symindex.set_dir_list(s, listing)
+        set s.used: true
+        set s.epoch: idx_epoch
+    }
+
+    procedure set_dir_path(s: pointer[DirSlot], dir: String)
+    {
+        if s.path_data <> null
+            free(s.path_data as pointer[void])
+        set s.path_data: null
+        set s.path_len: 0
+        let len dir.get_length()
+        if len > 0
+        {
+            let dst malloc(len) as pointer[u8]
+            if dst <> null
+            {
+                memcpy(dst as pointer[void], dir.get_buffer() as pointer[void], len)
+                set s.path_data: dst
+                set s.path_len: len
+            }
+        }
+    }
+
+    procedure set_dir_list(s: pointer[DirSlot], listing: String)
+    {
+        if s.list_data <> null
+            free(s.list_data as pointer[void])
+        set s.list_data: null
+        set s.list_len: 0
+        let len listing.get_length()
+        if len > 0
+        {
+            let dst malloc(len) as pointer[u8]
+            if dst <> null
+            {
+                memcpy(dst as pointer[void], listing.get_buffer() as pointer[void], len)
+                set s.list_data: dst
+                set s.list_len: len
+            }
+        }
     }
 }
