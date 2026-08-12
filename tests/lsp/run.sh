@@ -214,6 +214,82 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp worker crash isolation"; else bad "lsp worker crash isolation"; fi
 
+# ---- worker budget: a give-up must be LOUD, and per request kind ----
+# Exceeding the budget kills the worker and answers with the fallback — a
+# well-formed empty result the client cannot tell from "nothing here". That
+# silence is why an inlayHint overrun ran on every scroll unnoticed (measured
+# 2026-08-12: 8.01 / 9.01 / 8.00 s, empty every time, on a file in
+# packages/opensp). Two things are gated here: the give-up says so on stderr,
+# naming the kind and the budget, and the client still gets valid JSON.
+# SCALYLS_BUDGET_MS is what makes this testable at all — a real overrun needs a
+# workspace big enough to be machine-dependent (same reason the planner has
+# SCALYC_STACK_BUDGET).
+python3 - <<'PY'
+import sys, json, subprocess, os
+# 1500 call sites, so the request costs ~140 ms and a 1 ms budget is reliably
+# exceeded. A four-line document does NOT work here: it answers inside the poll
+# and the give-up never fires — the first draft of this test passed on the
+# BROKEN binary for exactly that reason, which is the trap a negative control
+# exists to catch.
+body = "".join("    f(%d)\n" % i for i in range(1500))
+doc  = "function f(a: int) returns int\n{\n" + body + "    0\n}\n"
+last = doc.count("\n") - 1
+uri = "file:///tmp/lsp_budget_test.scaly"
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/inlayHint","params":{
+        "textDocument":{"uri":uri},
+        "range":{"start":{"line":0,"character":0},"end":{"line":last,"character":0}}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+r = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                   env=dict(os.environ, SCALYLS_BUDGET_MS="1"))
+res, d = None, r.stdout
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if f.get("id") == 2: res = f.get("result")
+err = r.stderr.decode(errors="replace")
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check("exceeded its 1 ms budget" in err, "a give-up names the budget it exceeded on stderr")
+check("request 'y'" in err, "and names the request KIND that overran")
+check(res == [], "the client still gets a well-formed fallback, not a broken frame")
+# Unset: the same request must NOT report an overrun, and must ANSWER — which
+# also proves the test document is one the server can serve at all.
+r2 = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    env={k: v for k, v in os.environ.items() if k != "SCALYLS_BUDGET_MS"})
+res2, d2 = None, r2.stdout
+while d2:
+    i = d2.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d2[:i].decode().split(":")[1].strip())
+    f = json.loads(d2[i+4:i+4+n]); d2 = d2[i+4+n:]
+    if f.get("id") == 2: res2 = f.get("result")
+check("budget" not in r2.stderr.decode(errors="replace"),
+      "without the override a normal request reports nothing")
+check(res2 is not None and len(res2) == 1500,
+      "and answers in full — the empty result above was the give-up, not the input")
+# A non-numeric override must be IGNORED, never read as 0 (that would disable
+# the hang detector outright).
+r3 = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    env=dict(os.environ, SCALYLS_BUDGET_MS="soon"))
+check("budget" not in r3.stderr.decode(errors="replace"),
+      "a non-numeric SCALYLS_BUDGET_MS falls back to the table")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp worker budget"; else bad "lsp worker budget"; fi
+
 # ---- documentSymbol: outline tree for a file on disk ----
 # The request carries only a uri, so the worker re-reads the file; write a
 # known one to disk first. Exercises functions, a module-level mutable, a

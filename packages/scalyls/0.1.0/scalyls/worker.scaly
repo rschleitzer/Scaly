@@ -29,6 +29,7 @@
 
 use scaly.io.File
 use scaly.memory.runtime
+use scaly.memory.root_pages.getenv
 use scalyls.rpc
 use scalyls.diagnostics
 use scalyls.symbols
@@ -517,6 +518,99 @@ define worker
     ; and the request retried once on a fresh worker, so a transient crash is
     ; invisible to the editor. A deterministically-crashing input falls
     ; through to the fallback after the retry (bounded — no respawn storm).
+    ; The response budget for ONE request kind, in milliseconds.
+    ;
+    ; The question is not how interactive a request feels but whether its
+    ; handler can WALK THE WORKSPACE — because that walk is what builds the
+    ; symindex, and exceeding the budget kills the worker (worker.shutdown#),
+    ; which throws the index away. A budget too small for an index-building
+    ; request is therefore not "a slower answer": it is an answer that can
+    ; never arrive, since every retry starts cold and dies at the same point.
+    ;
+    ; ★Measured 2026-08-12 on packages/opensp/ContentState.scaly, three
+    ; consecutive inlayHint requests in ONE session: 8.01 s, 9.01 s, 8.00 s,
+    ; each returning an empty array with the worker dying in between. 8.01 s
+    ; against an 8000 ms budget is not a coincidence — it IS the budget, and
+    ; inlayHint fires on every visible-range change, so this ran on every
+    ; scroll and took the index for every OTHER request with it. The two
+    ; raised budgets that existed named `w` and `c` only, while the comment on
+    ; WORKSPACE_TIMEOUT_MS already claimed definition and signatureHelp were
+    ; covered; they were not. Hence a table with every letter in it, so the
+    ; next kind added has to answer the question rather than inherit it.
+    ;
+    ; WORKSPACE — walks the tree / builds the index:
+    ;   w workspace/symbol   the whole tree by definition
+    ;   g definition         current file, then siblings, then the package tree
+    ;   r references         every file under the root
+    ;   n rename             the same scan as references
+    ;   f signatureHelp      find_signature_in_workspace#
+    ;   y inlayHint          resolves each call site through f's machinery
+    ;   t semanticTokens     cross-package name harvest (nameset.scaly)
+    ; COMPLETION — runs the modeler+planner, whose FIRST run in a worker
+    ; process costs seconds and every later one 0.05 s:
+    ;   c completion         plus the cross-package member scan
+    ;   x semantic type      the planner-resolved type behind hover
+    ; ANALYZE — parse or lex of the OPEN DOCUMENT only, no other file read:
+    ;   d diagnostics   s documentSymbol   h hover (lexical fallback)
+    ;   l documentHighlight   p prepareRename   o foldingRange
+    ; `SCALYLS_BUDGET_MS=<n>` overrides EVERY budget below with n milliseconds.
+    ; It exists for the same reason `SCALYC_STACK_BUDGET` does in the planner:
+    ; the guard it tunes trips on a threshold no test can reach reliably on an
+    ; arbitrary machine, so without a knob the give-up path is untestable and
+    ; stays untested. Set it small to prove the path fires; set it large when a
+    ; genuinely huge workspace needs more than the table allows. 0 or unset =
+    ; the table. A value that does not parse as a positive number is IGNORED
+    ; rather than treated as 0 — a typo must not disable the hang detector.
+    function budget_override() returns i32
+    {
+        let raw getenv "SCALYLS_BUDGET_MS"
+        if raw = null
+            return 0
+        let s String(raw)
+        var value: i32 0
+        var i: size_t 0
+        let n s.get_length()
+        if n = 0
+            return 0
+        while i < n
+        {
+            let c s.get i
+            if c < 0x30
+                return 0
+            if c > 0x39
+                return 0
+            set value: value * 10 + ((c - 0x30) as i32)
+            set i: i + 1
+        }
+        value
+    }
+
+    function budget_for_kind(kind: String) returns i32
+    {
+        let override worker.budget_override()
+        if override > 0
+            return override
+        if kind = "w"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "g"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "r"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "n"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "f"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "y"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "t"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "c"
+            return COMPLETION_TIMEOUT_MS
+        if kind = "x"
+            return COMPLETION_TIMEOUT_MS
+        ANALYZE_TIMEOUT_MS
+    }
+
     function exchange(rp, kind: pointer[const_char], uri: String, text: String, position: String, fallback: String) returns String
     {
         var attempts: int 0
@@ -541,11 +635,7 @@ define worker
             ; takes seconds on a cold worker, where a per-document request
             ; never does. See WORKSPACE_TIMEOUT_MS for why one shared budget
             ; made the search unable to ever complete.
-            var budget: i32 ANALYZE_TIMEOUT_MS
-            if kind_str = "w"
-                set budget: WORKSPACE_TIMEOUT_MS
-            if kind_str = "c"
-                set budget: COMPLETION_TIMEOUT_MS
+            let budget worker.budget_for_kind(kind_str)
             var pfd pollfd(worker_out as i32, POLLIN, 0)
             let pr poll(&pfd, 1 as u64, budget)
 
@@ -553,6 +643,19 @@ define worker
             ; and give up — retrying would just hang again.
             if pr <= 0
             {
+                ; Say so on stderr, which the client surfaces in its Output
+                ; channel. Giving up is otherwise INVISIBLE: the fallback
+                ; below is a well-formed empty result, and no client can tell
+                ; that from "there is genuinely nothing here". That silence is
+                ; what let the inlayHint overrun above run on every scroll for
+                ; as long as it did — the feature looked switched off, not
+                ; broken. One line here is the difference between "go to
+                ; definition sometimes does nothing" and a budget to raise.
+                scaly_eputs "scalyls: request '"
+                scaly_eputs kind
+                scaly_eputs "' exceeded its "
+                scaly_eputi(budget as i64)
+                scaly_eputs " ms budget - answering empty, respawning worker\n"
                 worker.shutdown()
                 return fallback
             }
