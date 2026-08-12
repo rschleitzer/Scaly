@@ -1955,6 +1955,93 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-package definition+signatureHelp"; else bad "lsp cross-package definition+signatureHelp"; fi
 
+# ---- LSP server: `module NAME` must not shadow `define NAME` --------------
+# A `module NAME` statement is a LOAD DIRECTIVE, not a definition of NAME: the
+# concept lives in the file the module names. packages/scaly/0.1.0/scaly/
+# containers.scaly declares twenty of them and `find` lists it ahead of the
+# whole containers/ subdirectory holding the concepts, so a definition search
+# used to stop at `module Array` (containers.scaly:11) and never reach
+# `define Array[T]` (containers/Array.scaly). Three properties:
+#   1. cross-package: Array/StringBuilder land in the concept's OWN file;
+#   2. intra-file: containers.scaly declares `module Vector` AND uses
+#      Vector[int] — the use must still resolve to containers/Vector.scaly,
+#      and so must the cursor sitting on the `module Vector` line itself;
+#   3. a name that is ONLY ever a module (`runtime`, no `define runtime`
+#      anywhere) still answers the `module` line — the fallback is load-bearing,
+#      losing it would turn a working jump into null.
+# The uri is asserted EXACTLY, not just "packages/scaly" — the old, wrong
+# answer was inside packages/scaly too.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+def define_at(uri, doc, line, character):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/definition","params":{
+            "textDocument":{"uri":uri},"position":{"line":line,"character":character}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    d = out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+        if f.get("id") == 2: return f.get("result")
+    return None
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+home = os.getcwd()
+def rel(r):
+    if not r: return None
+    return r["uri"].replace("file://" + home + "/", "")
+
+# 1. cross-package (doc outside packages/, so the hit can only come from there)
+r = define_at("file:///tmp/moddef1.scaly",
+              "function f()\n{\n    var a Array[int]()\n}\n", 2, 12)
+check(rel(r) == "packages/scaly/0.1.0/scaly/containers/Array.scaly",
+      "definition: Array resolves to `define Array[T]`, not `module Array`")
+r = define_at("file:///tmp/moddef2.scaly",
+              "function f()\n{\n    var s StringBuilder()\n}\n", 2, 12)
+check(rel(r) == "packages/scaly/0.1.0/scaly/containers/StringBuilder.scaly",
+      "definition: StringBuilder resolves to its own file, not `module StringBuilder`")
+
+# 2. intra-file: the declaring file both lists the module and uses the concept
+cpath = os.path.join(home, "packages/scaly/0.1.0/scaly/containers.scaly")
+cdoc  = open(cpath).read()
+clines = cdoc.split("\n")
+use_line = next(i for i, l in enumerate(clines) if "var vector Vector[int](2)" in l)
+mod_line = next(i for i, l in enumerate(clines) if l.strip() == "module Vector")
+r = define_at("file://" + cpath, cdoc, use_line, clines[use_line].index("Vector[") + 2)
+check(rel(r) == "packages/scaly/0.1.0/scaly/containers/Vector.scaly",
+      "definition: a Vector[int] USE inside containers.scaly skips its own `module Vector`")
+r = define_at("file://" + cpath, cdoc, mod_line, clines[mod_line].index("Vector") + 2)
+check(rel(r) == "packages/scaly/0.1.0/scaly/containers/Vector.scaly",
+      "definition: the cursor ON `module Vector` jumps INTO the module's file")
+
+# 3. module-only name: the `module` line is the only answer there is
+r = define_at("file:///tmp/moddef3.scaly",
+              "function f()\n{\n    let r runtime\n}\n", 2, 12)
+check(rel(r) == "packages/scaly/0.1.0/scaly/memory.scaly",
+      "definition: `runtime` (module with no same-named define) still answers the module line")
+
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp module-vs-define definition"; else bad "lsp module-vs-define definition"; fi
+
+
 # ---- LSP server: cross-package member completion -------------------------
 # SCALY_HOME points at the repo so member completion scans packages/scaly when
 # the receiver's type/concept is not in the current file's dir tree. The doc is

@@ -4086,7 +4086,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.def_definition(source, uri, def, name)
             when m: ModuleSyntax
-                return symbols.def_match(source, uri, String(m.name), name, m.start)
+                return symbols.def_module_match(source, uri, String(m.name), name, m.start)
             when mut: MutableSyntax
                 return symbols.def_match(source, uri, String(mut.binding.name), name, mut.start)
             when sh: SharedSyntax
@@ -4120,7 +4120,7 @@ define symbols
             when t: TraitSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.def_match(source, uri, String(m.name), name, m.start)
+                return symbols.def_module_match(source, uri, String(m.name), name, m.start)
     }
 
     ; A `define X`: try its members/variants first (innermost), then its own
@@ -4196,7 +4196,7 @@ define symbols
             when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.def_match(source, uri, String(m.name), name, m.start)
+                return symbols.def_module_match(source, uri, String(m.name), name, m.start)
     }
 
     ; Nested declarations of a namespace.
@@ -4249,6 +4249,26 @@ define symbols
         result
     }
 
+    ; def_match# for a `module NAME` statement, which is a LOAD DIRECTIVE and not
+    ; a definition of NAME — the concept lives in the file the module names. The
+    ; hit is tagged with a leading "M" so definition_workspace_packed# can hold
+    ; it back as a last resort and answer NAME's real declaration in that file
+    ; first (def_in_module_file#). A plain Location always starts with "{", so the
+    ; tag is unambiguous, and it never reaches the client
+    ; (definition_workspace_packed# is the only exit and strips it).
+    function def_module_match(rp, source: String, uri: String, candidate: String, name: String, start: size_t) returns String
+    {
+        if candidate = name
+        {
+            let loc symbols.location_object(source, uri, start)
+            var sb StringBuilder()
+            sb.append("M" as char)
+            sb.append loc
+            return sb.to_string()
+        }
+        ""
+    }
+
     ; A Location pointing at `start` when `candidate` equals `name`, else "".
     function def_match(rp, source: String, uri: String, candidate: String, name: String, start: size_t) returns String
     {
@@ -4297,9 +4317,19 @@ define symbols
     ; the in-memory current-file text; `uri` is its file:// uri.
     function definition_workspace_packed(rp, source: String, uri: String, packed: String) returns String
     {
+        ; An "M"-tagged intra-file hit is a `module NAME` statement, not a
+        ; definition of NAME (def_module_match#) — containers.scaly declares
+        ; `module Vector` and USES `Vector[int]` in the same file. Resolve the
+        ; module to its own file below, keep the module line as a LAST RESORT,
+        ; and strip the tag: this is the only exit toward the client.
         let here symbols.definition_packed(source, uri, packed)
+        var here_module ""
         if here.get_length() > 0
-            return here
+        {
+            if here.get(0) <> ("M" as char)
+                return here
+            set here_module: symbols.substring(here, 1, here.get_length())
+        }
 
         ; Intra-file miss: re-derive the cursor identifier and search siblings.
         var line: size_t 0
@@ -4325,8 +4355,18 @@ define symbols
         let offset symbols.position_to_offset(source, line, character)
         let name symbols.identifier_at(source, offset)
         if name.get_length() = 0
-            return ""
-        symbols.find_definition_in_workspace(uri, name)
+            return here_module
+        if here_module.get_length() > 0
+        {
+            let path symbols.uri_to_path uri
+            let inmod symbols.def_in_module_file(path, name)
+            if inmod.get_length() > 0
+                return inmod
+        }
+        let ws symbols.find_definition_in_workspace(uri, name)
+        if ws.get_length() > 0
+            return ws
+        here_module
     }
 
     ; Resolve `name` across the workspace: first the current file's directory
@@ -4383,27 +4423,151 @@ define symbols
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > 0
                         if fpath <> self_path
-                            if File.exists(fpath)
+                        {
+                            let blob symbols.blob_for_file fpath
+                            if blob.get_length() > 0
                             {
-                                let fsrc File.read_to_string(fpath)
-                                let chash fsrc.hash()
-                                var blob ""
-                                if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob fpath
-                                if symindex.valid(fpath, chash) = false
+                                set result: symbols.def_from_ws_blob(blob, name, false)
+                                ; No definition, but a `module NAME` statement:
+                                ; NAME's definitions live in the file that module
+                                ; names, so resolve that ONE file (Modeler's own
+                                ; rule, def_in_module_file#) and keep the module
+                                ; line only as a last resort. Walking on instead
+                                ; would be the expensive answer: `module NAME`
+                                ; sits in the NAMESPACE file, which `find` lists
+                                ; ahead of the whole subdirectory holding the
+                                ; concepts, so a hit here must still terminate
+                                ; the scan.
+                                if result.get_length() = 0
                                 {
-                                    let furi symbols.path_to_uri fpath
-                                    set blob: symbols.workspace_symbols_in_file(fsrc, furi)
-                                    symindex.put(fpath, chash, blob)
+                                    let m symbols.def_from_ws_blob(blob, name, true)
+                                    if m.get_length() > 0
+                                    {
+                                        set result: symbols.def_in_module_file(fpath, name)
+                                        if result.get_length() = 0
+                                            set result: m
+                                    }
                                 }
-                                set result: symbols.def_from_ws_blob(blob, name)
                             }
+                        }
                 }
                 set line_start: i + 1
             }
             set i: i + 1
         }
         result
+    }
+
+    ; The content-hash-cached ws symbol blob of `fpath` — the SAME blob
+    ; workspace/symbol and semanticTokens build (parse-once, shared), built and
+    ; stored here on a cache miss. "" when the file does not exist.
+    function blob_for_file(rp, fpath: String) returns String
+    {
+        if File.exists(fpath) = false
+            return ""
+        let fsrc File.read_to_string(fpath)
+        let chash fsrc.hash()
+        if symindex.valid(fpath, chash)
+            return symindex.get_blob fpath
+        let furi symbols.path_to_uri fpath
+        let blob symbols.workspace_symbols_in_file(fsrc, furi)
+        symindex.put(fpath, chash, blob)
+        blob
+    }
+
+    ; The Location of `name`'s own declaration in the single file `fpath` (a
+    ; `module NAME` statement there does NOT count — see def_from_ws_blob#), or
+    ; "" when the file is absent or declares no such name.
+    function def_in_file(rp, fpath: String, name: String) returns String
+    {
+        let blob symbols.blob_for_file fpath
+        if blob.get_length() = 0
+            return ""
+        symbols.def_from_ws_blob(blob, name, false)
+    }
+
+    ; `decl_path` holds a `module NAME` statement, which says NAME's definitions
+    ; live in a sibling FILE. Resolve that file the way the Modeler does
+    ; (Modeler.handle_namespace#: a `module foo` inside `define <ns>` loads
+    ; <dir>/<ns>/foo.scaly; a top-level one loads <dir>/foo.scaly) and answer
+    ; NAME's declaration there. Both shapes are tried because scalyls sees only
+    ; the file, not the enclosing namespace name — which throughout this tree IS
+    ; the file's stem (containers.scaly / `define containers`). Two File.exists
+    ; probes on a module hit, no directory walk.
+    function def_in_module_file(rp, decl_path: String, name: String) returns String
+    {
+        let dir symbols.dir_of decl_path
+        if dir.get_length() = 0
+            return ""
+        let stem symbols.file_stem decl_path
+        let nested symbols.def_in_file(symbols.module_file_path(dir, stem, name), name)
+        if nested.get_length() > 0
+            return nested
+        symbols.def_in_file(symbols.module_file_path(dir, "", name), name)
+    }
+
+    ; "<dir>/<mid>/<name>.scaly", or "<dir>/<name>.scaly" when `mid` is empty.
+    function module_file_path(rp, dir: String, mid: String, name: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append dir
+        sb.append("/" as char)
+        if mid.get_length() > 0
+        {
+            sb.append mid
+            sb.append("/" as char)
+        }
+        sb.append name
+        sb.append ".scaly"
+        sb.to_string()
+    }
+
+    ; The last component of `path` with a trailing ".scaly" removed.
+    function file_stem(rp, path: String) returns String
+    {
+        let dir symbols.dir_of path
+        var start: size_t 0
+        if dir.get_length() > 0
+            set start: dir.get_length() + 1
+        var end path.get_length()
+        if end >= start + 6
+            if symbols.matches_at(path, end - 6, ".scaly")
+                set end: end - 6
+        symbols.substring(path, start, end)
+    }
+
+    ; The SymbolKind integer of one ws blob record, given the record's json part
+    ; [json_start, rec_end) and the caller's prebuilt "\"kind\":" needle (built
+    ; once per blob walk, not per record); `0 - 1` when the record carries none.
+    ; The json is `{"name":<quoted>,"kind":N,"location":{...}}`, so the needle
+    ; occurs exactly once — a quoted identifier cannot contain it.
+    function ws_record_kind(blob: String, json_start: size_t, rec_end: size_t, kind_needle: String) returns i64
+    {
+        let kn kind_needle.get_length()
+        var s json_start
+        while s + kn <= rec_end
+        {
+            if symbols.matches_at(blob, s, kind_needle)
+            {
+                var j s + kn
+                var v: i64 0
+                while j < rec_end
+                {
+                    let c blob.get j
+                    if c >= 0x30
+                        if c <= 0x39
+                        {
+                            set v: v * 10 + ((c - 0x30) as i64)
+                            set j: j + 1
+                            continue
+                        }
+                    break
+                }
+                return v
+            }
+            set s: s + 1
+        }
+        0 - 1
     }
 
     ; Walk a cached ws symbol blob (records "name<TAB>{json}<LF>") and return the
@@ -4416,7 +4580,17 @@ define symbols
     ; location is the LAST field in each record's json, single-line; its value
     ; is extracted by finding the "location": needle and taking the balanced
     ; {...} after it (depth-tracked — the range nests {start{},end{}}).
-    function def_from_ws_blob(rp, blob: String, name: String) returns String
+    ;
+    ; `modules_only` splits the walk in two, because a `module NAME` statement
+    ; (SymbolKind 2) is a LOAD DIRECTIVE, not a definition of NAME: the concept
+    ; lives in the file the module names, and `packages/scaly/.../containers.scaly`
+    ; lists twenty of them ahead of every container's own file in `find` order.
+    ; false = the definition pass (module records SKIPPED, so `define Array[T]`
+    ; in containers/Array.scaly wins over `module Array`); true = the module pass
+    ; (ONLY module records), which tells find_definition_in_dir# to resolve the
+    ; named file (def_in_module_file#) and, failing that, to answer the module
+    ; line — the only thing we know when nothing declares `name`.
+    function def_from_ws_blob(rp, blob: String, name: String, modules_only: bool) returns String
     {
         var needle StringBuilder()
         needle.append("\"" as char)
@@ -4425,6 +4599,13 @@ define symbols
         needle.append(":" as char)
         let loc_needle needle.to_string()
         let ln loc_needle.get_length()
+
+        var knb StringBuilder()
+        knb.append("\"" as char)
+        knb.append "kind"
+        knb.append("\"" as char)
+        knb.append(":" as char)
+        let kind_needle knb.to_string()
 
         let nm_len name.get_length()
         let n blob.get_length()
@@ -4455,6 +4636,18 @@ define symbols
                             break
                         }
                         set k: k + 1
+                    }
+                    ; kind gate: the definition pass skips SymbolKind 2
+                    ; (module), the fallback pass takes nothing else.
+                    if matched
+                    {
+                        let kind symbols.ws_record_kind(blob, tab, i, kind_needle)
+                        if modules_only
+                            if kind <> 2
+                                set matched: false
+                        if modules_only = false
+                            if kind = 2
+                                set matched: false
                     }
                     if matched
                     {
@@ -5072,7 +5265,6 @@ define symbols
         needle.append("\"" as char)
         needle.append(":" as char)
         let kind_needle needle.to_string()
-        let kn kind_needle.get_length()
 
         let n blob.get_length()
         var rec_start: size_t 0
@@ -5089,32 +5281,7 @@ define symbols
                         break
                     set tab: tab + 1
                 }
-                ; kind: find the "kind": needle in the json part [tab, i)
-                var kind: i64 (0 - 1)
-                var s tab
-                while s + kn <= i
-                {
-                    if symbols.matches_at(blob, s, kind_needle)
-                    {
-                        var j s + kn
-                        var v: i64 0
-                        while j < i
-                        {
-                            let c blob.get j
-                            if c >= 0x30
-                                if c <= 0x39
-                                {
-                                    set v: v * 10 + ((c - 0x30) as i64)
-                                    set j: j + 1
-                                    continue
-                                }
-                            break
-                        }
-                        set kind: v
-                        set s: i                       ; stop scanning
-                    }
-                    set s: s + 1
-                }
+                let kind symbols.ws_record_kind(blob, tab, i, kind_needle)
                 var tagb: size_t 0
                 if kind = 12
                     set tagb: 0x46           ; F: function
