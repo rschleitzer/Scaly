@@ -3320,12 +3320,18 @@ define symbols
     ; more places than that is more honestly answered by the empty result than by
     ; a document with its lines erased one by one.
     ;
-    ; NOT for everyone: diagnostics keep the raw text (the parse error IS the
-    ; answer), rename / prepareRename rewrite the real buffer, and semanticTokens
+    ; NOT for everyone: rename / prepareRename rewrite the real buffer, and semanticTokens
     ; is a lexer pass that already works — repairing it would blank a line's
     ; colours. And the completion path must keep the RAW buffer for its byte
     ; scans: the receiver it needs is the one being typed, on the very line this
     ; blanks, which is why completion_packed# takes both texts.
+    ;
+    ; DIAGNOSTICS use it too since 2026-08-12, but only for the SEMANTIC half:
+    ; the reported parse error still comes from the raw buffer (it is the one
+    ; fact about a broken buffer that needs no guess), and every planner
+    ; diagnostic obtained from the repaired text must pass
+    ; trust_repaired_diagnostic# below. See diagnostics.broken_buffer_
+    ; diagnostics# for why a package member does not need the repair at all.
     ; ====================================================================
 
     ; `source` when it parses; else a copy with the offending line (or two)
@@ -3410,6 +3416,115 @@ define symbols
             set k: k + 1
         }
         sb.to_string()
+    }
+
+    ; Is a diagnostic produced from `repaired` safe to report against the buffer
+    ; `original` it was repaired from?
+    ;
+    ; The repair BLANKS WHOLE LINES, so a diagnostic found in the repaired text
+    ; can be a consequence of the blanking instead of a statement about the
+    ; code: blank the line that declares a name and every use of it elsewhere
+    ; reports `unknown identifier: N` — about a name that is right there on the
+    ; reader's screen. A false diagnostic is worse than a missing one, so
+    ; diagnostics.broken_buffer_diagnostics# asks this before it keeps one, and
+    ; two classes are dropped:
+    ;
+    ;   * anything located ON a blanked line — it is a statement about spaces;
+    ;   * anything whose message QUOTES a word that a blanked line carries. That
+    ;     is exactly the shape of the class above, because every name-resolution
+    ;     diagnostic names the name it could not find (`unknown identifier: N`,
+    ;     `function not found: N`, `... not visible here`).
+    ;
+    ; ALSO REQUIRING the word to be GONE from the repaired text looks like an
+    ; obvious refinement — "the repair cannot have deleted a name that is still
+    ; there" — and it is WRONG, measured 2026-08-12: it re-admitted every case
+    ; this exists for. Blank the line `function helper(` and `return helper()`
+    ; four lines down keeps the word alive, so the refinement skipped the check
+    ; and the invented `function not found: helper` came straight back. The name
+    ; a blanked DECLARATION declares is by definition still present at its USE
+    ; sites — which is where the false diagnostic is reported.
+    ;
+    ; The price is over-dropping: a real diagnostic about a name that merely also
+    ; appears on the broken line is lost. That is the direction to err in, and
+    ; the whole reason this function exists.
+    ;
+    ; Keywords and value words are skipped: they are not names, and `set`/`this`
+    ; on a blanked line would otherwise suppress most of the file's messages
+    ; (`cannot cast this value to i64` quotes `this` as a token).
+    ;
+    ; `original` and `repaired` have the SAME LENGTH by construction (the repair
+    ; turns bytes into spaces, see blank_line_at#), so a byte position means the
+    ; same thing in both texts and a blanked line is one carrying a differing
+    ; byte. A length mismatch means this is not that repair, and nothing here can
+    ; be attributed to it.
+    function trust_repaired_diagnostic(rp, original: String, repaired: String, offset: size_t, message: String) returns bool
+    {
+        let len original.get_length()
+        if repaired.get_length() <> len
+            return true
+
+        var line_start: size_t 0
+        while line_start <= len
+        {
+            var line_end line_start
+            while line_end < len
+            {
+                if original.get(line_end) = ("\n" as char)
+                    break
+                set line_end: line_end + 1
+            }
+
+            var blanked false
+            var k line_start
+            while k < line_end
+            {
+                if original.get(k) <> repaired.get(k)
+                {
+                    set blanked: true
+                    break
+                }
+                set k: k + 1
+            }
+
+            if blanked
+            {
+                ; On the blanked line itself.
+                if offset >= line_start
+                    if offset <= line_end
+                        return false
+
+                ; A name the repair deleted, quoted by the message.
+                var w line_start
+                while w < line_end
+                {
+                    if symbols.is_ident_byte(original.get w) = false
+                    {
+                        set w: w + 1
+                        continue
+                    }
+                    var e w
+                    while e < line_end
+                    {
+                        if symbols.is_ident_byte(original.get e) = false
+                            break
+                        set e: e + 1
+                    }
+                    let word original.substring(w, e - w)
+                    set w: e
+                    if grammar.is_keyword word
+                        continue
+                    if grammar.is_value_word word
+                        continue
+                    if grammar.is_word_operator word
+                        continue
+                    if symbols.contains_token(message, word)
+                        return false
+                }
+            }
+
+            set line_start: line_end + 1
+        }
+        true
     }
 
     ; The name of the innermost `define` whose [start,end) contains `offset`, or

@@ -1794,9 +1794,12 @@ if [ $rc -eq 0 ]; then ok "lsp this-receiver in a package module"; else bad "lsp
 #
 # symbols.repaired_source# blanks the line the parse error points at (bytes ->
 # spaces, so every offset still indexes the same byte) and re-parses. The last
-# two checks are the guards that matter: the repair must NOT reach diagnostics
-# (the parse error IS that answer), and completion must still see the RAW line —
-# the receiver being typed lives on the very line the repair blanks.
+# two checks are the guards that matter: completion must still see the RAW line
+# (the receiver being typed lives on the very line the repair blanks), and the
+# repair must not cost the diagnostics their parse error nor add anything to it —
+# this fixture has exactly one thing wrong with it, so exactly one is reported.
+# The group below drives the other half: a file that is broken AND has a real
+# semantic error elsewhere must report both.
 python3 - <<'PY'
 import sys, json, subprocess, os, select, time
 src = ("define Point\n(\n    x: int\n)\n{\n"
@@ -1875,11 +1878,155 @@ check(labels == ["x","get_x"], "completion at `set this.|` -> the enclosing conc
 diags = next((f["params"]["diagnostics"] for f in frames
               if f.get("method") == "textDocument/publishDiagnostics"), None)
 check(diags is not None and len(diags) == 1,
-      "diagnostics still REPORT the parse error (not repaired away)")
+      "diagnostics REPORT the parse error and invent nothing beside it")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp mid-edit parse repair"; else bad "lsp mid-edit parse repair"; fi
+
+# ---- a parse error must not hide the file's SEMANTICS ----------------------
+# A parse error used to END the report: diagnostics.publish_diagnostics# emitted
+# the one parser message and returned, so no modeler/planner ran. Mid-edit is the
+# normal state of a buffer, which made every type error in the document invisible
+# until it parsed again — the single biggest gap in the live feel, and measured
+# 2026-08-12 as exactly 1 diagnostic for a file with a broken line AND a missing
+# function in it.
+#
+# The semantic half now runs on two routes, and the tests below are one each,
+# because only one of them involves a guess:
+#
+#   * PACKAGE MEMBER — planned through its root, which the modeler reads from
+#     DISK, so the broken buffer never enters that analysis. No repair, nothing
+#     to filter. Every file of this tree takes this route, which is why the
+#     fixture is a real (tiny) two-file package rather than a lone document.
+#   * STANDALONE — the buffer is the only source, so it is analysed through
+#     symbols.repaired_source#'s line blanking. THAT is a guess.
+#
+# The third check is the one that matters most, and it caught a real defect in
+# the first draft of the filter: blanking a line can DELETE A DECLARATION, and
+# then every use of that name reports `function not found` — about a name the
+# reader can see on screen. An invented diagnostic is worse than a missing one.
+# symbols.trust_repaired_diagnostic# drops those; the draft additionally required
+# the name to be GONE from the repaired text, which re-admitted the whole class
+# (a blanked declaration's name survives at its use sites) and is why that
+# refinement is refuted in the function's own comment.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os, select, time, shutil
+
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+# Open one document and return the diagnostics of the analysis it triggers.
+# Interactive (not one batch) because server.process_one# defers the owed
+# analysis while client input is pending, and `exit` would end the process.
+def diagnose(uri, text):
+    p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, bufsize=0)
+    fd = p.stdout.fileno()
+    buf = bytearray()
+    def next_frame(timeout=60.0):
+        deadline = time.time() + timeout
+        while True:
+            i = buf.find(b"\r\n\r\n")
+            if i >= 0:
+                n = int(bytes(buf[:i]).decode().split(":")[1].strip())
+                if len(buf) >= i + 4 + n:
+                    body = bytes(buf[i+4:i+4+n]); del buf[:i+4+n]
+                    return json.loads(body)
+            left = deadline - time.time()
+            if left <= 0: return None
+            if not select.select([fd], [], [], left)[0]: return None
+            chunk = os.read(fd, 65536)
+            if not chunk: return None
+            buf.extend(chunk)
+    p.stdin.write(frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}))
+    next_frame()
+    p.stdin.write(frame({"jsonrpc":"2.0","method":"initialized","params":{}}))
+    p.stdin.write(frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+            "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":text}}}))
+    f = next_frame()
+    p.stdin.write(frame({"jsonrpc":"2.0","method":"exit"}))
+    p.wait()
+    return (f or {}).get("params", {}).get("diagnostics")
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+def at(diags, line):
+    return [d["message"] for d in diags if d["range"]["start"]["line"] == line]
+
+# ---- standalone: parse error in the middle, missing function after it ----
+src = ("function helper() returns int\n"
+       "{\n"
+       "    return 7\n"
+       "}\n"
+       "\n"
+       "function broken() returns int\n"
+       "{\n"
+       "    set this.\n"                       # line 7: unfinished
+       "    return 1\n"
+       "}\n"
+       "\n"
+       "function later() returns int\n"
+       "{\n"
+       "    return nope()\n"                   # line 13: semantic error
+       "}\n")
+path = "/tmp/lsp_pasterror_standalone.scaly"
+open(path, "w").write(src)
+d = diagnose("file://" + path, src) or []
+check(any("expected" in m for m in at(d, 7)),
+      "standalone: the parse error is still reported, on its own line")
+check(any("nope" in m for m in at(d, 13)),
+      "standalone: and the planner diagnostic PAST it is reported too")
+
+# ---- package member: the semantic half comes from DISK ----
+root_dir = "/tmp/lsp_pasterror_pkg"
+shutil.rmtree(root_dir, ignore_errors=True)
+os.makedirs(root_dir + "/pkgroot")
+open(root_dir + "/pkgroot.scaly", "w").write("define pkgroot\n{\n    module member\n}\n")
+member = root_dir + "/pkgroot/member.scaly"
+disk = ("define member\n{\n"
+        "    function calls_missing() returns int\n"
+        "    {\n"
+        "        return no_such_function()\n"   # line 4 of the SAVED file
+        "    }\n"
+        "    function healthy() returns int\n"
+        "    {\n"
+        "        return 3\n"
+        "    }\n}\n")
+open(member, "w").write(disk)
+lines = disk.split("\n")
+lines.insert(8, "        set this.")            # buffer-only broken line, line 8
+d = diagnose("file://" + member, "\n".join(lines)) or []
+check(any("expected" in m for m in at(d, 8)),
+      "package member: the parse error comes from the live BUFFER")
+check(any("no_such_function" in m for m in at(d, 4)),
+      "package member: the semantic diagnostic comes from the package root on DISK")
+
+# ---- the guard: a blanked DECLARATION must not invent a diagnostic ----
+src = ("function helper(\n"                     # line 0: broken header
+       "{\n"
+       "    return 1\n"
+       "}\n"
+       "\n"
+       "function g() returns int\n"
+       "{\n"
+       "    return helper()\n"                  # line 7: helper IS declared above
+       "}\n")
+path = "/tmp/lsp_pasterror_invented.scaly"
+open(path, "w").write(src)
+d = diagnose("file://" + path, src) or []
+check(len(at(d, 0)) == 1, "invented-guard: the broken header is reported")
+check(at(d, 7) == [],
+      "invented-guard: the call to the name the repair BLANKED is not reported")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp diagnostics past a parse error"; else bad "lsp diagnostics past a parse error"; fi
 
 # ---- typing burst: diagnostics must not queue ahead of the answers ---------
 # didOpen/didChange used to ANALYSE on the spot, and the editor sends one

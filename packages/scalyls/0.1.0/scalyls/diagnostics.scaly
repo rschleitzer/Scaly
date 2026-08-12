@@ -8,6 +8,11 @@
 ; The advisory planner.errors array is intentionally ignored (it fires
 ; thousands of times benignly during a normal compile).
 ;
+; A parse error no longer ENDS the report: the semantic half still runs, from
+; disk for a package member and over a repaired buffer for a standalone
+; document. broken_buffer_diagnostics# has both routes and the one thing that
+; was deliberately left out.
+;
 ; Envelope:
 ;   {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics",
 ;    "params":{"uri":<uri>,"diagnostics":[ <diag>... ]}}
@@ -29,6 +34,7 @@ use scaly.memory.runtime
 use scaly.io.File
 use scaly.io.Path
 use scalyls.json
+use scalyls.symbols
 
 ; Compiler pipeline (scalyc package).
 use scalyc.compiler.parser
@@ -71,8 +77,12 @@ define diagnostics
         choose p.parse_program()
             when err: Error
             {
-                ; Surface the parse error and stop (no model/plan on a
-                ; document that does not parse).
+                ; Surface the parse error — and then KEEP GOING. Stopping here
+                ; ("the parse error IS the answer") meant a single unfinished
+                ; line hid every semantic diagnostic in the document, and an
+                ; unfinished line is the normal state of a buffer being typed
+                ; into: a type error was invisible until the file parsed again.
+                ; broken_buffer_diagnostics# supplies the rest.
                 choose err
                     when i: Invalid
                     {
@@ -84,6 +94,15 @@ define diagnostics
                         sb.append(diagnostics.diag_object(text, 0, "unexpected top-level construct"))
                         set first: false
                     }
+
+                let body diagnostics.broken_buffer_diagnostics(path, text)
+                if body.get_length() > 0
+                {
+                    if first = false
+                        sb.append("," as char)
+                    sb.append body
+                    set first: false
+                }
             }
             when program: Success
             {
@@ -303,6 +322,95 @@ define diagnostics
                                 sb.append("," as char)
 
                             sb.append(diagnostics.diag_object(disk, dp.start, dp.message))
+                            set first: false
+                        }
+                    }
+                    set di: di + 1
+                }
+            }
+
+        sb.to_string()
+    }
+
+    ; The SEMANTIC diagnostics of a document whose buffer does NOT parse — the
+    ; body publish_diagnostics# appends after the parse error itself.
+    ;
+    ; The point: a broken line must not hide the rest of the file. There are two
+    ; routes, and only one of them involves a guess.
+    ;
+    ; A PACKAGE MEMBER is planned through its ROOT, and the modeler reads every
+    ; module from DISK (package_diagnostics#) — so the broken BUFFER never enters
+    ; that analysis at all. The diagnostics are exactly the ones the file gets
+    ; while it parses, with no repair and nothing to filter; their offsets are
+    ; the saved text's, which package_diagnostics# already documents. Every file
+    ; of this tree, and of any real project, takes this route.
+    ;
+    ; A STANDALONE document has no source but the buffer, so it goes through
+    ; symbols.repaired_source# — the same length-preserving line blanking the
+    ; read-only requests use. THAT is a guess, so every diagnostic it yields is
+    ; checked with symbols.trust_repaired_diagnostic# before it is reported.
+    ;
+    ; DELIBERATELY NOT DONE: reporting the parse errors of the LATER repair
+    ; rounds, to get more than one syntax message. Only the FIRST parse error is
+    ; a fact about the buffer; a later one is a fact about a text one of whose
+    ; lines we erased, and it can be pure fiction. Blank the line carrying a
+    ; wrong closer and the parser next stops at the line that was fine, which
+    ; would put a red squiggle under correct code. There is no filter for that
+    ; the way there is for a name the repair deleted — the evidence the parser
+    ; would need is the very line that is gone — so the honest count of
+    ; certain syntax errors in a broken buffer stays one.
+    function broken_buffer_diagnostics(rp, path: String, text: String) returns String
+    {
+        var sb StringBuilder()
+
+        let root diagnostics.package_root path
+        if root.get_length() > 0
+        {
+            sb.append(diagnostics.package_diagnostics(root, path))
+            return sb.to_string()
+        }
+
+        let repaired symbols.repaired_source text
+
+        ; The repair gave up: repaired_source# then answers the ORIGINAL, which
+        ; still does not parse. parse_error_offset# reports a value PAST THE END
+        ; when a text parses, so this is the "no usable repair" test.
+        if symbols.parse_error_offset(repaired) <= repaired.get_length()
+            return sb.to_string()
+
+        var first true
+        var p parser.Parser(repaired)
+        choose p.parse_program()
+            when err: Error
+            {
+                ; Unreachable (the text was just checked to parse); answering
+                ; nothing is the only honest thing to do if it ever is not.
+            }
+            when program: Success
+            {
+                let prog_name "document"
+                let model Modeler.build_program(path, prog_name, program, true)
+
+                var planner Planner.Planner(path)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program model
+
+                var di: size_t 0
+                while di < planner.diagnostics.length
+                {
+                    let dp planner.diagnostics.get di
+                    if dp <> null
+                    {
+                        ; Offsets are mapped through the ORIGINAL text: the
+                        ; repair is length-preserving, so every offset indexes
+                        ; the same byte in both, and the reader sees the line
+                        ; that is actually in the editor.
+                        if symbols.trust_repaired_diagnostic(text, repaired, dp.start, dp.message)
+                        {
+                            if first = false
+                                sb.append("," as char)
+
+                            sb.append(diagnostics.diag_object(text, dp.start, dp.message))
                             set first: false
                         }
                     }
