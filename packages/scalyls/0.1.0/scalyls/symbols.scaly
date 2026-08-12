@@ -8520,6 +8520,730 @@ define symbols
         sb.to_string()
     }
 
+    ; ====================================================================
+    ; Call hierarchy (lexical)
+    ;
+    ; prepareCallHierarchy resolves the name at the cursor to the routine it
+    ; DECLARES — from a call site too, so "show me the callers" works where the
+    ; reader is looking. incomingCalls walks the workspace for call sites and
+    ; groups them by the routine that CONTAINS them; outgoingCalls scans one
+    ; routine's body for the names it calls.
+    ;
+    ; The shared primitive is routine_records#: the same routine-keyword walk
+    ; shadow_ranges# does, but reporting every routine with its NAME instead of
+    ; testing one for shadowing. Lexical, so it answers on a buffer mid-edit.
+    ;
+    ; A call is `name(` with `name` not a keyword and not preceded by a routine
+    ; or `define` keyword (preceded_by_def_keyword#) — the same test the inlay
+    ; hints use, so a declaration's parameter list is never read as a call.
+    ; ====================================================================
+
+    ; One record per routine of `source`, newline-terminated:
+    ;   <name> <0x09> <start> <0x09> <name_start> <0x09> <name_end> <0x09> <end>
+    ; `start` is the routine keyword, `end` its body end (exclusive). An `init`
+    ; / `deinit` has no name of its own and is reported under the keyword.
+    function routine_records(rp, source: String) returns String
+    {
+        let len source.get_length()
+        let kw_function "function"
+        let kw_procedure "procedure"
+        let kw_operator "operator"
+        let kw_init "init"
+        let kw_deinit "deinit"
+        var sb StringBuilder()
+        var k: size_t 0
+        while k < len
+        {
+            let c source.get k
+            if symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
+            if symbols.is_ident_byte(c) = false
+            {
+                set k: k + 1
+                continue
+            }
+            var j k
+            while j < len
+            {
+                if symbols.is_ident_byte(source.get j) = false
+                    break
+                set j: j + 1
+            }
+            var is_kw false
+            var named true
+            if symbols.token_equals(source, k, j, kw_function)
+                set is_kw: true
+            if is_kw = false
+                if symbols.token_equals(source, k, j, kw_procedure)
+                    set is_kw: true
+            if is_kw = false
+                if symbols.token_equals(source, k, j, kw_operator)
+                    set is_kw: true
+            if is_kw = false
+                if symbols.token_equals(source, k, j, kw_init)
+                {
+                    set is_kw: true
+                    set named: false
+                }
+            if is_kw = false
+                if symbols.token_equals(source, k, j, kw_deinit)
+                {
+                    set is_kw: true
+                    set named: false
+                }
+            if is_kw
+            {
+                let rend symbols.routine_body_end(source, j, len)
+                ; The routine's own name: the next identifier token after the
+                ; keyword. `init`/`deinit` carry none — they are reported under
+                ; the keyword itself so the record still has a span.
+                var ns j
+                var ne j
+                if named
+                {
+                    var t j
+                    while t < rend
+                    {
+                        if symbols.is_ident_byte(source.get t)
+                            break
+                        set t: t + 1
+                    }
+                    set ns: t
+                    var e t
+                    while e < rend
+                    {
+                        if symbols.is_ident_byte(source.get e) = false
+                            break
+                        set e: e + 1
+                    }
+                    set ne: e
+                }
+                if named = false
+                {
+                    set ns: k
+                    set ne: j
+                }
+                if ne > ns
+                {
+                    var ri ns
+                    while ri < ne
+                    {
+                        sb.append(source.get(ri) as char)
+                        set ri: ri + 1
+                    }
+                    sb.append("\t" as char)
+                    sb.append(json.format_i64(k as i64))
+                    sb.append("\t" as char)
+                    sb.append(json.format_i64(ns as i64))
+                    sb.append("\t" as char)
+                    sb.append(json.format_i64(ne as i64))
+                    sb.append("\t" as char)
+                    sb.append(json.format_i64(rend as i64))
+                    sb.append("\n" as char)
+                }
+                if rend > j
+                    set k: rend
+                if rend <= j
+                    set k: j
+                continue
+            }
+            set k: j
+        }
+        sb.to_string()
+    }
+
+    ; The field `which` (0-based) of the record starting at `at` in `records`.
+    function record_field(rp, records: String, at: size_t, which: size_t) returns String
+    {
+        var field: size_t 0
+        var start at
+        var i at
+        let n records.get_length()
+        while i < n
+        {
+            let c records.get i
+            if c = 0x0A
+                break
+            if c = 0x09
+            {
+                if field = which
+                    return symbols.substring(records, start, i)
+                set field: field + 1
+                set start: i + 1
+            }
+            set i: i + 1
+        }
+        if field = which
+            return symbols.substring(records, start, i)
+        ""
+    }
+
+    ; Parse a decimal field into a size_t (0 when empty / non-numeric).
+    function record_number(records: String, at: size_t, which: size_t) returns size_t
+    {
+        var field: size_t 0
+        var value: size_t 0
+        var start at
+        var i at
+        let n records.get_length()
+        var seen false
+        while i < n
+        {
+            let c records.get i
+            if c = 0x0A
+                break
+            if c = 0x09
+            {
+                if field = which
+                    return value
+                set field: field + 1
+                set value: 0
+                set seen: false
+                set i: i + 1
+                continue
+            }
+            if field = which
+                if c >= 0x30
+                    if c <= 0x39
+                    {
+                        set value: value * 10 + ((c - 0x30) as size_t)
+                        set seen: true
+                    }
+            set i: i + 1
+        }
+        if field = which
+            return value
+        0
+    }
+
+    ; The offset of the record whose [start,end) covers `off`, or the length of
+    ; `records` when none does. Routines do not nest, so the first hit wins.
+    function record_covering(records: String, off: size_t) returns size_t
+    {
+        let n records.get_length()
+        var at: size_t 0
+        while at < n
+        {
+            let start symbols.record_number(records, at, 1)
+            let end symbols.record_number(records, at, 4)
+            if off >= start
+                if off < end
+                    return at
+            var i at
+            while i < n
+            {
+                if records.get(i) = 0x0A
+                    break
+                set i: i + 1
+            }
+            set at: i + 1
+        }
+        n
+    }
+
+    ; The byte offset of a packed "<line> <char>" position frame.
+    function packed_offset(source: String, packed: String) returns size_t
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space false
+        var i: size_t 0
+        let n packed.get_length()
+        while i < n
+        {
+            let c packed.get i
+            if c = 0x0A
+                break
+            if c = 0x20
+                set seen_space: true
+            if c <> 0x20
+            {
+                let digit (c - 0x30) as size_t
+                if seen_space = false
+                    set line: line * 10 + digit
+                if seen_space
+                    set character: character * 10 + digit
+            }
+            set i: i + 1
+        }
+        symbols.position_to_offset(source, line, character)
+    }
+
+    ; A CallHierarchyItem. `kind` is LSP SymbolKind (12 Function, 6 Method).
+    ; `selectionRange` must be INSIDE `range` — the editor uses it to place the
+    ; cursor when you click the entry, so it points at the NAME.
+    function call_item(rp, source: String, uri: String, name: String, start: size_t, name_start: size_t, name_end: size_t, end: size_t) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("name"))
+        sb.append(json.quote_string(name))
+        sb.append("," as char)
+        sb.append(symbols.key("kind"))
+        sb.append("12")
+        sb.append("," as char)
+        sb.append(symbols.key("uri"))
+        sb.append(json.quote_string(uri))
+        sb.append("," as char)
+        sb.append(symbols.key("range"))
+        sb.append(symbols.range_for(source, start, end))
+        sb.append("," as char)
+        sb.append(symbols.key("selectionRange"))
+        sb.append(symbols.range_for(source, name_start, name_end))
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    ; The item for the routine record at `at`, over `source`/`uri`.
+    function call_item_at(rp, source: String, uri: String, records: String, at: size_t) returns String
+    {
+        let name symbols.record_field(records, at, 0)
+        if name.get_length() = 0
+            return ""
+        symbols.call_item(source, uri, name,
+            symbols.record_number(records, at, 1),
+            symbols.record_number(records, at, 2),
+            symbols.record_number(records, at, 3),
+            symbols.record_number(records, at, 4))
+    }
+
+    ; prepareCallHierarchy: one item for the routine named at the cursor. It
+    ; resolves from a CALL SITE too — that is where a reader asks "who calls
+    ; this?" — by looking the name up in this buffer's routines first and then,
+    ; on a miss, wherever the workspace declares it.
+    function prepare_call_hierarchy_packed(rp, source: String, uri: String, packed: String) returns String
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get i
+            if c = 0x20
+                set seen_space: true
+            if c <> 0x20
+            {
+                let digit (c - 0x30) as size_t
+                if seen_space = false
+                    set line: line * 10 + digit
+                if seen_space
+                    set character: character * 10 + digit
+            }
+            set i: i + 1
+        }
+        let offset symbols.position_to_offset(source, line, character)
+        let name symbols.identifier_at(source, offset)
+        if name.get_length() = 0
+            return "[]"
+
+        ; This buffer's own routines first — the editor's copy outranks disk.
+        let records symbols.routine_records source
+        var at: size_t 0
+        let rn records.get_length()
+        while at < rn
+        {
+            let rname symbols.record_field(records, at, 0)
+            if rname = name
+            {
+                var sb StringBuilder()
+                sb.append("[" as char)
+                symbols.append_fragment(&sb, symbols.call_item_at(source, uri, records, at))
+                sb.append("]" as char)
+                return sb.to_string()
+            }
+            var e at
+            while e < rn
+            {
+                if records.get(e) = 0x0A
+                    break
+                set e: e + 1
+            }
+            set at: e + 1
+        }
+
+        ; Declared elsewhere: locate the file, then take its record there.
+        let loc symbols.find_definition_in_workspace(uri, name)
+        if loc.get_length() = 0
+            return "[]"
+        let duri symbols.location_uri loc
+        if duri.get_length() = 0
+            return "[]"
+        let dpath symbols.uri_to_path duri
+        if File.exists(dpath) = false
+            return "[]"
+        let dsrc File.read_to_string(dpath)
+        let drecs symbols.routine_records dsrc
+        var dat: size_t 0
+        let dn drecs.get_length()
+        while dat < dn
+        {
+            let rname symbols.record_field(drecs, dat, 0)
+            if rname = name
+            {
+                var sb StringBuilder()
+                sb.append("[" as char)
+                symbols.append_fragment(&sb, symbols.call_item_at(dsrc, duri, drecs, dat))
+                sb.append("]" as char)
+                return sb.to_string()
+            }
+            var e dat
+            while e < dn
+            {
+                if drecs.get(e) = 0x0A
+                    break
+                set e: e + 1
+            }
+            set dat: e + 1
+        }
+        "[]"
+    }
+
+    ; The call sites of routine `name` within [lo,hi) of `source`, as a
+    ; comma-joined fragment of Ranges ("" when none). A call is `name(` that is
+    ; not itself a declaration's parameter list.
+    function call_site_ranges(rp, source: String, name: String, lo: size_t, hi: size_t) returns String
+    {
+        var sb StringBuilder()
+        var first true
+        let len source.get_length()
+        var bound hi
+        if bound > len
+            set bound: len
+        var k lo
+        while k < bound
+        {
+            let c source.get k
+            if symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
+            if symbols.is_ident_byte(c) = false
+            {
+                set k: k + 1
+                continue
+            }
+            var j k
+            while j < len
+            {
+                if symbols.is_ident_byte(source.get j) = false
+                    break
+                set j: j + 1
+            }
+            if symbols.token_equals(source, k, j, name)
+                if j < len
+                    if source.get(j) = 0x28
+                        if symbols.preceded_by_def_keyword(source, k) = false
+                        {
+                            if first = false
+                                sb.append("," as char)
+                            sb.append(symbols.range_for(source, k, j))
+                            set first: false
+                        }
+            set k: j
+        }
+        sb.to_string()
+    }
+
+    ; callHierarchy/incomingCalls: every routine that calls `name`, anywhere
+    ; under the walk root, each with the ranges of its call sites. The current
+    ; buffer is scanned from `source` so unsaved edits count; the other files
+    ; are read from disk, exactly as references does.
+    function incoming_calls(rp, source: String, uri: String, name: String, root: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("[" as char)
+        var first true
+        symbols.append_incoming_for(&sb, &first, source, uri, name)
+
+        let path symbols.uri_to_path uri
+        var walk_dir root
+        if walk_dir.get_length() = 0
+            set walk_dir: symbols.dir_of path
+        if walk_dir.get_length() > 0
+        {
+            let listing symbols.list_scaly_files walk_dir
+            var line_start: size_t 0
+            let n listing.get_length()
+            var i: size_t 0
+            while i < n
+            {
+                if listing.get(i) = ("\n" as char)
+                {
+                    let fpath symbols.substring(listing, line_start, i)
+                    if fpath.get_length() > 0
+                        if fpath <> path
+                            if File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string(fpath)
+                                let furi symbols.path_to_uri fpath
+                                symbols.append_incoming_for(&sb, &first, fsrc, furi, name)
+                            }
+                    set line_start: i + 1
+                }
+                set i: i + 1
+            }
+        }
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; One file's contribution: for each routine that calls `name`, a
+    ; CallHierarchyIncomingCall {"from":<item>,"fromRanges":[...]}.
+    procedure append_incoming_for(sb: pointer[StringBuilder], first: pointer[bool], source: String, uri: String, name: String)
+    {
+        ; Cheap pre-gate: a file that never writes the name cannot call it.
+        if symbols.contains_token(source, name) = false
+            return
+        let records symbols.routine_records source
+        var at: size_t 0
+        let rn records.get_length()
+        while at < rn
+        {
+            let start symbols.record_number(records, at, 1)
+            let end symbols.record_number(records, at, 4)
+            let ranges symbols.call_site_ranges(source, name, start, end)
+            if ranges.get_length() > 0
+            {
+                if *first = false
+                    sb.append("," as char)
+                sb.append("{" as char)
+                sb.append(symbols.key("from"))
+                symbols.append_fragment(sb, symbols.call_item_at(source, uri, records, at))
+                sb.append("," as char)
+                sb.append(symbols.key("fromRanges"))
+                sb.append("[" as char)
+                symbols.append_fragment(sb, ranges)
+                sb.append("]" as char)
+                sb.append("}" as char)
+                set *first: false
+            }
+            var e at
+            while e < rn
+            {
+                if records.get(e) = 0x0A
+                    break
+                set e: e + 1
+            }
+            set at: e + 1
+        }
+    }
+
+    ; True when `name` occurs in `source` as a whole token at all.
+    function contains_token(source: String, name: String) returns bool
+    {
+        let len source.get_length()
+        var k: size_t 0
+        while k < len
+        {
+            let c source.get k
+            if symbols.is_ident_byte(c) = false
+            {
+                set k: k + 1
+                continue
+            }
+            var j k
+            while j < len
+            {
+                if symbols.is_ident_byte(source.get j) = false
+                    break
+                set j: j + 1
+            }
+            if symbols.token_equals(source, k, j, name)
+                return true
+            set k: j
+        }
+        false
+    }
+
+    ; callHierarchy/outgoingCalls: the routines called from the body of the
+    ; routine containing `offset`, each with the ranges of its call sites HERE.
+    ; A callee is resolved to an item in this file first and only then across
+    ; the workspace; one that resolves nowhere is dropped, because an item
+    ; needs a location and inventing one would send the reader somewhere false.
+    function outgoing_calls(rp, source: String, uri: String, offset: size_t) returns String
+    {
+        var sb StringBuilder()
+        sb.append("[" as char)
+        let records symbols.routine_records source
+        let at symbols.record_covering(records, offset)
+        if at >= records.get_length()
+        {
+            sb.append("]" as char)
+            return sb.to_string()
+        }
+        let start symbols.record_number(records, at, 1)
+        let end symbols.record_number(records, at, 4)
+
+        var seen ""
+        var first true
+        var k start
+        let len source.get_length()
+        var bound end
+        if bound > len
+            set bound: len
+        while k < bound
+        {
+            let c source.get k
+            if symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
+            if symbols.is_ident_byte(c) = false
+            {
+                set k: k + 1
+                continue
+            }
+            var j k
+            while j < len
+            {
+                if symbols.is_ident_byte(source.get j) = false
+                    break
+                set j: j + 1
+            }
+            if j < len
+                if source.get(j) = 0x28
+                {
+                    let callee symbols.substring(source, k, j)
+                    if grammar.is_keyword(callee) = false
+                        if symbols.preceded_by_def_keyword(source, k) = false
+                            if symbols.seen_contains(seen, callee) = false
+                            {
+                                let item symbols.outgoing_item(source, uri, records, callee)
+                                if item.get_length() > 0
+                                {
+                                    if first = false
+                                        sb.append("," as char)
+                                    sb.append("{" as char)
+                                    sb.append(symbols.key("to"))
+                                    symbols.append_fragment(&sb, item)
+                                    sb.append("," as char)
+                                    sb.append(symbols.key("fromRanges"))
+                                    sb.append("[" as char)
+                                    symbols.append_fragment(&sb, symbols.call_site_ranges(source, callee, start, end))
+                                    sb.append("]" as char)
+                                    sb.append("}" as char)
+                                    set first: false
+                                }
+                                var acc StringBuilder()
+                                symbols.append_fragment(&acc, seen)
+                                symbols.append_fragment(&acc, callee)
+                                acc.append("\n" as char)
+                                set seen: acc.to_string()
+                            }
+                }
+            set k: j
+        }
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; The item for `callee`: this file's routine of that name, else the file
+    ; the workspace declares it in. "" when it resolves nowhere.
+    function outgoing_item(rp, source: String, uri: String, records: String, callee: String) returns String
+    {
+        var at: size_t 0
+        let rn records.get_length()
+        while at < rn
+        {
+            if symbols.record_field(records, at, 0) = callee
+                return symbols.call_item_at(source, uri, records, at)
+            var e at
+            while e < rn
+            {
+                if records.get(e) = 0x0A
+                    break
+                set e: e + 1
+            }
+            set at: e + 1
+        }
+        let loc symbols.find_definition_in_workspace(uri, callee)
+        if loc.get_length() = 0
+            return ""
+        let duri symbols.location_uri loc
+        if duri.get_length() = 0
+            return ""
+        let dpath symbols.uri_to_path duri
+        if File.exists(dpath) = false
+            return ""
+        let dsrc File.read_to_string(dpath)
+        let drecs symbols.routine_records dsrc
+        var dat: size_t 0
+        let dn drecs.get_length()
+        while dat < dn
+        {
+            if symbols.record_field(drecs, dat, 0) = callee
+                return symbols.call_item_at(dsrc, duri, drecs, dat)
+            var e dat
+            while e < dn
+            {
+                if drecs.get(e) = 0x0A
+                    break
+                set e: e + 1
+            }
+            set dat: e + 1
+        }
+        ""
+    }
+
+    ; True when the newline-separated `seen` list already holds `name`.
+    function seen_contains(seen: String, name: String) returns bool
+    {
+        let n seen.get_length()
+        let nl name.get_length()
+        var start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            if seen.get(i) = 0x0A
+            {
+                if i - start = nl
+                    if symbols.range_equals(seen, start, name, 0, nl)
+                        return true
+                set start: i + 1
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; The `uri` field of a Location JSON object, or "".
+    function location_uri(rp, loc: String) returns String
+    {
+        var needle StringBuilder()
+        needle.append("\"" as char)
+        needle.append "uri"
+        needle.append("\"" as char)
+        needle.append(":" as char)
+        needle.append("\"" as char)
+        let nd needle.to_string()
+        let nn nd.get_length()
+        let n loc.get_length()
+        var i: size_t 0
+        while i + nn <= n
+        {
+            if symbols.matches_at(loc, i, nd)
+            {
+                var e i + nn
+                while e < n
+                {
+                    if loc.get(e) = 0x22
+                        break
+                    set e: e + 1
+                }
+                return symbols.substring(loc, i + nn, e)
+            }
+            set i: i + 1
+        }
+        ""
+    }
+
     ; True when `off` falls inside any shadow range of `shadow_packed` (the
     ; newline-terminated "<start> <end>" list from shadow_ranges#).
     function in_shadow(shadow_packed: String, off: size_t) returns bool

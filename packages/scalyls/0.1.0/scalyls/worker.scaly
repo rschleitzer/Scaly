@@ -325,6 +325,31 @@ define worker
             return true
         }
 
+        ; prepareCallHierarchy: one item for the routine named at the cursor.
+        if kind = "k"
+        {
+            rpc.write_message_fd(out_fd, symbols.prepare_call_hierarchy_packed(source, uri, position))
+            return true
+        }
+
+        ; incomingCalls: `position` is "<root>\n<name>" — the walk root the
+        ; parent captured at initialize, then the item's name.
+        if kind = "i"
+        {
+            let iroot symbols.root_prefix position
+            let iname symbols.strip_root_prefix position
+            rpc.write_message_fd(out_fd, symbols.incoming_calls(source, uri, iname, iroot))
+            return true
+        }
+
+        ; outgoingCalls: `position` is the item's "<line> <char>", i.e. where
+        ; its declaration starts; the routine containing it is the caller.
+        if kind = "j"
+        {
+            rpc.write_message_fd(out_fd, symbols.outgoing_calls(source, uri, symbols.packed_offset(source, position)))
+            return true
+        }
+
         ; selectionRange: the cursor positions arrive in `position`, one
         ; "<line> <char>" per line; the answer is one chain each. Not repaired —
         ; it is a bracket walk, which answers on a buffer mid-edit too.
@@ -529,6 +554,18 @@ define worker
     function type_definition(rp, uri: String, text: String, packed: String) returns String
         worker.exchange("u", uri, text, packed, "")
 
+    ; prepareCallHierarchy at the packed "<line> <char>" position.
+    function prepare_call_hierarchy(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("k", uri, text, packed, "[]")
+
+    ; incomingCalls for "<root>\n<name>".
+    function incoming_calls(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("i", uri, text, packed, "[]")
+
+    ; outgoingCalls for the item declared at the packed "<line> <char>".
+    function outgoing_calls(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("j", uri, text, packed, "[]")
+
     ; selectionRange for the packed cursor positions (one per line).
     function selection_ranges(rp, uri: String, text: String, packed: String) returns String
         worker.exchange("e", uri, text, packed, "[]")
@@ -604,6 +641,9 @@ define worker
     ;   n rename             the same scan as references
     ;   f signatureHelp      find_signature_in_workspace#
     ;   u typeDefinition     resolves a type name, then searches for it
+    ;   k prepareCallHierarchy  may locate a routine declared elsewhere
+    ;   i incomingCalls      reads every file under the root, like references
+    ;   j outgoingCalls      resolves each callee, which may leave the file
     ;   y inlayHint          resolves each call site through f's machinery
     ;   t semanticTokens     cross-package name harvest (nameset.scaly)
     ; COMPLETION — runs the modeler+planner, whose FIRST run in a worker
@@ -663,6 +703,12 @@ define worker
         if kind = "f"
             return WORKSPACE_TIMEOUT_MS
         if kind = "u"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "k"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "i"
+            return WORKSPACE_TIMEOUT_MS
+        if kind = "j"
             return WORKSPACE_TIMEOUT_MS
         if kind = "y"
             return WORKSPACE_TIMEOUT_MS

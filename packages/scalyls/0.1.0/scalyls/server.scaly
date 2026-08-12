@@ -249,6 +249,27 @@ define server
             return
         }
 
+        if method = "textDocument/prepareCallHierarchy"
+        {
+            if has_id
+                server.handle_prepare_call_hierarchy(msg, id)
+            return
+        }
+
+        if method = "callHierarchy/incomingCalls"
+        {
+            if has_id
+                server.handle_incoming_calls(msg, id)
+            return
+        }
+
+        if method = "callHierarchy/outgoingCalls"
+        {
+            if has_id
+                server.handle_outgoing_calls(msg, id)
+            return
+        }
+
         if method = "workspace/symbol"
         {
             if has_id
@@ -461,6 +482,73 @@ define server
             set i: i + 1
         }
         hn
+    }
+
+    ; textDocument/prepareCallHierarchy — the entry point: resolve the cursor to
+    ; the routine whose hierarchy is asked for. The two call requests below then
+    ; arrive with the ITEM this returned, not with a cursor.
+    function handle_prepare_call_hierarchy(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string(json.get(doc, "uri"))
+        let position json.get(params, "position")
+        var pb StringBuilder()
+        pb.append(json.format_i64(json.as_i64(json.get(position, "line"))))
+        pb.append(" " as char)
+        pb.append(json.format_i64(json.as_i64(json.get(position, "character"))))
+        let text docstore.get uri
+        let result worker.prepare_call_hierarchy(uri, text, pb.to_string())
+        rpc.write_message(server.document_symbol_response(id, result))
+    }
+
+    ; callHierarchy/incomingCalls — who calls the item. The item's OWN uri is
+    ; the document (it may live in a different file than the cursor did), and
+    ; the workspace root rides along the same way references passes it.
+    function handle_incoming_calls(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let item json.get(params, "item")
+        let uri json.as_string(json.get(item, "uri"))
+        let name json.as_string(json.get(item, "name"))
+        let root docstore.workspace_root()
+        var pb StringBuilder()
+        var ri: size_t 0
+        let rn root.get_length()
+        while ri < rn
+        {
+            pb.append(root.get(ri) as char)
+            set ri: ri + 1
+        }
+        pb.append("\n" as char)
+        var ni: size_t 0
+        let nn name.get_length()
+        while ni < nn
+        {
+            pb.append(name.get(ni) as char)
+            set ni: ni + 1
+        }
+        let text docstore.get uri
+        let result worker.incoming_calls(uri, text, pb.to_string())
+        rpc.write_message(server.document_symbol_response(id, result))
+    }
+
+    ; callHierarchy/outgoingCalls — what the item calls. The item's range start
+    ; locates the routine in its own file.
+    function handle_outgoing_calls(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let item json.get(params, "item")
+        let uri json.as_string(json.get(item, "uri"))
+        let range json.get(item, "range")
+        let start json.get(range, "start")
+        var pb StringBuilder()
+        pb.append(json.format_i64(json.as_i64(json.get(start, "line"))))
+        pb.append(" " as char)
+        pb.append(json.format_i64(json.as_i64(json.get(start, "character"))))
+        let text docstore.get uri
+        let result worker.outgoing_calls(uri, text, pb.to_string())
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; textDocument/typeDefinition. Same request shape as definition; the worker
@@ -1042,6 +1130,9 @@ define server
         sb.append "true"
         sb.append("," as char)
         sb.append(server.key("typeDefinitionProvider"))
+        sb.append "true"
+        sb.append("," as char)
+        sb.append(server.key("callHierarchyProvider"))
         sb.append "true"
         sb.append("}" as char)                    ; } capabilities
         sb.append("," as char)

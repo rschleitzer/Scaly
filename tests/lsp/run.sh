@@ -913,6 +913,77 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeAction use quickfix"; else bad "lsp codeAction use quickfix"; fi
 
+# ---- callHierarchy: prepare / incoming / outgoing ----
+# prepare must resolve from a CALL SITE, not just from a declaration — that is
+# where a reader asks "who calls this?". incoming groups call sites by the
+# routine that CONTAINS them (two sites in one caller = one entry with two
+# ranges, not two entries). outgoing scans one body and dedupes by callee.
+# The walk root is pointed at a directory that does not exist, so the whole
+# assertion is about the OPEN BUFFER and cannot drift with the repo's contents.
+python3 - <<'PY'
+import sys, json, subprocess, os
+doc = ("function helper(a: int) returns int\n{\n    a\n}\n\n"
+       "function middle(b: int) returns int\n{\n    helper(b) + helper(b + 1)\n}\n\n"
+       "function top() returns int\n{\n    middle(1) + helper(2)\n}\n")
+uri = "file:///tmp/lsp_callh_test.scaly"
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def session(reqs):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+            "rootUri":"file:///tmp/lsp_callh_no_such_root"}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+    for r in reqs: inp += frame(r)
+    inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    got, d = {}, out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+        if isinstance(f.get("id"), int): got[f["id"]] = f.get("result")
+    return got
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def prep(line, ch, idn):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/prepareCallHierarchy",
+            "params":{"textDocument":{"uri":uri},"position":{"line":line,"character":ch}}}
+g = session([prep(7, 6, 2), prep(0, 10, 3), prep(5, 10, 4)])
+check(g[1]["capabilities"].get("callHierarchyProvider") is True,
+      "initialize advertises callHierarchyProvider")
+from_call = g.get(2) or []
+check(len(from_call) == 1 and from_call[0]["name"] == "helper"
+      and from_call[0]["range"]["start"]["line"] == 0,
+      "prepare on a CALL SITE resolves to the declaration")
+check(from_call and from_call[0]["selectionRange"]["start"]["line"] == 0,
+      "the selectionRange points at the name")
+helper_item = (g.get(3) or [None])[0]
+middle_item = (g.get(4) or [None])[0]
+if helper_item is None or middle_item is None:
+    print("FAIL  prepare produced no item to follow up with"); sys.exit(1)
+g2 = session([{"jsonrpc":"2.0","id":5,"method":"callHierarchy/incomingCalls","params":{"item":helper_item}},
+              {"jsonrpc":"2.0","id":6,"method":"callHierarchy/outgoingCalls","params":{"item":middle_item}},
+              {"jsonrpc":"2.0","id":7,"method":"callHierarchy/outgoingCalls","params":{"item":helper_item}}])
+inc = {c["from"]["name"]: c for c in (g2.get(5) or [])}
+check(set(inc) == {"middle", "top"}, "incoming: exactly the two routines that call helper")
+check(len(inc.get("middle", {}).get("fromRanges", [])) == 2,
+      "two call sites in one caller are ONE entry with two ranges")
+check(len(inc.get("top", {}).get("fromRanges", [])) == 1, "and the other caller has one")
+out = {c["to"]["name"]: c for c in (g2.get(6) or [])}
+check(set(out) == {"helper"}, "outgoing: middle calls helper, deduped to one entry")
+check(len(out.get("helper", {}).get("fromRanges", [])) == 2, "with both of its call sites")
+check((g2.get(7) or []) == [], "a routine that calls nothing -> []")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp callHierarchy"; else bad "lsp callHierarchy"; fi
+
 # ---- typeDefinition: go to the TYPE of the thing at the cursor ----
 # Four shapes, and the order they are tried in is the point: the OPEN BUFFER
 # before the workspace. Asking the workspace first got every case wrong in one
