@@ -808,6 +808,111 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp completion detail"; else bad "lsp completion detail"; fi
 
+# ---- codeAction: the `use` quick fix ----
+# The planner writes the fix INTO the diagnostic ("...; add: use a.b.C") and the
+# client hands that diagnostic back with the codeAction request, so the server
+# reads the answer rather than recomputing it. Two halves are gated: the real
+# round trip through a planner-produced diagnostic — which is what pins the
+# marker in Planner.use_vis_hint# to the reader in server.use_paths_from_
+# diagnostics#, a pair that would otherwise drift apart silently — and the
+# INSERT POSITION across the file shapes that occur, since a `use` above the
+# file's own header comment is wrong in the shape every file in this tree has.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile, threading, queue, shutil
+home = os.getcwd()
+d = tempfile.mkdtemp()
+os.makedirs(d + "/packages/demo/0.1.0/demo")
+os.symlink(home + "/packages/scaly", d + "/packages/scaly")
+open(d + "/packages/demo/0.1.0/demo.scaly", "w").write(
+    "define demo\n{\n    module widgets\n    module app\n}\n")
+open(d + "/packages/demo/0.1.0/demo/widgets.scaly", "w").write(
+    "define widgets\n{\n    define Widget\n    (\n        size: int\n    )\n}\n")
+app = d + "/packages/demo/0.1.0/demo/app.scaly"
+open(app, "w").write(
+    "; app.scaly - uses Widget without a `use` for it\n"
+    "\n"
+    "define app\n{\n    function make() returns int\n    {\n"
+    "        let w Widget(3)\n        w.size\n    }\n}\n")
+uri = "file://" + app
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                     env=dict(os.environ, SCALY_HOME=d))
+q = queue.Queue()
+def reader():
+    buf=b""
+    while True:
+        c=p.stdout.read(1)
+        if not c: return
+        buf+=c
+        i=buf.find(b"\r\n\r\n")
+        if i>=0:
+            n=int(buf[:i].decode().split(":")[1].strip())
+            while len(buf)<i+4+n:
+                ch=p.stdout.read(i+4+n-len(buf))
+                if not ch: return
+                buf+=ch
+            q.put(json.loads(buf[i+4:i+4+n])); buf=buf[i+4+n:]
+threading.Thread(target=reader, daemon=True).start()
+def send(o): p.stdin.write(frame(o)); p.stdin.flush()
+def wait_for(pred):
+    while True:
+        f = q.get(timeout=90)
+        if pred(f): return f
+try:
+    send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+    send({"jsonrpc":"2.0","method":"initialized","params":{}})
+    caps = wait_for(lambda f: f.get("id") == 1)["result"]["capabilities"]
+    check(caps.get("codeActionProvider") is True, "initialize advertises codeActionProvider")
+    send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":open(app).read()}}})
+    diags = wait_for(lambda f: f.get("method") == "textDocument/publishDiagnostics"
+                     )["params"]["diagnostics"]
+    check(len(diags) == 1 and "add: use demo.widgets.Widget" in diags[0]["message"],
+          "the planner's diagnostic carries the fix it wants")
+    send({"jsonrpc":"2.0","id":5,"method":"textDocument/codeAction","params":{
+            "textDocument":{"uri":uri},"range":diags[0]["range"],
+            "context":{"diagnostics":diags}}})
+    acts = wait_for(lambda f: f.get("id") == 5)["result"]
+    check(len(acts) == 1 and acts[0]["title"] == "Add: use demo.widgets.Widget",
+          "codeAction -> one quickfix naming the path")
+    check(acts[0].get("kind") == "quickfix", "declared as a quickfix, so the lightbulb offers it")
+    edits = acts[0]["edit"]["changes"][uri]
+    check(len(edits) == 1 and edits[0]["newText"] == "use demo.widgets.Widget\n",
+          "the edit inserts the use line")
+    r = edits[0]["range"]
+    check(r["start"] == r["end"], "a zero-width range — an insertion, not a replacement")
+    check(r["start"]["line"] == 1,
+          "inserted BELOW the file's header comment, not above it")
+    # No diagnostics at the cursor: the client asks on every position, so the
+    # answer has to be an empty array rather than an action with no fix in it.
+    send({"jsonrpc":"2.0","id":6,"method":"textDocument/codeAction","params":{
+            "textDocument":{"uri":uri},
+            "range":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}},
+            "context":{"diagnostics":[]}}})
+    check(wait_for(lambda f: f.get("id") == 6)["result"] == [],
+          "no diagnostic at the cursor -> []")
+    send({"jsonrpc":"2.0","id":9,"method":"shutdown"}); send({"jsonrpc":"2.0","method":"exit"})
+    p.wait(timeout=20)
+except Exception as e:
+    # type name, not str(e): a queue.Empty — the shape a server that never
+    # answers produces — stringifies to nothing at all.
+    print("FAIL  codeAction round trip (" + type(e).__name__ + ": " + str(e) + ")")
+    failures += 1
+    p.kill()
+finally:
+    shutil.rmtree(d, ignore_errors=True)
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp codeAction use quickfix"; else bad "lsp codeAction use quickfix"; fi
+
 # ---- incremental sync (textDocumentSync: 2): ranged edits ----
 # The client sends deltas (a range + replacement text), not the whole doc.
 # Apply two sequential ranged edits to the in-memory buffer and confirm a

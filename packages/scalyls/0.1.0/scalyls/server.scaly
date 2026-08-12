@@ -228,6 +228,13 @@ define server
             return
         }
 
+        if method = "textDocument/codeAction"
+        {
+            if has_id
+                server.handle_code_action(msg, id)
+            return
+        }
+
         if method = "workspace/symbol"
         {
             if has_id
@@ -355,6 +362,93 @@ define server
     ; back from the in-memory copy). The result is the FoldingRange[] array
     ; wrapped in a Response envelope; it can be large, so document_symbol_response#
     ; (byte-at-a-time) builds it.
+    ; textDocument/codeAction. The request carries the diagnostics the client
+    ; already holds for the range, and a visibility diagnostic ENDS in the fix:
+    ;   "... but not visible here; add: use demo.widgets.Widget"
+    ; So the answer is read off the request rather than recomputed — re-running
+    ; the planner to ask which name is invisible would ask a question it has
+    ; already answered, and let the two answers drift apart.
+    ;
+    ; Nothing to fix -> `[]`, which is what the client gets on every ordinary
+    ; cursor position (it asks constantly, unprompted).
+    function handle_code_action(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string(json.get(doc, "uri"))
+        let paths server.use_paths_from_diagnostics(json.get(params, "context"))
+        if paths.get_length() = 0
+        {
+            rpc.write_message(server.document_symbol_response(id, "[]"))
+            return
+        }
+        let text docstore.get uri
+        let result worker.code_actions(uri, text, paths)
+        rpc.write_message(server.document_symbol_response(id, result))
+    }
+
+    ; The `use` paths named by the diagnostics in a codeAction context, one per
+    ; line ("" when none). Each is the tail of a message after the marker below;
+    ; the marker is written by Planner.use_vis_hint#, and the two must agree —
+    ; a change there silently turns the quick fix off, which is why the LSP
+    ; suite asserts the whole round trip rather than this function alone.
+    function use_paths_from_diagnostics(rp, context: JsonValue) returns String
+    {
+        var sb StringBuilder()
+        let diags json.get(context, "diagnostics")
+        let n json.array_length diags
+        var i: size_t 0
+        while i < n
+        {
+            let d json.array_get(diags, i)
+            let message json.as_string(json.get(d, "message"))
+            let marker "; add: use "
+            let at server.find_substring(message, marker)
+            if at < message.get_length()
+            {
+                var k at + marker.get_length()
+                while k < message.get_length()
+                {
+                    sb.append(message.get(k) as char)
+                    set k: k + 1
+                }
+                sb.append("\n" as char)
+            }
+            set i: i + 1
+        }
+        sb.to_string()
+    }
+
+    ; The offset of `needle` in `hay`, or hay's length when absent.
+    function find_substring(hay: String, needle: String) returns size_t
+    {
+        let hn hay.get_length()
+        let nn needle.get_length()
+        if nn = 0
+            return hn
+        if nn > hn
+            return hn
+        var i: size_t 0
+        while i <= (hn - nn)
+        {
+            var k: size_t 0
+            var same true
+            while k < nn
+            {
+                if hay.get(i + k) <> needle.get(k)
+                {
+                    set same: false
+                    break
+                }
+                set k: k + 1
+            }
+            if same
+                return i
+            set i: i + 1
+        }
+        hn
+    }
+
     function handle_folding_range(msg: JsonValue, id: i64)
     {
         let params json.get(msg, "params")
@@ -876,6 +970,12 @@ define server
         sb.append "true"
         sb.append("," as char)
         sb.append(server.key("inlayHintProvider"))
+        sb.append "true"
+        sb.append("," as char)
+        ; codeActionProvider as a bare true rather than CodeActionOptions: we
+        ; advertise no codeActionKinds filter, so the client asks on every
+        ; position and we answer [] where there is nothing to fix.
+        sb.append(server.key("codeActionProvider"))
         sb.append "true"
         sb.append("}" as char)                    ; } capabilities
         sb.append("," as char)

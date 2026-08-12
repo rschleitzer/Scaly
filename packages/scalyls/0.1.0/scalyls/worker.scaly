@@ -298,6 +298,15 @@ define worker
             return true
         }
 
+        ; codeAction: the `use` paths the parent lifted out of the request's
+        ; own diagnostics arrive in `position`, one per line. No analysis runs
+        ; here — the planner already decided, and this only places the line.
+        if kind = "a"
+        {
+            rpc.write_message_fd(out_fd, symbols.code_actions_packed(source, uri, position))
+            return true
+        }
+
         ; semanticTokens: delta-encoded token classification of the source
         ; (uri-only, no position).
         if kind = "t"
@@ -480,6 +489,12 @@ define worker
     function folding(rp, uri: String, text: String) returns String
         worker.exchange("o", uri, text, "", "[]")
 
+    ; codeAction for `uri`. `packed` is the newline-separated list of `use`
+    ; paths the parent read out of the request's diagnostics. Returns the LSP
+    ; CodeAction[] array.
+    function code_actions(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("a", uri, text, packed, "[]")
+
     ; Semantic type at the packed "<line> <char>" position. `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the framed reply
     ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
@@ -553,6 +568,7 @@ define worker
     ; ANALYZE — parse or lex of the OPEN DOCUMENT only, no other file read:
     ;   d diagnostics   s documentSymbol   h hover (lexical fallback)
     ;   l documentHighlight   p prepareRename   o foldingRange
+    ;   a codeAction (a line scan; the planner already did the thinking)
     ; `SCALYLS_BUDGET_MS=<n>` overrides EVERY budget below with n milliseconds.
     ; It exists for the same reason `SCALYC_STACK_BUDGET` does in the planner:
     ; the guard it tunes trips on a threshold no test can reach reliably on an

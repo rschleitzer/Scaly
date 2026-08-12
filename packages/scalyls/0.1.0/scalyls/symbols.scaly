@@ -511,6 +511,199 @@ define symbols
     ; (if/while bodies) are NOT emitted — the walk stops at routine bodies.
     ; ====================================================================
 
+    ; ====================================================================
+    ; textDocument/codeAction — the `use` quick fix (lexical)
+    ;
+    ; The planner already knows the answer and writes it into the diagnostic:
+    ;   function not found: Widget - defined in demo.widgets but not visible
+    ;   here; add: use demo.widgets.Widget
+    ; The client hands that diagnostic straight back in the codeAction request,
+    ; so this needs no analysis at all — only the INSERT POSITION, which is a
+    ; line scan. `packed` is the newline-separated list of use paths the parent
+    ; lifted out of the diagnostics (see server.use_paths_from_diagnostics#).
+    ;
+    ; Deliberately NOT re-derived here: recomputing which name is invisible
+    ; would mean running the planner a second time to answer a question it has
+    ; already answered, and the two answers could then disagree.
+    ; ====================================================================
+
+    ; The line a new `use` belongs on: after the last NON-BLANK line of the
+    ; file's leading run of comments, `package` declarations and `use` lines —
+    ; that is, at the bottom of the header, before the first real declaration.
+    ; Returns a 0-based LINE number; the edit inserts a whole line there.
+    ;
+    ; A blank line neither moves the point nor ends the run. That is what puts
+    ; the new line at the bottom of the header block instead of below the blank
+    ; that separates the header from `define`, and it is why every real file in
+    ; this tree — which opens with a `;` header comment — gets its `use` in the
+    ; right place. The first draft moved the point on `use` and `package` only,
+    ; so a commented file (i.e. all of them) had the line inserted at the very
+    ; top, ABOVE its own header.
+    function use_insert_line(source: String) returns size_t
+    {
+        var line: size_t 0
+        var insert_at: size_t 0
+        var i: size_t 0
+        let n source.get_length()
+        while i <= n
+        {
+            ; Find this line's [start, end).
+            let start i
+            var end i
+            while end < n
+            {
+                if source.get(end) = 0x0A
+                    break
+                set end: end + 1
+            }
+            ; First non-blank byte of the line.
+            var t start
+            while t < end
+            {
+                let c source.get t
+                if c <> 0x20
+                    if c <> 0x09
+                        break
+                set t: t + 1
+            }
+            if t < end
+            {
+                var in_header false
+                if source.get(t) = 0x3B                   ; `;` comment
+                    set in_header: true
+                if symbols.line_starts_with(source, t, end, "use ")
+                    set in_header: true
+                if symbols.line_starts_with(source, t, end, "package ")
+                    set in_header: true
+                ; The first line that is none of those is the first real
+                ; declaration: the header ended above it.
+                if in_header = false
+                    return insert_at
+                set insert_at: line + 1
+            }
+            set line: line + 1
+            set i: end + 1
+        }
+        insert_at
+    }
+
+    ; True when source[t,end) begins with `word` (a plain byte compare).
+    function line_starts_with(source: String, t: size_t, end: size_t, word: String) returns bool
+    {
+        let wn word.get_length()
+        if (end - t) < wn
+            return false
+        var k: size_t 0
+        while k < wn
+        {
+            if source.get(t + k) <> word.get(k)
+                return false
+            set k: k + 1
+        }
+        true
+    }
+
+    ; One CodeAction per use path in `packed`, each a quickfix whose edit
+    ; inserts `use <path>` on its own line at use_insert_line#.
+    function code_actions_packed(rp, source: String, uri: String, packed: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("[" as char)
+        let at symbols.use_insert_line source
+        var first true
+        var i: size_t 0
+        let n packed.get_length()
+        while i < n
+        {
+            var end i
+            while end < n
+            {
+                if packed.get(end) = 0x0A
+                    break
+                set end: end + 1
+            }
+            if end > i
+            {
+                var path StringBuilder()
+                var k i
+                while k < end
+                {
+                    path.append(packed.get(k) as char)
+                    set k: k + 1
+                }
+                let path_str path.to_string()
+                if first = false
+                    sb.append("," as char)
+                symbols.append_fragment(&sb, symbols.use_code_action(uri, path_str, at))
+                set first: false
+            }
+            set i: end + 1
+        }
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; {"title":...,"kind":"quickfix","edit":{"changes":{<uri>:[<TextEdit>]}}}.
+    ; The edit's range is EMPTY (start = end = the insert line, column 0), which
+    ; is LSP's spelling of an insertion — a zero-width range replaces nothing.
+    function use_code_action(rp, uri: String, path: String, at: size_t) returns String
+    {
+        var title StringBuilder()
+        title.append "Add: use "
+        symbols.append_fragment(&title, path)
+        var text StringBuilder()
+        text.append "use "
+        symbols.append_fragment(&text, path)
+        text.append("\n" as char)
+
+        var pos StringBuilder()
+        pos.append("{" as char)
+        pos.append(symbols.key("line"))
+        pos.append(json.format_i64(at as i64))
+        pos.append("," as char)
+        pos.append(symbols.key("character"))
+        pos.append("0" as char)
+        pos.append("}" as char)
+        let pos_str pos.to_string()
+
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("title"))
+        sb.append(json.quote_string(title.to_string()))
+        sb.append("," as char)
+        sb.append(symbols.key("kind"))
+        sb.append(json.quote_string("quickfix"))
+        sb.append("," as char)
+        sb.append(symbols.key("isPreferred"))
+        sb.append "true"
+        sb.append("," as char)
+        sb.append(symbols.key("edit"))
+        sb.append("{" as char)
+        sb.append(symbols.key("changes"))
+        sb.append("{" as char)
+        sb.append(json.quote_string(uri))
+        sb.append(":" as char)
+        sb.append("[" as char)
+        sb.append("{" as char)
+        sb.append(symbols.key("range"))
+        sb.append("{" as char)
+        sb.append(symbols.key("start"))
+        symbols.append_fragment(&sb, pos_str)
+        sb.append("," as char)
+        sb.append(symbols.key("end"))
+        symbols.append_fragment(&sb, pos_str)
+        sb.append("}" as char)
+        sb.append("," as char)
+        sb.append(symbols.key("newText"))
+        sb.append(json.quote_string(text.to_string()))
+        sb.append("}" as char)
+        sb.append("]" as char)
+        sb.append("}" as char)
+        sb.append("}" as char)
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
     function folding_ranges(rp, source: String) returns String
     {
         var sb StringBuilder()
