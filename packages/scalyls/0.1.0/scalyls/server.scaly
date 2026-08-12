@@ -765,9 +765,19 @@ define server
         sb.append "true"
         sb.append("," as char)
         ; completionProvider must be a CompletionOptions object (not a bool).
-        ; Empty {} = no trigger chars; the editor invokes it on word typing.
+        ; `.` is declared as a TRIGGER CHARACTER: without it an editor asks only
+        ; while identifier characters are being typed, so `recv.` offered nothing
+        ; until the first letter after the dot — the member list, which is the
+        ; whole point of the member-after-`.` resolution, never appeared at the
+        ; moment it is wanted.
         sb.append(server.key("completionProvider"))
         sb.append("{" as char)
+        sb.append(server.key("triggerCharacters"))
+        sb.append("[" as char)
+        sb.append("\"" as char)
+        sb.append("." as char)
+        sb.append("\"" as char)
+        sb.append("]" as char)
         sb.append("}" as char)
         sb.append("," as char)
         ; renameProvider as RenameOptions {prepareProvider:true} so the editor

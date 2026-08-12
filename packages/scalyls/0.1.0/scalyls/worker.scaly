@@ -98,6 +98,19 @@ define ANALYZE_TIMEOUT_MS i32 8000
 ; enough that jitter cannot reach it.
 define WORKSPACE_TIMEOUT_MS i32 60000
 
+; Completion ("c") gets a budget of its own for the same reason, one step down:
+; a single request can reach BOTH expensive paths — the session's first
+; modeler+planner run for a receiver only the planner can type (measured
+; 2026-08-12: 6.0-7.1s once per worker process, 0.05s from the second on) and,
+; when the receiver's type lives elsewhere, the cross-package member scan this
+; index exists for. On opensp/ContentState.scaly that landed at 8.01s against
+; the 8000 ms per-document budget, i.e. the worker was killed and the editor got
+; a successful, empty `[]` — and since the kill takes the symindex with it, every
+; later keystroke repeated it. 20s leaves margin over the measured cold path
+; while staying far below the whole-tree budget: a completion is typed AT, so a
+; hang here is felt directly and must still be reaped quickly.
+define COMPLETION_TIMEOUT_MS i32 20000
+
 ; Worker process state, owned by the PARENT. worker_pid <= 0 means "no
 ; live worker"; the fds are the parent's ends of the two pipes.
 mutable worker_pid: int 0
@@ -500,6 +513,8 @@ define worker
             var budget: i32 ANALYZE_TIMEOUT_MS
             if kind_str = "w"
                 set budget: WORKSPACE_TIMEOUT_MS
+            if kind_str = "c"
+                set budget: COMPLETION_TIMEOUT_MS
             var pfd pollfd(worker_out as i32, POLLIN, 0)
             let pr poll(&pfd, 1 as u64, budget)
 

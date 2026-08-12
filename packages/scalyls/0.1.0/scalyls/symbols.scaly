@@ -2282,6 +2282,80 @@ define symbols
         sb.to_string()
     }
 
+    ; A class -> its FIELDS (CompletionItemKind Field=5), in declaration order,
+    ; followed by its body members. The fields used to be missing entirely:
+    ; `Point.` offered `get_x` and not `x`, so no completion could ever name a
+    ; field — which after `this.` is the first thing you reach for.
+    function completion_class(rp, source: String, c: ClassSyntax) returns String
+    {
+        let fields symbols.completion_structure(source, c.structure)
+        let body symbols.completion_body(source, c.body)
+        if fields.get_length() = 0
+            return body
+        if body.get_length() = 0
+            return fields
+        var sb StringBuilder()
+        symbols.append_fragment(&sb, fields)
+        sb.append("," as char)
+        symbols.append_fragment(&sb, body)
+        sb.to_string()
+    }
+
+    ; The `(a: int  b: T)` part of a class -> comma-joined Field items.
+    function completion_structure(rp, source: String, structure: StructureSyntax) returns String
+    {
+        var sb StringBuilder()
+        var first true
+        if structure.parts <> null
+        {
+            let parts (*structure.parts)
+            var i: size_t 0
+            while i < parts.length
+            {
+                let pptr parts.get i
+                if pptr <> null
+                {
+                    let part (*pptr)
+                    let name symbols.part_name part
+                    if name.get_length() > 0
+                    {
+                        if first = false
+                            sb.append("," as char)
+                        symbols.append_fragment(&sb, symbols.completion_item(name, 5))
+                        set first: false
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        sb.to_string()
+    }
+
+    ; The declared name of one structure part.
+    function part_name(rp, part: PartSyntax) returns String
+    {
+        choose part
+            when fld: FieldSyntax
+                return String(fld.property.name)
+            when prop: PropertySyntax
+                return String(prop.name)
+    }
+
+    ; Append `fragment` to `sb` ONE BYTE AT A TIME — see the STRING/JSON NOTE at
+    ; the top of this file: a single StringBuilder.append(String) that more than
+    ; doubles the buffer takes Array.add's manual-grow path, which SIGSEGVs past
+    ; one exclusive page, and a member list is exactly a potentially-large piece.
+    procedure append_fragment(sb: pointer[StringBuilder], fragment: String)
+    {
+        var i: size_t 0
+        let n fragment.get_length()
+        while i < n
+        {
+            sb.append(fragment.get(i) as char)
+            set i: i + 1
+        }
+    }
+
     ; One class/union member -> an item, or "" / a nested fragment.
     function completion_member(rp, source: String, member: MemberSyntax) returns String
     {
@@ -2476,6 +2550,69 @@ define symbols
             let direct symbols.member_completions(source, receiver)
             if direct.get_length() > 0
                 return direct
+
+            ; Case 1b: `this.` -> the members of the ENCLOSING concept, straight
+            ; from the parse tree. `this` is the most common receiver in this
+            ; tree and the semantic case below cannot answer it in a package
+            ; MODULE — it plans the bare document, where every sibling module's
+            ; name is absent (the very reason diagnostics plan the package ROOT
+            ; instead) — nor while the buffer is mid-edit at `this.`. Measured
+            ; 2026-08-12 before this existed: `this.` in opensp/ContentState.scaly
+            ; answered the FLAT file list (`fill_zeros_u32` in it gives it away,
+            ; that is no member) and paid the session's first plan, ~6 s, to get
+            ; there. Lexically it is 0.00 s and right.
+            ; Each of the two cases resolves the enclosing concept ITSELF rather
+            ; than sharing one lookup: it costs a parse, and a flat-list
+            ; completion (every keystroke that is not after a dot) must not pay
+            ; for a case it cannot reach.
+            let kw_this "this"
+            if receiver = kw_this
+            {
+                let this_type symbols.enclosing_concept_name(source, offset)
+                if this_type.get_length() > 0
+                {
+                    let tmem symbols.members_for_type(source, uri, this_type)
+                    if tmem.get_length() > 0
+                        return tmem
+                }
+            }
+
+            ; The receiver's own declared type, lexically (Case 2 below uses the
+            ; same answer; it is a pure scan, so it is computed once here and
+            ; ALSO decides Case 1c: a name with no local declaration).
+            let tname symbols.resolve_variable_type(source, receiver)
+
+            ; Case 1c: a bare FIELD of the enclosing concept — `open_elements.`
+            ; inside a ContentState method, where the receiver is neither a local
+            ; nor a type. Guarded on `tname` being empty, so a local binding or
+            ; parameter of the same name still wins (it shadows the field).
+            ; Residual: a module-level global with a field's name would lose to
+            ; the field — resolve_variable_type# does not see globals.
+            ;
+            ; BOTH lookups stay INSIDE this file, deliberately. The cross-file
+            ; forms (member_type_ws# / members_for_type#) walk the file's dir tree
+            ; and then the package tree, building a symindex record per file; for
+            ; a file inside packages/opensp that measured OVER the worker's 8 s
+            ; ANALYZE_TIMEOUT_MS, and a timeout KILLS the worker — which takes the
+            ; symindex with it, so the next attempt starts cold and dies again.
+            ; `open_elements.` answered `[]` in 8.01 s, every time. A field whose
+            ; type lives in another file therefore falls through to the cases
+            ; below, exactly as before.
+            if tname.get_length() = 0
+            {
+                let own_type symbols.enclosing_concept_name(source, offset)
+                if own_type.get_length() > 0
+                {
+                    let ftype symbols.member_type(source, own_type, receiver)
+                    if ftype.get_length() > 0
+                    {
+                        let fmem symbols.member_completions(source, ftype)
+                        if fmem.get_length() > 0
+                            return fmem
+                    }
+                }
+            }
+
             ; Case 2 (semantic): PREFER the planner-resolved receiver type — it
             ; handles reassigned / call-bound / generic receivers the lexical
             ; resolve_variable_type# below cannot. Query the type at a use of the
@@ -2494,10 +2631,9 @@ define symbols
                         return smem
                 }
             }
-            ; Case 2 (lexical): resolve the receiver's declared type lexically,
+            ; Case 2 (lexical): the receiver's declared type (resolved above),
             ; then list that type's members (this file first, then sibling
             ; .scaly files in the dir tree).
-            let tname symbols.resolve_variable_type(source, receiver)
             if tname.get_length() > 0
             {
                 let mem symbols.members_for_type(source, uri, tname)
@@ -2522,6 +2658,151 @@ define symbols
                 return xpkg
         }
         symbols.completion_items source
+    }
+
+    ; The name of the innermost `define` whose [start,end) contains `offset`, or
+    ; "" when the cursor is not inside one. Parse-only, like every other walk
+    ; here; the innermost wins, so a nested define inside a namespace or a class
+    ; body answers for its own body.
+    function enclosing_concept_name(rp, source: String, offset: size_t) returns String
+    {
+        var p parser.Parser(source)
+        var result ""
+        choose p.parse_program()
+            when err: Error
+                set result: ""
+            when program: Success
+            {
+                let file program.file
+                if file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        if result.get_length() = 0
+                        {
+                            let dptr decls.get i
+                            if dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.enclosing_concept_decl(source, d, offset)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    ; One top-level declaration: the enclosing concept's name, or "".
+    function enclosing_concept_decl(rp, source: String, decl: DeclarationSyntax, offset: size_t) returns String
+    {
+        choose decl
+            when def: DefinitionSyntax
+                return symbols.enclosing_concept_definition(source, def, offset)
+            when priv: PrivateSyntax
+                return symbols.enclosing_concept_export(source, priv.export_, offset)
+            else
+                return ""
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function enclosing_concept_export(rp, source: String, export_: ExportSyntax, offset: size_t) returns String
+    {
+        choose export_
+            when def: DefinitionSyntax
+                return symbols.enclosing_concept_definition(source, def, offset)
+            else
+                return ""
+    }
+
+    ; A `define X` containing `offset`: the name of the innermost nested define,
+    ; else X itself. "" when the offset is outside it.
+    function enclosing_concept_definition(rp, source: String, def: DefinitionSyntax, offset: size_t) returns String
+    {
+        if offset < def.start
+            return ""
+        if offset >= def.end
+            return ""
+        var nested ""
+        choose def.concept_
+            when c: ClassSyntax
+                set nested: symbols.enclosing_concept_body(source, c.body, offset)
+            when n: NamespaceSyntax
+                set nested: symbols.enclosing_concept_namespace(source, n, offset)
+            when un: UnionSyntax
+                set nested: symbols.enclosing_concept_body(source, un.body, offset)
+            else
+                0
+        if nested.get_length() > 0
+            return nested
+        String(def.name)
+    }
+
+    ; The innermost nested `define` of a class/union body, or "".
+    function enclosing_concept_body(rp, source: String, body: ref[BodySyntax]?, offset: size_t) returns String
+    {
+        var result ""
+        if body <> null
+        {
+            let b (*body)
+            if b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    if result.get_length() = 0
+                    {
+                        let mptr members.get i
+                        if mptr <> null
+                        {
+                            let m (*mptr)
+                            set result: symbols.enclosing_concept_member(source, m, offset)
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        result
+    }
+
+    ; One class/union member: only a nested `define` can be a concept.
+    function enclosing_concept_member(rp, source: String, member: MemberSyntax, offset: size_t) returns String
+    {
+        choose member
+            when def: DefinitionSyntax
+                return symbols.enclosing_concept_definition(source, def, offset)
+            else
+                return ""
+    }
+
+    ; The innermost nested `define` of a namespace, or "".
+    function enclosing_concept_namespace(rp, source: String, ns: NamespaceSyntax, offset: size_t) returns String
+    {
+        var result ""
+        if ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                if result.get_length() = 0
+                {
+                    let dptr decls.get i
+                    if dptr <> null
+                    {
+                        let d (*dptr)
+                        set result: symbols.enclosing_concept_decl(source, d, offset)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        result
     }
 
     ; Members of the concept named `type_name`: this file first, then sibling
@@ -3531,7 +3812,7 @@ define symbols
             var members ""
             choose def.concept_
                 when c: ClassSyntax
-                    set members: symbols.completion_body(source, c.body)
+                    set members: symbols.completion_class(source, c)
                 when n: NamespaceSyntax
                     set members: symbols.completion_namespace(source, n)
                 when un: UnionSyntax
@@ -6522,7 +6803,11 @@ define symbols
         var members ""
         choose def.concept_
             when c: ClassSyntax
-                set members: symbols.completion_body(source, c.body)
+                ; completion_class#, not completion_body#: the CROSS-FILE member
+                ; list is rebuilt from this cached fragment, so leaving it on the
+                ; body-only builder would offer a sibling file's methods without
+                ; its fields — the same list, asymmetric with the intra-file one.
+                set members: symbols.completion_class(source, c)
             when n: NamespaceSyntax
                 set members: symbols.completion_namespace(source, n)
             when un: UnionSyntax

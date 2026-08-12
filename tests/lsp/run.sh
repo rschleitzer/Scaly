@@ -522,6 +522,11 @@ def check(cond, label):
     if not cond: failures += 1
 caps = frames[0]["result"]["capabilities"]
 check(isinstance(caps.get("completionProvider"), dict), "initialize advertises completionProvider (object)")
+# Without `.` in triggerCharacters an editor asks only while WORD characters are
+# typed, so the member list never appeared at the dot — it took the first letter
+# after it. This is the whole visible half of member completion.
+check((caps.get("completionProvider") or {}).get("triggerCharacters") == ["."],
+      "completionProvider declares `.` as a trigger character")
 r = next((f for f in frames if f.get("id") == 2), None)
 items = (r or {}).get("result")
 check(isinstance(items, list), "completion -> array result")
@@ -1128,17 +1133,76 @@ def labels(idn):
     return [it["label"] for it in (res(idn) or [])]
 def kinds(idn):
     return {it["label"]: it["kind"] for it in (res(idn) or [])}
-check(labels(2) == ["get_x"], "`Point.` -> only the struct's members")
+check(labels(2) == ["x","get_x"], "`Point.` -> the struct's FIELDS then its members")
 check(kinds(2).get("get_x") == 2, "member kept its CompletionItemKind (Method=2)")
+check(kinds(2).get("x") == 5, "field carries CompletionItemKind Field=5")
 check(labels(3) == ["Circle","Square"], "`Shape.` -> only the union's variants")
 check(kinds(3).get("Circle") == 20, "variant kept its CompletionItemKind (EnumMember=20)")
 flat = ["add","counter","Point","get_x","Shape","Circle","Square","trigger"]
-check(labels(4) == ["get_x"], "variable receiver `p.` (p: Point) -> Point's members")
+check(labels(4) == ["x","get_x"], "variable receiver `p.` (p: Point) -> Point's members")
 check(labels(5) == flat, "no dot -> flat all-names list (unchanged)")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp context-aware completion"; else bad "lsp context-aware completion"; fi
+
+# ---- `this.` inside a PACKAGE MODULE (the case the planner cannot reach) ----
+# `this` used to have no lexical resolution at all: it was answered only by the
+# planner-backed case, and a file that BELONGS TO A PACKAGE does not plan on its
+# own — every sibling module's name is absent, which is why diagnostics plan the
+# package ROOT instead. So in this tree's own sources `this.` fell through to the
+# FLAT all-names list, and paid the session's first plan (~6 s) to get there.
+#
+# Asserted on a real tree file (line found by CONTENT): the enclosing concept's
+# fields AND methods must be there, and `fill_zeros_u32` — a FILE-LEVEL function
+# of the same file, i.e. the tell-tale of the flat list — must not be.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os
+
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+path = os.path.join(os.getcwd(), "packages/opensp/0.1.0/opensp/ContentState.scaly")
+uri  = "file://" + path
+doc  = open(path).read()
+lines = doc.split("\n")
+ln = next(i for i, l in enumerate(lines) if l.strip() == "if this.free_count = 0")
+col = lines[ln].index("this.") + len("this.")
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{
+        "textDocument":{"uri":uri},"position":{"line":ln,"character":col}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+r = next((f for f in frames if f.get("id") == 2), None)
+items = (r or {}).get("result") or []
+by = {it["label"]: it["kind"] for it in items}
+check(by.get("free_count") == 5, "`this.` in a package module offers a FIELD (Field=5)")
+check(by.get("acquire_element") == 2, "`this.` offers a METHOD of the same concept (Method=2)")
+check("fill_zeros_u32" not in by, "`this.` is NOT the flat file list (no file-level function)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp this-receiver in a package module"; else bad "lsp this-receiver in a package module"; fi
 
 # ---- cross-file go-to-definition (workspace) ----
 # When the cursor identifier is not declared in the current file, the worker
@@ -1819,7 +1883,7 @@ def labels(idn):
     return [it["label"] for it in (res(idn) or [])]
 def kinds(idn):
     return {it["label"]: it["kind"] for it in (res(idn) or [])}
-members = ["area","grow","inspect"]
+members = ["w","area","grow","inspect"]   # the field `w` comes first (declaration order)
 check(labels(2) == members, "ctor form `var local Widget#(..)` -> Widget members (cross-file)")
 check(kinds(2).get("area") == 2, "cross-file member kept its kind (Method=2)")
 check(labels(3) == members, "param form `g: Widget` -> Widget members (cross-file)")
@@ -2306,7 +2370,8 @@ if [ $rc -eq 0 ]; then ok "lsp cross-package member completion"; else bad "lsp c
 # follows the declared type GRAPH: a field-access chain `r.origin.` resolves
 # r:Rect -> field origin:Point -> Point's members, and a call-result binding
 # `let p make()` resolves to make()'s return type Point. Both list ONLY Point's
-# member (px), proving real type resolution rather than the flat all-names list.
+# own field and member (x, px), proving real type resolution rather than the flat
+# all-names list.
 python3 - <<'PY'
 import sys, json, subprocess, os, tempfile
 d = tempfile.mkdtemp(prefix="lsp_realtc_")
@@ -2355,9 +2420,9 @@ def labels(idn):
     r = next((x for x in frames if x.get("id") == idn), {}).get("result")
     return [it["label"] for it in r] if isinstance(r, list) else None
 l2 = labels(2)
-check(l2 == ["px"], "field-access chain r.origin. -> Point members only (not flat)")
+check(l2 == ["x","px"], "field-access chain r.origin. -> Point members only (not flat)")
 l3 = labels(3)
-check(l3 == ["px"], "call-result `let p make()` p. -> make()'s return type Point")
+check(l3 == ["x","px"], "call-result `let p make()` p. -> make()'s return type Point")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
