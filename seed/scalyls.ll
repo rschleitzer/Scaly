@@ -90559,7 +90559,7 @@ if.end2:                                          ; preds = %if.then
   br label %if.end
 }
 
-define linkonce_odr i1 @_ZN7symbols16token_is_decl_kwE6Stringmm(ptr %0, i64 %1, i64 %2) {
+define linkonce_odr i1 @_ZN7symbols18token_is_binder_kwE6Stringmm(ptr %0, i64 %1, i64 %2) {
 entry:
   %sub = sub i64 %2, %1
   %ne = icmp ne i64 %sub, 3
@@ -90603,7 +90603,8 @@ if.then13:                                        ; preds = %if.end5
   br i1 %eq15, label %if.then16, label %if.end17
 
 if.end14:                                         ; preds = %if.end17, %if.end5
-  ret i1 false
+  %eq21 = icmp eq i8 %call, 102
+  br i1 %eq21, label %if.then22, label %if.end23
 
 if.then16:                                        ; preds = %if.then13
   %eq18 = icmp eq i8 %call3, 114
@@ -90617,14 +90618,123 @@ if.then19:                                        ; preds = %if.then16
 
 if.end20:                                         ; preds = %if.then16
   br label %if.end17
+
+if.then22:                                        ; preds = %if.end14
+  %eq24 = icmp eq i8 %call1, 111
+  br i1 %eq24, label %if.then25, label %if.end26
+
+if.end23:                                         ; preds = %if.end26, %if.end14
+  ret i1 false
+
+if.then25:                                        ; preds = %if.then22
+  %eq27 = icmp eq i8 %call3, 114
+  br i1 %eq27, label %if.then28, label %if.end29
+
+if.end26:                                         ; preds = %if.end29, %if.then22
+  br label %if.end23
+
+if.then28:                                        ; preds = %if.then25
+  ret i1 true
+
+if.end29:                                         ; preds = %if.then25
+  br label %if.end26
+}
+
+define linkonce_odr i1 @_ZN7symbols15token_is_set_kwE6Stringmm(ptr %0, i64 %1, i64 %2) {
+entry:
+  %sub = sub i64 %2, %1
+  %ne = icmp ne i64 %sub, 3
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %call = call i8 @_ZN6String3getEm(ptr %0, i64 %1)
+  %add = add i64 %1, 1
+  %call1 = call i8 @_ZN6String3getEm(ptr %0, i64 %add)
+  %add2 = add i64 %1, 2
+  %call3 = call i8 @_ZN6String3getEm(ptr %0, i64 %add2)
+  %eq = icmp eq i8 %call, 115
+  br i1 %eq, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end
+  %eq6 = icmp eq i8 %call1, 101
+  br i1 %eq6, label %if.then7, label %if.end8
+
+if.end5:                                          ; preds = %if.end8, %if.end
+  ret i1 false
+
+if.then7:                                         ; preds = %if.then4
+  %eq9 = icmp eq i8 %call3, 116
+  br i1 %eq9, label %if.then10, label %if.end11
+
+if.end8:                                          ; preds = %if.end11, %if.then4
+  br label %if.end5
+
+if.then10:                                        ; preds = %if.then7
+  ret i1 true
+
+if.end11:                                         ; preds = %if.then7
+  br label %if.end8
+}
+
+define linkonce_odr i1 @_ZN7symbols15preceded_by_dotE6Stringm(ptr %0, i64 %1) {
+entry:
+  %p = alloca i64, align 8
+  store i64 %1, ptr %p, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.then6, %if.then, %entry
+  %p1 = load i64, ptr %p, align 8
+  %gt = icmp ugt i64 %p1, 0
+  br i1 %gt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %p2 = load i64, ptr %p, align 8
+  %sub = sub i64 %p2, 1
+  %call = call i8 @_ZN6String3getEm(ptr %0, i64 %sub)
+  %eq = icmp eq i8 %call, 32
+  br i1 %eq, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then:                                          ; preds = %while.body
+  %p3 = load i64, ptr %p, align 8
+  %sub4 = sub i64 %p3, 1
+  store i64 %sub4, ptr %p, align 1
+  br label %while.cond
+
+if.end:                                           ; preds = %while.body
+  %eq5 = icmp eq i8 %call, 9
+  br i1 %eq5, label %if.then6, label %if.end7
+
+if.then6:                                         ; preds = %if.end
+  %p8 = load i64, ptr %p, align 8
+  %sub9 = sub i64 %p8, 1
+  store i64 %sub9, ptr %p, align 1
+  br label %while.cond
+
+if.end7:                                          ; preds = %if.end
+  %eq10 = icmp eq i8 %call, 46
+  br i1 %eq10, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %if.end7
+  ret i1 true
+
+if.end12:                                         ; preds = %if.end7
+  ret i1 false
 }
 
 define linkonce_odr i1 @_ZN7symbols16range_binds_nameE6String6Stringmm(ptr %0, ptr %1, i64 %2, i64 %3) {
 entry:
   %p = alloca i64, align 8
+  %colon_binds = alloca i1, align 1
   %j = alloca i64, align 8
   %k = alloca i64, align 8
-  %prev_is_decl = alloca i1, align 1
+  %prev_is_set = alloca i1, align 1
+  %prev_is_binder = alloca i1, align 1
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %bound = alloca i64, align 8
   store i64 %3, ptr %bound, align 1
@@ -90637,7 +90747,8 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  store i1 false, ptr %prev_is_decl, align 1
+  store i1 false, ptr %prev_is_binder, align 1
+  store i1 false, ptr %prev_is_set, align 1
   store i64 %2, ptr %k, align 1
   br label %while.cond
 
@@ -90706,75 +90817,104 @@ if.end26:                                         ; preds = %while.body17
   br label %while.cond16
 
 if.then32:                                        ; preds = %while.exit18
-  %prev_is_decl34 = load i1, ptr %prev_is_decl, align 1
-  br i1 %prev_is_decl34, label %if.then35, label %if.end36
+  %prev_is_binder34 = load i1, ptr %prev_is_binder, align 1
+  br i1 %prev_is_binder34, label %if.then35, label %if.end36
 
-if.end33:                                         ; preds = %if.end58, %while.exit18
-  %k64 = load i64, ptr %k, align 8
-  %j65 = load i64, ptr %j, align 8
-  %call66 = call i1 @_ZN7symbols16token_is_decl_kwE6Stringmm(ptr %0, i64 %k64, i64 %j65)
-  store i1 %call66, ptr %prev_is_decl, align 1
-  %j67 = load i64, ptr %j, align 8
-  store i64 %j67, ptr %k, align 1
+if.end33:                                         ; preds = %if.end46, %while.exit18
+  %k74 = load i64, ptr %k, align 8
+  %j75 = load i64, ptr %j, align 8
+  %call76 = call i1 @_ZN7symbols18token_is_binder_kwE6Stringmm(ptr %0, i64 %k74, i64 %j75)
+  store i1 %call76, ptr %prev_is_binder, align 1
+  %k77 = load i64, ptr %k, align 8
+  %j78 = load i64, ptr %j, align 8
+  %call79 = call i1 @_ZN7symbols15token_is_set_kwE6Stringmm(ptr %0, i64 %k77, i64 %j78)
+  store i1 %call79, ptr %prev_is_set, align 1
+  %j80 = load i64, ptr %j, align 8
+  store i64 %j80, ptr %k, align 1
   br label %while.cond
 
 if.then35:                                        ; preds = %if.then32
   ret i1 true
 
 if.end36:                                         ; preds = %if.then32
-  %j37 = load i64, ptr %j, align 8
-  store i64 %j37, ptr %p, align 1
-  br label %while.cond38
+  store i1 true, ptr %colon_binds, align 1
+  %prev_is_set37 = load i1, ptr %prev_is_set, align 1
+  br i1 %prev_is_set37, label %if.then38, label %if.end39
 
-while.cond38:                                     ; preds = %if.then51, %if.then46, %if.end36
-  %p41 = load i64, ptr %p, align 8
-  %lt42 = icmp ult i64 %p41, %call
-  br i1 %lt42, label %while.body39, label %while.exit40
+if.then38:                                        ; preds = %if.end36
+  store i1 false, ptr %colon_binds, align 1
+  br label %if.end39
 
-while.body39:                                     ; preds = %while.cond38
-  %p43 = load i64, ptr %p, align 8
-  %call44 = call i8 @_ZN6String3getEm(ptr %0, i64 %p43)
-  %eq45 = icmp eq i8 %call44, 32
-  br i1 %eq45, label %if.then46, label %if.end47
+if.end39:                                         ; preds = %if.then38, %if.end36
+  %k40 = load i64, ptr %k, align 8
+  %call41 = call i1 @_ZN7symbols15preceded_by_dotE6Stringm(ptr %0, i64 %k40)
+  br i1 %call41, label %if.then42, label %if.end43
 
-while.exit40:                                     ; preds = %if.end52, %while.cond38
-  %p55 = load i64, ptr %p, align 8
-  %lt56 = icmp ult i64 %p55, %call
-  br i1 %lt56, label %if.then57, label %if.end58
+if.then42:                                        ; preds = %if.end39
+  store i1 false, ptr %colon_binds, align 1
+  br label %if.end43
 
-if.then46:                                        ; preds = %while.body39
-  %p48 = load i64, ptr %p, align 8
-  %add49 = add i64 %p48, 1
-  store i64 %add49, ptr %p, align 1
-  br label %while.cond38
+if.end43:                                         ; preds = %if.then42, %if.end39
+  %colon_binds44 = load i1, ptr %colon_binds, align 1
+  br i1 %colon_binds44, label %if.then45, label %if.end46
 
-if.end47:                                         ; preds = %while.body39
-  %eq50 = icmp eq i8 %call44, 9
-  br i1 %eq50, label %if.then51, label %if.end52
+if.then45:                                        ; preds = %if.end43
+  %j47 = load i64, ptr %j, align 8
+  store i64 %j47, ptr %p, align 1
+  br label %while.cond48
 
-if.then51:                                        ; preds = %if.end47
-  %p53 = load i64, ptr %p, align 8
-  %add54 = add i64 %p53, 1
-  store i64 %add54, ptr %p, align 1
-  br label %while.cond38
-
-if.end52:                                         ; preds = %if.end47
-  br label %while.exit40
-
-if.then57:                                        ; preds = %while.exit40
-  %p59 = load i64, ptr %p, align 8
-  %call60 = call i8 @_ZN6String3getEm(ptr %0, i64 %p59)
-  %eq61 = icmp eq i8 %call60, 58
-  br i1 %eq61, label %if.then62, label %if.end63
-
-if.end58:                                         ; preds = %if.end63, %while.exit40
+if.end46:                                         ; preds = %if.end68, %if.end43
   br label %if.end33
 
-if.then62:                                        ; preds = %if.then57
+while.cond48:                                     ; preds = %if.then61, %if.then56, %if.then45
+  %p51 = load i64, ptr %p, align 8
+  %lt52 = icmp ult i64 %p51, %call
+  br i1 %lt52, label %while.body49, label %while.exit50
+
+while.body49:                                     ; preds = %while.cond48
+  %p53 = load i64, ptr %p, align 8
+  %call54 = call i8 @_ZN6String3getEm(ptr %0, i64 %p53)
+  %eq55 = icmp eq i8 %call54, 32
+  br i1 %eq55, label %if.then56, label %if.end57
+
+while.exit50:                                     ; preds = %if.end62, %while.cond48
+  %p65 = load i64, ptr %p, align 8
+  %lt66 = icmp ult i64 %p65, %call
+  br i1 %lt66, label %if.then67, label %if.end68
+
+if.then56:                                        ; preds = %while.body49
+  %p58 = load i64, ptr %p, align 8
+  %add59 = add i64 %p58, 1
+  store i64 %add59, ptr %p, align 1
+  br label %while.cond48
+
+if.end57:                                         ; preds = %while.body49
+  %eq60 = icmp eq i8 %call54, 9
+  br i1 %eq60, label %if.then61, label %if.end62
+
+if.then61:                                        ; preds = %if.end57
+  %p63 = load i64, ptr %p, align 8
+  %add64 = add i64 %p63, 1
+  store i64 %add64, ptr %p, align 1
+  br label %while.cond48
+
+if.end62:                                         ; preds = %if.end57
+  br label %while.exit50
+
+if.then67:                                        ; preds = %while.exit50
+  %p69 = load i64, ptr %p, align 8
+  %call70 = call i8 @_ZN6String3getEm(ptr %0, i64 %p69)
+  %eq71 = icmp eq i8 %call70, 58
+  br i1 %eq71, label %if.then72, label %if.end73
+
+if.end68:                                         ; preds = %if.end73, %while.exit50
+  br label %if.end46
+
+if.then72:                                        ; preds = %if.then67
   ret i1 true
 
-if.end63:                                         ; preds = %if.then57
-  br label %if.end58
+if.end73:                                         ; preds = %if.then67
+  br label %if.end68
 }
 
 define linkonce_odr i1 @_ZN7symbols27has_local_binding_candidateE6String6String(ptr %0, ptr %1) {
