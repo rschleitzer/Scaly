@@ -242,6 +242,13 @@ define server
             return
         }
 
+        if method = "textDocument/codeLens"
+        {
+            if has_id
+                server.handle_code_lens(msg, id)
+            return
+        }
+
         if method = "textDocument/selectionRange"
         {
             if has_id
@@ -426,6 +433,24 @@ define server
         }
         let text docstore.get uri
         let result worker.code_actions(uri, text, paths)
+        rpc.write_message(server.document_symbol_response(id, result))
+    }
+
+    ; textDocument/codeLens: one lens per `for` loop, carrying the TaskPlanner's
+    ; self-scaling verdict (scalyls.tasklens). The request carries only a uri, so
+    ; the in-memory buffer is passed along — the lens POSITIONS are the buffer's,
+    ; even though the verdicts come from the file as last saved.
+    ;
+    ; The client asks again on every document version, so this pays a package-root
+    ; plan per edit burst — the same cost class as the diagnostics it already runs
+    ; per burst, and the reason the answer is never computed in this process.
+    function handle_code_lens(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string(json.get(doc, "uri"))
+        let text docstore.get uri
+        let result worker.code_lenses(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
     }
 
@@ -1151,6 +1176,16 @@ define server
         ; position and we answer [] where there is nothing to fix.
         sb.append(server.key("codeActionProvider"))
         sb.append "true"
+        sb.append("," as char)
+        ; codeLensProvider must be a CodeLensOptions object (the spec has no
+        ; boolean form). resolveProvider:false — every lens arrives with its
+        ; title already computed, because the title IS the verdict and there is
+        ; no cheaper half to send first.
+        sb.append(server.key("codeLensProvider"))
+        sb.append("{" as char)
+        sb.append(server.key("resolveProvider"))
+        sb.append "false"
+        sb.append("}" as char)
         sb.append("," as char)
         sb.append(server.key("selectionRangeProvider"))
         sb.append "true"

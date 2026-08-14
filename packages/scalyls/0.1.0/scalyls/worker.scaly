@@ -35,6 +35,7 @@ use scalyls.diagnostics
 use scalyls.format
 use scalyls.symbols
 use scalyls.semantic
+use scalyls.tasklens
 
 ; POSIX process / pipe primitives (libc). Declared here rather than in the
 ; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
@@ -425,6 +426,18 @@ define worker
             return true
         }
 
+        ; codeLens: the self-scaling verdict of every `for` loop. Runs the
+        ; same modeler+planner pipeline as "d" — through the package ROOT for
+        ; a member, since a verdict computed without the sibling modules would
+        ; be WRONG (an unresolved callee cannot be proved pure) rather than
+        ; merely missing. NOT repaired: tasklens.document_lenses# explains why
+        ; blanking a line is the one repair this feature must not have.
+        if kind = "z"
+        {
+            rpc.write_message_fd(out_fd, tasklens.code_lenses(uri, source))
+            return true
+        }
+
         rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics(uri, source))
         true
     }
@@ -591,6 +604,18 @@ define worker
     ; formatting: the TextEdit[] that re-indents the open document.
     function formatting(rp, uri: String, text: String) returns String
         worker.exchange("m", uri, text, "", "[]")
+
+    ; codeLens for `uri` (uri-only, no position). `text` is the in-memory copy
+    ; (empty -> worker reads disk). Returns the LSP CodeLens[] array; `[]` if
+    ; unavailable / crashed / hung.
+    ;
+    ; It plans a whole package root, which is the same work "d" diagnostics
+    ; already do per document, so it belongs on the per-document budget and
+    ; reaches it through budget_for_kind#'s fallthrough — measured 0.45 s for
+    ; the scaly root and 2.45 s for dazzle, the largest in this tree, against
+    ; a 30 s budget.
+    function code_lenses(rp, uri: String, text: String) returns String
+        worker.exchange("z", uri, text, "", "[]")
 
     ; typeDefinition at the packed "<line> <char>" position.
     function type_definition(rp, uri: String, text: String, packed: String) returns String

@@ -1,0 +1,424 @@
+; tasklens.scaly - textDocument/codeLens: the self-scaling verdict of every
+; `for` loop in the document.
+;
+; WHY THIS FEATURE EXISTS. Since milestone 4.4 there is no parallel syntax:
+; every `for` is classified by the TaskPlanner and a passing body is emitted
+; through the adaptive parallel driver, while a blocked one runs sequentially
+; — "never a diagnostic" (TaskPlanner.scaly's own words). So the single most
+; consequential thing the compiler decides about a loop is invisible in the
+; source, and the only surface that ever showed it was the `--task-plan` CLI
+; flag. A CodeLens puts it above the loop it is about.
+;
+; WHAT IT SHOWS, one lens per `for` keyword:
+;   "runs in parallel"                     — the emitter drives the engine here
+;   "runs sequentially: <reason>"          — the FIRST blocking construct
+;   "no verdict: not planned in this root" — see the has_diagnostics note below
+;
+; ASCII ONLY in those titles. Every non-ASCII byte in this tree's .scaly
+; sources sits in a COMMENT (checked: packages/**, no string literal carries
+; one), so a marker glyph would be the first and there is no reason for this
+; feature to be the experiment.
+;
+; The command id is the EMPTY string, which renders the title as plain,
+; non-clickable text. There is nothing to click yet: the reason is the whole
+; message, and a command would need a client-side handler in the VS Code
+; extension for no added information.
+;
+; WHICH PROGRAM IS PLANNED. A package member cannot be planned on its own —
+; diagnostics.scaly documents that at length (every sibling module's name is
+; absent, so calls into them report "function not found"). Here the damage
+; would be worse than a false diagnostic: the classifier PROVES purity
+; transitively, so an unresolved callee turns "parallel" into "blocked", i.e.
+; the verdict would be wrong rather than missing. So a package member is
+; planned through its ROOT (diagnostics.package_root#), exactly like the
+; semantic half of diagnostics; a standalone document is planned on its own.
+;
+; ANCHORING (the saved-state bargain, and how this differs from diagnostics).
+; Planning a root reads every module from DISK, so the report's byte offsets
+; index the SAVED text while the editor draws the BUFFER. Diagnostics live
+; with that (their lines can be stale after an unsaved edit); a lens cannot,
+; because it is drawn ON the line and an off-by-N lens is read as a wrong
+; verdict for the loop it happens to sit above.
+;
+; So the offsets are used for MATCHING (against the saved text they index) and
+; the positions come from the BUFFER, paired IN ORDER: the Nth `for` site of
+; the saved text is the Nth of the buffer. That is exact for every edit that
+; does not change the file's `for` structure, which is nearly all of them.
+; When the two counts DISAGREE, no pairing is honest and the answer is `[]` —
+; the lenses vanish until the file is saved. That is a visible state (an
+; absent lens) rather than a plausible-looking wrong one, which is the whole
+; reason this route was chosen over normalising the difference away.
+;
+; THE `for`-TOKEN GUARD. A Span is a bare pair of byte offsets and
+; PlannedFunction.file is the REQUESTING file for an instantiated generic
+; (semantic.scaly's FILE IDENTITY section has the measurement) — so a report
+; entry could name this file while its offset indexes another. The guard is
+; that a verdict is only ever attached to an offset this scanner independently
+; found to be a `for` keyword. Measured 2026-08-14 over all five package
+; roots: the scanner's site set and the report's entry set coincide ONE TO
+; ONE (scaly 22/22, scalyc 29/29, scalyls+opensp+dazzle 0/0), and every one of
+; the five lexical "for"s without an entry was inside a comment — which is why
+; the scan skips comments and string literals via symbols.skip_noncode#.
+;
+; DUPLICATE ENTRIES ARE REAL. A `for` inside a generic body is reported once
+; per planning of that body: a two-line fixture with an uninstantiated
+; `define Bag[T]` yields the same file:line TWICE. Verdicts could in
+; principle differ between instantiations (the emitter asks per site), so the
+; BLOCKED one wins — the conservative direction, and the one that cannot
+; promise parallelism the compiler did not deliver.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Quotes are 0x22 bytes.
+
+use scaly.io.File
+use scaly.memory.runtime
+
+use scalyls.diagnostics
+use scalyls.symbols
+use scalyls.json
+
+use scalyc.compiler.parser
+use scalyc.compiler.Modeler
+use scalyc.compiler.Planner
+use scalyc.compiler.TaskPlanner
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+define tasklens
+{
+    ; The CodeLens[] array for `uri`. `text` is the parent's buffer (the
+    ; worker substitutes the file from disk when it has none), so it is the
+    ; text the POSITIONS are computed in.
+    ;
+    ; "[]" whenever nothing can be said: no `for` loop at all, an unreadable
+    ; file, a root that does not parse, a plan that came back null, or a
+    ; buffer whose `for` structure no longer matches the saved text.
+    function code_lenses(rp, uri: String, text: String) returns String
+    {
+        let path diagnostics.strip_uri uri
+        let root diagnostics.package_root path
+
+        ; plan_text: the text whose byte offsets the report will carry. For a
+        ; package member that is the file ON DISK (the modeler reads it, not
+        ; the buffer); for a standalone document it IS the buffer.
+        var plan_text text
+        if root.get_length() > 0
+            set plan_text: File.read_to_string(path)
+        if plan_text.get_length() = 0
+            return "[]"
+
+        let sites tasklens.count_for_sites plan_text
+        if sites = 0
+            return "[]"
+        let anchors tasklens.count_for_sites text
+        if anchors <> sites
+            return "[]"
+
+        if root.get_length() > 0
+            return tasklens.root_lenses(root, path, plan_text, text)
+        tasklens.document_lenses(path, plan_text, text)
+    }
+
+    ; Package-member route: plan the ROOT so sibling modules resolve, then
+    ; keep the verdicts whose file is `path`.
+    function root_lenses(rp, root: String, path: String, plan_text: String, anchor_text: String) returns String
+    {
+        let root_text File.read_to_string(root)
+        if root_text.get_length() = 0
+            return "[]"
+
+        var result String("[]")
+        var p parser.Parser(root_text)
+        choose p.parse_program()
+            when err: Error
+            {
+                ; The root itself does not parse. Its own diagnostics are
+                ; published elsewhere; there is no plan to read verdicts from.
+            }
+            when program: Success
+            {
+                ; The root program NAME is part of every module path the
+                ; use-visibility check compares against — a placeholder makes
+                ; the planner report every sibling as invisible
+                ; (diagnostics.root_program_name# has the full account).
+                let prog_name diagnostics.root_program_name(root)
+                let model Modeler.build_program(root, prog_name, program, true)
+                var planner Planner.Planner(root)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program model
+                if plan <> null
+                {
+                    var tp TaskPlanner.TaskPlanner()
+                    tp.analyze(plan, root)
+                    set result: tasklens.lenses_body(&tp, planner.has_diagnostics(), path, plan_text, anchor_text)
+                }
+            }
+        result
+    }
+
+    ; Standalone-document route: no root, so the buffer IS the program. Its
+    ; own text carries the offsets, which is why this route has no anchoring
+    ; question at all.
+    function document_lenses(rp, path: String, plan_text: String, anchor_text: String) returns String
+    {
+        var result String("[]")
+        var p parser.Parser(plan_text)
+        choose p.parse_program()
+            when err: Error
+            {
+                ; A buffer being typed into does not parse, and a document
+                ; that does not parse has no plan. Deliberately NOT repaired
+                ; (symbols.repaired_source#): the repair blanks a line, and
+                ; blanking a `for` line would change the very site count this
+                ; feature pairs on — a repaired verdict would be about a
+                ; program the author never wrote.
+            }
+            when program: Success
+            {
+                let prog_name "document"
+                let model Modeler.build_program(path, prog_name, program, true)
+                var planner Planner.Planner(path)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program model
+                if plan <> null
+                {
+                    var tp TaskPlanner.TaskPlanner()
+                    tp.analyze(plan, path)
+                    set result: tasklens.lenses_body(&tp, planner.has_diagnostics(), path, plan_text, anchor_text)
+                }
+            }
+        result
+    }
+
+    ; The CodeLens[] array itself: walk the `for` sites of both texts in
+    ; lockstep (the counts were proved equal by code_lenses#), take the
+    ; verdict from the plan text's offset and draw it at the buffer's.
+    function lenses_body(rp, tp: ref[TaskPlanner.TaskPlanner], has_diag: bool, path: String, plan_text: String, anchor_text: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("[" as char)
+
+        let plan_len plan_text.get_length()
+        var first true
+        var kp: size_t 0
+        var ka: size_t 0
+        while kp < plan_len
+        {
+            set kp: tasklens.next_for_site(plan_text, kp)
+            if kp >= plan_len
+                break
+            set ka: tasklens.next_for_site(anchor_text, ka)
+
+            let verdict tasklens.verdict_at(tp, path, kp)
+
+            ; No entry for this site: the routine around it was not planned
+            ; in this root. The reachable case is a file that lives in the
+            ; package DIRECTORY but is not declared as a module of the root —
+            ; a file just created, which is worth saying. But a root that
+            ; produced HARD DIAGNOSTICS may have a truncated plan, and then
+            ; "not planned" would be a claim about the code rather than about
+            ; this file's membership: say nothing instead.
+            var emit true
+            if verdict.get_length() = 0
+                if has_diag
+                    set emit: false
+
+            if emit
+            {
+                if first = false
+                    sb.append("," as char)
+                let title tasklens.title_for verdict
+                sb.append(tasklens.lens_object(anchor_text, ka, title))
+                set first: false
+            }
+
+            ; 3 == length of "for": step past the keyword so the next search
+            ; cannot answer this site again.
+            set kp: kp + 3
+            set ka: ka + 3
+        }
+
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; The report's verdict for `offset` in `path`, or "" when it holds none.
+    ;
+    ; The answer SHARES the report's buffer (a String struct copy, no
+    ; allocation): every caller consumes it while `tp` is still alive, which
+    ; is what makes that safe.
+    function verdict_at(rp, tp: ref[TaskPlanner.TaskPlanner], path: String, offset: size_t) returns String
+    {
+        var found String("")
+        var have false
+        var i: size_t 0
+        while i < tp.report_files.length
+        {
+            let fp tp.report_files.get i
+            let op tp.report_offsets.get i
+            let vp tp.report_verdicts.get i
+            if fp <> null
+            {
+                if op <> null
+                {
+                    if vp <> null
+                    {
+                        if (*op) = offset
+                        {
+                            if (*fp) = path
+                            {
+                                if have = false
+                                {
+                                    set found: (*vp)
+                                    set have: true
+                                }
+                                else
+                                {
+                                    ; Same source loop reported twice (a
+                                    ; generic body planned more than once):
+                                    ; blocked wins.
+                                    let v (*vp)
+                                    if v.starts_with("blocked")
+                                        set found: v
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            set i: i + 1
+        }
+        found
+    }
+
+    ; The lens title for a report verdict ("" = no entry at all). The
+    ; TaskPlanner spells a blocked verdict "blocked: <reason>"; the reason is
+    ; kept verbatim, since it names the first blocking construct and that is
+    ; the actionable half.
+    function title_for(rp, verdict: String) returns String
+    {
+        var sb StringBuilder()
+        if verdict.get_length() = 0
+        {
+            sb.append "no verdict: not planned in this root"
+            return sb.to_string()
+        }
+        if verdict.starts_with("blocked: ")
+        {
+            sb.append "runs sequentially: "
+            ; 9 == length of "blocked: "
+            let n verdict.get_length()
+            var k: size_t 9
+            while k < n
+            {
+                sb.append(verdict.get(k) as char)
+                set k: k + 1
+            }
+            return sb.to_string()
+        }
+        sb.append "runs in parallel"
+        sb.to_string()
+    }
+
+    ; One LSP CodeLens over the `for` keyword at `offset`:
+    ;   {"range":{...},"command":{"title":<title>,"command":""}}
+    function lens_object(rp, source: String, offset: size_t, title: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("range"))
+        sb.append(symbols.range_for(source, offset, offset + 3))
+        sb.append("," as char)
+        sb.append(symbols.key("command"))
+        sb.append("{" as char)
+        sb.append(symbols.key("title"))
+        sb.append(json.quote_string(title))
+        sb.append("," as char)
+        sb.append(symbols.key("command"))
+        sb.append("\"" as char)
+        sb.append("\"" as char)
+        sb.append("}" as char)
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    ; ====================================================================
+    ; The `for`-site scanner.
+    ;
+    ; `for` is a keyword with exactly one use in the language, so a `for`
+    ; TOKEN in code always opens a loop — no parse needed, which is what
+    ; keeps this usable on a buffer that does not parse. Comments and string
+    ; literals are skipped wholesale (symbols.skip_noncode#): five of the
+    ; tree's lexical "for"s live in comments and would otherwise be sites
+    ; with no verdict.
+    ; ====================================================================
+
+    ; The offset of the next `for` keyword at or after `from`, or the source
+    ; length when there is none.
+    function next_for_site(source: String, from: size_t) returns size_t
+    {
+        let len source.get_length()
+        var k from
+        while k < len
+        {
+            let c source.get k
+            if symbols.is_noncode_start c
+            {
+                ; skip_noncode always advances past an opener, so this cannot
+                ; spin.
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
+            if c = ("f" as char)
+            {
+                if tasklens.is_for_token(source, k, len)
+                    return k
+            }
+            set k: k + 1
+        }
+        len
+    }
+
+    function count_for_sites(source: String) returns size_t
+    {
+        let len source.get_length()
+        var n: size_t 0
+        var k: size_t 0
+        while k < len
+        {
+            set k: tasklens.next_for_site(source, k)
+            if k >= len
+                return n
+            set n: n + 1
+            set k: k + 3
+        }
+        n
+    }
+
+    ; Is source[k..] the keyword `for` on both token boundaries? A bare `for`
+    ; at EOF is not a loop (a loop needs its variable), so k+3 must exist.
+    function is_for_token(source: String, k: size_t, len: size_t) returns bool
+    {
+        if k + 3 >= len
+            return false
+        let c1 source.get(k + 1)
+        if c1 <> ("o" as char)
+            return false
+        let c2 source.get(k + 2)
+        if c2 <> ("r" as char)
+            return false
+        let c3 source.get(k + 3)
+        if symbols.is_ident_byte c3
+            return false
+        if k > 0
+        {
+            let c0 source.get(k - 1)
+            if symbols.is_ident_byte c0
+                return false
+        }
+        true
+    }
+}

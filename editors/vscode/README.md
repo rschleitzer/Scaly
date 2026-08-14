@@ -22,6 +22,16 @@ What you get:
   variants), namespaces, module-level mutables; **workspace symbols** across
   the project (Cmd+T).
 - **Inlay hints** — inferred types inline.
+- **Code lenses — the self-scaling verdict** — above every `for` loop: whether
+  the compiler drives it through the adaptive parallel engine (`runs in
+  parallel`) or runs it sequentially, and in that case the first construct that
+  blocked it (`runs sequentially: writes loop-external t`). Scaly has no
+  parallel syntax and emits no diagnostic either way, so this is the only place
+  the decision is visible outside `scalyc --task-plan`. The verdicts describe
+  the file **as last saved** — a loop's classification needs its whole package
+  planned, which is read from disk — so while an unsaved edit adds or removes a
+  `for`, the lenses disappear rather than sit on the wrong lines. Turn them off
+  per language with `"[scaly]": { "editor.codeLens": false }`.
 - **Folding ranges**.
 - **Debugging** — gutter breakpoints, stepping, call stack, and a Variables
   view with arguments, `let` bindings and readable containers. See below.

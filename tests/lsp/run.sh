@@ -3752,6 +3752,210 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp foldingRange"; else bad "lsp foldingRange"; fi
 
+# ---- codeLens: the self-scaling verdict of every `for` loop ----
+# Since milestone 4.4 a `for` whose body passes the TaskPlanner classification
+# is emitted through the adaptive parallel driver and a blocked one runs
+# sequentially, with NO diagnostic either way — so the lens is the only editor
+# surface for the single most consequential thing the compiler decides about a
+# loop (scalyls/tasklens.scaly).
+#
+# The groups below are each other's controls:
+#   * a standalone document       -> the buffer IS the planned program
+#   * a package member            -> planned through its ROOT (from disk), so
+#                                    the verdicts and the buffer come from
+#                                    different texts and must be PAIRED
+#   * comment/string `for`s       -> the noncode skip is load-bearing: without
+#                                    it this file has FIVE sites and the one
+#                                    real verdict lands on the wrong line
+#   * an undeclared module file   -> the reachable "no verdict" case
+#   * a file with no `for` at all -> []
+# The last group is the sharpest: the same verdicts are computed a SECOND time
+# by a different program (`scalyc --plan --task-plan`) and compared line by
+# line. A cross-producer check is what makes "the lens agrees with the
+# compiler" an assertion rather than a hope.
+( ulimit -s 65520; "$SCALYC" --plan --task-plan packages/scaly/0.1.0/scaly.scaly ) \
+    > /tmp/lsp_taskplan.txt 2>/dev/null || true
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+
+# One server run: didOpen `path` with `buffer` (defaults to the file), then ask
+# for its lenses. Answers (capabilities, lens list).
+def lenses(path, buffer=None):
+    if buffer is None: buffer = open(path).read()
+    uri = "file://" + os.path.abspath(path)
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":buffer}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/codeLens",
+                  "params":{"textDocument":{"uri":uri}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    caps = frames[0]["result"]["capabilities"] if frames else {}
+    r = next((f for f in frames if f.get("id") == 2), None)
+    res = (r or {}).get("result")
+    if not isinstance(res, list): res = None
+    return caps, res
+# (1-based line, title) per lens, in reply order.
+def rows(ls):
+    return [(l["range"]["start"]["line"] + 1, l["command"]["title"]) for l in (ls or [])]
+
+ws = "/tmp/lsp_ws/codelens"
+shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws)
+
+# ---- a standalone document: buffer == planned program --------------------
+doc = ws + "/doc.scaly"
+open(doc, "w").write(
+    "function double_all(n: int, out: Vector[int])\n"
+    "{\n"
+    "    for i in n\n"                                  # 3: disjoint Vector slot
+    "        out.put(i, i * 2)\n"
+    "}\n"
+    "\n"
+    "function total(n: int) returns int\n"
+    "{\n"
+    "    var t 0\n"
+    "    for x in n\n"                                  # 10: writes t
+    "        set t: t + x\n"
+    "    t\n"
+    "}\n"
+    "\n"
+    "var results Vector[int](4)\n"
+    "double_all(4, results)\n"
+    "if total(4) <> 6\n"
+    "    exit 1\n"
+    "print \"PASS\"\n")
+caps, ls = lenses(doc)
+check(caps.get("codeLensProvider") == {"resolveProvider": False},
+      "initialize advertises codeLensProvider as CodeLensOptions")
+check(ls is not None, "codeLens -> array result")
+check(rows(ls) == [(3, "runs in parallel"),
+                   (10, "runs sequentially: writes loop-external t")],
+      "standalone document: one lens per `for`, verdict verbatim")
+# The lens sits ON the keyword, so the editor draws it above that line.
+first = (ls or [{}])[0]
+check(first.get("range", {}).get("start", {}).get("character") == 4
+      and first["range"]["end"]["character"] == 7,
+      "range covers the `for` keyword itself")
+check(all(l["command"]["command"] == "" for l in (ls or [])),
+      "every lens is plain text (empty command id, nothing to click)")
+
+# ---- the noncode skip is load-bearing -----------------------------------
+# Four decoy `for`s: a line comment, a `;* *;` block spanning two lines, and a
+# string literal. Without symbols.skip_noncode# the scan finds five sites, the
+# real loop's verdict is paired with the FIRST of them, and every lens is
+# wrong while the count still looks plausible.
+nc = ws + "/noncode.scaly"
+open(nc, "w").write(
+    "; A comment mentioning for i in n must never get a lens.\n"
+    ";* for x in y\n"
+    "   for z in w *;\n"
+    "function only_one(n: int) returns int\n"
+    "{\n"
+    "    let text_for \"for a in b\"\n"
+    "    var t 0\n"
+    "    for i in n\n"                                  # 8: the only real one
+    "        set t: t + i\n"
+    "    t\n"
+    "}\n"
+    "\n"
+    "if only_one(3) <> 3\n"
+    "    exit 1\n"
+    "print \"PASS\"\n")
+caps, ls = lenses(nc)
+check(rows(ls) == [(8, "runs sequentially: writes loop-external t")],
+      "`for` in a comment / block comment / string literal gets no lens")
+
+# ---- a package member: verdicts from DISK, positions from the BUFFER ----
+pkg = ws + "/pkg/0.1.0"
+os.makedirs(pkg + "/pkg")
+open(pkg + "/pkg.scaly", "w").write("define pkg\n{\n    module a\n}\n")
+body = ("define a\n"
+        "{\n"
+        "    function sum_a(n: int) returns int\n"
+        "    {\n"
+        "        var t 0\n"
+        "        for i in n\n"                           # 6
+        "            set t: t + i\n"
+        "        t\n"
+        "    }\n"
+        "}\n")
+member = pkg + "/pkg/a.scaly"
+open(member, "w").write(body)
+caps, ls = lenses(member)
+check(rows(ls) == [(6, "runs sequentially: writes loop-external t")],
+      "package member: planned through its root, so the sibling names resolve")
+# Unsaved edit that shifts lines without changing the `for` structure: the
+# verdict still comes from the saved text, the POSITION follows the buffer.
+caps, ls = lenses(member, "; one\n; two\n" + body)
+check(rows(ls) == [(8, "runs sequentially: writes loop-external t")],
+      "unsaved edit above the loop: the lens follows the buffer, not the disk")
+# Unsaved edit that ADDS a `for`: no pairing is honest, so the lenses vanish
+# until the file is saved (a visibly absent lens beats a plausible wrong one).
+caps, ls = lenses(member, body.replace("        var t 0\n",
+                                       "        var t 0\n        for q in n\n            set t: t + q\n"))
+check(ls == [], "a buffer whose `for` structure differs from disk answers []")
+
+# ---- the reachable "no verdict": a file the root does not declare -------
+undeclared = pkg + "/pkg/b.scaly"
+open(undeclared, "w").write(body.replace("define a", "define b").replace("sum_a", "sum_b"))
+caps, ls = lenses(undeclared)
+check(rows(ls) == [(6, "no verdict: not planned in this root")],
+      "a file that is not a declared module of its root has no verdict")
+
+# ---- nothing to say -----------------------------------------------------
+plain = ws + "/plain.scaly"
+open(plain, "w").write("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n")
+caps, ls = lenses(plain)
+check(ls == [], "a file without a `for` loop answers []")
+
+# ---- cross-producer: the lens must agree with `--task-plan` -------------
+# tensor.scaly is this tree's densest `for` file (the tape kernels) and lives
+# in the scaly package, so the LSP has to plan its ROOT to answer at all.
+cli = {}
+for ln in open("/tmp/lsp_taskplan.txt"):
+    ln = ln.rstrip("\n")
+    if not ln.startswith("task-plan: ") or " for-loops," in ln: continue
+    f, line, col, verdict = ln[len("task-plan: "):].split(":", 3)
+    if f.endswith("scaly/tensor.scaly"): cli[int(line)] = verdict.strip()
+check(len(cli) > 10, "the --task-plan control run produced tensor.scaly entries")
+caps, ls = lenses("packages/scaly/0.1.0/scaly/tensor.scaly")
+lens_map = {}
+for (line, title) in rows(ls):
+    lens_map[line] = title
+check(sorted(lens_map) == sorted(cli),
+      "codeLens covers exactly the loops --task-plan reports (%d)" % len(cli))
+def expected(v):
+    if v == "parallel": return "runs in parallel"
+    return "runs sequentially: " + v[len("blocked: "):]
+mismatch = [l for l in cli if lens_map.get(l) != expected(cli[l])]
+check(not mismatch, "every verdict matches the compiler's own report")
+if mismatch:
+    for l in mismatch[:5]:
+        print("      line %d: lens %r vs cli %r" % (l, lens_map.get(l), cli[l]))
+# Both outcomes must be present, or the comparison above could be vacuous.
+check(any(v == "parallel" for v in cli.values()) and any(v != "parallel" for v in cli.values()),
+      "the corpus file carries both a parallel and a blocked verdict")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp codeLens"; else bad "lsp codeLens"; fi
+
 # ---- semanticTokens/full: lexical token classification ----
 # A single byte scan classifies every token into the legend (keyword/type/
 # function/variable/operator/string/number/comment) and returns the LSP

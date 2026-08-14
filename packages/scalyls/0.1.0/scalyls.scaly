@@ -43,6 +43,11 @@ define scalyls
     ; map a byte offset to the innermost planned node's resolved type.
     module semantic
 
+    ; textDocument/codeLens: the TaskPlanner's self-scaling verdict over
+    ; every `for` loop — the only editor surface where parallelization is
+    ; observable at all.
+    module tasklens
+
     ; In-memory document store (parent side) so navigation features see
     ; unsaved editor edits instead of re-reading from disk.
     module docstore
