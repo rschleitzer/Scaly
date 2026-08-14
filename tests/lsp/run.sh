@@ -225,7 +225,8 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "define Point\n(\n    x: int\n)\n{\n"
        "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"
        "define Shape union (\n    Circle: int\n    Square: int\n)\n")
-path = "/tmp/lsp_symbols_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/symbols_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_symbols_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -287,7 +288,8 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        # Line 18: a GENERIC routine — nothing in the tree declares one, so this
        # fixture is the only cover for the `[T]` half of the rendering.
        "\nfunction pick[T](a: T, b: T) returns T\n{\n    return a\n}\n")
-path = "/tmp/lsp_hover_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/hover_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_hover_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -359,7 +361,8 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"
        "define Shape union (\n    Circle: int\n    Square: int\n)\n\n"
        "function use_it(p: Point) returns int\n{\n    return add(p.get_x(), 1)\n}\n")
-path = "/tmp/lsp_def_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/def_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_def_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -412,11 +415,30 @@ if [ $rc -eq 0 ]; then ok "lsp definition"; else bad "lsp definition"; fi
 # a Location per whole-token occurrence. Exercises a multiply-called function,
 # whole-token matching (the param `a` must NOT match inside `add`), and the
 # no-identifier `[]` case.
+#
+# ★Every fixture block in this file writes into its OWN directory under
+# /tmp/lsp_ws/, and for this test that is load-bearing. `references` is a
+# WORKSPACE-WIDE query — scalyls searches the directory of the document, not
+# just the document — so with all fixtures in a shared /tmp it answered 7
+# instead of 3: hover, definition, symbols and rename each declare a
+# `function add` of their own, and it found them all, correctly. Rename asserts
+# the same "3 occurrences" and was NOT affected, because its TextEdits are
+# scoped to one document.
+#
+# Measured 2026-08-14, the first time the bar ran this suite on Linux. ★The
+# second lesson is why the isolation is applied to ALL blocks rather than to
+# this one: the suite ABORTS at the first failing section, so the two failures
+# here hid the other 44 tests entirely — and the very next one to run, the
+# scope test's module-wide `alpha`, was the same defect again (the incremental
+# test's fixture declares an `alpha` too). A shared scratch directory is not a
+# tidiness question; it is a silent coupling between tests that only the
+# workspace-wide assertions can feel.
 python3 - <<'PY'
 import sys, json, subprocess
 src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "function main() returns int\n{\n    return add(add(1, 2), 3)\n}\n")
-path = "/tmp/lsp_ref_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/ref_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_ref_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -471,7 +493,8 @@ python3 - <<'PY'
 import sys, json, subprocess
 src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "function main() returns int\n{\n    return add(add(1, 2), 3)\n}\n")
-path = "/tmp/lsp_hl_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/hl_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_hl_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -522,7 +545,8 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "define Point\n(\n    x: int\n)\n{\n"
        "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"
        "define Shape union (\n    Circle: int\n    Square: int\n)\n")
-path = "/tmp/lsp_completion_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/completion_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_completion_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -576,7 +600,8 @@ if [ $rc -eq 0 ]; then ok "lsp completion"; else bad "lsp completion"; fi
 # navigation request reflects the rebuilt document. Disk is never touched.
 python3 - <<'PY'
 import sys, json, subprocess
-path = "/tmp/lsp_incr_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/incr_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_incr_test.scaly"
 src  = "function alpha() returns int\n{\n    return 1\n}\n"
 open(path, "w").write(src)             # disk has `alpha`; never rewritten
 def frame(o):
@@ -634,7 +659,8 @@ if [ $rc -eq 0 ]; then ok "lsp incremental sync"; else bad "lsp incremental sync
 # outline. After didClose the entry is dropped and it falls back to disk.
 python3 - <<'PY'
 import sys, json, subprocess
-path = "/tmp/lsp_docstore_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/docstore_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_docstore_test.scaly"
 disk   = "function on_disk() returns int\n{\n    return 1\n}\n"
 edited = "function edited_only() returns int\n{\n    return 2\n}\n"
 open(path, "w").write(disk)          # disk has `on_disk`; never rewritten
@@ -687,7 +713,8 @@ python3 - <<'PY'
 import sys, json, subprocess
 src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "function main() returns int\n{\n    return add(add(1, 2), 3)\n}\n")
-path = "/tmp/lsp_rename_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/rename_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_rename_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -766,7 +793,8 @@ src = ("function alpha() returns int\n"                       # 0
        "    var x 2\n"                                        # 9
        "    return alpha() + x\n"                             # 10
        "}\n")                                                 # 11
-path = "/tmp/lsp_scope_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/scope_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_scope_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -1115,7 +1143,8 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "define Shape union (\n    Circle: int\n    Square: int\n)\n\n"
        "function trigger(p: Point) returns int\n{\n    let q Point.get_x(p)\n"
        "    let s Shape.Circle\n    return q + p.get_x()\n}\n")
-path = "/tmp/lsp_ctxcompl_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/ctxcompl_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_ctxcompl_test.scaly"
 open(path, "w").write(src)
 def linecol(idx):
     pre = src[:idx]; return pre.count("\n"), idx - (pre.rfind("\n")+1)
@@ -1247,7 +1276,8 @@ src = ("define Point\n(\n    x: int\n)\n{\n"
        "    function get_x(this: Point) returns int\n    {\n"
        "        set this.\n"                     # line 7: unfinished
        "        return x\n    }\n}\n")
-path = "/tmp/lsp_midedit_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/midedit_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_midedit_test.scaly"
 open(path, "w").write(src)
 uri = "file://" + path
 def frame(o):
@@ -1344,7 +1374,8 @@ import sys, json, subprocess, os, select, time
 src = ("define Point\n(\n    x: int\n)\n{\n"
        "    function get_x(this: Point) returns int\n    {\n"
        "        return x\n    }\n}\n")
-path = "/tmp/lsp_burst_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/burst_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_burst_test.scaly"
 open(path, "w").write(src)
 uri = "file://" + path
 def frame(o):
@@ -2671,7 +2702,8 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"   
        "define Point\n(\n    x: int\n)\n{\n"                                    # 7.. open at 11
        "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"  # 12..16
        "define Shape union (\n    Circle: int\n    Square: int\n)\n")          # 18..21
-path = "/tmp/lsp_fold_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/fold_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_fold_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -3099,7 +3131,8 @@ src = ("define Box[T](value: T)\n"
        "    let c o.gi().z\n"
        "    return r\n"
        "}\n")
-path = "/tmp/lsp_sem_hover.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/sem_hover"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_sem_hover.scaly"
 open(path, "w").write(src)
 lines = src.split("\n")
 def loc(unique, token):
@@ -3159,9 +3192,10 @@ if [ $rc -eq 0 ]; then ok "lsp semantic hover"; else bad "lsp semantic hover"; f
 # response (null) and stay alive to answer the next request.
 python3 - <<'PY'
 import sys, json, subprocess
-bad = "/tmp/lsp_sem_bad.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/sem_bad"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+bad = _ws + "/lsp_sem_bad.scaly"
 open(bad, "w").write("function broken(a: int \n{\n    return a\n")  # missing ')'
-good = "/tmp/lsp_sem_good.scaly"
+good = _ws + "/lsp_sem_good.scaly"
 open(good, "w").write("function fine(a: int) returns int\n{\n    return a\n}\n")
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -3231,7 +3265,8 @@ src = ("define Point(x: int)\n"
        "    let z g.px()\n"
        "    return z\n"
        "}\n")
-path = "/tmp/lsp_sem_completion.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/sem_completion"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_sem_completion.scaly"
 open(path, "w").write(src)
 uri = "file://" + path
 lines = src.split("\n")
