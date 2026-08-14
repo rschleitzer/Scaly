@@ -15,9 +15,16 @@ define ParserError union (
     Invalid: InvalidSyntax
 )
 
-; Syntax types are defined in Syntax.scaly (loaded as module Syntax by compiler.scaly)
-
-module lexer
+; Syntax types are defined in Syntax.scaly and the Lexer in lexer.scaly; both are
+; loaded as SIBLING modules by compiler.scaly, and the two `use` clauses above are
+; what bring their names in here.
+;
+; This file must NOT declare `module lexer` itself, and it did until 2026-08-14.
+; A module declared inside `define parser` resolves to compiler/parser/lexer.scaly
+; (Modeler.handle_namespace# appends the namespace name), that file does not exist,
+; and a missing module file is SILENT: build_referenced_module# substitutes an
+; empty stub with no diagnostic and no counter. So the declaration was dead weight
+; nobody could see, until the scalyls codeLens for module resolution reported it.
 
 define Parser
 (

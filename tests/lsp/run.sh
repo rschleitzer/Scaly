@@ -4095,12 +4095,14 @@ for f in sweep:
 check(opens > 20, "the sweep resolved a real number of module files (%d)" % opens)
 check(not wrong, "every module/package claim matches the file system")
 for w in wrong[:5]: print("      ", w)
-# The sweep must contain BOTH outcomes, or "claims are true" proves little: the
-# generated parser.scaly carries a `module lexer` inside `define parser`, which
-# resolves to compiler/parser/lexer.scaly and does not exist (the real lexer is
-# loaded by compiler.scaly as a SIBLING module, and a missing module file is
-# silent in the Modeler). That is the lens doing its job.
-check(missing > 0, "the sweep contains at least one missing-module claim")
+# This tree resolves EVERY declared module, so the sweep is expected to contain no
+# missing-module claim at all — and it is the lens that made that true: it reported
+# a dead `module lexer` inside the generated parser.scaly (resolving to
+# compiler/parser/lexer.scaly, which never existed, silently stubbed by the
+# Modeler), and codegen/parser-scaly.scm stopped emitting it. So "claims are true"
+# is proved on the OTHER outcome by the fixture group below, which declares a
+# module with no file on purpose; asserting a wart here would pin the tree to it.
+check(missing == 0, "no module of this tree fails to resolve (%d)" % missing)
 
 # ---- the two rules the first draft got wrong ---------------------------
 ws = "/tmp/lsp_ws/codelens_paths"
