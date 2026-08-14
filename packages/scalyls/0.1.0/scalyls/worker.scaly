@@ -37,6 +37,7 @@ use scalyls.symbols
 use scalyls.semantic
 use scalyls.tasklens
 use scalyls.codelens
+use scalyls.placehints
 
 ; POSIX process / pipe primitives (libc). Declared here rather than in the
 ; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
@@ -332,11 +333,13 @@ define worker
             return true
         }
 
-        ; inlayHint: parameter-name hints for call sites in the packed
-        ; "<sl> <sc> <el> <ec>" range.
+        ; inlayHint: parameter-name and binding-type hints for the packed
+        ; "<sl> <sc> <el> <ec>" range, plus the allocation-placement hints
+        ; (scalyls.placehints — plan-derived, and answered only for a SAVED file,
+        ; which is also what keeps a plan off every scroll).
         if kind = "y"
         {
-            rpc.write_message_fd(out_fd, symbols.inlay_hints_packed(symbols.repaired_source(source), uri, position))
+            rpc.write_message_fd(out_fd, placehints.merged(symbols.repaired_source(source), source, uri, position))
             return true
         }
 

@@ -52,6 +52,10 @@ define scalyls
     ; the demand-driven planner never emitted.
     module instlens
 
+    ; textDocument/inlayHint: where each construction is allocated (stack, or
+    ; which region). Plan-derived, cached per saved file.
+    module placehints
+
     ; textDocument/codeLens: assembles the array from every lens family, and
     ; owns the three that need no plan (generated file, package/module
     ; resolution, Run).

@@ -4305,6 +4305,183 @@ PYINST
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeLens instantiations"; else bad "lsp codeLens instantiations"; fi
 
+# ---- inlayHint: where each construction is ALLOCATED ----
+# scalyls/placehints.scaly labels every construction with the placement the
+# EMITTER will give it: `stack`, `region` (this function's own frame),
+# `region #` (the caller's page) or `region ^name`. Lifetimes are inferred, so
+# this is the only place the decision is visible at all.
+#
+# The gate is an IR cross-check, because a placement hint that lies is worse than
+# no hint: the fixture is compiled by $SCALYC and each label is checked against
+# what the emitted IR actually does —
+#   stack     -> an alloca of the struct, and NO Page::allocate
+#   region    -> Page::allocate on the function's OWN frame (%frame = alloca)
+#   region #  -> Page::allocate on the CALLER's frame (force_frame(ptr %0))
+# That check is what caught the first version: `is_region_alloc` alone said
+# `region #` for a construction the emitter puts on the STACK, because the
+# function has no page parameter and the region path is abandoned when `_rp`
+# cannot be resolved.
+python3 - "$SCALYC" <<'PYPLACE'
+import sys, json, subprocess, os, shutil, re
+scalyc = sys.argv[1]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+# A real client sends raw UTF-8; json.dumps would escape it as \uXXXX, which is
+# NOT byte-identical to the file on disk and would make every placement hint
+# vanish (they are answered only for a buffer that matches the saved text).
+def frame(o):
+    b=json.dumps(o, ensure_ascii=False).encode()
+    return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def hints(path, buffer=None, repeat=1):
+    if buffer is None: buffer = open(path).read()
+    uri = "file://" + os.path.abspath(path)
+    nl = buffer.count("\n") + 1
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":buffer}}})
+    for i in range(repeat):
+        inp += frame({"jsonrpc":"2.0","id":2+i,"method":"textDocument/inlayHint","params":{
+                      "textDocument":{"uri":uri},
+                      "range":{"start":{"line":0,"character":0},"end":{"line":nl,"character":0}}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    answers = []
+    for i in range(repeat):
+        r = next((f for f in frames if f.get("id") == 2+i), None)
+        res = (r or {}).get("result") or []
+        answers.append(res)
+    return answers
+def placement(res):
+    out = []
+    for h in res:
+        t = h.get("label", "")
+        if t == "stack" or t.startswith("region"):
+            out.append((h["position"]["line"] + 1, t))
+    return sorted(out)
+
+ws = "/tmp/lsp_ws/placehints"
+shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws)
+src = ("define Point\n"
+       "(\n"
+       "    x: int\n"
+       "    y: int\n"
+       ")\n"
+       "\n"
+       "function on_stack(n: int) returns int\n"
+       "{\n"
+       "    let p Point(n, n)\n"                     # 9  — no page parameter
+       "    p.x\n"
+       "}\n"
+       "\n"
+       "function on_caller_sigil(rp, n: int) returns int\n"
+       "{\n"
+       "    let p Point#(n, n)\n"                    # 15 — the `#` sigil
+       "    p.x\n"
+       "}\n"
+       "\n"
+       "function on_own_region(rp, n: int) returns String\n"
+       "{\n"
+       "    var sb StringBuilder()\n"                # 21 — its own frame
+       "    sb.append \"x\"\n"
+       "    sb.to_string()\n"
+       "}\n"
+       "\n"
+       "if on_stack(3) <> 3\n"
+       "    exit 1\n"
+       "print \"PASS\"\n")
+path = ws + "/place.scaly"
+open(path, "w").write(src)
+
+rows = placement(hints(path)[0])
+check(len(rows) == 3, "one hint per construction (%s)" % rows)
+
+# ---- the IR decides what each label SHOULD be -------------------------
+# Not a hardcoded expectation: the emitted IR is read per function and
+# classified, then the lens is compared against that. So the assertion cannot rot
+# as the emitter's choices move — it only breaks when the two disagree.
+ir = ws + "/place.ll"
+rc = subprocess.run([scalyc, "-S", "-o", ir, path],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+check(rc == 0 and os.path.exists(ir), "the fixture compiles to IR")
+if os.path.exists(ir):
+    text = open(ir).read()
+    def body(name):
+        m = re.search(r"^define [^\n]*@[^\n]*" + name + r"[^\n]*\{\n(.*?)^\}", text, re.M | re.S)
+        return m.group(1) if m else ""
+    def classify(b):
+        # No Page::allocate at all -> the construction is a plain stack alloca.
+        #
+        # Otherwise: WHICH frame did the page come from? Presence alone does not
+        # answer that — a function with a caller frame AND its own frame contains
+        # `scaly_force_frameP5Frame(ptr %0)` for the frame chain and
+        # `…(ptr %frame)` for the allocation, so a substring test called the
+        # own-region case `region #`. Follow the dataflow instead: read the page
+        # argument of Page::allocate, then find which force_frame defined it.
+        # (The mangled callee is `_Z17scaly_force_frameP5Frame`; a pattern of
+        # "force_frame(ptr %0)" matches nothing.)
+        if "_ZN4Page8allocateEmm" not in b: return "stack"
+        m = re.search(r"@_ZN4Page8allocateEmm\(ptr (%[A-Za-z0-9_.]+)", b)
+        if not m: return "?"
+        page = m.group(1)
+        d = re.search(re.escape(page) + r" = call ptr @_Z17scaly_force_frameP5Frame\(ptr (%[A-Za-z0-9_.]+)\)", b)
+        if not d: return "?"
+        src = d.group(1)
+        if src == "%0": return "region #"
+        if src.startswith("%frame"): return "region"
+        return "?"
+    sites = [(9, "on_stack"), (15, "on_caller_sigil"), (21, "on_own_region")]
+    got = dict(rows)
+    for (line, fname) in sites:
+        b = body(fname)
+        check(b != "", "found %s in the IR" % fname)
+        want = classify(b)
+        check(want in ("stack", "region", "region #"),
+              "  the IR classifies %s as %s" % (fname, want))
+        check(got.get(line) == want,
+              "  the hint on line %d says %r and the IR says %r" % (line, got.get(line), want))
+
+# ---- the saved-text rule ----------------------------------------------
+# The placement comes from a plan the modeler builds from DISK, and a
+# construction has no lexical anchor to pair saved offsets with buffer
+# positions — so an unsaved buffer gets NO placement hints, while the lexical
+# hints (parameter names, binding types) keep working.
+edited = hints(path, buffer="; an unsaved line\n" + src)[0]
+check(placement(edited) == [], "an unsaved buffer answers no placement hint")
+check(len(edited) > 0, "  while the lexical hints are unaffected")
+
+# ---- the cache -------------------------------------------------------
+# Two requests for the same saved file must agree; the second is served from the
+# blob cache (measured on the shipped opt -O2 build: 7.6 s cold, 0.3 s warm, and
+# the cold half of that is the pre-existing lexical pass, not this one).
+two = hints(path, repeat=2)
+check(placement(two[0]) == placement(two[1]) and placement(two[0]) != [],
+      "a repeated request answers identically (the cache is transparent)")
+
+# ---- the tree: one hint per site, not one per instantiation ------------
+# A generic body is planned once per instantiation, so containers/Vector.scaly's
+# two constructions are reached ~20 times each. Without the dedup pass the
+# answer held 89 hints for those two sites.
+vec = placement(hints("packages/scaly/0.1.0/scaly/containers/Vector.scaly")[0])
+check(len(vec) == len(set(vec)), "no duplicate hints for one site (%d hints)" % len(vec))
+check(len(vec) > 0 and len(vec) < 6,
+      "  and the count is the file's own construction count, not its instantiation count (%s)" % vec)
+sys.exit(1 if failures else 0)
+PYPLACE
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp inlayHint placement"; else bad "lsp inlayHint placement"; fi
+
 # ---- semanticTokens/full: lexical token classification ----
 # A single byte scan classifies every token into the legend (keyword/type/
 # function/variable/operator/string/number/comment) and returns the LSP

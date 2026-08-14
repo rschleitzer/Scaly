@@ -11444,6 +11444,32 @@ define symbols
         sb.to_string()
     }
 
+    ; One LSP InlayHint carrying a NOTE — a label that is neither a parameter name
+    ; nor a type, so it takes the Type kind (LSP has only those two) and stands on
+    ; its own with padding on both sides. Used by scalyls.placehints for the
+    ; allocation-placement labels.
+    function inlay_note_hint_object(rp, source: String, offset: size_t, note: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("position"))
+        sb.append(symbols.offset_to_pos(source, offset))
+        sb.append("," as char)
+        sb.append(symbols.key("label"))
+        sb.append(json.quote_string(note))
+        sb.append("," as char)
+        sb.append(symbols.key("kind"))
+        sb.append "1"                             ; InlayHintKind.Type
+        sb.append("," as char)
+        sb.append(symbols.key("paddingLeft"))
+        sb.append "true"
+        sb.append("," as char)
+        sb.append(symbols.key("paddingRight"))
+        sb.append "true"
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
     ; True when `name` is a primitive / wrapper builtin (int/bool/.../pointer/ref)
     ; — these get NO type hint (a `pointer`/`ref` wrapper base is also dropped per
     ; the type-graph limits). Scans the `\n`-bracketed primitive_type_list#.

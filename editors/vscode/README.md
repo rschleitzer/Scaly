@@ -21,7 +21,16 @@ What you get:
 - **Document symbols / outline** — functions, structs/unions (with methods and
   variants), namespaces, module-level mutables; **workspace symbols** across
   the project (Cmd+T).
-- **Inlay hints** — inferred types inline.
+- **Inlay hints** — inferred types inline, plus **where each construction is
+  allocated**: `stack`, `region` (the function's own region), `region #` (the
+  caller's page, so it outlives the call) or `region ^name`. Lifetimes are
+  inferred in Scaly — the `$` sigil is gone and `#`/`^` survive only where a page
+  is genuinely pinned — so this is the only place the allocation decision is
+  visible. It is the emitter's own rule, checked against emitted IR in the test
+  suite. These hints describe the file **as saved**: they come from a plan the
+  compiler builds by reading from disk, so they disappear while a buffer has
+  unsaved changes and come back on save (which is also what keeps a full plan off
+  every scroll — the answer is cached per saved file).
 - **Code lenses** — five families, all Scaly-specific:
   - **Run** — `Run (scalyc --jit)` at the top of any file that has top-level
     statements, i.e. a program rather than a library. Runs it in a terminal

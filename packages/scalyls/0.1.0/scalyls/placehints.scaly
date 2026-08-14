@@ -1,0 +1,989 @@
+; placehints.scaly - textDocument/inlayHint: where each construction is
+; ALLOCATED — the stack, or which region.
+;
+; WHY. Lifetimes are INFERRED. The `$` sigil is gone, `#`/`^` survive only where
+; a page is genuinely pinned, and the planner decides the rest — so the single
+; most consequential property of a construction is invisible in the source. The
+; tree has bled on exactly this: "a by-value CONSTRUCTION in ARGUMENT POSITION
+; takes its memory from the REGION instead of the stack, visible only in one line
+; of disassembler" is a documented RBMM rule, and `let x StringC(lit)` versus
+; `StringC(lit)` passed straight into a call is the difference between working
+; code and a silent SIGSEGV. A hint at the construction says which one it is.
+;
+; WHAT THE LABEL MEANS, and it is the EMITTER's own rule, not an interpretation:
+;   * a data-class construction (PlannedTuple) allocates on a region exactly
+;     when `is_region_alloc` is set — the emitter reads that field verbatim
+;     (Emitter.scaly's emit_tuple), and `life` only chooses WHICH page.
+;   * a constructor call (PlannedCall whose mangled name contains "C1E", the
+;     discriminator Emitter.scaly:9598 uses) allocates on a region for
+;     Lifetime.Local / .Call / .Reference and on the STACK for anything else —
+;     emit_constructor_call_into# spells out those three arms and leaves
+;     `is_region_alloc` false otherwise.
+; So:
+;   stack        the value lives in this frame and dies with it
+;   region       this function's own region (Lifetime.Local)
+;   region #     the CALLER's page — it outlives the call (Lifetime.Call)
+;   region ^name the named page (Lifetime.Reference)
+;
+; ★WHY THE HINTS VANISH WHILE YOU TYPE, and why that is the design rather than a
+; limitation. The placement comes from a PLAN, and for a package member the
+; modeler reads every module from DISK — so the offsets a plan carries are the
+; SAVED text's. The other lens families pair saved offsets with buffer positions
+; by walking a cheap lexical site list (a `for` token, a `function` keyword), but
+; a CONSTRUCTION has no keyword to scan for, so there is nothing to pair on. This
+; family therefore answers only when the buffer IS the saved text, and answers
+; nothing otherwise.
+;
+; ★That same rule is what makes the feature affordable, and affordability is not
+; optional here: inlayHint fires on EVERY visible-range change (worker.scaly has
+; the measurement — an 8 s handler once ran on every scroll and killed the worker,
+; taking the symindex with it), the worker serves requests SEQUENTIALLY, and a
+; plan costs 0.45 s for the scaly root and 2.45 s for dazzle. With the blob cached
+; per (path, content hash), a plan happens once per SAVE instead of once per
+; scroll, and scrolling is a filter over a few hundred bytes.
+;
+; MEMORY MODEL: symindex.scaly's, for its reasons — the cache must outlive a
+; request while a long-lived Scaly root page would leak under the stack-LIFO
+; discipline, so the slot's bytes are libc malloc'd copies. ONE slot: the working
+; pattern is scrolling the file being edited, a second file evicts the first, and
+; a re-plan on switching files is the price of not holding several plans' worth of
+; blobs forever.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Syntax unions are matched by PAYLOAD TYPE, Plan unions
+; by VARIANT TAG NAME (`when c: Call`). Quotes are 0x22 bytes.
+
+use scaly.io.File
+use scaly.memory.runtime
+
+use scalyls.diagnostics
+use scalyls.symbols
+use scalyls.semantic
+use scalyls.json
+
+use scalyc.compiler.parser
+use scalyc.compiler.Modeler
+use scalyc.compiler.Planner
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+; libc allocator for the cache slot (symindex.scaly declares malloc the same way
+; and for the same reason: free/memcpy come from scaly.memory.runtime, malloc does
+; not, and declaring it here touches no scaly/scalyc source).
+function malloc(size: size_t) returns pointer[void] extern
+
+; The one cache slot: the path and blob bytes are malloc'd copies, `hash` is the
+; content hash they were built from, `used` says whether they mean anything.
+mutable ph_path_data: pointer[u8] null
+mutable ph_path_len: size_t 0
+mutable ph_blob_data: pointer[u8] null
+mutable ph_blob_len: size_t 0
+mutable ph_hash: size_t 0
+mutable ph_used: bool false
+
+define placehints
+{
+    ; The placement hints for the packed "<sl> <sc> <el> <ec>" range as a
+    ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
+    function fragment(rp, uri: String, text: String, packed: String) returns String
+    {
+        let path diagnostics.strip_uri uri
+        if path.get_length() = 0
+            return ""
+        if text.get_length() = 0
+            return ""
+
+        ; The saved-text rule from the header: no pairing exists for a
+        ; construction, so unless the buffer IS what the planner will read, this
+        ; family says nothing.
+        let disk File.read_to_string(path)
+        if disk.get_length() = 0
+            return ""
+        if disk.equals(text) = false
+            return ""
+
+        let h text.hash()
+        var blob String("")
+        if placehints.cache_hit(path, h)
+            set blob: placehints.cached_blob()
+        else
+        {
+            set blob: placehints.build(path, text)
+            placehints.cache_put(path, h, blob)
+        }
+        if blob.get_length() = 0
+            return ""
+        placehints.render(blob, text, packed)
+    }
+
+    ; The whole InlayHint[] array for one request: the lexical hints
+    ; (parameter names, binding types) with the placement hints appended.
+    ;
+    ; ★The splice is a STRING one, deliberately. symbols.inlay_hints_packed#
+    ; answers a finished array and is what every existing LSP test asserts
+    ; against; changing its contract to a fragment would edit the most
+    ; load-bearing file in this server for a cosmetic gain. The shape it answers
+    ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
+    ; else takes `,mine` before its final byte.
+    function merged(rp, repaired: String, source: String, uri: String, packed: String) returns String
+    {
+        let base symbols.inlay_hints_packed(repaired, uri, packed)
+        let mine placehints.fragment(uri, source, packed)
+        if mine.get_length() = 0
+            return base
+        let bn base.get_length()
+        if bn < 2
+            return base
+        var sb StringBuilder()
+        ; Everything but the closing bracket, then the separator when the base
+        ; held anything, then ours, then the bracket back.
+        var i: size_t 0
+        while i < bn - 1
+        {
+            sb.append(base.get(i) as char)
+            set i: i + 1
+        }
+        if bn > 2
+            sb.append("," as char)
+        symbols.append_fragment(&sb, mine)
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; ====================================================================
+    ; Building the blob: one line per construction, "<offset>\t<label>".
+    ;
+    ; The offset is the construction's own span START. A planner operand's span
+    ; covers its own tokens only — semantic.scaly's walk_operand# documents that
+    ; children lie BESIDE the parent rather than inside it — so a Call's span
+    ; ends after the callee name and its arguments are outside. The start is the
+    ; one end of it that reliably sits on the construction's first token.
+    ; ====================================================================
+    function build(rp, path: String, text: String) returns String
+    {
+        var sb StringBuilder()
+
+        ; The document's own parse: semantic.is_routine_start# needs it to decide
+        ; which planned routines belong to THIS file, which is the only exact
+        ; test available (PlannedFunction.file names the REQUESTING file for an
+        ; instantiation — see semantic.scaly's FILE IDENTITY section).
+        var dp parser.Parser(text)
+        choose dp.parse_program()
+            when derr: Error
+                return sb.to_string()
+            when doc: Success
+            {
+                let root diagnostics.package_root path
+                if root.get_length() > 0
+                {
+                    let root_text File.read_to_string(root)
+                    if root_text.get_length() = 0
+                        return sb.to_string()
+                    var rp2 parser.Parser(root_text)
+                    choose rp2.parse_program()
+                        when rerr: Error
+                        {
+                            ; The root does not parse; nothing to read.
+                        }
+                        when rprog: Success
+                        {
+                            let prog_name diagnostics.root_program_name(root)
+                            let model Modeler.build_program(root, prog_name, rprog, true)
+                            var planner Planner.Planner(root)
+                            diagnostics.register_packages(&planner, &model)
+                            let plan planner.plan_program model
+                            if plan <> null
+                                placehints.collect_plan(&sb, plan, doc.file, false)
+                        }
+                }
+                if root.get_length() = 0
+                {
+                    let prog_name "document"
+                    let model Modeler.build_program(path, prog_name, doc, true)
+                    var planner Planner.Planner(path)
+                    diagnostics.register_packages(&planner, &model)
+                    let plan planner.plan_program model
+                    if plan <> null
+                        placehints.collect_plan(&sb, plan, doc.file, true)
+                }
+            }
+        placehints.dedupe(sb.to_string())
+    }
+
+    ; Every body the document declares, plus its top-level statements when the
+    ; document IS the planned program.
+    ;
+    ; The set of places a body can hide is semantic.scaly's map, mirrored: the
+    ; flat `functions` vector holds free routines, while a METHOD, an `init`, a
+    ; `deinit` and an OPERATOR hang off `plan.structures` / `plan.unions`, and a
+    ; module-level global's initializer is an operand list of its own. Walking
+    ; only `functions` misses every constructor body — which in this tree is where
+    ; a large share of the interesting constructions live.
+    procedure collect_plan(sb: pointer[StringBuilder], plan: Plan, file: FileSyntax, own_statements: bool)
+    {
+        if plan.functions <> null
+        {
+            let fns (*plan.functions)
+            var i: size_t 0
+            while i < fns.length
+            {
+                let fp fns.get i
+                if fp <> null
+                {
+                    let fn (*fp)
+                    if semantic.is_routine_start(file, fn.loc.start)
+                        placehints.collect_impl(sb, fn.page_parameter <> null, fn.impl)
+                }
+                set i: i + 1
+            }
+        }
+        if plan.structures <> null
+        {
+            let sts (*plan.structures)
+            var i: size_t 0
+            while i < sts.length
+            {
+                let sp sts.get i
+                if sp <> null
+                    placehints.collect_structure(sb, (*sp), file)
+                set i: i + 1
+            }
+        }
+        if plan.unions <> null
+        {
+            let uns (*plan.unions)
+            var i: size_t 0
+            while i < uns.length
+            {
+                let up uns.get i
+                if up <> null
+                    placehints.collect_union(sb, (*up), file)
+                set i: i + 1
+            }
+        }
+        if plan.globals <> null
+        {
+            let gls (*plan.globals)
+            var i: size_t 0
+            while i < gls.length
+            {
+                let gp gls.get i
+                if gp <> null
+                {
+                    let g (*gp)
+                    if g.value <> null
+                        if semantic.is_routine_start(file, g.loc.start)
+                            placehints.collect_operands_opt(sb, false, g.value)
+                }
+                set i: i + 1
+            }
+        }
+        if own_statements
+        {
+            if plan.statements <> null
+            {
+                let stmts (*plan.statements)
+                var i: size_t 0
+                while i < stmts.length
+                {
+                    let sp stmts.get i
+                    if sp <> null
+                        placehints.collect_statement(sb, false, (*sp))
+                    set i: i + 1
+                }
+            }
+        }
+    }
+
+    procedure collect_structure(sb: pointer[StringBuilder], st: PlannedStructure, file: FileSyntax)
+    {
+        if st.methods <> null
+        {
+            let ms (*st.methods)
+            var i: size_t 0
+            while i < ms.length
+            {
+                let mp ms.get i
+                if mp <> null
+                {
+                    let m (*mp)
+                    if semantic.is_routine_start(file, m.loc.start)
+                        placehints.collect_impl(sb, m.page_parameter <> null, m.impl)
+                }
+                set i: i + 1
+            }
+        }
+        if st.initializers <> null
+        {
+            let inits (*st.initializers)
+            var i: size_t 0
+            while i < inits.length
+            {
+                let ip inits.get i
+                if ip <> null
+                {
+                    let it (*ip)
+                    if semantic.is_routine_start(file, it.loc.start)
+                        placehints.collect_impl(sb, it.page_parameter <> null, it.impl)
+                }
+                set i: i + 1
+            }
+        }
+        if st.operators <> null
+        {
+            let ops (*st.operators)
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op ops.get i
+                if op <> null
+                {
+                    let o (*op)
+                    if semantic.is_routine_start(file, o.loc.start)
+                        placehints.collect_impl(sb, false, o.impl)
+                }
+                set i: i + 1
+            }
+        }
+        if st.deinitializer <> null
+        {
+            let dp st.deinitializer
+            let d (*dp)
+            if semantic.is_routine_start(file, d.loc.start)
+                placehints.collect_impl(sb, false, d.impl)
+        }
+    }
+
+    procedure collect_union(sb: pointer[StringBuilder], un: PlannedUnion, file: FileSyntax)
+    {
+        if un.methods <> null
+        {
+            let ms (*un.methods)
+            var i: size_t 0
+            while i < ms.length
+            {
+                let mp ms.get i
+                if mp <> null
+                {
+                    let m (*mp)
+                    if semantic.is_routine_start(file, m.loc.start)
+                        placehints.collect_impl(sb, m.page_parameter <> null, m.impl)
+                }
+                set i: i + 1
+            }
+        }
+        if un.operators <> null
+        {
+            let ops (*un.operators)
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op ops.get i
+                if op <> null
+                {
+                    let o (*op)
+                    if semantic.is_routine_start(file, o.loc.start)
+                        placehints.collect_impl(sb, false, o.impl)
+                }
+                set i: i + 1
+            }
+        }
+    }
+
+    procedure collect_impl(sb: pointer[StringBuilder], has_page: bool, impl: PlannedImplementation)
+    {
+        choose impl
+            when action: Action
+                placehints.collect_action(sb, has_page, action)
+            when ext: Extern
+                0
+            when inst: Instruction
+                0
+            when intr: Intrinsic
+                0
+    }
+
+    ; ====================================================================
+    ; The walk. It mirrors semantic.scaly's resolver arm for arm — same fields,
+    ; same order — but COLLECTS instead of resolving, and never prunes: an
+    ; operand's children are not inside its span, so there is nothing to prune on.
+    ; ====================================================================
+
+    procedure collect_action(sb: pointer[StringBuilder], has_page: bool, act: PlannedAction)
+    {
+        placehints.collect_operands_opt(sb, has_page, act.source)
+        placehints.collect_operands_opt(sb, has_page, act.target)
+    }
+
+    procedure collect_statement(sb: pointer[StringBuilder], has_page: bool, stmt: PlannedStatement)
+    {
+        choose stmt
+            when a: Action
+                placehints.collect_action(sb, has_page, a)
+            when bnd: Binding
+                placehints.collect_operands_opt(sb, has_page, bnd.operation)
+            when br: Break
+                placehints.collect_operands_opt(sb, has_page, br.result)
+            when ret: Return
+                placehints.collect_operands_opt(sb, has_page, ret.result)
+            when th: Throw
+                placehints.collect_operands_opt(sb, has_page, th.result)
+            when cont: Continue
+                0
+    }
+
+    procedure collect_statement_opt(sb: pointer[StringBuilder], has_page: bool, opt: ref[PlannedStatement]?)
+    {
+        if opt <> null
+        {
+            let s opt
+            placehints.collect_statement(sb, has_page, (*s))
+        }
+    }
+
+    procedure collect_operands_opt(sb: pointer[StringBuilder], has_page: bool, opt: ref[Vector[PlannedOperand]]?)
+    {
+        if opt = null
+            return
+        let ops (*opt)
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op ops.get i
+            if op <> null
+                placehints.collect_operand(sb, has_page, (*op))
+            set i: i + 1
+        }
+    }
+
+    procedure collect_operand_opt(sb: pointer[StringBuilder], has_page: bool, opt: ref[PlannedOperand]?)
+    {
+        if opt <> null
+        {
+            let o opt
+            placehints.collect_operand(sb, has_page, (*o))
+        }
+    }
+
+    procedure collect_operand(sb: pointer[StringBuilder], has_page: bool, op: PlannedOperand)
+    {
+        ; `op.member_access` needs no traversal: a PlannedMemberAccess is a name
+        ; plus an index (Plan.scaly) and carries no operands, so a method call in
+        ; a chain reaches its arguments as the operand's own Call expression —
+        ; which is where `x.add(Vector[int](3))`, the construction-in-argument
+        ; shape this family exists for, is found.
+        placehints.collect_expr(sb, has_page, op.expr, op.loc)
+    }
+
+    procedure collect_expr(sb: pointer[StringBuilder], has_page: bool, expr: PlannedExpression, loc: Span)
+    {
+        choose expr
+            when k: Constant
+                0
+            when ty: Type
+                0
+            when v: Variable
+                0
+            when g: GlobalRef
+                0
+            when c: Call
+            {
+                ; The construction itself, then its arguments.
+                let note placehints.label_for_call(c, has_page)
+                if note.get_length() > 0
+                    placehints.emit_site(sb, c.loc.start, note)
+                placehints.collect_operands_opt(sb, has_page, c.args)
+            }
+            when t: Tuple
+            {
+                let note placehints.label_for_tuple(t, has_page)
+                if note.get_length() > 0
+                    placehints.emit_site(sb, t.loc.start, note)
+                if t.components <> null
+                {
+                    let comps (*t.components)
+                    var i: size_t 0
+                    while i < comps.length
+                    {
+                        let cp comps.get i
+                        if cp <> null
+                        {
+                            let comp (*cp)
+                            placehints.collect_operands_opt(sb, has_page, comp.value)
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+            when mx: Matrix
+                0
+            when b: Block
+            {
+                if b.statements <> null
+                {
+                    let stmts (*b.statements)
+                    var i: size_t 0
+                    while i < stmts.length
+                    {
+                        let sp stmts.get i
+                        if sp <> null
+                            placehints.collect_statement(sb, has_page, (*sp))
+                        set i: i + 1
+                    }
+                }
+            }
+            when iff: If
+            {
+                placehints.collect_operands_opt(sb, has_page, iff.condition)
+                placehints.collect_statement_opt(sb, has_page, iff.consequent)
+                placehints.collect_statement_opt(sb, has_page, iff.alternative)
+            }
+            when m: Match
+            {
+                placehints.collect_operands_opt(sb, has_page, m.condition)
+                if m.branches <> null
+                {
+                    let brs (*m.branches)
+                    var i: size_t 0
+                    while i < brs.length
+                    {
+                        let bp brs.get i
+                        if bp <> null
+                        {
+                            let br (*bp)
+                            placehints.collect_statement_opt(sb, has_page, br.consequent)
+                        }
+                        set i: i + 1
+                    }
+                }
+                placehints.collect_statement_opt(sb, has_page, m.alternative)
+            }
+            when ch: Choose
+            {
+                placehints.collect_operands_opt(sb, has_page, ch.condition)
+                if ch.cases <> null
+                {
+                    let cs (*ch.cases)
+                    var i: size_t 0
+                    while i < cs.length
+                    {
+                        let wp cs.get i
+                        if wp <> null
+                        {
+                            let w (*wp)
+                            placehints.collect_statement_opt(sb, has_page, w.consequent)
+                        }
+                        set i: i + 1
+                    }
+                }
+                placehints.collect_statement_opt(sb, has_page, ch.alternative)
+            }
+            when fr: For
+            {
+                placehints.collect_operands_opt(sb, has_page, fr.expr)
+                placehints.collect_action(sb, has_page, fr.body)
+            }
+            when wh: While
+            {
+                placehints.collect_operands_opt(sb, has_page, wh.cond.operation)
+                placehints.collect_action(sb, has_page, wh.body)
+            }
+            when rep: Repeat
+                placehints.collect_action(sb, has_page, rep.body)
+            when lm: Lambda
+                0
+            when tr: Try
+            {
+                placehints.collect_operands_opt(sb, has_page, tr.cond.operation)
+                if tr.catches <> null
+                {
+                    let cs (*tr.catches)
+                    var i: size_t 0
+                    while i < cs.length
+                    {
+                        let wp cs.get i
+                        if wp <> null
+                        {
+                            let w (*wp)
+                            placehints.collect_statement_opt(sb, has_page, w.consequent)
+                        }
+                        set i: i + 1
+                    }
+                }
+                placehints.collect_statement_opt(sb, has_page, tr.alternative)
+            }
+            when so: SizeOf
+                0
+            when ao: AlignOf
+                0
+            when iz: Is
+                placehints.collect_operand_opt(sb, has_page, iz.value)
+            when az: As
+                placehints.collect_operand_opt(sb, has_page, az.value)
+            when vc: VariantConstruction
+                placehints.collect_operand_opt(sb, has_page, vc.value)
+    }
+
+    ; ====================================================================
+    ; The two placement rules, each the emitter's own.
+    ; ====================================================================
+
+    ; A constructor call: "C1E" in the mangled name is the discriminator
+    ; Emitter.scaly:9598 routes on. Region for Local / Call / Reference, stack
+    ; for anything else (emit_constructor_call_into#).
+    function label_for_call(rp, c: PlannedCall, has_page: bool) returns String
+    {
+        if c.mangled_name.contains("C1E") = false
+            return ""
+        placehints.label_for_life(c.life, true, has_page)
+    }
+
+    ; A data-class construction: `is_region_alloc` decides, `life` only says
+    ; which page (emit_tuple).
+    ;
+    ; ★A PARENTHESISED EXPRESSION IS ALSO A TUPLE, and it allocates nothing.
+    ; `let bytes (DOC_CAP as size_t) * sizeof DocSlot` was labelled `stack` until
+    ; this filter existed — a hint about an allocation on a line that has none.
+    ; The discriminator is the tuple's own TYPE: a construction builds a concept,
+    ; while a grouping tuple carries whatever its expression yields, which for
+    ; every case seen is a PRIMITIVE (symbols.is_primitive_type_name#, the same
+    ; list the type hints suppress). An unnamed type answers nothing either.
+    function label_for_tuple(rp, t: PlannedTuple, has_page: bool) returns String
+    {
+        let tn t.tuple_type.name
+        if tn.get_length() = 0
+            return ""
+        if symbols.is_primitive_type_name(tn)
+            return ""
+        placehints.label_for_life(t.life, t.is_region_alloc, has_page)
+    }
+
+    ; The placement itself. `on_region` false answers "stack"; otherwise the page
+    ; the life names — EXCEPT that a region allocation also needs a page the
+    ; emitter can RESOLVE, and when it cannot, the construction falls through to a
+    ; stack alloca at the bottom of emit_tuple / emit_constructor_call_into.
+    ;
+    ; ★That fallthrough is why `has_page` exists, and skipping it made this
+    ; feature LIE on its very first fixture: `let p Point(n, n)` inside
+    ; `function make_local(n: int)` is planned `is_region_alloc` with a caller-page
+    ; life, was labelled `region #`, and the emitted IR is
+    ; `%tuple = alloca %_Z5Point` — because the function has no page parameter, so
+    ; the `_rp` lookup finds nothing and the region path is abandoned. The IR is
+    ; the only place that shows it; the plan looks like a region allocation.
+    ;
+    ; `has_page` is the enclosing body's own answer: a PlannedFunction /
+    ; PlannedInitializer carries `page_parameter`, and an operator, a `deinit`, a
+    ; global initializer and the program's top-level statements have none — so a
+    ; `#` construction there reads as `stack`, which is what the emitter does.
+    function label_for_life(rp, life: Lifetime, on_region: bool, has_page: bool) returns String
+    {
+        var sb StringBuilder()
+        if on_region = false
+        {
+            sb.append "stack"
+            return sb.to_string()
+        }
+        choose life
+            when l: Local
+            {
+                ; The function's OWN frame, materialised by get_local_frame() —
+                ; always available, so this needs no page parameter.
+                sb.append "region"
+                return sb.to_string()
+            }
+            when r: Reference
+            {
+                ; A named page. Residual: the emitter looks the name up as a
+                ; variable and then as a field of `this`, and falls back to the
+                ; stack if neither exists — a shape that would be a bug in the
+                ; source, so it is reported as the region it asks for.
+                sb.append "region ^"
+                sb.append(r.location)
+                return sb.to_string()
+            }
+            else
+                0
+        ; Lifetime.Call, and anything else a region allocation carries, resolves
+        ; the caller-page slot `_rp` (emit_tuple's default page_var_name).
+        if has_page = false
+        {
+            sb.append "stack"
+            return sb.to_string()
+        }
+        sb.append "region #"
+        sb.to_string()
+    }
+
+    ; One blob line: "<offset>\t<label>\n". (The parameter is `note`, not
+    ; `label`: `label` is a reserved word and cannot be a binding name.)
+    ; One blob line: "<offset>\t<label>\n". (The parameter is `note`, not `label`:
+    ; `label` is a reserved word and cannot be a binding name.)
+    procedure emit_site(sb: pointer[StringBuilder], offset: size_t, note: String)
+    {
+        sb.append(json.format_i64(offset as i64))
+        sb.append(0x09 as char)
+        sb.append note
+        sb.append(0x0A as char)
+    }
+
+    ; ★DEDUPE BY OFFSET, as a SECOND PASS over the finished blob.
+    ;
+    ; A generic body is planned once per instantiation, so one source construction
+    ; is reached many times — measured on containers/Vector.scaly: 89 sites for the
+    ; file's TWO constructions, because Vector's methods have 20 planned copies.
+    ;
+    ; ★It is a second pass and not a set threaded through the walk because the
+    ; set would have to be an `Array` mutated THROUGH A POINTER from a callee, and
+    ; `Array.add` grows its buffer via `Page.get(this)` — on a receiver that is not
+    ; page-hosted that is a garbage page header. Built that way first, and the
+    ; whole inlayHint request came back EMPTY (the worker died and the parent
+    ; answered its silent fallback), for a tiny standalone fixture as much as for
+    ; a package root. The pass below needs no container at all: for each line, it
+    ; scans what has already been kept for the same offset, and what is kept is the
+    ; small deduplicated blob.
+    ;
+    ; Residual, stated because it cannot be tested from here: if two
+    ; instantiations disagreed about a construction's placement, only the first is
+    ; shown. Every site of this tree with more than one copy agrees (checked on
+    ; Vector.scaly, where all 20 copies label both of its sites identically), and
+    ; they should — same source, same escape analysis.
+    function dedupe(rp, blob: String) returns String
+    {
+        var out StringBuilder()
+        let bn blob.get_length()
+        var k: size_t 0
+        while k < bn
+        {
+            let line_start k
+            while k < bn
+            {
+                if blob.get(k) = 0x0A
+                    break
+                set k: k + 1
+            }
+            let line_end k
+            set k: k + 1
+            if line_end > line_start
+            {
+                ; The offset is the digits before the tab.
+                var tab line_start
+                while tab < line_end
+                {
+                    if blob.get(tab) = 0x09
+                        break
+                    set tab: tab + 1
+                }
+                let digits blob.substring(line_start, tab - line_start)
+                let kept out.to_string()
+                if placehints.has_offset(kept, digits) = false
+                {
+                    var i line_start
+                    while i < line_end
+                    {
+                        out.append(blob.get(i) as char)
+                        set i: i + 1
+                    }
+                    out.append(0x0A as char)
+                }
+            }
+        }
+        out.to_string()
+    }
+
+    ; Is a line of `kept` introduced by exactly `digits` followed by a tab?
+    function has_offset(kept: String, digits: String) returns bool
+    {
+        let kn kept.get_length()
+        let dn digits.get_length()
+        if dn = 0
+            return true
+        var k: size_t 0
+        while k < kn
+        {
+            ; k is at a line start here.
+            var same true
+            var i: size_t 0
+            while i < dn
+            {
+                if k + i >= kn
+                {
+                    set same: false
+                    break
+                }
+                if kept.get(k + i) <> digits.get(i)
+                {
+                    set same: false
+                    break
+                }
+                set i: i + 1
+            }
+            if same
+                if k + dn < kn
+                    if kept.get(k + dn) = 0x09
+                        return true
+            ; advance to the next line
+            while k < kn
+            {
+                if kept.get(k) = 0x0A
+                    break
+                set k: k + 1
+            }
+            set k: k + 1
+        }
+        false
+    }
+
+    ; ====================================================================
+    ; Rendering: filter the blob by the requested range, one InlayHint each.
+    ; ====================================================================
+    function render(rp, blob: String, source: String, packed: String) returns String
+    {
+        ; The packed range is "<start_line> <start_char> <end_line> <end_char>",
+        ; 0-based, exactly as symbols.inlay_hints_packed# reads it.
+        var nums Array[size_t]()
+        var cur: size_t 0
+        var have false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get i
+            if c = 0x20
+            {
+                if have
+                    nums.add cur
+                set cur: 0
+                set have: false
+            }
+            else
+            {
+                set cur: cur * 10 + ((c - 0x30) as size_t)
+                set have: true
+            }
+            set i: i + 1
+        }
+        if have
+            nums.add cur
+        if nums.length < 4
+            return ""
+        let sl nums.get 0
+        let sc nums.get 1
+        let el nums.get 2
+        let ec nums.get 3
+        if sl = null
+            return ""
+        if sc = null
+            return ""
+        if el = null
+            return ""
+        if ec = null
+            return ""
+        let lo symbols.position_to_offset(source, (*sl), (*sc))
+        let hi symbols.position_to_offset(source, (*el), (*ec))
+
+        var sb StringBuilder()
+        var first true
+        var k: size_t 0
+        let bn blob.get_length()
+        while k < bn
+        {
+            ; One line: digits, tab, label, newline.
+            var off: size_t 0
+            while k < bn
+            {
+                let c blob.get k
+                if c = 0x09
+                    break
+                set off: off * 10 + ((c - 0x30) as size_t)
+                set k: k + 1
+            }
+            set k: k + 1
+            let lstart k
+            while k < bn
+            {
+                if blob.get(k) = 0x0A
+                    break
+                set k: k + 1
+            }
+            if k > lstart
+            {
+                if off >= lo
+                {
+                    if off <= hi
+                    {
+                        let note blob.substring(lstart, k - lstart)
+                        if first = false
+                            sb.append("," as char)
+                        symbols.append_fragment(&sb, symbols.inlay_note_hint_object(source, off, note))
+                        set first: false
+                    }
+                }
+            }
+            set k: k + 1
+        }
+        sb.to_string()
+    }
+
+    ; ====================================================================
+    ; The one-slot cache (symindex.scaly's memory model — malloc'd copies).
+    ; ====================================================================
+    function cache_hit(path: String, hash: size_t) returns bool
+    {
+        if ph_used = false
+            return false
+        if ph_hash <> hash
+            return false
+        if ph_path_len <> path.get_length()
+            return false
+        var i: size_t 0
+        while i < ph_path_len
+        {
+            let a ph_path_data
+            if (*(a + i)) <> path.get(i)
+                return false
+            set i: i + 1
+        }
+        true
+    }
+
+    function cached_blob(rp) returns String
+    {
+        if ph_used = false
+            return ""
+        String(ph_blob_data, ph_blob_len)
+    }
+
+    procedure cache_put(path: String, hash: size_t, blob: String)
+    {
+        ; Replace: free what was there, then copy in. A failed malloc simply
+        ; leaves the slot unused — the next request re-plans, which is slow but
+        ; correct.
+        if ph_used
+        {
+            free(ph_path_data as pointer[void])
+            free(ph_blob_data as pointer[void])
+            set ph_used: false
+        }
+        let pn path.get_length()
+        let bn blob.get_length()
+        let pd malloc(pn + 1) as pointer[u8]
+        if pd = null
+            return
+        let bd malloc(bn + 1) as pointer[u8]
+        if bd = null
+        {
+            free(pd as pointer[void])
+            return
+        }
+        memcpy(pd as pointer[void], path.get_buffer() as pointer[void], pn)
+        memcpy(bd as pointer[void], blob.get_buffer() as pointer[void], bn)
+        set ph_path_data: pd
+        set ph_path_len: pn
+        set ph_blob_data: bd
+        set ph_blob_len: bn
+        set ph_hash: hash
+        set ph_used: true
+    }
+}
