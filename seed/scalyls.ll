@@ -752,7 +752,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @"6POLLIN" = internal constant i16 1
 @"7SIGKILL" = internal constant i64 9
 @"7SIGPIPE" = internal constant i64 13
-@"18ANALYZE_TIMEOUT_MS" = internal constant i32 8000
+@"18ANALYZE_TIMEOUT_MS" = internal constant i32 30000
 @"20WORKSPACE_TIMEOUT_MS" = internal constant i32 60000
 @"21COMPLETION_TIMEOUT_MS" = internal constant i32 20000
 @worker_pid = thread_local global i64 0
@@ -122210,7 +122210,7 @@ if.then50:                                        ; preds = %if.end47
   ret i32 20000
 
 if.end51:                                         ; preds = %if.end47
-  ret i32 8000
+  ret i32 30000
 }
 
 define linkonce_odr i1 @_ZN6server11process_oneEv() {
