@@ -1,0 +1,448 @@
+; instlens.scaly - textDocument/codeLens: how often the compiler INSTANTIATED
+; each routine of this document, and which routines it did not emit at all.
+;
+; WHY. The planner is demand-driven: a routine nothing reaches is never planned
+; and never emitted, and the source gives no hint of it. That is not a cosmetic
+; fact — it is the one that cost a red CI leg (CLAUDE.md's first iron rule: a
+; stdlib entry point the compiler itself never calls is absent from the compiler
+; image, so the `--jit` leg cannot materialise it). A `0` where the file looks
+; perfectly alive is the whole point of this family.
+;
+; The other half is monomorphisation: a generic routine appears once in the
+; source and N times in the plan, one per instantiation, and nothing in the
+; editor showed N. It is shown with each instantiation's FIRST parameter type
+; rendered by the compiler's own renderer (Planner.get_readable_name#, which is
+; also what the DWARF type names go through), because that parameter is the
+; receiver for a method and the interesting argument for a free function.
+;
+; WHAT IT SHOWS, one lens per `function` / `procedure` declaration:
+;   "4 definitions emitted: Box[T], Box[int], Box[char]"   — N >= 2
+;   "not emitted in this root"                             — N == 0
+; and NOTHING for the ordinary N == 1, which would put a lens on every routine of
+; the file to repeat what the signature already says. A non-generic routine has
+; exactly one definition, so in practice the lens marks the generic ones and says
+; what they COST in copies.
+;
+; ★"definitions emitted" and not "instantiations", because the number counts what
+; the compiler produces and a reader can check: 4 for `Box[T].get` above, where
+; the emitted IR holds `_ZN3Box3getEv`, `_ZN3BoxI1TE3getEv`, `_ZN3BoxIcE3getEv`
+; and `_ZN3BoxIiE3getEv`. The LIST is deduplicated by rendered type, so it can be
+; shorter than the count — `Box[T]` covers both the template stub and the bare
+; declaration form — and calling the number "instantiations" made those two look
+; like a miscount instead of what they are.
+;
+; THE JOIN KEY IS THE SPAN START, and it may not be the file. A Span is a bare
+; pair of byte offsets, and PlannedFunction.file names the file that REQUESTED
+; an instantiation (semantic.scaly's FILE IDENTITY section has the measurement),
+; so filtering on it would drop exactly the instantiations worth counting — the
+; ones some other module asked for. What is exact is the start:
+; Modeler.build_function# copies it from the routine's own FunctionSyntax, and
+; every instantiation copies it verbatim.
+;
+; ★THE COLLISION GUARD. `plan.functions` is ONE FLAT VECTOR for the whole root,
+; so a start alone is not unique across a package: two modules having a routine
+; at the same byte offset is ordinary, and counting by start alone would inflate
+; every such site silently. So a match needs the start AND the routine NAME, and
+; when a (start, name) pair maps to more than one distinct span END — i.e. two
+; genuinely different routines still collide — this family says NOTHING for that
+; site rather than a number it cannot stand behind.
+;
+; ONLY `function` AND `procedure`. The Plan has no flat vector for operators,
+; initializers or deinitializers, so those declarations would read as "not
+; emitted" — a lie. They are left out instead, which also keeps the site counts
+; of the two texts comparable (both scans use the same rule).
+;
+; ANCHORING is tasklens.scaly's rule, for its reasons: the offsets MATCH against
+; the text the plan was built from (disk, for a package member) and the
+; positions are drawn in the BUFFER, paired in order; a count mismatch answers
+; nothing rather than drawing a lens on a line it does not belong to.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Quotes are 0x22 bytes.
+
+use scaly.memory.runtime
+
+use scalyls.symbols
+use scalyls.json
+
+use scalyc.compiler.Planner
+
+; Model.* is not optional here: `Span` is defined in Model.scaly, and without
+; it visible the emitter cannot lay `loc` out — `fn.loc.start` then fails with
+; `member not found: Span.start` (the dangling-member trap, exit 16).
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+
+define instlens
+{
+    ; The instantiation lenses as a COMMA-JOINED FRAGMENT, or "".
+    ;
+    ; `plan` is the caller's (codelens.scaly plans once for every plan-derived
+    ; family). `has_diag` suppresses the not-emitted claim: a root that produced
+    ; hard diagnostics may have a truncated plan, and then "not emitted" would be
+    ; a statement about the error rather than about demand.
+    function fragment(rp, plan: Plan, has_diag: bool, plan_text: String, anchor_text: String) returns String
+    {
+        let sites instlens.count_routine_sites plan_text
+        if sites = 0
+            return ""
+        let anchors instlens.count_routine_sites anchor_text
+        if anchors <> sites
+            return ""
+
+        ; Is ANY routine of this file planned? A file the root does not include
+        ; as a module has NONE, and then "not emitted" per routine is a wall of
+        ; identical lenses that buries the one thing it is saying. That case is a
+        ; FILE-level fact and gets a single lens at the top instead.
+        var any_planned false
+        var kq: size_t 0
+        while kq < plan_text.get_length()
+        {
+            set kq: instlens.next_routine_site(plan_text, kq)
+            if kq >= plan_text.get_length()
+                break
+            let qname instlens.routine_name_at(plan_text, kq)
+            if qname.get_length() > 0
+                if instlens.is_planned_at(plan, kq, qname)
+                    set any_planned: true
+            set kq: kq + 1
+        }
+        if any_planned = false
+        {
+            ; Same suppression as the per-routine claim: a truncated plan is not
+            ; evidence about demand.
+            if has_diag
+                return ""
+            return symbols.lens_object(anchor_text, 0, 3, "no routine of this file is planned in this root", "", "")
+        }
+
+        var sb StringBuilder()
+        var first true
+        let plan_len plan_text.get_length()
+        var kp: size_t 0
+        var ka: size_t 0
+        while kp < plan_len
+        {
+            set kp: instlens.next_routine_site(plan_text, kp)
+            if kp >= plan_len
+                break
+            set ka: instlens.next_routine_site(anchor_text, ka)
+
+            let name instlens.routine_name_at(plan_text, kp)
+            if name.get_length() > 0
+            {
+                let title instlens.title_for(plan, has_diag, kp, name)
+                if title.get_length() > 0
+                {
+                    if first = false
+                        sb.append("," as char)
+                    ; 8 == length of "function". The WIDTH is cosmetic (the
+                    ; editor draws the lens above the line, not inside it), so
+                    ; one constant covers `procedure` too.
+                    symbols.append_fragment(&sb, symbols.lens_object(anchor_text, ka, 8, title, "", ""))
+                    set first: false
+                }
+            }
+
+            ; One byte past the keyword's first letter is enough to leave this
+            ; site; the scan re-checks token boundaries anyway.
+            set kp: kp + 1
+            set ka: ka + 1
+        }
+        sb.to_string()
+    }
+
+    ; The lens title for the routine named `name` declared at `start`, or "" when
+    ; there is nothing worth saying (the ordinary single instantiation, an
+    ; ambiguous site, or a not-emitted routine in a plan that carries hard
+    ; diagnostics).
+    ;
+    ; ★COUNT DISTINCT MANGLED NAMES, not plan entries. A generic body is PLANNED
+    ; more than once — the same instantiation appears repeatedly in
+    ; plan.functions, which is also why one `for` loop inside a generic yields two
+    ; TaskPlanner report entries (tasklens.scaly's duplicate note). The emitter
+    ; emits ONE definition per mangled name (its own dedup is "does this function
+    ; already have a body"), so the mangled name is the unit a reader can CHECK
+    ; against the IR: entries said 44 for `Vector[T].get`, distinct names say 20,
+    ; and the emitted scaly.ll holds exactly 20 definitions of it.
+    ;
+    ; ★Those 20 include shapes one does not picture first, and every one of them
+    ; gets a definition: the template stub `Vector[T]`, the template-level
+    ; instantiations another generic asks for (`Vector[BuilderList[Slot[T]]]`,
+    ; `Vector[KeyValuePair[K, V]]`), and the bare declaration form
+    ; `_ZN6Vector3getE…` with no type argument at all. A "concrete only" filter
+    ; was built and REVERTED: `PlannedType.variable` is null for an unsubstituted
+    ; template parameter (that field belongs to HM inference), so the only test
+    ; left was textual — and the count needed no correction anyway. ★The 20-vs-19
+    ; that started that detour was MY GREP: `_ZN6VectorI…` demands a type-argument
+    ; list right after the class name and so misses the bare form. The instrument
+    ; was wrong, not the product.
+    function title_for(rp, plan: Plan, has_diag: bool, start: size_t, name: String) returns String
+    {
+        if plan.functions = null
+            return ""
+        let fns (*plan.functions)
+
+        var seen Array[String]()          ; distinct mangled names = instantiations
+        var types Array[String]()         ; distinct first-parameter types
+        var shown StringBuilder()         ; the first three of those, joined
+        var end_seen: size_t 0
+        var have_end false
+        var ambiguous false
+
+        var i: size_t 0
+        while i < fns.length
+        {
+            let fp fns.get i
+            if fp <> null
+            {
+                let fn (*fp)
+                if fn.loc.start = start
+                {
+                    if fn.name = name
+                    {
+                        ; The collision guard: two genuinely different routines
+                        ; sharing a start AND a name would disagree on the END.
+                        if have_end = false
+                        {
+                            set end_seen: fn.loc.end
+                            set have_end: true
+                        }
+                        if fn.loc.end <> end_seen
+                            set ambiguous: true
+
+                        let mangled fn.mangled_name
+                        if instlens.contains_name(&seen, mangled) = false
+                        {
+                            ; The copies land on THIS function's page so they
+                            ; outlive the iteration that made them (the
+                            ; bound-local-add idiom the TaskPlanner report uses).
+                            let kept String(mangled)
+                            seen.add kept
+                            let rendered instlens.first_input_type(fn)
+                            if rendered.get_length() > 0
+                            {
+                                if instlens.contains_name(&types, rendered) = false
+                                {
+                                    let tkept String(rendered)
+                                    types.add tkept
+                                    if types.length <= 3
+                                    {
+                                        if types.length > 1
+                                            shown.append ", "
+                                        shown.append rendered
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            set i: i + 1
+        }
+        if ambiguous
+            return ""
+
+        let count seen.length
+        if count = 0
+        {
+            if has_diag
+                return ""
+            var nb StringBuilder()
+            nb.append "not emitted in this root"
+            return nb.to_string()
+        }
+        if count < 2
+            return ""
+
+        var sb StringBuilder()
+        sb.append(json.format_i64(count as i64))
+        sb.append " definitions emitted"
+        if types.length > 0
+        {
+            sb.append ": "
+            sb.append(shown.to_string())
+            ; More distinct types than were shown: say so rather than implying
+            ; the list is complete.
+            if types.length > 3
+                sb.append ", ..."
+        }
+        sb.to_string()
+    }
+
+    ; Is there at least ONE plan entry for the routine named `name` at `start`?
+    ; Stops at the first hit, which is what makes the file-level pre-pass cheap
+    ; for the ordinary file where everything is planned.
+    function is_planned_at(plan: Plan, start: size_t, name: String) returns bool
+    {
+        if plan.functions = null
+            return false
+        let fns (*plan.functions)
+        var i: size_t 0
+        while i < fns.length
+        {
+            let fp fns.get i
+            if fp <> null
+            {
+                let fn (*fp)
+                if fn.loc.start = start
+                    if fn.name = name
+                        return true
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; The readable type of a planned routine's FIRST input item, or "".
+    function first_input_type(rp, fn: PlannedFunction) returns String
+    {
+        if fn.input = null
+            return ""
+        let items (*fn.input)
+        if items.length = 0
+            return ""
+        let ip items.get 0
+        if ip = null
+            return ""
+        let item (*ip)
+        if item.item_type = null
+            return ""
+        let it (*item.item_type)
+        Planner.get_readable_name it
+    }
+
+    function contains_name(seen: pointer[Array[String]], name: String) returns bool
+    {
+        var i: size_t 0
+        while i < seen.get_length()
+        {
+            let sp seen.get i
+            if sp <> null
+                if (*sp) = name
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; ====================================================================
+    ; The routine-declaration scanner.
+    ;
+    ; `function` / `procedure` are keywords with one meaning, so a token in code
+    ; always opens a declaration — no parse needed, which keeps this working on a
+    ; buffer that does not parse. The keyword's own offset IS the declaration's
+    ; span start: measured 2026-08-14 over documentSymbol, whose ranges come
+    ; straight from FunctionSyntax.start — a routine with two comment lines above
+    ; it reports the `function` line, not the comment.
+    ;
+    ; Comments and string literals are skipped wholesale (symbols.skip_noncode#),
+    ; the same guard tasklens.scaly needs for the same reason.
+    ; ====================================================================
+
+    function next_routine_site(source: String, from: size_t) returns size_t
+    {
+        let len source.get_length()
+        var k from
+        while k < len
+        {
+            let c source.get k
+            if symbols.is_noncode_start c
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
+            if c = ("f" as char)
+            {
+                if instlens.is_keyword_at(source, k, len, "function")
+                    return k
+            }
+            if c = ("p" as char)
+            {
+                if instlens.is_keyword_at(source, k, len, "procedure")
+                    return k
+            }
+            set k: k + 1
+        }
+        len
+    }
+
+    function count_routine_sites(source: String) returns size_t
+    {
+        let len source.get_length()
+        var n: size_t 0
+        var k: size_t 0
+        while k < len
+        {
+            set k: instlens.next_routine_site(source, k)
+            if k >= len
+                return n
+            set n: n + 1
+            set k: k + 1
+        }
+        n
+    }
+
+    ; Is `word` the token at source[k..]? Both boundaries are checked, so neither
+    ; `functions` nor `myfunction` is a site.
+    function is_keyword_at(source: String, k: size_t, len: size_t, word: String) returns bool
+    {
+        let wn word.get_length()
+        if k + wn >= len
+            return false
+        var i: size_t 0
+        while i < wn
+        {
+            let a source.get(k + i)
+            let b word.get i
+            if a <> b
+                return false
+            set i: i + 1
+        }
+        let after source.get(k + wn)
+        if symbols.is_ident_byte after
+            return false
+        if k > 0
+        {
+            let before source.get(k - 1)
+            if symbols.is_ident_byte before
+                return false
+        }
+        true
+    }
+
+    ; The declared name that follows the keyword at `offset` ("" when the next
+    ; token is not a plain identifier — a string-identifier target is rare and
+    ; answering nothing for it is better than answering a wrong name).
+    function routine_name_at(rp, source: String, offset: size_t) returns String
+    {
+        let n source.get_length()
+        var k offset
+        while k < n
+        {
+            let c source.get k
+            if symbols.is_ident_byte(c) = false
+                break
+            set k: k + 1
+        }
+        while k < n
+        {
+            let c source.get k
+            if c <> 0x20
+                if c <> 0x09
+                    break
+            set k: k + 1
+        }
+        let start k
+        while k < n
+        {
+            let c source.get k
+            if symbols.is_ident_byte(c) = false
+                break
+            set k: k + 1
+        }
+        if k <= start
+            return ""
+        source.substring(start, k - start)
+    }
+}

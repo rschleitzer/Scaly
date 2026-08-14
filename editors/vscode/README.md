@@ -22,7 +22,7 @@ What you get:
   variants), namespaces, module-level mutables; **workspace symbols** across
   the project (Cmd+T).
 - **Inlay hints** — inferred types inline.
-- **Code lenses** — four families, all Scaly-specific:
+- **Code lenses** — five families, all Scaly-specific:
   - **Run** — `Run (scalyc --jit)` at the top of any file that has top-level
     statements, i.e. a program rather than a library. Runs it in a terminal
     through the in-process JIT; nothing is written to disk.
@@ -33,6 +33,12 @@ What you get:
     `module NAME` declaration resolves to, clickable — and, the useful half,
     `missing module file: …` when it resolves to nothing (the compiler
     substitutes an empty module for that, silently).
+  - **Definitions emitted** — above a generic `function`/`procedure`, how many
+    definitions the compiler emits for it (one per distinct mangled name, so a
+    generic shows what it costs in copies) and which concrete types it was
+    instantiated with; above a routine the demand-driven planner never reached,
+    `not emitted in this root` — and for a whole file that the package root does
+    not include as a module, that fact once, at the top.
   - **The self-scaling verdict** — above every `for` loop: whether the compiler
     drives it through the adaptive parallel engine (`runs in parallel`) or runs
     it sequentially, and in that case the first construct that blocked it

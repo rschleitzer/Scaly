@@ -4141,6 +4141,170 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeLens plan-free"; else bad "lsp codeLens plan-free"; fi
 
+# ---- codeLens: definitions emitted per routine (monomorphisation) ----
+# scalyls/instlens.scaly counts, per `function` / `procedure` declaration, how
+# many definitions the compiler emits for it — one per distinct mangled name, so
+# a generic routine shows what it COSTS in copies — and reports a routine, or a
+# whole file, that the demand-driven planner never planned.
+#
+# The gate is a cross-check against the compiler's own output, never against a
+# number written into this file, and it has TWO halves because one of them cannot
+# see the defect that matters:
+#   * a self-contained fixture package, compiled to IR by $SCALYC right here
+#   * the TREE: `Vector[T].get` against the committed seed/scaly.ll
+# The first version of this lens counted plan ENTRIES rather than distinct mangled
+# names and said 44 for Vector[T].get where the IR holds 20 — and the fixture does
+# NOT reproduce that (measured: its plan has exactly one entry per definition, and
+# a deliberately broken build passed the fixture half unchanged). Whatever makes
+# the planner keep several entries for one instantiation, this fixture does not
+# trigger it, so the tree half is the one that holds the dedup load-bearing.
+python3 - "$SCALYC" <<'PYINST'
+import sys, json, subprocess, os, shutil, re
+scalyc = sys.argv[1]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def lenses(path):
+    uri = "file://" + os.path.abspath(path)
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":open(path).read()}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/codeLens",
+                  "params":{"textDocument":{"uri":uri}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    r = next((f for f in frames if f.get("id") == 2), None)
+    res = (r or {}).get("result")
+    return res if isinstance(res, list) else []
+def titles(ls, needle):
+    return [(l["range"]["start"]["line"] + 1, l["command"]["title"])
+            for l in ls if needle in l["command"]["title"]]
+
+ws = "/tmp/lsp_ws/codelens_inst"
+shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws + "/pkg/0.1.0/pkg")
+open(ws + "/pkg/0.1.0/pkg.scaly", "w").write(
+    "define pkg\n{\n    module boxes\n    module uses\n}\n")
+# A generic with ONE method, plus a non-generic routine as the control.
+open(ws + "/pkg/0.1.0/pkg/boxes.scaly", "w").write(
+    "define boxes\n"
+    "{\n"
+    "    define Box[T]\n"
+    "    (\n"
+    "        value: T\n"
+    "    )\n"
+    "    {\n"
+    "        function get(this: Box[T]) returns T\n"
+    "        {\n"
+    "            value\n"
+    "        }\n"
+    "    }\n"
+    "\n"
+    "    function plain_helper(n: int) returns int\n"
+    "    {\n"
+    "        n + 1\n"
+    "    }\n"
+    "}\n")
+# Two instantiations, from a sibling module.
+open(ws + "/pkg/0.1.0/pkg/uses.scaly", "w").write(
+    "use pkg.boxes.Box\n"
+    "\n"
+    "define uses\n"
+    "{\n"
+    "    function use_int(n: int) returns int\n"
+    "    {\n"
+    "        let b Box[int](n)\n"
+    "        b.get()\n"
+    "    }\n"
+    "\n"
+    "    function use_char(c: char) returns char\n"
+    "    {\n"
+    "        let b Box[char](c)\n"
+    "        b.get()\n"
+    "    }\n"
+    "}\n")
+
+rows = titles(lenses(ws + "/pkg/0.1.0/pkg/boxes.scaly"), "definitions emitted")
+check(len(rows) == 1 and rows[0][0] == 8,
+      "the generic method gets a lens, the non-generic routine does not")
+m = re.match(r"^(\d+) definitions emitted: (.*)$", rows[0][1] if rows else "")
+check(m is not None, "the title reads '<N> definitions emitted: <types>'")
+lens_count = int(m.group(1)) if m else -1
+listed = m.group(2).split(", ") if m else []
+check("Box[int]" in listed and "Box[char]" in listed,
+      "both instantiated types are named (%s)" % ", ".join(listed))
+check("Box[T]" in listed,
+      "  and the template form too, since it is emitted as well")
+
+# The cross-check: compile the same package and count the definitions.
+ir = ws + "/pkg.ll"
+rc = subprocess.run([scalyc, "-S", "--no-prelude", "-o", ir, ws + "/pkg/0.1.0/pkg.scaly"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+check(rc == 0 and os.path.exists(ir), "the fixture package compiles to IR")
+if os.path.exists(ir):
+    # `Box::get` in Itanium: _ZN3Box(I<args>E)?3getE...
+    defs = set(re.findall(r"^define [^@]*@(_ZN3Box(?:I.*?E)?3getE[^(]*)\(", open(ir).read(), re.M))
+    check(len(defs) == lens_count,
+          "the lens count equals the emitted definition count (%d vs %d)" % (lens_count, len(defs)))
+    check(len(defs) > 2, "  and the fixture really produced several (%d)" % len(defs))
+
+# ---- the TREE half: a real generic against the committed IR ----------------
+# Vector.scaly is a member of packages/scaly, so answering means planning that
+# whole root; seed/scaly.ll is that package as the seed compiler emitted it, so
+# the two sides come from different programs.
+vec = "packages/scaly/0.1.0/scaly/containers/Vector.scaly"
+src = open(vec).read()
+# The `get` method's declaration line (1-based), found rather than hardcoded.
+want_line = 0
+for (n, line) in enumerate(src.split("\n"), start=1):
+    if line.strip().startswith("function get(this: Vector[T]"):
+        want_line = n
+        break
+check(want_line > 0, "found Vector[T].get in the tree")
+rows = titles(lenses(vec), "definitions emitted")
+hit = [t for (l, t) in rows if l == want_line]
+check(len(hit) == 1, "Vector[T].get carries a definitions-emitted lens")
+mv = re.match(r"^(\d+) definitions emitted: (.*)$", hit[0] if hit else "")
+check(mv is not None, "  with the same title shape")
+if mv:
+    # Itanium: _ZN6Vector(I<args>E)?3getE... — the optional args group matters,
+    # since the bare declaration form carries none and IS emitted.
+    ir_defs = set(re.findall(r"^define [^@]*@(_ZN6Vector(?:I.*?E)?3getE[^(]*)\(",
+                             open("seed/scaly.ll").read(), re.M))
+    check(int(mv.group(1)) == len(ir_defs),
+          "the tree lens count equals the seed IR definition count (%s vs %d)"
+          % (mv.group(1), len(ir_defs)))
+    check(len(ir_defs) > 10, "  and this generic really has many (%d)" % len(ir_defs))
+    check("Vector[int]" in mv.group(2), "  the type list names a concrete instantiation")
+
+# A file the root does not include as a module: ONE file-level lens, not a wall.
+open(ws + "/pkg/0.1.0/pkg/orphan.scaly", "w").write(
+    "define orphan\n{\n"
+    "    function a(n: int) returns int\n    {\n        n\n    }\n"
+    "    function b(n: int) returns int\n    {\n        n\n    }\n"
+    "    function c(n: int) returns int\n    {\n        n\n    }\n"
+    "}\n")
+orphan = titles(lenses(ws + "/pkg/0.1.0/pkg/orphan.scaly"), "planned in this root")
+check(len(orphan) == 1 and orphan[0][0] == 1
+      and orphan[0][1] == "no routine of this file is planned in this root",
+      "a file outside the root's module tree says so ONCE, at the top")
+sys.exit(1 if failures else 0)
+PYINST
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp codeLens instantiations"; else bad "lsp codeLens instantiations"; fi
+
 # ---- semanticTokens/full: lexical token classification ----
 # A single byte scan classifies every token into the legend (keyword/type/
 # function/variable/operator/string/number/comment) and returns the LSP

@@ -89,110 +89,32 @@ use scalyc.compiler.Syntax.*
 
 define tasklens
 {
-    ; The `for`-loop lenses for `uri` as a COMMA-JOINED FRAGMENT (no enclosing
-    ; brackets — scalyls.codelens joins the families and wraps the array; the
-    ; fragment convention symbols.scaly already uses). `text` is the parent's
-    ; buffer (the worker substitutes the file from disk when it has none), so
-    ; it is the text the POSITIONS are computed in.
+    ; The `for`-loop lenses as a COMMA-JOINED FRAGMENT (no enclosing brackets —
+    ; scalyls.codelens joins the families and wraps the array; the fragment
+    ; convention symbols.scaly already uses).
     ;
-    ; "" whenever nothing can be said: no `for` loop at all, an unreadable
-    ; file, a root that does not parse, a plan that came back null, or a
-    ; buffer whose `for` structure no longer matches the saved text.
-    function for_lens_fragment(rp, uri: String, text: String) returns String
+    ; The PLAN IS THE CALLER'S: codelens.scaly parses and plans once and hands
+    ; the same plan to every plan-derived family, because two families each
+    ; planning the same root would double the cost of the most expensive request
+    ; this server answers (measured 0.45 s for the scaly root, 2.45 s for dazzle).
+    ; `entry_file` is what the plan was built for (the root, or the document);
+    ; `plan_text` is the text its offsets index; `anchor_text` is the buffer the
+    ; positions are drawn in.
+    ;
+    ; "" whenever nothing can be said: no `for` loop at all, or a buffer whose
+    ; `for` structure no longer matches the saved text.
+    function fragment(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) returns String
     {
-        let path diagnostics.strip_uri uri
-        let root diagnostics.package_root path
-
-        ; plan_text: the text whose byte offsets the report will carry. For a
-        ; package member that is the file ON DISK (the modeler reads it, not
-        ; the buffer); for a standalone document it IS the buffer.
-        var plan_text text
-        if root.get_length() > 0
-            set plan_text: File.read_to_string(path)
-        if plan_text.get_length() = 0
-            return ""
-
         let sites tasklens.count_for_sites plan_text
         if sites = 0
             return ""
-        let anchors tasklens.count_for_sites text
+        let anchors tasklens.count_for_sites anchor_text
         if anchors <> sites
             return ""
 
-        if root.get_length() > 0
-            return tasklens.root_lenses(root, path, plan_text, text)
-        tasklens.document_lenses(path, plan_text, text)
-    }
-
-    ; Package-member route: plan the ROOT so sibling modules resolve, then
-    ; keep the verdicts whose file is `path`.
-    function root_lenses(rp, root: String, path: String, plan_text: String, anchor_text: String) returns String
-    {
-        let root_text File.read_to_string(root)
-        if root_text.get_length() = 0
-            return ""
-
-        var result String("")
-        var p parser.Parser(root_text)
-        choose p.parse_program()
-            when err: Error
-            {
-                ; The root itself does not parse. Its own diagnostics are
-                ; published elsewhere; there is no plan to read verdicts from.
-            }
-            when program: Success
-            {
-                ; The root program NAME is part of every module path the
-                ; use-visibility check compares against — a placeholder makes
-                ; the planner report every sibling as invisible
-                ; (diagnostics.root_program_name# has the full account).
-                let prog_name diagnostics.root_program_name(root)
-                let model Modeler.build_program(root, prog_name, program, true)
-                var planner Planner.Planner(root)
-                diagnostics.register_packages(&planner, &model)
-                let plan planner.plan_program model
-                if plan <> null
-                {
-                    var tp TaskPlanner.TaskPlanner()
-                    tp.analyze(plan, root)
-                    set result: tasklens.lenses_body(&tp, planner.has_diagnostics(), path, plan_text, anchor_text)
-                }
-            }
-        result
-    }
-
-    ; Standalone-document route: no root, so the buffer IS the program. Its
-    ; own text carries the offsets, which is why this route has no anchoring
-    ; question at all.
-    function document_lenses(rp, path: String, plan_text: String, anchor_text: String) returns String
-    {
-        var result String("")
-        var p parser.Parser(plan_text)
-        choose p.parse_program()
-            when err: Error
-            {
-                ; A buffer being typed into does not parse, and a document
-                ; that does not parse has no plan. Deliberately NOT repaired
-                ; (symbols.repaired_source#): the repair blanks a line, and
-                ; blanking a `for` line would change the very site count this
-                ; feature pairs on — a repaired verdict would be about a
-                ; program the author never wrote.
-            }
-            when program: Success
-            {
-                let prog_name "document"
-                let model Modeler.build_program(path, prog_name, program, true)
-                var planner Planner.Planner(path)
-                diagnostics.register_packages(&planner, &model)
-                let plan planner.plan_program model
-                if plan <> null
-                {
-                    var tp TaskPlanner.TaskPlanner()
-                    tp.analyze(plan, path)
-                    set result: tasklens.lenses_body(&tp, planner.has_diagnostics(), path, plan_text, anchor_text)
-                }
-            }
-        result
+        var tp TaskPlanner.TaskPlanner()
+        tp.analyze(plan, entry_file)
+        tasklens.lenses_body(&tp, has_diag, path, plan_text, anchor_text)
     }
 
     ; The CodeLens[] array itself: walk the `for` sites of both texts in
@@ -232,7 +154,7 @@ define tasklens
                 if first = false
                     sb.append("," as char)
                 let title tasklens.title_for verdict
-                sb.append(tasklens.lens_object(anchor_text, ka, title))
+                sb.append(symbols.lens_object(anchor_text, ka, 3, title, "", ""))
                 set first: false
             }
 
@@ -320,28 +242,6 @@ define tasklens
             return sb.to_string()
         }
         sb.append "runs in parallel"
-        sb.to_string()
-    }
-
-    ; One LSP CodeLens over the `for` keyword at `offset`:
-    ;   {"range":{...},"command":{"title":<title>,"command":""}}
-    function lens_object(rp, source: String, offset: size_t, title: String) returns String
-    {
-        var sb StringBuilder()
-        sb.append("{" as char)
-        sb.append(symbols.key("range"))
-        sb.append(symbols.range_for(source, offset, offset + 3))
-        sb.append("," as char)
-        sb.append(symbols.key("command"))
-        sb.append("{" as char)
-        sb.append(symbols.key("title"))
-        sb.append(json.quote_string(title))
-        sb.append("," as char)
-        sb.append(symbols.key("command"))
-        sb.append("\"" as char)
-        sb.append("\"" as char)
-        sb.append("}" as char)
-        sb.append("}" as char)
         sb.to_string()
     }
 

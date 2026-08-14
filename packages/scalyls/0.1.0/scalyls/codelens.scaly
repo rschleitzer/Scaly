@@ -49,7 +49,11 @@ use scalyls.diagnostics
 use scalyls.symbols
 use scalyls.json
 use scalyls.tasklens
+use scalyls.instlens
 
+use scalyc.compiler.Modeler
+use scalyc.compiler.Planner
+use scalyc.compiler.Plan.*
 use scalyc.compiler.parser
 use scalyc.compiler.parser.*
 use scalyc.compiler.Syntax.*
@@ -86,16 +90,128 @@ define codelens
             set first: false
         }
 
-        let loops tasklens.for_lens_fragment(uri, text)
-        if loops.get_length() > 0
+        let planned codelens.planned_fragment(path, text)
+        if planned.get_length() > 0
         {
             if first = false
                 sb.append("," as char)
-            symbols.append_fragment(&sb, loops)
+            symbols.append_fragment(&sb, planned)
             set first: false
         }
 
         sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; ====================================================================
+    ; THE SHARED PLAN.
+    ;
+    ; Every plan-derived family (the `for`-loop verdicts, the instantiation
+    ; counts) needs the SAME plan, and planning is by far the most expensive
+    ; thing this request does — measured 0.45 s for the scaly root and 2.45 s for
+    ; dazzle, the largest in this tree. So the parse and the plan happen ONCE
+    ; here and every family is handed the result; each family planning for itself
+    ; would double the cost of the whole request for nothing.
+    ;
+    ; WHICH program is planned is the same decision tasklens.scaly documents: a
+    ; package member goes through its ROOT (a member planned alone cannot resolve
+    ; its siblings, and for the classifier that turns a "parallel" verdict into a
+    ; wrong "blocked" one rather than a missing answer), a standalone document is
+    ; planned as itself. `plan_text` is the text whose offsets the plan carries —
+    ; the file ON DISK for a member, because the modeler reads from disk.
+    ; ====================================================================
+    function planned_fragment(rp, path: String, text: String) returns String
+    {
+        let root diagnostics.package_root path
+        if root.get_length() > 0
+            return codelens.root_planned_fragment(root, path, text)
+        codelens.document_planned_fragment(path, text)
+    }
+
+    function root_planned_fragment(rp, root: String, path: String, text: String) returns String
+    {
+        let plan_text File.read_to_string(path)
+        if plan_text.get_length() = 0
+            return ""
+        let root_text File.read_to_string(root)
+        if root_text.get_length() = 0
+            return ""
+
+        var result String("")
+        var p parser.Parser(root_text)
+        choose p.parse_program()
+            when err: Error
+            {
+                ; The root itself does not parse. Its own diagnostics are
+                ; published elsewhere; there is no plan to read from.
+            }
+            when program: Success
+            {
+                ; The root program NAME is part of every module path the strict
+                ; use-visibility check compares against — a placeholder makes the
+                ; planner report every sibling as invisible
+                ; (diagnostics.root_program_name# has the full account).
+                let prog_name diagnostics.root_program_name(root)
+                let model Modeler.build_program(root, prog_name, program, true)
+                var planner Planner.Planner(root)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program model
+                if plan <> null
+                    set result: codelens.families(plan, planner.has_diagnostics(), root, path, plan_text, text)
+            }
+        result
+    }
+
+    function document_planned_fragment(rp, path: String, text: String) returns String
+    {
+        if text.get_length() = 0
+            return ""
+        var result String("")
+        var p parser.Parser(text)
+        choose p.parse_program()
+            when err: Error
+            {
+                ; A buffer being typed into does not parse, and a document that
+                ; does not parse has no plan. Deliberately NOT repaired
+                ; (symbols.repaired_source#): the repair blanks a line, which
+                ; would change the very site counts these families pair on — an
+                ; answer about a program the author never wrote.
+            }
+            when program: Success
+            {
+                let prog_name "document"
+                let model Modeler.build_program(path, prog_name, program, true)
+                var planner Planner.Planner(path)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program model
+                if plan <> null
+                    set result: codelens.families(plan, planner.has_diagnostics(), path, path, text, text)
+            }
+        result
+    }
+
+    ; Join every plan-derived family over the one plan.
+    function families(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) returns String
+    {
+        var sb StringBuilder()
+        var first true
+
+        let loops tasklens.fragment(plan, has_diag, entry_file, path, plan_text, anchor_text)
+        if loops.get_length() > 0
+        {
+            symbols.append_fragment(&sb, loops)
+            set first: false
+        }
+
+        let insts instlens.fragment(plan, has_diag, plan_text, anchor_text)
+        if insts.get_length() > 0
+        {
+            if first = false
+                sb.append("," as char)
+            symbols.append_fragment(&sb, insts)
+            set first: false
+        }
+
         sb.to_string()
     }
 
@@ -123,7 +239,7 @@ define codelens
         {
             if first = false
                 sb.append("," as char)
-            symbols.append_fragment(&sb, codelens.lens_object(text, 0, 3, "Run (scalyc --jit)", "scaly.runFile", path))
+            symbols.append_fragment(&sb, symbols.lens_object(text, 0, 3, "Run (scalyc --jit)", "scaly.runFile", path))
             set first: false
         }
 
@@ -235,7 +351,7 @@ define codelens
         title.append rel
         title.append " - edit the generator, then ./mkp"
         let t title.to_string()
-        codelens.lens_object(text, 0, 3, t, "scaly.openPath", target)
+        symbols.lens_object(text, 0, 3, t, "scaly.openPath", target)
     }
 
     ; ====================================================================
@@ -396,7 +512,7 @@ define codelens
             plain.append "package: "
             plain.append relative
             let pt plain.to_string()
-            return codelens.lens_object(text, pkg.start, 7, pt, "", "")
+            return symbols.lens_object(text, pkg.start, 7, pt, "", "")
         }
 
         let target codelens.join(base, relative)
@@ -406,13 +522,13 @@ define codelens
             missing.append "not found: "
             missing.append relative
             let mt missing.to_string()
-            return codelens.lens_object(text, pkg.start, 7, mt, "", "")
+            return symbols.lens_object(text, pkg.start, 7, mt, "", "")
         }
         var title StringBuilder()
         title.append "package root: "
         title.append relative
         let t title.to_string()
-        codelens.lens_object(text, pkg.start, 7, t, "scaly.openPath", target)
+        symbols.lens_object(text, pkg.start, 7, t, "scaly.openPath", target)
     }
 
     ; `module NAME` -> <base>/NAME.scaly, where `base` is the search directory
@@ -434,13 +550,13 @@ define codelens
             missing.append "missing module file: "
             missing.append relative
             let mt missing.to_string()
-            return codelens.lens_object(text, m.start, 6, mt, "", "")
+            return symbols.lens_object(text, m.start, 6, mt, "", "")
         }
         var title StringBuilder()
         title.append "opens "
         title.append relative
         let t title.to_string()
-        codelens.lens_object(text, m.start, 6, t, "scaly.openPath", target)
+        symbols.lens_object(text, m.start, 6, t, "scaly.openPath", target)
     }
 
     ; The digits-and-dots run starting at `offset` ("0.1.0").
@@ -504,44 +620,6 @@ define codelens
             set depth: depth + 1
         }
         ""
-    }
-
-    ; ====================================================================
-    ; One LSP CodeLens.
-    ;
-    ; `command_id` empty -> plain, non-clickable text (VS Code renders a span
-    ; instead of a link). Otherwise the id is invoked with `argument` as its
-    ; single string parameter — which is why both commands the server names
-    ; take a PATH: a string is all a JSON-RPC argument can be.
-    ; ====================================================================
-    function lens_object(rp, source: String, offset: size_t, width: size_t, title: String, command_id: pointer[const_char], argument: String) returns String
-    {
-        var sb StringBuilder()
-        sb.append("{" as char)
-        sb.append(symbols.key("range"))
-        sb.append(symbols.range_for(source, offset, offset + width))
-        sb.append("," as char)
-        sb.append(symbols.key("command"))
-        sb.append("{" as char)
-        sb.append(symbols.key("title"))
-        sb.append(json.quote_string(title))
-        sb.append("," as char)
-        sb.append(symbols.key("command"))
-        sb.append("\"" as char)
-        sb.append command_id
-        sb.append("\"" as char)
-        let id String(command_id)
-        if id.get_length() > 0
-        {
-            sb.append("," as char)
-            sb.append(symbols.key("arguments"))
-            sb.append("[" as char)
-            sb.append(json.quote_string(argument))
-            sb.append("]" as char)
-        }
-        sb.append("}" as char)
-        sb.append("}" as char)
-        sb.to_string()
     }
 
     ; ====================================================================
