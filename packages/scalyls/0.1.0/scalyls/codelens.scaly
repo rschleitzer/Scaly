@@ -56,6 +56,7 @@ use scalyls.symbols
 use scalyls.json
 use scalyls.tasklens
 use scalyls.instlens
+use scalyls.storelens
 
 use scalyc.compiler.Modeler
 use scalyc.compiler.Planner
@@ -215,6 +216,18 @@ define codelens
             if first = false
                 sb.append("," as char)
             symbols.append_fragment(&sb, insts)
+            set first: false
+        }
+
+        ; No `has_diag` here, deliberately: this family marks a SHAPE, so a
+        ; truncated plan costs it sites rather than making the ones it found
+        ; wrong (storelens.scaly's SCOPE note).
+        let stores storelens.fragment(plan, plan_text, anchor_text)
+        if stores.get_length() > 0
+        {
+            if first = false
+                sb.append("," as char)
+            symbols.append_fragment(&sb, stores)
             set first: false
         }
 

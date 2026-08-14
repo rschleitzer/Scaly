@@ -4486,6 +4486,216 @@ PYSTOR
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeLens storage"; else bad "lsp codeLens storage"; fi
 
+# ---- codeLens: a store through a pointer parameter with no page to pin on ----
+# scalyls/storelens.scaly marks the field-insensitive gap in the escape checker:
+# a `set` that writes a String/StringC-carrying value through a pointer
+# parameter, inside a routine that has NO page parameter and therefore nothing
+# to pin the buffer onto.
+#
+# The gate is a RUNTIME cross-check, which is available here and stronger than
+# any IR reading: the marked fixture and its one-keyword-different twin are
+# COMPILED AND RUN, and the dangling one must actually print recycled bytes
+# while the pinned one prints its string. So the lens is judged against the
+# defect itself, not against a description of it.
+python3 - "$SCALYC" <<'PYSTORE'
+import sys, json, subprocess, os, shutil, re
+scalyc = sys.argv[1]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def lenses(path):
+    uri = "file://" + os.path.abspath(path)
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":open(path).read()}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/codeLens",
+                  "params":{"textDocument":{"uri":uri}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    r = next((f for f in frames if f.get("id") == 2), None)
+    res = (r or {}).get("result")
+    return res if isinstance(res, list) else []
+def stores(ls):
+    return {l["range"]["start"]["line"] + 1: (l["command"]["title"], l["command"]["command"])
+            for l in ls if l["command"]["title"].startswith("writes ")}
+
+ws = "/tmp/lsp_ws/storelens"
+shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws)
+
+# The fixture prints what the caller reads back. `churn` reuses the released
+# page, so a dangling buffer shows as the recycled bytes rather than by luck.
+BODY = ("define Holder (name: String)\n"
+        "\n"
+        "function fill(%s) returns bool\n"
+        "{\n"
+        "    let s String(\"hello\")\n"
+        "    set *out: Holder(s)\n"                      # 6 - the store
+        "    true\n"
+        "}\n"
+        "\n"
+        "function churn(k: int) returns int\n"
+        "{\n"
+        "    var acc 0\n"
+        "    var i 0\n"
+        "    while i < k\n"
+        "    {\n"
+        "        let junk String(\"XXXXXXXXXXXXXXXX\")\n"
+        "        set acc: acc + (junk.get_length() as int)\n"
+        "        set i: i + 1\n"
+        "    }\n"
+        "    acc\n"
+        "}\n"
+        "\n"
+        "var h Holder(String(\"\"))\n"
+        "if fill(&h, 1)\n"
+        "{\n"
+        "    let noise churn(64)\n"
+        "    if noise > 0\n"
+        "        scaly.io.Console.print(h.name.to_c_string())\n"
+        "}\n")
+bad_src  = BODY % "out: pointer[Holder], n: int"        # no page parameter
+good_src = BODY % "rp, out: pointer[Holder], n: int"    # can pin on the caller
+open(ws + "/bad.scaly", "w").write(bad_src)
+open(ws + "/good.scaly", "w").write(good_src)
+
+# ---- the defect itself, at runtime ------------------------------------
+def run(name):
+    exe = ws + "/" + name
+    rc = subprocess.run([scalyc, "-o", exe, exe + ".scaly"],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+    if rc != 0 or not os.path.exists(exe): return None
+    p = subprocess.run([exe], stdout=subprocess.PIPE)
+    return p.stdout.decode(errors="replace").strip()
+out_bad, out_good = run("bad"), run("good")
+check(out_good == "hello",
+      "with a page parameter the caller reads what was written (%r)" % out_good)
+check(out_bad is not None and out_bad != "hello",
+      "without one it reads recycled bytes - SILENTLY, rc 0 (%r)" % out_bad)
+
+# ---- and the lens marks exactly the one that breaks -------------------
+bad_rows, good_rows = stores(lenses(ws + "/bad.scaly")), stores(lenses(ws + "/good.scaly"))
+check(sorted(bad_rows) == [6],
+      "the lens marks the store that dangles, and only it (%s)" % sorted(bad_rows))
+check(bad_rows.get(6, ("",))[0] ==
+      "writes Holder (carries String) through 'out' - no page parameter here, so its buffer cannot be pinned",
+      "  naming the parameter and the String it carries transitively")
+check(bad_rows.get(6, ("", ""))[1] == "", "  plain text, no command")
+check(not good_rows,
+      "a routine WITH a page parameter is not marked (%s)" % sorted(good_rows))
+
+# ---- the three narrowings, each proved to cut something ---------------
+# Without them this family put 133 lenses on one real file, several of them on
+# lines that hold no store at all. Each fixture below is a shape that must stay
+# UNMARKED, and each is unmarked for a different reason.
+quiet = ("define Holder (name: String)\n"
+         "use scaly.memory.Page\n"
+         "\n"
+         "function scalar_out(ok: pointer[bool], n: int) returns int\n"
+         "{\n"
+         "    set *ok: true\n"                                    # 6  no buffer in a bool
+         "    n\n"
+         "}\n"
+         "\n"
+         "function empty_ctor(out: pointer[Holder], n: int) returns int\n"
+         "{\n"
+         "    set *out: Holder(String())\n"                       # 12 nothing allocated
+         "    n\n"
+         "}\n"
+         "\n"
+         "function pinned(out: pointer[String], host: pointer[Page], n: int) returns int\n"
+         "{\n"
+         "    set *out: String^host(\"x\")\n"                     # 18 decided on the line
+         "    n\n"
+         "}\n"
+         "\n"
+         "function local_only(n: int) returns int\n"
+         "{\n"
+         "    var acc 0\n"
+         "    set acc: acc + n\n"                                 # 25 no pointer parameter
+         "    acc\n"
+         "}\n"
+         "\n"
+         "var q Holder(String(\"\"))\n"
+         "var flag false\n"
+         "if scalar_out(&flag, 1) > 0\n"
+         "    scaly.io.Console.print \"q\"\n")
+open(ws + "/quiet.scaly", "w").write(quiet)
+qrc = subprocess.run([scalyc, "-S", "--no-tests", "-o", ws + "/quiet.ll", ws + "/quiet.scaly"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+check(qrc == 0, "the quiet fixture compiles")
+qrows = stores(lenses(ws + "/quiet.scaly"))
+check(not qrows, "none of the four quiet shapes is marked (%s)" % sorted(qrows))
+
+# ---- over the real tree: every mark is ATTRIBUTED to its own routine ----
+# The assertion that cannot rot, and it took two attempts. The first version
+# only asked whether the marked line holds a `set` and whether the enclosing
+# routine lacks a page parameter — and stayed GREEN with the declared_here
+# guard removed, i.e. with 41 offsets from OTHER FILES of the package drawn into
+# this one. It could not fail: the anchoring maps every offset to the nearest
+# PRECEDING `set` site, so a marked line is a `set` line by construction, and in
+# a file this full of them a foreign offset lands in a page-less routine too.
+#
+# What separates a correct mark from a foreign one is ATTRIBUTION, so that is
+# what is checked: the parameter the title names must be a parameter OF THE
+# ENCLOSING ROUTINE, and it must appear in the store's own target. Both fail
+# immediately for an offset that belongs to another file.
+sweep = ["packages/dazzle/0.1.0/dazzle/Style.scaly",
+         "packages/opensp/0.1.0/opensp/Parser.scaly"]
+def routine_head(src, ln):
+    j = ln - 1
+    while j >= 0 and not re.match(r"\s*(function|procedure)\s", src[j]): j -= 1
+    if j < 0: return None
+    head = ""
+    for k in range(j, min(j + 8, len(src))):
+        head += src[k]
+        if ")" in src[k]: break
+    return head
+total = 0
+wrong = []
+for f in sweep:
+    src = open(f).read().split("\n")
+    rows = stores(lenses(f))
+    total += len(rows)
+    for (ln, (title, _)) in rows.items():
+        line = src[ln - 1]
+        m = re.search(r"through '([A-Za-z_0-9]+)'", title)
+        if not m:
+            wrong.append((f, ln, "title names no parameter", title[:40])); continue
+        param = m.group(1)
+        if not re.match(r"\s*set\s", line):
+            wrong.append((f, ln, "not a set", line.strip()[:50])); continue
+        target = line.split(":")[0]
+        if not re.search(r"\b%s\b" % re.escape(param), target):
+            wrong.append((f, ln, "param %s not in the target" % param, target.strip()[:50])); continue
+        head = routine_head(src, ln)
+        if head is None:
+            wrong.append((f, ln, "no enclosing routine", "")); continue
+        params = head[head.find("(") + 1:]
+        if param != "this" and not re.search(r"\b%s\s*:" % re.escape(param), params):
+            wrong.append((f, ln, "param %s is not a parameter here" % param, head.strip()[:60])); continue
+        if re.match(r"\s*(function|procedure)\s+[A-Za-z_0-9]+\(\s*rp\b", head):
+            wrong.append((f, ln, "routine HAS a page parameter", head.strip()[:50]))
+check(total > 10, "the sweep marked a real number of stores (%d)" % total)
+check(not wrong, "every mark is attributed to a parameter of its OWN routine")
+for w in wrong[:5]: print("      ", w)
+sys.exit(1 if failures else 0)
+PYSTORE
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp codeLens unpinnable store"; else bad "lsp codeLens unpinnable store"; fi
+
 # ---- inlayHint: where each construction is ALLOCATED ----
 # scalyls/placehints.scaly labels every construction with the placement the
 # EMITTER will give it: `stack`, `region` (this function's own frame),
