@@ -29,6 +29,7 @@
 
 use scaly.io.File
 use scaly.memory.runtime
+use scaly.memory.root_pages.getenv
 use scalyls.rpc
 use scalyls.diagnostics
 use scalyls.symbols
@@ -73,10 +74,35 @@ define SIGKILL int 9
 define SIGPIPE int 13
 
 ; Wait at most this long for the worker to answer one PER-DOCUMENT request
-; before declaring it hung and killing it (milliseconds). Sized for the
-; single-document pipeline (parse -> model -> plan), which is well under a
-; second even on the largest file in this tree.
-define ANALYZE_TIMEOUT_MS i32 8000
+; before declaring it hung and killing it (milliseconds). Override with
+; SCALYLS_ANALYZE_TIMEOUT_MS (see worker.budget_ms).
+;
+; ★★★8000 -> 30000 on 2026-08-14, and the old comment shows why: it read
+; "well under a second even on the largest file in this tree", which was an
+; ASSUMPTION about the single-document pipeline and is false on both machines
+; this has now been measured on. Measured here, x86_64 Linux, on a build with
+; the same whole-program `opt -O2` the shipped server gets:
+;
+;   file                        documentSymbol   definition COLD   WARM
+;   opensp/Parser.scaly 881 KB       7.17 s          8.72 s       0.14 s
+;   dazzle/Primitive.scaly 391 KB    2.39 s         19.81 s       0.06 s
+;   scalyls/symbols.scaly  401 KB    2.94 s          3.16 s       0.05 s
+;
+; A cold `definition` costs 2.5x the old budget on an ordinary file, and
+; `documentSymbol` on the largest one sat at 90 % of it with no margin at all.
+; ★The warm column is the reason this matters far beyond one slow request: the
+; SECOND definition costs 0.06 s, so the budget's job is to protect the very
+; state that makes everything after it instant. Overrunning kills the worker
+; (worker.shutdown#), the symindex dies with it (symindex.scaly), and the next
+; request pays the cold price again — while the client sees a successful
+; result, because the parent answers with its fallback. A budget that fires on
+; legitimate work is therefore not "a slow path", it is a permanent cold cache.
+;
+; 30 s covers the measured worst case with ~50 % margin and stays well under
+; the whole-tree budget, so the ordering of the three is finally the one the
+; work justifies: per-document < completion < whole-tree. It stays finite —
+; reaping a genuinely hung pipeline is the whole point of the isolation.
+define ANALYZE_TIMEOUT_MS i32 30000
 
 ; The whole-tree searches ("w" = workspace/symbol, and the cross-package
 ; definition / signatureHelp scans that share its index) get their own, far
@@ -137,6 +163,51 @@ define worker
         if pr > 0
             return true
         false
+    }
+
+    ; Digits of an environment value, stopping at the first non-digit. Same
+    ; shape as dazzle's FrameMark.parse_i64 and local for the same reason: the
+    ; stdlib has no such entry point, and adding one that only a dependent
+    ; package calls is the demand-driven-emission trap (see CLAUDE.md's iron
+    ; rule about the `--jit` leg).
+    function parse_ms(t: pointer[const_char]) returns i32
+    {
+        var v: i32 0
+        var p t as pointer[u8]
+        let zero "0" as char
+        while (*p) <> 0
+        {
+            let d (*p as i32) - (zero as i32)
+            if d < 0
+                return v
+            if d > 9
+                return v
+            set v: (v * 10) + d
+            set p: p + 1
+        }
+        v
+    }
+
+    ; A budget, overridable from the environment. ★These are WALL-CLOCK limits
+    ; on work whose duration scales with machine speed, so a single compiled-in
+    ; number cannot be right everywhere — the same argument that gives the
+    ; planner's stack guard its SCALYC_STACK_BUDGET escape hatch. Measured
+    ; 2026-08-14 on an x86_64 Linux box: `documentSymbol` on the tree's largest
+    ; file (opensp/Parser.scaly, 881 KB) takes 7.6 s and a `definition` there
+    ; overran the 8 s budget outright — the worker was reaped mid-request and
+    ; the symindex died with it, so the NEXT request started cold and paid the
+    ; 7.6 s again. None of that is visible to the client: the parent answers
+    ; with its fallback, which the editor sees as a successful result.
+    ; A value of 0 or a non-numeric one keeps the default.
+    function budget_ms(name: pointer[const_char], fallback: i32) returns i32
+    {
+        let e getenv(name)
+        if e = null
+            return fallback
+        let v worker.parse_ms(e)
+        if v <= 0
+            return fallback
+        v
     }
 
     ; ====================================================================
@@ -541,11 +612,11 @@ define worker
             ; takes seconds on a cold worker, where a per-document request
             ; never does. See WORKSPACE_TIMEOUT_MS for why one shared budget
             ; made the search unable to ever complete.
-            var budget: i32 ANALYZE_TIMEOUT_MS
+            var budget: i32 worker.budget_ms("SCALYLS_ANALYZE_TIMEOUT_MS", ANALYZE_TIMEOUT_MS)
             if kind_str = "w"
-                set budget: WORKSPACE_TIMEOUT_MS
+                set budget: worker.budget_ms("SCALYLS_WORKSPACE_TIMEOUT_MS", WORKSPACE_TIMEOUT_MS)
             if kind_str = "c"
-                set budget: COMPLETION_TIMEOUT_MS
+                set budget: worker.budget_ms("SCALYLS_COMPLETION_TIMEOUT_MS", COMPLETION_TIMEOUT_MS)
             var pfd pollfd(worker_out as i32, POLLIN, 0)
             let pr poll(&pfd, 1 as u64, budget)
 
