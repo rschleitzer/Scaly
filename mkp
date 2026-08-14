@@ -71,21 +71,38 @@ fi
 # and the diff would show up as an unexplained source change, days later and
 # nowhere near this line. Skipping is the safe direction and already the
 # documented posture for "no engine at all": the committed files stay valid.
-# Set MKP_OPENJADE_VERSION to accept a different one deliberately.
-OJ_WANT="${MKP_OPENJADE_VERSION:-1.3.3-pre1}"
+# ★Keyed on the fork's IDENTITY, not on one version string. Written on
+# 2026-08-14 pinning "1.3.3-pre1", it was WRONG within the hour: the porting
+# source renamed itself, so the December build says
+#     I: "openjade" version "1.3.3-pre1"
+# and a build from current source says
+#     I: "dazzle" version "1.3.3"
+# while Ubuntu's package says
+#     I: "OpenJade" version "1.4devel"
+# The name `dazzle` identifies the fork on its own; the historical spelling is
+# admitted by its version. Pinning one exact string is precisely what breaks
+# the next time the reference is rebuilt. MKP_OPENJADE_VERSION admits a further
+# version deliberately.
+oj_accept() {  # $1 = command to interrogate
+    local id name ver
+    id="$("$1" -v < /dev/null 2>&1 \
+          | sed -n 's/.*"\([^"]*\)" version "\([^"]*\)".*/\1 \2/p' | head -1)"
+    name="${id% *}"; ver="${id#* }"
+    OJ_ID="${id:-unknown}"
+    [ "$name" = dazzle ] || [ "$ver" = "1.3.3-pre1" ] \
+        || { [ -n "${MKP_OPENJADE_VERSION:-}" ] && [ "$ver" = "$MKP_OPENJADE_VERSION" ]; }
+}
 if [ -x "$DAZZLE" ]; then
     ENGINE=("$DAZZLE" -t sgml -d)
     echo "mkp: codegen via $DAZZLE (dazzle)"
 elif command -v openjade > /dev/null 2>&1; then
-    oj_ver="$(openjade -v < /dev/null 2>&1 \
-              | sed -n 's/.*version "\([^"]*\)".*/\1/p' | head -1)"
-    if [ "$oj_ver" = "$OJ_WANT" ]; then
+    if oj_accept openjade; then
         ENGINE=(openjade -t sgml -d)
-        echo "mkp: codegen via openjade $oj_ver (dazzle unavailable)"
+        echo "mkp: codegen via openjade [$OJ_ID] (dazzle unavailable)"
     else
         ENGINE=()
-        echo "mkp: skipping codegen — openjade on PATH is '${oj_ver:-unknown}', not the" \
-             "$OJ_WANT the committed goldens came from (the generated files stay valid)"
+        echo "mkp: skipping codegen — openjade on PATH is [$OJ_ID], not the porting-source" \
+             "build the committed goldens came from (the generated files stay valid)"
     fi
 else
     ENGINE=()
