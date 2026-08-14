@@ -36,6 +36,7 @@ use scalyls.format
 use scalyls.symbols
 use scalyls.semantic
 use scalyls.tasklens
+use scalyls.codelens
 
 ; POSIX process / pipe primitives (libc). Declared here rather than in the
 ; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
@@ -434,7 +435,7 @@ define worker
         ; blanking a line is the one repair this feature must not have.
         if kind = "z"
         {
-            rpc.write_message_fd(out_fd, tasklens.code_lenses(uri, source))
+            rpc.write_message_fd(out_fd, codelens.lenses(uri, source))
             return true
         }
 

@@ -48,6 +48,11 @@ define scalyls
     ; observable at all.
     module tasklens
 
+    ; textDocument/codeLens: assembles the array from every lens family, and
+    ; owns the three that need no plan (generated file, package/module
+    ; resolution, Run).
+    module codelens
+
     ; In-memory document store (parent side) so navigation features see
     ; unsaved editor edits instead of re-reading from disk.
     module docstore

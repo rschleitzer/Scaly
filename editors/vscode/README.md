@@ -22,16 +22,29 @@ What you get:
   variants), namespaces, module-level mutables; **workspace symbols** across
   the project (Cmd+T).
 - **Inlay hints** — inferred types inline.
-- **Code lenses — the self-scaling verdict** — above every `for` loop: whether
-  the compiler drives it through the adaptive parallel engine (`runs in
-  parallel`) or runs it sequentially, and in that case the first construct that
-  blocked it (`runs sequentially: writes loop-external t`). Scaly has no
-  parallel syntax and emits no diagnostic either way, so this is the only place
-  the decision is visible outside `scalyc --task-plan`. The verdicts describe
-  the file **as last saved** — a loop's classification needs its whole package
-  planned, which is read from disk — so while an unsaved edit adds or removes a
-  `for`, the lenses disappear rather than sit on the wrong lines. Turn them off
-  per language with `"[scaly]": { "editor.codeLens": false }`.
+- **Code lenses** — four families, all Scaly-specific:
+  - **Run** — `Run (scalyc --jit)` at the top of any file that has top-level
+    statements, i.e. a program rather than a library. Runs it in a terminal
+    through the in-process JIT; nothing is written to disk.
+  - **Generated file** — `generated from codegen/parser-scaly.scm - edit the
+    generator, then ./mkp` at the top of every file `./mkp` writes, with a click
+    that opens the generator. The list mirrors `mkp` itself.
+  - **Package / module resolution** — the file a `package NAME VERSION` or
+    `module NAME` declaration resolves to, clickable — and, the useful half,
+    `missing module file: …` when it resolves to nothing (the compiler
+    substitutes an empty module for that, silently).
+  - **The self-scaling verdict** — above every `for` loop: whether the compiler
+    drives it through the adaptive parallel engine (`runs in parallel`) or runs
+    it sequentially, and in that case the first construct that blocked it
+    (`runs sequentially: writes loop-external t`). Scaly has no parallel syntax
+    and emits no diagnostic either way, so this is the only place the decision
+    is visible outside `scalyc --task-plan`. These verdicts describe the file
+    **as last saved** — a loop's classification needs its whole package planned,
+    which is read from disk — so while an unsaved edit adds or removes a `for`,
+    they disappear rather than sit on the wrong lines.
+
+  Turn all of them off per language with
+  `"[scaly]": { "editor.codeLens": false }`.
 - **Folding ranges**.
 - **Debugging** — gutter breakpoints, stepping, call stack, and a Variables
   view with arguments, `let` bindings and readable containers. See below.
@@ -64,6 +77,7 @@ What you get:
 | Setting | Default | Meaning |
 |---------|---------|---------|
 | `scaly.server.path` | `scalyls` | Path to the `scalyls` binary. The default resolves it on `PATH` (the scaly.io installer's wrapper); falls back to `~/.scaly/bin/scalyls`. |
+| `scaly.compiler.path` | `scalyc` | Path to `scalyc`, used by the **Run** code lens. Resolved like the server: setting, then `PATH`, then `~/.scaly/bin/scalyc`. |
 | `scaly.home` | `""` | `SCALY_HOME` for the server (prelude/packages search root). If empty and a workspace folder is itself a Scaly checkout (contains `packages/scaly`), that folder is used; otherwise the server wrapper's own `SCALY_HOME` applies. |
 
 ## Restart the server

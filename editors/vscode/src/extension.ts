@@ -212,10 +212,74 @@ class ScalyDebugConfigurationProvider
   }
 }
 
+// ---------------------------------------------------------------- code lenses
+//
+// The server emits lenses whose command is one of the two below. They are
+// registered here and DELIBERATELY not contributed in package.json: a lens
+// invokes them programmatically with a path argument, and a palette entry
+// would offer the user a command that cannot work without one.
+//
+// The server cannot name a built-in instead. `vscode.open` takes a Uri OBJECT
+// and rejects the string a JSON-RPC argument can carry, so opening a file from
+// a lens needs this thin conversion either way.
+
+async function openPath(target: unknown): Promise<void> {
+  if (typeof target !== "string" || target.length === 0) {
+    return;
+  }
+  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(target));
+  await vscode.window.showTextDocument(doc, { preview: false });
+}
+
+// Resolve the compiler the way the server is resolved: explicit setting, then
+// PATH (the installer's wrapper, which sets SCALY_HOME itself), then the
+// default install location.
+function resolveCompilerPath(): string {
+  const configured = vscode.workspace
+    .getConfiguration("scaly")
+    .get<string>("compiler.path", "scalyc")
+    .trim();
+  if (configured.length > 0 && configured !== "scalyc") {
+    return configured;
+  }
+  if (onPath("scalyc")) {
+    return "scalyc";
+  }
+  const installed = path.join(os.homedir(), ".scaly", "bin", "scalyc");
+  if (fileIsExecutable(installed)) {
+    return installed;
+  }
+  return "scalyc";
+}
+
+// One reused terminal, so running a file repeatedly does not pile up panels.
+let runTerminal: vscode.Terminal | undefined;
+
+function shellQuote(s: string): string {
+  return `'` + s.replace(/'/g, `'\\''`) + `'`;
+}
+
+function runFile(target: unknown): void {
+  if (typeof target !== "string" || target.length === 0) {
+    return;
+  }
+  if (!runTerminal || runTerminal.exitStatus !== undefined) {
+    runTerminal = vscode.window.createTerminal({ name: "Scaly" });
+  }
+  runTerminal.show(true);
+  // --jit runs the program in the compiler's own process; nothing is written to
+  // disk, which is what makes this safe to offer on any program file.
+  runTerminal.sendText(
+    `${shellQuote(resolveCompilerPath())} --jit ${shellQuote(target)}`
+  );
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   void startClient();
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("scaly.openPath", openPath),
+    vscode.commands.registerCommand("scaly.runFile", runFile),
     vscode.commands.registerCommand("scaly.restartServer", async () => {
       await stopClient();
       await startClient();

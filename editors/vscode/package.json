@@ -58,6 +58,11 @@
           "default": "scalyls",
           "description": "Path to the scalyls language server binary. Default 'scalyls' resolves it on PATH (the scaly.io installer's wrapper); falls back to ~/.scaly/bin/scalyls."
         },
+        "scaly.compiler.path": {
+          "type": "string",
+          "default": "scalyc",
+          "description": "Path to the scalyc binary, used by the 'Run (scalyc --jit)' code lens. Default 'scalyc' resolves it on PATH (the scaly.io installer's wrapper); falls back to ~/.scaly/bin/scalyc."
+        },
         "scaly.home": {
           "type": "string",
           "default": "",

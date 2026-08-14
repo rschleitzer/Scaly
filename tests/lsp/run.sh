@@ -3810,9 +3810,22 @@ def lenses(path, buffer=None):
     res = (r or {}).get("result")
     if not isinstance(res, list): res = None
     return caps, res
-# (1-based line, title) per lens, in reply order.
+# (1-based line, title) per lens, in reply order — restricted to the `for`-loop
+# family this group is about. The plan-free families (Run, generated banner,
+# package/module) live in the next group; a program fixture legitimately carries
+# a Run lens too, and asserting an exact row list here would make each group's
+# expectations depend on the other's behaviour.
 def rows(ls):
-    return [(l["range"]["start"]["line"] + 1, l["command"]["title"]) for l in (ls or [])]
+    out = []
+    for l in (ls or []):
+        t = l["command"]["title"]
+        if t.startswith("runs ") or t.startswith("no verdict"):
+            out.append((l["range"]["start"]["line"] + 1, t))
+    return out
+def verdict_lenses(ls):
+    return [l for l in (ls or [])
+            if l["command"]["title"].startswith("runs ")
+            or l["command"]["title"].startswith("no verdict")]
 
 ws = "/tmp/lsp_ws/codelens"
 shutil.rmtree(ws, ignore_errors=True)
@@ -3848,12 +3861,13 @@ check(rows(ls) == [(3, "runs in parallel"),
                    (10, "runs sequentially: writes loop-external t")],
       "standalone document: one lens per `for`, verdict verbatim")
 # The lens sits ON the keyword, so the editor draws it above that line.
-first = (ls or [{}])[0]
+vl = verdict_lenses(ls)
+first = (vl or [{}])[0]
 check(first.get("range", {}).get("start", {}).get("character") == 4
       and first["range"]["end"]["character"] == 7,
       "range covers the `for` keyword itself")
-check(all(l["command"]["command"] == "" for l in (ls or [])),
-      "every lens is plain text (empty command id, nothing to click)")
+check(len(vl) > 0 and all(l["command"]["command"] == "" for l in vl),
+      "every verdict lens is plain text (empty command id, nothing to click)")
 
 # ---- the noncode skip is load-bearing -----------------------------------
 # Four decoy `for`s: a line comment, a `;* *;` block spanning two lines, and a
@@ -3909,7 +3923,7 @@ check(rows(ls) == [(8, "runs sequentially: writes loop-external t")],
 # until the file is saved (a visibly absent lens beats a plausible wrong one).
 caps, ls = lenses(member, body.replace("        var t 0\n",
                                        "        var t 0\n        for q in n\n            set t: t + q\n"))
-check(ls == [], "a buffer whose `for` structure differs from disk answers []")
+check(verdict_lenses(ls) == [], "a buffer whose `for` structure differs from disk answers no verdict")
 
 # ---- the reachable "no verdict": a file the root does not declare -------
 undeclared = pkg + "/pkg/b.scaly"
@@ -3922,7 +3936,7 @@ check(rows(ls) == [(6, "no verdict: not planned in this root")],
 plain = ws + "/plain.scaly"
 open(plain, "w").write("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n")
 caps, ls = lenses(plain)
-check(ls == [], "a file without a `for` loop answers []")
+check(verdict_lenses(ls) == [], "a file without a `for` loop answers no verdict")
 
 # ---- cross-producer: the lens must agree with `--task-plan` -------------
 # tensor.scaly is this tree's densest `for` file (the tape kernels) and lives
@@ -3955,6 +3969,175 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeLens"; else bad "lsp codeLens"; fi
+
+# ---- codeLens: the three plan-free families ----
+# scalyls/codelens.scaly owns the lenses that need no planner: the GENERATED
+# banner, PACKAGE/MODULE resolution, and Run. Two of them make a claim about the
+# FILE SYSTEM, so most of this group checks the claim against the file system
+# rather than against a hardcoded expectation — an invariant that cannot rot as
+# the tree moves:
+#   * every generator the banner names must exist
+#   * every "opens X" target must exist, every "missing module file: X" must not
+# The rest pins the two rules that were WRONG in the first draft and are the
+# reason this group exists at all:
+#   * the module search directory is the file's OWN for a top-level `module`, and
+#     <dir>/<NS> only inside `define NS { … }` (Modeler.build_module# vs
+#     Modeler.handle_namespace#) — the first draft used the second rule for both
+#   * a package lens with no absolute base must NOT be clickable (a relative path
+#     handed to vscode.Uri.file resolves against nothing)
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+
+# `no_home=True` runs the server WITHOUT SCALY_HOME, so the resolution-base
+# fallback is exercised deterministically instead of depending on the shell that
+# started the suite.
+def lenses(path, no_home=False):
+    uri = "file://" + os.path.abspath(path)
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":open(path).read()}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/codeLens",
+                  "params":{"textDocument":{"uri":uri}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    env = dict(os.environ)
+    if no_home: env.pop("SCALY_HOME", None)
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE, env=env).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    r = next((f for f in frames if f.get("id") == 2), None)
+    res = (r or {}).get("result")
+    return res if isinstance(res, list) else []
+def rows(ls):   # (1-based line, title, command id, single argument or None)
+    out = []
+    for l in ls:
+        c = l["command"]
+        a = c.get("arguments")
+        out.append((l["range"]["start"]["line"] + 1, c["title"], c["command"],
+                    a[0] if a else None))
+    return out
+
+# ---- GENERATED banner over the real tree --------------------------------
+# The table in codelens.scaly mirrors ./mkp; these are three of mkp's four
+# output classes, and the fourth (docs/*.xml) is not a .scaly file.
+gen_cases = [
+    ("packages/scalyc/0.1.0/scalyc/compiler/parser.scaly", "codegen/parser-scaly.scm"),
+    ("packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly", "codegen/syntax-scaly.scm"),
+    ("packages/scalyls/0.1.0/scalyls/grammar.scaly",       "codegen/highlight-scaly.scm"),
+    ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
+    ("packages/opensp/0.1.0/opensp/ParserMessages.scaly",  "tools/msggen.py"),
+]
+for (f, want) in gen_cases:
+    banner = [r for r in rows(lenses(f)) if r[1].startswith("generated from ")]
+    hit = len(banner) == 1 and banner[0][1] == ("generated from %s - edit the generator, then ./mkp" % want)
+    check(hit, "banner on %s names %s" % (os.path.basename(f), want))
+    if hit:
+        target = banner[0][3]
+        check(banner[0][2] == "scaly.openPath" and target is not None
+              and os.path.isabs(target) and os.path.exists(target),
+              "  its generator is an absolute path that exists")
+        check(banner[0][0] == 1, "  and it sits at the top of the file")
+# The literate tests say in their own first line where they came from, so that
+# claim and the table are two independent producers of the same fact.
+first = open("tests/selfhosted/controlflow__break-in-for.scaly").readline()
+check("tests/controlflow.sgm" in first,
+      "the generated file's own header agrees with the table")
+# A hand-written file gets no banner.
+check(not [r for r in rows(lenses("packages/scalyls/0.1.0/scalyls/docstore.scaly"))
+           if r[1].startswith("generated from ")],
+      "a hand-written file gets no banner")
+
+# ---- Run --------------------------------------------------------------
+run = [r for r in rows(lenses("tests/aot/hello.scaly")) if r[1].startswith("Run ")]
+check(len(run) == 1 and run[0][1] == "Run (scalyc --jit)" and run[0][2] == "scaly.runFile"
+      and run[0][3] == os.path.abspath("tests/aot/hello.scaly"),
+      "a program (top-level statements) gets a Run lens carrying its own path")
+check(not [r for r in rows(lenses("packages/scaly/0.1.0/scaly.scaly")) if r[1].startswith("Run ")],
+      "a library root (no top-level statements) gets no Run lens")
+
+# ---- claims about the file system must be TRUE --------------------------
+# Over real tree files: whatever the lens says about a module file, the file
+# system must agree. This is the assertion that cannot rot.
+sweep = ["packages/scalyls/0.1.0/scalyls.scaly",
+         "packages/scaly/0.1.0/scaly.scaly",
+         "packages/scalyc/0.1.0/scalyc/compiler.scaly",
+         "packages/scalyc/0.1.0/scalyc/compiler/parser.scaly"]
+opens = 0
+missing = 0
+wrong = []
+for f in sweep:
+    for (line, title, cmd, arg) in rows(lenses(f)):
+        if title.startswith("opens "):
+            opens += 1
+            if arg is None or not os.path.exists(arg): wrong.append((f, line, title, arg))
+        if title.startswith("missing module file: "):
+            missing += 1
+            # A "missing" lens carries no command, so the claim is checked by
+            # rebuilding the path the way the lens did: relative to the file's
+            # own directory.
+            rel = title[len("missing module file: "):]
+            if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(f)), rel)):
+                wrong.append((f, line, title, None))
+        if title.startswith("package root: "):
+            if arg is None or not os.path.exists(arg): wrong.append((f, line, title, arg))
+check(opens > 20, "the sweep resolved a real number of module files (%d)" % opens)
+check(not wrong, "every module/package claim matches the file system")
+for w in wrong[:5]: print("      ", w)
+# The sweep must contain BOTH outcomes, or "claims are true" proves little: the
+# generated parser.scaly carries a `module lexer` inside `define parser`, which
+# resolves to compiler/parser/lexer.scaly and does not exist (the real lexer is
+# loaded by compiler.scaly as a SIBLING module, and a missing module file is
+# silent in the Modeler). That is the lens doing its job.
+check(missing > 0, "the sweep contains at least one missing-module claim")
+
+# ---- the two rules the first draft got wrong ---------------------------
+ws = "/tmp/lsp_ws/codelens_paths"
+shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws + "/pkg/0.1.0/pkg")
+open(ws + "/pkg/0.1.0/pkg.scaly", "w").write(
+    "package scaly 0.1.0\n\ndefine pkg\n{\n    module a\n    module gone\n}\n")
+# a.scaly declares a TOP-LEVEL module: the Modeler looks for it beside a.scaly,
+# NOT under a/.
+open(ws + "/pkg/0.1.0/pkg/a.scaly", "w").write("module helper\n\ndefine a\n{\n}\n")
+open(ws + "/pkg/0.1.0/pkg/helper.scaly", "w").write("define helper\n{\n}\n")
+root_rows = rows(lenses(ws + "/pkg/0.1.0/pkg.scaly", no_home=True))
+titles = [t for (_, t, _, _) in root_rows]
+check("opens pkg/a.scaly" in titles,
+      "a module inside `define NS` resolves under NS/ (the namespace rule)")
+check("missing module file: pkg/gone.scaly" in titles,
+      "a declared module with no file says so")
+member_rows = rows(lenses(ws + "/pkg/0.1.0/pkg/a.scaly", no_home=True))
+mt = [t for (_, t, _, _) in member_rows]
+check("opens helper.scaly" in mt,
+      "a TOP-LEVEL module resolves beside its own file (the sibling rule)")
+check("missing module file: a/helper.scaly" not in mt,
+      "  and is not looked up under a directory named after the file")
+# No packages/ anywhere above the fixture, so there is no absolute base: the
+# package lens must state the path and offer NO command.
+pkg_rows = [r for r in root_rows if r[1].startswith("package")]
+check(len(pkg_rows) == 1 and pkg_rows[0][1] == "package: packages/scaly/0.1.0/scaly.scaly"
+      and pkg_rows[0][2] == "" and pkg_rows[0][3] is None,
+      "with no resolution base the package lens is plain text, not a link")
+# In the checkout the same declaration IS clickable and absolute.
+tree_pkg = [r for r in rows(lenses("packages/scalyls/0.1.0/scalyls.scaly")) if r[1].startswith("package root: ")]
+check(len(tree_pkg) == 2 and all(r[2] == "scaly.openPath" and os.path.isabs(r[3]) for r in tree_pkg),
+      "in a checkout the package lens resolves absolutely and is clickable")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp codeLens plan-free"; else bad "lsp codeLens plan-free"; fi
 
 # ---- semanticTokens/full: lexical token classification ----
 # A single byte scan classifies every token into the legend (keyword/type/

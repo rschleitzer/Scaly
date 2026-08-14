@@ -1,0 +1,611 @@
+; codelens.scaly - textDocument/codeLens: assemble the CodeLens[] array from
+; every lens family.
+;
+; One family lives elsewhere because it is expensive: scalyls.tasklens plans a
+; package root to answer the self-scaling verdict of each `for` loop. The three
+; families HERE need no plan at all — a path table, one parse, and a length
+; check — which is why they answer on a buffer the planner could not touch:
+;
+;   GENERATED FILE   "generated from codegen/parser-scaly.scm - edit the
+;                    generator, then ./mkp" at the top of every file ./mkp
+;                    writes. The rule it states is one this repo breaks often
+;                    enough to document it in CLAUDE.md; a lens states it where
+;                    the mistake is made. The table below MIRRORS ./mkp (its
+;                    GENERATED list plus its msggen loop) and mkp is the
+;                    authority — the two must agree, and a generator that moves
+;                    must move here too.
+;
+;   PACKAGE / MODULE the file a `package NAME VERSION` or `module NAME`
+;                    declaration resolves to, and — the useful half — when it
+;                    resolves to NOTHING. A declared module whose file is
+;                    missing is a compile error waiting for the next build; a
+;                    lens turns it into an answer while typing the line.
+;
+;   RUN              "Run (scalyc --jit)" on a file that HAS top-level
+;                    statements, i.e. a program rather than a library. This one
+;                    is CLICKABLE, so it is the reason the extension gained two
+;                    commands (scaly.runFile / scaly.openPath): a lens command
+;                    id must be a command the CLIENT has registered — the
+;                    built-in `vscode.open` takes a Uri OBJECT and rejects the
+;                    string a JSON-RPC argument can carry.
+;
+; ASCII ONLY in the titles, for the reason tasklens.scaly gives.
+;
+; PATH ARITHMETIC, not search: every family below decides with `ends_with` /
+; `last_index_of` / `substring` on the document path. There is no substring
+; SEARCH primitive on String (index_of takes a byte), and none is needed —
+; which also means these lenses cost nothing measurable next to the plan.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Syntax unions are matched by PAYLOAD TYPE
+; (`when m: ModuleSyntax`), and every arm of a value-returning choose returns
+; explicitly. Quotes are 0x22 bytes.
+
+use scaly.io.File
+use scaly.memory.runtime
+use scaly.memory.root_pages.getenv
+
+use scalyls.diagnostics
+use scalyls.symbols
+use scalyls.json
+use scalyls.tasklens
+
+use scalyc.compiler.parser
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+define codelens
+{
+    ; The whole CodeLens[] array for `uri`. `text` is the source the worker
+    ; resolved (the parent's buffer, or the file from disk when it had none).
+    function lenses(rp, uri: String, text: String) returns String
+    {
+        let path diagnostics.strip_uri uri
+
+        var sb StringBuilder()
+        sb.append("[" as char)
+        var first true
+
+        ; Cheapest first, and in the order they read down the file: the file's
+        ; own banner and its Run action sit at the top, the declarations follow,
+        ; the loops last. The client sorts by position anyway; this only keeps
+        ; the array legible in a transcript.
+        let head codelens.head_fragment(path, text)
+        if head.get_length() > 0
+        {
+            symbols.append_fragment(&sb, head)
+            set first: false
+        }
+
+        let decls codelens.declaration_fragment(text, path)
+        if decls.get_length() > 0
+        {
+            if first = false
+                sb.append("," as char)
+            symbols.append_fragment(&sb, decls)
+            set first: false
+        }
+
+        let loops tasklens.for_lens_fragment(uri, text)
+        if loops.get_length() > 0
+        {
+            if first = false
+                sb.append("," as char)
+            symbols.append_fragment(&sb, loops)
+            set first: false
+        }
+
+        sb.append("]" as char)
+        sb.to_string()
+    }
+
+    ; ====================================================================
+    ; The file-level lenses, both at offset 0.
+    ;
+    ; Offset 0 rather than "the first top-level statement": a file-level action
+    ; belongs at the top of the file, the line always exists, and it costs no
+    ; walk over the statement union. Two lenses at one position are what an
+    ; editor shows side by side, which is the conventional look for this.
+    ; ====================================================================
+    function head_fragment(rp, path: String, text: String) returns String
+    {
+        var sb StringBuilder()
+        var first true
+
+        let banner codelens.generated_banner(text, path)
+        if banner.get_length() > 0
+        {
+            symbols.append_fragment(&sb, banner)
+            set first: false
+        }
+
+        if codelens.has_top_level_statements text
+        {
+            if first = false
+                sb.append("," as char)
+            symbols.append_fragment(&sb, codelens.lens_object(text, 0, 3, "Run (scalyc --jit)", "scaly.runFile", path))
+            set first: false
+        }
+
+        sb.to_string()
+    }
+
+    ; True when the document is a PROGRAM: it parses and carries at least one
+    ; top-level statement. A library root (`define X { module a }`) carries
+    ; none, so it gets no Run lens — which is the whole distinction the CLI
+    ; makes too. A buffer that does not parse gets none either: `--jit` on it
+    ; would print a diagnostic the editor is already showing.
+    function has_top_level_statements(text: String) returns bool
+    {
+        var p parser.Parser(text)
+        choose p.parse_program()
+            when err: Error
+                return false
+            when program: Success
+            {
+                if program.statements = null
+                    return false
+                let stmts (*program.statements)
+                if stmts.length = 0
+                    return false
+                return true
+            }
+    }
+
+    ; ====================================================================
+    ; GENERATED FILES — the table, mirroring ./mkp.
+    ;
+    ; Answers the finished banner lens for `path`, or "". Every entry is decided
+    ; on a path SUFFIX, so the checkout root is whatever precedes it and the
+    ; click target is absolute without knowing where the checkout lives.
+    ;
+    ; Each arm hands banner_lens# BOTH halves — the root it just computed and the
+    ; generator's path RELATIVE to it — because the relative path is what the
+    ; title must show and only this table knows it. The first draft answered the
+    ; absolute path alone and rebuilt the relative one from the common prefix of
+    ; the two paths; that is not the same thing and it was wrong wherever the
+    ; generator sits in the same directory branch as its output ("controlflow.sgm"
+    ; for tests/controlflow.sgm, since the document is tests/selfhosted/…).
+    ; ====================================================================
+    function generated_banner(rp, text: String, path: String) returns String
+    {
+        ; The three compiler-side DSSSL outputs (mkp's `gen codegen/scaly.dsl`).
+        let parser_out "/packages/scalyc/0.1.0/scalyc/compiler/parser.scaly"
+        let root1 codelens.strip_suffix(path, parser_out)
+        if root1.get_length() > 0
+            return codelens.banner_lens(text, root1, "codegen/parser-scaly.scm")
+
+        let syntax_out "/packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly"
+        let root2 codelens.strip_suffix(path, syntax_out)
+        if root2.get_length() > 0
+            return codelens.banner_lens(text, root2, "codegen/syntax-scaly.scm")
+
+        let grammar_out "/packages/scalyls/0.1.0/scalyls/grammar.scaly"
+        let root3 codelens.strip_suffix(path, grammar_out)
+        if root3.get_length() > 0
+            return codelens.banner_lens(text, root3, "codegen/highlight-scaly.scm")
+
+        ; tests/selfhosted/<topic>__<name>.scaly comes from tests/<topic>.sgm
+        ; (mkp's four `gen codegen/test-<topic>.dsl` lines). The .sgm is what an
+        ; author edits — the literate document IS the test source — so that is
+        ; what the lens points at, not the .dsl driver.
+        let dir codelens.directory_of path
+        let base codelens.file_name path
+        if dir.ends_with("/tests/selfhosted")
+        {
+            let cut base.index_of("_" as u8)
+            if cut > 0
+            {
+                let topic base.substring(0, cut as size_t)
+                var rel StringBuilder()
+                rel.append "tests/"
+                rel.append topic
+                rel.append ".sgm"
+                let r rel.to_string()
+                let root codelens.strip_suffix(dir, "/tests/selfhosted")
+                if root.get_length() > 0
+                    return codelens.banner_lens(text, root, r)
+            }
+        }
+
+        ; The opensp message tables come from James Clark's .msg catalogs via
+        ; tools/msggen.py (mkp's msggen loop). The catalogs live in a separate
+        ; checkout that need not exist here, so the lens points at the
+        ; generator, which always does.
+        if dir.ends_with("/packages/opensp/0.1.0/opensp")
+        {
+            if base.ends_with("Messages.scaly")
+            {
+                let root codelens.strip_suffix(dir, "/packages/opensp/0.1.0/opensp")
+                if root.get_length() > 0
+                    return codelens.banner_lens(text, root, "tools/msggen.py")
+            }
+        }
+
+        ""
+    }
+
+    ; The banner lens itself: the title names the generator RELATIVE to the
+    ; checkout (what a reader can act on), the click opens it absolutely.
+    function banner_lens(rp, text: String, root: String, rel: String) returns String
+    {
+        let target codelens.join(root, rel)
+        var title StringBuilder()
+        title.append "generated from "
+        title.append rel
+        title.append " - edit the generator, then ./mkp"
+        let t title.to_string()
+        codelens.lens_object(text, 0, 3, t, "scaly.openPath", target)
+    }
+
+    ; ====================================================================
+    ; PACKAGE / MODULE declarations.
+    ;
+    ; THE SEARCH DIRECTORY IS NOT ALWAYS THE FILE'S OWN — this is the whole
+    ; subtlety, and getting it wrong makes the lens LIE about the file system.
+    ; The Modeler is the authority (Modeler.build_module# walks a file's
+    ; top-level declarations with the directory the FILE was loaded from, while
+    ; Modeler.handle_namespace# descends into `define NS { … }` with
+    ; <dir>/NS — skipping that append when the directory's last segment is
+    ; already NS). So:
+    ;
+    ;   module lexer   at the top level of compiler/parser.scaly
+    ;                                       -> compiler/lexer.scaly   (SIBLING)
+    ;   define scalyls { module json }  in   scalyls.scaly
+    ;                                       -> scalyls/json.scaly     (CHILD)
+    ;
+    ; The first draft used the child rule everywhere and reported "missing
+    ; module file: parser/lexer.scaly" for a module that resolves perfectly —
+    ; found by pointing the lens at this tree's own sources on the first run.
+    ; `base` below is that search directory, threaded exactly as the Modeler
+    ; threads it; `dir` is the document's own directory, used only for display.
+    ; ====================================================================
+    function declaration_fragment(rp, text: String, path: String) returns String
+    {
+        let dir codelens.directory_of path
+        var p parser.Parser(text)
+        var result String("")
+        choose p.parse_program()
+            when err: Error
+            {
+                ; No parse, no declarations. The parse error itself is a
+                ; diagnostic, not a lens.
+            }
+            when program: Success
+                set result: codelens.declarations_fragment(text, path, dir, dir, program.file.declarations)
+        result
+    }
+
+    function declarations_fragment(rp, text: String, path: String, base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) returns String
+    {
+        var sb StringBuilder()
+        if decls = null
+            return sb.to_string()
+        let list (*decls)
+        var first true
+        var i: size_t 0
+        while i < list.length
+        {
+            let dptr list.get i
+            if dptr <> null
+            {
+                let d (*dptr)
+                let piece codelens.declaration_lens(text, path, base, dir, d)
+                if piece.get_length() > 0
+                {
+                    if first = false
+                        sb.append("," as char)
+                    symbols.append_fragment(&sb, piece)
+                    set first: false
+                }
+            }
+            set i: i + 1
+        }
+        sb.to_string()
+    }
+
+    ; One declaration: a lens for `package` / `module`, a recursion for a
+    ; namespace, nothing for the rest.
+    function declaration_lens(rp, text: String, path: String, base: String, dir: String, decl: DeclarationSyntax) returns String
+    {
+        choose decl
+            when pkg: PackageSyntax
+                return codelens.package_lens(text, path, pkg)
+            when m: ModuleSyntax
+                return codelens.module_lens(text, base, dir, m)
+            when def: DefinitionSyntax
+            {
+                choose def.concept_
+                    when n: NamespaceSyntax
+                    {
+                        ; Modeler.handle_namespace#: <base>/<name>, unless
+                        ; base's last segment already IS the name.
+                        var child base
+                        let last codelens.file_name base
+                        if last <> def.name
+                            set child: codelens.join(base, def.name)
+                        return codelens.declarations_fragment(text, path, child, dir, n.declarations)
+                    }
+                    when c: ClassSyntax
+                        return ""
+                    when un: UnionSyntax
+                        return ""
+                    when cn: ConstantSyntax
+                        return ""
+                    when dl: DelegateSyntax
+                        return ""
+                    when ic: IntrinsicSyntax
+                        return ""
+            }
+            when e: EmptySyntax
+                return ""
+            when u: UseSyntax
+                return ""
+            when priv: PrivateSyntax
+                return ""
+            when f: FunctionSyntax
+                return ""
+            when pr: ProcedureSyntax
+                return ""
+            when o: OperatorSyntax
+                return ""
+            when t: TraitSyntax
+                return ""
+            when mac: MacroSyntax
+                return ""
+            when mut: MutableSyntax
+                return ""
+            when sh: SharedSyntax
+                return ""
+    }
+
+    ; `package NAME VERSION` -> packages/NAME/VERSION/NAME.scaly under the ONE
+    ; resolution base the compiler uses: $SCALY_HOME when set, else the current
+    ; directory (Package system, "Resolution has exactly ONE base").
+    ;
+    ; The version text is read from the SOURCE BYTES rather than from the two
+    ; Literals of VersionSyntax: a syntax node's `end` runs to the start of the
+    ; next token, so a span would carry trailing trivia — while "digits and
+    ; dots from version.start" is exactly a version and nothing else.
+    function package_lens(rp, text: String, path: String, pkg: PackageSyntax) returns String
+    {
+        if pkg.version = null
+            return ""
+        let v (*pkg.version)
+        let version codelens.version_text(text, v.start)
+        if version.get_length() = 0
+            return ""
+
+        var rel StringBuilder()
+        rel.append "packages/"
+        rel.append(pkg.name.name)
+        rel.append "/"
+        rel.append version
+        rel.append "/"
+        rel.append(pkg.name.name)
+        rel.append ".scaly"
+        let relative rel.to_string()
+
+        ; No base means no ABSOLUTE answer, and a relative path is not something
+        ; to hand a click: vscode.Uri.file resolves it against nothing. Say what
+        ; the declaration names and offer no command.
+        let base codelens.resolution_base path
+        if base.get_length() = 0
+        {
+            var plain StringBuilder()
+            plain.append "package: "
+            plain.append relative
+            let pt plain.to_string()
+            return codelens.lens_object(text, pkg.start, 7, pt, "", "")
+        }
+
+        let target codelens.join(base, relative)
+        if File.exists(target) = false
+        {
+            var missing StringBuilder()
+            missing.append "not found: "
+            missing.append relative
+            let mt missing.to_string()
+            return codelens.lens_object(text, pkg.start, 7, mt, "", "")
+        }
+        var title StringBuilder()
+        title.append "package root: "
+        title.append relative
+        let t title.to_string()
+        codelens.lens_object(text, pkg.start, 7, t, "scaly.openPath", target)
+    }
+
+    ; `module NAME` -> <base>/NAME.scaly, where `base` is the search directory
+    ; the Modeler would use (see the section comment above). Shown relative to
+    ; the document's own directory, so a sibling reads "lexer.scaly" and a
+    ; namespace child reads "scalyls/json.scaly".
+    function module_lens(rp, text: String, base: String, dir: String, m: ModuleSyntax) returns String
+    {
+        var t StringBuilder()
+        t.append(m.name)
+        t.append ".scaly"
+        let leaf t.to_string()
+        let target codelens.join(base, leaf)
+        let relative codelens.relative_to(target, dir)
+
+        if File.exists(target) = false
+        {
+            var missing StringBuilder()
+            missing.append "missing module file: "
+            missing.append relative
+            let mt missing.to_string()
+            return codelens.lens_object(text, m.start, 6, mt, "", "")
+        }
+        var title StringBuilder()
+        title.append "opens "
+        title.append relative
+        let t title.to_string()
+        codelens.lens_object(text, m.start, 6, t, "scaly.openPath", target)
+    }
+
+    ; The digits-and-dots run starting at `offset` ("0.1.0").
+    function version_text(rp, text: String, offset: size_t) returns String
+    {
+        let n text.get_length()
+        var k offset
+        while k < n
+        {
+            let c text.get k
+            var ok false
+            if c = ("." as char)
+                set ok: true
+            if c >= 0x30
+                if c <= 0x39
+                    set ok: true
+            if ok = false
+                break
+            set k: k + 1
+        }
+        if k <= offset
+            return ""
+        text.substring(offset, k - offset)
+    }
+
+    ; The base a `package` declaration resolves against, ABSOLUTE, or "".
+    ;
+    ; The compiler has exactly ONE base: $SCALY_HOME when set, else
+    ; cwd-relative. The first half carries over; the second CANNOT — a language
+    ; server's cwd is whatever the editor chose, and a lens that turned that
+    ; into a click would open a file the compiler never reads. So the fallback
+    ; asks the DOCUMENT instead: the nearest ancestor directory that contains a
+    ; `packages` directory is the checkout the compiler would be invoked from,
+    ; which is the same answer for every real in-repo case and no answer at all
+    ; outside one.
+    function resolution_base(rp, path: String) returns String
+    {
+        let home getenv "SCALY_HOME"
+        if home <> null
+        {
+            let s String(home)
+            if s.get_length() > 0
+                return s
+        }
+
+        ; Walk up. The bound is a loop guard, not a depth limit — a path is
+        ; finite, but a malformed one must not be able to spin the worker.
+        var dir codelens.directory_of path
+        var depth 0
+        while depth < 64
+        {
+            let probe codelens.join(dir, "packages")
+            if File.exists probe
+                return dir
+            let up codelens.directory_of dir
+            if up = dir
+                return ""
+            if up.get_length() <= 1
+                return ""
+            set dir: up
+            set depth: depth + 1
+        }
+        ""
+    }
+
+    ; ====================================================================
+    ; One LSP CodeLens.
+    ;
+    ; `command_id` empty -> plain, non-clickable text (VS Code renders a span
+    ; instead of a link). Otherwise the id is invoked with `argument` as its
+    ; single string parameter — which is why both commands the server names
+    ; take a PATH: a string is all a JSON-RPC argument can be.
+    ; ====================================================================
+    function lens_object(rp, source: String, offset: size_t, width: size_t, title: String, command_id: pointer[const_char], argument: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("range"))
+        sb.append(symbols.range_for(source, offset, offset + width))
+        sb.append("," as char)
+        sb.append(symbols.key("command"))
+        sb.append("{" as char)
+        sb.append(symbols.key("title"))
+        sb.append(json.quote_string(title))
+        sb.append("," as char)
+        sb.append(symbols.key("command"))
+        sb.append("\"" as char)
+        sb.append command_id
+        sb.append("\"" as char)
+        let id String(command_id)
+        if id.get_length() > 0
+        {
+            sb.append("," as char)
+            sb.append(symbols.key("arguments"))
+            sb.append("[" as char)
+            sb.append(json.quote_string(argument))
+            sb.append("]" as char)
+        }
+        sb.append("}" as char)
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    ; ====================================================================
+    ; Path arithmetic.
+    ; ====================================================================
+
+    ; <path minus suffix>, or "" when path does not end in suffix (or would be
+    ; left empty — a suffix that IS the whole path answers nothing rather than
+    ; a bare relative name).
+    function strip_suffix(rp, path: String, suffix: String) returns String
+    {
+        if path.ends_with(suffix) = false
+            return ""
+        let plen path.get_length()
+        let slen suffix.get_length()
+        if slen >= plen
+            return ""
+        path.substring(0, plen - slen)
+    }
+
+    function join(rp, left: String, right: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append left
+        sb.append "/"
+        sb.append right
+        sb.to_string()
+    }
+
+    ; Everything before the last "/" ("." when there is none).
+    function directory_of(rp, path: String) returns String
+    {
+        let at path.last_index_of("/" as u8)
+        if at <= 0
+            return "."
+        path.substring(0, at as size_t)
+    }
+
+    ; Everything after the last "/".
+    function file_name(rp, path: String) returns String
+    {
+        let at path.last_index_of("/" as u8)
+        if at < 0
+            return path
+        let start (at as size_t) + 1
+        let n path.get_length()
+        if start >= n
+            return ""
+        path.substring(start, n - start)
+    }
+
+    ; `target` with a leading "<dir>/" removed, or `target` unchanged when it
+    ; does not live under `dir`. What the reader wants to see for a resolved
+    ; module: "lexer.scaly" for a sibling, "scalyls/json.scaly" for a child.
+    function relative_to(rp, target: String, dir: String) returns String
+    {
+        let prefix codelens.join(dir, "")
+        if target.starts_with(prefix) = false
+            return target
+        let plen prefix.get_length()
+        let tlen target.get_length()
+        if plen >= tlen
+            return target
+        target.substring(plen, tlen - plen)
+    }
+
+}
