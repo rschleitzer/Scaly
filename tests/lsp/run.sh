@@ -131,20 +131,23 @@ def next_frame(timeout=20.0):
         buf.extend(chunk)
 def send(o): p.stdin.write(frame(o))
 
+import shutil as _sh; _ws = "/tmp/lsp_ws/basic"; _sh.rmtree(_ws, ignore_errors=True); os.makedirs(_ws)
+_uri = "file://" + _ws + "/ok.scaly"
+
 frames = []
 send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
 frames.append(next_frame())
 send({"jsonrpc":"2.0","method":"initialized","params":{}})
 send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
-        "uri":"file:///tmp/ok.scaly","languageId":"scaly","version":1,
+        "uri":_uri,"languageId":"scaly","version":1,
         "text":"function answer() returns int\n{\n    return 42\n}\n"}}})
 frames.append(next_frame())
 send({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
-        "textDocument":{"uri":"file:///tmp/ok.scaly","version":2},
+        "textDocument":{"uri":_uri,"version":2},
         "contentChanges":[{"text":"function f() returns int\n{\n    return nope()\n}\n"}]}})
 frames.append(next_frame())
 send({"jsonrpc":"2.0","method":"textDocument/didClose","params":{
-        "textDocument":{"uri":"file:///tmp/ok.scaly"}}})
+        "textDocument":{"uri":_uri}}})
 frames.append(next_frame())
 send({"jsonrpc":"2.0","id":2,"method":"shutdown"})
 frames.append(next_frame())
@@ -167,7 +170,7 @@ check(len(diags) == 1, "didChange (bad call) -> 1 diagnostic")
 check("nope" in diags[0]["message"], "diagnostic message names the missing fn")
 check(diags[0]["range"]["start"]["line"] == 2, "diagnostic on 0-based line 2")
 check(frames[3].get("method") == "textDocument/publishDiagnostics", "didClose -> publishDiagnostics")
-check(frames[3]["params"]["uri"] == "file:///tmp/ok.scaly", "didClose clears the right uri")
+check(frames[3]["params"]["uri"] == _uri, "didClose clears the right uri")
 check(frames[3]["params"]["diagnostics"] == [], "didClose -> empty diagnostics (cleared)")
 check(frames[4].get("id") == 2 and frames[4].get("result") is None, "shutdown -> null result")
 sys.exit(1 if failures else 0)
@@ -234,7 +237,8 @@ import sys, json, subprocess, os
 body = "".join("    f(%d)\n" % i for i in range(1500))
 doc  = "function f(a: int) returns int\n{\n" + body + "    0\n}\n"
 last = doc.count("\n") - 1
-uri = "file:///tmp/lsp_budget_test.scaly"
+import shutil as _sh; _ws = "/tmp/lsp_ws/budget_test"; _sh.rmtree(_ws, ignore_errors=True); os.makedirs(_ws)
+uri = "file://" + _ws + "/lsp_budget_test.scaly"
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
 inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
@@ -574,6 +578,22 @@ if [ $rc -eq 0 ]; then ok "lsp references"; else bad "lsp references"; fi
 #   * `let NAME` shadows (Step 38, already covered above — pinned here too so
 #     the two directions are read together)
 #   * comments and string literals are never occurrences
+# ★Its own directory under /tmp/lsp_ws/, and here that is load-bearing for the
+# same reason it is in the references block above: `references` is answered
+# from the document's DIRECTORY tree, and every assertion below counts EXACT
+# occurrences (`[1, 5, 5, 6]`, "exactly the 4 real occurrences"), so one
+# sibling naming `counter` turns a correct answer into a red test — measured:
+# the same fixture with a `counter`-declaring sibling answers 8 locations
+# across 2 files.
+# ★★★It was missed when the other seventeen were isolated on 2026-08-14, and
+# the reason it nevertheless stayed green on macOS turned out to be a DEFECT
+# rather than luck: /tmp is a symlink to private/tmp, `find` does not follow a
+# symlinked STARTING POINT, and scalyls' walk therefore listed nothing at all
+# for any document sitting directly in /tmp. So this fixture was not immune,
+# it was answered by a broken walk — and so was every other /tmp fixture on
+# this host, which is why the Linux run was the first to see the coupling.
+# Fixed with `find -H` (symbols.list_scaly_files); the gate for THAT is "lsp
+# symlinked workspace root" below.
 python3 - <<'PY'
 import sys, json, subprocess
 src = ("; counter is mentioned in this comment\n"          # 0
@@ -599,7 +619,8 @@ src = ("; counter is mentioned in this comment\n"          # 0
        "    let counter 7\n"                               # 20
        "    counter\n"                                     # 21
        "}\n")
-path = "/tmp/lsp_scan_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/scan_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/lsp_scan_test.scaly"
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -643,6 +664,73 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp reference scan boundaries"; else bad "lsp reference scan boundaries"; fi
+
+# ---- the walk root reached through a SYMLINK ----
+# ★scalyls lists a directory with `find`, and `find` does not follow a symlink
+# that is its own starting point — so before `-H` (symbols.list_scaly_files,
+# 2026-08-14) a workspace behind a symlink answered every cross-file request as
+# if it held ONE file: references and rename lost every other file,
+# workspace/symbol went empty, the definition fan-out never left the buffer.
+# Silent in all of them, because a shorter list is a well-formed result.
+#
+# The fixture is the defect in miniature: two files in `real/`, opened through
+# `link/`. The assertion is that the SIBLING is found — which is exactly what
+# fails without `-H`, and the reason this test exists rather than a comment.
+# ★It is not an exotic setup: /tmp is a symlink on macOS, which is why every
+# fixture in this file was walking a directory that listed nothing there.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+ws = "/tmp/lsp_ws/symlink_test"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws + "/real")
+main = ("mutable counter: int 0\n"                      # 0
+        "\n"
+        "function bump() returns int\n"
+        "{\n"
+        "    set counter: counter + 1\n"                # 4
+        "}\n")
+sibling = ("function reader() returns int\n"
+           "{\n"
+           "    counter\n"                              # 2
+           "}\n")
+open(ws + "/real/main.scaly", "w").write(main)
+open(ws + "/real/sibling.scaly", "w").write(sibling)
+os.symlink("real", ws + "/link")
+path = ws + "/link/main.scaly"                          # the path the editor sees
+uri  = "file://" + path
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":main}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{
+        "textDocument":{"uri":uri},"position":{"line":0,"character":8},
+        "context":{"includeDeclaration":True}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+locs = next((x for x in frames if x.get("id") == 2), {}).get("result") or []
+files = sorted(set(os.path.basename(l["uri"]) for l in locs))
+check("sibling.scaly" in files,
+      "the sibling behind the symlinked root is walked (find -H)")
+check(files == ["main.scaly", "sibling.scaly"],
+      "both files and no others: " + ",".join(files))
+check(len(locs) == 4, "3 occurrences in the open buffer + 1 in the sibling (got %d)" % len(locs))
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp symlinked workspace root"; else bad "lsp symlinked workspace root"; fi
 
 # ---- documentHighlight: occurrences in the current document (no uri) ----
 # Same lexical scan as references, but each result is a range-only
@@ -777,7 +865,8 @@ doc = ("mutable counter: int 0\n"
        "function pick[T](a: T, b: T) returns T\n{\n    a\n}\n"
        "\n"
        "procedure emit(text: String)\n{\n}\n")
-uri = "file:///tmp/lsp_detail_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/detail_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+uri = "file://" + _ws + "/lsp_detail_test.scaly"
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
 def items_at(line, ch):
@@ -949,7 +1038,8 @@ import sys, json, subprocess, os
 doc = ("function helper(a: int) returns int\n{\n    a\n}\n\n"
        "function middle(b: int) returns int\n{\n    helper(b) + helper(b + 1)\n}\n\n"
        "function top() returns int\n{\n    middle(1) + helper(2)\n}\n")
-uri = "file:///tmp/lsp_callh_test.scaly"
+import shutil as _sh; _ws = "/tmp/lsp_ws/callh_test"; _sh.rmtree(_ws, ignore_errors=True); os.makedirs(_ws)
+uri = "file://" + _ws + "/lsp_callh_test.scaly"
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
 def session(reqs):
@@ -1023,7 +1113,12 @@ doc = ("define Point\n(\n    x: int\n)\n{\n}\n\n"
        "    let q make()\n"            # 15  initialised by a CALL
        "    var sb StringBuilder()\n"  # 16  stdlib, cross-package
        "    p.x\n}\n")
-uri = "file:///tmp/lsp_typedef_test.scaly"
+# ★Own empty directory, like every other fixture: the document's own dir tree
+# is the fallback walk root, so with the fixtures sharing /tmp this test
+# resolved `Point` to a SIBLING fixture's `define Point` (it went red the
+# moment `find -H` made that walk work at all on macOS).
+import shutil as _sh; _ws = "/tmp/lsp_ws/typedef_test"; _sh.rmtree(_ws, ignore_errors=True); os.makedirs(_ws)
+uri = "file://" + _ws + "/lsp_typedef_test.scaly"
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
 cases = [(14, 8), (15, 8), (15, 10), (9, 4), (16, 8)]
@@ -1082,7 +1177,8 @@ doc = ("function outer(a: int) returns int\n"
        "    let v compute(a + inner(a, 2), 7)\n"
        "    v\n"
        "}\n")
-uri = "file:///tmp/lsp_selrange_test.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/selrange_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+uri = "file://" + _ws + "/lsp_selrange_test.scaly"
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
 positions = [{"line":2,"character":28}, {"line":3,"character":4}]
@@ -2005,7 +2101,9 @@ src = ("function helper() returns int\n"
        "{\n"
        "    return nope()\n"                   # line 13: semantic error
        "}\n")
-path = "/tmp/lsp_pasterror_standalone.scaly"
+ws = "/tmp/lsp_ws/pasterror_standalone"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+path = ws + "/lsp_pasterror_standalone.scaly"
 open(path, "w").write(src)
 d = diagnose("file://" + path, src) or []
 check(any("expected" in m for m in at(d, 7)),
@@ -2014,7 +2112,7 @@ check(any("nope" in m for m in at(d, 13)),
       "standalone: and the planner diagnostic PAST it is reported too")
 
 # ---- package member: the semantic half comes from DISK ----
-root_dir = "/tmp/lsp_pasterror_pkg"
+root_dir = "/tmp/lsp_ws/pasterror_pkg"
 shutil.rmtree(root_dir, ignore_errors=True)
 os.makedirs(root_dir + "/pkgroot")
 open(root_dir + "/pkgroot.scaly", "w").write("define pkgroot\n{\n    module member\n}\n")
@@ -2047,7 +2145,9 @@ src = ("function helper(\n"                     # line 0: broken header
        "{\n"
        "    return helper()\n"                  # line 7: helper IS declared above
        "}\n")
-path = "/tmp/lsp_pasterror_invented.scaly"
+ws = "/tmp/lsp_ws/pasterror_invented"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+path = ws + "/lsp_pasterror_invented.scaly"
 open(path, "w").write(src)
 d = diagnose("file://" + path, src) or []
 check(len(at(d, 0)) == 1, "invented-guard: the broken header is reported")
@@ -2175,7 +2275,8 @@ want = ("define Point\n"
         "        0\n"
         "    }\n"
         "}\n")
-path = "/tmp/lsp_format_doc.scaly"
+import shutil as _sh; _ws = "/tmp/lsp_ws/format_doc"; _sh.rmtree(_ws, ignore_errors=True); os.makedirs(_ws)
+path = _ws + "/lsp_format_doc.scaly"
 open(path, "w").write(src)
 uri = "file://" + path
 
@@ -3059,7 +3160,8 @@ def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-uri = "file:///tmp/sig.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/sig"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+uri = "file://" + _ws + "/sig.scaly"
 doc = (
     "function foo(buf: pointer[Page], items: Vector[char], opt: ref[String]?) returns int\n"  # 0
     "{\n"                                                                                       # 1
@@ -3153,7 +3255,8 @@ def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-uri = "file:///tmp/xpkg.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/xpkg"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+uri = "file://" + _ws + "/xpkg.scaly"
 doc = ("function f()\n"               # 0
        "{\n"                          # 1
        "    var sb StringBuilder$()\n"# 2
@@ -3252,12 +3355,19 @@ def rel(r):
     if not r: return None
     return r["uri"].replace("file://" + home + "/", "")
 
+# Own empty directory per document: the doc's dir tree is the fallback walk
+# root, so a shared scratch dir would let a sibling fixture answer instead of
+# packages/ — which is the whole claim of each check below.
+import shutil as _sh
+_ws = "/tmp/lsp_ws/moddef"; _sh.rmtree(_ws, ignore_errors=True); os.makedirs(_ws)
+def _u(name): return "file://" + _ws + "/" + name
+
 # 1. cross-package (doc outside packages/, so the hit can only come from there)
-r = define_at("file:///tmp/moddef1.scaly",
+r = define_at(_u("moddef1.scaly"),
               "function f()\n{\n    var a Array[int]()\n}\n", 2, 12)
 check(rel(r) == "packages/scaly/0.1.0/scaly/containers/Array.scaly",
       "definition: Array resolves to `define Array[T]`, not `module Array`")
-r = define_at("file:///tmp/moddef2.scaly",
+r = define_at(_u("moddef2.scaly"),
               "function f()\n{\n    var s StringBuilder()\n}\n", 2, 12)
 check(rel(r) == "packages/scaly/0.1.0/scaly/containers/StringBuilder.scaly",
       "definition: StringBuilder resolves to its own file, not `module StringBuilder`")
@@ -3276,7 +3386,7 @@ check(rel(r) == "packages/scaly/0.1.0/scaly/containers/Vector.scaly",
       "definition: the cursor ON `module Vector` jumps INTO the module's file")
 
 # 3. module-only name: the `module` line is the only answer there is
-r = define_at("file:///tmp/moddef3.scaly",
+r = define_at(_u("moddef3.scaly"),
               "function f()\n{\n    let r runtime\n}\n", 2, 12)
 check(rel(r) == "packages/scaly/0.1.0/scaly/memory.scaly",
       "definition: `runtime` (module with no same-named define) still answers the module line")
@@ -3474,7 +3584,8 @@ def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-uri = "file:///tmp/xpkgmem.scaly"
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/xpkgmem"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+uri = "file://" + _ws + "/xpkgmem.scaly"
 doc = ("function f()\n"               # 0
        "{\n"                          # 1
        "    var sb StringBuilder$()\n"# 2

@@ -7175,10 +7175,30 @@ define symbols
         ""
     }
 
-    ; Run `find '<dir>' -name '*.scaly'` and return its stdout (newline-
+    ; Run `find -H '<dir>' -name '*.scaly'` and return its stdout (newline-
     ; separated absolute paths) with a guaranteed trailing LF. "" on failure.
     ; The quote bytes are emitted as 0x27 (the lexer treats a `'` as the start
     ; of a string-identifier token, so it must not appear in a "..." literal).
+    ;
+    ; ★★★The `-H` is load-bearing and was missing until 2026-08-14: `find` does
+    ; NOT follow a symlink that is its own STARTING POINT, so a walk root
+    ; reached through one listed NOTHING — and every cross-file answer then
+    ; came back as if the workspace held a single file. Silently, because a
+    ; shorter list is a well-formed result: references/rename lose every other
+    ; file, workspace/symbol goes empty, the definition fan-out never leaves
+    ; the buffer. Measured on this box, where /tmp -> private/tmp:
+    ;     find /tmp -name '*.scaly'          -> 0
+    ;     find /private/tmp -name '*.scaly'  -> 245
+    ;     find -H /tmp -name '*.scaly'       -> 245
+    ; `-H` follows symlinks for the command-line operand ONLY, so a link INSIDE
+    ; the tree is still not descended — no cycles, no file counted twice. Both
+    ; BSD and GNU find have it.
+    ; ★How it hid: it needs a symlinked root to show at all, so it was invisible
+    ; on Linux boxes and on any project under a real path, while on macOS it
+    ; made every /tmp-based LSP fixture accidentally immune to the workspace
+    ; walk — which is exactly why the shared-scratch coupling the Linux run
+    ; found on 2026-08-14 could never reproduce here. Gate: "lsp symlinked
+    ; workspace root" in tests/lsp/run.sh.
     function list_scaly_files(rp, dir: String) returns String
     {
         ; ★Answered from this request's cache when possible. The body below
@@ -7193,7 +7213,7 @@ define symbols
 
         set prof_list: prof_list + 1
         var cmd StringBuilder()
-        cmd.append "find "
+        cmd.append "find -H "
         cmd.append("'" as char)
         var di: size_t 0
         let dn dir.get_length()
