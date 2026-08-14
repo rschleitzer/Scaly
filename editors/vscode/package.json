@@ -17,9 +17,6 @@
     "Programming Languages"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onLanguage:scaly"
-  ],
   "contributes": {
     "languages": [
       {
