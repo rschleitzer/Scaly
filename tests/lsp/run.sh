@@ -4305,6 +4305,187 @@ PYINST
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeLens instantiations"; else bad "lsp codeLens instantiations"; fi
 
+# ---- codeLens: mutable / shared module globals ----
+# codelens.storage_lens# states two things a reader cannot see on the line:
+# which THREAD sees the cell (`mutable` is thread-local, `shared` is
+# process-global) and whether the declaration produces a global AT ALL — the
+# Modeler drops one whose annotation is not a TYPE, silently, with rc 0.
+#
+# The gate is an IR cross-check for the same reason the placement gate is one:
+# the emitted IR is the second producer of both facts, so the expectation is
+# DERIVED from it per declaration rather than written down here —
+#   @n = thread_local global ...  -> "thread-local: ..."
+#   @n = global ...               -> "process-global: ..."
+#   no @n at all                  -> "dropped: ..."
+# It cannot rot as the emitter's choices move; it breaks only when the lens and
+# the compiler disagree.
+python3 - "$SCALYC" <<'PYSTOR'
+import sys, json, subprocess, os, shutil, re
+scalyc = sys.argv[1]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def lenses(path):
+    uri = "file://" + os.path.abspath(path)
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":open(path).read()}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/codeLens",
+                  "params":{"textDocument":{"uri":uri}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    r = next((f for f in frames if f.get("id") == 2), None)
+    res = (r or {}).get("result")
+    return res if isinstance(res, list) else []
+# Only this family's lenses, keyed by 1-based line.
+KINDS = ("thread-local", "process-global", "dropped:")
+def storage(ls):
+    out = {}
+    for l in ls:
+        c = l["command"]
+        if c["title"].startswith(KINDS):
+            out[l["range"]["start"]["line"] + 1] = (c["title"], c["command"], c.get("arguments"))
+    return out
+
+ws = "/tmp/lsp_ws/codelens_storage"
+shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws)
+# Every state the family can answer, and the two spellings for each.
+# `pair` / `spair` are the case that makes the condition more than a colon
+# test: the colon IS there and the global is still dropped, because a
+# BindingSpec has a Structure arm and only the Type arm models to a type.
+src = ("mutable counter: int 7\n"                    # 1  thread-local
+       "shared table: pointer[void] null\n"          # 2  process-global
+       "mutable flag: bool false\n"                  # 3  thread-local
+       "shared ticket: int 0\n"                      # 4  process-global
+       "mutable nameless 9\n"                        # 5  dropped (no colon)
+       "shared unnamed 11\n"                         # 6  dropped (no colon)
+       "mutable pair: (x: int) 0\n"                  # 7  dropped (colon, no type)
+       "shared spair: (y: int) 0\n"                  # 8  dropped (colon, no type)
+       "\n"
+       "define ns\n"
+       "{\n"
+       "    mutable inner: int 3\n"                  # 12 thread-local, in a namespace
+       "    shared outer: int 4\n"                   # 13 process-global, in a namespace
+       "}\n"
+       "\n"
+       "set counter: counter + 1\n")
+path = ws + "/storage.scaly"
+open(path, "w").write(src)
+
+decls = [(i + 1, m.group(1), m.group(2))
+         for i, line in enumerate(src.split("\n"))
+         for m in [re.match(r"\s*(mutable|shared)\s+([A-Za-z_][A-Za-z0-9_]*)", line)] if m]
+check(len(decls) == 10, "the fixture declares 10 globals (%d)" % len(decls))
+
+rows = storage(lenses(path))
+check(sorted(rows) == [d[0] for d in decls],
+      "one lens per declaration, on its own line (%s)" % sorted(rows))
+
+# ---- the IR decides what each label SHOULD be -------------------------
+ir = ws + "/storage.ll"
+rc = subprocess.run([scalyc, "-S", "--no-tests", "-o", ir, path],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+check(rc == 0 and os.path.exists(ir),
+      "the fixture compiles with rc 0 - every drop below is SILENT")
+if os.path.exists(ir):
+    text = open(ir).read()
+    def ir_state(name):
+        # LLVM auto-renames a non-extern collision (@cell.1), so accept a suffix.
+        m = re.search(r"^@%s(\.\d+)? = (thread_local )?global " % re.escape(name),
+                      text, re.M)
+        if not m: return "dropped"
+        return "thread-local" if m.group(2) else "process-global"
+    want = {
+        "thread-local":   "thread-local: one cell per thread",
+        "process-global": "process-global: the declarer owns the race discipline",
+    }
+    states = {}
+    wrong = []
+    for (line, kw, name) in decls:
+        st = ir_state(name)
+        states[st] = states.get(st, 0) + 1
+        expect = want.get(st, "dropped: needs a type annotation - %s NAME: TYPE INIT" % kw)
+        got = rows.get(line, ("<none>", None, None))[0]
+        if got != expect: wrong.append((line, name, st, expect, got))
+    # A comparison is only worth something if the fixture reaches every state;
+    # otherwise an all-one-answer lens would pass it.
+    check(states.get("thread-local", 0) == 3 and states.get("process-global", 0) == 3
+          and states.get("dropped", 0) == 4,
+          "the IR puts the fixture in all three states (%s)" % states)
+    check(not wrong, "every lens says what the IR does")
+    for w in wrong[:6]: print("      ", w)
+    # Named on its own, because it is the assertion that separates this
+    # implementation from a colon test: both `pair` lines carry a colon and
+    # neither reaches the IR.
+    check(ir_state("pair") == "dropped" and ir_state("spair") == "dropped"
+          and rows.get(7, ("", ))[0].startswith("dropped:")
+          and rows.get(8, ("", ))[0].startswith("dropped:"),
+          "a colon is not enough: `: (x: int)` is dropped and the lens says so")
+    # The namespace pair is a correction to CLAUDE.md, which calls a namespace
+    # `mutable` rejected. It is not rejected, so the lens must cover it.
+    check(ir_state("inner") == "thread-local" and ir_state("outer") == "process-global",
+          "a global declared inside `define ns` is emitted, not rejected")
+
+# Plain text, never a link: there is nothing to open.
+check(all(v[1] == "" and v[2] is None for v in rows.values()),
+      "the storage lenses carry no command")
+
+# ---- a STATEMENT-level `mutable` is not a module global ----------------
+# parse_file# takes the declaration list first and stops at the first
+# statement, so a `mutable` after one is a local binding. It emits no global,
+# and a lens over it would name a cell that does not exist.
+stmt = ws + "/stmt.scaly"
+open(stmt, "w").write("let z 1\nmutable after: int 7\n")
+sir = ws + "/stmt.ll"
+subprocess.run([scalyc, "-S", "--no-tests", "-o", sir, stmt],
+               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+check(os.path.exists(sir) and not re.search(r"^@after ", open(sir).read(), re.M),
+      "a `mutable` after a top-level statement emits no global")
+check(not storage(lenses(stmt)), "  and gets no lens")
+
+# ---- over the real tree: one lens per declaration, right keyword --------
+# The fixture proves the three states; this proves COVERAGE on files nobody
+# wrote for the test. The source is the second producer here (the IR is not
+# available per member without building its root): every `mutable` / `shared`
+# line must carry exactly one lens, and only a `shared` may say
+# "process-global". Members of the scaly package, whose root is the cheapest
+# to plan.
+sweep = ["packages/scaly/0.1.0/scaly/memory/root_pages.scaly",
+         "packages/scaly/0.1.0/scaly/memory/Page.scaly",
+         "packages/scaly/0.1.0/scaly/fiber.scaly"]
+total = 0
+off = []
+for f in sweep:
+    want = [(i + 1, m.group(1))
+            for i, line in enumerate(open(f).read().split("\n"))
+            for m in [re.match(r"\s*(mutable|shared)\s+[A-Za-z_]", line)] if m]
+    got = {ln: t for ln, (t, _, _) in storage(lenses(f)).items()}
+    total += len(want)
+    if len(got) != len(want): off.append((f, "count", len(want), len(got)))
+    for (ln, kw) in want:
+        if (kw == "shared") != got.get(ln, "").startswith("process-global"):
+            off.append((f, ln, kw, got.get(ln)))
+check(total > 25, "the sweep saw a real number of declarations (%d)" % total)
+check(not off, "every tree declaration gets one lens naming its own keyword")
+for o in off[:5]: print("      ", o)
+sys.exit(1 if failures else 0)
+PYSTOR
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp codeLens storage"; else bad "lsp codeLens storage"; fi
+
 # ---- inlayHint: where each construction is ALLOCATED ----
 # scalyls/placehints.scaly labels every construction with the placement the
 # EMITTER will give it: `stack`, `region` (this function's own frame),

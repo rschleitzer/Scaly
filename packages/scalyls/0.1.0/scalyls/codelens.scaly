@@ -2,7 +2,7 @@
 ; every lens family.
 ;
 ; One family lives elsewhere because it is expensive: scalyls.tasklens plans a
-; package root to answer the self-scaling verdict of each `for` loop. The three
+; package root to answer the self-scaling verdict of each `for` loop. The four
 ; families HERE need no plan at all — a path table, one parse, and a length
 ; check — which is why they answer on a buffer the planner could not touch:
 ;
@@ -20,6 +20,12 @@
 ;                    resolves to NOTHING. A declared module whose file is
 ;                    missing is a compile error waiting for the next build; a
 ;                    lens turns it into an answer while typing the line.
+;
+;   MUTABLE / SHARED which THREAD sees a module global's cell, and — the
+;                    half that is not a matter of taste at all — whether the
+;                    declaration produces a global AT ALL. See the section
+;                    above storage_lens# for the three measurements this rests
+;                    on.
 ;
 ;   RUN              "Run (scalyc --jit)" on a file that HAS top-level
 ;                    statements, i.e. a program rather than a library. This one
@@ -470,9 +476,103 @@ define codelens
             when mac: MacroSyntax
                 return ""
             when mut: MutableSyntax
-                return ""
+                return codelens.storage_lens(text, mut.start, "mutable", mut.binding.annotation, "thread-local: one cell per thread")
             when sh: SharedSyntax
-                return ""
+                return codelens.storage_lens(text, sh.start, "shared", sh.binding.annotation, "process-global: the declarer owns the race discipline")
+    }
+
+    ; ====================================================================
+    ; MUTABLE / SHARED module globals.
+    ;
+    ; TWO THINGS ARE INVISIBLE IN THE SOURCE and both are stated here.
+    ;
+    ; (1) WHICH THREAD SEES THE CELL. `mutable` is THREAD-LOCAL (M2.2: the
+    ; allocator state is a per-thread stack discipline, and a process-shared
+    ; mutable would be a data race under threads); `shared` is the exemption
+    ; that keeps a global PROCESS-wide, and its declarer owns the race
+    ; discipline — initialize while single-threaded, or mutate via
+    ; scaly_atomic_*. The two spellings differ by one keyword and by nothing
+    ; else on the line, so the consequence is invisible exactly where it
+    ; matters. Measured against the emitted IR, which is the second producer
+    ; of this fact and the one the test derives its expectation from:
+    ; `mutable c: int 7` emits `@c = thread_local global i64 7`, while
+    ; `shared t: pointer[void] null` emits `@t = global ptr null`
+    ; (Emitter.scaly's global loop: LLVMSetThreadLocal unless is_shared).
+    ;
+    ; (2) WHETHER THERE IS A GLOBAL AT ALL — the more valuable half, because
+    ; the failure is SILENT. Modeler.handle_declaration# models the
+    ; declaration only when its annotation resolves to a TYPE, and DROPS it
+    ; otherwise ("mirrors stage-0's hard error leniently"). Both of these
+    ; compile with rc 0 and emit NOTHING (measured):
+    ;
+    ;   mutable bad 9            — no annotation at all. An annotation starts
+    ;                              at a COLON (parse_bindingannotation#), so
+    ;                              the `u8[64]` of a local's `var buf u8[64]`
+    ;                              is not one either — same silent case.
+    ;   mutable pair: (x: int) 0 — a colon IS present and the global is still
+    ;                              dropped: a BindingSpec is a union of
+    ;                              Structure / Type / Array and only the Type
+    ;                              arm models to a type.
+    ;
+    ; Nothing is reported at the declaration. The first USE is what fails, as
+    ; `unknown assignment target: bad` at the use's own line — a diagnostic
+    ; that names the wrong place. The second example is why the condition
+    ; below MIRRORS THE MODELER (the spec must be a TypeSyntax) instead of
+    ; testing for a colon, and it is the case the gate uses to prove the
+    ; difference; the Modeler stays the authority, so if it ever accepts
+    ; another spec, declares_a_type# is the one line to follow it in.
+    ;
+    ; WHERE THE LENS FIRES. On a DECLARATION, never on a statement — which is
+    ; the same distinction the compiler makes and the reason this family sits
+    ; in the declaration walk instead of scanning for a keyword. Measured:
+    ; a `mutable` that follows a top-level STATEMENT is parsed as a statement
+    ; (parse_file# takes the declaration list first, then stops), is modeled
+    ; as a local Binding, and emits no global — and a lens claiming
+    ; "thread-local" over it would be describing a cell that does not exist.
+    ;
+    ; NAMESPACE BODIES ARE COVERED, and that is a correction: this repo's
+    ; CLAUDE.md says a `mutable` is "rejected inside a namespace body", which
+    ; is not what the compiler does. Modeler.handle_namespace# routes its
+    ; declarations through the same handle_declaration#, and
+    ; `define ns { mutable inner: int 3 }` emits
+    ; `@inner = thread_local global i64 3` and reads back correctly from a
+    ; function of that namespace (measured 2026-08-14). The declaration walk
+    ; recurses into namespaces for the module lens already, so this family
+    ; inherits the coverage; if the compiler ever does start rejecting it, the
+    ; lens follows for free, because there would then be a diagnostic instead.
+    ;
+    ; Not clickable (the empty command id), for tasklens.scaly's reason: the
+    ; sentence is the whole message. ASCII only in the titles.
+    ; ====================================================================
+    function storage_lens(rp, text: String, offset: size_t, keyword: String, annotation: ref[BindingAnnotationSyntax]?, title: String) returns String
+    {
+        let width keyword.get_length()
+        if codelens.declares_a_type annotation
+            return symbols.lens_object(text, offset, width, title, "", "")
+
+        var sb StringBuilder()
+        sb.append "dropped: needs a type annotation - "
+        sb.append keyword
+        sb.append " NAME: TYPE INIT"
+        let dropped sb.to_string()
+        symbols.lens_object(text, offset, width, dropped, "", "")
+    }
+
+    ; Exactly Modeler.handle_binding_annotation#'s condition: an annotation is
+    ; present AND its spec is a TypeSyntax. Anything else models to null, and a
+    ; null type is what makes the Modeler drop the whole declaration.
+    function declares_a_type(annotation: ref[BindingAnnotationSyntax]?) returns bool
+    {
+        if annotation = null
+            return false
+        let a (*annotation)
+        choose a.spec
+            when t: TypeSyntax
+                return true
+            when s: StructureSyntax
+                return false
+            when arr: ArraySyntax
+                return false
     }
 
     ; `package NAME VERSION` -> packages/NAME/VERSION/NAME.scaly under the ONE
