@@ -75,10 +75,38 @@ define SIGKILL int 9
 define SIGPIPE int 13
 
 ; Wait at most this long for the worker to answer one PER-DOCUMENT request
-; before declaring it hung and killing it (milliseconds). Sized for the
-; single-document pipeline (parse -> model -> plan), which is well under a
-; second even on the largest file in this tree.
-define ANALYZE_TIMEOUT_MS i32 8000
+; before declaring it hung and killing it (milliseconds). Which kinds land
+; here is decided by worker.budget_for_kind; SCALYLS_BUDGET_MS overrides it.
+;
+; ★★★8000 -> 30000 on 2026-08-14, and the old comment shows why: it read
+; "well under a second even on the largest file in this tree", which was an
+; ASSUMPTION about the single-document pipeline and is false on both machines
+; this has now been measured on. Measured here, x86_64 Linux, on a build with
+; the same whole-program `opt -O2` the shipped server gets:
+;
+;   file                        documentSymbol   definition COLD   WARM
+;   opensp/Parser.scaly 881 KB       7.17 s          8.72 s       0.14 s
+;   dazzle/Primitive.scaly 391 KB    2.39 s         19.81 s       0.06 s
+;   scalyls/symbols.scaly  401 KB    2.94 s          3.16 s       0.05 s
+;
+; A cold `definition` costs 2.5x the old budget on an ordinary file, and
+; `documentSymbol` on the largest one sat at 90 % of it with no margin at all.
+; ★`definition` itself no longer answers to THIS number — the kind table below
+; puts every workspace-walking kind on WORKSPACE_TIMEOUT_MS — but its column
+; measures the same cold pipeline, and `documentSymbol` is squarely here.
+; ★The warm column is the reason this matters far beyond one slow request: the
+; SECOND definition costs 0.06 s, so the budget's job is to protect the very
+; state that makes everything after it instant. Overrunning kills the worker
+; (worker.shutdown#), the symindex dies with it (symindex.scaly), and the next
+; request pays the cold price again — while the client sees a successful
+; result, because the parent answers with its fallback. A budget that fires on
+; legitimate work is therefore not "a slow path", it is a permanent cold cache.
+;
+; 30 s covers the measured worst case with ~50 % margin and stays well under
+; the whole-tree budget, so the ordering of the three is finally the one the
+; work justifies: per-document < completion < whole-tree. It stays finite —
+; reaping a genuinely hung pipeline is the whole point of the isolation.
+define ANALYZE_TIMEOUT_MS i32 30000
 
 ; The whole-tree searches ("w" = workspace/symbol, and the cross-package
 ; definition / signatureHelp scans that share its index) get their own, far

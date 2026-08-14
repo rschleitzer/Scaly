@@ -29,6 +29,14 @@ fi
 #    Windows rung 12 relies on exactly that, with llc 20 against libLLVM 18).
 #    So a version skew here is not automatically wrong — but keep both at the
 #    same major unless a rung documents why not.
+#    ★The skew is ONE-DIRECTIONAL: llc may be AHEAD of libLLVM, never behind.
+#    An older llc cannot read a newer seed at all — today's carries 29 478
+#    `getelementptr inbounds nuw` (LLVM-19 syntax) and llc-18 stops at the first
+#    one with `error: expected type` under the `nuw` (measured 2026-08-14).
+#    Note the failure below reads `llc (LLVM 20) not found`, which looks like a
+#    PATH problem and is usually a missing PACKAGE: llc/opt/llvm-link ship in
+#    Ubuntu's `llvm-20`, NOT in `llvm-20-dev`, and libLLVM-20.so may already be
+#    present as another package's dependency. See CLAUDE.md's Dependencies.
 if [ -z "$LLC" ]; then
   for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-20" llc-20; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLC="$cand"; break; fi

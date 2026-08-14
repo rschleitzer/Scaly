@@ -60,7 +60,26 @@ cd "$(dirname "$0")/../.." || exit 1
 # is 64-bit on every parameter by design. The seven that remain are the
 # documented benign direction: fds, pids and modes, where the caller writes the
 # whole register and a 32-bit callee reads the low half it is entitled to.
-EXPECTED_PARAM_FINDINGS=7
+#
+# ★★The pin is PER HOST, and that is not a wart — it follows from what checks
+# 1+2 actually do. They compare each extern against the REAL headers of the
+# machine they run on, and glibc and the macOS SDK do not declare the same
+# prototypes; on top of that, only a symbol the header scrape can RESOLVE is
+# judged at all, so the set of judgeable positions differs too. A single number
+# therefore cannot be right on both. Measured 2026-08-14, the first time this
+# suite ran on Linux (CI's Linux leg does not run it):
+#   Darwin  7 positions — access, close, kill, mkdir, waitpid (fds, pids, modes)
+#   Linux   2 positions — signal (sig), waitpid (options)
+# Both sets are the same benign direction. The RESULT, consistency and LLP64
+# checks are NOT host-dependent in this way and stay at 0 everywhere; a finding
+# there is a real defect on any machine.
+case "$(uname -s)" in
+  Darwin) EXPECTED_PARAM_FINDINGS=7 ;;
+  Linux)  EXPECTED_PARAM_FINDINGS=2 ;;
+  # No pin for this host yet. Fail loudly rather than pass quietly: an
+  # unpinned count is exactly the number that drifts unnoticed.
+  *)      EXPECTED_PARAM_FINDINGS="" ;;
+esac
 
 fail=0
 
@@ -97,8 +116,13 @@ else
     fail=1
   fi
   got=$(echo "$out" | sed -n 's/^PARAM-BEFUNDE: //p')
-  if [ "$got" != "$EXPECTED_PARAM_FINDINGS" ]; then
-    echo "abi: FAIL — PARAM-BEFUNDE $got, erwartet $EXPECTED_PARAM_FINDINGS"
+  if [ -z "$EXPECTED_PARAM_FINDINGS" ]; then
+    echo "abi: FAIL — kein PARAM-Pin für $(uname -s) (gemessen: $got)"
+    echo "         (Pin oben eintragen, nachdem die Befunde geprüft sind)"
+    python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly') | head -40
+    fail=1
+  elif [ "$got" != "$EXPECTED_PARAM_FINDINGS" ]; then
+    echo "abi: FAIL — PARAM-BEFUNDE $got, erwartet $EXPECTED_PARAM_FINDINGS auf $(uname -s)"
     echo "         (mehr = eine neue Abweichung; weniger = eine wurde behoben," \
          "dann EXPECTED_PARAM_FINDINGS hier nachziehen)"
     python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly') | head -40

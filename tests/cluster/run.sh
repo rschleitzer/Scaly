@@ -65,9 +65,11 @@ if [ "$ok" = "1" ]; then
   fi
 fi
 
-# Wait until a log file contains a marker line (max ~10s).
+# Wait until a log file contains a marker line. $3 = tick budget, 0.05s each
+# (default 200 = ~10s). Pass a larger one for any marker whose arrival time
+# scales with MACHINE SPEED rather than with a round trip — see the fault test.
 wait_marker() {
-  for _ in $(seq 1 200); do
+  for _ in $(seq 1 "${3:-200}"); do
     grep -q "$2" "$1" 2>/dev/null && return 0
     sleep 0.05
   done
@@ -200,8 +202,20 @@ if [ -x "$OUT/cluster_train" ]; then
   W2=$!
   # kill worker 2 once training is underway (first progress line): the
   # run is provably mid-flight and has steps left, at any machine speed.
-  if wait_marker "$OUT/train_faultR.log" "^L "; then
+  # ★The BUDGET, however, was not speed-independent, and that is the whole
+  # trap: the first progress line is step 200 of 1200, so it arrives at
+  # 200/rate seconds — 17 s at the 12 steps/s this x86_64 Linux box manages,
+  # comfortably past the 10 s default. wait_marker then returned 1, the kill
+  # never fired, all three ranks ran to completion, and the assertion below
+  # reported a missing "R: down 2" — which reads exactly like a broken failure
+  # DETECTOR while nothing had died at all (2026-08-14, the first time this
+  # suite ran on Linux; CI's Linux leg does not run it). 60 s covers a machine
+  # roughly six times slower than the dev box and still leaves 1000 steps
+  # after the kill. A missed window is now reported instead of being silent.
+  if wait_marker "$OUT/train_faultR.log" "^L " 1200; then
     kill -9 $W2 2>/dev/null
+  else
+    echo "cluster: train fault — no progress line within 60s, kill window missed"
   fi
   wait $RPID; RRC=$?
   wait $W1 2>/dev/null; W1RC=$?

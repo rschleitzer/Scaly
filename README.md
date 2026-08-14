@@ -45,8 +45,26 @@ machine, so you need **LLVM 20** and a C compiler first:
 # macOS
 brew install llvm@20
 # Ubuntu / Debian
-sudo apt install llvm-20 clang
+sudo apt update && sudo apt install llvm-20 lld-20 clang
 ```
+
+On Ubuntu, `lld` is the linker that matters: stock GNU ld (BFD) fails to link
+against libLLVM-20. The `apt update` is not decoration either — a stale package
+list names a revision the mirror has already superseded, and the install then
+dies with a wall of `404 Not Found` on the `.deb` URLs rather than with anything
+resembling "not found". If your mirror still 404s afterwards, take LLVM's own
+packages instead:
+
+```sh
+wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
+```
+
+Note that a `libLLVM-20.so` already on the machine proves nothing — plenty of
+distributions pull the runtime library in as some other package's dependency
+while `llc`, `opt` and `llvm-link` (the `llvm-20` package) are absent. Version 20
+is a hard requirement, not a floor — an older `llc` cannot even read the seed,
+which is written in LLVM 19+ syntax and stops LLVM 18 at the first
+`getelementptr inbounds nuw` with a bare `error: expected type`.
 
 Then run the installer — it puts `scalyc` on your `PATH` under `~/.scaly`, no
 `sudo`:
