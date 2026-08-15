@@ -2166,9 +2166,15 @@ define symbols
         ; per-identifier cost no longer scales with the list bytes (the Step 27
         ; gate is removed; the harvest cost is bounded by the content-hashed
         ; symindex regardless of the current file's size).
-        let xname_blob symbols.workspace_name_blob uri
-        let xfn_list symbols.tagged_name_list(xname_blob, 0x46)  ; F
-        let xty_list symbols.tagged_name_list(xname_blob, 0x54)  ; T
+        ; The two halves are taken apart rather than unioned, because the
+        ; `defaultLibrary` modifier below is exactly the question of which half
+        ; a name came from. Same total work — see local_name_blob#.
+        let here_blob symbols.local_name_blob uri
+        let pkg_blob symbols.package_name_blob uri
+        let xfn_list symbols.tagged_name_list(here_blob, 0x46)  ; F
+        let xty_list symbols.tagged_name_list(here_blob, 0x54)  ; T
+        let pfn_list symbols.tagged_name_list(pkg_blob, 0x46)
+        let pty_list symbols.tagged_name_list(pkg_blob, 0x54)
 
         ; One hashed name->token-kind table from the five lists. Type lists
         ; (primitives, intra-file types, cross-file types) -> token type 1;
@@ -2181,8 +2187,33 @@ define symbols
         nameset.insert_name_list(ns_slots, ns_cap, prim_list, 1)
         nameset.insert_name_list(ns_slots, ns_cap, ty_list, 1)
         nameset.insert_name_list(ns_slots, ns_cap, xty_list, 1)
+        nameset.insert_name_list(ns_slots, ns_cap, pty_list, 1)
         nameset.insert_name_list(ns_slots, ns_cap, fn_list, 2)
         nameset.insert_name_list(ns_slots, ns_cap, xfn_list, 2)
+        nameset.insert_name_list(ns_slots, ns_cap, pfn_list, 2)
+
+        ; A second table holding ONLY the package-tree names: membership in it
+        ; is the `defaultLibrary` modifier. The kind it stores is unused.
+        let lib_slots nameset.create ns_cap
+        nameset.insert_name_list(lib_slots, ns_cap, pty_list, 1)
+        nameset.insert_name_list(lib_slots, ns_cap, pfn_list, 1)
+
+        ; ★And a third holding the names THIS FILE declares, which VETO
+        ; defaultLibrary. The tables are keyed on the bare name, so a local that
+        ; happens to share one with the package tree inherits it — measured on
+        ; scalyls/nameset.scaly, where a `let sp`, a parameter `size` and this
+        ; file's own `malloc extern` all came back as library names. A name
+        ; declared here is the reader's own, whatever a package calls its
+        ; namesake, so the veto is not a heuristic; the locals it cannot see
+        ; (a `let`, a parameter) are vetoed at the use site instead.
+        let own_slots nameset.create ns_cap
+        nameset.insert_name_list(own_slots, ns_cap, ty_list, 1)
+        nameset.insert_name_list(own_slots, ns_cap, fn_list, 1)
+        nameset.insert_name_list(own_slots, ns_cap, prim_list, 1)
+
+        ; Module-level `mutable` / `shared` names — a pre-pass, since a use can
+        ; stand above the declaration.
+        let global_list symbols.global_name_list source
 
         ; Scope-aware tables: routine [start,end)+param-names and field-decl
         ; offsets, both from ONE more parse. param_in_scope / is_field_decl_offset
@@ -2198,6 +2229,13 @@ define symbols
         var first true
         var pending: i64 (0 - 1)                   ; -1 none, 1 type-name, 2 fn-name
         var prev_was_dot false                     ; previous emitted token was `.`
+
+        ; Modifier state, with the same lifetime as `pending`: whatever the
+        ; keyword just read says about the NEXT identifier. -1 = nothing pending.
+        var pmod: i64 (0 - 1)
+        ; The `let`-bound names of the routine being scanned (see the section
+        ; above name_list_add# for the scope this approximates and how).
+        var ro_names String("")
 
         while i < n
         {
@@ -2283,6 +2321,7 @@ define symbols
                     }
                     set i: k
                     set pending: 0 - 1
+                    set pmod: 0 - 1
                     set prev_was_dot: false
                     continue
                 }
@@ -2305,12 +2344,14 @@ define symbols
                 set col: col + clen
                 set i: j
                 set pending: 0 - 1
+                set pmod: 0 - 1
                 set prev_was_dot: false
                 continue
             }
 
             ; A single-line token from here. Classify [i, j) -> tok_type/tlen.
             var tok_type: i64 (0 - 1)
+            var tok_mods: i64 0
             var tlen: size_t 0
             let start_col col
 
@@ -2341,6 +2382,7 @@ define symbols
                 set tlen: j - i
                 set tok_type: 5                 ; string
                 set pending: 0 - 1
+                set pmod: 0 - 1
             }
 
             ; number: starts with a digit
@@ -2357,6 +2399,7 @@ define symbols
                 set tlen: j - i
                 set tok_type: 6                 ; number
                 set pending: 0 - 1
+                set pmod: 0 - 1
             }
 
             ; identifier: starts with a letter
@@ -2388,8 +2431,14 @@ define symbols
                 ; parameter: in scope of the enclosing routine (above function)
                 if symbols.param_in_scope(scope_tbl, source, i, j, i)
                     set t: 8
-                ; property (a): a field/property name at its declaration site
-                if symbols.is_field_decl_offset(scope_tbl, i)
+                ; property (a): a field/property name at its declaration site.
+                ; ★Asked ONCE and kept: the query is a LINEAR scan of the scope
+                ; table, so a second call for the `declaration` modifier below
+                ; cost +35 % of the whole request on the largest file in this
+                ; tree (12.9 s -> 17.5 s, measured) -- the same answer, paid for
+                ; twice, and by far the most expensive thing in this loop.
+                let is_field symbols.is_field_decl_offset(scope_tbl, i)
+                if is_field
                     set t: 9
                 ; property (b): an after-`.` member access not resolved as a
                 ; function/method or type (Type.method / ns.fn keep their kind)
@@ -2412,10 +2461,56 @@ define symbols
                 if grammar.is_value_word(word)
                     set t: 0                ; keyword
                 set tok_type: t
+
+                ; ---- the modifiers of THIS identifier ----
+                var m: i64 0
+                if t <> 0
+                {
+                    if pmod >= 0
+                        set m: pmod
+                    if is_field
+                        set m: m | 1                   ; declaration
+                    if symbols.list_contains(ro_names, word)
+                        set m: m | 2                   ; readonly
+                    if symbols.list_contains(global_list, word)
+                        set m: m | 4                   ; static
+
+                    ; defaultLibrary, unless this file owns the name: it
+                    ; declares one itself, this token IS a declaration, or the
+                    ; name is a local (a `let`, hence readonly) / a parameter /
+                    ; a field.
+                    let lk nameset.lookup(lib_slots, ns_cap, source, i, j)
+                    if lk >= 0
+                    {
+                        var own false
+                        if nameset.lookup(own_slots, ns_cap, source, i, j) >= 0
+                            set own: true
+                        if (m & 1) <> 0
+                            set own: true
+                        if (m & 2) <> 0
+                            set own: true
+                        if t = 8
+                            set own: true              ; parameter
+                        if t = 9
+                            set own: true              ; property
+                        if own = false
+                            set m: m | 8
+                    }
+                }
+                set tok_mods: m
+
+                ; A `let` name joins the routine's readonly set; a `var` of the
+                ; same name takes it out again — a redeclaration is a rebinding.
+                if pmod = 3
+                    set ro_names: symbols.name_list_add(ro_names, word)
+                if pmod = 1
+                    set ro_names: symbols.name_list_remove(ro_names, word)
+
                 ; set pending for the NEXT identifier off this keyword, else clear
                 if t = 0
                 {
                     var np: i64 (0 - 1)
+                    var nm: i64 (0 - 1)
                     if word = "function"
                         set np: 2
                     if word = "procedure"
@@ -2428,10 +2523,44 @@ define symbols
                         set np: 1
                     if word = "module"
                         set np: 1
+                    if np >= 0
+                        set nm: 1                      ; declaration
+
+                    ; A binding or global keyword declares a name too, but says
+                    ; nothing about its TYPE — hence a modifier with no pending
+                    ; classification. 3 = declaration|readonly is the `let`
+                    ; marker the readonly set above is keyed on.
+                    if word = "let"
+                        set nm: 3
+                    if word = "var"
+                        set nm: 1
+                    if word = "mutable"
+                        set nm: 5                      ; declaration|static
+                    if word = "shared"
+                        set nm: 5
                     set pending: np
+                    set pmod: nm
+
+                    ; A routine keyword opens a new scope for the readonly set.
+                    var opens_scope false
+                    if word = "function"
+                        set opens_scope: true
+                    if word = "procedure"
+                        set opens_scope: true
+                    if word = "operator"
+                        set opens_scope: true
+                    if word = "init"
+                        set opens_scope: true
+                    if word = "deinit"
+                        set opens_scope: true
+                    if opens_scope
+                        set ro_names: String("")
                 }
                 if t <> 0
+                {
                     set pending: 0 - 1
+                    set pmod: 0 - 1
+                }
             }
 
             ; operator: a run of operator characters. The class is generated
@@ -2451,6 +2580,7 @@ define symbols
                 set tlen: j - i
                 set tok_type: 4
                 set pending: 0 - 1
+                set pmod: 0 - 1
             }
 
             ; Emit the single-line token (if one was classified).
@@ -2458,7 +2588,7 @@ define symbols
             {
                 if first = false
                     sb.append("," as char)
-                sb.append(symbols.encode_token(prev_line, prev_col, line, start_col, tlen, tok_type))
+                sb.append(symbols.encode_token_mods(prev_line, prev_col, line, start_col, tlen, tok_type, tok_mods))
                 set prev_line: line
                 set prev_col: start_col
                 set first: false
@@ -2477,16 +2607,25 @@ define symbols
             set col: col + 1
             set i: i + 1
             set pending: 0 - 1
+            set pmod: 0 - 1
         }
 
         sb.append("]" as char)
         sb.append("}" as char)
         nameset.destroy ns_slots
+        nameset.destroy lib_slots
+        nameset.destroy own_slots
         sb.to_string()
     }
 
-    ; One delta-encoded semantic token: "dLine,dStartChar,length,type,0".
+    ; One delta-encoded semantic token with no modifiers.
     function encode_token(rp, prev_line: size_t, prev_col: size_t, tline: size_t, tcol: size_t, tlen: size_t, ttype: i64) returns String
+        symbols.encode_token_mods(prev_line, prev_col, tline, tcol, tlen, ttype, 0)
+
+    ; One delta-encoded semantic token: "dLine,dStartChar,length,type,mods".
+    ; `mods` is a BITSET over the legend in server.initialize_response#:
+    ;   1 declaration   2 readonly   4 static   8 defaultLibrary
+    function encode_token_mods(rp, prev_line: size_t, prev_col: size_t, tline: size_t, tcol: size_t, tlen: size_t, ttype: i64, mods: i64) returns String
     {
         let dline tline - prev_line
         var dcol tcol
@@ -2501,7 +2640,134 @@ define symbols
         sb.append("," as char)
         sb.append(json.format_i64(ttype))
         sb.append("," as char)
-        sb.append("0" as char)                    ; 0 (no modifiers)
+        sb.append(json.format_i64(mods))
+        sb.to_string()
+    }
+
+    ; ---- semantic token MODIFIERS --------------------------------------
+    ;
+    ; The classification above is lexical, and so is this. What each one means:
+    ;
+    ;   declaration  the identifier directly after the keyword that declares it,
+    ;                or a field at its declaration offset. EXACT: the keyword
+    ;                immediately precedes the name.
+    ;   readonly     a `let` binding — at its declaration AND at its uses inside
+    ;                the enclosing routine. This is the one that earns the
+    ;                feature in Scaly, where `let` versus `var` is the whole
+    ;                mutability story and nothing in the source repeats it at the
+    ;                use site.
+    ;   static       a module-level `mutable` / `shared` global, declaration and
+    ;                uses. LSP has no `global`; `static` is the conventional
+    ;                mapping and the one themes style.
+    ;   defaultLibrary  a name that comes from the PACKAGE dependency tree.
+    ;
+    ; ★THE `readonly` SET IS SCOPED LEXICALLY, and its limit is written here
+    ; rather than discovered later: names are collected per ROUTINE (the set is
+    ; cleared at every `function` / `procedure` / `operator` / `init` / `deinit`
+    ; keyword) and a `var` of the same name removes it again, but a `let` inside
+    ; an inner BLOCK stays in the set after that block ends. So an outer `var x`
+    ; used after an inner `let x` is coloured readonly although it is not. It
+    ; costs a colour, not an answer, and the alternative — a scope-accurate set —
+    ; means walking statement bodies, which this scan deliberately does not do
+    ; (the editor asks for tokens while the buffer does not parse).
+
+    ; The module-level `mutable` / `shared` names of the file, LF-separated.
+    ; A pre-pass, because a use can precede the declaration.
+    function global_name_list(rp, source: String) returns String
+    {
+        var sb StringBuilder()
+        let n source.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            let skipped symbols.skip_non_code(source, i)
+            if skipped > i
+            {
+                set i: skipped
+                continue
+            }
+            let c source.get i
+            if symbols.is_ident_byte(c) = false
+            {
+                set i: i + 1
+                continue
+            }
+            var e i
+            while e < n
+            {
+                let c2 source.get e
+                if symbols.is_ident_byte(c2) = false
+                    break
+                set e: e + 1
+            }
+            let word symbols.substring(source, i, e)
+            set i: e
+
+            var is_global false
+            if word = "mutable"
+                set is_global: true
+            if word = "shared"
+                set is_global: true
+            if is_global
+            {
+                let ns symbols.skip_blanks(source, i, n)
+                var ne ns
+                while ne < n
+                {
+                    let c3 source.get ne
+                    if symbols.is_ident_byte(c3) = false
+                        break
+                    set ne: ne + 1
+                }
+                if ne > ns
+                {
+                    symbols.append_fragment(&sb, symbols.substring(source, ns, ne))
+                    sb.append(0x0A as char)
+                }
+                set i: ne
+            }
+        }
+        sb.to_string()
+    }
+
+    ; `list` plus `word`, unless it is already there.
+    function name_list_add(rp, list: String, word: String) returns String
+    {
+        if symbols.list_contains(list, word)
+            return list
+        var sb StringBuilder()
+        symbols.append_fragment(&sb, list)
+        symbols.append_fragment(&sb, word)
+        sb.append(0x0A as char)
+        sb.to_string()
+    }
+
+    ; `list` without `word`.
+    function name_list_remove(rp, list: String, word: String) returns String
+    {
+        if symbols.list_contains(list, word) = false
+            return list
+        var sb StringBuilder()
+        let n list.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            var e i
+            while e < n
+            {
+                let c list.get e
+                if c = 0x0A
+                    break
+                set e: e + 1
+            }
+            let item symbols.substring(list, i, e)
+            if item <> word
+            {
+                symbols.append_fragment(&sb, item)
+                sb.append(0x0A as char)
+            }
+            set i: e + 1
+        }
         sb.to_string()
     }
 
@@ -7657,6 +7923,37 @@ define symbols
     ; Mirrors find_definition_in_workspace#: current file's dir tree, then the
     ; package tree (stdlib String / Vector / Page, …).
     ; ====================================================================
+
+    ; The two halves of workspace_name_blob# on their own. semanticTokens needs
+    ; them apart because `defaultLibrary` is a statement about WHERE a name
+    ; comes from: a name of the package dependency tree is library, a name of a
+    ; sibling file is the reader's own code, and the union cannot tell them
+    ; apart. Together they do exactly the work the union did — the symindex
+    ; caches each directory's blob — so asking for both costs nothing extra.
+    function local_name_blob(rp, uri: String) returns String
+    {
+        if uri.get_length() = 0
+            return String("")
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
+        symbols.tagged_names_in_dir(dir, path)
+    }
+
+    ; "" when the file has no package tree, or when it IS the directory already
+    ; covered by local_name_blob# (the same skip workspace_name_blob# makes).
+    function package_name_blob(rp, uri: String) returns String
+    {
+        if uri.get_length() = 0
+            return String("")
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
+        let pkg symbols.package_search_dir path
+        if pkg.get_length() = 0
+            return String("")
+        if pkg = dir
+            return String("")
+        symbols.tagged_names_in_dir(pkg, path)
+    }
 
     function workspace_name_blob(rp, uri: String) returns String
     {

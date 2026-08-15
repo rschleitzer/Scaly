@@ -1237,8 +1237,20 @@ define server
         sb.append(server.quoted("property"))
         sb.append("]" as char)
         sb.append("," as char)
+        ; tokenModifiers: the BIT ORDER of this list is the wire format — a
+        ; token's fifth integer is a bitset indexed into it, so an entry may be
+        ; appended but never reordered or removed. Only names from LSP's own
+        ; list are used: a custom one would be legal and invisible, because no
+        ; theme has a rule for it.
         sb.append(server.key("tokenModifiers"))
         sb.append("[" as char)
+        sb.append(server.quoted("declaration"))
+        sb.append("," as char)
+        sb.append(server.quoted("readonly"))
+        sb.append("," as char)
+        sb.append(server.quoted("static"))
+        sb.append("," as char)
+        sb.append(server.quoted("defaultLibrary"))
         sb.append("]" as char)
         sb.append("}" as char)                    ; } legend
         sb.append("," as char)

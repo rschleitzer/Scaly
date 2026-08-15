@@ -9,7 +9,12 @@ debugger backed by `lldb-dap`.
 What you get:
 
 - **Syntax highlighting** — TextMate grammar for keywords, literals, comments,
-  operators (plus richer, server-computed **semantic tokens** on top).
+  operators (plus richer, server-computed **semantic tokens** on top). Tokens
+  carry modifiers as well: `readonly` on a `let` binding and on every use of it
+  (in Scaly `let` versus `var` is the whole mutability story, and the use site
+  does not repeat it), `static` on a module-level `mutable`/`shared` global,
+  `declaration` on the name being declared, and `defaultLibrary` on names from
+  a package dependency.
 - **Diagnostics** — parse / model / plan errors as you type, in the editor and
   the Problems panel. A package member is analysed through its package ROOT, so
   the errors of every module of that root are reported at once: a mistake in a

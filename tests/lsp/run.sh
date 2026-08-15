@@ -5511,6 +5511,158 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semanticTokens"; else bad "lsp semanticTokens"; fi
 
+# ---- semanticTokens: the MODIFIERS ---------------------------------------
+# The fifth integer of each token is a bitset over the legend's tokenModifiers,
+# whose ORDER is therefore the wire format. Every check below reads the legend
+# from `initialize` and derives the bit itself, so a reordered legend cannot
+# make this pass by accident.
+#
+# What each modifier claims, and why it is worth a bit:
+#   declaration     the name right after the keyword that declares it. Exact.
+#   readonly        a `let` binding, at its declaration AND at its uses. This is
+#                   the one that earns the feature in Scaly: `let` versus `var`
+#                   is the whole mutability story, and the use site does not
+#                   repeat it. A `var` must NOT carry it -- that pair is the
+#                   test, a `let` alone would pass on a rule that just says yes.
+#   static          a module-level `mutable` / `shared` global, declaration and
+#                   uses.
+#   defaultLibrary  a name from the package dependency tree.
+#
+# ★The defaultLibrary VETO has its own fixture, because the name tables are
+# keyed on the bare name: a local, a parameter or this file's own declaration
+# that shares a name with the package tree would inherit `defaultLibrary`
+# without it. Measured on scalyls/nameset.scaly before the veto: a `let sp`, a
+# parameter `size` and the file's own `malloc extern` all came back as library.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+
+ws = "/tmp/lsp_ws/semtokens_mods"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+src = ("mutable counter: int 0\n"                    # 0
+       "\n"
+       "define Point\n(\n    x: int\n)\n"            # 2..5
+       "\n"
+       "function demo(a: int) returns int\n"         # 7
+       "{\n"
+       "    let fixed 3\n"                           # 9
+       "    var moving 4\n"                          # 10
+       "    set moving: fixed + counter\n"           # 11
+       "    let s String(\"hi\")\n"                  # 12
+       "    return moving + fixed + s.get_length()\n"  # 13
+       "}\n")
+path = ws + "/lsp_semtok_mods.scaly"
+open(path, "w").write(src)
+
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+    "textDocument":{"uri":"file://"+path,"languageId":"scaly","version":1,"text":src}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full",
+              "params":{"textDocument":{"uri":"file://"+path}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+legend = frames[0]["result"]["capabilities"]["semanticTokensProvider"]["legend"]
+MODS = legend["tokenModifiers"]
+check(MODS == ["declaration", "readonly", "static", "defaultLibrary"],
+      "the legend advertises the four modifiers, in wire order -- %s" % (MODS,))
+
+data = next(f for f in frames if f.get("id") == 2)["result"]["data"]
+lines = src.split("\n")
+toks = []
+L = C = 0
+for k in range(0, len(data), 5):
+    dl, dc, ln, ty, mo = data[k:k+5]
+    L += dl; C = dc if dl else C + dc
+    toks.append((L, C, lines[L][C:C+ln],
+                 set(MODS[b] for b in range(len(MODS)) if mo & (1 << b))))
+
+def mods_at(line, text):
+    hit = [t[3] for t in toks if t[0] == line and t[2] == text]
+    return hit[0] if hit else None
+
+check(mods_at(0, "counter") == {"declaration", "static"},
+      "a module-level mutable declares and is static -- %s" % (mods_at(0, "counter"),))
+check(mods_at(11, "counter") == {"static"},
+      "and its USE is static without declaration -- %s" % (mods_at(11, "counter"),))
+check(mods_at(2, "Point") == {"declaration"}, "a concept name declares")
+check(mods_at(4, "x") == {"declaration"}, "a field declares")
+check(mods_at(7, "demo") == {"declaration"}, "a routine name declares")
+check(mods_at(9, "fixed") == {"declaration", "readonly"},
+      "a `let` declares and is readonly -- %s" % (mods_at(9, "fixed"),))
+check(mods_at(11, "fixed") == {"readonly"},
+      "and its USE stays readonly -- %s" % (mods_at(11, "fixed"),))
+check(mods_at(10, "moving") == {"declaration"},
+      "a `var` declares and is NOT readonly -- %s" % (mods_at(10, "moving"),))
+check(mods_at(11, "moving") == set(),
+      "and its use carries nothing -- %s" % (mods_at(11, "moving"),))
+check(mods_at(12, "String") == {"defaultLibrary"},
+      "a stdlib type is defaultLibrary -- %s" % (mods_at(12, "String"),))
+check(mods_at(13, "get_length") == {"defaultLibrary"},
+      "so is a stdlib method -- %s" % (mods_at(13, "get_length"),))
+check(mods_at(7, "a") == set(), "a parameter carries none of them -- %s" % (mods_at(7, "a"),))
+
+# The veto: names of this file that a package tree also declares.
+ws2 = "/tmp/lsp_ws/semtokens_veto"
+shutil.rmtree(ws2, ignore_errors=True); os.makedirs(ws2)
+src2 = ("function malloc(size: size_t) returns pointer[void] extern\n"   # 0
+        "\n"
+        "function use_it() returns int\n{\n"                             # 2,3
+        "    let get_length 7\n"                                         # 4
+        "    let p malloc(8)\n"                                          # 5
+        "    return get_length\n}\n")                                    # 6
+path2 = ws2 + "/lsp_semtok_veto.scaly"
+open(path2, "w").write(src2)
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+    "textDocument":{"uri":"file://"+path2,"languageId":"scaly","version":1,"text":src2}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full",
+              "params":{"textDocument":{"uri":"file://"+path2}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames2, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames2.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+data2 = next(f for f in frames2 if f.get("id") == 2)["result"]["data"]
+lines2 = src2.split("\n")
+toks = []
+L = C = 0
+for k in range(0, len(data2), 5):
+    dl, dc, ln, ty, mo = data2[k:k+5]
+    L += dl; C = dc if dl else C + dc
+    toks.append((L, C, lines2[L][C:C+ln],
+                 set(MODS[b] for b in range(len(MODS)) if mo & (1 << b))))
+# An exact set, not a `not in`: a token the walk failed to find would answer
+# None and pass a membership test vacuously.
+check(mods_at(5, "malloc") == set(),
+      "a name this file declares itself is not library -- %s" % (mods_at(5, "malloc"),))
+check(mods_at(6, "get_length") == {"readonly"},
+      "nor is a LOCAL that shares a stdlib name -- %s" % (mods_at(6, "get_length"),))
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semanticTokens modifiers"; else bad "lsp semanticTokens modifiers"; fi
+
 # ---- semanticTokens: word operators, value words, and the caret ----
 # Scaly has no operator token class: an operator IS an identifier, one made
 # exclusively of operator characters (lexer.scaly:326,:338 return
