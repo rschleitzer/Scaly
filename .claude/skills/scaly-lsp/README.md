@@ -45,8 +45,9 @@ Registered diagnostics handler for plugin:scaly-lsp:scalyls
 
 | Operation | Status |
 |---|---|
-| goToDefinition, findReferences, documentSymbol, workspaceSymbol | OK |
-| prepareCallHierarchy, incomingCalls, outgoingCalls | OK |
+| goToDefinition | OK — a `.`-qualified member resolves through the RECEIVER's concept |
+| findReferences, documentSymbol, workspaceSymbol | OK — matched by name, workspace-wide |
+| prepareCallHierarchy, incomingCalls, outgoingCalls | OK — outgoing scopes a member call the same way |
 | hover | OK — a declaration answers its signature + doc block, an expression its resolved TYPE, and a genuine miss says `in function X` (where the cursor is, not what it is) |
 | goToImplementation | answers "no results" — the server does not implement it |
 
@@ -55,6 +56,20 @@ unimplemented request unanswered, the client sends it without checking
 capabilities, and the client has no request timeout (measured 94 s, killed by
 hand). Fixed 2026-08-15 by answering `result: null` at the tail of
 `server.handle_message`; gate `"lsp unhandled request answers null"`.
+
+`goToDefinition` on a METHOD was fixed 2026-08-15 as well, and the defect is the
+one worth remembering because it looks like a right answer: the search matched
+by NAME alone, and a method name is not unique — this tree declares `append`
+twenty-six times, so `line.append(b as char)` on a StringBuilder jumped into
+dazzle's `SaveFOTBuilder`. The receiver now picks the file (`this.` → the
+enclosing concept, a local → its declared / constructed type, `Type.` / `ns.` →
+the token itself; all LEXICAL, no plan). Gate `"lsp definition scoped by the
+receiver type"`, six checks, five of which fail on the pre-fix binary — the
+sixth is the negative control that a non-member cursor is unchanged. LIMITS:
+overloads are not told apart (the concept's first member of that name wins), a
+plain FIELD is not found this way, and cross-file the search narrows to the
+concept's FILE rather than to the concept. `findReferences` and `rename` are
+deliberately still name-wide — a reference search is meant to be broad.
 
 `hover` at a CALL SITE was fixed the same day. It used to answer the enclosing
 routine for anything the planner could not resolve, and a file that is a MODULE

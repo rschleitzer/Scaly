@@ -3319,6 +3319,106 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-file definition"; else bad "lsp cross-file definition"; fi
 
+# ---- definition + outgoingCalls scoped by the RECEIVER's type ----
+# A method name is not unique — this tree declares `append` twenty-six times —
+# and matching by name alone answered whichever file the walk reached first.
+# The receiver is right there in the source, so its concept decides who may
+# answer. Every assertion below is FALSE on the pre-fix binary: the free
+# `append` / `helper` of the document itself sit ahead of everything (the
+# intra-file pass runs first), so all four member jumps landed in main.scaly.
+#
+# The decoys are deliberately in the DOCUMENT rather than in a sibling file:
+# `find` lists a directory in readdir order, so a sibling decoy would win or
+# lose by inode luck, and a gate that passes for that reason gates nothing.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+ws = "/tmp/lsp_ws/def_scope"; shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+def concept(name):
+    return ("define %s\n(\n    n: int\n)\n{\n"
+            "    function append(this: %s, x: int) returns int\n    {\n        return x\n    }\n}\n"
+            % (name, name))
+tools = "define tools\n{\n    function append(x: int) returns int\n    {\n        return x\n    }\n}\n"
+main = ("function append(x: int) returns int\n{\n    return x\n}\n\n"          # decoy 1
+        "function helper(x: int) returns int\n{\n    return x\n}\n\n"          # decoy 2
+        "define Holder\n(\n    v: int\n)\n{\n"
+        "    function run(this: Holder, x: int) returns int\n    {\n        return this.helper(x)\n    }\n\n"
+        "    function helper(this: Holder, x: int) returns int\n    {\n        return x\n    }\n}\n\n"
+        "function use_it(x: int) returns int\n{\n    var b Bag()\n    var s Sink()\n"
+        "    let p b.append(x)\n    let q s.append(x)\n    let r tools.append(x)\n    return p + q + r\n}\n")
+for nm, txt in (("bag.scaly", concept("Bag")), ("sink.scaly", concept("Sink")),
+                ("tools.scaly", tools), ("main.scaly", main)):
+    open(os.path.join(ws, nm), "w").write(txt)
+uri  = "file://" + ws + "/main.scaly"
+buri = "file://" + ws + "/bag.scaly"
+suri = "file://" + ws + "/sink.scaly"
+turi = "file://" + ws + "/tools.scaly"
+L = main.split("\n")
+def pos(needle, occurrence=0, off=0):
+    """(line, character) of the `occurrence`-th line containing `needle`."""
+    hits = [i for i, l in enumerate(L) if needle in l]
+    ln = hits[occurrence]
+    return ln, L[ln].index(needle) + off
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+def session(reqs):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+ws}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":main}}})
+    for r in reqs: inp += frame(r)
+    inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    got, d = {}, out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+        if isinstance(f.get("id"), int): got[f["id"]] = f.get("result")
+    return got
+def df(idn, ln, ch):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/definition",
+            "params":{"textDocument":{"uri":uri},"position":{"line":ln,"character":ch}}}
+bl, bc = pos("b.append", 0, 2)          # the member word, not the receiver
+sl, sc = pos("s.append", 0, 2)
+tl, tc = pos("tools.append", 0, 6)
+hl, hc = pos("this.helper", 0, 5)
+ul, uc = pos("function use_it", 0, 9)
+g = session([df(2, bl, bc), df(3, sl, sc), df(4, tl, tc), df(5, hl, hc), df(6, ul, uc)])
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def at(idn):
+    r = g.get(idn)
+    return None if r is None else (r["uri"], r["range"]["start"]["line"])
+holder_helper = [i for i, l in enumerate(L) if "function helper(this: Holder" in l][0]
+use_it_line    = [i for i, l in enumerate(L) if "function use_it" in l][0]
+check(at(2) == (buri, 5), "b.append -> Bag's own file, not the document's free `append`")
+check(at(3) == (suri, 5), "s.append -> Sink's file: the SAME name, a different receiver")
+check(at(4) == (turi, 2), "tools.append -> the namespace the receiver names")
+check(at(5) == (uri, holder_helper),
+      "this.helper -> the enclosing concept's member, not the free one above it")
+check(at(6) == (uri, use_it_line), "a cursor that is not a member is unchanged")
+
+# The call hierarchy resolves callees the same way and had the same defect.
+# outgoing dedupes by NAME, so the three `append` calls collapse into the entry
+# of the FIRST one — b.append, i.e. Bag's file.
+prep = session([{"jsonrpc":"2.0","id":2,"method":"textDocument/prepareCallHierarchy",
+                 "params":{"textDocument":{"uri":uri},"position":{"line":ul,"character":uc}}}])
+item = (prep.get(2) or [None])[0]
+if item is None:
+    print("FAIL  prepareCallHierarchy produced no item for use_it"); sys.exit(1)
+g2 = session([{"jsonrpc":"2.0","id":3,"method":"callHierarchy/outgoingCalls","params":{"item":item}}])
+outs = {c["to"]["name"]: c["to"]["uri"] for c in (g2.get(3) or [])}
+check(outs.get("append") == buri, "outgoingCalls: the callee comes from the receiver's file too")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp definition scoped by the receiver type"; else bad "lsp definition scoped by the receiver type"; fi
+
 # ---- workspace/symbol (parse-based, all files) ----
 # Query the whole workspace for declarations whose name matches a substring
 # (case-insensitive). The root comes from initialize's rootUri. Two files in
