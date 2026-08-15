@@ -425,14 +425,14 @@ define server
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
         let uri json.as_string(json.get(doc, "uri"))
-        let paths server.use_paths_from_diagnostics(json.get(params, "context"))
-        if paths.get_length() = 0
+        let packed server.diagnostics_packed(json.get(params, "context"))
+        if packed.get_length() = 0
         {
             rpc.write_message(server.document_symbol_response(id, "[]"))
             return
         }
         let text docstore.get uri
-        let result worker.code_actions(uri, text, paths)
+        let result worker.code_actions(uri, text, packed)
         rpc.write_message(server.document_symbol_response(id, result))
     }
 
@@ -454,12 +454,22 @@ define server
         rpc.write_message(server.document_symbol_response(id, result))
     }
 
-    ; The `use` paths named by the diagnostics in a codeAction context, one per
-    ; line ("" when none). Each is the tail of a message after the marker below;
-    ; the marker is written by Planner.use_vis_hint#, and the two must agree —
-    ; a change there silently turns the quick fix off, which is why the LSP
-    ; suite asserts the whole round trip rather than this function alone.
-    function use_paths_from_diagnostics(rp, context: JsonValue) returns String
+    ; The diagnostics of a codeAction context, one per line, as
+    ; `<line> <character> <message>` — the 0-based start position of the
+    ; diagnostic, then its text.
+    ;
+    ; ★THE PARENT PACKS, THE WORKER DECIDES. Which messages have a fix, and what
+    ; the fix is, is settled in ONE place (symbols.code_actions_packed#) — the
+    ; parent does not look inside a message at all. It used to: it scraped the
+    ; `use` path out of the visibility hint and sent only that, so the parent
+    ; knew one fix and the worker knew the rest. Every fix added after it would
+    ; have had to be recognised twice, on both sides of a pipe, which is exactly
+    ; the drift the recognise-from-the-message rule exists to avoid.
+    ;
+    ; A message cannot contain an LF (the planner writes none, and a diagnostic
+    ; is one line), but one is replaced by a space rather than trusted — the line
+    ; IS the framing here.
+    function diagnostics_packed(rp, context: JsonValue) returns String
     {
         var sb StringBuilder()
         let diags json.get(context, "diagnostics")
@@ -469,14 +479,23 @@ define server
         {
             let d json.array_get(diags, i)
             let message json.as_string(json.get(d, "message"))
-            let marker "; add: use "
-            let at server.find_substring(message, marker)
-            if at < message.get_length()
+            if message.get_length() > 0
             {
-                var k at + marker.get_length()
+                let range json.get(d, "range")
+                let start json.get(range, "start")
+                sb.append(json.format_i64(json.as_i64(json.get(start, "line"))))
+                sb.append(" " as char)
+                sb.append(json.format_i64(json.as_i64(json.get(start, "character"))))
+                sb.append(" " as char)
+
+                var k: size_t 0
                 while k < message.get_length()
                 {
-                    sb.append(message.get(k) as char)
+                    let c message.get k
+                    if c = 0x0A
+                        sb.append(" " as char)
+                    if c <> 0x0A
+                        sb.append(c as char)
                     set k: k + 1
                 }
                 sb.append("\n" as char)

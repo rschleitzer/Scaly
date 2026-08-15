@@ -21,6 +21,14 @@ What you get:
   cross-file and cross-package.
 - **Completion** — names in scope, members, keywords.
 - **Rename** — shadow-aware, with prepare support (F2).
+- **Quick fixes** (Cmd+.) for the compiler's own hard diagnostics: add the
+  missing `use` line for a name that is declared but not visible; turn
+  `a = b` into `set a: b` (in Scaly `=` compares, it does not assign);
+  parenthesize a parenless call whose head swallowed its argument
+  (`print helper(2)` → `print(helper(2))`, a statement that would otherwise be
+  dropped whole); and correct a misspelled name to the nearest one in the file.
+  Each is offered only where it needs no guess, so applying one without reading
+  it is safe.
 - **Signature Help** — parameter hints while typing a call.
 - **Document symbols / outline** — functions, structs/unions (with methods and
   variants), namespaces, module-level mutables; **workspace symbols** across

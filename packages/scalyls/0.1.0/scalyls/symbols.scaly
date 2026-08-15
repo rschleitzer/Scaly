@@ -929,13 +929,36 @@ define symbols
         true
     }
 
-    ; One CodeAction per use path in `packed`, each a quickfix whose edit
-    ; inserts `use <path>` on its own line at use_insert_line#.
+    ; ====================================================================
+    ; textDocument/codeAction — the quick fixes
+    ;
+    ; EVERY FIX IS READ OFF THE DIAGNOSTIC'S OWN MESSAGE, never recomputed. The
+    ; planner has already decided what is wrong and said so; asking it again
+    ; would be a second answer to a settled question, and the two would drift.
+    ; What the buffer is used for is the EDIT — the text a fix has to produce —
+    ; not the judgement.
+    ;
+    ; ★THE MESSAGES ARE THE INTERFACE, and it is an unchecked one: each marker
+    ; below is a substring of a string literal in Planner.scaly, and a reworded
+    ; diagnostic silently turns its fix off. That is why the gate asserts the
+    ; whole round trip — compiler diagnostic through the server to the edit —
+    ; rather than these functions alone. A fix that stops firing is invisible
+    ; otherwise: an empty action list is what the editor gets on every ordinary
+    ; cursor position anyway.
+    ;
+    ; ★A FIX IS OFFERED ONLY WHEN IT NEEDS NO GUESS. Each one below refuses on
+    ; the shapes it cannot rewrite exactly (a second `=` on the line, a comment
+    ; that would be swallowed into the parens, a name the cursor does not sit
+    ; on) — a quick fix is applied without being read, so a plausible-looking
+    ; wrong edit is worse than no fix at all.
+    ; ====================================================================
+
+    ; The comma-joined CodeAction fragments for every diagnostic in `packed`
+    ; (one `<line> <character> <message>` per line), wrapped in the array.
     function code_actions_packed(rp, source: String, uri: String, packed: String) returns String
     {
         var sb StringBuilder()
         sb.append("[" as char)
-        let at symbols.use_insert_line source
         var first true
         var i: size_t 0
         let n packed.get_length()
@@ -944,24 +967,21 @@ define symbols
             var end i
             while end < n
             {
-                if packed.get(end) = 0x0A
+                let c packed.get end
+                if c = 0x0A
                     break
                 set end: end + 1
             }
             if end > i
             {
-                var path StringBuilder()
-                var k i
-                while k < end
+                let frag symbols.code_actions_for(source, uri, symbols.substring(packed, i, end))
+                if frag.get_length() > 0
                 {
-                    path.append(packed.get(k) as char)
-                    set k: k + 1
+                    if first = false
+                        sb.append("," as char)
+                    symbols.append_fragment(&sb, frag)
+                    set first: false
                 }
-                let path_str path.to_string()
-                if first = false
-                    sb.append("," as char)
-                symbols.append_fragment(&sb, symbols.use_code_action(uri, path_str, at))
-                set first: false
             }
             set i: end + 1
         }
@@ -969,39 +989,628 @@ define symbols
         sb.to_string()
     }
 
-    ; {"title":...,"kind":"quickfix","edit":{"changes":{<uri>:[<TextEdit>]}}}.
-    ; The edit's range is EMPTY (start = end = the insert line, column 0), which
-    ; is LSP's spelling of an insertion — a zero-width range replaces nothing.
-    function use_code_action(rp, uri: String, path: String, at: size_t) returns String
+    ; The fixes for ONE packed diagnostic, comma-joined (no brackets), or "".
+    function code_actions_for(rp, source: String, uri: String, entry: String) returns String
     {
-        var title StringBuilder()
-        title.append "Add: use "
-        symbols.append_fragment(&title, path)
+        let len entry.get_length()
+        let sp1 symbols.index_of_byte(entry, 0, len, 0x20)
+        if sp1 >= len
+            return String("")
+        let sp2 symbols.index_of_byte(entry, sp1 + 1, len, 0x20)
+        if sp2 >= len
+            return String("")
+
+        let line symbols.parse_uint(entry, 0, sp1)
+        let character symbols.parse_uint(entry, sp1 + 1, sp2)
+        let message symbols.substring(entry, sp2 + 1, len)
+
+        ; A name that is declared but not visible here. The marker is written by
+        ; Planner.use_vis_hint#.
+        let use_marker "; add: use "
+        let uat symbols.find_substring(message, use_marker)
+        if uat < message.get_length()
+        {
+            let path symbols.substring(message, uat + use_marker.get_length(), message.get_length())
+            return symbols.use_code_action(uri, path, symbols.use_insert_line(source))
+        }
+
+        ; `a = b` written where `set a: b` was meant. The planner names the fix
+        ; in the message; this turns it into the edit.
+        if symbols.find_substring(message, "it does not assign") < message.get_length()
+            return symbols.set_code_action(source, uri, line)
+
+        ; A parenless call whose argument is itself a call: the head swallowed
+        ; the chain and the statement was dropped whole.
+        if symbols.swallowed_call_head(message)
+            return symbols.paren_code_action(source, uri, line)
+
+        symbols.spelling_code_actions(source, uri, line, character, message)
+    }
+
+    ; True when the message describes a statement whose parenless call head
+    ; swallowed the chain that was meant to be its argument.
+    ;
+    ; TWO WORDINGS reach here, because the collapse ends in two different
+    ; places. When it leaves no name behind, the planner says so outright. When
+    ; it leaves one, the message is about a discarded operator — and the
+    ; operator NAME settles it soundly rather than by guess: an operator in this
+    ; language consists EXCLUSIVELY of the eleven operator characters, the four
+    ; word operators being the only exceptions. So an alphanumeric name that is
+    ; none of those is not an operator at all, it is the callee the head
+    ; swallowed. `print helper(2)` reports operator `helper` and is this; `a + b`
+    ; keeps its symbolic name and is left alone, because parenthesizing a real
+    ; dead expression would produce nonsense.
+    function swallowed_call_head(message: String) returns bool
+    {
+        if symbols.find_substring(message, "did not resolve to a call") < message.get_length()
+            return true
+
+        let marker "the result of operator '"
+        let at symbols.find_substring(message, marker)
+        if at >= message.get_length()
+            return false
+
+        let from at + marker.get_length()
+        let to symbols.index_of_byte(message, from, message.get_length(), 0x27)   ; '
+        if to >= message.get_length()
+            return false
+        if to = from
+            return true                    ; no name at all: the collapse left none
+
+        ; A name of identifier characters, starting with a letter or `_`.
+        let first message.get from
+        if symbols.is_ident_byte(first) = false
+            return false
+        if first >= 0x30
+            if first <= 0x39
+                return false
+        var i from
+        while i < to
+        {
+            if symbols.is_ident_byte(message.get i) = false
+                return false
+            set i: i + 1
+        }
+
+        let name symbols.substring(message, from, to)
+        if name = "and"
+            return false
+        if name = "or"
+            return false
+        if name = "not"
+            return false
+        if name = "xor"
+            return false
+        true
+    }
+
+    ; ---- fix: `a = b` -> `set a: b` ------------------------------------
+    ;
+    ; The whole line is replaced, indentation preserved. A trailing comment
+    ; rides along at the end, where it still belongs.
+    function set_code_action(rp, source: String, uri: String, line: size_t) returns String
+    {
+        let ls symbols.position_to_offset(source, line, 0)
+        let le symbols.line_end(source, ls)
+
+        let eq symbols.sole_equals(source, ls, le)
+        if eq >= le
+            return String("")
+
+        let indent symbols.skip_blanks(source, ls, le)
+        let lhs symbols.trimmed(source, indent, eq)
+        let rhs symbols.trimmed(source, eq + 1, le)
+        if lhs.get_length() = 0
+            return String("")
+        if rhs.get_length() = 0
+            return String("")
+
         var text StringBuilder()
-        text.append "use "
-        symbols.append_fragment(&text, path)
-        text.append("\n" as char)
+        symbols.append_fragment(&text, symbols.substring(source, ls, indent))
+        text.append "set "
+        symbols.append_fragment(&text, lhs)
+        text.append ": "
+        symbols.append_fragment(&text, rhs)
 
-        var pos StringBuilder()
-        pos.append("{" as char)
-        pos.append(symbols.key("line"))
-        pos.append(json.format_i64(at as i64))
-        pos.append("," as char)
-        pos.append(symbols.key("character"))
-        pos.append("0" as char)
-        pos.append("}" as char)
-        let pos_str pos.to_string()
+        var title StringBuilder()
+        title.append "Assign: set "
+        symbols.append_fragment(&title, lhs)
+        title.append ": ..."
 
+        symbols.edit_code_action(uri, title.to_string(), true,
+            line, 0, line, le - ls, text.to_string())
+    }
+
+    ; The offset of the ONE `=` in [from, to) that is an operator on its own,
+    ; or `to` when the line has none or more than one.
+    ;
+    ; An `=` adjacent to another operator character belongs to a different
+    ; operator (`<=`, `>=`, `<>` is not one but `==` is), and a line with two of
+    ; them — `if a = b: c = d` — cannot be rewritten without deciding which
+    ; comparison the author meant. Both refuse.
+    function sole_equals(source: String, from: size_t, to: size_t) returns size_t
+    {
+        var found to
+        var count: size_t 0
+        var i from
+        while i < to
+        {
+            let c source.get i
+            if c = 0x3D                                ; '='
+            {
+                var lone true
+                if i > from
+                {
+                    let before source.get(i - 1)
+                    if grammar.is_op_char(before)
+                        set lone: false
+                }
+                if (i + 1) < to
+                {
+                    let after source.get(i + 1)
+                    if grammar.is_op_char(after)
+                        set lone: false
+                }
+                if lone
+                {
+                    set found: i
+                    set count: count + 1
+                }
+            }
+            set i: i + 1
+        }
+        if count = 1
+            return found
+        to
+    }
+
+    ; ---- fix: `f x.m()` -> `f(x.m())` ----------------------------------
+    ;
+    ; The head is everything up to the first space, the argument everything
+    ; after it. A line carrying a `;` is refused: the comment would end up
+    ; INSIDE the parentheses, which compiles and means something else.
+    function paren_code_action(rp, source: String, uri: String, line: size_t) returns String
+    {
+        let ls symbols.position_to_offset(source, line, 0)
+        let le symbols.line_end(source, ls)
+
+        if symbols.index_of_byte(source, ls, le, 0x3B) < le
+            return String("")
+
+        let indent symbols.skip_blanks(source, ls, le)
+        let head_end symbols.index_of_byte(source, indent, le, 0x20)
+        if head_end >= le
+            return String("")
+
+        let head symbols.substring(source, indent, head_end)
+        let arg symbols.trimmed(source, head_end, le)
+        if head.get_length() = 0
+            return String("")
+        if arg.get_length() = 0
+            return String("")
+
+        var text StringBuilder()
+        symbols.append_fragment(&text, symbols.substring(source, ls, indent))
+        symbols.append_fragment(&text, head)
+        text.append("(" as char)
+        symbols.append_fragment(&text, arg)
+        text.append(")" as char)
+
+        var title StringBuilder()
+        title.append "Parenthesize the argument of "
+        symbols.append_fragment(&title, head)
+
+        symbols.edit_code_action(uri, title.to_string(), true,
+            line, 0, line, le - ls, text.to_string())
+    }
+
+    ; ---- fix: a misspelled name -> the nearest one in the file ---------
+    ;
+    ; For `unknown identifier: N`, `unknown type: N` and `unknown assignment
+    ; target: N`. Candidates are the identifiers that OCCUR IN THE BUFFER —
+    ; which is where the intended name is: a local, a parameter, a field or a
+    ; declaration, all of them written correctly somewhere else in the file. A
+    ; walk over the declarations alone would miss precisely the locals, which is
+    ; what most typos are.
+    ;
+    ; ★THE SPAN COMES FROM THE LINE, NOT FROM THE DIAGNOSTIC'S COLUMN, and that
+    ; is a measurement rather than a preference: of the three messages this
+    ; handles, only one points AT the name. `unknown assignment target: countre`
+    ; is reported at the `set` that begins the statement, and an unknown
+    ; ARGUMENT at the callee's opening paren — a first version keyed on
+    ; identifier_at# therefore offered nothing for either, and would have
+    ; rewritten the wrong word had it not checked.
+    ;
+    ; So the anchor is the diagnostic's LINE, and the name must occur on it
+    ; EXACTLY ONCE as a whole identifier. That is still exact: with two
+    ; occurrences there is no way to tell which one the planner meant, and the
+    ; fix is refused rather than guessed.
+    function spelling_code_actions(rp, source: String, uri: String, line: size_t, character: size_t, message: String) returns String
+    {
+        let name symbols.unknown_name_in(message)
+        if name.get_length() = 0
+            return String("")
+
+        let ls symbols.position_to_offset(source, line, 0)
+        let le symbols.line_end(source, ls)
+        let start symbols.sole_word_occurrence(source, ls, le, name)
+        if start >= le
+            return String("")
+        let end start + name.get_length()
+
+        let cands symbols.spelling_candidates(source, name)
+        if cands.get_length() = 0
+            return String("")
+
+        var sb StringBuilder()
+        var first true
+        var i: size_t 0
+        let n cands.get_length()
+        while i < n
+        {
+            var e i
+            while e < n
+            {
+                let c cands.get e
+                if c = 0x0A
+                    break
+                set e: e + 1
+            }
+            if e > i
+            {
+                let cand symbols.substring(cands, i, e)
+                var title StringBuilder()
+                title.append "Change to "
+                symbols.append_fragment(&title, cand)
+                if first = false
+                    sb.append("," as char)
+                symbols.append_fragment(&sb, symbols.edit_code_action(
+                    uri, title.to_string(), first,
+                    line, start - ls, line, end - ls, cand))
+                set first: false
+            }
+            set i: e + 1
+        }
+        sb.to_string()
+    }
+
+    ; The offset of the ONE occurrence of `word` as a whole identifier in
+    ; [from, to), or `to` when there is none or more than one.
+    function sole_word_occurrence(source: String, from: size_t, to: size_t, word: String) returns size_t
+    {
+        var found to
+        var count: size_t 0
+        var i from
+        while i < to
+        {
+            let c source.get i
+            if symbols.is_ident_byte(c) = false
+            {
+                set i: i + 1
+                continue
+            }
+            var e i
+            while e < to
+            {
+                let c2 source.get e
+                if symbols.is_ident_byte(c2) = false
+                    break
+                set e: e + 1
+            }
+            if (e - i) = word.get_length()
+            {
+                var same true
+                var k: size_t 0
+                while k < word.get_length()
+                {
+                    if source.get(i + k) <> word.get(k)
+                    {
+                        set same: false
+                        break
+                    }
+                    set k: k + 1
+                }
+                if same
+                {
+                    set found: i
+                    set count: count + 1
+                }
+            }
+            set i: e
+        }
+        if count = 1
+            return found
+        to
+    }
+
+    ; The name a `unknown ...: N` message reports, or "". The name ends at the
+    ; first space, because a visibility hint may follow it.
+    function unknown_name_in(rp, message: String) returns String
+    {
+        var at message.get_length()
+        if symbols.starts_with_str(message, "unknown identifier: ")
+            set at: 20
+        if symbols.starts_with_str(message, "unknown type: ")
+            set at: 14
+        if symbols.starts_with_str(message, "unknown assignment target: ")
+            set at: 27
+        if at >= message.get_length()
+            return String("")
+
+        let end symbols.index_of_byte(message, at, message.get_length(), 0x20)
+        symbols.substring(message, at, end)
+    }
+
+    ; True when `s` begins with `prefix`.
+    function starts_with_str(s: String, prefix: String) returns bool
+    {
+        let pn prefix.get_length()
+        if pn > s.get_length()
+            return false
+        var i: size_t 0
+        while i < pn
+        {
+            if s.get(i) <> prefix.get(i)
+                return false
+            set i: i + 1
+        }
+        true
+    }
+
+    ; Up to three identifiers of the buffer nearest to `name`, one per line,
+    ; closest first. "" when nothing is near enough.
+    ;
+    ; NEAR ENOUGH is deliberately tight — one edit for a short name, two from
+    ; five bytes up. A quick fix is applied without being read; offering the
+    ; wrong name is worse than offering none.
+    function spelling_candidates(rp, source: String, name: String) returns String
+    {
+        var cap: size_t 1
+        if name.get_length() >= 5
+            set cap: 2
+
+        var sb StringBuilder()
+        var count: size_t 0
+        var d: size_t 1
+        while d <= cap
+        {
+            if count < 3
+                symbols.append_candidates_at(&sb, &count, source, name, d)
+            set d: d + 1
+        }
+        sb.to_string()
+    }
+
+    ; Append every buffer identifier whose distance from `name` is exactly `d`,
+    ; skipping duplicates and stopping at three in total.
+    procedure append_candidates_at(sb: pointer[StringBuilder], count: pointer[size_t], source: String, name: String, d: size_t)
+    {
+        let n source.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            ; Comments and string literals are not code, and a word from prose
+            ; is not a name. Skipping them is what keeps `; the value` out of
+            ; the candidates for a typo near `value`.
+            let skipped symbols.skip_non_code(source, i)
+            if skipped > i
+            {
+                set i: skipped
+                continue
+            }
+
+            let c source.get i
+            if symbols.is_ident_byte(c) = false
+            {
+                set i: i + 1
+                continue
+            }
+            var e i
+            while e < n
+            {
+                let c2 source.get e
+                if symbols.is_ident_byte(c2) = false
+                    break
+                set e: e + 1
+            }
+            let word symbols.substring(source, i, e)
+            set i: e
+
+            if *count < 3
+                if word <> name
+                    if symbols.edit_distance(word, name, d) = d
+                        if symbols.list_contains(sb.to_string(), word) = false
+                        {
+                            symbols.append_fragment(sb, word)
+                            sb.append(0x0A as char)
+                            set *count: *count + 1
+                        }
+        }
+    }
+
+    ; The offset past a comment or a string literal starting at `i`, else `i`.
+    function skip_non_code(source: String, i: size_t) returns size_t
+    {
+        let n source.get_length()
+        let c source.get i
+        if c = 0x3B                                    ; ';'
+        {
+            var k i + 1
+            var block false
+            if k < n
+            {
+                let c2 source.get k
+                if c2 = 0x2A                           ; ';*' block comment
+                    set block: true
+            }
+            if block
+            {
+                set k: k + 1
+                while k < n
+                {
+                    let a source.get k
+                    if a = 0x2A
+                        if (k + 1) < n
+                        {
+                            let b source.get(k + 1)
+                            if b = 0x3B
+                                return k + 2
+                        }
+                    set k: k + 1
+                }
+                return n
+            }
+            while k < n
+            {
+                let a source.get k
+                if a = 0x0A
+                    return k
+                set k: k + 1
+            }
+            return n
+        }
+        if c = 0x22                                    ; '"'
+        {
+            var k i + 1
+            while k < n
+            {
+                let a source.get k
+                if a = 0x5C                            ; backslash escape
+                {
+                    set k: k + 2
+                    continue
+                }
+                if a = 0x22
+                    return k + 1
+                if a = 0x0A
+                    return k
+                set k: k + 1
+            }
+            return n
+        }
+        i
+    }
+
+    ; True when the LF-separated `list` already holds `word`.
+    function list_contains(list: String, word: String) returns bool
+    {
+        let n list.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            var e i
+            while e < n
+            {
+                let c list.get e
+                if c = 0x0A
+                    break
+                set e: e + 1
+            }
+            if (e - i) = word.get_length()
+            {
+                var same true
+                var k: size_t 0
+                while k < word.get_length()
+                {
+                    if list.get(i + k) <> word.get(k)
+                    {
+                        set same: false
+                        break
+                    }
+                    set k: k + 1
+                }
+                if same
+                    return true
+            }
+            set i: e + 1
+        }
+        false
+    }
+
+    ; Levenshtein distance between `a` and `b`, answering `cap + 1` as soon as
+    ; the answer cannot be `cap` or less. Two fixed rows, so a name of 64 bytes
+    ; or more is simply not a candidate — no name in this tree comes close, and
+    ; a heap row per identifier of the buffer would not be worth it.
+    function edit_distance(a: String, b: String, cap: size_t) returns size_t
+    {
+        let an a.get_length()
+        let bn b.get_length()
+        if an >= 64
+            return cap + 1
+        if bn >= 64
+            return cap + 1
+        if an > (bn + cap)
+            return cap + 1
+        if bn > (an + cap)
+            return cap + 1
+
+        var prev size_t[64]
+        var cur size_t[64]
+        var j: size_t 0
+        while j <= bn
+        {
+            set prev[j]: j
+            set j: j + 1
+        }
+
+        var i: size_t 1
+        while i <= an
+        {
+            set cur[0]: i
+            var best i
+            var k: size_t 1
+            while k <= bn
+            {
+                var cost: size_t 1
+                if a.get(i - 1) = b.get(k - 1)
+                    set cost: 0
+
+                var v prev[k - 1] + cost              ; substitute
+                let del prev[k] + 1
+                if del < v
+                    set v: del
+                let ins cur[k - 1] + 1
+                if ins < v
+                    set v: ins
+                set cur[k]: v
+                if v < best
+                    set best: v
+                set k: k + 1
+            }
+            ; Whole row already past the cap: nothing below it can come back.
+            if best > cap
+                return cap + 1
+
+            var m: size_t 0
+            while m <= bn
+            {
+                set prev[m]: cur[m]
+                set m: m + 1
+            }
+            set i: i + 1
+        }
+        prev[bn]
+    }
+
+    ; ---- shared builders ------------------------------------------------
+
+    ; A quickfix CodeAction with one TextEdit. An EMPTY range (start = end) is
+    ; LSP's spelling of an insertion — it replaces nothing.
+    function edit_code_action(rp, uri: String, title: String, preferred: bool, start_line: size_t, start_char: size_t, end_line: size_t, end_char: size_t, new_text: String) returns String
+    {
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("title"))
-        sb.append(json.quote_string(title.to_string()))
+        sb.append(json.quote_string(title))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append(json.quote_string("quickfix"))
-        sb.append("," as char)
-        sb.append(symbols.key("isPreferred"))
-        sb.append "true"
+        if preferred
+        {
+            sb.append("," as char)
+            sb.append(symbols.key("isPreferred"))
+            sb.append "true"
+        }
         sb.append("," as char)
         sb.append(symbols.key("edit"))
         sb.append("{" as char)
@@ -1014,20 +1623,140 @@ define symbols
         sb.append(symbols.key("range"))
         sb.append("{" as char)
         sb.append(symbols.key("start"))
-        symbols.append_fragment(&sb, pos_str)
+        symbols.append_fragment(&sb, symbols.position_object(start_line, start_char))
         sb.append("," as char)
         sb.append(symbols.key("end"))
-        symbols.append_fragment(&sb, pos_str)
+        symbols.append_fragment(&sb, symbols.position_object(end_line, end_char))
         sb.append("}" as char)
         sb.append("," as char)
         sb.append(symbols.key("newText"))
-        sb.append(json.quote_string(text.to_string()))
+        sb.append(json.quote_string(new_text))
         sb.append("}" as char)
         sb.append("]" as char)
         sb.append("}" as char)
         sb.append("}" as char)
         sb.append("}" as char)
         sb.to_string()
+    }
+
+    ; {"line":L,"character":C}
+    function position_object(rp, line: size_t, character: size_t) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("line"))
+        sb.append(json.format_i64(line as i64))
+        sb.append("," as char)
+        sb.append(symbols.key("character"))
+        sb.append(json.format_i64(character as i64))
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    ; The `use <path>` insertion at line `at`, column 0.
+    function use_code_action(rp, uri: String, path: String, at: size_t) returns String
+    {
+        var title StringBuilder()
+        title.append "Add: use "
+        symbols.append_fragment(&title, path)
+        var text StringBuilder()
+        text.append "use "
+        symbols.append_fragment(&text, path)
+        text.append("\n" as char)
+
+        symbols.edit_code_action(uri, title.to_string(), true, at, 0, at, 0, text.to_string())
+    }
+
+    ; The offset of the LF ending the line that starts at `ls` (or the length).
+    function line_end(source: String, ls: size_t) returns size_t
+    {
+        let n source.get_length()
+        var i ls
+        while i < n
+        {
+            let c source.get i
+            if c = 0x0A
+                return i
+            set i: i + 1
+        }
+        n
+    }
+
+    ; The offset of the first `b` in [from, to), else `to`.
+    function index_of_byte(source: String, from: size_t, to: size_t, b: u8) returns size_t
+    {
+        var i from
+        while i < to
+        {
+            if source.get(i) = b
+                return i
+            set i: i + 1
+        }
+        to
+    }
+
+    ; The offset of `needle` in `hay`, or hay's length when absent.
+    function find_substring(hay: String, needle: String) returns size_t
+    {
+        let hn hay.get_length()
+        let nn needle.get_length()
+        if nn = 0
+            return hn
+        if nn > hn
+            return hn
+        var i: size_t 0
+        while i <= (hn - nn)
+        {
+            var k: size_t 0
+            var same true
+            while k < nn
+            {
+                if hay.get(i + k) <> needle.get(k)
+                {
+                    set same: false
+                    break
+                }
+                set k: k + 1
+            }
+            if same
+                return i
+            set i: i + 1
+        }
+        hn
+    }
+
+    ; The decimal number in [from, to), or 0.
+    function parse_uint(s: String, from: size_t, to: size_t) returns size_t
+    {
+        var v: size_t 0
+        var i from
+        while i < to
+        {
+            let c s.get i
+            if c < 0x30
+                return v
+            if c > 0x39
+                return v
+            set v: v * 10 + ((c - 0x30) as size_t)
+            set i: i + 1
+        }
+        v
+    }
+
+    ; Bytes [from, to) with leading and trailing spaces and tabs removed.
+    function trimmed(rp, source: String, from: size_t, to: size_t) returns String
+    {
+        var s symbols.skip_blanks(source, from, to)
+        var e to
+        while e > s
+        {
+            let c source.get(e - 1)
+            if c <> 0x20
+                if c <> 0x09
+                    break
+            set e: e - 1
+        }
+        symbols.substring(source, s, e)
     }
 
     function folding_ranges(rp, source: String) returns String

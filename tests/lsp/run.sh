@@ -1149,6 +1149,207 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeAction use quickfix"; else bad "lsp codeAction use quickfix"; fi
 
+# ---- codeAction: quick fixes for the hard planner gates ------------------
+# The 2026-08-15 gates each report a mistake with a mechanical repair, and each
+# fix here is derived from the diagnostic's own MESSAGE — the planner has
+# already decided what is wrong, and asking it a second time would let the two
+# answers drift (symbols.code_actions_for# carries the argument).
+#
+# ★THE ASSERTION IS THAT THE FIX FIXES IT. Every case below applies the edit,
+# writes the result back and re-analyses: the diagnostic must be GONE. A test
+# that compares the produced text against an expected string only proves the
+# server is self-consistent; re-running the compiler over the result is what
+# makes the round trip — gate, message, action, range, edit — load-bearing end
+# to end.
+#
+# The REFUSALS are the other half, and each would produce a wrong edit if it
+# fired: a second `=` on the line (which comparison was meant?), a comment that
+# the parentheses would swallow, a name occurring twice on the line (which one
+# is the typo?), and a genuine dead expression, where parenthesizing `c + b`
+# would produce `c(+ b)`.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os, select, time, shutil
+
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+class Session:
+    def __init__(self):
+        self.p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE, bufsize=0)
+        self.buf = bytearray()
+        self.send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+        self.next_frame()
+        self.send({"jsonrpc":"2.0","method":"initialized","params":{}})
+
+    def send(self, o):
+        self.p.stdin.write(frame(o)); self.p.stdin.flush()
+
+    def next_frame(self, timeout=60.0):
+        fd = self.p.stdout.fileno()
+        deadline = time.time() + timeout
+        while True:
+            i = self.buf.find(b"\r\n\r\n")
+            if i >= 0:
+                n = int(bytes(self.buf[:i]).decode().split(":")[1].strip())
+                if len(self.buf) >= i + 4 + n:
+                    body = bytes(self.buf[i+4:i+4+n]); del self.buf[:i+4+n]
+                    return json.loads(body)
+            left = deadline - time.time()
+            if left <= 0: return None
+            if not select.select([fd], [], [], left)[0]: return None
+            chunk = os.read(fd, 65536)
+            if not chunk: return None
+            self.buf.extend(chunk)
+
+    # The diagnostics published for `path` after an open or an edit.
+    def analyse(self, path, text, version):
+        uri = "file://" + path
+        if version == 1:
+            self.send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":text}}})
+        else:
+            self.send({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+                "textDocument":{"uri":uri,"version":version},
+                "contentChanges":[{"text":text}]}})
+        out = {}
+        f = self.next_frame(60.0)
+        while f is not None:
+            if f.get("method") == "textDocument/publishDiagnostics":
+                out[f["params"]["uri"]] = f["params"]["diagnostics"]
+            f = self.next_frame(2.0)
+        return out.get(uri, [])
+
+    def actions(self, path, diag, idn):
+        self.send({"jsonrpc":"2.0","id":idn,"method":"textDocument/codeAction","params":{
+            "textDocument":{"uri":"file://"+path}, "range":diag["range"],
+            "context":{"diagnostics":[diag]}}})
+        while True:
+            f = self.next_frame(60.0)
+            if f is None: return []
+            if f.get("id") == idn: return f.get("result") or []
+
+    def close(self):
+        self.send({"jsonrpc":"2.0","method":"exit"}); self.p.wait()
+
+# A line of a possibly-missing result. A failing fix leaves `fixed` None, and
+# an indexing crash there would take the whole suite down instead of reporting
+# the one check that failed -- which is exactly what the negative control did.
+def line_of(text, i):
+    lines = (text or "").split("\n")
+    if i >= len(lines): return None
+    return lines[i]
+
+def apply_edit(text, action):
+    changes = list(action["edit"]["changes"].values())[0]
+    lines = text.split("\n")
+    for e in sorted(changes, key=lambda e: (-e["range"]["start"]["line"],
+                                            -e["range"]["start"]["character"])):
+        sl, sc = e["range"]["start"]["line"], e["range"]["start"]["character"]
+        el, ec = e["range"]["end"]["line"], e["range"]["end"]["character"]
+        if sl == el:
+            lines[sl] = lines[sl][:sc] + e["newText"] + lines[el][ec:]
+        else:
+            lines[sl:el+1] = [lines[sl][:sc] + e["newText"] + lines[el][ec:]]
+    return "\n".join(lines)
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+ws = "/tmp/lsp_ws/codeaction_fixes"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+s = Session()
+counter = [0]
+
+# Open `src`, find the diagnostic whose message contains `marker`, take its
+# quick fixes, apply the first, and report (titles, line-after, diagnostic-gone).
+def fix(name, src, marker):
+    counter[0] += 1
+    path = ws + "/" + name + ".scaly"
+    open(path, "w").write(src)
+    diags = s.analyse(path, src, 1)
+    hit = [d for d in diags if marker in d["message"]]
+    if not hit:
+        return (None, None, None, [d["message"] for d in diags])
+    d = hit[0]
+    acts = s.actions(path, d, 500 + counter[0])
+    if not acts:
+        return ([], None, None, None)
+    fixed = apply_edit(src, acts[0])
+    open(path, "w").write(fixed)
+    left = s.analyse(path, fixed, 2)
+    gone = not [x for x in left if marker in x["message"]]
+    return ([a["title"] for a in acts], fixed, gone, None)
+
+# 1. `a = b` where `set a: b` was meant.
+titles, fixed, gone, _ = fix("assign",
+    "function demo() returns int\n{\n"
+    "    var buffer u8[4]\n"
+    "    set buffer[0]: 111\n"
+    "    buffer[0] = 222\n"
+    "    return 1\n}\n", "it does not assign")
+check(titles == ["Assign: set buffer[0]: ..."], "`=` statement offers the set fix -- %s" % (titles,))
+check(line_of(fixed, 4) == "    set buffer[0]: 222",
+      "the edit writes `set buffer[0]: 222`, indentation kept")
+check(gone is True, "and re-analysing the fixed file no longer reports it")
+
+# 2. a parenless head that swallowed its argument's own call.
+titles, fixed, gone, _ = fix("paren",
+    "function helper(v: int) returns int\n    v + 1\n\n"
+    "function demo() returns int\n{\n"
+    "    print helper(2)\n"
+    "    return 1\n}\n", "is discarded")
+check(titles == ["Parenthesize the argument of print"],
+      "swallowed call head offers the parenthesize fix -- %s" % (titles,))
+check(line_of(fixed, 5) == "    print(helper(2))", "the edit parenthesizes the argument")
+check(gone is True, "and the statement then resolves")
+
+# 3-5. a misspelled name, in the three positions whose diagnostics differ.
+SPELL = ("function twice(v: int) returns int\n    v + v\n\n"
+         "function demo() returns int\n{\n"
+         "    var counter 3\n"
+         "    %s\n"
+         "    return counter\n}\n")
+for label, stmt, want in [
+        ("in an operand",      "let b 1 + countr",  "    let b 1 + counter"),
+        ("as a `set` target",  "set countr: 5",     "    set counter: 5"),
+        ("as a call argument", "let c twice(countr)", "    let c twice(counter)")]:
+    titles, fixed, gone, _ = fix("spell_" + label.split()[-1], SPELL % stmt, "countr")
+    check(titles == ["Change to counter"], "a typo %s offers the near name -- %s" % (label, titles))
+    check(line_of(fixed, 6) == want,
+          "and replaces exactly the name %s" % label)
+
+# 6-9. the refusals. Each would be a WRONG edit.
+for label, src, marker in [
+        ("two `=` on one line",
+         "function demo() returns int\n{\n    var counter 3\n"
+         "    set counter: 1\n    counter = 2: counter = 3\n    return counter\n}\n",
+         "it does not assign"),
+        ("a comment the parens would swallow",
+         "function helper(v: int) returns int\n    v + 1\n\n"
+         "function demo() returns int\n{\n    print helper(2)  ; a note\n    return 1\n}\n",
+         "is discarded"),
+        ("the name occurs twice on the line",
+         "function demo() returns int\n{\n    var counter 3\n"
+         "    let d countr + countr\n    return counter + d\n}\n",
+         "countr"),
+        ("a genuine dead expression",
+         "function demo() returns int\n{\n    let a 1\n    let b 2\n"
+         "    a + b\n    return a\n}\n",
+         "is discarded")]:
+    titles, _, _, msgs = fix("refuse_" + str(len(label)), src, marker)
+    check(titles == [], "refused: %s -- %s" % (label, titles if titles is not None else msgs))
+
+s.close()
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp codeAction gate fixes"; else bad "lsp codeAction gate fixes"; fi
+
 # ---- callHierarchy: prepare / incoming / outgoing ----
 # prepare must resolve from a CALL SITE, not just from a declaration — that is
 # where a reader asks "who calls this?". incoming groups call sites by the
