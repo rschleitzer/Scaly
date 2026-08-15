@@ -429,6 +429,129 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp hover"; else bad "lsp hover"; fi
 
+# ---- hover: the DOC COMMENT above the declaration ------------------------
+# In this tree the `;` block above a routine IS its documentation — it carries
+# the reasoning the signature cannot. symbols.with_doc# appends it, fenced so
+# that markdown does not reflow hand-wrapped structure into one paragraph.
+#
+# The interesting checks are the ones about where the block STOPS:
+#
+#   BLANK LINE   a file banner or an unrelated note above the doc is separated
+#                by an empty line in this tree, and a walk that crossed one
+#                would hand the reader the section header instead of the doc.
+#   OWN LINE     a declaration that is not the first thing on its line does not
+#                own the block above it. `a: b` on one line puts two routines
+#                there, and the doc belongs to the first — which is what the
+#                skip_blanks# test in doc_comment# decides, and the only reason
+#                it is not dead code.
+#   `;*` BLOCK   a block comment is not a doc line: its content runs past this
+#                line, so a line-wise walk could report commented-out SOURCE as
+#                documentation.
+#
+# And where it is NOT attached: a constituent (`parameter a: int`) is a
+# statement about the parameter, and the in-body fallback about where the cursor
+# is — repeating the whole block there would bury the semantic type hover.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+ws = "/tmp/lsp_ws/hover_doc"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+src = ("; A file banner that must NOT reach any hover.\n"        # 0
+       "\n"                                                     # 1  blank ends it
+       "; Add two numbers.\n"                                   # 2
+       ";\n"                                                    # 3  paragraph break
+       ";   a  the left one\n"                                  # 4  structure
+       ";   b  the right one\n"                                 # 5
+       "function add(a: int, b: int) returns int\n"             # 6
+       "{\n    return a + b\n}\n"                               # 7-9
+       "\n"                                                     # 10
+       "; The live count.\n"                                    # 11
+       "mutable counter: int 0\n"                               # 12
+       "\n"                                                     # 13
+       "; A point in the plane.\n"                              # 14
+       "define Point\n(\n    x: int\n)\n{\n"                    # 15-19
+       "    ; The x coordinate, read-only.\n"                   # 20
+       "    function get_x(this: Point) returns int\n"          # 21
+       "    {\n        return x\n    }\n}\n"                    # 22-25
+       "\n"                                                     # 26
+       "function undocumented() returns int\n"                  # 27
+       "{\n    return 1\n}\n"                                   # 28-30
+       "\n"                                                     # 31
+       ";* a BLOCK comment, whose content runs past this line *;\n"  # 32
+       "function blocky() returns int\n"                        # 33
+       "{\n    return 2\n}\n"                                   # 34-36
+       "\n"                                                     # 37
+       "; the doc of first\n"                                   # 38
+       "function first(rp) returns int  1: function second(rp) returns int  2\n")  # 39
+path = ws + "/lsp_hover_doc.scaly"
+open(path, "w").write(src)
+
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def hov(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += hov(2,  6, 10)   # the name `add`      -> signature + doc
+inp += hov(3,  6, 15)   # a PARAMETER of add  -> no doc
+inp += hov(4,  8, 10)   # inside add's BODY   -> no doc
+inp += hov(5, 12, 10)   # `mutable counter`
+inp += hov(6, 15, 8)    # `define Point`
+inp += hov(7, 21, 15)   # the method name
+inp += hov(8, 27, 10)   # an UNDOCUMENTED routine -> byte-identical to before
+inp += hov(9, 33, 10)   # a routine under a `;*` block comment
+inp += hov(10, 39, 10)  # `first`  -> owns the block above
+inp += hov(11, 39, 45)  # `second` -> same line, does NOT
+inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def val(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    r = (f or {}).get("result")
+    return None if r is None else r.get("contents", {}).get("value")
+
+FENCE = "`" * 3
+add = val(2) or ""
+check(add.startswith("function add(a: int, b: int) returns int\n\n" + FENCE + "\n"),
+      "the signature comes first, then the fenced doc block")
+check("Add two numbers." in add, "the doc text is there")
+check("\n\n  a  the left one\n  b  the right one\n" in add,
+      "the block's own line structure survives (paragraph break + indent)")
+check("file banner" not in add, "a block above a BLANK LINE is not part of it")
+check(add.endswith("\n" + FENCE), "the fence is closed")
+
+check(val(3) == "parameter a: int", "a constituent gets no doc")
+check(val(4) == "function add", "an offset inside the BODY gets no doc")
+check((val(5) or "").startswith("mutable counter\n\n") and "The live count." in (val(5) or ""),
+      "a mutable global carries its doc")
+check((val(6) or "").startswith("struct Point\n\n") and "A point in the plane." in (val(6) or ""),
+      "a concept carries its doc")
+check("The x coordinate, read-only." in (val(7) or ""), "a method carries its doc")
+check(val(8) == "function undocumented() returns int",
+      "an undocumented routine is unchanged -- no fence, no blank line")
+check(val(9) == "function blocky() returns int",
+      "a `;*` BLOCK comment is not a doc comment")
+check("the doc of first" in (val(10) or ""), "the routine that STARTS the line owns the block")
+check(val(11) == "function second(rp) returns int",
+      "a second routine on the same line does not")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp hover doc comments"; else bad "lsp hover doc comments"; fi
+
 # ---- definition: jump to the declaration named under the cursor ----
 # Intra-file go-to-definition: extract the identifier at the cursor and find
 # a declaration with that name. Exercises a top-level function call, a method

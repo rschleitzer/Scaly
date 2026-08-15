@@ -15,7 +15,8 @@ What you get:
   the errors of every module of that root are reported at once: a mistake in a
   file you do not have open still appears in the Problems panel, at its own
   line. It costs nothing extra — that analysis was already running.
-- **Hover** — signatures and doc info for functions, types, and bindings.
+- **Hover** — signatures for functions, types, and bindings, plus the `;`
+  comment block written above the declaration, its line structure intact.
 - **Go to Definition** / **Find All References** / **Document Highlight** —
   cross-file and cross-package.
 - **Completion** — names in scope, members, keywords.

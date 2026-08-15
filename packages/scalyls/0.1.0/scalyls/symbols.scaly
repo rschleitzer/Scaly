@@ -4892,11 +4892,11 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
             when m: ModuleSyntax
-                return symbols.hover_leaf(m.start, m.end, offset, "module", String(m.name))
+                return symbols.hover_leaf(source, m.start, m.end, offset, "module", String(m.name))
             when mut: MutableSyntax
-                return symbols.hover_leaf(mut.start, mut.end, offset, "mutable", String(mut.binding.name))
+                return symbols.hover_leaf(source, mut.start, mut.end, offset, "mutable", String(mut.binding.name))
             when sh: SharedSyntax
-                return symbols.hover_leaf(sh.start, sh.end, offset, "shared", String(sh.binding.name))
+                return symbols.hover_leaf(source, sh.start, sh.end, offset, "shared", String(sh.binding.name))
             when priv: PrivateSyntax
                 return symbols.hover_export(source, priv.export_, offset)
             when e: EmptySyntax
@@ -4926,7 +4926,7 @@ define symbols
             when t: TraitSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.hover_leaf(m.start, m.end, offset, "module", String(m.name))
+                return symbols.hover_leaf(source, m.start, m.end, offset, "module", String(m.name))
     }
 
     ; A `define X`. Recurse into the body/members for the innermost match;
@@ -4968,7 +4968,7 @@ define symbols
                 sb.append kind
                 sb.append(" " as char)
                 sb.append def.name
-                return sb.to_string()
+                return symbols.with_doc(source, def.start, sb.to_string())
             }
         }
         ""
@@ -5016,7 +5016,7 @@ define symbols
             when ini: InitSyntax
                 return symbols.hover_init(source, ini, offset)
             when dei: DeInitSyntax
-                return symbols.hover_word(dei.start, dei.end, offset, "deinit")
+                return symbols.hover_word(source, dei.start, dei.end, offset, "deinit")
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
             when e: EmptySyntax
@@ -5028,7 +5028,7 @@ define symbols
             when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
-                return symbols.hover_leaf(m.start, m.end, offset, "module", String(m.name))
+                return symbols.hover_leaf(source, m.start, m.end, offset, "module", String(m.name))
     }
 
     ; Innermost-matching nested declaration of a namespace, or "".
@@ -5070,7 +5070,7 @@ define symbols
                 {
                     let vptr variants.get i
                     if vptr <> null
-                        set result: symbols.hover_leaf(vptr.start, vptr.end, offset, "case", String(vptr.name))
+                        set result: symbols.hover_leaf(source, vptr.start, vptr.end, offset, "case", String(vptr.name))
                 }
                 set i: i + 1
             }
@@ -5082,26 +5082,212 @@ define symbols
     }
 
     ; `kind name` when start <= offset < end, else "".
-    function hover_leaf(rp, start: size_t, end: size_t, offset: size_t, kind: pointer[const_char], name: String) returns String
+    function hover_leaf(rp, source: String, start: size_t, end: size_t, offset: size_t, kind: pointer[const_char], name: String) returns String
     {
         if offset >= start
             if offset < end
-                return symbols.kind_name_text(kind, name)
+                return symbols.with_doc(source, start, symbols.kind_name_text(kind, name))
         ""
     }
 
     ; `text` when start <= offset < end, else "" — for a construct whose hover
     ; has no name to add (init / deinit).
-    function hover_word(rp, start: size_t, end: size_t, offset: size_t, text: pointer[const_char]) returns String
+    function hover_word(rp, source: String, start: size_t, end: size_t, offset: size_t, text: pointer[const_char]) returns String
     {
         if offset >= start
             if offset < end
             {
                 var sb StringBuilder()
                 sb.append text
-                return sb.to_string()
+                return symbols.with_doc(source, start, sb.to_string())
             }
         ""
+    }
+
+    ; --------------------------------------------------------------------
+    ; DOC COMMENTS — the `;` block written directly above a declaration
+    ;
+    ; WHY. In this tree the comment block above a routine IS its documentation,
+    ; and it is where the reasoning lives — the hazard a parameter guards
+    ; against, the measurement a constant rests on, the reason a shape is the
+    ; way it is. The signature alone answers "what does it take"; only the block
+    ; answers "why". None of it reached the reader without opening the file.
+    ;
+    ; ATTACHED ONLY TO A DECLARATION-LEVEL ANSWER. `parameter k: size_t` and
+    ; `returns int` are statements about a CONSTITUENT, and the routine's doc is
+    ; not about them; the in-body fallback `method get_x` is a statement about
+    ; where the cursor IS, and repeating the whole block on every hover inside a
+    ; body would bury the semantic type hover that normally answers there.
+    ;
+    ; ★FENCED, and that is a rendering decision with a reason. The hover value is
+    ; markdown, where consecutive lines REFLOW into one paragraph — and these
+    ; comments are hand-wrapped, with aligned tables, bullet runs and ★ markers
+    ; whose meaning is carried by the line structure. The markdown alternative to
+    ; a fence is a hard line break, i.e. two TRAILING SPACES per line: invisible,
+    ; and the first tool that trims trailing whitespace silently reflows the
+    ; block. A fence preserves the structure in every renderer.
+    ; --------------------------------------------------------------------
+
+    ; `text` with the doc block above `start` appended, or `text` unchanged when
+    ; there is none. An empty `text` (no hover here) stays empty.
+    function with_doc(rp, source: String, start: size_t, text: String) returns String
+    {
+        if text.get_length() = 0
+            return text
+
+        let doc symbols.doc_comment(source, start)
+        if doc.get_length() = 0
+            return text
+
+        var sb StringBuilder()
+        sb.append text
+        sb.append(0x0A as char)
+        sb.append(0x0A as char)
+        sb.append(symbols.fence())
+        sb.append(0x0A as char)
+        sb.append doc
+        sb.append(0x0A as char)
+        sb.append(symbols.fence())
+        sb.to_string()
+    }
+
+    ; The three backticks of a markdown code fence. A backtick opens string
+    ; interpolation, so it is written as the escaped character.
+    function fence(rp) returns String
+    {
+        var sb StringBuilder()
+        sb.append("\`" as char)
+        sb.append("\`" as char)
+        sb.append("\`" as char)
+        sb.to_string()
+    }
+
+    ; The `;` comment block immediately above the declaration that begins at
+    ; `start`, markers stripped, or "" when there is none.
+    ;
+    ; A BLANK LINE ENDS THE BLOCK, which is what makes a file-level banner or an
+    ; unrelated note above it stay out — this tree separates those with an empty
+    ; line, and a walk that crossed one would hand the reader the section header
+    ; of the region instead of the doc of the routine.
+    function doc_comment(rp, source: String, start: size_t) returns String
+    {
+        let ls symbols.line_start(source, start)
+
+        ; The declaration must be the first thing on its line. Otherwise the
+        ; block above belongs to whatever precedes it there, not to this.
+        if symbols.skip_blanks(source, ls, start) < start
+            return String("")
+
+        ; Walk up while the line above is a comment line. `top - 1` is the LF
+        ; that ends it, so the line itself is [line_start(top - 1), top - 1).
+        var top ls
+        while top > 0
+        {
+            let prev symbols.line_start(source, top - 1)
+            if symbols.is_doc_line(source, prev, top - 1) = false
+                break
+            set top: prev
+        }
+        if top = ls
+            return String("")
+
+        symbols.doc_text(source, top, ls)
+    }
+
+    ; Offset of the first byte of the line containing `off`.
+    function line_start(source: String, off: size_t) returns size_t
+    {
+        var i off
+        while i > 0
+        {
+            let c source.get(i - 1)
+            if c = (0x0A as char)
+                return i
+            set i: i - 1
+        }
+        0
+    }
+
+    ; First offset in [from, to) that is neither a space nor a tab, else `to`.
+    function skip_blanks(source: String, from: size_t, to: size_t) returns size_t
+    {
+        var i from
+        while i < to
+        {
+            let c source.get i
+            if c <> 0x20
+                if c <> 0x09
+                    return i
+            set i: i + 1
+        }
+        to
+    }
+
+    ; True when the line [from, to) is a `;` LINE comment.
+    ;
+    ; A `;*` block comment is deliberately not one: its content runs past this
+    ; line and its closing `*;` is elsewhere, so a line-wise walk would hand the
+    ; reader whatever the block happens to contain — including commented-out
+    ; source — as if it were documentation.
+    function is_doc_line(source: String, from: size_t, to: size_t) returns bool
+    {
+        let i symbols.skip_blanks(source, from, to)
+        if i >= to
+            return false
+
+        let c source.get i
+        if c <> 0x3B                       ; ';'
+            return false
+
+        if i + 1 < to
+        {
+            let c2 source.get(i + 1)
+            if c2 = 0x2A                   ; '*'
+                return false
+        }
+        true
+    }
+
+    ; The comment block in [top, limit) as text: one line per source line, with
+    ; the indentation, the `;` and one following space removed. A bare `;` line
+    ; becomes an empty line, which is how a paragraph break survives.
+    function doc_text(rp, source: String, top: size_t, limit: size_t) returns String
+    {
+        var sb StringBuilder()
+        var first true
+        var ls top
+        while ls < limit
+        {
+            var le ls
+            while le < limit
+            {
+                let c source.get le
+                if c = (0x0A as char)
+                    break
+                set le: le + 1
+            }
+
+            var i symbols.skip_blanks(source, ls, le)
+            if i < le
+                set i: i + 1               ; past the ';'
+            if i < le
+            {
+                let c source.get i         ; and one space after it
+                if c = 0x20
+                    set i: i + 1
+            }
+
+            if first = false
+                sb.append(0x0A as char)
+            while i < le
+            {
+                sb.append(source.get(i) as char)
+                set i: i + 1
+            }
+            set first: false
+            set ls: le + 1
+        }
+        sb.to_string()
     }
 
     ; `kind name`.
@@ -5144,14 +5330,14 @@ define symbols
             return ""
         choose target
             when named: NamedSyntax
-                return symbols.hover_signature(source, offset, kind, String(named.name), named.routine)
+                return symbols.hover_signature(source, start, offset, kind, String(named.name), named.routine)
             when r: RoutineSyntax
-                return symbols.hover_signature(source, offset, kind, "[]", r)
+                return symbols.hover_signature(source, start, offset, kind, "[]", r)
     }
 
     ; The constituent under `offset`, or the whole signature; inside the body the
     ; bare `kind name`.
-    function hover_signature(rp, source: String, offset: size_t, kind: pointer[const_char], name: String, routine: RoutineSyntax) returns String
+    function hover_signature(rp, source: String, start: size_t, offset: size_t, kind: pointer[const_char], name: String, routine: RoutineSyntax) returns String
     {
         let body_start symbols.implementation_start(routine.implementation)
         if offset >= body_start
@@ -5178,7 +5364,7 @@ define symbols
         let generic symbols.hover_generic_at(source, offset, routine.generics, generic_limit)
         if generic.get_length() > 0
             return generic
-        symbols.routine_signature_text(source, kind, name, routine)
+        symbols.with_doc(source, start, symbols.routine_signature_text(source, kind, name, routine))
     }
 
     ; Hover for an `init` member: it has no name, no return and no generics, so
@@ -5198,7 +5384,7 @@ define symbols
         var sb StringBuilder()
         sb.append "init"
         sb.append(symbols.parameter_set_text(source, ini.parameters))
-        sb.to_string()
+        symbols.with_doc(source, ini.start, sb.to_string())
     }
 
     ; `kind name[G](p: T, q: U) returns R throws E`, rebuilt from the tree's
