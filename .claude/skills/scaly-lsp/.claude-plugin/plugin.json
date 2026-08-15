@@ -1,0 +1,8 @@
+{
+  "name": "scaly-lsp",
+  "description": "scalyls language server for Scaly (.scaly) sources",
+  "version": "0.1.0",
+  "author": {
+    "name": "rschleitzer"
+  }
+}

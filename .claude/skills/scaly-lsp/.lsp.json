@@ -1,0 +1,14 @@
+{
+  "scalyls": {
+    "command": "scalyls",
+    "extensionToLanguage": {
+      ".scaly": "scaly"
+    },
+    "transport": "stdio",
+    "startupTimeout": 60000,
+    "shutdownTimeout": 5000,
+    "restartOnCrash": true,
+    "maxRestarts": 3,
+    "diagnostics": true
+  }
+}
