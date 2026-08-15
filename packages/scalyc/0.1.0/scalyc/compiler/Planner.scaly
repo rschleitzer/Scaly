@@ -10607,6 +10607,10 @@ define Planner
                         ; receiver (s75), prepend the receiver as
                         ; argument 0; the callee declared `this` as the
                         ; first param.
+                        ; The receiver about to be prepended occupies one
+                        ; parameter — see report_receiver_arity#. ONE statement:
+                        ; an inline branch here perturbs the s178 alloca pool.
+                        this.report_receiver_arity(is_method_dispatch, match_ref, arg_types, fn_name, result.loc)
                         var args_arr Array[PlannedOperand]()
                         if is_method_dispatch
                             args_arr.add receiver_op
@@ -20070,6 +20074,103 @@ define Planner
         ; gets a fresh type variable, no overload matches, and the message
         ; names the callee instead of the typo. Reporting at the argument
         ; makes all three shapes say the same true thing.
+        ; ── Arity of a call that PREPENDS ITS RECEIVER (2026-08-15).
+        ;
+        ; A dotted call on a value receiver passes the receiver as argument 0, so
+        ; the receiver always occupies ONE parameter — but WHICH one depends on
+        ; the member:
+        ;
+        ;   `s.length()`        declares `this`  -> receiver binds `this`
+        ;   `old.is_equal(gid)` this-LESS        -> receiver fills its FIRST
+        ;                                           declared parameter, and gid
+        ;                                           fills the second
+        ;                                           (dazzle/ELObj.scaly:970)
+        ;
+        ; ★★★ WHY THIS CANNOT LIVE IN lookup_method#, where the other arity gate
+        ; is: that function serves a THIRD shape it cannot tell from the second —
+        ; a this-less member called UNQUALIFIED from a sibling
+        ; (`allocate_page()` inside Page.allocate_exclusive_page), where nothing
+        ; is prepended and args = params exactly. Its gate therefore accepts both
+        ; readings, and that disjunction is what let the defect through.
+        ; Tightening it there was tried and REFUTED by the build: the stdlib's own
+        ; Page.allocate_page / Page.release_page sibling calls fail it. The
+        ; distinguishing fact — is there a receiver at all — exists only at the
+        ; call site, which is here.
+        ;
+        ; What was silent before: `this.one(21)` against a this-less
+        ; `one(c: int)` planned with rc 0 and emitted
+        ; `call @one(ptr this, i64 21)` into a ONE-parameter function. The
+        ; receiver landed in `c`, the real argument was dropped, and emit_call
+        ; builds the callee type from the ARGUMENTS so llc saw nothing wrong
+        ; either. Found porting the TypeScript scanner: a this-less predicate
+        ; answered its own receiver's address, so an identifier scan never
+        ; advanced and the loop spun until the process was killed.
+        ;
+        ; A SINGLE statement at the call site, and the work in here, because an
+        ; inline branch inside collapse_operand_sequence# perturbs its s178
+        ; alloca pool — the same discipline report_unknown_identifier# follows.
+        ; Conservative on anything it cannot judge (no match, no recorded
+        ; parameter types): silence beats a false diagnostic in a gate this
+        ; broad.
+        function report_receiver_arity(
+            this: Planner,
+            is_dispatch: bool,
+            match_ref: ref[MethodMatch]?,
+            arg_types: Vector[PlannedType],
+            fn_name: String,
+            loc: Span
+        )
+        {
+            if is_dispatch = false
+                return
+            if match_ref = null
+                return
+            let m (*match_ref)
+            if m.parameter_types = null
+                return
+            let pts (*m.parameter_types)
+
+            ; parameter_types is built from param_start, so it EXCLUDES a
+            ; declared `this` and includes every parameter of a this-less member.
+            var expected: size_t 0
+            var bad: bool false
+            if m.takes_this
+                set expected: pts.length
+            else
+            {
+                ; No parameter at all means no slot for the receiver.
+                if pts.length = 0
+                    set bad: true
+                else
+                    set expected: pts.length - 1
+            }
+            if expected <> arg_types.length
+                set bad: true
+            if bad = false
+                return
+
+            var rsb StringBuilder()
+            rsb.append "wrong number of arguments for "
+            rsb.append fn_name
+            rsb.append ": got "
+            rsb.append arg_types.length
+            rsb.append ", expected "
+            rsb.append expected
+            ; NO BACKTICKS in this literal: a backtick opens string
+            ; interpolation, so `this` here silently truncated the message at
+            ; the opening quote and emitted a stray byte. The compiler's own
+            ; diagnostics are Scaly strings like any other.
+            if m.takes_this = false
+                rsb.append " (the receiver fills the first parameter of a member that does not declare this)"
+            ; Same idiom as report_unknown_identifier# right below: this function
+            ; has no caller page in scope, and add_diagnostic stores the message
+            ; beyond the frame that builds it — so pin it to the Planner's page.
+            ; The escape checker rejects the unpinned form outright, which is the
+            ; system working.
+            let rmsg rsb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
         function report_unknown_identifier(this: Planner, op: PlannedOperand)
         {
             let uname this.unknown_identifier_name(op)

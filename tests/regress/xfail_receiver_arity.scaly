@@ -1,0 +1,49 @@
+; Regression: a dotted call PREPENDS ITS RECEIVER, and the arity was not checked
+; against that (2026-08-15).
+;
+; A call on a value receiver passes the receiver as argument 0, so the receiver
+; always occupies one parameter — but WHICH one depends on the member. A `this`
+; method binds it to its declared `this`. A this-LESS member has the receiver
+; fill its FIRST DECLARED PARAMETER: `old.is_equal(gid)` against
+; `is_equal(a: pointer[ELObj], b: pointer[ELObj])` passes old as `a` and gid as
+; `b`, and packages/dazzle depends on exactly that.
+;
+; So `b.one(21)` against a this-less `one(c: int)` is one argument too many: the
+; receiver already fills `c`. It planned with rc 0 and emitted
+;   call @one(ptr <receiver>, i64 21)
+; into a ONE-parameter function — the receiver landed in `c`, the real argument
+; was dropped, and emit_call builds the callee's type from the ARGUMENTS, so
+; llc saw nothing wrong either. The callee simply answered its own receiver's
+; address.
+;
+; Found while porting the TypeScript scanner: `this.is_identifier_start(cp)` on
+; a this-less predicate answered the receiver's address for every code point, so
+; the identifier scan never advanced and the loop spun until the process was
+; killed. The infinite loop was the lucky part — the same wrong answer in a
+; predicate that drives no loop is just a wrong result.
+;
+; ★ The check CANNOT live in lookup_method#, where the neighbouring arity gate
+; is. That function also serves a this-less member called UNQUALIFIED from a
+; sibling (`allocate_page()` inside Page.allocate_exclusive_page), where nothing
+; is prepended and args = params exactly — so its gate has to accept both
+; readings, and that disjunction is what let this through. Tightening it there
+; was tried and refuted by the build: the stdlib's own Page.allocate_page and
+; Page.release_page sibling calls fail it. Whether a receiver exists is known
+; only at the call site, so the gate lives there (report_receiver_arity#).
+;
+; xfail: wrong number of arguments for one: got 1, expected 0
+
+define Box
+(
+    v: int
+)
+{
+    function one(c: int) returns int
+    {
+        c * 2
+    }
+}
+
+let b Box(7)
+let r b.one(21)
+print "unreachable"

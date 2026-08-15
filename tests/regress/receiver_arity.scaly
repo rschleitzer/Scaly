@@ -1,0 +1,82 @@
+; Negative control for the receiver-arity gate (2026-08-15). xfail_receiver_arity
+; proves the gate fires; this file proves it cuts NOTHING that used to work,
+; which is the half a new diagnostic can silently get wrong.
+;
+; Five shapes, each of which the gate must leave alone — and three of them look
+; like the rejected one until you count what the receiver occupies:
+;
+;   * a `this` method through a receiver: the receiver binds `this`, so the
+;     explicit arguments match the declared parameters one for one
+;   * a THIS-LESS member through a value receiver: the receiver fills its FIRST
+;     parameter, so one fewer explicit argument than declared parameters. This
+;     is the shape packages/dazzle relies on (ELObj.is_equal) and the one the
+;     gate must not confuse with the error case
+;   * the same with the member taking exactly one parameter, so ZERO explicit
+;     arguments is correct
+;   * a this-less sibling called UNQUALIFIED from inside its own structure:
+;     nothing is prepended, so args = params. This is the shape that refuted
+;     putting the check in lookup_method# — the stdlib's Page.allocate_page is
+;     exactly it
+;   * a QUALIFIED static (`Box.name(args)`): also nothing prepended, and it
+;     reaches a different resolution path entirely
+;
+; Expected: PASS
+
+define Box
+(
+    v: int
+)
+{
+    ; takes `this` — receiver binds this, one explicit argument for one param
+    function scaled(this, k: int) returns int
+    {
+        v * k
+    }
+
+    ; this-LESS with two parameters — the receiver fills `a`
+    function combine(a: Box, b: int) returns int
+    {
+        a.v + b
+    }
+
+    ; this-LESS with one parameter — the receiver fills it, zero explicit args
+    function only(a: Box) returns int
+    {
+        a.v
+    }
+
+    ; a this-less sibling, called unqualified below
+    function bump(n: int) returns int
+    {
+        n + 1
+    }
+
+    function via_sibling(this) returns int
+    {
+        bump(41)
+    }
+}
+
+let b Box(7)
+
+var ok: bool true
+
+if b.scaled(6) <> 42
+    set ok: false
+
+if b.combine(35) <> 42
+    set ok: false
+
+if b.only() <> 7
+    set ok: false
+
+if b.via_sibling() <> 42
+    set ok: false
+
+if Box.bump(41) <> 42
+    set ok: false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"
