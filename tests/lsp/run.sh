@@ -356,9 +356,11 @@ if [ $rc -eq 0 ]; then ok "lsp documentSymbol outline"; else bad "lsp documentSy
 #
 # A DECLARATION HEADER answers with the signature, or with the constituent under
 # the cursor (a parameter, the return type) — `method get_x` alone throws away
-# everything the line says. Inside the BODY it stays `kind name`: there the
-# semantic hover answers with a type when it can, and the enclosing declaration
-# is all its fallback owes. Both halves are asserted (ids 2/3/7/8 header, 9 body).
+# everything the line says. Inside the BODY it becomes `in kind name`: there the
+# semantic hover answers with a type when it can, and all its fallback owes is
+# WHERE the cursor sits — the leading `in` is what keeps that from being read as
+# an answer about the token under the cursor (symbols.enclosing_text#).
+# Both halves are asserted (ids 2/3/7/8 header, 9 body).
 python3 - <<'PY'
 import sys, json, subprocess
 src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
@@ -367,7 +369,11 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n"
        # Line 18: a GENERIC routine — nothing in the tree declares one, so this
        # fixture is the only cover for the `[T]` half of the rendering.
-       "\nfunction pick[T](a: T, b: T) returns T\n{\n    return a\n}\n")
+       "\nfunction pick[T](a: T, b: T) returns T\n{\n    return a\n}\n"
+       # Line 28: a DEINIT, appended at the END so no line above it moves. It
+       # is the one member whose hover has no name to add, so it is the only
+       # cover for hover_deinit# — header `deinit`, body `in deinit`.
+       "\ndefine Res\n(\n    n: int\n)\n{\n    deinit\n    {\n        let z 1\n    }\n}\n")
 import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/hover_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
 path = _ws + "/lsp_hover_test.scaly"
 open(path, "w").write(src)
@@ -391,6 +397,8 @@ inp += hov(8, 0, 30)     # the RETURN TYPE of `add`
 inp += hov(9, 13, 4)     # get_x's `{` -> body, so the bare `method get_x`
 inp += hov(10, 18, 10)   # the name `pick` -> a generic signature
 inp += hov(11, 18, 14)   # its generic parameter `T`
+inp += hov(12, 28, 4)    # the `deinit` KEYWORD -> the header answer
+inp += hov(13, 29, 4)    # its body brace -> the `in` form
 inp += frame({"jsonrpc":"2.0","id":6,"method":"shutdown"})
 inp += frame({"jsonrpc":"2.0","method":"exit"})
 out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
@@ -420,10 +428,12 @@ check(val(4) == "mutable counter", "hover on mutable -> 'mutable counter'")
 check(val(5) is None, "hover off any symbol -> null result")
 check(val(7) == "parameter a: int", "hover on a parameter -> 'parameter a: int'")
 check(val(8) == "returns int", "hover on the return type -> 'returns int'")
-check(val(9) == "method get_x", "hover in a method BODY -> 'method get_x'")
+check(val(9) == "in method get_x", "hover in a method BODY -> 'in method get_x'")
 check(val(10) == "function pick[T](a: T, b: T) returns T",
       "hover on a generic routine -> signature with its generics")
 check(val(11) == "generic T", "hover on a generic parameter -> 'generic T'")
+check(val(12) == "deinit", "hover on `deinit` -> 'deinit'")
+check(val(13) == "in deinit", "hover in a deinit BODY -> 'in deinit'")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
@@ -534,7 +544,7 @@ check("file banner" not in add, "a block above a BLANK LINE is not part of it")
 check(add.endswith("\n" + FENCE), "the fence is closed")
 
 check(val(3) == "parameter a: int", "a constituent gets no doc")
-check(val(4) == "function add", "an offset inside the BODY gets no doc")
+check(val(4) == "in function add", "an offset inside the BODY gets no doc")
 check((val(5) or "").startswith("mutable counter\n\n") and "The live count." in (val(5) or ""),
       "a mutable global carries its doc")
 check((val(6) or "").startswith("struct Point\n\n") and "A point in the plane." in (val(6) or ""),
@@ -6256,6 +6266,153 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semantic hover"; else bad "lsp semantic hover"; fi
+
+# ---- semantic hover through the PACKAGE ROOT + the honest fallback -------
+# A file that is a MODULE of a package cannot be planned on its own: the
+# one-module program the modeler builds has no sibling, so every call into one
+# was unresolved and the lexical fallback answered the ENCLOSING ROUTINE for it.
+# Measured 2026-08-15 through the LSP plugin on scalyls/server.scaly, where
+# `rpc.read_message()` reported `function process_one` while goToDefinition at
+# the same position resolved correctly — the two contradicted each other. Same
+# gap, same fix as diagnostics.package_report# and codelens.planned_fragment#.
+#
+# Four things are asserted, and the first three FAIL on the pre-fix binary:
+#   1. the sibling call resolves (the defect itself),
+#   2. the binding bound to it resolves,
+#   3. a genuine miss (a brace) says `in function use_it`, not `function use_it`
+#      — the fallback names WHERE the cursor is, and may not be readable as an
+#      answer about the token under it,
+#   4. an UNSAVED buffer keeps the document-plan behaviour. That is not a
+#      nicety: the modeler reads every module from DISK, so a root plan's spans
+#      index the SAVED bytes while the offset came from the buffer — resolving
+#      anyway would trade one silent wrong answer for another.
+#
+# ★ensure_ascii=False, unlike every other block here, and it is load-bearing:
+# json.decode_escape# maps a \uXXXX escape above 0x7F to a single '?' byte, so
+# a python-default didOpen of a file with `★` or `—` in it delivers a buffer
+# SHORTER than the file (server.scaly: 60440 against 60526 bytes) and the
+# saved-buffer test in (1)…(3) would silently take the unsaved path. A real
+# client (JSON.stringify) sends raw UTF-8, which is what this models.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+
+ws = "/tmp/lsp_ws/sem_root"
+shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws + "/app")
+# A minimal PACKAGE: the root names two modules, one calls the other.
+open(ws + "/app.scaly", "w").write(
+    "package scaly 0.1.0\n\ndefine app\n{\n    module util\n    module user\n}\n")
+open(ws + "/app/util.scaly", "w").write(
+    "define util\n"
+    "{\n"
+    "    function num() returns int\n"
+    "    {\n"
+    "        return 7\n"
+    "    }\n"
+    "\n"
+    "    function txt(rp) returns String\n"
+    "    {\n"
+    "        return String(\"x\")\n"
+    "    }\n"
+    "}\n")
+# ★The two call lines are the SAME LENGTH on purpose — that is what makes the
+# unsaved-buffer control below able to fail. See it.
+src = ("define user\n"
+       "{\n"
+       "    function use_it() returns int\n"
+       "    {\n"
+       "        let a util.num()\n"
+       "        let s util.txt()\n"
+       "        return a\n"
+       "    }\n"
+       "}\n")
+path = ws + "/app/user.scaly"
+open(path, "w").write(src)
+uri = "file://" + path
+lines = src.split("\n")
+
+def frame(o):
+    b = json.dumps(o, ensure_ascii=False).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+def hov(idn, u, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+                  "params":{"textDocument":{"uri":u},
+                            "position":{"line":line,"character":char}}})
+def loc(unique, token):
+    li = next(i for i, l in enumerate(lines) if unique in l)
+    return li, lines[li].index(token)
+
+call_l, call_c = loc("let a util.num()", "num")     # the SIBLING module's call
+bind_l, bind_c = loc("let a util.num()", "a")       # the binding bound to it
+brace_l = next(i for i, l in enumerate(lines) if l == "    {")  # body open brace
+
+# The real tree at real scale: the very position the wish list names.
+srv = os.path.join(os.getcwd(), "packages/scalyls/0.1.0/scalyls/server.scaly")
+srv_uri = "file://" + srv
+srv_doc = open(srv).read()
+srv_lines = srv_doc.split("\n")
+srv_l = next(i for i, l in enumerate(srv_lines) if l.strip() == "let body rpc.read_message()")
+srv_c = srv_lines[srv_l].index("read_message")
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+inp += hov(2, uri, call_l, call_c)
+inp += hov(3, uri, bind_l, bind_c)
+inp += hov(4, uri, brace_l, 4)
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":srv_uri,"languageId":"scaly","version":1,"text":srv_doc}}})
+inp += hov(5, srv_uri, srv_l, srv_c)
+# Now the SAME document as an unsaved buffer. The edit is placed and SIZED so
+# that a missing guard has to answer WRONG rather than merely differently — it
+# took two tries to get a control that can fail at all:
+#   * INSIDE the body, below the routine header, so `use_it`'s own start is
+#     unchanged and is_routine_start# still accepts it. A comment prepended to
+#     the FILE moves every routine start, the identity check rejects the whole
+#     plan, and the probe passes with the guard REMOVED — proving nothing.
+#   * exactly as long as the distance from `num` to `txt`, so the buffer offset
+#     of `num` IS the saved offset of `txt`. Drop the `disk = source` test in
+#     resolve_through_root# and this probe answers `String`: the type of the
+#     OTHER call, read out of a file the buffer no longer matches.
+pad = src.index("txt") - src.index("num")
+edited = "\n".join(lines[:call_l] + [";" + " " * (pad - 2)] + lines[call_l:])
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+        "textDocument":{"uri":uri,"version":2},
+        "contentChanges":[{"text":edited}]}})
+inp += hov(6, uri, call_l + 1, call_c)
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def val(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    r = (f or {}).get("result")
+    return None if r is None else r.get("contents", {}).get("value")
+
+check(val(2) == "int", "a SIBLING module's call resolves through the package root")
+check(val(3) == "int", "the binding bound to it resolves too")
+check(val(4) == "in function use_it",
+      "a genuine miss says WHERE the cursor is (`in function use_it`)")
+check(val(5) == "String",
+      "the tree's own case: rpc.read_message() in server.scaly -> String")
+check(val(6) == "in function use_it",
+      "an UNSAVED buffer keeps the document plan (offsets index the saved file)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semantic hover through the package root"; else bad "lsp semantic hover through the package root"; fi
 
 # ---- semantic hover fallback: parse-error input still answers (no crash) ----
 # A broken document fails the pipeline; the server must still return a valid

@@ -6202,7 +6202,7 @@ define symbols
             when ini: InitSyntax
                 return symbols.hover_init(source, ini, offset)
             when dei: DeInitSyntax
-                return symbols.hover_word(source, dei.start, dei.end, offset, "deinit")
+                return symbols.hover_deinit(source, dei, offset)
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
             when e: EmptySyntax
@@ -6276,18 +6276,23 @@ define symbols
         ""
     }
 
-    ; `text` when start <= offset < end, else "" — for a construct whose hover
-    ; has no name to add (init / deinit).
-    function hover_word(rp, source: String, start: size_t, end: size_t, offset: size_t, text: pointer[const_char]) returns String
+    ; A `deinit` member: it has no name, no parameters and no return, so the
+    ; word IS the whole header. The body still gets the `in` form of it, for
+    ; the reason enclosing_text# states — the split is the only thing this
+    ; needs over the one-liner it replaced (symbols.hover_word#, retired with
+    ; it because deinit was its only caller).
+    function hover_deinit(rp, source: String, dei: DeInitSyntax, offset: size_t) returns String
     {
-        if offset >= start
-            if offset < end
-            {
-                var sb StringBuilder()
-                sb.append text
-                return symbols.with_doc(source, start, sb.to_string())
-            }
-        ""
+        if offset < dei.start
+            return ""
+        if offset >= dei.end
+            return ""
+        let body_start symbols.action_start(dei.action)
+        if offset >= body_start
+            return "in deinit"
+        var sb StringBuilder()
+        sb.append "deinit"
+        symbols.with_doc(source, dei.start, sb.to_string())
     }
 
     ; --------------------------------------------------------------------
@@ -6301,7 +6306,7 @@ define symbols
     ;
     ; ATTACHED ONLY TO A DECLARATION-LEVEL ANSWER. `parameter k: size_t` and
     ; `returns int` are statements about a CONSTITUENT, and the routine's doc is
-    ; not about them; the in-body fallback `method get_x` is a statement about
+    ; not about them; the in-body fallback `in method get_x` is a statement about
     ; where the cursor IS, and repeating the whole block on every hover inside a
     ; body would bury the semantic type hover that normally answers there.
     ;
@@ -6486,10 +6491,30 @@ define symbols
         sb.to_string()
     }
 
+    ; `in kind name` — the IN-BODY fallback, and the leading word is the whole
+    ; point of it. This answer is a statement about where the cursor SITS, not
+    ; about the token under it: the semantic hover is what names the token, and
+    ; when it misses (a keyword, a brace, a routine the demand-driven planner
+    ; never planned, an unresolvable name) the bare `function process_one` reads
+    ; as an answer ABOUT `read_message` — measured 2026-08-15 through the LSP
+    ; plugin, where three positions of `let body rpc.read_message()` all reported
+    ; the enclosing routine and goToDefinition at the same position resolved
+    ; correctly, i.e. the two contradicted each other. `in` costs three
+    ; characters and cannot be read that way.
+    function enclosing_text(rp, kind: pointer[const_char], name: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append "in "
+        sb.append kind
+        sb.append(" " as char)
+        sb.append name
+        sb.to_string()
+    }
+
     ; --------------------------------------------------------------------
     ; Hovering a routine DECLARATION: its signature, and its constituents
     ;
-    ; `kind name` alone answers the question "what am I inside of", which is all
+    ; `in kind name` answers the question "what am I inside of", which is all
     ; a body offset needs (there the semantic hover answers with a type when it
     ; can, and this is only its fallback). On the DECLARATION LINE itself that
     ; answer throws away everything that is written there, so a header offset
@@ -6521,13 +6546,13 @@ define symbols
                 return symbols.hover_signature(source, start, offset, kind, "[]", r)
     }
 
-    ; The constituent under `offset`, or the whole signature; inside the body the
-    ; bare `kind name`.
+    ; The constituent under `offset`, or the whole signature; inside the body
+    ; `in kind name`.
     function hover_signature(rp, source: String, start: size_t, offset: size_t, kind: pointer[const_char], name: String, routine: RoutineSyntax) returns String
     {
         let body_start symbols.implementation_start(routine.implementation)
         if offset >= body_start
-            return symbols.kind_name_text(kind, name)
+            return symbols.enclosing_text(kind, name)
         if routine.throws_ <> null
         {
             let t (*routine.throws_)
@@ -6563,7 +6588,7 @@ define symbols
             return ""
         let body_start symbols.action_start(ini.action)
         if offset >= body_start
-            return "init"
+            return "in init"
         let param symbols.hover_parameter_at(source, offset, ini.parameters)
         if param.get_length() > 0
             return param

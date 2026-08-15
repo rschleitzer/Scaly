@@ -45,6 +45,7 @@
 ; EVERY arm uses an explicit return.
 
 use scaly.memory.runtime
+use scaly.io.File
 
 use scalyls.diagnostics
 
@@ -143,6 +144,22 @@ define semantic
     }
 
     ; Run the full pipeline and walk the Plan for the type at `offset`.
+    ;
+    ; TWO PLANS, cheap one first. The document planned ALONE answers every name
+    ; that lives in this file or in the prelude, and it costs 0.03 s — but a
+    ; file that is a MODULE of a package cannot resolve its SIBLINGS that way:
+    ; the one-module program the modeler builds has no `rpc`, no `worker`, no
+    ; `json`, so every call into one is simply unresolved and the walk finds
+    ; nothing. That is the whole defect this fallback closes. Measured
+    ; 2026-08-15 in scalyls/server.scaly: `pb.to_string()` (prelude) and
+    ; `server.semantic_hover_from_framed` (same file) resolved, while
+    ; `worker.semantic_type(…)` and `rpc.read_message()` did not — which is what
+    ; made it look like a rule about QUALIFIED calls, and is not one:
+    ; `rpc.read_byte()` inside rpc.scaly is just as qualified and resolves.
+    ; The same gap in the diagnostics route produced a flood of false
+    ; "function not found" (diagnostics.publish_diagnostics#) and is closed the
+    ; same way; codelens.planned_fragment# routes through the root for the
+    ; third time.
     function resolve_at(rp, source: String, path: String, mode: size_t, offset: size_t) returns String
     {
         var p parser.Parser(source)
@@ -164,7 +181,76 @@ define semantic
                     ; handed, so its routine starts are the very numbers the
                     ; plan's spans carry — see is_routine_start#, which is what
                     ; keeps a foreign file's span out of the answer.
-                    let rr semantic.walk_plan(pl, mode, offset, program.file)
+                    let rr semantic.walk_plan(pl, mode, offset, program.file, path)
+                    if rr.found
+                        set result: String(rr.type_name)
+                }
+                if result.get_length() = 0
+                    set result: semantic.resolve_through_root(source, path, mode, offset, program.file)
+            }
+        result
+    }
+
+    ; The document plan had no answer. If this file is a module of a package,
+    ; plan the package ROOT and ask the same question of that plan.
+    ;
+    ; ★THE BUFFER MUST BE THE SAVED TEXT, and the guard is not caution. The
+    ; modeler reads every module from DISK, so the root plan's spans index the
+    ; SAVED bytes of this file while `offset` was computed from the editor
+    ; buffer — the same bargain diagnostics.package_report# documents for its
+    ; line numbers. For a DIAGNOSTIC a stale offset misplaces a message; here it
+    ; would name the type of whatever expression happens to sit at that offset
+    ; in the saved text, i.e. trade one silent wrong answer for another. Unequal
+    ; text therefore keeps the document-plan behaviour, which is what an
+    ; unsaved buffer had before this fallback existed.
+    ;
+    ; ★It also bounds the cost for the one caller that fires on a KEYSTROKE:
+    ; completion (mode 2) asks at `receiver.`, i.e. on a buffer that differs
+    ; from disk by construction, so it keeps the 0.03 s path. The root plan
+    ; costs what the diagnostics of the same root cost — 0.86 s for scalyls,
+    ; ~1.9 s for opensp, 2.45 s for dazzle — against the 20 s budget kind "x"
+    ; carries (worker.budget_for_kind#).
+    function resolve_through_root(rp, source: String, path: String, mode: size_t, offset: size_t, file: FileSyntax) returns String
+    {
+        let root diagnostics.package_root path
+        if root.get_length() = 0
+            return ""
+        let disk File.read_to_string(path)
+        if disk.get_length() = 0
+            return ""
+        if disk = source
+            return semantic.root_resolve(root, path, mode, offset, file)
+        ""
+    }
+
+    ; Plan `root` — the package root that owns `path` — and walk that plan for
+    ; the type at `offset`. `file` is the parse of the DOCUMENT, so the walk's
+    ; file identity is decided exactly as it is for the document plan.
+    function root_resolve(rp, root: String, path: String, mode: size_t, offset: size_t, file: FileSyntax) returns String
+    {
+        let root_text File.read_to_string(root)
+        if root_text.get_length() = 0
+            return ""
+        var p parser.Parser(root_text)
+        var result ""
+        choose p.parse_program()
+            when err: Error
+                return ""
+            when program: Success
+            {
+                ; The root program NAME is part of every module path the strict
+                ; use-visibility check compares against; a placeholder makes the
+                ; planner report every sibling as invisible
+                ; (diagnostics.root_program_name# has the full account).
+                let prog_name diagnostics.root_program_name(root)
+                let model Modeler.build_program(root, prog_name, program, true)
+                var planner Planner.Planner(root)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program model
+                if plan <> null
+                {
+                    let pl (*plan)
+                    let rr semantic.walk_plan(pl, mode, offset, file, path)
                     if rr.found
                         set result: String(rr.type_name)
                 }
@@ -204,7 +290,31 @@ define semantic
     ; so both sides are literally the same numbers. A rejected walk yields ""
     ; and the server falls back to the lexical hover — which is what a file of
     ; uninstantiated generic templates should answer anyway.
+    ;
+    ; ★THE START ALONE STOPPED BEING ENOUGH when root_resolve# landed. A plan
+    ; built from the package ROOT holds every module of the package, and a
+    ; sibling's routine that happens to start at the same byte offset as one of
+    ; this document's would pass the start test and hand back a type read out of
+    ; ANOTHER FILE's operands — the very class this section exists to keep out,
+    ; only now with 56 more files to collide with. So owns_routine# adds the
+    ; file, for the one plan node that carries it: PlannedFunction.file is
+    ; documented as "the source file of this function's module" and is what
+    ; diagnostics filters on (`dp.file = path`). It does not REPLACE the start
+    ; test — for an instantiation that field is the requesting module, which is
+    ; exactly the Slice/Vector case above — the two together are what is exact.
+    ; PlannedInitializer / PlannedOperator / PlannedDeInitializer / PlannedGlobal
+    ; carry no file, so those four rest on the start test alone, as they did
+    ; before.
     ; ====================================================================
+
+    ; Does this planned routine belong to the open document? Both halves are
+    ; needed; the section header above has the reasoning for each.
+    function owns_routine(rp, file: FileSyntax, path: String, fn_file: String, start: size_t) returns bool
+    {
+        if fn_file = path
+            return semantic.is_routine_start(file, start)
+        false
+    }
 
     ; Does the document declare a routine (function / procedure / operator /
     ; init / deinit) or a module-level global starting exactly at `start`?
@@ -409,7 +519,7 @@ define semantic
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.
     ; ====================================================================
-    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t, file: FileSyntax) returns ResolveResult
+    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
     {
         var result semantic.none()
 
@@ -428,7 +538,7 @@ define semantic
                     {
                         let fp fns.get i
                         if fp <> null
-                            if semantic.is_routine_start(file, (*fp).loc.start)
+                            if semantic.owns_routine(file, path, (*fp).file, (*fp).loc.start)
                                 set result: semantic.walk_impl((*fp).impl, mode, offset)
                     }
                     set i: i + 1
@@ -448,7 +558,7 @@ define semantic
                     {
                         let sp sts.get i
                         if sp <> null
-                            set result: semantic.walk_structure(*sp, mode, offset, file)
+                            set result: semantic.walk_structure(*sp, mode, offset, file, path)
                     }
                     set i: i + 1
                 }
@@ -467,7 +577,7 @@ define semantic
                     {
                         let up uns.get i
                         if up <> null
-                            set result: semantic.walk_union(*up, mode, offset, file)
+                            set result: semantic.walk_union(*up, mode, offset, file, path)
                     }
                     set i: i + 1
                 }
@@ -501,7 +611,7 @@ define semantic
         result
     }
 
-    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax) returns ResolveResult
+    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
     {
         var result semantic.none()
 
@@ -515,7 +625,7 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null
-                        if semantic.is_routine_start(file, (*mp).loc.start)
+                        if semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
                             set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1
@@ -572,7 +682,7 @@ define semantic
         result
     }
 
-    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax) returns ResolveResult
+    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
     {
         var result semantic.none()
 
@@ -586,7 +696,7 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null
-                        if semantic.is_routine_start(file, (*mp).loc.start)
+                        if semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
                             set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1

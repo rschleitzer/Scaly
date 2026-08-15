@@ -47,7 +47,7 @@ Registered diagnostics handler for plugin:scaly-lsp:scalyls
 |---|---|
 | goToDefinition, findReferences, documentSymbol, workspaceSymbol | OK |
 | prepareCallHierarchy, incomingCalls, outgoingCalls | OK |
-| hover | OK on a declaration; on a CALL SITE it answers the enclosing routine |
+| hover | OK — a declaration answers its signature + doc block, an expression its resolved TYPE, and a genuine miss says `in function X` (where the cursor is, not what it is) |
 | goToImplementation | answers "no results" — the server does not implement it |
 
 `goToImplementation` used to HANG the whole session: the server left an
@@ -55,6 +55,17 @@ unimplemented request unanswered, the client sends it without checking
 capabilities, and the client has no request timeout (measured 94 s, killed by
 hand). Fixed 2026-08-15 by answering `result: null` at the tail of
 `server.handle_message`; gate `"lsp unhandled request answers null"`.
+
+`hover` at a CALL SITE was fixed the same day. It used to answer the enclosing
+routine for anything the planner could not resolve, and a file that is a MODULE
+of a package could not resolve its SIBLINGS at all — the document was planned
+alone. It now re-asks a plan built from the package ROOT (gate `"lsp semantic
+hover through the package root"`), which costs that root's plan (0.86 s for
+scalyls, ~1.9 s for opensp, 2.45 s for dazzle) on a miss and nothing on a hit.
+Two limits worth knowing when an answer looks thin: the root plan is only used
+when the buffer matches the file ON DISK (its spans index the saved bytes), and
+the planner is demand-driven, so a routine nothing calls is never planned and
+every offset in it falls back to `in function X`.
 
 Push diagnostics arrive on didOpen/didChange (0.01 s on a small file).
 Latency on the largest source in the tree (`opensp/Parser.scaly`, 881 KB):
