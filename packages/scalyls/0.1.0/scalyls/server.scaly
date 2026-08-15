@@ -186,6 +186,13 @@ define server
             return
         }
 
+        if method = "completionItem/resolve"
+        {
+            if has_id
+                server.handle_completion_resolve(msg, id)
+            return
+        }
+
         if method = "textDocument/prepareRename"
         {
             if has_id
@@ -917,6 +924,81 @@ define server
         rpc.write_message(server.document_symbol_response(id, result))
     }
 
+    ; completionItem/resolve: fill in the `documentation` of the ONE entry the
+    ; client has selected, and answer the entry.
+    ;
+    ; The request carries the CompletionItem and NOTHING ELSE — no textDocument,
+    ; no position — so the entry has to say where it came from itself. It does:
+    ; symbols.with_item_data# put the uri of the file it was read from into
+    ; `data`, which the client returns untouched. The buffer for THAT file is
+    ; looked up in the docstore (empty when the editor has it closed, in which
+    ; case the worker reads disk), so an entry from a file being edited resolves
+    ; against the unsaved text like every other request.
+    ;
+    ; The answer is the entry the client sent, plus `documentation` — never a
+    ; freshly built one. Re-serializing what arrived is what keeps every field
+    ; the client set (and every field a future version of this server adds)
+    ; instead of silently dropping it; the injection is a splice before the
+    ; object's closing brace, which needs no scan because stringify# produced
+    ; the string one line above.
+    function handle_completion_resolve(msg: JsonValue, id: i64)
+    {
+        let item json.get(msg, "params")
+        ; `label` is a reserved word in Scaly and cannot be a binding name.
+        let item_label json.as_string(json.get(item, "label"))
+        let data json.as_string(json.get(item, "data"))
+        let serialized json.stringify item
+
+        ; No label or no data: an entry this server did not produce (or one from
+        ; before `data` existed). Answer it unchanged — resolve is allowed to
+        ; add nothing, and inventing a lookup target would be a guess.
+        var doc ""
+        if item_label.get_length() > 0
+            if data.get_length() > 0
+            {
+                let text docstore.get data
+                set doc: worker.completion_resolve(data, text, item_label)
+            }
+
+        if doc.get_length() = 0
+        {
+            rpc.write_message(server.document_symbol_response(id, serialized))
+            return
+        }
+        rpc.write_message(server.document_symbol_response(id, server.with_documentation(serialized, doc)))
+    }
+
+    ; `serialized` (a JSON object) with `"documentation":<doc>` spliced in before
+    ; its closing brace. Byte-at-a-time: a doc block in this tree runs to
+    ; hundreds of bytes and this runs in the PARENT, with no crash isolation.
+    function with_documentation(rp, serialized: String, doc: String) returns String
+    {
+        let n serialized.get_length()
+        if n < 2
+            return serialized
+
+        var sb StringBuilder()
+        var i: size_t 0
+        while i < n - 1                          ; everything but the final '}'
+        {
+            sb.append(serialized.get(i) as char)
+            set i: i + 1
+        }
+        ; `{}` would leave a leading comma behind; anything else has a member.
+        if n > 2
+            sb.append("," as char)
+        sb.append(server.key("documentation"))
+        var di: size_t 0
+        let dn doc.get_length()
+        while di < dn
+        {
+            sb.append(doc.get(di) as char)
+            set di: di + 1
+        }
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
     ; prepareRename: the request carries a uri + {line,character}. Pack the
     ; position as "<line> <char>" and ask the worker for the range of the
     ; renameable identifier under the cursor. An empty worker reply ->
@@ -1167,6 +1249,13 @@ define server
         ; until the first letter after the dot — the member list, which is the
         ; whole point of the member-after-`.` resolution, never appeared at the
         ; moment it is wanted.
+        ;
+        ; resolveProvider:true — the entries arrive WITHOUT documentation and
+        ; get it one at a time, for the entry the user has selected. Unlike the
+        ; codeLens below, where the title IS the verdict and there is no cheaper
+        ; half to send first, a completion list here runs to hundreds of entries
+        ; and the doc block of each is the largest thing it could carry; see the
+        ; completionItem/resolve section in symbols.scaly.
         sb.append(server.key("completionProvider"))
         sb.append("{" as char)
         sb.append(server.key("triggerCharacters"))
@@ -1175,6 +1264,9 @@ define server
         sb.append("." as char)
         sb.append("\"" as char)
         sb.append("]" as char)
+        sb.append("," as char)
+        sb.append(server.key("resolveProvider"))
+        sb.append "true"
         sb.append("}" as char)
         sb.append("," as char)
         ; renameProvider as RenameOptions {prepareProvider:true} so the editor

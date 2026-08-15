@@ -24,7 +24,12 @@ What you get:
   comment block written above the declaration, its line structure intact.
 - **Go to Definition** / **Find All References** / **Document Highlight** —
   cross-file and cross-package.
-- **Completion** — names in scope, members, keywords.
+- **Completion** — names in scope, members, keywords. Each entry carries its
+  signature beside the label, and the `;` comment block above its declaration
+  arrives when you select it — for the selected entry alone, so a list of
+  several hundred names stays a list of names. An entry offered after a `.`
+  reads its documentation from the file its concept is declared in, which is
+  usually not the file you are typing in.
 - **Rename** — shadow-aware, with prepare support (F2).
 - **Quick fixes** (Cmd+.) for the compiler's own hard diagnostics: add the
   missing `use` line for a name that is declared but not visible; turn

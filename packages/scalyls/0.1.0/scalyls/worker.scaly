@@ -279,6 +279,19 @@ define worker
             return true
         }
 
+        ; completionItem/resolve: the doc block of the entry the client has
+        ; selected. `uri` is the entry's own `data` — the file it was READ from,
+        ; which for a member list is not the document the completion came from —
+        ; and `position` carries its label. Answers the MarkupContent object or
+        ; "" (no doc block). One file, one parse, no workspace walk: see the
+        ; completionItem/resolve section in symbols.scaly for the measurement
+        ; that makes that the whole design.
+        if kind = "v"
+        {
+            rpc.write_message_fd(out_fd, symbols.completion_documentation(symbols.repaired_source(source), uri, position))
+            return true
+        }
+
         ; hover: symbol under the packed "<line> <char>" cursor position.
         if kind = "h"
         {
@@ -575,6 +588,15 @@ define worker
     function completion(rp, uri: String, text: String, packed: String) returns String
         worker.exchange("c", uri, text, packed, "[]")
 
+    ; completionItem/resolve: the doc block of ONE entry. `uri` is the entry's
+    ; `data` (the file it was read from), `text` the parent's buffer for that
+    ; file when it has one — an entry from a file the editor has not opened
+    ; resolves from disk, which is the same rule every other request follows.
+    ; `packed` is the entry's label. Returns the MarkupContent object, or ""
+    ; when the declaration carries no doc block / the worker is unavailable.
+    function completion_resolve(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("v", uri, text, packed, "")
+
     ; Rename for `uri`. `packed` is "<line> <char> <newName>". `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the LSP
     ; WorkspaceEdit, or "" if unavailable / no identifier at the cursor.
@@ -726,6 +748,10 @@ define worker
     ;   l documentHighlight   p prepareRename   o foldingRange
     ;   a codeAction (a line scan; the planner already did the thinking)
     ;   e selectionRange (a bracket walk over the open document)
+    ;   v completionItem/resolve — it parses the ONE file the entry's `data`
+    ;     names and reads the comment block above one declaration. It is here
+    ;     rather than with the workspace kinds BY CONSTRUCTION, not by luck:
+    ;     the file is carried in the entry, so there is nothing to search for.
     ; `SCALYLS_BUDGET_MS=<n>` overrides EVERY budget below with n milliseconds.
     ; It exists for the same reason `SCALYC_STACK_BUDGET` does in the planner:
     ; the guard it tunes trips on a threshold no test can reach reliably on an

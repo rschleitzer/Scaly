@@ -4150,6 +4150,177 @@ define symbols
     }
 
     ; ====================================================================
+    ; completionItem/resolve — the `data` round-trip and the doc block
+    ;
+    ; The `;` block above a declaration is the most valuable thing a completion
+    ; entry could carry: in this tree it holds the reasoning the signature
+    ; cannot, which is why hover shows it (with_doc#). Sending it with every
+    ; entry is what makes that expensive — a flat list here has HUNDREDS of them
+    ; (379 for scalyls/symbols.scaly, measured), and a member list read from
+    ; another file would ship that file's comments on every keystroke. LSP's
+    ; resolve is the seam that makes it payable: the client asks for the ONE
+    ; entry it has selected, and only then is the block read.
+    ;
+    ; The round trip needs an identity for the entry, and LSP offers exactly one
+    ; field for it: `data`, which the client hands back untouched. Here it is
+    ; the URI OF THE FILE THE ENTRY WAS READ FROM — which is NOT the document
+    ; the completion was requested in whenever the receiver's concept lives
+    ; elsewhere (`String.` resolves into packages/scaly). The label carries the
+    ; name, so the file is the only other thing resolve needs.
+    ;
+    ; ★★★RESOLVE NEVER WALKS THE WORKSPACE, and that is what `data` buys.
+    ; Measured on this tree before this was built, one warm session, the
+    ; scalyls package: a cross-PACKAGE definition — the search a resolve would
+    ; have to run if it only knew the name — costs 7.93 s, a cross-file one
+    ; 1.12 s cold, against 0.03 s for a lookup that stays inside a known file.
+    ; resolve fires while the user ARROWS THROUGH THE LIST, and a request that
+    ; overruns its budget kills the worker and takes the symindex with it
+    ; (WORKSPACE_TIMEOUT_MS has the account), so a walking resolve would not be
+    ; "a slow entry" — it would make every request after it cold. Naming the
+    ; file in `data` reduces the whole feature to one parse of one file.
+    ;
+    ; ★The data is attached HERE, to the FINISHED ARRAY, rather than inside
+    ; completion_item_detail#. Two reasons, and the first is the load-bearing
+    ; one: every entry of ONE response comes from ONE file (member_completions_
+    ; in_dir# stops at the first file declaring the concept), so the file is a
+    ; property of the RESPONSE and not of the entry. And completion_items# has
+    ; three other consumers — the semantic name tables and the nameset harvest —
+    ; which read these items for labels and kinds; a field added at the leaf
+    ; would grow into their input for no reason.
+    ; ====================================================================
+
+    ; `items` (a CompletionItem[] array) with `"data":<uri>` added to every
+    ; entry. An empty `uri` leaves the array untouched.
+    ;
+    ; The scan tracks JSON string state (backslash escapes included) and brace
+    ; depth, so a `}` inside a `detail` string cannot be mistaken for the end of
+    ; an entry. Today no detail can contain one — a Scaly type or parameter name
+    ; has no braces in it — but that is a fact about the current shape of a
+    ; neighbouring function, and a scanner that depends on it would fail
+    ; silently and much later.
+    function with_item_data(rp, items: String, uri: String) returns String
+    {
+        if uri.get_length() = 0
+            return items
+
+        let quoted json.quote_string uri
+        var sb StringBuilder()
+        var depth: size_t 0
+        var in_string: bool false
+        var escaped: bool false
+        var i: size_t 0
+        let n items.get_length()
+        while i < n
+        {
+            let c items.get i
+            ; `escaped` is cleared every iteration and set only by a backslash
+            ; that is not itself escaped — so `\\` ends the escape rather than
+            ; starting a new one.
+            let was_escaped escaped
+            set escaped: false
+            var handled: bool false
+            if in_string
+            {
+                set handled: true
+                if was_escaped = false
+                {
+                    if c = 0x5C                       ; '\'
+                        set escaped: true
+                    if c = 0x22                       ; '"'
+                        set in_string: false
+                }
+                sb.append(c as char)
+            }
+            if handled = false
+            {
+                if c = 0x22                           ; '"'
+                    set in_string: true
+                if c = 0x7B                           ; '{'
+                    set depth: depth + 1
+                if c = 0x7D                           ; '}'
+                {
+                    if depth = 1
+                    {
+                        sb.append("," as char)
+                        symbols.append_fragment(&sb, symbols.key("data"))
+                        symbols.append_fragment(&sb, quoted)
+                    }
+                    if depth > 0
+                        set depth: depth - 1
+                }
+                sb.append(c as char)
+            }
+            set i: i + 1
+        }
+        sb.to_string()
+    }
+
+    ; The `documentation` value for the entry named `name` declared in `source`
+    ; (whose uri is `uri`): an LSP MarkupContent object, or "" when there is no
+    ; doc block — the parent then answers the entry unchanged.
+    ;
+    ; FENCED, for hover's reason (see the doc-comment section): the value is
+    ; markdown, consecutive lines REFLOW into one paragraph there, and these
+    ; comments are hand-wrapped with aligned tables, bullet runs and ★ markers
+    ; whose meaning is carried by the line structure. The signature is NOT
+    ; repeated here — the entry's `detail` already carries it, and a client
+    ; renders detail above documentation.
+    function completion_documentation(rp, source: String, uri: String, name: String) returns String
+    {
+        let doc symbols.completion_doc_text(source, uri, name)
+        if doc.get_length() = 0
+            return ""
+
+        var vb StringBuilder()
+        vb.append(symbols.fence())
+        vb.append(0x0A as char)
+        symbols.append_fragment(&vb, doc)
+        vb.append(0x0A as char)
+        vb.append(symbols.fence())
+
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(symbols.key("kind"))
+        sb.append(json.quote_string("markdown"))
+        sb.append("," as char)
+        sb.append(symbols.key("value"))
+        sb.append(json.quote_string(vb.to_string()))
+        sb.append("}" as char)
+        sb.to_string()
+    }
+
+    ; The doc block above the declaration of `name` in `source`, or "".
+    ;
+    ; The declaration is located with find_definition#, the SAME walk
+    ; textDocument/definition uses, and the block is then read with the same
+    ; doc_comment# hover reads — so the documentation an entry resolves to is by
+    ; construction the block above the declaration the editor would jump to.
+    ; Its limit is that walk's own and is inherited rather than re-decided here:
+    ; the FIRST declaration of the name in the file wins.
+    function completion_doc_text(rp, source: String, uri: String, name: String) returns String
+    {
+        let loc symbols.find_definition(source, uri, name)
+        if loc.get_length() = 0
+            return ""
+        ; An "M"-tagged hit is a `module NAME` statement, not a declaration of
+        ; NAME (def_module_match#) — the comment above it documents the module
+        ; line, not the routine the entry names.
+        if loc.get(0) = ("M" as char)
+            return ""
+
+        let v json.parse loc
+        let range json.get(v, "range")
+        let start json.get(range, "start")
+        let line json.as_i64(json.get(start, "line"))
+        let character json.as_i64(json.get(start, "character"))
+        if line < 0
+            return ""
+        if character < 0
+            return ""
+        symbols.doc_comment(source, symbols.position_to_offset(source, line as size_t, character as size_t))
+    }
+
+    ; ====================================================================
     ; Context-aware completion (member-after-`.`, lexical)
     ;
     ; When a `.` precedes the cursor, offer ONLY the members of the receiver
@@ -4210,7 +4381,7 @@ define symbols
                     if cmem.get_length() > 0
                         return cmem
                 }
-                return symbols.completion_items parse_source
+                return symbols.flat_items(parse_source, uri)
             }
 
         let receiver symbols.receiver_before_cursor(source, offset)
@@ -4220,7 +4391,7 @@ define symbols
             ; file (Type. / namespace. / union.) -> that concept's members.
             let direct symbols.member_completions(parse_source, receiver)
             if direct.get_length() > 0
-                return direct
+                return symbols.with_item_data(direct, uri)
 
             ; Case 1b: `this.` -> the members of the ENCLOSING concept, straight
             ; from the parse tree. `this` is the most common receiver in this
@@ -4279,7 +4450,7 @@ define symbols
                     {
                         let fmem symbols.member_completions(parse_source, ftype)
                         if fmem.get_length() > 0
-                            return fmem
+                            return symbols.with_item_data(fmem, uri)
                     }
                 }
             }
@@ -4328,7 +4499,15 @@ define symbols
             if xpkg.get_length() > 0
                 return xpkg
         }
-        symbols.completion_items parse_source
+        symbols.flat_items(parse_source, uri)
+    }
+
+    ; The flat all-names list of THIS document, tagged with its own uri so
+    ; completionItem/resolve knows where to read the doc blocks from.
+    function flat_items(rp, parse_source: String, uri: String) returns String
+    {
+        let items symbols.completion_items parse_source
+        symbols.with_item_data(items, uri)
     }
 
     ; ====================================================================
@@ -4712,11 +4891,17 @@ define symbols
     ; Members of the concept named `type_name`: this file first, then sibling
     ; .scaly files under the current file's directory tree (cross-file). ""
     ; when no such concept is found anywhere.
+    ;
+    ; Both halves tag their entries with the file they were READ from (see the
+    ; completionItem/resolve section): the local hit with this document's uri,
+    ; the workspace hit with the uri of whichever file declared the concept —
+    ; which is the whole point of tagging here rather than at the caller, since
+    ; only this function knows which of the two answered.
     function members_for_type(rp, source: String, uri: String, type_name: String) returns String
     {
         let here symbols.member_completions(source, type_name)
         if here.get_length() > 0
-            return here
+            return symbols.with_item_data(here, uri)
         symbols.member_completions_in_workspace(uri, type_name)
     }
 
@@ -4770,6 +4955,12 @@ define symbols
                             {
                                 let blob symbols.blob_for_file(fpath)
                                 set result: symbols.members_from_ws_blob(blob, type_name)
+                                ; The entries were read from THIS file, so this
+                                ; is where completionItem/resolve must look for
+                                ; their doc blocks — not in the document the
+                                ; completion was requested in.
+                                if result.get_length() > 0
+                                    set result: symbols.with_item_data(result, symbols.path_to_uri(fpath))
                             }
                 }
                 set line_start: i + 1
@@ -7246,8 +7437,31 @@ define symbols
         ; 2. a routine's return type — this file's routine before the tree's
         if type_name.get_length() = 0
             set type_name: symbols.function_return_type(source, name)
+        ; ★★★The workspace walk is SKIPPED when the open buffer already declares
+        ; this name, and that is the same "THE OPEN BUFFER FIRST" rule as above
+        ; rather than a new one — step 2 simply did not obey it, because the
+        ; buffer was only asked about ROUTINES (function_return_type# above) and
+        ; not about the name at all. So a cursor on a TYPE declared right here
+        ; fell through to a search of every sibling and every package for a
+        ; ROUTINE of that name, found none, and step 3 then answered from the
+        ; buffer anyway: the walk could not change the result, only delay it.
+        ;
+        ; ★Measured on packages/ (177 files read, per SCALYLS_PROF): 28 s for a
+        ; cursor on `Point(1)` where `Point` is declared in the open document,
+        ; against this request kind's 60 s budget. 2.1x of margin, and it does
+        ; not hold: the same request took over 60 s whenever the suite ran it
+        ; after the four-package-root emission, which killed the worker and took
+        ; the symindex with it (see WORKSPACE_TIMEOUT_MS in worker.scaly for why
+        ; that is a permanent cold cache and not one slow answer). Skipping the
+        ; walk makes it 0.02 s, so the margin question does not arise.
+        ;
+        ; What CHANGES: a name that is both a concept HERE and a routine in
+        ; another file used to answer with that routine's return type and now
+        ; answers with the local concept. That is the documented order, and the
+        ; other way round is the bug the paragraph above this one describes.
         if type_name.get_length() = 0
-            set type_name: symbols.return_type_in_workspace(uri, name)
+            if symbols.buffer_declares(source, uri, name) = false
+                set type_name: symbols.return_type_in_workspace(uri, name)
         ; 3. the name itself — the cursor is already on a type
         if type_name.get_length() = 0
             set type_name: name
@@ -7256,6 +7470,17 @@ define symbols
         if here.get_length() > 0
             return here
         symbols.find_definition_in_workspace(uri, type_name)
+    }
+
+    ; True when the OPEN BUFFER itself declares `name`. One parse of the
+    ; document — the same blob the answer is read out of two steps later, and
+    ; the same test — so asking it first costs nothing and saves a walk of every
+    ; sibling and every package.
+    function buffer_declares(source: String, uri: String, name: String) returns bool
+    {
+        let blob symbols.workspace_symbols_in_file(source, uri)
+        let hit symbols.def_from_ws_blob(blob, name, false)
+        hit.get_length() > 0
     }
 
     ; The Location of `name`'s own declaration in the single file `fpath` (a

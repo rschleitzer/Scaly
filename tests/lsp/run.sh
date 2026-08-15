@@ -1044,6 +1044,193 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp completion detail"; else bad "lsp completion detail"; fi
 
+# ---- completionItem/resolve: the doc block, one entry at a time ------------
+# The `;` block above a declaration is what hover shows, and it is the most
+# valuable thing a completion entry could carry. It is NOT sent with the list:
+# measured on packages/scalyls/0.1.0/scalyls/symbols.scaly, the flat list is 392
+# entries / 85 KB, and resolving all of them takes it to 182 KB — 2.1x, per
+# keystroke, for a reader who looks at one entry.
+#
+# So each entry carries `data` — the uri of the FILE IT WAS READ FROM — and the
+# doc arrives on completionItem/resolve for the selected entry alone. `data`
+# naming the file is what keeps resolve to one parse of one file: measured
+# before this existed, the workspace search a name-only resolve would need
+# costs 7.93 s cross-package and 1.12 s cross-file cold, against 0.026 s
+# (median of 40) for the lookup this does.
+#
+# The checks that measure the EFFECT rather than the form:
+#   * two documented routines in one file resolve to their OWN blocks, so an
+#     implementation that always answers the first one fails
+#   * a member read from ANOTHER file resolves against THAT file, while the open
+#     document declares the same name with a different block — so using the
+#     request's document instead of `data` is visible
+#   * a name containing `"` and `}` still yields parseable JSON: the data
+#     splice tracks string state and brace depth, and a scan that did not would
+#     cut an entry in half
+#
+# 15 of the 19 fail on the binary built one commit earlier. The four that pass
+# there are the WATCHDOGS and pass by carrying nothing: that the list has no
+# `documentation` on it (which is the whole point and must stay true), that `s.`
+# still lists Shape's members, and the two "and NOT the other file's text"
+# companions — each guards a claim its red neighbour makes.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+ws = "/tmp/lsp_ws/completion_resolve"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+
+# The OTHER file: the concept whose members complete, with its own doc blocks.
+other = ("; The shape module banner.\n"
+         "\n"
+         "define Shape\n(\n    side: int\n)\n{\n"
+         "    ; The area, computed in the OTHER file.\n"
+         "    function area(this: Shape) returns int\n    {\n        side * side\n    }\n"
+         "    function undocumented_member(this: Shape) returns int\n    {\n        1\n    }\n}\n")
+open(ws + "/helper.scaly", "w").write(other)
+
+doc = ("; A file banner that must NOT reach any entry.\n"                 # 0
+       "\n"                                                              # 1
+       "; Add two numbers.\n"                                            # 2
+       ";\n"                                                             # 3
+       ";   a  the left one\n"                                           # 4
+       "function add(a: int, b: int) returns int\n{\n    a + b\n}\n"     # 5-8
+       "\n"                                                              # 9
+       "; Subtract two numbers.\n"                                       # 10
+       "function sub(a: int, b: int) returns int\n{\n    a - b\n}\n"     # 11-14
+       "\n"                                                              # 15
+       "function undocumented() returns int\n{\n    1\n}\n"              # 16-19
+       "\n"                                                              # 20
+       "; A different area, declared in the OPEN file.\n"                # 21
+       "function area() returns int\n{\n    0\n}\n"                      # 22-25
+       "\n"                                                              # 26
+       "; A point in the plane.\n"                                       # 27
+       "define Point\n(\n    x: int\n)\n{\n"                             # 28-32
+       "    ; The x coordinate.\n"                                       # 33
+       "    function get_x(this: Point) returns int\n    {\n        x\n    }\n}\n"   # 34-38
+       "\n"                                                              # 39
+       "; A name with a quote and a brace in it.\n"                      # 40
+       "function 'we\"ird}x'() returns int\n{\n    1\n}\n"                # 41-44
+       "\n"                                                              # 45
+       "function use_it(s: Shape) returns int\n{\n"                      # 46-47
+       "    s.\n"                                                        # 48
+       "    0\n}\n")                                                     # 49-50
+path = ws + "/main.scaly"
+open(path, "w").write(doc)
+uri = "file://" + path
+
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def session(msgs):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+ws}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+    for m in msgs: inp += frame(m)
+    inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    return frames
+def result(frames, idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return None if f is None else f.get("result")
+
+def completion(line, ch):
+    return {"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{
+            "textDocument":{"uri":uri},"position":{"line":line,"character":ch}}}
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+FENCE = "`" * 3
+
+# --- the flat list of the open document, then a resolve for each entry -----
+comp = completion(19, 0)
+fr = session([comp])
+caps = ((result(fr, 1) or {}).get("capabilities") or {}).get("completionProvider") or {}
+check(caps.get("resolveProvider") is True,
+      "the server advertises completionItem/resolve")
+
+flat = result(fr, 2) or []
+by = {it["label"]: it for it in flat}
+check(len(flat) > 0 and all(it.get("data") == uri for it in flat),
+      "every entry names the file it was read from in `data`")
+check(all("documentation" not in it for it in flat),
+      "the list itself carries NO documentation -- that is what resolve is for")
+check(by.get('we"ird}x', {}).get("data") == uri,
+      "a label holding a quote and a brace survives the `data` splice")
+
+wanted = ["add", "sub", "undocumented", 'we"ird}x', "get_x", "Point"]
+msgs = [comp] + [{"jsonrpc":"2.0","id":100+k,"method":"completionItem/resolve",
+                  "params":by[n]} for k, n in enumerate(wanted) if n in by]
+# an entry with no `data` at all (a client-invented one), and one whose label
+# names nothing: both must come back unchanged rather than unanswered.
+msgs.append({"jsonrpc":"2.0","id":200,"method":"completionItem/resolve",
+             "params":{"label":"add","kind":3}})
+msgs.append({"jsonrpc":"2.0","id":201,"method":"completionItem/resolve",
+             "params":{"label":"nosuchname","kind":3,"data":uri}})
+fr = session(msgs)
+res = {}
+for k, n in enumerate(wanted):
+    if n in by: res[n] = result(fr, 100+k)
+def value(n):
+    d = (res.get(n) or {}).get("documentation")
+    return d and d.get("value")
+
+add = value("add") or ""
+check((res.get("add") or {}).get("documentation", {}).get("kind") == "markdown",
+      "the documentation is MarkupContent, kind markdown")
+check(add.startswith(FENCE + "\n") and add.endswith("\n" + FENCE),
+      "it is fenced, so markdown cannot reflow a hand-wrapped block")
+check("Add two numbers." in add and "\n\n  a  the left one\n" in add,
+      "the block's own line structure survives (paragraph break + indent)")
+check("file banner" not in add,
+      "a block above a BLANK LINE is not part of it")
+got_add = res.get("add") or {}
+check(got_add == dict(by["add"], documentation=got_add.get("documentation")),
+      "the entry comes back with label/kind/detail/data untouched")
+check(res.get("undocumented") == by["undocumented"],
+      "an undocumented routine resolves to itself, with no documentation key")
+check("The x coordinate." in (value("get_x") or ""),
+      "a member nested in a `define` carries its own block")
+check("A point in the plane." in (value("Point") or ""),
+      "a concept carries its block")
+# THE effect check: each entry gets ITS OWN block, not the first one found.
+check("Subtract two numbers." in (value("sub") or "") and "Add two numbers." not in (value("sub") or ""),
+      "a second documented routine resolves to ITS block, not the first one's")
+check(result(fr, 200) == {"label":"add","kind":3},
+      "an entry with no `data` is answered unchanged rather than guessed at")
+check(result(fr, 201) == {"label":"nosuchname","kind":3,"data":uri},
+      "a label that declares nothing resolves to itself")
+
+# --- the cross-file half: `s.` lists Shape's members from helper.scaly -----
+comp_x = completion(48, 6)
+fr = session([comp_x])
+members = {it["label"]: it for it in (result(fr, 2) or [])}
+helper_uri = "file://" + ws + "/helper.scaly"
+check(set(members) == {"side", "area", "undocumented_member"},
+      "`s.` lists the members of Shape, which is declared in the other file")
+check(all(it.get("data") == helper_uri for it in members.values()),
+      "their `data` names helper.scaly, NOT the document the request came from")
+msgs = [comp_x, {"jsonrpc":"2.0","id":300,"method":"completionItem/resolve","params":members["area"]}]
+fr = session(msgs)
+xdoc = ((result(fr, 300) or {}).get("documentation") or {}).get("value") or ""
+check("The area, computed in the OTHER file." in xdoc,
+      "the member resolves against the file it was read from")
+check("declared in the OPEN file" not in xdoc,
+      "and NOT against the open document, which declares `area` too")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp completionItem resolve"; else bad "lsp completionItem resolve"; fi
+
 # ---- codeAction: the `use` quick fix ----
 # The planner writes the fix INTO the diagnostic ("...; add: use a.b.C") and the
 # client hands that diagnostic back with the codeAction request, so the server
@@ -1443,6 +1630,14 @@ doc = ("define Point\n(\n    x: int\n)\n{\n}\n\n"
 # moment `find -H` made that walk work at all on macOS).
 import shutil as _sh; _ws = "/tmp/lsp_ws/typedef_test"; _sh.rmtree(_ws, ignore_errors=True); os.makedirs(_ws)
 uri = "file://" + _ws + "/lsp_typedef_test.scaly"
+# ★A SIBLING declaring a ROUTINE with the same name as the buffer's TYPE. It
+# pins the narrowing that took case (9,4) from 28 s to 0.02 s: step 2 used to
+# search every sibling and every package for a routine named `Point` before
+# step 3 asked the buffer, so this file's return type won — and the walk could
+# never change the answer for a name the buffer declares, only delay it. With
+# the old order the check below reads `Other`, at line 0 of THIS file.
+open(_ws + "/sibling.scaly", "w").write(
+    "define Other\n(\n    v: int\n)\n{\n}\n\nfunction Point() returns Other\n{\n    Other(1)\n}\n")
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
 cases = [(14, 8), (15, 8), (15, 10), (9, 4), (16, 8)]
@@ -1480,6 +1675,9 @@ check(at(0) == (uri, 0), "a constructed binding -> its type in the SAME buffer")
 check(at(1) == (uri, 0), "a binding initialised by a call -> the callee's return type")
 check(at(2) == (uri, 0), "on the routine itself -> what it returns")
 check(at(3) == (uri, 0), "on a type name -> that type (never nothing)")
+check(at(3) is not None and at(3)[0] == uri,
+      "a type declared HERE beats a same-named routine in a sibling -- the "
+      "workspace walk is skipped, not merely outranked")
 tgt = at(4)
 check(tgt is not None and tgt[0].endswith("scaly/containers/StringBuilder.scaly"),
       "a stdlib type resolves cross-package")
