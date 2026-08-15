@@ -3468,7 +3468,7 @@ define symbols
     ; code: blank the line that declares a name and every use of it elsewhere
     ; reports `unknown identifier: N` — about a name that is right there on the
     ; reader's screen. A false diagnostic is worse than a missing one, so
-    ; diagnostics.broken_buffer_diagnostics# asks this before it keeps one, and
+    ; diagnostics.broken_buffer_report# asks this before it keeps one, and
     ; two classes are dropped:
     ;
     ;   * anything located ON a blanked line — it is a statement about spaces;

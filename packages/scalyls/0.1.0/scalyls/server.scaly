@@ -1037,7 +1037,69 @@ define server
     function publish_for(uri: String, text: String)
     {
         let payload worker.analyze(uri, text)
-        rpc.write_message payload
+        server.write_notifications payload
+    }
+
+    ; The diagnostics reply is a LINE-SEPARATED list of publishDiagnostics
+    ; notifications: the analysed document first, then one per sibling module of
+    ; its package root (scalyls.diagnostics' header has the reasoning). Write each
+    ; as its own JSON-RPC frame.
+    ;
+    ; An empty line is skipped rather than framed — an empty frame is not a valid
+    ; message, and the tail deliberately ends in an LF.
+    ;
+    ; ★A SIBLING THAT IS ITSELF OPEN IS SKIPPED, and this is the one thing in the
+    ; fan-out the worker cannot decide: the docstore lives only in the parent.
+    ; The reason is that the two analyses are not equivalent. A sibling's
+    ; notification is derived from DISK, while a file's own analysis takes its
+    ; parse errors from the LIVE BUFFER — so publishing over an open file erases
+    ; exactly the diagnostic the user is looking at. Measured on two open files of
+    ; one root: an unfinished line in B showed `expected '}'`, and one keystroke
+    ; in A cleared it, with the broken line still on screen. An open file loses
+    ; nothing by being skipped — it gets its own analysis on its own next edit.
+    procedure write_notifications(payload: String)
+    {
+        let len payload.get_length()
+        if len = 0
+            return
+
+        var start: size_t 0
+        var i: size_t 0
+        var line: size_t 0
+        while i < len
+        {
+            ; Bind the byte first — `payload.get i = X` is a parenless call
+            ; whose head swallows the comparison.
+            let c payload.get i
+            if c = (0x0A as char)
+            {
+                if i > start
+                {
+                    server.write_notification(payload.substring(start, i - start), line)
+                    set line: line + 1
+                }
+                set start: i + 1
+            }
+            set i: i + 1
+        }
+        if len > start
+            server.write_notification(payload.substring(start, len - start), line)
+    }
+
+    ; Write one publishDiagnostics notification, unless it is a sibling (index
+    ; > 0) whose document the editor has open — see write_notifications# for why.
+    ; Line 0 is the analysed document itself and is always written.
+    procedure write_notification(notification: String, index: size_t)
+    {
+        if index > 0
+        {
+            let msg json.parse notification
+            let params json.get(msg, "params")
+            let uri json.as_string(json.get(params, "uri"))
+            if docstore.find(uri) >= 0
+                return
+        }
+        rpc.write_message notification
     }
 
     ; ====================================================================

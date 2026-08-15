@@ -11,7 +11,10 @@ What you get:
 - **Syntax highlighting** — TextMate grammar for keywords, literals, comments,
   operators (plus richer, server-computed **semantic tokens** on top).
 - **Diagnostics** — parse / model / plan errors as you type, in the editor and
-  the Problems panel.
+  the Problems panel. A package member is analysed through its package ROOT, so
+  the errors of every module of that root are reported at once: a mistake in a
+  file you do not have open still appears in the Problems panel, at its own
+  line. It costs nothing extra — that analysis was already running.
 - **Hover** — signatures and doc info for functions, types, and bindings.
 - **Go to Definition** / **Find All References** / **Document Highlight** —
   cross-file and cross-package.

@@ -10,7 +10,7 @@
 ;
 ; A parse error no longer ENDS the report: the semantic half still runs, from
 ; disk for a package member and over a repaired buffer for a standalone
-; document. broken_buffer_diagnostics# has both routes and the one thing that
+; document. broken_buffer_report# has both routes and the one thing that
 ; was deliberately left out.
 ;
 ; Envelope:
@@ -21,6 +21,33 @@
 ;             "end":{"line":L,"character":C}},
 ;    "severity":1,"message":<msg>}
 ; LSP line/character are 0-based (one less than cli's 1-based report).
+;
+; ★THE REPLY IS A LIST, one notification per LINE. A package member is planned
+; through its ROOT (package_report#), so the planner answers for EVERY module of
+; that root in one pass — and the answer for every module but the open one used
+; to be computed and thrown away by a `dp.file = path` filter. A file that is not
+; open in the editor then reported nothing, although its diagnostics were already
+; in hand. So the reply now carries the open document's notification FIRST and
+; one notification per sibling module after it, and server.write_notifications#
+; writes each as its own frame.
+;
+; LF is a safe separator because json.quote_string# escapes 0x0A to `\n`: no
+; notification we build can contain a raw one. Paths cannot either.
+;
+; ★CLEAN SIBLINGS ARE REPORTED TOO, with an EMPTY diagnostics array, and that is
+; the whole reason no state is needed anywhere: LSP diagnostics are owned by the
+; server until it says otherwise, so a fixed error must be cleared explicitly. The
+; alternative — remembering which files were last reported and diffing — puts a
+; second, mutable copy of that answer in the parent, where a worker respawn or a
+; server restart makes it wrong. The price is one small notification per module of
+; the root per typing burst; the largest root in this tree has 58 files (~9 KB),
+; against an analysis that costs 0.45-2.45 s, so the message volume is not the
+; term that matters.
+;
+; ★WHAT THIS DOES NOT REACH: the planner is DEMAND-DRIVEN. A routine nothing calls
+; is never planned, so it yields no diagnostics — in a sibling exactly as in the
+; open document. This is not a limit of the fan-out; it is the same limit the
+; single-file report always had, seen across more files.
 ;
 ; STRING/JSON NOTE: outgoing JSON uses a local StringBuilder appended in
 ; place; nested pieces come from String-returning helpers (a StringBuilder
@@ -73,6 +100,11 @@ define diagnostics
         var first true
         let path diagnostics.strip_uri uri
 
+        ; The sibling notifications, LF-separated, appended after this
+        ; document's own envelope (see the header). Empty for a standalone
+        ; document, which has no root and therefore no siblings.
+        var extra String("")
+
         var p parser.Parser(text)
         choose p.parse_program()
             when err: Error
@@ -82,7 +114,7 @@ define diagnostics
                 ; line hid every semantic diagnostic in the document, and an
                 ; unfinished line is the normal state of a buffer being typed
                 ; into: a type error was invisible until the file parsed again.
-                ; broken_buffer_diagnostics# supplies the rest.
+                ; broken_buffer_report# supplies the rest.
                 choose err
                     when i: Invalid
                     {
@@ -95,7 +127,8 @@ define diagnostics
                         set first: false
                     }
 
-                let body diagnostics.broken_buffer_diagnostics(path, text)
+                let report diagnostics.broken_buffer_report(path, text)
+                let body diagnostics.report_head report
                 if body.get_length() > 0
                 {
                     if first = false
@@ -103,6 +136,7 @@ define diagnostics
                     sb.append body
                     set first: false
                 }
+                set extra: diagnostics.report_tail report
             }
             when program: Success
             {
@@ -124,7 +158,8 @@ define diagnostics
                 let root diagnostics.package_root path
                 if root.get_length() > 0
                 {
-                    let body diagnostics.package_diagnostics(root, path)
+                    let report diagnostics.package_report(root, path)
+                    let body diagnostics.report_head report
                     if body.get_length() > 0
                     {
                         if first = false
@@ -132,6 +167,7 @@ define diagnostics
                         sb.append body
                         set first: false
                     }
+                    set extra: diagnostics.report_tail report
                 }
                 if root.get_length() = 0
                 {
@@ -142,26 +178,47 @@ define diagnostics
                     diagnostics.register_packages(&planner, &model)
                     let plan planner.plan_program model
 
+                    ; ★A PROGRAM ROOT is a standalone document that still has
+                    ; MODULES — `define app { module util }` reads util.scaly
+                    ; from disk — so this plan answers for more than one file
+                    ; here too, and the `dp.file` filter is not optional: without
+                    ; it a diagnostic from a module was rendered at ITS byte
+                    ; offset in THIS buffer, i.e. under an unrelated line of a
+                    ; file that is perfectly fine. Measured on a two-module
+                    ; probe: `unknown type` in util.scaly appeared on line 8 of
+                    ; the root. The sibling half below is where it belongs.
                     var di: size_t 0
                     while di < planner.diagnostics.length
                     {
                         let dp planner.diagnostics.get di
                         if dp <> null
                         {
-                            if first = false
-                                sb.append("," as char)
+                            if dp.file = path
+                            {
+                                if first = false
+                                    sb.append("," as char)
 
-                            sb.append(diagnostics.diag_object(text, dp.start, dp.message))
-                            set first: false
+                                sb.append(diagnostics.diag_object(text, dp.start, dp.message))
+                                set first: false
+                            }
                         }
                         set di: di + 1
                     }
+
+                    set extra: diagnostics.sibling_notifications(&model.module_, path, path, &planner)
                 }
             }
 
         sb.append("]" as char)
         sb.append("}" as char)                    ; } params
         sb.append("}" as char)                    ; } root
+
+        ; The sibling notifications follow, one per line.
+        if extra.get_length() > 0
+        {
+            sb.append(0x0A as char)
+            sb.append extra
+        }
         sb.to_string()
     }
 
@@ -263,9 +320,14 @@ define diagnostics
         base.substring(0, cut)
     }
 
-    ; Planner diagnostics for `path`, obtained by planning the package root
-    ; `root` so that sibling modules resolve. Returns the comma-separated
-    ; diagnostic objects (no enclosing brackets), or "" when there are none.
+    ; Planner diagnostics for the whole package root `root`, obtained by planning
+    ; it once so that sibling modules resolve.
+    ;
+    ; Returns a REPORT: the comma-separated diagnostic objects for `path` (no
+    ; enclosing brackets), then — separated by LF — one complete
+    ; publishDiagnostics notification per OTHER module file of the root, clean
+    ; ones included (empty array). report_head#/report_tail# split it; the header
+    ; has the reasoning for both halves.
     ;
     ; SAVED-STATE NOTE: the modeler reads every module from DISK, so the byte
     ; offsets these diagnostics carry are relative to the SAVED text of `path`
@@ -276,9 +338,14 @@ define diagnostics
     ; documents for workspace/symbol ("unsaved editor edits, which never touch
     ; disk, are not reflected"). Parse errors are unaffected: publish_
     ; diagnostics# still takes those from the live buffer.
-    function package_diagnostics(rp, root: String, path: String) returns String
+    function package_report(rp, root: String, path: String) returns String
     {
         var sb StringBuilder()
+
+        ; The sibling notifications. Built in the same pass as `sb`, from the
+        ; same plan — a second plan for them would cost what the whole feature
+        ; is supposed to be free of.
+        var extra StringBuilder()
 
         ; The document as the planner saw it. Empty = unreadable; nothing can
         ; be said about offsets into a text we do not have.
@@ -327,9 +394,300 @@ define diagnostics
                     }
                     set di: di + 1
                 }
+
+                extra.append(diagnostics.sibling_notifications(&model.module_, root, path, &planner))
             }
 
+        let head sb.to_string()
+        let tail extra.to_string()
+        var out StringBuilder()
+        out.append head
+        if tail.get_length() > 0
+        {
+            out.append(0x0A as char)
+            out.append tail
+        }
+        out.to_string()
+    }
+
+    ; One LF-terminated publishDiagnostics notification per module file of `m`'s
+    ; tree EXCEPT `path` — the answer the plan already holds for every file but
+    ; the one that was asked about.
+    ;
+    ; The file list is the MODELER's (Module.file, filled by
+    ; build_referenced_module#), not a directory walk: only a file this analysis
+    ; actually read may be claimed to be clean.
+    ;
+    ; ★`entry` is the file the plan STARTED from (the package root, or the
+    ; document itself for a program root), and it is what bounds the fan-out to
+    ; the subtree that entry owns. The bound is not cosmetic: build_program#
+    ; attaches the PRELUDE as a sub-module of the main module, so an unbounded
+    ; walk publishes into packages/scaly/0.1.0/scaly/prelude.scaly — a file of
+    ; another root, whose diagnostics this analysis has no business clearing.
+    ; Measured on a two-module probe, where prelude.scaly was the only sibling
+    ; the first version reported.
+    function sibling_notifications(rp, m: pointer[Module], entry: String, path: String, planner: pointer[Planner.Planner]) returns String
+    {
+        var sb StringBuilder()
+
+        let prefix diagnostics.subtree_prefix entry
+        let files diagnostics.module_files(m)
+        let flen files.get_length()
+        var fstart: size_t 0
+        var fi: size_t 0
+        while fi < flen
+        {
+            ; Bind the byte first: `files.get fi = X` is a parenless call whose
+            ; head swallows the comparison (CLAUDE.md's dropped-chain class; the
+            ; arity gate reports it as "got 0").
+            let fc files.get fi
+            if fc = (0x0A as char)
+            {
+                if fi > fstart
+                {
+                    let f files.substring(fstart, fi - fstart)
+                    if f <> path
+                        if diagnostics.owns_file(entry, prefix, f)
+                            sb.append(diagnostics.sibling_notification(f, planner))
+                }
+                set fstart: fi + 1
+            }
+            set fi: fi + 1
+        }
         sb.to_string()
+    }
+
+    ; The publishDiagnostics notification for one sibling module `file`, followed
+    ; by its LF, read out of the planner that has already run.
+    ;
+    ; A file the analysis found NOTHING in is reported with an empty array —
+    ; that is what clears a diagnostic the user has just fixed, and the header
+    ; explains why it is done statelessly. A file that carries diagnostics but
+    ; cannot be READ yields nothing at all: its offsets index a text we do not
+    ; have, the same bargain the head half makes.
+    function sibling_notification(rp, file: String, planner: pointer[Planner.Planner]) returns String
+    {
+        var sb StringBuilder()
+
+        var count: size_t 0
+        var di: size_t 0
+        while di < planner.diagnostics.length
+        {
+            let dp planner.diagnostics.get di
+            if dp <> null
+                if dp.file = file
+                    set count: count + 1
+            set di: di + 1
+        }
+
+        var body StringBuilder()
+        if count > 0
+        {
+            let text File.read_to_string(file)
+            if text.get_length() = 0
+                return sb.to_string()
+
+            var first true
+            var dj: size_t 0
+            while dj < planner.diagnostics.length
+            {
+                let dp planner.diagnostics.get dj
+                if dp <> null
+                    if dp.file = file
+                    {
+                        if first = false
+                            body.append("," as char)
+                        body.append(diagnostics.diag_object(text, dp.start, dp.message))
+                        set first: false
+                    }
+                set dj: dj + 1
+            }
+        }
+
+        sb.append(diagnostics.notification(symbols.path_to_uri(file), body.to_string()))
+        sb.append(0x0A as char)
+        sb.to_string()
+    }
+
+    ; The publishDiagnostics envelope for `uri` around an already-assembled,
+    ; comma-separated `body` of diagnostic objects ("" = none).
+    function notification(rp, uri: String, body: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(diagnostics.key("jsonrpc"))
+        sb.append(diagnostics.quoted("2.0"))
+        sb.append("," as char)
+        sb.append(diagnostics.key("method"))
+        sb.append(diagnostics.quoted("textDocument/publishDiagnostics"))
+        sb.append("," as char)
+        sb.append(diagnostics.key("params"))
+        sb.append("{" as char)                    ; params {
+        sb.append(diagnostics.key("uri"))
+        sb.append(json.quote_string(uri))
+        sb.append("," as char)
+        sb.append(diagnostics.key("diagnostics"))
+        sb.append("[" as char)
+        sb.append body
+        sb.append("]" as char)
+        sb.append("}" as char)                    ; } params
+        sb.append("}" as char)                    ; } root
+        sb.to_string()
+    }
+
+    ; The directory an entry file owns its modules under: "<dir>/<name>/". The
+    ; convention is the modeler's own — build_referenced_module# resolves
+    ; `module foo` of <dir>/<name>.scaly to <dir>/<name>/foo.scaly, and
+    ; handle_namespace# appends the namespace segment the same way — and it is
+    ; the same one package_root# walks UP.
+    function subtree_prefix(rp, entry: String) returns String
+    {
+        let len entry.get_length()
+
+        ; 6 == length of ".scaly"
+        var cut len
+        if len > 6
+        {
+            let tail entry.substring(len - 6, 6)
+            if tail = ".scaly"
+                set cut: len - 6
+        }
+
+        var sb StringBuilder()
+        sb.append(entry.substring(0, cut))
+        sb.append("/" as char)
+        sb.to_string()
+    }
+
+    ; True when `file` belongs to the tree rooted at `entry`: the entry itself,
+    ; or anything under the directory it owns.
+    function owns_file(entry: String, prefix: String, file: String) returns bool
+    {
+        if file = entry
+            return true
+        file.starts_with prefix
+    }
+
+    ; Every module FILE reachable from `m`, one per line (a path cannot contain
+    ; an LF). Depth-first, `m` itself first.
+    ;
+    ; ★MODULES DECLARED IN A NAMESPACE need the member walk below, and they are
+    ; the normal case, not an exotic one: every package root in this tree writes
+    ; `define <pkg> { module a  module b }`, and handle_namespace# puts those in
+    ; Namespace.modules — NOT in Module.modules, which only carries the ones
+    ; declared at file level. A walk over Module.modules alone therefore finds no
+    ; sibling at all in any real package; measured on a two-module probe, where
+    ; it found only the prelude.
+    ;
+    ; model.packages — every `package NAME VERSION` dependency — is not walked at
+    ; all: a diagnostic there belongs to that package's own root.
+    function module_files(rp, m: pointer[Module]) returns String
+    {
+        var sb StringBuilder()
+        sb.append m.file
+        sb.append(0x0A as char)
+
+        var i: size_t 0
+        while i < m.modules.length
+        {
+            let sub m.modules.get i
+            if sub <> null
+                sb.append(diagnostics.module_files(sub))
+            set i: i + 1
+        }
+
+        var j: size_t 0
+        while j < m.members.length
+        {
+            let mem m.members.get j
+            if mem <> null
+                sb.append(diagnostics.member_module_files(mem))
+            set j: j + 1
+        }
+        sb.to_string()
+    }
+
+    ; The module files nested inside one member — i.e. inside a namespace, the
+    ; only member kind that can declare modules.
+    function member_module_files(rp, mem: pointer[Member]) returns String
+    {
+        var sb StringBuilder()
+        choose mem
+            when c: Concept
+                sb.append(diagnostics.definition_module_files(&c.definition))
+            else
+            {
+                ; An operator, a function or a package member declares no module.
+            }
+        sb.to_string()
+    }
+
+    ; The module files of a namespace definition, recursing through nested
+    ; namespaces (`define a { define b { module c } }`).
+    function definition_module_files(rp, d: pointer[Definition]) returns String
+    {
+        var sb StringBuilder()
+        choose d
+            when ns: Namespace
+            {
+                var i: size_t 0
+                while i < ns.modules.length
+                {
+                    let sub ns.modules.get i
+                    if sub <> null
+                        sb.append(diagnostics.module_files(sub))
+                    set i: i + 1
+                }
+
+                var j: size_t 0
+                while j < ns.members.length
+                {
+                    let mem ns.members.get j
+                    if mem <> null
+                        sb.append(diagnostics.member_module_files(mem))
+                    set j: j + 1
+                }
+            }
+            else
+            {
+                ; A structure, union, global, type alias or delegate holds none.
+            }
+        sb.to_string()
+    }
+
+    ; The head of a report (everything before the first LF) — the diagnostic
+    ; objects belonging to the document that was asked about.
+    function report_head(rp, report: String) returns String
+    {
+        let cut diagnostics.first_lf report
+        report.substring(0, cut)
+    }
+
+    ; The tail of a report (everything after the first LF) — the sibling
+    ; notifications, or "" when there are none.
+    function report_tail(rp, report: String) returns String
+    {
+        let len report.get_length()
+        let cut diagnostics.first_lf report
+        if cut >= len
+            return String("")
+
+        report.substring(cut + 1, len - cut - 1)
+    }
+
+    ; Offset of the first LF in `s`, or its length when there is none.
+    function first_lf(s: String) returns size_t
+    {
+        let len s.get_length()
+        var i: size_t 0
+        while i < len
+        {
+            let c s.get i
+            if c = (0x0A as char)
+                return i
+            set i: i + 1
+        }
+        len
     }
 
     ; The SEMANTIC diagnostics of a document whose buffer does NOT parse — the
@@ -339,10 +697,10 @@ define diagnostics
     ; routes, and only one of them involves a guess.
     ;
     ; A PACKAGE MEMBER is planned through its ROOT, and the modeler reads every
-    ; module from DISK (package_diagnostics#) — so the broken BUFFER never enters
+    ; module from DISK (package_report#) — so the broken BUFFER never enters
     ; that analysis at all. The diagnostics are exactly the ones the file gets
     ; while it parses, with no repair and nothing to filter; their offsets are
-    ; the saved text's, which package_diagnostics# already documents. Every file
+    ; the saved text's, which package_report# already documents. Every file
     ; of this tree, and of any real project, takes this route.
     ;
     ; A STANDALONE document has no source but the buffer, so it goes through
@@ -359,14 +717,14 @@ define diagnostics
     ; the way there is for a name the repair deleted — the evidence the parser
     ; would need is the very line that is gone — so the honest count of
     ; certain syntax errors in a broken buffer stays one.
-    function broken_buffer_diagnostics(rp, path: String, text: String) returns String
+    function broken_buffer_report(rp, path: String, text: String) returns String
     {
         var sb StringBuilder()
 
         let root diagnostics.package_root path
         if root.get_length() > 0
         {
-            sb.append(diagnostics.package_diagnostics(root, path))
+            sb.append(diagnostics.package_report(root, path))
             return sb.to_string()
         }
 
@@ -404,15 +762,27 @@ define diagnostics
                         ; Offsets are mapped through the ORIGINAL text: the
                         ; repair is length-preserving, so every offset indexes
                         ; the same byte in both, and the reader sees the line
-                        ; that is actually in the editor.
-                        if symbols.trust_repaired_diagnostic(text, repaired, dp.start, dp.message)
-                        {
-                            if first = false
-                                sb.append("," as char)
+                        ; that is actually in the editor. That equivalence holds
+                        ; for THIS file only, hence the file test: a module's
+                        ; diagnostic carries an offset into ITS text and would be
+                        ; drawn under an unrelated line here.
+                        ;
+                        ; ★And no sibling notifications are emitted from the
+                        ; repaired route, deliberately: the repair BLANKS a line
+                        ; of this buffer, so a name it erased makes a module that
+                        ; uses that name report "not found" — a diagnostic
+                        ; manufactured by the repair, in a file the user is not
+                        ; even editing. The siblings keep whatever the last
+                        ; parsing analysis published, which is stale at worst.
+                        if dp.file = path
+                            if symbols.trust_repaired_diagnostic(text, repaired, dp.start, dp.message)
+                            {
+                                if first = false
+                                    sb.append("," as char)
 
-                            sb.append(diagnostics.diag_object(text, dp.start, dp.message))
-                            set first: false
-                        }
+                                sb.append(diagnostics.diag_object(text, dp.start, dp.message))
+                                set first: false
+                            }
                     }
                     set di: di + 1
                 }

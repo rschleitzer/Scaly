@@ -2158,6 +2158,193 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp diagnostics past a parse error"; else bad "lsp diagnostics past a parse error"; fi
 
+# ---- diagnostics for the WHOLE package root, not just the open file -------
+# A package member is planned through its ROOT, so one analysis answers for
+# every module of that root. The answer for every file but the open one used to
+# be computed and discarded; scalyls.diagnostics' header has the reasoning and
+# server.write_notifications# the transport. What is checked here:
+#
+#   FAN-OUT     a diagnostic in a file that is NOT open is reported.
+#   COORDINATES it is reported at ITS OWN line. This is the sharp one: the
+#               standalone (program-root) route had no file filter at all, so a
+#               module's byte offset was rendered against the OPEN buffer and
+#               the squiggle landed under an unrelated line of a file that is
+#               perfectly fine. Measured before the fix on this very fixture:
+#               the module's error appeared on line 8 of the root.
+#   CLEARING    a clean sibling is reported with an EMPTY array, which is what
+#               removes a squiggle the user has just fixed. No server-side state
+#               backs this, so it is the mechanism, not a nicety.
+#   BOUND       nothing outside the root's own subtree is published into. The
+#               modeler attaches the PRELUDE as a sub-module of the main module,
+#               so an unbounded walk reports into packages/scaly/.../prelude.scaly
+#               — another root's file, whose diagnostics this analysis has no
+#               business clearing. The first version did exactly that.
+#   BOTH ROUTES the package-member route (planned via package_root#) and the
+#               program-root route (planned directly) reach the fan-out through
+#               different code and are checked separately.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os, select, time, shutil
+
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+# A server session that collects EVERY publishDiagnostics notification, keyed by
+# uri. One analysis now answers with a list of them, so a helper that reads a
+# single frame (diagnose# above) cannot see this feature at all.
+class Session:
+    def __init__(self):
+        self.p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE, bufsize=0)
+        self.buf = bytearray()
+        self.send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+        self.next_frame()
+        self.send({"jsonrpc":"2.0","method":"initialized","params":{}})
+
+    def send(self, o):
+        self.p.stdin.write(frame(o)); self.p.stdin.flush()
+
+    def next_frame(self, timeout=60.0):
+        fd = self.p.stdout.fileno()
+        deadline = time.time() + timeout
+        while True:
+            i = self.buf.find(b"\r\n\r\n")
+            if i >= 0:
+                n = int(bytes(self.buf[:i]).decode().split(":")[1].strip())
+                if len(self.buf) >= i + 4 + n:
+                    body = bytes(self.buf[i+4:i+4+n]); del self.buf[:i+4+n]
+                    return json.loads(body)
+            left = deadline - time.time()
+            if left <= 0: return None
+            if not select.select([fd], [], [], left)[0]: return None
+            chunk = os.read(fd, 65536)
+            if not chunk: return None
+            self.buf.extend(chunk)
+
+    # Every notification of the analysis an edit triggers: read until the first
+    # one arrives (the analysis is slow), then until the stream goes quiet (the
+    # rest arrive together, measured well under a millisecond apart).
+    def collect(self):
+        out = {}
+        f = self.next_frame(60.0)
+        while f is not None:
+            if f.get("method") == "textDocument/publishDiagnostics":
+                pr = f["params"]
+                out[pr["uri"]] = pr["diagnostics"]
+            f = self.next_frame(2.0)
+        return out
+
+    def open(self, path):
+        self.send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+            "textDocument":{"uri":"file://"+path,"languageId":"scaly",
+                            "version":1,"text":open(path).read()}}})
+        return self.collect()
+
+    def touch(self, path, version):
+        self.send({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+            "textDocument":{"uri":"file://"+path,"version":version},
+            "contentChanges":[{"text":open(path).read()}]}})
+        return self.collect()
+
+    def close(self):
+        self.send({"jsonrpc":"2.0","method":"exit"}); self.p.wait()
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+# A program root with two modules, one of them broken. The call is what makes
+# the module reachable: the planner is DEMAND-DRIVEN, and a routine nothing
+# calls is never planned in a sibling exactly as in the open file.
+ws = "/tmp/lsp_ws/root_diagnostics"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws + "/app")
+open(ws + "/app.scaly", "w").write(
+    "define app\n{\n    module good\n    module bad\n}\n"
+    "\n"
+    "use app.bad.faulty\n"
+    "\n"
+    "let v faulty.boom()\n")
+BROKEN = ("define faulty\n{\n"
+          "    function boom(rp) returns int\n"
+          "    {\n"
+          "        let x no_such_name_here + 1\n"      # line 4 of bad.scaly
+          "        x\n"
+          "    }\n}\n")
+open(ws + "/app/bad.scaly", "w").write(BROKEN)
+open(ws + "/app/good.scaly", "w").write(
+    "define fine\n{\n    function ok(rp) returns int\n        7\n}\n")
+
+ROOT = "file://" + ws + "/app.scaly"
+BAD  = "file://" + ws + "/app/bad.scaly"
+GOOD = "file://" + ws + "/app/good.scaly"
+
+s = Session()
+d = s.open(ws + "/app.scaly")
+check(BAD in d and any("no_such_name_here" in x["message"] for x in d.get(BAD, [])),
+      "program root: a diagnostic in a module that is NOT open is reported")
+lines_bad = [x["range"]["start"]["line"] for x in d.get(BAD, [])]
+check(lines_bad == [4],
+      "program root: at the MODULE's own line, not an offset into the open buffer"
+      + ("" if lines_bad == [4] else " -- got %s" % lines_bad))
+check(d.get(ROOT) == [],
+      "program root: the open file itself stays clean")
+check(GOOD in d and d[GOOD] == [],
+      "program root: a CLEAN module is reported with an empty array (that is what clears)")
+outside = [u for u in d if not u.startswith("file://" + ws + "/")]
+check(not outside,
+      "program root: nothing outside the root's subtree is published into"
+      + ("" if not outside else " -- %s" % outside[:2]))
+
+# Same session: fix the module on disk and re-analyse. The empty array is the
+# only thing that takes the squiggle away.
+open(ws + "/app/bad.scaly", "w").write(BROKEN.replace("no_such_name_here + 1", "2 + 1"))
+d = s.touch(ws + "/app.scaly", 2)
+check(d.get(BAD) == [],
+      "the fixed module is CLEARED in the same session")
+open(ws + "/app/bad.scaly", "w").write(BROKEN)
+s.close()
+
+# The other route: opening a MEMBER plans through package_root# instead.
+s = Session()
+d = s.open(ws + "/app/good.scaly")
+check(BAD in d and any("no_such_name_here" in x["message"] for x in d.get(BAD, [])),
+      "package member: the sibling module's diagnostic is reported")
+check([x["range"]["start"]["line"] for x in d.get(BAD, [])] == [4],
+      "package member: at the sibling's own line")
+check(d.get(GOOD) == [], "package member: the open file itself stays clean")
+s.close()
+
+# A sibling that is itself OPEN must not be published over: its own analysis
+# takes parse errors from the LIVE BUFFER, a sibling notification only from
+# disk, so the fan-out would erase the diagnostic under the user's cursor.
+ws2 = "/tmp/lsp_ws/root_diagnostics_open"
+shutil.rmtree(ws2, ignore_errors=True); os.makedirs(ws2 + "/app")
+open(ws2 + "/app.scaly", "w").write(
+    "define app\n{\n    module good\n}\n\nuse app.good.fine\n\nlet v fine.ok()\n")
+open(ws2 + "/app/good.scaly", "w").write(
+    "define fine\n{\n    function ok(rp) returns int\n        7\n}\n")
+OPEN_SIB = "file://" + ws2 + "/app/good.scaly"
+
+s = Session()
+s.open(ws2 + "/app.scaly")
+# good.scaly is opened with an unfinished line that is NEVER saved.
+buf = open(ws2 + "/app/good.scaly").read().replace("        7\n", "        7\n    set this.\n")
+s.send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+    "textDocument":{"uri":OPEN_SIB,"languageId":"scaly","version":1,"text":buf}}})
+d = s.collect()
+check(any("expected" in x["message"] for x in d.get(OPEN_SIB, [])),
+      "open sibling: its own analysis reports the buffer-only parse error")
+d = s.touch(ws2 + "/app.scaly", 2)
+check(OPEN_SIB not in d,
+      "open sibling: editing another file of the root does not publish over it")
+s.close()
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp package-root diagnostics"; else bad "lsp package-root diagnostics"; fi
+
 # ---- formatter: THE TREE IS THE CORPUS ------------------------------------
 # A formatter is only worth having if it agrees with the code that already
 # exists, so the gate is not a fixture: it is every packages/**/*.scaly. Two
