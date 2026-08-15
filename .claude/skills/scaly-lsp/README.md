@@ -48,7 +48,13 @@ Registered diagnostics handler for plugin:scaly-lsp:scalyls
 | goToDefinition, findReferences, documentSymbol, workspaceSymbol | OK |
 | prepareCallHierarchy, incomingCalls, outgoingCalls | OK |
 | hover | OK on a declaration; on a CALL SITE it answers the enclosing routine |
-| **goToImplementation** | **HANGS — never call it, see CLAUDE.md** |
+| goToImplementation | answers "no results" — the server does not implement it |
+
+`goToImplementation` used to HANG the whole session: the server left an
+unimplemented request unanswered, the client sends it without checking
+capabilities, and the client has no request timeout (measured 94 s, killed by
+hand). Fixed 2026-08-15 by answering `result: null` at the tail of
+`server.handle_message`; gate `"lsp unhandled request answers null"`.
 
 Push diagnostics arrive on didOpen/didChange (0.01 s on a small file).
 Latency on the largest source in the tree (`opensp/Parser.scaly`, 881 KB):

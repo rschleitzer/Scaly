@@ -298,9 +298,22 @@ define server
             return
         }
 
-        ; initialized + any other notification: ignore. Unknown requests
-        ; are left unanswered for now (the client tolerates this for the
-        ; methods we do not advertise).
+        ; initialized + any other notification: ignore — a notification carries
+        ; no id and owes no answer.
+        ;
+        ; ★★★A REQUEST, though, must ALWAYS be answered, even one we do not
+        ; implement, and the older wording here ("left unanswered for now — the
+        ; client tolerates this") was measurably wrong about that. Claude Code's
+        ; LSP client maps its goToImplementation operation onto
+        ; textDocument/implementation UNCONDITIONALLY — it never reads
+        ; implementationProvider back out of our initialize result — and its
+        ; transport has no request timeout at all (only a ContentModified
+        ; retry). So silence here does not degrade the feature, it hangs the
+        ; caller forever: measured 2026-08-15 at 94 s with no answer, killed by
+        ; hand. `null` is the LSP-legal "no result" and reads to that client as
+        ; "no matches", which is the truth for every method we do not serve.
+        if has_id
+            rpc.write_message(server.null_result_response(id))
     }
 
     ; ====================================================================

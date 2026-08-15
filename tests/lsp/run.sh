@@ -855,6 +855,85 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp symlinked workspace root"; else bad "lsp symlinked workspace root"; fi
 
+# ---- every REQUEST is answered, every NOTIFICATION is not ----
+# ★★★An unimplemented request used to get SILENCE (server.scaly's old tail
+# comment even said the client tolerates it). It does not: Claude Code's LSP
+# client maps its goToImplementation operation onto textDocument/implementation
+# UNCONDITIONALLY — it never reads implementationProvider back out of our
+# initialize result — and its transport has no request timeout, only a
+# ContentModified retry. So silence does not degrade the feature, it hangs the
+# caller forever: measured 2026-08-15 at 94 s in a real session before it was
+# killed by hand, and at the protocol level five unimplemented methods in a row
+# each ran the full 25 s probe budget with no answer.
+#
+# The two halves must be tested TOGETHER, because the obvious fix breaks the
+# second: answering "everything left over" would also answer notifications, and
+# a response to a message that carries no id is a stray frame that shifts every
+# later id the client is waiting on. Hence the notification half is not padding
+# — it is the half that constrains the fix.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+ws = "/tmp/lsp_ws/unhandled_request"
+shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+src = ("function target() returns int  7\n"
+       "function caller() returns int  target()\n")
+path = ws + "/main.scaly"; uri = "file://" + path
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+pos = {"line": 1, "character": src.split("\n")[1].index("target()")}
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+# requests the server does not implement — each MUST come back
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/implementation","params":{
+        "textDocument":{"uri":uri},"position":pos}})
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/declaration","params":{
+        "textDocument":{"uri":uri},"position":pos}})
+inp += frame({"jsonrpc":"2.0","id":4,"method":"textDocument/documentLink","params":{
+        "textDocument":{"uri":uri}}})
+inp += frame({"jsonrpc":"2.0","id":5,"method":"nosuch/method","params":{}})
+# notifications the server does not implement — each MUST NOT come back
+inp += frame({"jsonrpc":"2.0","method":"$/setTrace","params":{"value":"off"}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didSave","params":{
+        "textDocument":{"uri":uri}}})
+inp += frame({"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":999}})
+# an implemented request AFTER the unknown traffic: the stream is still in sync
+inp += frame({"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{
+        "textDocument":{"uri":uri},"position":pos}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+answered = {f["id"]: f for f in frames if "id" in f}
+for idn, name in ((2, "textDocument/implementation"), (3, "textDocument/declaration"),
+                  (4, "textDocument/documentLink"), (5, "nosuch/method")):
+    check(idn in answered, "unimplemented request is ANSWERED: " + name)
+    check(answered.get(idn, {}).get("result", "missing") is None,
+          "  ... and its result is null: " + name)
+check(len(answered) == 7,
+      "exactly seven responses (initialize + 4 unknown + definition + shutdown), got %d"
+      % len(answered))
+check(all("id" in f or f.get("method") == "textDocument/publishDiagnostics" for f in frames),
+      "no stray response was produced for a notification")
+check(answered.get(6, {}).get("result") is not None,
+      "the implemented request after the unknown traffic still answers")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp unhandled request answers null"; else bad "lsp unhandled request answers null"; fi
+
 # ---- documentHighlight: occurrences in the current document (no uri) ----
 # Same lexical scan as references, but each result is a range-only
 # DocumentHighlight (the editor knows the current document).

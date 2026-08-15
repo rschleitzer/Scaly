@@ -137290,6 +137290,7 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr void @_ZN6server14handle_messageE6String(ptr %0) {
 entry:
+  %sret.result193 = alloca { ptr }, align 8
   %arg.tmp183 = alloca { ptr }, align 8
   %arg.tmp176 = alloca { ptr }, align 8
   %arg.tmp169 = alloca { ptr }, align 8
@@ -137786,14 +137787,23 @@ if.then185:                                       ; preds = %if.end179
   br i1 %has_id187, label %if.then188, label %if.end189
 
 if.end186:                                        ; preds = %if.end179
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret void
+  %has_id190 = load i1, ptr %has_id, align 1
+  br i1 %has_id190, label %if.then191, label %if.end192
 
 if.then188:                                       ; preds = %if.then185
   call void @_ZN6server23handle_workspace_symbolE9JsonValue3i64(ptr %sret.result, i64 %call4)
   br label %if.end189
 
 if.end189:                                        ; preds = %if.then188, %if.then185
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.then191:                                       ; preds = %if.end186
+  call void @_ZN6server20null_result_responseEPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result193, ptr %frame, i64 %call4)
+  call void @_ZN3rpc13write_messageE6String(ptr %sret.result193)
+  br label %if.end192
+
+if.end192:                                        ; preds = %if.then191, %if.end186
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
