@@ -109,3 +109,26 @@ Repository layout
 - **scaly** — runtime support and standard library (`packages/scaly/`).
 - **scalyc** — the self-hosted compiler (`packages/scalyc/`).
 - **scaly.io** — the static website, the home page of Scaly (`docs/website/`).
+
+Licensing
+---------
+
+Scaly is MIT (see [LICENSE](LICENSE)) — but licensing here is **per directory**,
+not per repository, because two packages are ports of existing works and carry
+the license they were derived under:
+
+| path | license | origin |
+|---|---|---|
+| everything not listed below | MIT | — |
+| `packages/opensp/`, `packages/dazzle/` | Clark / OpenJade (permissive) | James Clark's SP and the OpenJade project |
+| `packages/tscaly/` | Apache 2.0 (+ `NOTICE.txt`) | [microsoft/typescript-go](https://github.com/microsoft/typescript-go) |
+
+Each such package carries its own `LICENSE` next to its sources; that file
+governs the directory it sits in. None of these licenses is copyleft, so they
+neither infect one another nor the rest of the tree.
+
+One rule follows from the mixture and is easy to break by accident:
+**no code moves out of `packages/tscaly` into the compiler, the runtime or the
+standard library.** Concepts and ideas yes, literal code no — a helper lifted
+upward while porting would relicense a piece of the MIT stdlib to Apache 2.0
+without anyone deciding to. `tools/license-boundary.sh` checks it on every push.

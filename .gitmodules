@@ -1,0 +1,3 @@
+[submodule "packages/tscaly/_submodules/typescript-go"]
+	path = packages/tscaly/_submodules/typescript-go
+	url = https://github.com/microsoft/typescript-go

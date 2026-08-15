@@ -1,0 +1,42 @@
+name: license-boundary
+
+# Enforce the tscaly license boundary: no Apache-2.0-marked file may appear
+# outside packages/tscaly. The reasoning and the scope limits are in
+# tools/license-boundary.sh; the rule itself is a one-liner in the root
+# CLAUDE.md, because whoever works in the stdlib never loads tscaly's.
+#
+# ★ THIS ONE IS ON THE PUSH TRIGGER, and deliberately so — unlike `seed`, which
+# went manual-only on 2026-08-11 to stop burning the account's included Actions
+# minutes. Two reasons the cost argument does not reach here:
+#
+#   1. It costs seconds. No toolchain, no build, no LLVM, no submodule — a
+#      checkout and one `grep` over the tracked file list. It is the cheapest
+#      job this repository can run.
+#   2. A manual check enforces nothing. The whole point of putting this rule in
+#      CI rather than only in a document is that a document can fall out of
+#      context while a check cannot — and a check nobody dispatches has exactly
+#      the failure mode of the document.
+#
+# No paths-ignore: a lift can land anywhere, including in paths the seed
+# pipeline ignores.
+#
+# The submodule is NOT checked out (checkout defaults to submodules: false).
+# That is intended: the check reads git-tracked files of THIS repository, and
+# fetching 339 MB to grep our own tree would be the one way to make this job
+# expensive.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tscaly license boundary
+        run: tools/license-boundary.sh
