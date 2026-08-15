@@ -1,0 +1,71 @@
+; Negative control for the effect-free-statement gate (2026-08-15). The gate is
+; proved by xfail_effect_free_statement; this file proves it stays silent on
+; every position where a bare operator expression is the VALUE of something.
+;
+; The gate fires only in NON-LAST statement position, which is what makes it
+; sound — a non-last statement's value is never a block value, an arm value, or
+; a tail return. Each shape below is a last statement of its enclosing body:
+;
+;   * the implicit return of a bool function, written as a bare comparison
+;   * the implicit return of an arithmetic function
+;   * the value of a braced block used as a binding initializer
+;   * the value of an `if`/`else` arm
+;   * the break value of a `repeat`
+;
+; Expected: PASS
+
+function is_zero(a: int) returns bool
+{
+    let doubled a * 2
+    a = 0
+}
+
+function twice_plus(a: int) returns int
+{
+    let base a
+    base * 2 + 1
+}
+
+function pick(flag: bool, a: int) returns int
+{
+    if flag
+    {
+        let k a
+        k + 1
+    }
+    else
+    {
+        let k a
+        k - 1
+    }
+}
+
+if is_zero(0) = false
+    exit 10
+if is_zero(1)
+    exit 11
+if twice_plus(4) <> 9
+    exit 12
+if pick(true, 5) <> 6
+    exit 13
+if pick(false, 5) <> 4
+    exit 14
+
+let block_value {
+    let a 3
+    a + 4
+}
+if block_value <> 7
+    exit 15
+
+var n 0
+let looped repeat
+{
+    set n: n + 1
+    if n = 3
+        break n * 10
+}
+if looped <> 30
+    exit 16
+
+print "PASS"

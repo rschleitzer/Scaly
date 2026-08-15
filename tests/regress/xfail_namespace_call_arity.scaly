@@ -1,0 +1,26 @@
+; Regression: a NAMESPACE function call with too many arguments used to compile
+; clean (2026-08-15).
+;
+; The same silence as xfail_static_call_arity, reached through the other member
+; container. A namespace's functions are members like a structure's, so
+; `ns.greet(1, 2)` falls to the same s155 static path once the namespace-function
+; branch above it has rejected the call on arity — and that branch's rejection
+; was the whole mechanism by which the wrong call arrived at a path with no gate.
+;
+; Kept as a separate test from the structure case because the two travel through
+; different `choose` arms when the member list is collected (Structure / Union /
+; Namespace), and a gate that covers only the arm it was written against is the
+; defect this file exists to catch.
+;
+; xfail: wrong number of arguments for ns.greet: got 2, expected 1
+
+define ns
+{
+    function greet(a: int) returns int
+    {
+        a + 1
+    }
+}
+
+let r ns.greet(1, 2)
+print "unreachable"

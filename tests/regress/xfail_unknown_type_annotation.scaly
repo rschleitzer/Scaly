@@ -1,0 +1,19 @@
+; Regression: a type annotation that names no type used to be DROPPED with
+; rc 0 and not a word (2026-08-15).
+;
+; plan_type# ends with `if this.has_concept(name) = false  return after_subst` —
+; the lenient exit that lets a name this root never lays out through as an
+; opaque placeholder. Everything downstream then treats the binding as a pointer
+; of unknown size: map_type answers `ptr`, sizeof is 8, and the program compiles.
+;
+; The class covered every position that takes an annotation — binding, parameter,
+; return type, structure property, module-level `mutable` — and CLAUDE.md already
+; recorded one face of it under the storage lens ("a declaration whose annotation
+; does not resolve to a TYPE is DROPPED, with rc 0 and no diagnostic"), where the
+; first sign is a later `unknown assignment target` at a line that is not the
+; mistake.
+;
+; xfail: unknown type: nosuchtype
+
+let r: nosuchtype 5
+print "unreachable"

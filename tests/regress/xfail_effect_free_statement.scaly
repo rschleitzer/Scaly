@@ -1,0 +1,26 @@
+; Regression: a statement that is only a discarded operator result used to
+; compile clean (2026-08-15).
+;
+; Scaly has no assignment operator — `=` is equality, and the write is
+; `set target: value`. So this pair
+;
+;     set arr[0]: 111
+;     arr[0] = 222
+;
+; leaves arr[0] at 111, and the second line was accepted with rc 0 and not a
+; word. It is what made a broken array WRITE look like a broken array read while
+; the real defect (&arr[i] answering the element's value) was being hunted
+; elsewhere — see tests/regress/address_of_array_element.scaly.
+;
+; Operators are pure by definition in this language, so a discarded operator
+; result cannot have had a side effect: the statement is provably dead, not
+; merely suspicious.
+;
+; xfail: the result of operator '=' is discarded
+
+var arr int[4]
+set arr[0]: 111
+arr[0] = 222
+if arr[0] <> 222
+    exit 1
+print "unreachable"

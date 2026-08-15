@@ -1,0 +1,91 @@
+; Regression / negative control for the qualified-static arity gate
+; (2026-08-15). The gate itself is proved by xfail_static_call_arity and
+; xfail_namespace_call_arity; this file proves it cuts NOTHING that used to
+; work, which is the half a diagnostic can silently get wrong.
+;
+; Each shape below reaches the same s155 static path the gate sits in:
+;
+;   * a qualified static with the exact arity, zero and non-zero
+;   * a static on a NAMESPACE rather than a structure
+;   * a static that region-allocates, so function_needs_caller_page# gives it an
+;     implicit caller-page slot — the page is NOT in `input`, so counting
+;     `input` against the argument list must still agree
+;   * a sibling static called UNQUALIFIED from inside its own structure, which
+;     resolves through resolve_static_method_on# — the second site the gate was
+;     added to, and the one whose fallback (first same-named member when no
+;     arity matches) is what made the surplus call silent there
+;   * two same-named statics of DIFFERENT arity, where the survey must find the
+;     matching one rather than judging whichever happens to come first
+;
+; Expected: PASS
+
+define Box
+(
+    v: int
+)
+{
+    function twice(a: int) returns int
+    {
+        a * 2
+    }
+
+    function zero() returns int
+    {
+        7
+    }
+
+    function make(x: int) returns pointer[Box]
+    {
+        Box#(x)
+    }
+
+    ; Two arities under one name: the survey must not report the call that
+    ; matches the SECOND one just because the first is picked by name.
+    function pick(a: int) returns int
+    {
+        a
+    }
+
+    function pick(a: int, b: int) returns int
+    {
+        a + b
+    }
+
+    ; Sibling static, called without a qualifier from another static of the same
+    ; structure — resolve_static_method_on#.
+    function sibling(a: int) returns int
+    {
+        twice(a) + zero()
+    }
+}
+
+define ns
+{
+    function greet(a: int) returns int
+    {
+        a + 1
+    }
+}
+
+if Box.twice(21) <> 42
+    exit 10
+if Box.zero() <> 7
+    exit 11
+if ns.greet(1) <> 2
+    exit 12
+
+let b Box.make(5)
+if b = null
+    exit 13
+if (*b).v <> 5
+    exit 14
+
+if Box.sibling(3) <> 13
+    exit 15
+
+if Box.pick(4) <> 4
+    exit 16
+if Box.pick(4, 5) <> 9
+    exit 17
+
+print "PASS"

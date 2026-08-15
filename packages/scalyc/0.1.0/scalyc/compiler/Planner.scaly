@@ -5741,6 +5741,10 @@ define Planner
                 return null
             let smc (*smc_ref)
             var static_fn: ref[Function]? null
+            ; Same gate as the qualified static path: the fallback below takes
+            ; the first same-named static when no arity matches, which is how a
+            ; sibling call with surplus arguments planned clean.
+            var static_arity_seen: bool false
             choose smc.definition
                 when sst: Structure
                 {
@@ -5772,7 +5776,16 @@ define Planner
                                             if static_fn = null
                                                 set static_fn: &^this sf
                                             if sf.input.length = arg_types.length
-                                                set static_fn: &^this sf
+                                            {
+                                                ; FIRST arity match wins, not the
+                                                ; last — same rule as the qualified
+                                                ; static path, so the two sites
+                                                ; cannot disagree about which
+                                                ; overload a call names.
+                                                if static_arity_seen = false
+                                                    set static_fn: &^this sf
+                                                set static_arity_seen: true
+                                            }
                                         }
                                     }
                                     0
@@ -5790,6 +5803,19 @@ define Planner
                 return null
 
             let sfn (*static_fn)
+            if static_arity_seen = false
+            {
+                var ra_sb StringBuilder()
+                ra_sb.append "wrong number of arguments for "
+                ra_sb.append struct_name
+                ra_sb.append "."
+                ra_sb.append fn_name
+                ra_sb.append ": got "
+                ra_sb.append arg_types.length
+                ra_sb.append ", expected "
+                ra_sb.append sfn.input.length
+                this.add_diagnostic(loc, ra_sb.to_string())
+            }
             let sparent_ref &^this PlannedType(
                 loc,
                 String(struct_name),
@@ -9276,6 +9302,10 @@ define Planner
                                                 if v_s90.length > 0
                                                 {
                                                     let collapsed_s90 this.collapse_operand_sequence(v_s90)
+                                                    ; An argument that names nothing
+                                                    ; reachable — see
+                                                    ; report_unknown_identifier#.
+                                                    this.report_unknown_identifier(collapsed_s90)
                                                     arg_types_arr_s90.add collapsed_s90.result_type
                                                     arg_ops_arr_s90.add collapsed_s90
                                                 }
@@ -10233,6 +10263,28 @@ define Planner
                                     {
                                         let smc (*smc_ref)
                                         var static_fn: ref[Function]? null
+                                        ; Arity gate for the QUALIFIED STATIC path. Selection
+                                        ; below takes the FIRST same-named this-less member and
+                                        ; never compared its parameter count with the call's, so
+                                        ; `Box.twice(1, 2, 3)` on a one-parameter static and
+                                        ; `ns.greet(1, 2)` on a one-parameter namespace function
+                                        ; both planned CLEAN (rc 0) and handed the surplus
+                                        ; arguments to a signature with no slots for them —
+                                        ; emit_call synthesizes the callee type from the
+                                        ; ARGUMENTS, so LLVM had nothing to verify against
+                                        ; either. The this-method path (lookup_method#), the
+                                        ; free-function path (check_function_match#) and the
+                                        ; namespace-function path above have all had this gate
+                                        ; for a long time; the qualified static was the one
+                                        ; direction left silent, and only the TOO MANY direction
+                                        ; is silent at all (too few loses the candidate and
+                                        ; surfaces as "function not found").
+                                        ;
+                                        ; Record and CONTINUE, exactly as lookup_method#'s gate
+                                        ; does: add_diagnostic is fatal at the cli.scaly gate, so
+                                        ; resolution proceeds unchanged and no path that expects
+                                        ; a hit for a method it just found by name is disturbed.
+                                        var static_arity_seen: bool false
                                         ; s155 + union: a this-less static can live
                                         ; on a Structure OR a Union concept (opensp's
                                         ; CodingSystem is a union with a `test()`
@@ -10261,25 +10313,45 @@ define Planner
                                                     choose sm
                                                         when sf: Function
                                                         {
-                                                            if static_fn = null
+                                                            if sf.name = suffix
                                                             {
-                                                                if sf.name = suffix
+                                                                var is_static: bool true
+                                                                if sf.input.length > 0
                                                                 {
-                                                                    var is_static: bool true
-                                                                    if sf.input.length > 0
+                                                                    let i0 sf.input.get 0
+                                                                    if i0 <> null
                                                                     {
-                                                                        let i0 sf.input.get 0
-                                                                        if i0 <> null
+                                                                        if i0.name <> null
                                                                         {
-                                                                            if i0.name <> null
-                                                                            {
-                                                                                if (*i0.name) = "this"
-                                                                                    set is_static: false
-                                                                            }
+                                                                            if (*i0.name) = "this"
+                                                                                set is_static: false
                                                                         }
                                                                     }
-                                                                    if is_static
+                                                                }
+                                                                if is_static
+                                                                {
+                                                                    ; The first same-named static is
+                                                                    ; the fallback; the first whose
+                                                                    ; ARITY matches wins. Before, the
+                                                                    ; fallback was the only rule, so
+                                                                    ; two same-named statics of
+                                                                    ; different arity always resolved
+                                                                    ; to the one declared first —
+                                                                    ; `Box.pick(4, 5)` ran the
+                                                                    ; one-parameter `pick` and
+                                                                    ; answered 4, with rc 0 and no
+                                                                    ; word said. Mirrors
+                                                                    ; resolve_static_method_on#,
+                                                                    ; which has always preferred the
+                                                                    ; arity match on the sibling path.
+                                                                    if static_fn = null
                                                                         set static_fn: &^this sf
+                                                                    if sf.input.length = arg_types.length
+                                                                    {
+                                                                        if static_arity_seen = false
+                                                                            set static_fn: &^this sf
+                                                                        set static_arity_seen: true
+                                                                    }
                                                                 }
                                                             }
                                                             0
@@ -10294,6 +10366,19 @@ define Planner
                                         if static_fn <> null
                                         {
                                             let sfn (*static_fn)
+                                            if static_arity_seen = false
+                                            {
+                                                var qa_sb StringBuilder()
+                                                qa_sb.append "wrong number of arguments for "
+                                                qa_sb.append sconcept
+                                                qa_sb.append "."
+                                                qa_sb.append suffix
+                                                qa_sb.append ": got "
+                                                qa_sb.append arg_types.length
+                                                qa_sb.append ", expected "
+                                                qa_sb.append sfn.input.length
+                                                this.add_diagnostic(result.loc, qa_sb.to_string())
+                                            }
                                             let sparent_ref &^this PlannedType(
                                                 result.loc,
                                                 String(sconcept),
@@ -14957,6 +15042,122 @@ define Planner
         ; skeleton), apply_name_substitution (T → int, etc.), and the
         ; concept registry to fill in mangled_name for registered types.
         ; ================================================================
+        ; is_concept_parameter_name: is `name` declared as a type PARAMETER by
+        ; any registered concept? The tree's own generics all use a single
+        ; uppercase letter, which is_generic_type_param_name# recognises
+        ; directly and which type_mentions_generic_param# already depends on —
+        ; but nothing in the language requires that, and a user writing
+        ; `define Box[Elem]` must not have `Elem` reported as an unknown type
+        ; while the TEMPLATE body is planned (there the parameter is unbound by
+        ; definition). Asking every concept rather than the enclosing one is
+        ; deliberately lax in the safe direction: it can only ever SUPPRESS a
+        ; report, and the set it suppresses is the set of parameter names, which
+        ; in this tree is T/K/V.
+        ;
+        ; Only reached from the unknown-name exit of plan_type#, so the scan is
+        ; not on any hot path.
+        function is_concept_parameter_name(this: Planner, name: String) returns bool
+        {
+            var ci: size_t 0
+            while ci < concepts.length
+            {
+                let c_ptr concepts.get ci
+                if c_ptr <> null
+                {
+                    let c c_ptr.value
+                    var pi: size_t 0
+                    while pi < c.parameters.length
+                    {
+                        let p_ptr c.parameters.get pi
+                        if p_ptr <> null
+                            if p_ptr.name = name
+                                return true
+                        set pi: pi + 1
+                    }
+                }
+                set ci: ci + 1
+            }
+            false
+        }
+
+        ; unknown_type_name: `t` names nothing that could be a type — return that
+        ; name, otherwise "". The type-annotation counterpart of
+        ; unknown_identifier_name#, and the last of the silent classes: an
+        ; annotation that resolves to no type was DROPPED with rc 0 and not a
+        ; word, in every position that takes one —
+        ;
+        ;   let r: nosuchtype 5          function f(a: nosuchtype)
+        ;   function f() returns nosuchtype   define R (a: nosuchtype)
+        ;   mutable g: nosuchtype 3
+        ;
+        ; — and, worst of the set, `let r nosuchname + 1`, where the untyped
+        ; binding PEELS its first operand as a type annotation, so a typo in an
+        ; expression became a binding of an unknown type and the diagnostic the
+        ; binary-operator check would have raised never ran.
+        ;
+        ; The exemptions, each for a shape that legitimately reaches the
+        ; unknown-name exit of plan_type#:
+        ;   * a DOTTED name — the namespace machinery owns those, and the
+        ;     union-variant and namespace-function forms return before the exit;
+        ;     the same carve-out unknown_identifier_name# makes.
+        ;   * a primitive (a plain one returns early with a mangled name; this is
+        ;     belt and braces for the array/generic rewrites).
+        ;   * a generic type PARAMETER, by the single-letter convention and, for
+        ;     user code that does not follow it, by is_concept_parameter_name#.
+        ;   * any registered concept, asked WITHOUT use-visibility
+        ;     (lookup_concept_any#): a type hidden by visibility is a different
+        ;     diagnosis with its own hint, and reporting it here would make this
+        ;     check a function of which `use` lines a file happens to carry.
+        ; report_unknown_type: the ANNOTATION-position half of the check. Called
+        ; only from the places a Model.Type arrives as a written annotation —
+        ; plan_item# (binding, parameter, lambda parameter, init/operator
+        ; parameter), plan_property#, plan_function#'s return and throws types,
+        ; plan_global#, and plan_binding#'s peeled type.
+        ;
+        ; ★It is NOT called from plan_type#'s own unknown-name exit, and the
+        ; measurement that ruled that out is worth keeping: `plan_type` is
+        ; applied to any Type-SHAPED expression, not to annotations, so that exit
+        ; reports 10535 times over this tree — 2068 of them the operator `+`,
+        ; 1714 `*`, then `memcpy`, `exit`, `get_iterator`, `const_char`. That is
+        ; the same reason unknown_identifier_name# carries its long exemption
+        ; list. An annotation position needs no such list because a name there
+        ; can only be a type.
+        function report_unknown_type(this: Planner, t: PlannedType)
+        {
+            let uk this.unknown_type_name(t)
+            if uk.get_length() > 0
+            {
+                ; No use-visibility hint, deliberately: the check exempts
+                ; anything lookup_concept_any# can see, and that is the same
+                ; index use_vis_hint# reads — a hint here could only ever be
+                ; empty. A type hidden by visibility is a different diagnosis
+                ; and is not reported here.
+                var tsb StringBuilder()
+                tsb.append "unknown type: "
+                tsb.append uk
+                let tmsg tsb.to_string()
+                this.add_diagnostic(t.loc, String^this(tmsg))
+            }
+        }
+
+        function unknown_type_name(this: Planner, t: PlannedType) returns String
+        {
+            let tname t.name
+            if tname.get_length() = 0
+                return ""
+            if tname.contains(".")
+                return ""
+            if Planner.is_primitive_type_name(tname)
+                return ""
+            if Planner.is_generic_type_param_name(tname)
+                return ""
+            if this.lookup_concept_any(tname) <> null
+                return ""
+            if this.is_concept_parameter_name(tname)
+                return ""
+            tname
+        }
+
         function plan_type(this: Planner, t: Type) returns PlannedType
         {
             let base Planner.resolve_type_base(t)
@@ -15530,6 +15731,14 @@ define Planner
             {
                 let model_type (*i.type)
                 set planned_type: &^this this.plan_type(model_type)
+                ; Annotation position — see report_unknown_type#. Read the type
+                ; back THROUGH the ref rather than binding plan_type's result to
+                ; a local and boxing that: `&^this <call>` places the result's
+                ; guts on the Planner's page, while a local binding places them
+                ; on this frame and the box then copies a struct whose
+                ; `generics` pointer still points into the frame. Doing it the
+                ; other way SIGSEGVs in encode_type via mangle_function.
+                this.report_unknown_type((*planned_type))
             }
 
             PlannedItem(
@@ -19368,6 +19577,20 @@ define Planner
                                                     set has_peeled_type: true
                                                     set peeled_idx: 1
                                                     peeled_holder.put(0, ft)
+                                                    ; The peel turns the first
+                                                    ; operand into this binding's
+                                                    ; TYPE, so a typo there stops
+                                                    ; being an expression and the
+                                                    ; unknown-identifier checks on
+                                                    ; both sides of the binary
+                                                    ; operator never see it:
+                                                    ; `let r nosuchname + 1` was
+                                                    ; silent while all three
+                                                    ; neighbouring spellings were
+                                                    ; loud. Judge it as the
+                                                    ; annotation it has become —
+                                                    ; see report_unknown_type#.
+                                                    this.report_unknown_type(ft)
                                                 }
                                             }
                                         }
@@ -19827,6 +20050,45 @@ define Planner
                 else
                     return ""
             ""
+        }
+
+        ; report_unknown_identifier: the same message the four inline
+        ; unknown-name checks build (binary operand, `set` target, `set` source,
+        ; binding initializer) — name, use-visibility hint, report. A helper
+        ; rather than a fifth copy because the CALL ARGUMENT site sits inside
+        ; collapse_operand_sequence# and must stay a SINGLE statement: an inline
+        ; branch there perturbs the s178 alloca pool (see
+        ; resolve_static_method_on# for the same reasoning). The four inline
+        ; copies are deliberately left alone — rewriting them buys nothing and
+        ; each one would have to be re-proved emission-neutral.
+        ;
+        ; The argument position was the one place a name that resolves to
+        ; NOTHING travelled without a word. `Box.twice(nosuchname, 3)` and
+        ; `x.twice(nosuchname)` both planned with rc 0 and passed whatever the
+        ; slot held; on a free function the same typo was reported only
+        ; INDIRECTLY, as "function not found: twice" — the unknown argument
+        ; gets a fresh type variable, no overload matches, and the message
+        ; names the callee instead of the typo. Reporting at the argument
+        ; makes all three shapes say the same true thing.
+        function report_unknown_identifier(this: Planner, op: PlannedOperand)
+        {
+            let uname this.unknown_identifier_name(op)
+            if uname.get_length() > 0
+            {
+                var usb StringBuilder()
+                usb.append "unknown identifier: "
+                usb.append uname
+                let uvis this.use_vis_hint(uname)
+                if uvis.get_length() > 0
+                    usb.append uvis
+                ; The four inline copies hand `to_string()` straight to
+                ; add_diagnostic because their enclosing functions have a caller
+                ; page in scope; this one does not, and the message must outlive
+                ; the frame that builds it. Pin it to the Planner's own page —
+                ; the fix_graph diagnostics use the same idiom.
+                let umsg usb.to_string()
+                this.add_diagnostic(op.loc, String^this(umsg))
+            }
         }
 
         function plan_action(this: Planner, a: Action) returns PlannedAction
@@ -24438,6 +24700,99 @@ define Planner
             null
         }
 
+        ; report_effect_free_statement: a statement in NON-LAST position whose
+        ; whole value is a discarded OPERATOR result does nothing at all.
+        ;
+        ; Scaly operators are pure by definition ("Functions are pure … Operators
+        ; are always pure"), so a discarded operator result cannot have had a
+        ; side effect — the statement is dead, and it was accepted with rc 0 and
+        ; not a word. The shape this exists for is the one that reads like an
+        ; assignment and is not:
+        ;
+        ;   set arr[0]: 111
+        ;   arr[0] = 222      ; a COMPARISON. arr[0] is still 111.
+        ;
+        ; `=` is equality in Scaly and there is no assignment operator, so a
+        ; `=`-statement is always this mistake; it made a broken array WRITE look
+        ; like a broken array read (2026-08-04, address_of_array_element).
+        ; Arithmetic (`a + 1`) and every other operator get the same treatment
+        ; for the same reason.
+        ;
+        ; NON-LAST is what makes the check sound, and it is the same precision
+        ; promote_discarded_pagecall# rests on: a non-last statement's value is
+        ; never a block value, an arm value, or a tail return. A bool-returning
+        ; body whose last statement is `a = 0` is the legitimate implicit return
+        ; and must stay silent.
+        ;
+        ; Deliberately narrow to operators. A discarded CALL result is ordinary
+        ; (a procedure called for its effect, a builder whose return value is not
+        ; needed), and a bare variable or literal as a statement, while equally
+        ; dead, is not a shape that has cost anyone anything here.
+        function report_effect_free_statement(this: Planner, stmt: PlannedStatement)
+        {
+            choose stmt
+                when a: PlannedAction
+                {
+                    if a.target = null
+                    {
+                        if a.source <> null
+                        {
+                            let src (*a.source)
+                            if src.length > 0
+                            {
+                                let s0_ptr src.get 0
+                                if s0_ptr <> null
+                                {
+                                    let s0 (*s0_ptr)
+                                    choose s0.expr
+                                        when oc: PlannedCall
+                                        {
+                                            if oc.is_operator
+                                            {
+                                                var esb StringBuilder()
+                                                if oc.name.get_length() = 0
+                                                {
+                                                    ; An operator call with NO
+                                                    ; NAME is not something anyone
+                                                    ; wrote — it is what a failed
+                                                    ; collapse leaves behind, and
+                                                    ; the shape that produces it is
+                                                    ; a parenless call whose
+                                                    ; ARGUMENT is itself a call.
+                                                    ; The statement is dropped
+                                                    ; whole: `scaly_eputs
+                                                    ; s.to_c_string()` emitted
+                                                    ; neither call, which is how it
+                                                    ; sat unnoticed in
+                                                    ; dazzle_cli.scaly for months.
+                                                    ; Say THAT, not "operator ''".
+                                                    esb.append "this statement did not resolve to a call and has no effect - a parenless call whose argument is itself a call ('f x.m()') does not collapse: bind the argument to a local first"
+                                                }
+                                                else
+                                                {
+                                                    esb.append "the result of operator '"
+                                                    esb.append oc.name
+                                                    esb.append "' is discarded - this statement has no effect"
+                                                    if oc.name = "="
+                                                        esb.append " ('=' compares, it does not assign - write 'set target: value')"
+                                                }
+                                                let emsg esb.to_string()
+                                                this.add_diagnostic(s0.loc, String^this(emsg))
+                                            }
+                                            0
+                                        }
+                                        else
+                                            0
+                                }
+                            }
+                        }
+                    }
+                    0
+                }
+                else
+                    0
+        }
+
         ; plan_statements: batch plan_statement over a Model.Block's statements.
         function plan_statements(
             this: Planner,
@@ -24460,6 +24815,10 @@ define Planner
                         let dp this.promote_discarded_pagecall(pl)
                         if dp <> null
                             set pl: (*dp)
+                        ; Same non-last precision, other question: does this
+                        ; statement do anything at all? See
+                        ; report_effect_free_statement#.
+                        this.report_effect_free_statement(pl)
                     }
                     result.put(i, pl)
                 }
@@ -24576,6 +24935,8 @@ define Planner
             {
                 let t (*p.type)
                 set prop_type: this.plan_type(t)
+                ; Annotation position — see report_unknown_type#.
+                this.report_unknown_type(prop_type)
             }
 
             var initializer_ref: ref[Vector[PlannedOperand]]? null
@@ -26622,6 +26983,9 @@ define Planner
             {
                 let rt (*f.returns_)
                 set return_type: &^this this.plan_type(rt)
+                ; Annotation position — read back through the ref, never via a
+                ; local; see the note in plan_item#.
+                this.report_unknown_type((*return_type))
             }
 
             var throws_type: ref[PlannedType]? null
@@ -28252,6 +28616,12 @@ define Planner
         function plan_global(this: Planner, g: Global, name: String) returns PlannedGlobal
         {
             let planned_type this.plan_type(g.type)
+            ; Annotation position — see report_unknown_type#. This is the site
+            ; the storage codeLens describes from the outside: a `mutable` whose
+            ; annotation names no type is DROPPED, and the first sign used to be
+            ; an `unknown assignment target` at the USE, which names the wrong
+            ; place.
+            this.report_unknown_type(planned_type)
             let planned_value this.plan_operands(g.value)
             var value_holder Vector[PlannedOperand](planned_value)
             ; Module-level mutable globals (stack_head etc.) keep their bare

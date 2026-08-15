@@ -1,0 +1,17 @@
+; Regression: the same dropped annotation in a SIGNATURE (2026-08-15). See
+; xfail_unknown_type_annotation for the diagnosis.
+;
+; Separate from the binding case because a signature's types are planned while
+; the function is registered rather than while a body is walked, and a parameter
+; whose type is a placeholder also silently changes overload resolution — the
+; call then matches on a type nobody wrote.
+;
+; xfail: unknown type: nosuchparam
+
+function takes(a: nosuchparam) returns int
+{
+    1
+}
+
+let r takes(1)
+print "unreachable"

@@ -1,0 +1,34 @@
+; Regression: a QUALIFIED STATIC call with too many arguments used to compile
+; clean (2026-08-15).
+;
+; `Type.method(args)` on a this-less member resolves through the s155 static
+; path, which took the FIRST same-named member and never compared its parameter
+; count with the call's. So `Box.twice(1, 2, 3)` on a one-parameter static
+; planned with rc 0 and handed the two surplus arguments to a signature that has
+; no slots for them — and emit_call synthesizes the callee's type from the
+; ARGUMENTS, so LLVM had nothing to verify against either.
+;
+; Every neighbouring call shape already had the gate: a `this` method through
+; lookup_method#, a free function through check_function_match# (an arity
+; mismatch loses the candidate and surfaces as "function not found"), and a
+; namespace function with an explicit `this` through the arity_ok branch above
+; the static path. The qualified static was the one direction left silent.
+;
+; Only TOO MANY is silent at all. Too few also loses the arity test, but the
+; call then has no candidate anywhere and is already reported.
+;
+; xfail: wrong number of arguments for Box.twice: got 3, expected 1
+
+define Box
+(
+    v: int
+)
+{
+    function twice(a: int) returns int
+    {
+        a * 2
+    }
+}
+
+let r Box.twice(1, 2, 3)
+print "unreachable"

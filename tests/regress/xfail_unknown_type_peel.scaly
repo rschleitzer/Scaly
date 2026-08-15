@@ -1,0 +1,19 @@
+; Regression: the worst face of the dropped annotation — a TYPO IN AN EXPRESSION
+; that became a binding of an unknown type (2026-08-15).
+;
+; An untyped binding PEELS its first operand as a type annotation
+; (plan_binding#'s has_peeled_type), which is what makes `var buffer u8[64]`
+; work. So `let r nosuchpeel + 1` bound `r` with type `nosuchpeel` and an
+; initializer of `+ 1`, and the unknown-identifier check that guards both sides
+; of a binary operator never saw the name at all: it had already been consumed as
+; a type.
+;
+; The neighbouring shapes were all loud, which is exactly why this one was hard
+; to place — `let r 1 + nosuchpeel`, `let r nosuchpeel` and
+; `let r: int nosuchpeel + 1` each reported "unknown identifier". Only the
+; peelable position was silent, and it is the one a typo lands in most often.
+;
+; xfail: unknown type: nosuchpeel
+
+let r nosuchpeel + 1
+print "unreachable"

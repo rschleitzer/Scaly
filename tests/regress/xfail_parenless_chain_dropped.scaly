@@ -1,0 +1,33 @@
+; Regression: a parenless call whose ARGUMENT is itself a call is dropped whole,
+; and was silent until the effect-free-statement gate named it (2026-08-15).
+;
+; `scaly_eputs s.to_c_string()` emits NEITHER call — not the extern, not
+; `to_c_string`. Measured against the pre-change compiler: two `scaly_eputs`
+; statements in the source, ONE `call void @_Z11scaly_eputs...` in the IR, and no
+; `to_c_string` anywhere. The one that survives is the one whose argument is a
+; plain literal.
+;
+; CLAUDE.md described this shape as "silently drops or mis-parses" and it was
+; half right: through a MEMBER receiver (`vec.add helper(2)`) the arity gate
+; catches it and says `got 0, expected 1`. Through a FREE function there is no
+; arity to check against, so the collapse leaves an unnamed operator call behind
+; and the statement evaporates.
+;
+; It was live in the tree: dazzle_cli.scaly's JIT-selftest failure branch built
+; a "FAILED at step N" message and printed only the newline after it.
+;
+; xfail: this statement did not resolve to a call
+
+package scaly 0.1.0
+
+function probe() returns int
+{
+    var sb StringBuilder()
+    sb.append "hi"
+    let s sb.to_string()
+    scaly_eputs s.to_c_string()
+    1
+}
+
+let r probe()
+print "unreachable"

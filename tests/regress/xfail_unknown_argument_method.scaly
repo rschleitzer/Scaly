@@ -1,0 +1,25 @@
+; Regression: the same silent unknown argument, this time through a `this`
+; METHOD rather than a static (2026-08-15). See xfail_unknown_argument for the
+; diagnosis.
+;
+; A separate file because the two shapes reach argument collection down
+; different resolution paths (lookup_method# versus the s155 static path), and a
+; check that covers only the path it was written against is exactly the defect
+; this class is made of.
+;
+; xfail: unknown identifier: nosuchname
+
+define Box
+(
+    v: int
+)
+{
+    function twice(this: Box, b: int) returns int
+    {
+        this.v * 2 + b
+    }
+}
+
+let x Box(3)
+let r x.twice(nosuchname)
+print "unreachable"

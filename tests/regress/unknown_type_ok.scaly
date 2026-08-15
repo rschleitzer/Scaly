@@ -1,0 +1,91 @@
+; Negative control for the unknown-type gate (2026-08-15). The gate itself is
+; proved by the three xfail_unknown_type_* files; this one proves it stays
+; silent on every annotation that legitimately resolves to nothing the concept
+; registry holds.
+;
+; The load-bearing case is `Holder[Elem]`. A generic type parameter is
+; recognised by is_generic_type_param_name#, whose rule is a SINGLE UPPERCASE
+; LETTER — the convention this whole tree follows and that
+; type_mentions_generic_param# already depends on. Nothing in the language
+; requires it, so a multi-letter parameter would be reported as an unknown type
+; while the TEMPLATE body is planned, where the parameter is unbound by
+; definition. is_concept_parameter_name# is the exemption that covers it, and
+; `Elem` in a parameter, a property and a return type is what makes it fail if
+; that exemption is ever dropped.
+;
+; The remaining shapes each reach the check through a different call site:
+; plan_item# (binding, parameter), plan_property#, plan_function#'s return type,
+; plan_global#, and plan_binding#'s peeled annotation.
+;
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+; Multi-letter generic parameter, used in a property, a parameter and a return.
+define Holder[Elem]
+(
+    value: Elem
+)
+{
+    function get(this: Holder[Elem]) returns Elem
+    {
+        this.value
+    }
+}
+
+; Single-letter parameter, the convention the tree uses.
+define Pair[T]
+(
+    first: T
+    second: T
+)
+
+; A module global whose annotation is a primitive.
+mutable counter: int 0
+
+define LIMIT: int 5
+
+function take_pointer(p: pointer[int]) returns int
+{
+    *p
+}
+
+function make_string() returns String
+{
+    String("ok")
+}
+
+let h Holder[int](7)
+if h.get() <> 7
+    exit 10
+
+let p Pair[int](3, 4)
+if p.first + p.second <> 7
+    exit 11
+
+set counter: counter + LIMIT
+if counter <> 5
+    exit 12
+
+var raw 9
+if take_pointer(&raw) <> 9
+    exit 13
+
+let s make_string()
+if s.get_length() <> 2
+    exit 14
+
+; The peel path with a legitimate type head: `var buffer u8[64]` is the shape
+; has_peeled_type# exists for, and it must stay silent.
+var buffer u8[8]
+set buffer[0]: 42 as u8
+if buffer[0] <> (42 as u8)
+    exit 15
+
+; A qualified (dotted) annotation is exempt by construction — the namespace
+; machinery owns those names.
+let sb: scaly.containers.StringBuilder StringBuilder()
+
+print "PASS"

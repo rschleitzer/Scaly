@@ -1,0 +1,38 @@
+; Regression: an argument that names NOTHING used to travel without a word
+; through a static call (2026-08-15).
+;
+; `Box.twice(nosuchname, 3)` planned with rc 0 and passed whatever the argument
+; slot happened to hold. The unknown name gets a fresh type variable, which
+; matches anything, so nothing downstream objected either.
+;
+; The three call shapes disagreed about this, which is what made it hard to
+; recognise as one class:
+;
+;   free function   `twice(nosuchname, 3)`   reported "function not found:
+;                                            twice" — the right file and line,
+;                                            the wrong subject
+;   static / method `Box.twice(nosuchname)`  reported nothing at all
+;
+; The check now sits where every call shape collects its arguments (the s90
+; block in collapse_operand_sequence#), so all three say the same true thing and
+; name the typo rather than the callee.
+;
+; Cost of the old behaviour, from CLAUDE.md: a mechanical rename left
+; `Primitive.grove_entity(gnode, …)` in a body with no `gnode` in scope, and the
+; result was a SIGSEGV three suites away.
+;
+; xfail: unknown identifier: nosuchname
+
+define Box
+(
+    v: int
+)
+{
+    function twice(a: int, b: int) returns int
+    {
+        a * 2 + b
+    }
+}
+
+let r Box.twice(nosuchname, 3)
+print "unreachable"
