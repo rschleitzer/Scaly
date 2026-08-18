@@ -1,0 +1,13 @@
+; xfail: wrong number of arguments for U.First: got 2, expected 1
+;
+; A union ARM carries at most one payload, so a variant construction takes at
+; most one argument — and until 2026-08-18 both planner paths that build one
+; read component 0 and DROPPED the rest without a word, rc 0: `U.First(1, 2)`
+; answered 1. This is the resolved path (the is_variant_ctor gate);
+; xfail_variant_arg_arity_bare.scaly covers the s185 rescue, which is a
+; different site with the same symptom.
+
+define U union (First: int  Second: int)
+
+let u U.First(1, 2)
+print("compiled\n")

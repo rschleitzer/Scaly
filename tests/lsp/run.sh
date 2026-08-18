@@ -6884,6 +6884,128 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semantic hover through the package root"; else bad "lsp semantic hover through the package root"; fi
 
+# ---- \uXXXX escapes decode to their UTF-8 bytes ------------------------------
+# json.decode_escape# used to answer ONE '?' byte for any \u escape above 0x7F,
+# on the comment's own admission a deliberate simplification. The CONSEQUENCE is
+# what makes it a defect: a client that escapes non-ASCII delivers a buffer
+# SHORTER than the file (measured on server.scaly: 60440 against 60526 bytes
+# over 43 `★`/`—`), and from the first hit onwards EVERY offset is wrong —
+# diagnostics, hover, all of it. Exposition is small but real: VS Code and
+# Claude Code send raw UTF-8 via JSON.stringify, but JSON permits the escapes
+# and python's json.dumps emits them BY DEFAULT.
+#
+# So this whole block frames with ensure_ascii=True — the opposite of the block
+# above, which needs raw UTF-8 and says so.
+#
+# The observable is the BYTE COUNT, not the content, and it is borrowed rather
+# than invented: resolve_through_root# only plans the package root when the
+# buffer EQUALS the file on disk, so a buffer one byte off silently loses every
+# cross-module answer. One fixture per encoding width (2, 3 and 4 bytes, the
+# last one a SURROGATE PAIR), each with its non-ASCII on an EARLIER LINE than
+# the hovered token — deliberately not on the same line, because scalyls counts
+# columns in bytes while the client sends UTF-16, and that separate, documented
+# gap would make this test fail for the wrong reason.
+#
+# The fourth check is the control: the same document sent one byte SHORT must
+# fall back. Without it, three green checks would prove only that hover works.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+
+def frame(o):
+    b = json.dumps(o, ensure_ascii=True).encode()   # ★ the point of this block
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+def build(name, mark):
+    ws = "/tmp/lsp_ws/" + name
+    shutil.rmtree(ws, ignore_errors=True)
+    os.makedirs(ws + "/app")
+    open(ws + "/app.scaly", "w").write(
+        "package scaly 0.1.0\n\ndefine app\n{\n    module util\n    module user\n}\n")
+    open(ws + "/app/util.scaly", "w").write(
+        "define util\n"
+        "{\n"
+        "    function num() returns int\n"
+        "    {\n"
+        "        return 7\n"
+        "    }\n"
+        "}\n")
+    src = ("; " + mark + " a comment carrying the non-ASCII, on its OWN line\n"
+           "define user\n"
+           "{\n"
+           "    function use_it() returns int\n"
+           "    {\n"
+           "        let a util.num()\n"
+           "        return a\n"
+           "    }\n"
+           "}\n")
+    path = ws + "/app/user.scaly"
+    open(path, "w", encoding="utf-8").write(src)
+    return path, src
+
+# 2 bytes (U+00FC), 3 bytes (U+2605), 4 bytes as a SURROGATE PAIR (U+1F600).
+cases = [("esc2", "üü"), ("esc3", "★—"), ("esc4", "\U0001F600")]
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+ids = {}
+idn = 2
+for name, mark in cases:
+    path, src = build(name, mark)
+    uri = "file://" + path
+    lines = src.split("\n")
+    l = next(i for i, x in enumerate(lines) if "util.num()" in x)
+    c = lines[l].index("num")
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+    inp += frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+                  "params":{"textDocument":{"uri":uri},
+                            "position":{"line":l,"character":c}}})
+    ids[name] = idn
+    idn += 1
+
+# The control: the third fixture again, one byte short of its file.
+path, src = build("esc_short", "★")
+uri = "file://" + path
+lines = src.split("\n")
+l = next(i for i, x in enumerate(lines) if "util.num()" in x)
+c = lines[l].index("num")
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src[:-1]}}})
+inp += frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+              "params":{"textDocument":{"uri":uri},
+                        "position":{"line":l,"character":c}}})
+ids["esc_short"] = idn
+
+inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def val(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    r = (f or {}).get("result")
+    return None if r is None else r.get("contents", {}).get("value")
+
+check(val(ids["esc2"]) == "int", "a 2-byte escape (\\u00fc) keeps the buffer byte-exact")
+check(val(ids["esc3"]) == "int", "a 3-byte escape (\\u2605) keeps the buffer byte-exact")
+check(val(ids["esc4"]) == "int", "a surrogate PAIR (\\ud83d\\ude00) decodes to its four bytes")
+check(val(ids["esc_short"]) == "in function use_it",
+      "the control: a buffer one byte short DOES fall back")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp unicode escapes decode to UTF-8"; else bad "lsp unicode escapes decode to UTF-8"; fi
+
 # ---- semantic hover fallback: parse-error input still answers (no crash) ----
 # A broken document fails the pipeline; the server must still return a valid
 # response (null) and stay alive to answer the next request.

@@ -1,0 +1,28 @@
+; xfail: but not visible here; add: use
+;
+; A record the file cannot SEE, constructed as the payload of a variant of a
+; union it CAN see (2026-08-16). Strict use visibility says an invisible
+; concept is not found and the diagnostic names the `use` to add — and here
+; neither happened: the compile answered rc 0, wordless, and emitted a SECOND
+; variant construction of the OUTER union, same tag, with only the first
+; argument as its payload. It cost 34 SIGSEGVs in Array::get_length three
+; subsystems away while porting the TypeScript class parser; only the IR named
+; it (`alloca %_Z8NodeData` where `alloca %_Z13ClassLikeData` had to stand).
+;
+; The MECHANISM was not "argument position of a variant construction" — that
+; was only the shape it was noticed in. lookup_variant_tag# answers a union arm
+; on the name of its PAYLOAD TYPE as well (`choose … when TypeName:` needs
+; that), and the s185 rescue for a bare `Some(5)` used it as its trigger: with
+; `Payload` invisible, lookup_concept answered null, the rescue ran, the
+; payload-type arm matched on "Payload", and it returned BEFORE the
+; not-found machinery that owns the `use` hint. The fix asks the narrower
+; question (lookup_variant_tag_by_name#), so this falls into the existing
+; diagnostic and needed no new message. xfail_use_vis_hidden.scaly is the same
+; form WITHOUT the coincidence — its `Box` is nobody's payload type — which is
+; why it always failed correctly and this one did not.
+
+module variant_vis_helper
+use xfail_variant_vis_hidden.variant_vis_helper.Tagged
+
+let t Tagged.First(Payload(11, 22, 33))
+print("compiled\n")

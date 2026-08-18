@@ -1,0 +1,52 @@
+; The POSITIVE control for the variant-payload arity gate (2026-08-18): the
+; three shapes it must not touch.
+;
+;   1. a qualified variant construction with its ONE payload,
+;   2. the BARE form, which reaches the s185 rescue,
+;   3. a payload-less variant, constructed with no argument at all.
+;
+; The payload of a multi-field record is built as its own construction and
+; handed over as that one argument (shape 4) — spelling the record's fields
+; into the variant construction is what the gate names.
+; Expected: PASS
+
+define Rec (a: int  b: int)
+define U union (Num: int  Wrapped: Rec  Nothing)
+
+function score(u: U) returns int
+{
+    choose u
+        when n: Num
+            n
+        when r: Wrapped
+            r.a + r.b
+        when e: Nothing
+            100
+        else
+            0
+}
+
+let one U.Num(7)
+let bare Num(9)
+let none U.Nothing()
+let rec U.Wrapped(Rec(3, 4))
+
+if score(one) <> 7
+    print("FAIL qualified\n")
+else
+{
+    if score(bare) <> 9
+        print("FAIL bare\n")
+    else
+    {
+        if score(none) <> 100
+            print("FAIL payloadless\n")
+        else
+        {
+            if score(rec) <> 7
+                print("FAIL record payload\n")
+            else
+                print("PASS")
+        }
+    }
+}

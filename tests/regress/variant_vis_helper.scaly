@@ -1,0 +1,14 @@
+; Sidecar module for the variant-visibility tests: xfail_variant_vis_hidden.scaly
+; and variant_vis_glob.scaly load it via `module variant_vis_helper`. The
+; harness also runs it standalone (every *.scaly here is a test), so it prints
+; PASS itself; module loading ignores top-level statements.
+;
+; The pairing is what the tests need: `Payload` is the PAYLOAD TYPE of an arm of
+; `Tagged`, and that is exactly the coincidence the old s185 rescue answered on.
+; Expected: PASS
+
+define Payload (a: int  b: int  c: int)
+
+define Tagged union (First: Payload)
+
+print("PASS")

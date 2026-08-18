@@ -1,0 +1,25 @@
+; The POSITIVE control for xfail_variant_vis_hidden.scaly: the SAME
+; construction with the payload record imported compiles and answers 105. The
+; glob is deliberate — an explicit `use ns.Name` also feeds the call-mangling
+; and extern-declaration machinery, while a glob only adds an inert "*" alias,
+; so the glob is the remedy the tree is allowed to recommend.
+; Expected: PASS
+
+module variant_vis_helper
+use variant_vis_glob.variant_vis_helper.*
+
+function total(x: Tagged) returns int
+{
+    choose x
+        when p: First
+            p.a + p.b + p.c + 39
+        else
+            0
+}
+
+let t Tagged.First(Payload(11, 22, 33))
+
+if total(t) = 105
+    print("PASS")
+else
+    print("FAIL")

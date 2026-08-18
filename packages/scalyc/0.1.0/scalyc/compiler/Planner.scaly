@@ -1473,7 +1473,7 @@ define Planner
                                     {
                                         var nm_path Vector[String](1)
                                         nm_path.put(0, String((*it.name)))
-                                        let synth_ty Type(it.span, nm_path, null, scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()))
+                                        let synth_ty Type(it.span, nm_path, null, Lifetime.Unspecified(Unspecified()))
                                         let synth_pt this.plan_type(synth_ty)
                                         result.add synth_pt
                                     }
@@ -3895,6 +3895,52 @@ define Planner
                         var filled_vec Vector[PlannedComponent](filled)
                         set out_ref: &filled_vec
                     }
+                    if provided_count > s.properties.length
+                    {
+                        ; The mirror image of the branch above, and it was
+                        ; SILENT until 2026-08-18 — in two grades, neither of
+                        ; them a diagnostic. The field-store loop in
+                        ; Emitter.emit_tuple is bounded by the ARGUMENT count
+                        ; while LLVMStructGetTypeAtIndex indexes over FIELDS,
+                        ; so past the last field the call is out of range: its
+                        ; only guard in LLVM is an assert, compiled out of a
+                        ; release libLLVM, and the following bytes come back as
+                        ; a `Type*` that LLVMGetTypeKind then DEREFERENCES.
+                        ; ONE argument too many read close enough to survive
+                        ; (rc 0, an undefined-behaviour answer against a
+                        ; recycled acquire_temp slot — `Two(1, 2, 3)` answered
+                        ; 5, as though the FIRST argument had fallen away);
+                        ; TWO or more read far enough out to CRASH the compiler
+                        ; with SIGBUS and not a word. Report it here, on the
+                        ; same fallthrough path as the too-FEW branch above, so
+                        ; both directions of the same mistake are named at the
+                        ; construction.
+                        ;
+                        ; Suppressed for the generic TEMPLATE body for exactly
+                        ; the reason the branch above is: with `K`/`V` unbound
+                        ; no init can match by type and the body is emitted as
+                        ; an empty stub; every instantiation is planned
+                        ; separately, with concrete types, and IS checked.
+                        ;
+                        ; Unions are excluded by the `when s: Structure` arm
+                        ; and must STAY excluded — the s172 copy construction
+                        ; `ParameterSetSyntax(success)` runs through here.
+                        var over_report: bool true
+                        if Planner.type_mentions_generic_param(ctor_type)
+                            set over_report: false
+                        if over_report
+                        {
+                            var osb StringBuilder()
+                            osb.append "wrong number of arguments for "
+                            osb.append struct_name
+                            osb.append ": got "
+                            osb.append provided_count
+                            osb.append ", expected "
+                            osb.append s.properties.length
+                            this.add_diagnostic(loc, osb.to_string())
+                        }
+                        return provided
+                    }
                 }
                 else
                     0
@@ -4575,6 +4621,58 @@ define Planner
                             if v_ptr.name = variant_name
                                 return i as int
                         }
+                        set i: i + 1
+                    }
+                    -1
+                }
+                else
+                    -1
+        }
+
+        ; lookup_variant_tag_by_name: lookup_variant_tag restricted to the
+        ; variant's own FIELD name, never its payload TYPE name.
+        ;
+        ; The type-name arm above exists for `choose … when TypeName: x`, which
+        ; matches by the payload type. Reading a CONSTRUCTION that way is dead
+        ; code in every well-formed program — if the payload record is visible,
+        ; lookup_concept has already resolved the name as a struct ctor — and it
+        ; was live in exactly one broken one: a record the file cannot SEE.
+        ; `U.First(Rec(11, 22, 33))` with `Rec` hidden made lookup_concept answer
+        ; null, so the s185 rescue for a bare `Some(5)` ran, the payload-type arm
+        ; answered on "Rec", and the rescue returned a variant construction of
+        ; the OUTER union — same tag, only the first argument as its payload,
+        ; rc 0 and not a word (2026-08-16: 34 SIGSEGVs in Array::get_length,
+        ; three subsystems from the cause). The rescue standing in FRONT of the
+        ; not-found machinery is what swallowed the `use` hint that
+        ; xfail_use_vis_hidden.scaly proves is otherwise given.
+        ;
+        ; So the rescue asks this narrower question and an invisible record falls
+        ; through into the existing hard diagnostic — no new message needed.
+        ; lookup_variant_tag# itself is unchanged, so `choose` keeps matching by
+        ; the payload type as it must; and the three tests that
+        ; cover the rescue (definitions__option-some, result-ok, result-err) all
+        ; match on the FIELD name and are the refutation control.
+        function lookup_variant_tag_by_name(
+            this: Planner,
+            union_name: String,
+            variant_name: String
+        ) returns int
+        {
+            let concept_ref this.lookup_concept(union_name)
+            if concept_ref = null
+                return -1
+
+            let c (*concept_ref)
+            choose c.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    var i: size_t 0
+                    while i < u.variants.length
+                    {
+                        let v_ptr u.variants.get i
+                        if v_ptr <> null
+                            if v_ptr.name = variant_name
+                                return i as int
                         set i: i + 1
                     }
                     -1
@@ -9207,6 +9305,7 @@ define Planner
                                         let comps (*tp.components)
                                         if comps.length > 0
                                         {
+                                            this.report_variant_arg_arity(ctor_union_type.name, ctor_variant_name, comps.length, second.loc)
                                             let c_ptr comps.get 0
                                             if c_ptr <> null
                                             {
@@ -10830,7 +10929,7 @@ define Planner
                                             let bv_kvp concepts.get bvi
                                             if bv_kvp <> null
                                             {
-                                                let bv_t this.lookup_variant_tag(bv_kvp.key, fn_name)
+                                                let bv_t this.lookup_variant_tag_by_name(bv_kvp.key, fn_name)
                                                 if bv_t >= 0
                                                 {
                                                     set bv_found: true
@@ -10854,6 +10953,7 @@ define Planner
                                             null
                                         )
                                         var bv_payload: ref[PlannedOperand]? null
+                                        this.report_variant_arg_arity(bv_union_name, fn_name, call_args_holder.length, result.loc)
                                         if call_args_holder.length > 0
                                             set bv_payload: call_args_holder.get(0)
                                         let bv_vc PlannedVariantConstruction(
@@ -20169,6 +20269,42 @@ define Planner
             ; system working.
             let rmsg rsb.to_string()
             this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        ; report_variant_arg_arity: a union ARM carries at most ONE payload, so
+        ; a variant construction takes at most one argument — and until
+        ; 2026-08-18 both planner paths that build one took component 0 and
+        ; dropped the rest WORDLESS, rc 0 (`U.First(1, 2)` answered 1). The two
+        ; call sites are the resolved gate (is_variant_ctor) and the s185 rescue
+        ; for a bare `Some(5)`; both call this in ONE statement, because an
+        ; inline branch in collapse_operand_sequence# perturbs its s178 alloca
+        ; pool — the same discipline report_unknown_identifier# follows.
+        ;
+        ; A payload record with several fields is constructed on its own
+        ; (`U.First(Rec(11, 22, 33))`); spelling its fields into the variant
+        ; construction is what this names.
+        function report_variant_arg_arity(
+            this: Planner,
+            union_name: String,
+            variant_name: String,
+            provided_count: size_t,
+            loc: Span
+        )
+        {
+            if provided_count <= 1
+                return
+            var vsb StringBuilder()
+            vsb.append "wrong number of arguments for "
+            vsb.append union_name
+            vsb.append "."
+            vsb.append variant_name
+            vsb.append ": got "
+            vsb.append provided_count
+            vsb.append ", expected 1 (a union arm carries at most one payload)"
+            ; Same pinning idiom as report_receiver_arity# above: no caller page
+            ; in scope, and add_diagnostic stores the message beyond this frame.
+            let vmsg vsb.to_string()
+            this.add_diagnostic(loc, String^this(vmsg))
         }
 
         function report_unknown_identifier(this: Planner, op: PlannedOperand)

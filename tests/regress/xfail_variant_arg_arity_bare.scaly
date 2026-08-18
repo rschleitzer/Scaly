@@ -1,0 +1,11 @@
+; xfail: wrong number of arguments for Wrapper.Only: got 2, expected 1
+;
+; The second site of the same defect (2026-08-18): a BARE variant
+; construction, which does not resolve as a call at all and is rescued by
+; the s185 scan over the registered unions (that is what makes `Some(5)`
+; work). It took argument 0 and dropped the rest just as silently.
+
+define Wrapper union (Only: int)
+
+let w Only(1, 2)
+print("compiled\n")

@@ -3837,7 +3837,7 @@ while.exit20:                                     ; preds = %while.cond18
 
 define linkonce_odr void @_ZN4json12parse_stringEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
-  %sret.result23 = alloca { ptr }, align 8
+  %sret.result28 = alloca { ptr }, align 8
   %sret.result13 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %sb = alloca ptr, align 8
@@ -3878,11 +3878,11 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then5, label %if.end6
 
 while.exit:                                       ; preds = %while.cond
-  %sb24 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result23, ptr %1, ptr %sb24)
+  %sb29 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %sb29)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body25 = load { ptr }, ptr %sret.result23, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result23, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body30 = load { ptr }, ptr %sret.result28, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result28, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.then5:                                         ; preds = %while.body
@@ -3916,19 +3916,32 @@ if.then17:                                        ; preds = %if.end12
   call void @_ZN4json7advanceEP10JsonParser(ptr %2)
   %call19 = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
   call void @_ZN4json7advanceEP10JsonParser(ptr %2)
-  %sb20 = load ptr, ptr %sb, align 8
-  %call21 = call i8 @_ZN4json13decode_escapeEP10JsonParser2u8(ptr %2, i8 %call19)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb20, i8 %call21)
-  br label %if.end18
+  %eq20 = icmp eq i8 %call19, 117
+  br i1 %eq20, label %if.then21, label %if.else22
 
 if.else:                                          ; preds = %if.end12
-  %sb22 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb22, i8 %call4)
+  %sb27 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb27, i8 %call4)
   call void @_ZN4json7advanceEP10JsonParser(ptr %2)
   br label %if.end18
 
-if.end18:                                         ; preds = %if.else, %if.then17
+if.end18:                                         ; preds = %if.else, %if.end23
   br label %while.cond
+
+if.then21:                                        ; preds = %if.then17
+  %addr.heap = load ptr, ptr %sb, align 8
+  %call24 = call i64 @_ZN4json19read_unicode_escapeEP10JsonParser(ptr %2)
+  call void @_ZN4json11append_utf8EP13StringBuilder3i64(ptr %addr.heap, i64 %call24)
+  br label %if.end23
+
+if.else22:                                        ; preds = %if.then17
+  %sb25 = load ptr, ptr %sb, align 8
+  %call26 = call i8 @_ZN4json13decode_escapeE2u8(i8 %call19)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb25, i8 %call26)
+  br label %if.end23
+
+if.end23:                                         ; preds = %if.else22, %if.then21
+  br label %if.end18
 }
 
 define linkonce_odr i1 @_ZN4json13match_literalEP10JsonParserP10const_char(ptr %0, ptr %1) {
@@ -4367,86 +4380,184 @@ entry:
 
 declare void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }), ptr, ptr)
 
-define linkonce_odr i8 @_ZN4json13decode_escapeEP10JsonParser2u8(ptr %0, i8 %1) {
+define linkonce_odr i64 @_ZN4json19read_unicode_escapeEP10JsonParser(ptr %0) {
 entry:
-  %k = alloca i64, align 8
-  %value = alloca i64, align 8
-  %eq = icmp eq i8 %1, 110
+  %call = call i64 @_ZN4json9read_hex4EP10JsonParser(ptr %0)
+  %lt = icmp slt i64 %call, 55296
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 %call
+
+if.end:                                           ; preds = %entry
+  %gt = icmp sgt i64 %call, 57343
+  br i1 %gt, label %if.then1, label %if.end2
+
+if.then1:                                         ; preds = %if.end
+  ret i64 %call
+
+if.end2:                                          ; preds = %if.end
+  %gt3 = icmp sgt i64 %call, 56319
+  br i1 %gt3, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end2
+  ret i64 65533
+
+if.end5:                                          ; preds = %if.end2
+  %load.struct = load %_Z10JsonParser, ptr %0, align 8
+  %pos = extractvalue %_Z10JsonParser %load.struct, 1
+  %call6 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %ne = icmp ne i8 %call6, 92
+  br i1 %ne, label %if.then7, label %if.end8
+
+if.then7:                                         ; preds = %if.end5
+  ret i64 65533
+
+if.end8:                                          ; preds = %if.end5
+  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  %call9 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %ne10 = icmp ne i8 %call9, 117
+  br i1 %ne10, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %if.end8
+  %pos13 = getelementptr inbounds nuw %_Z10JsonParser, ptr %0, i32 0, i32 1
+  store i64 %pos, ptr %pos13, align 8
+  ret i64 65533
+
+if.end12:                                         ; preds = %if.end8
+  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  %call14 = call i64 @_ZN4json9read_hex4EP10JsonParser(ptr %0)
+  %lt15 = icmp slt i64 %call14, 56320
+  br i1 %lt15, label %if.then16, label %if.end17
+
+if.then16:                                        ; preds = %if.end12
+  %pos18 = getelementptr inbounds nuw %_Z10JsonParser, ptr %0, i32 0, i32 1
+  store i64 %pos, ptr %pos18, align 8
+  ret i64 65533
+
+if.end17:                                         ; preds = %if.end12
+  %gt19 = icmp sgt i64 %call14, 57343
+  br i1 %gt19, label %if.then20, label %if.end21
+
+if.then20:                                        ; preds = %if.end17
+  %pos22 = getelementptr inbounds nuw %_Z10JsonParser, ptr %0, i32 0, i32 1
+  store i64 %pos, ptr %pos22, align 8
+  ret i64 65533
+
+if.end21:                                         ; preds = %if.end17
+  %sub = sub i64 %call, 55296
+  %mul = mul i64 %sub, 1024
+  %add = add i64 65536, %mul
+  %sub23 = sub i64 %call14, 56320
+  %add24 = add i64 %add, %sub23
+  ret i64 %add24
+}
+
+define linkonce_odr void @_ZN4json11append_utf8EP13StringBuilder3i64(ptr %0, i64 %1) {
+entry:
+  %lt = icmp slt i64 %1, 128
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %as.trunc = trunc i64 %1 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc)
+  ret void
+
+if.end:                                           ; preds = %entry
+  %lt1 = icmp slt i64 %1, 2048
+  br i1 %lt1, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  %ashr = ashr i64 %1, 6
+  %or = or i64 192, %ashr
+  %as.trunc4 = trunc i64 %or to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc4)
+  %and = and i64 %1, 63
+  %or5 = or i64 128, %and
+  %as.trunc6 = trunc i64 %or5 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc6)
+  ret void
+
+if.end3:                                          ; preds = %if.end
+  %lt7 = icmp slt i64 %1, 65536
+  br i1 %lt7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end3
+  %ashr10 = ashr i64 %1, 12
+  %or11 = or i64 224, %ashr10
+  %as.trunc12 = trunc i64 %or11 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc12)
+  %ashr13 = ashr i64 %1, 6
+  %and14 = and i64 %ashr13, 63
+  %or15 = or i64 128, %and14
+  %as.trunc16 = trunc i64 %or15 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc16)
+  %and17 = and i64 %1, 63
+  %or18 = or i64 128, %and17
+  %as.trunc19 = trunc i64 %or18 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc19)
+  ret void
+
+if.end9:                                          ; preds = %if.end3
+  %ashr20 = ashr i64 %1, 18
+  %or21 = or i64 240, %ashr20
+  %as.trunc22 = trunc i64 %or21 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc22)
+  %ashr23 = ashr i64 %1, 12
+  %and24 = and i64 %ashr23, 63
+  %or25 = or i64 128, %and24
+  %as.trunc26 = trunc i64 %or25 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc26)
+  %ashr27 = ashr i64 %1, 6
+  %and28 = and i64 %ashr27, 63
+  %or29 = or i64 128, %and28
+  %as.trunc30 = trunc i64 %or29 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc30)
+  %and31 = and i64 %1, 63
+  %or32 = or i64 128, %and31
+  %as.trunc33 = trunc i64 %or32 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %as.trunc33)
+  ret void
+}
+
+define linkonce_odr i8 @_ZN4json13decode_escapeE2u8(i8 %0) {
+entry:
+  %eq = icmp eq i8 %0, 110
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret i8 10
 
 if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %1, 116
+  %eq1 = icmp eq i8 %0, 116
   br i1 %eq1, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
   ret i8 9
 
 if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %1, 114
+  %eq4 = icmp eq i8 %0, 114
   br i1 %eq4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end3
   ret i8 13
 
 if.end6:                                          ; preds = %if.end3
-  %eq7 = icmp eq i8 %1, 98
+  %eq7 = icmp eq i8 %0, 98
   br i1 %eq7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end6
   ret i8 8
 
 if.end9:                                          ; preds = %if.end6
-  %eq10 = icmp eq i8 %1, 102
+  %eq10 = icmp eq i8 %0, 102
   br i1 %eq10, label %if.then11, label %if.end12
 
 if.then11:                                        ; preds = %if.end9
   ret i8 12
 
 if.end12:                                         ; preds = %if.end9
-  %eq13 = icmp eq i8 %1, 117
-  br i1 %eq13, label %if.then14, label %if.end15
-
-if.then14:                                        ; preds = %if.end12
-  store i64 0, ptr %value, align 1
-  store i64 0, ptr %k, align 1
-  br label %while.cond
-
-if.end15:                                         ; preds = %if.end12
-  ret i8 %1
-
-while.cond:                                       ; preds = %while.body, %if.then14
-  %k16 = load i64, ptr %k, align 8
-  %lt = icmp slt i64 %k16, 4
-  br i1 %lt, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
-  %value17 = load i64, ptr %value, align 8
-  %mul = mul i64 %value17, 16
-  %call18 = call i64 @_ZN4json9hex_valueE2u8(i8 %call)
-  %add = add i64 %mul, %call18
-  store i64 %add, ptr %value, align 1
-  %k19 = load i64, ptr %k, align 8
-  %add20 = add i64 %k19, 1
-  store i64 %add20, ptr %k, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  %value21 = load i64, ptr %value, align 8
-  %lt22 = icmp slt i64 %value21, 128
-  br i1 %lt22, label %if.then23, label %if.end24
-
-if.then23:                                        ; preds = %while.exit
-  %value25 = load i64, ptr %value, align 8
-  %as.trunc = trunc i64 %value25 to i8
-  ret i8 %as.trunc
-
-if.end24:                                         ; preds = %while.exit
-  ret i8 63
+  ret i8 %0
 }
 
 declare void @_ZN13StringBuilder6appendEc(ptr, i8)
@@ -4507,6 +4618,37 @@ if.then15:                                        ; preds = %lor.end12
 
 if.end16:                                         ; preds = %lor.end12
   ret i64 0
+}
+
+define linkonce_odr i64 @_ZN4json9read_hex4EP10JsonParser(ptr %0) {
+entry:
+  %value = alloca i64, align 8
+  store i64 0, ptr %value, align 1
+  %k = alloca i64, align 8
+  store i64 0, ptr %k, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %k1 = load i64, ptr %k, align 8
+  %lt = icmp slt i64 %k1, 4
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  %value2 = load i64, ptr %value, align 8
+  %mul = mul i64 %value2, 16
+  %call3 = call i64 @_ZN4json9hex_valueE2u8(i8 %call)
+  %add = add i64 %mul, %call3
+  store i64 %add, ptr %value, align 1
+  %k4 = load i64, ptr %k, align 8
+  %add5 = add i64 %k4, 1
+  store i64 %add5, ptr %k, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %value6 = load i64, ptr %value, align 8
+  ret i64 %value6
 }
 
 declare i64 @_ZN6String10get_lengthEv(ptr)

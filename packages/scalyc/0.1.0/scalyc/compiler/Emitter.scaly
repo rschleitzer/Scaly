@@ -7559,7 +7559,7 @@ define Emitter
                         "void",
                         "v",
                         null,
-                        scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
+                        Lifetime.Unspecified(Unspecified()),
                         null,
                         "",
                         null

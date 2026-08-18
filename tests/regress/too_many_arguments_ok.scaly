@@ -1,0 +1,55 @@
+; The POSITIVE control for the too-many-arguments gate (2026-08-18). Every
+; shape here reaches the positional-tuple fallthrough in
+; Planner.fill_default_components and must stay accepted — none of them is
+; visible in the diff of that gate, so without this test a tightening that
+; broke one of them would only surface as a broken self-compile.
+;
+;   1. exact arity,
+;   2. FEWER arguments than fields, every missing one defaulted (the fill),
+;   3. the zero-argument construction of a data class that declares no init#
+;      (`T()` zero-constructs — opensp/dazzle build records that way by the
+;      hundred),
+;   4. the s172 copy construction of a UNION value: one argument against a
+;      union whose arm count is unrelated to it. Unions are excluded from the
+;      gate by its `when s: Structure` arm and MUST stay excluded.
+; Expected: PASS
+
+define Three (a: int  b: int  c: int)
+define Defaulted (a: int  b: int(20)  c: int(300))
+define Plain (x: int  y: int)
+define Wrapped union (One: int  Two: int)
+
+function tag_of(w: Wrapped) returns int
+{
+    choose w
+        when o: One
+            o
+        else
+            0
+}
+
+let exact Three(1, 2, 3)
+let filled Defaulted(1)
+let zeroed Plain()
+let source Wrapped.One(7)
+let copied Wrapped(source)
+
+if exact.a + exact.b + exact.c <> 6
+    print("FAIL exact\n")
+else
+{
+    if filled.a + filled.b + filled.c <> 321
+        print("FAIL defaults\n")
+    else
+    {
+        if zeroed.x + zeroed.y <> 0
+            print("FAIL zero\n")
+        else
+        {
+            if tag_of(copied) <> 7
+                print("FAIL union copy\n")
+            else
+                print("PASS")
+        }
+    }
+}

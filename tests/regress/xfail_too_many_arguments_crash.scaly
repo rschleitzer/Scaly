@@ -1,0 +1,13 @@
+; xfail: wrong number of arguments for Two: got 4, expected 2
+;
+; The same defect one grade further (2026-08-18): TWO arguments too many read
+; far enough past the last field that the invented Type* fell outside mapped
+; memory, and the COMPILER died with SIGBUS (rc 138) without a word — no file,
+; no line, nothing to grep. Same fix, same message; kept as its own test
+; because a crash and a wrong answer are different failures and only one of
+; them could ever be noticed.
+
+define Two (a: int  b: int)
+
+let x Two(1, 2, 3, 4)
+print("compiled\n")

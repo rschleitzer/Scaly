@@ -4,7 +4,8 @@
 ; i64 (LSP positions and ids are integers); a fractional/exponent part is
 ; parsed and discarded (the integer part is kept). String escapes are
 ; handled on read AND write: " \ / and the control escapes b f n r t,
-; plus \uXXXX decoded to a single byte when it lands in 0..0x7F.
+; plus \uXXXX decoded to the UTF-8 encoding of its codepoint, surrogate
+; pairs included.
 ;
 ; LAYOUT NOTE: the array/object children are held in non-generic structs
 ; (JsonArray / JsonObject = count + raw pointer) rather than
@@ -334,7 +335,10 @@ define json
                 json.advance p            ; consume backslash
                 let e json.peek p
                 json.advance p            ; consume escape char
-                sb.append(json.decode_escape(p, e))
+                if e = 0x75         ; 'u' — one to four bytes, so not a char
+                    json.append_utf8(&sb, json.read_unicode_escape(p))
+                else
+                    sb.append(json.decode_escape(e))
             }
             else
             {
@@ -346,9 +350,11 @@ define json
         sb.to_string()
     }
 
-    ; Maps an escape letter to its byte. For \u, reads four hex digits and
-    ; emits the low byte when the codepoint is ASCII, else '?'.
-    function decode_escape(p: pointer[JsonParser], e: u8) returns char
+    ; Maps a single-byte escape letter to its byte. `\u` is NOT handled here
+    ; and cannot be: its codepoint encodes to one to four bytes and this
+    ; answers a char — parse_string routes it to read_unicode_escape# +
+    ; append_utf8# instead.
+    function decode_escape(e: u8) returns char
     {
         if e = 0x6E             ; 'n'
             return "\n" as char
@@ -365,25 +371,101 @@ define json
         if e = 0x66             ; 'f'
             return 12 as char
 
-        if e = 0x75             ; 'u'
-        {
-            var value: i64 0
-            var k 0
-            while k < 4
-            {
-                let h json.peek p
-                json.advance p
-                set value: (value * 16) + json.hex_value(h)
-                set k: k + 1
-            }
-            if value < 128
-                return value as char
-
-            return "?" as char            ; '?'
-        }
-
         ; default: \" \\ \/ map to themselves
         e as char
+    }
+
+    ; Reads the four hex digits of a \uXXXX escape at the cursor (the `u` is
+    ; already consumed) and advances past them.
+    function read_hex4(p: pointer[JsonParser]) returns i64
+    {
+        var value: i64 0
+        var k 0
+        while k < 4
+        {
+            let h json.peek p
+            json.advance p
+            set value: (value * 16) + json.hex_value(h)
+            set k: k + 1
+        }
+        value
+    }
+
+    ; Reads a \uXXXX escape and answers its CODEPOINT, joining a
+    ; surrogate PAIR (\uD83D\uDE00) into the one codepoint it denotes.
+    ; A lone surrogate — which no well-formed document can mean — answers
+    ; U+FFFD, so the encoding downstream stays well-formed.
+    function read_unicode_escape(p: pointer[JsonParser]) returns i64
+    {
+        let hi json.read_hex4 p
+        if hi < 0xD800
+            return hi
+        if hi > 0xDFFF
+            return hi
+        if hi > 0xDBFF
+            return 0xFFFD             ; a low surrogate with no high one
+
+        ; A high surrogate: take the next escape only if it is the matching
+        ; low one, and leave the cursor untouched otherwise — the `\u` may
+        ; belong to an ordinary escape that has to be read as itself.
+        let save p.pos
+        if json.peek(p) <> 0x5C
+            return 0xFFFD
+        json.advance p
+        if json.peek(p) <> 0x75
+        {
+            set p.pos: save
+            return 0xFFFD
+        }
+        json.advance p
+        let lo json.read_hex4 p
+        if lo < 0xDC00
+        {
+            set p.pos: save
+            return 0xFFFD
+        }
+        if lo > 0xDFFF
+        {
+            set p.pos: save
+            return 0xFFFD
+        }
+        (0x10000 + ((hi - 0xD800) * 0x400)) + (lo - 0xDC00)
+    }
+
+    ; Appends the UTF-8 encoding of `cp` to `sb`.
+    ;
+    ; ★This is what makes the decoded buffer BYTE-FOR-BYTE the document. The
+    ; old decoder answered one `?` for anything above 0x7F, so a client that
+    ; escapes non-ASCII (JSON allows it; python's json.dumps does it by
+    ; DEFAULT) delivered a buffer SHORTER than the file — measured on
+    ; server.scaly, 60440 against 60526 bytes over 43 `★`/`—` — and from the
+    ; first hit onwards EVERY offset was wrong: diagnostics, hover, all of it.
+    ; A length that merely looks plausible is the failure mode, so the gate in
+    ; tests/lsp/run.sh checks the BYTE COUNT, not only the content.
+    procedure append_utf8(sb: pointer[StringBuilder], cp: i64)
+    {
+        if cp < 0x80
+        {
+            sb.append(cp as char)
+            return
+        }
+        if cp < 0x800
+        {
+            sb.append((0xC0 | (cp >> 6)) as char)
+            sb.append((0x80 | (cp & 0x3F)) as char)
+            return
+        }
+        if cp < 0x10000
+        {
+            sb.append((0xE0 | (cp >> 12)) as char)
+            sb.append((0x80 | ((cp >> 6) & 0x3F)) as char)
+            sb.append((0x80 | (cp & 0x3F)) as char)
+            return
+        }
+        sb.append((0xF0 | (cp >> 18)) as char)
+        sb.append((0x80 | ((cp >> 12) & 0x3F)) as char)
+        sb.append((0x80 | ((cp >> 6) & 0x3F)) as char)
+        sb.append((0x80 | (cp & 0x3F)) as char)
     }
 
     function parse_number(p: pointer[JsonParser]) returns i64

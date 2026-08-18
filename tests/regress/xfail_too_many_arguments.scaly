@@ -1,0 +1,17 @@
+; xfail: wrong number of arguments for Two: got 3, expected 2
+;
+; ONE argument too many on a data-class construction (2026-08-18). The
+; opposite direction has been a hard diagnostic for a while ("property c
+; would be left uninitialized"); this one compiled with rc 0 and answered
+; an UNDEFINED value — `Two(1, 2, 3)` printed 5, as though the FIRST
+; argument had fallen away, because Emitter.emit_tuple's field-store loop is
+; bounded by the ARGUMENT count while LLVMStructGetTypeAtIndex indexes over
+; FIELDS: past the last field the query is out of range (its only guard in
+; LLVM is an assert, compiled out of a release libLLVM) and the bytes that
+; come back are dereferenced as a Type*. The 5 is NOT a specification and
+; must never be asserted — this test pins the DIAGNOSIS.
+
+define Two (a: int  b: int)
+
+let x Two(1, 2, 3)
+print("compiled\n")
