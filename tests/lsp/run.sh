@@ -3610,6 +3610,180 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp definition on a property"; else bad "lsp definition on a property"; fi
 
+# ---- hover names the chain LINK the cursor is on ----
+# Mode 0 reports a member chain's FINAL type and hover asked it at every
+# offset, so all twelve columns of `t.mid.leaf.v` answered `int`: hovering `t`
+# said the Top was an int. Three of four names carried another name's type — a
+# plausible answer to a different question, which is the class this tree keeps
+# calling out.
+#
+# The plan cannot say which link a cursor is on: a PlannedMemberAccess carries
+# a NAME and no span, and the operand's span is NOT the chain's text —
+# reconstructing the tokens backwards from `loc.end` came out shifted by 1, 5,
+# 3 and 1 in four statement contexts, which is why that route was abandoned.
+# The question is decided on the SOURCE instead (semantic.chain_position#) and
+# chooses WHICH question to put to the walk. A middle link is the one position
+# no mode reports, and it answers where the cursor IS rather than a type.
+#
+# Checks 1-3 are FALSE on the pre-fix binary (all three report `int`);
+# 4-6 are the controls and pass on both — the last link, the METHOD link that
+# must keep answering what the call yields, and an ordinary binding.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+BIN = "/tmp/scalyls"
+ws = "/tmp/lsp_ws/hover_chain"; shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+src = ("define Leaf\n(\n    v: int\n)\n{\n    init()\n    {\n        set v: 1\n    }\n}\n"          # 0-9
+       "\ndefine Mid\n(\n    leaf: Leaf\n)\n{\n    init()\n    {\n        set leaf: Leaf()\n    }\n}\n"   # 10-20
+       "\ndefine Top\n(\n    mid: Mid\n)\n{\n    init()\n    {\n        set mid: Mid()\n    }\n"     # 21-30
+       "    function depth(this) returns int\n    {\n        return 3\n    }\n}\n"                   # 31-35
+       "\nfunction f(t: Top) returns int\n"                                                          # 36-37
+       "{\n"                                                                                         # 38
+       "    var n: size_t 7\n"                                                                       # 39
+       "    let a t.mid.leaf.v\n"                                                                    # 40
+       "    let b t.depth()\n"                                                                       # 41
+       "    return a + b\n"                                                                          # 42
+       "}\n")                                                                                        # 43
+path = ws + "/a.scaly"; open(path, "w").write(src)
+uri = "file://" + path
+L = src.split("\n")
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+chain_ln = [i for i, l in enumerate(L) if "let a t.mid.leaf.v" in l][0]
+base = L[chain_ln].index("t.mid.leaf.v")
+call_ln = [i for i, l in enumerate(L) if "let b t.depth()" in l][0]
+probes = [
+    (2, chain_ln, base + 0,  "receiver `t`"),
+    (3, chain_ln, base + 2,  "middle link `mid`"),
+    (4, chain_ln, base + 7,  "middle link `leaf`"),
+    (5, chain_ln, base + 11, "last link `v`"),
+    (6, call_ln,  L[call_ln].index("depth"), "method link `depth`"),
+    (7, 39,       L[39].index("n") if "n" in L[39] else 8, "a plain binding name"),
+]
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+ws}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+for idn, ln, ch, _ in probes:
+    inp += frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+                  "params":{"textDocument":{"uri":uri},"position":{"line":ln,"character":ch}}})
+inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run([BIN], input=inp, stdout=subprocess.PIPE).stdout
+got, d = {}, out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    fr = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if isinstance(fr.get("id"), int): got[fr["id"]] = fr.get("result")
+def val(idn):
+    r = got.get(idn)
+    return None if r is None else r["contents"]["value"].split("\n")[0]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(val(2) == "Top",  "the RECEIVER of a chain reports its own type, not the chain's last link")
+check(val(3) == "in function f", "a MIDDLE link answers where the cursor is, never another link's type")
+check(val(4) == "in function f", "the second middle link likewise")
+check(val(5) == "int",  "the LAST link reports its own type (unchanged)")
+check(val(6) == "int",  "a METHOD link still reports what the call yields (unchanged)")
+check(val(7) == "size_t", "a plain binding is untouched")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp hover names the chain link"; else bad "lsp hover names the chain link"; fi
+
+# ---- cross-FILE definition on a property ----
+# def_structure# closed the intra-file half; a receiver whose concept lives in
+# ANOTHER file still missed, because that path answers from the cached
+# workspace blob (def_in_file#), which indexed declarations and body members
+# but not structure parts. Measured before the fix on this tree: five field
+# accesses in symbols.scaly — `def.concept_`, `c.structure`, `fld.property`,
+# `routine.throws_`, `routine.implementation`, every one of them a record from
+# scalyc/compiler/Syntax.scaly — all answered null.
+#
+# The decoy is a free `height` in the DOCUMENT, so only the receiver-scoped
+# route can reach the property in the other file. The third check is the
+# consequence, asserted rather than left implicit: this blob IS the workspace
+# symbol table, so the property now appears there too.
+# Checks 1 and 3 are FALSE on the pre-fix binary; check 2 is the control.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+BIN = "/tmp/scalyls"
+ws = "/tmp/lsp_ws/def_property_xfile"; shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+box = ("define Box\n"                                  # 0
+       "(\n"                                           # 1
+       "    width: int\n"                              # 2
+       "    height: int\n"                             # 3
+       ")\n"                                           # 4
+       "{\n"                                           # 5
+       "    init()\n"                                  # 6
+       "    {\n"                                       # 7
+       "        set width: 3\n"                        # 8
+       "        set height: 4\n"                       # 9
+       "    }\n"                                       # 10
+       "\n"                                            # 11
+       "    function area(this) returns int\n"         # 12
+       "    {\n"                                       # 13
+       "        return width\n"                        # 14
+       "    }\n"                                       # 15
+       "}\n")                                          # 16
+main = ("function height(x: int) returns int\n"        # 0  DECOY, and it sits in the OTHER file
+        "{\n    return x\n}\n"                         # 1-3
+        "\n"                                           # 4
+        "function use_it() returns int\n"              # 5
+        "{\n"                                          # 6
+        "    var b Box()\n"                            # 7
+        "    return b.height + b.area()\n"             # 8
+        "}\n")                                         # 9
+open(os.path.join(ws, "box.scaly"),  "w").write(box)
+open(os.path.join(ws, "main.scaly"), "w").write(main)
+buri = "file://" + ws + "/box.scaly"
+uri  = "file://" + ws + "/main.scaly"
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+ws}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":main}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/definition","params":{
+        "textDocument":{"uri":uri},"position":{"line":8,"character":13}}})     # b.height
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{
+        "textDocument":{"uri":uri},"position":{"line":8,"character":25}}})     # b.area()
+inp += frame({"jsonrpc":"2.0","id":4,"method":"workspace/symbol","params":{"query":"width"}})
+inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run([BIN], input=inp, stdout=subprocess.PIPE).stdout
+got, d = {}, out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    fr = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if isinstance(fr.get("id"), int): got[fr["id"]] = fr.get("result")
+def at(idn):
+    r = got.get(idn)
+    return None if r is None else (r["uri"], r["range"]["start"]["line"], r["range"]["start"]["character"])
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(at(2) == (buri, 3, 4),
+      "b.height with Box in ANOTHER file -> the property there, not the decoy beside the call")
+check(at(3) == (buri, 12, 4), "a method through the same receiver is unchanged")
+syms = got.get(4) or []
+hits = [(s["name"], s["kind"], os.path.basename(s["location"]["uri"]),
+         s["location"]["range"]["start"]["line"]) for s in syms]
+check(("width", 8, "box.scaly", 2) in hits,
+      "workspace/symbol lists the property as Field(8) at its NAME token")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-file definition on a property"; else bad "lsp cross-file definition on a property"; fi
+
 # ---- workspace/symbol (parse-based, all files) ----
 # Query the whole workspace for declarations whose name matches a substring
 # (case-insensitive). The root comes from initialize's rootUri. Two files in

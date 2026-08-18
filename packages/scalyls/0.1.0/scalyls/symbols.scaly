@@ -9412,7 +9412,9 @@ define symbols
             when c: ClassSyntax
             {
                 set kind: 23
-                set children: symbols.ws_body(source, uri, c.body)
+                let parts symbols.ws_structure(source, uri, c.structure)
+                let mems symbols.ws_body(source, uri, c.body)
+                set children: symbols.join_fragments(parts, mems)
             }
             when n: NamespaceSyntax
             {
@@ -9432,6 +9434,53 @@ define symbols
                 set kind: 23
         let own symbols.ws_item(source, uri, def.name, kind, def.start, def.end, symbols.concept_member_detail(source, def), "", symbols.concept_member_types(source, def))
         symbols.join_fragments(own, children)
+    }
+
+    ; Structure parts of a class -> one Field(8) record each.
+    ;
+    ; WHY THEY ARE IN THE INDEX. This blob is the ONLY thing a cross-file
+    ; question can consult — def_in_file# answers from it without a parse — so
+    ; while it held declarations and body members but not structure parts, a
+    ; property was invisible to every cross-file jump: `b.width` with `Box` in
+    ; another file answered null, where the same expression resolved fine when
+    ; the concept sat in the open document (def_structure# handles that half).
+    ; The measured shape in this tree is `def.concept_` / `c.structure` — every
+    ; record of Syntax.scaly read from parser.scaly, Modeler.scaly or
+    ; symbols.scaly — 349 properties whose declaration could not be reached.
+    ;
+    ; The location is the NAME TOKEN, not the part's `start`: a PartSyntax start
+    ; is `previous_position` (the end of the `(` or of the previous part), so a
+    ; span from it selects the punctuation and the whitespace ahead of the name.
+    ;
+    ; ★They also enter workspace/symbol, which is not a side effect but the same
+    ; fact: this blob IS the workspace symbol table, and a field is a symbol.
+    function ws_structure(rp, source: String, uri: String, structure: StructureSyntax) returns String
+    {
+        var sb StringBuilder()
+        if structure.parts <> null
+        {
+            let parts (*structure.parts)
+            var i: size_t 0
+            while i < parts.length
+            {
+                let pptr parts.get i
+                if pptr <> null
+                {
+                    let part (*pptr)
+                    let pname symbols.part_name part
+                    if pname.get_length() > 0
+                    {
+                        let pstart symbols.part_start part
+                        let noff symbols.name_offset_at(source, pstart)
+                        let detail symbols.part_detail_text(source, part)
+                        let frag symbols.ws_item(source, uri, pname, 8, noff, noff + pname.get_length(), detail, "", "")
+                        symbols.append_fragment(&sb, frag)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        sb.to_string()
     }
 
     ; Members of a class body -> a comma-joined fragment.

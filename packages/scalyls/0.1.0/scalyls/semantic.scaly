@@ -162,6 +162,28 @@ define semantic
     ; third time.
     function resolve_at(rp, source: String, path: String, mode: size_t, offset: size_t) returns String
     {
+        ; WHICH LINK of a member chain the cursor is on. The plan cannot say:
+        ; a PlannedMemberAccess carries a NAME and no span, and the operand's
+        ; own span is NOT the chain's text — measured 2026-08-18 on the same
+        ; `t.mid.leaf.v` in four statement contexts, where reconstructing the
+        ; name tokens backwards from `loc.end` came out shifted by 1, 5, 3 and 1
+        ; respectively. So the question is answered from the SOURCE, where it is
+        ; a local one (chain_position#), and it decides WHICH QUESTION to ask of
+        ; the walk rather than trying to correct its answer.
+        var m mode
+        if mode = 0
+        {
+            let cp semantic.chain_position(source, offset)
+            ; A middle link is the one position neither mode reports. Answering
+            ; "" hands it to the lexical hover, which says where the cursor IS —
+            ; the honest miss this module already prefers over a wrong type.
+            if cp = 2
+                return ""
+            if cp = 1
+                set m: 2
+            if cp = 3
+                set m: 3
+        }
         var p parser.Parser(source)
         var result ""
         choose p.parse_program()
@@ -181,12 +203,12 @@ define semantic
                     ; handed, so its routine starts are the very numbers the
                     ; plan's spans carry — see is_routine_start#, which is what
                     ; keeps a foreign file's span out of the answer.
-                    let rr semantic.walk_plan(pl, mode, offset, program.file, path)
+                    let rr semantic.walk_plan(pl, m, offset, program.file, path)
                     if rr.found
                         set result: String(rr.type_name)
                 }
                 if result.get_length() = 0
-                    set result: semantic.resolve_through_root(source, path, mode, offset, program.file)
+                    set result: semantic.resolve_through_root(source, path, m, offset, program.file)
             }
         result
     }
@@ -256,6 +278,121 @@ define semantic
                 }
             }
         result
+    }
+
+    ; ====================================================================
+    ; WHERE IN A MEMBER CHAIN THE CURSOR IS
+    ;
+    ; Mode 0 reports a chain's FINAL type and mode 2 the receiver's OWN base
+    ; type, and until 2026-08-18 hover asked mode 0 at every offset — so every
+    ; column of `t.mid.leaf.v` answered `int` (t: Top, mid: Mid, leaf: Leaf),
+    ; and hovering `t` said the Top was an int. Three of the four names carried
+    ; another name's type: a plausible-looking answer to a different question,
+    ; indistinguishable from a right one.
+    ;
+    ; The question is decided HERE, on the source, because the plan cannot
+    ; answer it (see resolve_at#) — and it is a LOCAL question: only the two
+    ; characters bracketing the token under the cursor are read, never the
+    ; whole chain. That is what keeps `a.f(x.y).b` out of trouble without
+    ; parsing it: a token followed by `(` or `[` is a CALL or a subscript, whose
+    ; text the neighbour test cannot see past, and it keeps mode 0 — which is
+    ; the answer a call site is supposed to give anyway.
+    ; ====================================================================
+
+    ; 0 = not a chain at all (mode 0 answers it, unchanged);
+    ; 1 = the RECEIVER of a chain;  2 = a MIDDLE link (neither mode answers it);
+    ; 3 = the LAST link, a plain field — mode 0's answer, but only from an
+    ;     operand that actually HAS a member chain (see walk_operand#).
+    function chain_position(rp, source: String, offset: size_t) returns size_t
+    {
+        let n source.get_length()
+        if n = 0
+            return 0
+        var at offset
+        if at >= n
+            return 0
+        if semantic.is_ident_byte(source.get at) = false
+        {
+            if at = 0
+                return 0
+            if semantic.is_ident_byte(source.get(at - 1)) = false
+                return 0
+            set at: at - 1
+        }
+        var start at
+        while start > 0
+        {
+            if semantic.is_ident_byte(source.get(start - 1)) = false
+                break
+            set start: start - 1
+        }
+        var end at + 1
+        while end < n
+        {
+            if semantic.is_ident_byte(source.get end) = false
+                break
+            set end: end + 1
+        }
+        ; Forward: a dot means more links follow; a `(`/`[` means the neighbour
+        ; test cannot see past this link, so leave the question to mode 0.
+        var j end
+        while j < n
+        {
+            let c source.get j
+            if c <> (0x20 as u8)
+                break
+            set j: j + 1
+        }
+        if j >= n
+            return 0
+        let after source.get j
+        if after = (0x28 as u8)
+            return 0
+        if after = (0x5B as u8)
+            return 0
+        var more true
+        if after <> (0x2E as u8)
+            set more: false
+        ; Backward: a dot means this token is itself a member.
+        var i start
+        while i > 0
+        {
+            if source.get(i - 1) <> (0x20 as u8)
+                break
+            set i: i - 1
+        }
+        var member false
+        if i > 0
+            if source.get(i - 1) = (0x2E as u8)
+                set member: true
+        if member
+        {
+            if more
+                return 2
+            return 3
+        }
+        if more
+            return 1
+        0
+    }
+
+    ; Letters, digits and `_` — the bytes an identifier is made of. A private
+    ; copy for the same reason position_to_offset# is one: this module does not
+    ; depend on symbols.
+    function is_ident_byte(c: u8) returns bool
+    {
+        if c >= (0x61 as u8)
+            if c <= (0x7A as u8)
+                return true
+        if c >= (0x41 as u8)
+            if c <= (0x5A as u8)
+                return true
+        if c >= (0x30 as u8)
+            if c <= (0x39 as u8)
+                return true
+        if c = (0x5F as u8)
+            return true
+        false
     }
 
     ; ====================================================================
@@ -795,7 +932,16 @@ define semantic
         if bnd.operation <> null
             set op_result: semantic.walk_operands(*bnd.operation, mode, offset)
         let bi bnd.binding_item
-        if semantic.contains(bi.loc, offset)
+        var on_name semantic.contains(bi.loc, offset)
+        ; MEMBER mode (3): the cursor is on a field token and so is never on the
+        ; binding NAME — while this item's span is coarse enough to contain the
+        ; whole initializer, which is how `let body_start symbols.
+        ; implementation_start(routine.implementation)` answered `size_t` for
+        ; the field written inside the argument. Both name answers below must
+        ; therefore stay out of that mode.
+        if mode = 3
+            set on_name: false
+        if on_name
         {
             ; Cursor on the binding NAME -> the binding item's declared type.
             if bi.item_type <> null
@@ -916,6 +1062,18 @@ define semantic
         var self_type semantic.operand_final_type op
         if semantic.is_block op.expr
             set self_type: ""
+        ; MEMBER mode (3): the cursor is on a plain field at the end of a chain,
+        ; so only an operand that HAS a chain may answer for it. Without this an
+        ; operand whose chain the planner could not type contributes "" and the
+        ; ENCLOSING one answers instead — measured on symbols.scaly's
+        ; `symbols.body_children(source, c.body)`, where `body` reported
+        ; `String`, the surrounding call's return type. That is the last
+        ; position where a wrong type could still reach a member token; a miss
+        ; here falls through to the lexical hover, which says where the cursor
+        ; sits rather than naming a type it does not know.
+        if mode = 3
+            if semantic.ends_in_field(op.member_access) = false
+                set self_type: ""
         ; A strictly-tighter deeper match wins (genuine nesting f(g x)).
         if child.found
         {
@@ -1195,6 +1353,29 @@ define semantic
     ; ====================================================================
     ; Type extraction
     ; ====================================================================
+
+    ; Does this operand end in a plain FIELD access? This is the test by which
+    ; MEMBER mode (3) admits an operand, and both halves are load-bearing. No
+    ; chain at all means the operand is not the one the cursor's member belongs
+    ; to. A chain ending in a METHOD is a CALL — `symbols.implementation_start(
+    ; routine.implementation)` has a member chain too, and its span covers the
+    ; argument, so it answered `size_t` for the field written inside it until
+    ; this half excluded it.
+    function ends_in_field(rp, member_access: ref[Vector[PlannedMemberAccess]]?) returns bool
+    {
+        if member_access = null
+            return false
+        let ma (*member_access)
+        if ma.length = 0
+            return false
+        let lp ma.get(ma.length - 1)
+        if lp = null
+            return false
+        let last (*lp)
+        if last.is_method
+            return false
+        true
+    }
 
     ; The clean source type of an operand. PlannedOperand.result_type is often
     ; ABI-lowered (an lvalue variable reads back as `pointer`) or the chain
