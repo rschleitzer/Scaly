@@ -3419,6 +3419,197 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp definition scoped by the receiver type"; else bad "lsp definition scoped by the receiver type"; fi
 
+# ---- hover on a PROPERTY declaration ----
+# A hover on a property's declaration line fell through to the concept and
+# answered `struct Box` — the same class the routine-declaration block in
+# symbols.scaly argues against, one level in: a plausible-looking answer to a
+# different question. Hovering the SAME name in a use or in a `set` always
+# answered `int`, so the declaration was the one place its type was hidden.
+# hover_definition# asked the class BODY and never the structure.
+#
+# The first three checks are FALSE on the pre-fix binary (all three report
+# `struct Box`); the last four are the negative controls and pass on both.
+# The `struct Box` control at the class's closing brace is the one that keeps
+# the walk BOUNDED: every part test is `offset >= start`, so with the body-start
+# limit removed that offset reports `property secret: int` instead (verified by
+# building exactly that variant).
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+BIN = "/tmp/scalyls"
+ws = "/tmp/lsp_ws/hover_property"; shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+src = ("; A file banner that must NOT reach any hover.\n"                  # 0
+       "\n"                                                               # 1
+       "define Box\n"                                                     # 2
+       "(\n"                                                              # 3
+       "    ; The width, in points.\n"                                    # 4
+       "    ; A second doc line.\n"                                       # 5
+       "    width: int\n"                                                 # 6
+       "    height: size_t\n"                                             # 7
+       "    private secret: int\n"                                        # 8
+       ")\n"                                                              # 9
+       "{\n"                                                              # 10
+       "    init()\n"                                                     # 11
+       "    {\n"                                                          # 12
+       "        set width: 3\n"                                           # 13
+       "        set height: 4\n"                                          # 14
+       "        set secret: 5\n"                                          # 15
+       "    }\n"                                                          # 16
+       "\n"                                                               # 17
+       "    function area(this) returns int\n"                            # 18
+       "    {\n"                                                          # 19
+       "        return width\n"                                           # 20
+       "    }\n"                                                          # 21
+       "}\n")                                                             # 22
+path = ws + "/box.scaly"; open(path, "w").write(src)
+uri = "file://" + path
+L = src.split("\n")
+def pos(needle, off=0):
+    ln = [i for i, l in enumerate(L) if needle in l][0]
+    return ln, L[ln].index(needle) + off
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+def session(reqs):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+ws}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+    for r in reqs: inp += frame(r)
+    inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run([BIN], input=inp, stdout=subprocess.PIPE).stdout
+    got, d = {}, out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+        if isinstance(f.get("id"), int): got[f["id"]] = f.get("result")
+    return got
+def hv(idn, ln, ch):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+            "params":{"textDocument":{"uri":uri},"position":{"line":ln,"character":ch}}}
+wl, wc = pos("    width: int", 4)
+hl, hc = pos("    height: size_t", 4)
+sl, sc = pos("    private secret", 12)
+cl, cc = pos("define Box", 7)
+ul, uc = pos("return width", 7)
+bl, bc = 22, 0                                  # the class's closing brace
+refs = {"jsonrpc":"2.0","id":8,"method":"textDocument/references",
+        "params":{"textDocument":{"uri":uri},"position":{"line":wl,"character":wc},
+                  "context":{"includeDeclaration":True}}}
+g = session([hv(2,wl,wc), hv(3,hl,hc), hv(4,sl,sc), hv(5,cl,cc), hv(6,ul,uc), hv(7,bl,bc), refs])
+def val(idn):
+    r = g.get(idn)
+    return None if r is None else r["contents"]["value"]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(val(2) == "property width: int\n\n```\nThe width, in points.\nA second doc line.\n```",
+      "hover on a property DECLARATION -> the property, with its doc block")
+check(val(3) == "property height: size_t",
+      "the SECOND property answers its own name and type")
+check(val(4) == "property secret: int",
+      "a `private` field is a property too")
+check(val(5) == "struct Box", "the concept name still answers the concept")
+check(val(6) == "int", "hover on a USE is unchanged (the semantic type)")
+check(val(7) == "struct Box",
+      "an offset PAST the body answers the concept, not the last property")
+loc = g.get(8) or []
+check(sorted((r["range"]["start"]["line"], r["range"]["start"]["character"]) for r in loc)
+      == [(wl, wc), (13, 12), (20, 15)],
+      "findReferences on the declaration is unchanged (3 hits)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp hover on a property declaration"; else bad "lsp hover on a property declaration"; fi
+
+# ---- definition on a PROPERTY ----
+# The other half of the same gap: def_body# walks a class BODY, so a property
+# had no declaration to jump to at all and goToDefinition on a field answered
+# nothing. Wired at BOTH sites that route a class to def_body — the intra-file
+# walk (def_definition#) and the receiver-scoped one (md_definition#) — which
+# is what the `b.height` check separates: a free `height` sits at line 0 and
+# wins the name-wide walk, so only the scoped route can answer the property.
+# The first three checks are FALSE on the pre-fix binary (null, null, and the
+# free function); the last two are the controls.
+#
+# LIMIT, deliberate: a receiver whose concept lives in ANOTHER FILE still
+# misses. That path answers from the cached workspace blob (def_in_file#),
+# which indexes declarations and not structure parts — extending it is a
+# separate claim, with workspace/symbol's output attached to it.
+python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+BIN = "/tmp/scalyls"
+ws = "/tmp/lsp_ws/def_property"; shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
+src = ("function height(x: int) returns int\n"         # 0  DECOY: a free function named like a property
+       "{\n    return x\n}\n"                          # 1-3
+       "\n"                                            # 4
+       "define Box\n"                                  # 5
+       "(\n"                                           # 6
+       "    width: int\n"                              # 7
+       "    height: int\n"                             # 8
+       ")\n"                                           # 9
+       "{\n"                                           # 10
+       "    init()\n"                                  # 11
+       "    {\n"                                       # 12
+       "        set width: 3\n"                        # 13
+       "        set height: 4\n"                       # 14
+       "    }\n"                                       # 15
+       "\n"                                            # 16
+       "    function area(this) returns int\n"         # 17
+       "    {\n"                                       # 18
+       "        return width\n"                        # 19
+       "    }\n"                                       # 20
+       "}\n"                                           # 21
+       "\n"                                            # 22
+       "function use_it() returns int\n"               # 23
+       "{\n"                                           # 24
+       "    var b Box()\n"                             # 25
+       "    return b.height\n"                         # 26
+       "}\n")                                          # 27
+path = ws + "/box.scaly"; open(path, "w").write(src)
+uri = "file://" + path
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+ws}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+probes = [(2, 19, 15), (3, 13, 12), (4, 26, 13), (5, 17, 13), (6, 23, 9)]
+for idn, ln, ch in probes:
+    inp += frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/definition",
+                  "params":{"textDocument":{"uri":uri},"position":{"line":ln,"character":ch}}})
+inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run([BIN], input=inp, stdout=subprocess.PIPE).stdout
+got, d = {}, out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    f = json.loads(d[i+4:i+4+n]); d = d[i+4+n:]
+    if isinstance(f.get("id"), int): got[f["id"]] = f.get("result")
+def at(idn):
+    r = got.get(idn)
+    return None if r is None else (r["range"]["start"]["line"], r["range"]["start"]["character"])
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(at(2) == (7, 4),  "definition on a property USE -> its declaration")
+check(at(3) == (7, 4),  "definition on a `set` target -> the property it names")
+check(at(4) == (8, 4),
+      "b.height -> the receiver's property, not the free function of that name")
+check(at(5) == (17, 4), "a method still resolves to the method")
+check(at(6) == (23, 0), "a non-member cursor is unchanged")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp definition on a property"; else bad "lsp definition on a property"; fi
+
 # ---- workspace/symbol (parse-based, all files) ----
 # Query the whole workspace for declarations whose name matches a substring
 # (case-insensitive). The root comes from initialize's rootUri. Two files in
@@ -4327,9 +4518,14 @@ lines = doc.split("\n")
 def line_of(needle):
     return next(i for i, l in enumerate(lines) if l.strip() == needle)
 
+# Row 2 hovers a PROPERTY DECLARATION. Its expectation used to be `Vector`,
+# because a property declaration fell through to the enclosing concept; since
+# the structure walk landed it answers the property itself, and the claim of
+# this test — an answer that can only have come from THIS file — is what the
+# new string is checked for, not the concept name it used as a proxy.
 probes = [
     (line_of("define Vector[T]"),        "Vector",  "Vector"),
-    (line_of("length: size_t"),          "length",  "Vector"),
+    (line_of("length: size_t"),          "length",  "property length: size_t"),
     (line_of("define VectorIterator[T]"), "VectorIterator", "VectorIterator"),
     (line_of("set length: len"),         "len",     "size_t"),
     (line_of("set position: position + 1"), "position", "size_t"),

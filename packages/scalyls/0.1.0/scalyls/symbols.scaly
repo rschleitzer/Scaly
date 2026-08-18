@@ -3984,6 +3984,18 @@ define symbols
         sb.to_string()
     }
 
+    ; The `start` of one structure part. It is `previous_position`, i.e. the end
+    ; of the `(` or of the part before it — NOT the name token; name_offset_at#
+    ; is what turns it into the first letter of the declaration.
+    function part_start(rp, part: PartSyntax) returns size_t
+    {
+        choose part
+            when fld: FieldSyntax
+                return fld.start
+            when prop: PropertySyntax
+                return prop.start
+    }
+
     ; The declared name of one structure part.
     function part_name(rp, part: PartSyntax) returns String
     {
@@ -6126,7 +6138,24 @@ define symbols
                 var child ""
                 choose def.concept_
                     when c: ClassSyntax
-                        set child: symbols.hover_body(source, c.body, offset)
+                    {
+                        ; The STRUCTURE is asked first, bounded by the body's
+                        ; start: its parts and the body's members do not
+                        ; overlap, and the bound is what keeps an offset inside
+                        ; the body — where hover_body# legitimately answers ""
+                        ; on a brace or on blank space between members — from
+                        ; matching the LAST part (every part test is `offset >=
+                        ; start`, so without a ceiling every later offset does).
+                        var limit: size_t def.end
+                        if c.body <> null
+                        {
+                            let b (*c.body)
+                            set limit: b.start
+                        }
+                        set child: symbols.hover_structure_at(source, c.structure, offset, limit)
+                        if child.get_length() = 0
+                            set child: symbols.hover_body(source, c.body, offset)
+                    }
                     when n: NamespaceSyntax
                         set child: symbols.hover_namespace(source, n, offset)
                     when un: UnionSyntax
@@ -6158,6 +6187,72 @@ define symbols
             }
         }
         ""
+    }
+
+    ; The `(width: int  height: int)` structure of a class: `property name: T`
+    ; for the part the cursor is on, or "" when it is on none. `limit` is the
+    ; first offset that is no longer the structure's (the body's `start`).
+    ;
+    ; WHY THIS EXISTS. Without it a hover on a property's DECLARATION fell
+    ; through to the concept itself and answered `struct Box` — which is not
+    ; merely unhelpful, it is a plausible-looking answer to a different
+    ; question: the same argument the routine-declaration block below states,
+    ; one level in. Hovering the same name in a USE or in a `set` always
+    ; answered `int`, so the declaration was the one place the type was hidden.
+    ;
+    ; Tested from the LAST part backwards, for the reason that block gives: a
+    ; syntax node's `end` overshoots into the next token, so every boundary
+    ; here is a `start` and the last part that starts at or before the cursor is
+    ; the one it is on. A cursor on the closing paren therefore reports the last
+    ; property, exactly as one on a routine's closing paren reports the last
+    ; parameter.
+    function hover_structure_at(rp, source: String, structure: StructureSyntax, offset: size_t, limit: size_t) returns String
+    {
+        var result ""
+        if offset < limit
+            if structure.parts <> null
+            {
+                let parts (*structure.parts)
+                var i: size_t 0
+                while i < parts.length
+                {
+                    let pptr parts.get i
+                    if pptr <> null
+                    {
+                        let part (*pptr)
+                        let pstart symbols.part_start part
+                        if offset >= pstart
+                            set result: symbols.hover_part_text(source, part)
+                    }
+                    set i: i + 1
+                }
+            }
+        result
+    }
+
+    ; `property name: Type` for one structure part, with its doc block.
+    ;
+    ; The DOC ANCHOR is the first LETTER of the declaration, not the part's
+    ; `start`: that start is `previous_position` — the end of the `(` or of the
+    ; part before it, which in a multi-line structure sits on ANOTHER LINE — and
+    ; doc_comment# requires the declaration to be the first thing on its line,
+    ; so anchoring on the raw start would drop every property's doc block.
+    function hover_part_text(rp, source: String, part: PartSyntax) returns String
+    {
+        var sb StringBuilder()
+        sb.append "property "
+        let name symbols.part_name part
+        sb.append name
+        let detail symbols.part_detail_text(source, part)
+        if detail.get_length() > 0
+        {
+            sb.append(":" as char)
+            sb.append(" " as char)
+            sb.append detail
+        }
+        let pstart symbols.part_start part
+        let anchor symbols.name_offset_at(source, pstart)
+        symbols.with_doc(source, anchor, sb.to_string())
     }
 
     ; Innermost-matching member of a class body, or "".
@@ -7030,7 +7125,11 @@ define symbols
         var child ""
         choose def.concept_
             when c: ClassSyntax
-                set child: symbols.def_body(source, uri, c.body, name)
+            {
+                set child: symbols.def_structure(source, uri, c.structure, name)
+                if child.get_length() = 0
+                    set child: symbols.def_body(source, uri, c.body, name)
+            }
             when n: NamespaceSyntax
                 set child: symbols.def_namespace(source, uri, n, name)
             when un: UnionSyntax
@@ -7040,6 +7139,39 @@ define symbols
         if child.get_length() > 0
             return child
         symbols.def_match(source, uri, def.name, name, def.start)
+    }
+
+    ; Structure parts of a class — the half def_body# is not: it walks a class
+    ; BODY, so before this a property had no declaration to jump to at all and
+    ; goToDefinition on a field answered nothing. The Location points at the
+    ; NAME token (name_offset_at# of the part's `previous_position` start),
+    ; because a property has no keyword ahead of it the way every other
+    ; declaration this file matches does.
+    function def_structure(rp, source: String, uri: String, structure: StructureSyntax, name: String) returns String
+    {
+        var result ""
+        if structure.parts <> null
+        {
+            let parts (*structure.parts)
+            var i: size_t 0
+            while i < parts.length
+            {
+                if result.get_length() = 0
+                {
+                    let pptr parts.get i
+                    if pptr <> null
+                    {
+                        let part (*pptr)
+                        let pname symbols.part_name part
+                        let pstart symbols.part_start part
+                        let noff symbols.name_offset_at(source, pstart)
+                        set result: symbols.def_match(source, uri, pname, name, noff)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        result
     }
 
     ; Members of a class body.
@@ -7368,7 +7500,11 @@ define symbols
             var own ""
             choose def.concept_
                 when c: ClassSyntax
-                    set own: symbols.def_body(source, uri, c.body, member_name)
+                {
+                    set own: symbols.def_structure(source, uri, c.structure, member_name)
+                    if own.get_length() = 0
+                        set own: symbols.def_body(source, uri, c.body, member_name)
+                }
                 when n: NamespaceSyntax
                     set own: symbols.def_namespace(source, uri, n, member_name)
                 when un: UnionSyntax
