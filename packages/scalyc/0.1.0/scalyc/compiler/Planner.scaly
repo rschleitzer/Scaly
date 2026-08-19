@@ -11685,6 +11685,27 @@ define Planner
                             else
                                 0
                     }
+                    ; A member-access chain whose LAST hop is a PROPERTY is
+                    ; exactly as non-callable as a bare local — nothing
+                    ; downstream attaches `op` to it. Only a chain ending in a
+                    ; METHOD hop is the valid parenless call `recv.method arg`
+                    ; (the s174 rule the rhs side above already reads the same
+                    ; way). Without this the missing-separator mis-parse was
+                    ; silent whenever the left side was a FIELD read:
+                    ; `{ let p other  p.n }` planned the binding as `other` and
+                    ; dropped `p.n`, so the whole body returned 0 with rc 0,
+                    ; while the identical line over a PARAMETER was diagnosed.
+                    ; A member-access chain whose LAST hop is a resolved
+                    ; PROPERTY is exactly as non-callable as a bare local —
+                    ; nothing downstream attaches `op` to it. ONE statement,
+                    ; with the work in a static helper: an inline branch here
+                    ; perturbs collapse_operand_sequence's s178 alloca pool
+                    ; (measured — the three locals the check needs cost the
+                    ; -g suite six parameter reads), the same discipline
+                    ; report_unknown_identifier# and report_receiver_arity#
+                    ; follow.
+                    if Planner.chain_tail_is_property(result)
+                        set result_is_bare_noncallable: true
                     if result_is_bare_noncallable
                         if this.is_delegate_type(result.result_type.name)
                             set result_is_bare_noncallable: false
@@ -33308,6 +33329,42 @@ define Planner
         if Planner.is_integer_type(left) = false
             return false
         Planner.is_integer_type right
+    }
+
+    ; chain_tail_is_property: does this operand end in a member hop that reads
+    ; a resolved PROPERTY? Such an operand is exactly as non-callable as a bare
+    ; local — nothing downstream attaches a following operand to it — which is
+    ; what the orphan-operand gate in collapse_operand_sequence asks. The three
+    ; other hop kinds all DO consume what follows and must answer false:
+    ;
+    ;   * a METHOD hop is the valid parenless call `recv.method arg`, and with
+    ;     an argument tuple the ordinary `recv.method(args)` (the s174 rule the
+    ;     rhs side of that loop reads the same way);
+    ;   * a VARIANT or `.value` hop (is_union_value) is a construction;
+    ;   * a PLACEHOLDER hop — void result, recorded by resolve_member_access
+    ;     for a name that resolved against nothing — belongs to a type this
+    ;     pass cannot see yet (an uninstantiated generic body's `value.hash()`,
+    ;     a lazily registered instantiation's `vars.get vi`) and still resolves
+    ;     downstream.
+    ;
+    ; Static, and called in ONE statement: the locals this needs would perturb
+    ; collapse_operand_sequence's s178 alloca pool if they were inlined there.
+    function chain_tail_is_property(operand: PlannedOperand) returns bool
+    {
+        if operand.member_access = null
+            return false
+        let chain (*operand.member_access)
+        if chain.length = 0
+            return false
+        let last_ptr chain.get(chain.length - 1)
+        if last_ptr = null
+            return false
+        let last (*last_ptr)
+        if last.is_method
+            return false
+        if last.is_union_value
+            return false
+        last.result_type.name <> "void"
     }
 
     ; ========================================================================

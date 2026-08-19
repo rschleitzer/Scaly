@@ -1,0 +1,35 @@
+; Regression: a missing separator whose LEFT side reads a FIELD used to compile
+; clean, and the statement after it was dropped (2026-08-19).
+;
+; Two statements need an LF (or a colon) between them. Written on one line with
+; only spaces,
+;
+;     { let p other  p.n }
+;
+; the binding greedily grabs `other p.n` as its initializer. The orphan-operand
+; gate exists for exactly that mis-parse and reported it whenever the left side
+; was a PARAMETER or a local — but it asked `result.member_access = null`, so an
+; implicit `this.` FIELD read, which carries a one-hop chain, slipped past it:
+; rc 0, `p.n` silently dropped, and the whole body returned 0.
+;
+; A chain ending in a PROPERTY hop is exactly as non-callable as a bare local.
+; Only a METHOD hop is the valid parenless call `recv.method arg`.
+;
+; xfail: unexpected operand - missing operator, or a ':'/newline separator
+
+define Other (n: int)
+{
+    init()  set n: 7
+}
+
+define Holder (other: pointer[Other])
+{
+    init(o: pointer[Other])  set other: o
+    procedure p_local(this) returns int   { let p other  p.n }
+}
+
+let o Other()
+let h Holder(&o)
+if h.p_local() <> 7
+    exit 1
+print "unreachable"

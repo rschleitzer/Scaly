@@ -1,0 +1,81 @@
+; Negative control for the orphan-operand gate's chain arm (2026-08-19). The
+; gate is proved by xfail_orphan_operand_after_field; this file proves it stays
+; silent on every shape whose left side legitimately consumes the operand that
+; follows it, or that is simply well separated.
+;
+;   * a parenless call through a METHOD hop of a field-rooted chain
+;   * a parenless call on a method of `this`
+;   * a call with an argument TUPLE after a method hop
+;   * the same two statements, separated by an LF, which is the correct spelling
+;     of what the xfail file mis-writes
+;   * a chain hop into a VARIANT (is_union_value), followed by its payload
+;
+; Expected: PASS
+
+define Other (n: int)
+{
+    init()  set n: 7
+    function twice(this, k: int) returns int  k * 2
+}
+
+define Sink (total: int)
+{
+    init()  set total: 0
+    procedure take(this, v: int)  set total: total + v
+}
+
+define U union
+(
+    First: int
+    Second: int
+)
+
+define Holder (other: pointer[Other]  sink: Sink)
+{
+    init(o: pointer[Other])
+    {
+        set other: o
+        set sink: Sink()
+    }
+
+    ; method hop of a field-rooted chain: `other.twice 4` must attach the 4
+    function through_field(this) returns int   other.twice 4
+
+    ; the correctly separated form of the xfail file's one-liner
+    procedure separated(this) returns int
+    {
+        let p other
+        p.n
+    }
+
+    ; argument tuple after a method hop
+    function with_tuple(this) returns int   other.twice(5)
+
+    ; a parenless call on a method of `this`
+    function via_this(this) returns int   this.through_field()
+}
+
+let o Other()
+let h Holder(&o)
+var ok: bool true
+if h.through_field() <> 8
+    set ok: false
+if h.separated() <> 7
+    set ok: false
+if h.with_tuple() <> 10
+    set ok: false
+if h.via_this() <> 8
+    set ok: false
+
+; a variant hop is a construction, not a bare property read
+let u U.First(3)
+let tag choose u
+    when a: First
+        a
+    else
+        0
+if tag <> 3
+    set ok: false
+
+if ok
+    print "PASS"
