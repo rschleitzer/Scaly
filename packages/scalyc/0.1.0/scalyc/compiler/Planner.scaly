@@ -15036,16 +15036,37 @@ define Planner
                     }
 
                     ; Unresolved — record placeholder with void result.
+                    ;
+                    ; The parent is the UNWRAPPED lookup_type, exactly as the
+                    ; four resolved arms above record it (s173) — the
+                    ; placeholder was the one arm still recording `current`,
+                    ; i.e. the pointer[T]/ref[T] wrapper the lookup was NOT
+                    ; performed against. That disagreement decided whether the
+                    ; member-not-found trap fires at all: the emitter's gate
+                    ; asks map_type of the recorded parent for a sized STRUCT,
+                    ; and map_type(pointer[T]) is `ptr`, so such a hop slipped
+                    ; past the trap into the lenient extractvalue-at-field-0
+                    ; recovery meant for an UNRESOLVED base (empty name). A
+                    ; call on a POINTER-typed FIELD therefore compiled with
+                    ; rc 0 and no call in the emitted body at all — the call
+                    ; shape needs is_method on the last hop — while the same
+                    ; call on a parameter, whose operand type is already the
+                    ; pointee, was a loud exit 16. It cost a silently wrong
+                    ; parse of `{@link Foo#bar}` in packages/tscaly, whose
+                    ; scanner.re_scan_hash_token() had never been written.
+                    ; A base that genuinely did not resolve still has an empty
+                    ; name here (lookup_type = current), so the recovery keeps
+                    ; its one legitimate case.
                     if matched = false
                     {
                         var sb StringBuilder()
                         sb.append "member '"
                         sb.append m
                         sb.append "' not found in type "
-                        sb.append current.name
+                        sb.append lookup_type.name
                         this.add_error(sb.to_string())
                         result.add(PlannedMemberAccess(
-                            m, 0, false, false, current, Planner.make_void_type()
+                            m, 0, false, false, lookup_type, Planner.make_void_type()
                         ))
                     }
                 }

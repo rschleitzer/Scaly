@@ -1,0 +1,107 @@
+; Negative control for xfail_member_call_on_pointer_field (2026-08-19): the
+; member-not-found trap now sees a hop whose parent is a pointer[T] field, so
+; this file proves it cuts NOTHING that used to work. Four shapes, each of which
+; resolves through the pointer and must keep resolving:
+;
+;   * a method on a pointer[T] FIELD — the shape the fix made loud
+;   * a PROPERTY on the same field, which reaches the emitter's deref path with
+;     the newly UNWRAPPED parent type recorded on the hop (the parent is what
+;     that path unwraps, so recording it unwrapped must not change the load)
+;   * a two-hop chain through a pointer field to a pointer field
+;   * a ref[T] field, the other type the placeholder arm unwraps
+;
+; Expected: PASS
+
+define Leaf
+(
+    k: int
+)
+{
+    init(v: int)
+    {
+        set k: v
+    }
+
+    function doubled(this) returns int
+    {
+        k * 2
+    }
+}
+
+define Other
+(
+    n: int
+    leaf: pointer[Leaf]
+)
+{
+    init(l: pointer[Leaf])
+    {
+        set n: 7
+        set leaf: l
+    }
+
+    function get(this) returns int
+    {
+        n
+    }
+}
+
+define Holder
+(
+    other: pointer[Other]
+    aliased: ref[Other]
+)
+{
+    init(o: pointer[Other], r: ref[Other])
+    {
+        set other: o
+        set aliased: r
+    }
+
+    ; a METHOD through a pointer field
+    procedure via_method(this) returns int
+    {
+        other.get()
+    }
+
+    ; a PROPERTY through the same pointer field
+    procedure via_property(this) returns int
+    {
+        other.n
+    }
+
+    ; two pointer hops in one chain
+    procedure via_chain(this) returns int
+    {
+        other.leaf.doubled()
+    }
+
+    ; a ref field
+    procedure via_ref(this) returns int
+    {
+        aliased.get()
+    }
+}
+
+let l Leaf(10)
+let o Other(&l)
+let h Holder(&o, &o)
+
+var ok: bool true
+
+if h.via_method() <> 7
+    set ok: false
+
+if h.via_property() <> 7
+    set ok: false
+
+if h.via_chain() <> 20
+    set ok: false
+
+if h.via_ref() <> 7
+    set ok: false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"

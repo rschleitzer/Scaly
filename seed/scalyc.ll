@@ -181653,13 +181653,13 @@ if.then482:                                       ; preds = %if.end428
   store { ptr } { ptr @.sconst.749 }, ptr %arg.tmp489, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb488, ptr %arg.tmp489)
   %sb490 = load ptr, ptr %inner_o, align 8
-  %field.inplace491 = getelementptr inbounds nuw %_Z11PlannedType, ptr %current, i32 0, i32 1
+  %field.inplace491 = getelementptr inbounds nuw %_Z11PlannedType, ptr %lookup_type, i32 0, i32 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb490, ptr %field.inplace491)
   %sb493 = load ptr, ptr %inner_o, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result492, ptr %1, ptr %sb493)
   call void @_ZN7Planner9add_errorE6String(ptr %2, ptr %sret.result492)
   %result494 = load ptr, ptr %result, align 8
-  %current495 = load %_Z11PlannedType, ptr %current, align 8
+  %lookup_type495 = load %_Z11PlannedType, ptr %lookup_type, align 8
   call void @_ZN7Planner14make_void_typeEPN4scaly6memory4PageE(ptr noalias sret(%_Z11PlannedType) %payload_type, ptr %1)
   %forced_page496 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %tuple.region497 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page496, i64 ptrtoint (ptr getelementptr (%_Z19PlannedMemberAccess, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z19PlannedMemberAccess }, ptr null, i64 0, i32 1) to i64))
@@ -181673,7 +181673,7 @@ if.then482:                                       ; preds = %if.end428
   %tuple.field502 = getelementptr inbounds nuw %_Z19PlannedMemberAccess, ptr %tuple.region497, i32 0, i32 3
   store i1 false, ptr %tuple.field502, align 1
   %tuple.field503 = getelementptr inbounds nuw %_Z19PlannedMemberAccess, ptr %tuple.region497, i32 0, i32 4
-  store %_Z11PlannedType %current495, ptr %tuple.field503, align 1
+  store %_Z11PlannedType %lookup_type495, ptr %tuple.field503, align 1
   %field.load504 = load %_Z11PlannedType, ptr %payload_type, align 8
   %tuple.field505 = getelementptr inbounds nuw %_Z19PlannedMemberAccess, ptr %tuple.region497, i32 0, i32 5
   store %_Z11PlannedType %field.load504, ptr %tuple.field505, align 1

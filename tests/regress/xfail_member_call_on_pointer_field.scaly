@@ -1,0 +1,66 @@
+; xfail: member not found: Other.no_such_member
+;
+; A member call on a POINTER-typed FIELD used to compile with rc 0, and the
+; call simply was not in the emitted body (2026-08-19). The identical call on a
+; PARAMETER or a LOCAL of the same type was a loud exit 16, and so was a call on
+; a BY-VALUE field — so the distinguishing thing was neither the field nor the
+; statement position nor whether the result is used, it was the POINTER.
+;
+; Mechanism: Planner.resolve_member_access# records a placeholder hop for an
+; unresolved member, and that arm recorded `current` — the pointer[T] wrapper —
+; where the four resolved arms record the UNWRAPPED lookup_type (s173). The
+; emitter's member-not-found trap asks map_type of the recorded parent for a
+; sized STRUCT, and map_type(pointer[T]) is `ptr`, so such a hop slipped past
+; the trap into the lenient extractvalue-at-field-0 recovery that exists for a
+; base the planner could not resolve at all. The call itself then disappeared
+; for a second reason: the call shape is only recognised when the chain's last
+; hop is_method, which an unresolved hop is not.
+;
+; It cost a silently wrong parse of `{@link Foo#bar}` in packages/tscaly, whose
+; scanner.re_scan_hash_token() had never been written; and it hid one live site
+; in packages/dazzle (VM.scaly's `ic.ident.get_name()`, whose Identifier was not
+; visible in that file) where field 0 happened to BE the intended member, so the
+; recovery produced the right answer by accident.
+;
+; member_call_on_pointer_field.scaly is the negative control.
+
+define Other
+(
+    n: int
+)
+{
+    init()
+    {
+        set n: 7
+    }
+
+    function get(this) returns int
+    {
+        n
+    }
+}
+
+define Holder
+(
+    other: pointer[Other]
+)
+{
+    init(o: pointer[Other])
+    {
+        set other: o
+    }
+
+    procedure via_field(this) returns int
+    {
+        other.no_such_member()
+        other.get()
+    }
+}
+
+; The planner is demand-driven, so the method has to be CALLED or its body is
+; never planned and never emitted — an uncalled `via_field` compiles clean and
+; the test would pass for the wrong reason.
+let o Other()
+let h Holder(&o)
+if h.via_field() = 7
+    print("compiled\n")
