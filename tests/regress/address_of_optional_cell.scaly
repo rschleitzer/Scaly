@@ -1,0 +1,57 @@
+; Regression: `&p` where `p` is a NULLABLE CELL (`var p: ref[T]? null`) answers
+; the cell's slot ADDRESS, not the null it currently holds (2026-08-23).
+;
+; The `&`-on-a-mutable-local path in emit_intrinsic_operator loads the slot for
+; a heap-bound var (`var x Foo^page()`: the alloca holds the object pointer, so
+; `&x` IS that pointer) and must NOT load for a genuine pointer variable, where
+; `&p` has to be the slot address. That distinction was drawn by asking whether
+; the declared type is named "pointer" or "ref" — and s113 wraps `ref[T]?` into
+; `Option[ref[T]]`, whose name is "Option". So a nullable cell missed both
+; tests, the load fired, and `&p` evaluated to p's VALUE.
+;
+; Silent at compile time, and only on ONE of the two resolution paths: handing
+; `&p` to a `pointer[pointer[T]]` parameter of a FREE function is a hard
+; `function not found` (the argument type genuinely differs), so the shape only
+; reached the emitter through a METHOD call. There it stored through a null
+; out-param — `str x0, [x8]` with x8 = 0. Found at 98 sites at once in the
+; opensp port; the symptom was 380 ESIS models collapsing to 20.
+;
+; The doctrine is unchanged and is what the port now follows: a cell whose
+; ADDRESS is taken is not a reference but storage the callee writes through, so
+; it should be declared `pointer[T]`. This test pins the emission for the shape
+; that is nevertheless accepted, so that being wrong is loud rather than fatal.
+;
+; Expected: PASS
+
+define Box (v: i64)
+
+define Holder (k: i64)
+{
+    ; writes the reference it is handed back through the out-parameter
+    function fill(this: Holder, out: pointer[pointer[Box]], b: ref[Box]) returns i64
+    {
+        set *out: &b
+        1
+    }
+}
+
+function check() returns bool
+{
+    var p: ref[Box]? null
+    let b Box(7)
+    let h Holder(1)
+    let n h.fill(&p, &b)
+    ; the cell must have been written through its own slot ...
+    if p = null
+        return false
+    ; ... and must point at the very object that was passed in.
+    let got (*p)
+    if got.v <> 7
+        return false
+    true
+}
+
+if check()
+    print "PASS"
+else
+    print "FAIL"

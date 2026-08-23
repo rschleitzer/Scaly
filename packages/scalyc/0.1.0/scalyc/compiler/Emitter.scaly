@@ -10585,6 +10585,21 @@ define Emitter
                                                         set is_ptr_var: true
                                                     if arg_op.result_type.name = "ref"
                                                         set is_ptr_var: true
+                                                    ; s113 wraps `ref[T]?` into Option[ref[T]],
+                                                    ; whose NAME is "Option" — so the two tests
+                                                    ; above miss a nullable CELL, the load below
+                                                    ; fired, and `&p` yielded p's VALUE (null)
+                                                    ; instead of its slot address. An NPO Option
+                                                    ; IS a bare pointer, so it belongs here.
+                                                    ; Cost of the gap: `&<optional cell>` handed
+                                                    ; to a `pointer[pointer[X]]` out-param stored
+                                                    ; through NULL — `str x0, [x8]` with x8 = 0,
+                                                    ; silent at compile time (the free-function
+                                                    ; path refuses the same call as a type
+                                                    ; mismatch; only the METHOD path reached the
+                                                    ; emitter), 98 sites at once, 380 -> 20 ESIS.
+                                                    if is_npo_option(arg_op.result_type)
+                                                        set is_ptr_var: true
                                                     if is_ptr_var = false
                                                     {
                                                         let ptr_ty LLVMPointerTypeInContext(context, 0)
