@@ -28,3 +28,8 @@ retired/*/target/
 scalyc_native
 dist/
 demo/build/
+
+# tscaly: the REFERENCE-dump cache (slice 58). Derived data keyed on run.sh's
+# oracle stamp; it sits OUTSIDE packages/ so scalyls' `*.scaly` walk never
+# traverses it — see packages/tscaly/tests/run.sh for the argument.
+.tscaly-refcache/
