@@ -1,0 +1,120 @@
+; Negative control for lookup_method#'s argument-type gate (2026-08-23).
+; xfail_method_arg_type proves the gate fires; this file proves what it must
+; NOT cut — the half a new diagnostic silently gets wrong, and the half that
+; cost three measured rounds here: the first draft of the gate reported 26
+; findings across the stdlib and the compiler, every one of them correct code.
+;
+; Each shape below is one of those rounds:
+;
+;   * the plain correct call — the gate's own baseline
+;   * a String literal into a pointer[const_char] parameter. types_compatible#
+;     rule 2b accepts it, and the gate asks the ORIGINAL pair before its own
+;     stripped one for exactly this reason: peeling the pointer first would
+;     have hidden rule 2b and reported 36 findings on Emitter alone
+;   * a VALUE handed to a ref[T] parameter. Rules 3 and 4 cover only the other
+;     direction (a ref/pointer deref'd to its pointee), so types_compatible
+;     answers no to a perfectly ordinary borrow
+;   * a GENERIC receiver. The gate refuses to judge these at all: binding the
+;     receiver's parameters the way the selection loop does is unsound —
+;     define_type_substitution appends and lookup is first-wins, so an ambient
+;     binding of the same letter wins. Measured on the stdlib, where
+;     BuilderList[Slot[T]].add's `element: T` planned as the AMBIENT T
+;     (String) instead of Slot[String] and the gate rejected working code
+;   * a this-LESS member through a value receiver, whose receiver fills the
+;     first DECLARED parameter, so its arguments sit one slot off against the
+;     declaration. Left to the arity gate, exactly as in report_receiver_arity#
+;
+; Expected: PASS
+
+define Holder[T]
+(
+    item: T
+)
+{
+    function put(this, x: T) returns int
+    {
+        7
+    }
+}
+
+define Slot2[T]
+(
+    value: T
+)
+
+; The ambient-shadowing shape, reduced from the stdlib's
+; BuilderList[Slot[T]].add call inside HashSetBuilder[T]: the receiver's own
+; parameter is Slot2[T], while an ambient T is bound to something else
+; entirely. Bind the receiver's parameters here the way the selection loop
+; does and `x: T` plans as the AMBIENT T, not as Slot2[int] — the gate would
+; reject this call.
+define Outer[T]
+(
+    inner: Holder[Slot2[T]]
+)
+{
+    function feed(this, v: T) returns int
+    {
+        inner.put(Slot2[T](v))
+    }
+}
+
+define Box
+(
+    v: int
+)
+{
+    function take(this, n: int) returns int
+    {
+        n * 2
+    }
+
+    function cstr_len(this, s: pointer[const_char]) returns int
+    {
+        var n: int 0
+        while (*(s + n)) <> 0
+            set n: n + 1
+        n
+    }
+
+    function borrow(this, o: ref[Box]) returns int
+    {
+        o.v
+    }
+
+    ; this-LESS: the receiver fills `a`
+    function combine(a: Box, b: int) returns int
+    {
+        a.v + b
+    }
+}
+
+let b Box(7)
+let other Box(35)
+
+var ok: bool true
+
+if b.take(21) <> 42
+    set ok: false
+
+if b.cstr_len("abcde") <> 5
+    set ok: false
+
+if b.borrow(other) <> 35
+    set ok: false
+
+if b.combine(35) <> 42
+    set ok: false
+
+let h Holder[int](3)
+if h.put(9) <> 7
+    set ok: false
+
+let o Outer[int](Holder[Slot2[int]](Slot2[int](1)))
+if o.feed(5) <> 7
+    set ok: false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"

@@ -13586,6 +13586,15 @@ define Planner
             ; get_length deref'd the literal bytes → SIGSEGV in
             ; resolve_type_base#. A single candidate, or no arg-type match,
             ; falls back to the first by-name candidate (prior behaviour).
+            ;
+            ; ★★★The `> 1` is why report_method_arg_types# exists and is NOT a
+            ; place to fix it: with ONE candidate there is nothing to select,
+            ; so hoisting these passes out of the gate changes no decision (a
+            ; match picks the same function, a miss falls back to it) and only
+            ; buys the answer to `did the argument types fit?`. That answer is
+            ; what was missing, and the gate below asks it directly — for one
+            ; permissive pass instead of three, and without inheriting the
+            ; ambient-substitution hazard the binding block below carries.
             var f_ptr: ref[Function]? candidates.get(0)
             if candidates.length > 1
             {
@@ -13770,6 +13779,17 @@ define Planner
                 asb.append arity_expected
                 this.add_diagnostic(struct_type.loc, asb.to_string())
             }
+
+            ; ── Type gate (2026-08-23) — the sibling of the arity gate above,
+            ; and the reason the selection loop no longer hides behind
+            ; `candidates.length > 1`; the account is on
+            ; report_method_arg_types#. Reached only when selection matched
+            ; NOTHING, so a call the passes accepted pays nothing for it, and
+            ; suppressed when the arity gate has already spoken about the same
+            ; call. ONE statement, the discipline every other report_* gate
+            ; follows.
+            if arity_bad = false
+                this.report_method_arg_types(f, lookup_st, method_name, arg_types, arg_ops, struct_type.loc)
 
             ; ── s188: lazy full instantiation of a HashSet-machinery generic
             ; concept reached via a method CALL rather than a type annotation.
@@ -20426,6 +20446,275 @@ define Planner
             ; system working.
             let rmsg rsb.to_string()
             this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        ; gate_char_like: the one-byte family as a CALL BOUNDARY sees it.
+        ; type_is_char_like# omits const_char deliberately — it decides whether
+        ; a bare char LITERAL may fold — so report_method_arg_types# asks its
+        ; own question rather than widening that one.
+        function gate_char_like(t: PlannedType) returns bool
+        {
+            if t.name = "const_char"
+                return true
+            Planner.type_is_char_like(t)
+        }
+
+        ; gate_strip_indirection: peel Option / ref / pointer wrappers off a
+        ; type until a plain one is reached (bounded, so a cyclic or absurdly
+        ; nested type cannot spin). ONLY for report_method_arg_types# — it is
+        ; deliberately NOT types_compatible#, which overload SELECTION depends
+        ; on: tightening or loosening that function moves which candidate is
+        ; chosen, i.e. emission, everywhere.
+        ;
+        ; The gate needs the looser question because types_compatible answers
+        ; NO for two shapes this language passes freely, both measured on the
+        ; compiler's own sources: an NPO Option wrapper on either side
+        ; (`plan_function(name, t)` where the parameter is declared
+        ; `ref[PlannedType]?`, which s113 wraps to Option[ref[PlannedType]] —
+        ; the seam CLAUDE.md records hiding a pointer-shaped thing under a name
+        ; no name-test knows), and an Option flowing INTO a plain parameter
+        ; (`Emitter.emit`, argument Option[ref[Plan]] against `Plan`), which the
+        ; nullability rule explicitly allows. Rules 3/4 cover ONE direction of
+        ; the pointer/ref deref only, so a value handed to a `ref[T]` parameter
+        ; is rejected too.
+        ;
+        ; Consequence, stated rather than hidden: an INDIRECTION mistake is not
+        ; reported by this gate — pointer[A] and A agree here. What survives is
+        ; the class it was built for, a genuinely different type.
+        ;
+        ; Single exit: a by-value struct returned from several branches
+        ; region-allocates per site and the merging phi fails llc verification.
+        function gate_strip_indirection(t: PlannedType) returns PlannedType
+        {
+            var cur t
+            var steps: size_t 0
+            var go: bool true
+            while go
+            {
+                set go: false
+                var is_wrap: bool false
+                if cur.name = "Option"
+                    set is_wrap: true
+                if cur.name = "ref"
+                    set is_wrap: true
+                if cur.name = "pointer"
+                    set is_wrap: true
+                if is_wrap
+                {
+                    if cur.generics <> null
+                    {
+                        let gs (*cur.generics)
+                        if gs.length = 1
+                        {
+                            let inner_ptr gs.get 0
+                            if inner_ptr <> null
+                            {
+                                set cur: (*inner_ptr)
+                                set go: true
+                            }
+                        }
+                    }
+                }
+                set steps: steps + 1
+                if steps > 3
+                    set go: false
+            }
+            cur
+        }
+
+        ; report_method_arg_types: the TYPE half of lookup_method#'s call gate
+        ; (2026-08-23). Its sibling arity gate has counted a method call's
+        ; arguments since 2026-08-01; their TYPES were compared only when a
+        ; concept declared SEVERAL same-named methods, because the s163
+        ; selection loop — which owns method_params_match#, the one place a
+        ; declared parameter type ever meets an argument type — is gated on
+        ; `candidates.length > 1`. A SINGLE by-name candidate was therefore
+        ; taken unexamined: handing it an argument of the wrong type planned
+        ; clean with rc 0, and emit_call builds the callee's type from the
+        ; ARGUMENT VALUES rather than from the declaration, so llc had nothing
+        ; to object to either — the callee read whatever the caller happened to
+        ; leave in the register. Same class as the receiver-arity and
+        ; static-arity gates, and visible from the same side: a FREE function
+        ; with the identical mistake is a hard `function not found`, because
+        ; check_function_match# always compares.
+        ;
+        ; ★★★THREE restrictions, each measured against the stdlib rather than
+        ; guessed — without them the gate reports 26 findings there, all its
+        ; own imprecision:
+        ;
+        ; (a) Only a method that declares `this`. lookup_method# also serves a
+        ;     this-LESS member reached through a value receiver, whose receiver
+        ;     fills the first DECLARED parameter (`old.is_equal(gid)`,
+        ;     dazzle/ELObj.scaly), so its arg_types sit one slot off against
+        ;     f.input and every comparison would be against the wrong
+        ;     parameter. Exactly the restriction the arity gate's exact arm
+        ;     carries, for the same reason.
+        ; (b) Only a NON-GENERIC receiver. Binding the receiver's parameters
+        ;     the way the selection loop does is not sound here: 
+        ;     define_type_substitution appends and lookup is FIRST-WINS, so an
+        ;     AMBIENT binding of the same letter wins over the one just made.
+        ;     Measured: `slot_list.add(own_page, Slot[T](…))` on a
+        ;     BuilderList[Slot[T]] inside HashSetBuilder[T] planned its
+        ;     `element: T` as the ambient T (String) instead of the receiver's
+        ;     Slot[String], and the gate reported a correct call. The same
+        ;     trap sits in the selection loop, where it can only mis-RANK
+        ;     overloads; here it would reject working code, so the whole class
+        ;     stays out until substitution scoping is fixed.
+        ; (c) Per argument, anything neither side has resolved is skipped: an
+        ;     argument type that is a fresh variable or has no name at all
+        ;     (measured 20× on Vector.get_ptr), and a parameter that still
+        ;     mentions a generic parameter — a generic METHOD of a plain
+        ;     concept — since an unbound var compares as matching anything and
+        ;     the check would be vacuous rather than wrong.
+        ;
+        ; What is left is the shape the bug was found in: a plain concept, a
+        ; concrete signature, one candidate. The comparison is the PERMISSIVE
+        ; pass — types_compatible plus the char and float folds — i.e. exactly
+        ; what the selection's last pass accepts, so nothing reported here
+        ; could have been selected by it either.
+        ;
+        ; Record and CONTINUE, like the arity gate: add_diagnostic is fatal at
+        ; the cli.scaly gate, so resolution proceeds exactly as it did before.
+        function report_method_arg_types(
+            this: Planner,
+            f: Function,
+            lookup_st: PlannedType,
+            method_name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
+            loc: Span
+        )
+        {
+            ; (b) a generic receiver instance — see the note above.
+            if lookup_st.generics <> null
+            {
+                let tg_gens (*lookup_st.generics)
+                if tg_gens.length > 0
+                    return
+            }
+
+            var param_start: size_t 0
+            if f.input.length > 0
+            {
+                let first_ptr f.input.get 0
+                if first_ptr <> null
+                    if first_ptr.name <> null
+                        if (*first_ptr.name) = "this"
+                            set param_start: 1
+            }
+            ; (a) this-less member: the receiver fills a declared parameter, so
+            ; the alignment this walk assumes does not hold. The arity gate
+            ; carries that case.
+            if param_start = 0
+                return
+            if f.input.length - param_start <> arg_types.length
+                return
+
+            var reported: bool false
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                if reported = false
+                {
+                    let p_ptr f.input.get(j + param_start)
+                    let a_ptr arg_types.get j
+                    if p_ptr <> null
+                    {
+                        if a_ptr <> null
+                        {
+                            if p_ptr.type <> null
+                            {
+                                let p_type (*p_ptr.type)
+                                let planned_p this.plan_type(p_type)
+                                let arg (*a_ptr)
+                                ; (c) skip what neither side has resolved.
+                                var judge: bool true
+                                if planned_p.variable <> null
+                                    set judge: false
+                                if arg.variable <> null
+                                    set judge: false
+                                if planned_p.name.get_length() = 0
+                                    set judge: false
+                                if arg.name.get_length() = 0
+                                    set judge: false
+                                if Planner.type_mentions_generic_param(planned_p)
+                                    set judge: false
+                                let bare_p Planner.gate_strip_indirection(planned_p)
+                                let bare_a Planner.gate_strip_indirection(arg)
+                                ; void is what an unresolved result plans to;
+                                ; it is a miss of the planner's, not of the call.
+                                if bare_p.name = "void"
+                                    set judge: false
+                                if bare_a.name = "void"
+                                    set judge: false
+                                if Planner.type_mentions_generic_param(bare_p)
+                                    set judge: false
+                                var ok: bool true
+                                if judge
+                                {
+                                    ; The ORIGINAL pair first, so every rule
+                                    ; types_compatible# carries still applies —
+                                    ; notably 2b, a String value flowing into a
+                                    ; pointer[const_char] parameter, which
+                                    ; stripping the pointer would have hidden
+                                    ; from it (36 findings on Emitter alone).
+                                    ; The stripped pair only ever ADDS
+                                    ; acceptance.
+                                    set ok: Planner.types_compatible(planned_p, arg)
+                                    if ok = false
+                                        set ok: Planner.types_compatible(bare_p, bare_a)
+                                    ; char / u8 / i8 / const_char are one family
+                                    ; at a call boundary (Rule 2b's own list);
+                                    ; const_char is not in type_is_char_like#,
+                                    ; which exists for the literal fold.
+                                    if ok = false
+                                        if Planner.gate_char_like(bare_p)
+                                            if Planner.gate_char_like(bare_a)
+                                                set ok: true
+                                }
+                                if ok = false
+                                    if arg.name = "String"
+                                        if Planner.type_is_char_like(planned_p)
+                                            if this.arg_is_foldable_char_string(arg_ops, j)
+                                                set ok: true
+                                if ok = false
+                                    if Planner.type_is_float_like(planned_p)
+                                        if this.arg_is_foldable_float(arg_ops, j)
+                                            set ok: true
+                                if ok = false
+                                {
+                                    set reported: true
+                                    var tsb StringBuilder()
+                                    tsb.append "argument type mismatch for "
+                                    tsb.append lookup_st.name
+                                    tsb.append "."
+                                    tsb.append method_name
+                                    tsb.append ": argument "
+                                    ; Bound first: a parenless call swallows the
+                                    ; operand, so `append j + 1` would collapse
+                                    ; to `(append j) + 1` — the 0-based index.
+                                    let tg_ix j + 1
+                                    tsb.append tg_ix
+                                    tsb.append " is "
+                                    ; Likewise bound: a call as the argument of
+                                    ; a parenless call does not collapse.
+                                    let tg_an Planner.get_readable_name(arg)
+                                    tsb.append tg_an
+                                    tsb.append ", expected "
+                                    let tg_pn Planner.get_readable_name(planned_p)
+                                    tsb.append tg_pn
+                                    ; Pinned to the Planner's page: add_diagnostic
+                                    ; stores the message beyond the frame that
+                                    ; builds it (report_receiver_arity# idiom).
+                                    let tmsg tsb.to_string()
+                                    this.add_diagnostic(loc, String^this(tmsg))
+                                }
+                            }
+                        }
+                    }
+                }
+                set j: j + 1
+            }
         }
 
         ; report_variant_arg_arity: a union ARM carries at most ONE payload, so

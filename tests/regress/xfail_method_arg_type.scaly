@@ -1,0 +1,42 @@
+; Regression: a method call's argument TYPES were never compared when the
+; concept declared exactly ONE method of that name (2026-08-23).
+;
+; lookup_method# owns method_params_match#, the single place a declared
+; parameter type ever meets an argument type — and it ran it only inside
+; `if candidates.length > 1`, the s163 overload SELECTION loop. With one
+; candidate there is nothing to select, so the function was taken by name and
+; nothing looked at what was being handed to it.
+;
+; Nothing downstream catches it either: emit_call synthesizes the callee's type
+; from the ARGUMENT VALUES rather than from the declaration, so llc is handed a
+; self-consistent call and has nothing to object to. The callee then reads the
+; wrong thing out of the register — here a String struct where an int is
+; declared.
+;
+; The same mistake on a FREE function has always been a hard `function not
+; found`, because check_function_match# compares unconditionally. That
+; asymmetry between the two call shapes is what this gate closes.
+;
+; It found two live sites in packages/dazzle the day it landed, both of the
+; shape that survives on layout coincidence: Interpreter.emit_aux declared
+; MessageType while all twelve callers passed a MessageFragment (MessageType's
+; field 0 IS a MessageFragment), and Primitive.invalid_key_arg passed a
+; ref[Identifier] where StringC was declared (Identifier's field 0 IS its
+; name). Both read the right bytes, and neither declaration was true.
+;
+; xfail: argument type mismatch for Box.take: argument 1 is String, expected int
+
+define Box
+(
+    v: int
+)
+{
+    function take(this, n: int) returns int
+    {
+        n * 2
+    }
+}
+
+let b Box(7)
+let r b.take("nope")
+print "unreachable"
