@@ -33931,6 +33931,9 @@ define Planner
         if Planner.is_generic_type_param_name(joined)
             return false
 
+        if Planner.is_npo_option_generic_pointee(ret_type)
+            return false
+
         true
     }
 
@@ -33953,6 +33956,89 @@ define Planner
     ; fires. function_needs_caller_page unifies it with needs_implicit_return_page
     ; at every page-decision site (mangled `…PageE` suffix, page_param_ref="_rp",
     ; requires_page_param on calls).
+    ; is_npo_option_type: an `Option` whose sole generic is `ref`/`pointer`,
+    ; i.e. the NPO layout — a bare nullable pointer with no tag. Mirrors
+    ; Emitter.is_npo_option (Emitter.scaly:3801) on a Model.Type.
+    ; `Option[int]` is NOT NPO (it carries a tag).
+    function is_npo_option_type(t: scalyc.compiler.Model.Type) returns bool
+    {
+        if t.name.length <> 1
+            return false
+        let n0 t.name.get 0
+        if n0 = null
+            return false
+        let n (*n0)
+        if n <> "Option"
+            return false
+        if t.generics = null
+            return false
+        let gens (*t.generics)
+        if gens.length = 0
+            return false
+        let inner_ptr gens.get 0
+        if inner_ptr = null
+            return false
+        let inner_type (*inner_ptr)
+        Planner.is_ref_or_pointer_type(inner_type)
+    }
+
+    ; is_npo_option_generic_pointee: `ref[T]?` / `pointer[T]?` whose POINTEE is
+    ; a generic type PARAMETER. This is the one shape where the s113 wrap's
+    ; implicit caller page is provably dead weight, so needs_implicit_return_page
+    ; skips it: a function returning `ref[T]?` cannot CONSTRUCT a T — it has no
+    ; concrete type to construct — so the reference it hands back must point
+    ; into storage that already existed (`this`, a parameter, a global), and no
+    ; caller page is needed to allocate it. That is exactly the stdlib's hot
+    ; container accessors: Vector.get, Array.get, Slice.get, List.get_head,
+    ; HashMap.get, HashMapBuilder.get and their `[]` operators.
+    ;
+    ; A CONCRETE pointee is deliberately NOT exempt, and the reason is measured
+    ; rather than cautious. `ref[Vector[X]]?` is the shape that BUILDS its
+    ; result (parser.parse_operand_list, Planner.unify, lookup_method,
+    ; restamp_args, ...), and there the blanket page does DOUBLE DUTY: it is
+    ; also what makes promote_tail_operand promote the tail construction to the
+    ; caller page (`f_promote_tail` reads this predicate directly). Drop it for
+    ; those and the result is built on the callee's own frame and handed back
+    ; as a dangling reference — and neither the escape checker nor
+    ; body_returns_value_ctor_as_pointer catches it: parse_operand_list slipped
+    ; through both and failed as a RUNTIME exit 19 (Page.get on an oversized
+    ; page) inside List.add, before the return was ever reached.
+    ;
+    ; Judged on the DECLARED type, so every instantiation of a generic agrees:
+    ; the Model.Function still says T after T is bound to a concrete type.
+    function is_npo_option_generic_pointee(t: scalyc.compiler.Model.Type) returns bool
+    {
+        if Planner.is_npo_option_type(t) = false
+            return false
+        if t.generics = null
+            return false
+        let gens (*t.generics)
+        if gens.length = 0
+            return false
+        let inner_ptr gens.get 0
+        if inner_ptr = null
+            return false
+        let inner (*inner_ptr)
+        ; inner is ref[X] / pointer[X] — extract X and ask whether it is a
+        ; generic parameter (the single-uppercase-letter convention).
+        if inner.generics = null
+            return false
+        let igens (*inner.generics)
+        if igens.length <> 1
+            return false
+        let pointee_ptr igens.get 0
+        if pointee_ptr = null
+            return false
+        let pointee (*pointee_ptr)
+        if pointee.name.length <> 1
+            return false
+        let pn_ptr pointee.name.get 0
+        if pn_ptr = null
+            return false
+        let pn (*pn_ptr)
+        Planner.is_generic_type_param_name(pn)
+    }
+
     function is_ref_or_pointer_type(t: scalyc.compiler.Model.Type) returns bool
     {
         if t.name.length <> 1
