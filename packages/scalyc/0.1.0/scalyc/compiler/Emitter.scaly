@@ -1752,6 +1752,28 @@ define Emitter
             t.name
         }
 
+        ; The first generic argument of `t`, or `t` itself when it has none --
+        ; the type-level sibling of first_generic_name#. Used to peel one
+        ; reference wrapper at a time: Option[ref[T]] -> ref[T] -> T. A single
+        ; exit through one local keeps it clear of the multi-branch by-value
+        ; return hazard (a struct returned from several branches region-
+        ; allocates per site and the merging phi fails llc verification).
+        function first_generic_of(this, t: PlannedType) returns PlannedType
+        {
+            var result t
+            if t.generics <> null
+            {
+                let g (*t.generics)
+                if g.length > 0
+                {
+                    let g0 g.get 0
+                    if g0 <> null
+                        set result: (*g0)
+                }
+            }
+            result
+        }
+
         ; Index of the receiver concept's property named `field_name` (-1 if none).
         ; Used to lower a `^field` page sigil (host is a member, not a local).
         function receiver_field_index(this, field_name: String) returns int
@@ -17453,6 +17475,19 @@ define Emitter
             var is_pointer var_ty_name = "pointer"
             if is_pointer = false
                 set is_pointer: var_ty_name = "ref"
+            ; A `ref[T]?` / `pointer[T]?` arrives as Option[ref[T]] (Modeler
+            ; s113), so the two name tests above miss it and the base falls
+            ; through to the by-value path: current_type becomes map_type of the
+            ; Option, which for an NPO is a bare `ptr`, the struct-typed load
+            ; below is gated on Struct and is skipped, and the chain walk then
+            ; emits `getelementptr inbounds ptr, ptr %r, i32 0, i32 N`.
+            ; LLVMBuildStructGEP2 ACCEPTS that -- its assertion is compiled out
+            ; of a release libLLVM -- so nothing fails here and the BACKEND
+            ; SIGSEGVs instead: `-S` prints the broken GEP with rc 0 while `-o`
+            ; dies wordless with rc 139. The chain's own hops have unwrapped the
+            ; hull since s99; this is the same question asked of the BASE.
+            if is_pointer = false
+                set is_pointer: is_npo_option(var_ty)
             let is_this planned_var.name = "this"
 
             var current_type LLVMTypeRef(null)
@@ -17485,7 +17520,15 @@ define Emitter
                         let inner_opt gens.get 0
                         if inner_opt <> null
                         {
-                            let inner (*inner_opt)
+                            var inner (*inner_opt)
+                            ; Option[ref[T]] / Option[pointer[T]]: generic 0 is
+                            ; the ref/pointer, not the pointee, so one more hop
+                            ; is needed before the layout is in hand. Mirrors the
+                            ; cascade the chain hop runs below.
+                            if inner.name = "ref"
+                                set inner: first_generic_of(inner)
+                            if inner.name = "pointer"
+                                set inner: first_generic_of(inner)
                             set current_type: map_type(inner)
                             ; s138: map_type falls back to opaque-ptr for
                             ; unmaterialised stdlib generics (HashMapBuilder[K,V]

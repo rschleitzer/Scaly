@@ -1,0 +1,127 @@
+; Regression: `set r.field: v` through a value whose type carries the NPO
+; OPTION hull -- `ref[T]?` or `pointer[T]?` -- killed the build wordlessly.
+;
+; emit_member_address decided the base's pointer-ness with two raw name tests
+; ("pointer", "ref"), but `ref[T]?` arrives as Option[ref[T]] (Modeler s113),
+; so the base fell through to the by-value path: current_type became map_type
+; of the Option, which for an NPO is a bare `ptr`; the struct-typed load below
+; is gated on Struct and was skipped; and the chain walk then emitted
+; `getelementptr inbounds ptr, ptr %r, i32 0, i32 N`. LLVMBuildStructGEP2
+; ACCEPTS a non-struct element type -- its assertion is compiled out of a
+; release libLLVM -- so the emitter reported nothing and the BACKEND died:
+; `-S` printed the broken GEP with rc 0, `-o` SIGSEGVed with rc 139 and no
+; file, no line, no message. The chain's own hops had unwrapped the hull since
+; s99; only the BASE had never been asked.
+;
+; The asymmetry that located it: READING (`r.v` as an expression) was correct
+; all along, and only the store crashed.
+;
+; Expected: PASS
+
+define Box (v: int  w: int)
+
+; The two forms that crashed.
+procedure store_ref_opt(r: ref[Box]?)
+    set r.v: 99
+
+procedure store_ptr_opt(r: pointer[Box]?)
+    set r.v: 98
+
+procedure store_w_opt(r: ref[Box]?)
+    set r.w: 42
+
+; The two that always worked -- controls, so a fix that breaks them is caught.
+procedure store_ref(r: ref[Box])
+    set r.v: 97
+
+procedure store_ptr(r: pointer[Box])
+    set r.v: 96
+
+; Reading through the hull was never broken; pin it so the fix stays two-sided.
+function read_ref_opt(r: ref[Box]?) returns int
+    r.v
+
+var b Box(7, 1)
+
+if read_ref_opt(&b) <> 7
+{
+    Console.println "FAIL read through ref[T]? hull"
+    exit 1
+}
+
+store_ref_opt(&b)
+if b.v <> 99
+{
+    Console.println "FAIL store through ref[T]?"
+    exit 1
+}
+
+store_ptr_opt(&b)
+if b.v <> 98
+{
+    Console.println "FAIL store through pointer[T]?"
+    exit 1
+}
+
+store_ref(&b)
+if b.v <> 97
+{
+    Console.println "FAIL store through ref[T]"
+    exit 1
+}
+
+store_ptr(&b)
+if b.v <> 96
+{
+    Console.println "FAIL store through pointer[T]"
+    exit 1
+}
+
+; The NEIGHBOURING field must be untouched -- a wrong element type for the GEP
+; writes at the wrong offset, and a single-field Box could not tell the
+; difference between "right field" and "base of the struct".
+if b.w <> 1
+{
+    Console.println "FAIL neighbouring field clobbered"
+    exit 1
+}
+
+; The second field, through the hull, so the offset itself is exercised.
+store_w_opt(&b)
+if b.w <> 42
+{
+    Console.println "FAIL store to second field through hull"
+    exit 1
+}
+if b.v <> 96
+{
+    Console.println "FAIL first field clobbered by second-field store"
+    exit 1
+}
+
+; The shape that actually carries the class: a ref[T]? handed out by a
+; CONTAINER, written through. `Vector.get` returns ref[T]? -> Option[ref[T]],
+; so this is the same hull arriving from the other direction, and it is the
+; form the corpus is full of. It crashed identically before the fix.
+var items Vector[Box](2)
+let b0 Box(7, 1)
+let b1 Box(8, 2)
+items.put(0, b0)
+items.put(1, b1)
+
+let e items.get(0)
+set e.v: 55
+
+let c0 items.get(0)
+if c0.v <> 55
+{
+    Console.println "FAIL store through a container's ref[T]?"
+    exit 1
+}
+if c0.w <> 1
+{
+    Console.println "FAIL container element's neighbouring field clobbered"
+    exit 1
+}
+
+Console.println "PASS"
