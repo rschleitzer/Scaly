@@ -10611,7 +10611,7 @@ define Planner
                                 if this_ref <> null
                                 {
                                     let this_ty (*this_ref)
-                                    if this_ty.name = "pointer"
+                                    if Planner.is_this_wrapper_name(this_ty.name)
                                     {
                                         if this_ty.generics <> null
                                         {
@@ -16321,7 +16321,7 @@ define Planner
                     if this_ref <> null
                     {
                         let this_ty (*this_ref)
-                        if this_ty.name = "pointer"
+                        if Planner.is_this_wrapper_name(this_ty.name)
                         {
                             if this_ty.generics <> null
                             {
@@ -16640,7 +16640,7 @@ define Planner
                     if this_ref2 <> null
                     {
                         let this_ty2 (*this_ref2)
-                        if this_ty2.name = "pointer"
+                        if Planner.is_this_wrapper_name(this_ty2.name)
                         {
                             if this_ty2.generics <> null
                             {
@@ -27224,18 +27224,25 @@ define Planner
                             ; pointer[T] (struct-by-pointer ABI), so field
                             ; access auto-derefs. Mirrors Planner.cpp:11781-11790.
                             ; EXCEPTION: when `this` is EXPLICITLY declared as a
-                            ; pointer (`this: pointer[X]`, opensp's method idiom),
-                            ; the function already receives a single pointer — the
-                            ; local binding must stay `pointer[X]`, not be wrapped
-                            ; again into `pointer[pointer[X]]` (double indirection
-                            ; whose inner generic is the opaque `pointer`, which
-                            ; the emitter's struct-GEP then SIGSEGVs on). The
-                            ; stdlib's explicit-`this` idiom passes the concept
-                            ; VALUE (`this: BuilderList[T]`), which correctly needs
-                            ; the wrap; only a pointer-typed `this` skips it.
+                            ; borrowed receiver — `this: pointer[X]` (opensp's
+                            ; method idiom) or `this: ref[X]` — the function
+                            ; already receives a single pointer, so the local
+                            ; binding must stay as declared and must NOT be
+                            ; wrapped again into `pointer[pointer[X]]` /
+                            ; `pointer[ref[X]]` (double indirection whose inner
+                            ; generic is the opaque wrapper, which the emitter's
+                            ; struct-GEP then SIGSEGVs on). The stdlib's
+                            ; explicit-`this` idiom passes the concept VALUE
+                            ; (`this: BuilderList[T]`), which correctly needs the
+                            ; wrap; only a borrowed `this` skips it.
+                            ; ★The `ref` half was missing until 2026-08-23 and was
+                            ; SILENT: the double wrap left the implicit-property
+                            ; fallback unwrapping to `ref` instead of X, so a
+                            ; method reading its own field unqualified answered 0
+                            ; with rc 0 — see is_this_wrapper_name.
                             if n = "this"
                             {
-                                if t.name = "pointer"
+                                if Planner.is_this_wrapper_name(t.name)
                                     this.define_parameter(n, t)
                                 else
                                 {
@@ -31702,6 +31709,22 @@ define Planner
     ; ========================================================================
     ; Struct-layout arithmetic.
     ; ========================================================================
+
+    ; is_this_wrapper_name: `this` arrives WRAPPED, and both wrappers mean
+    ; the same thing here -- `pointer[T]` and `ref[T]` alike name a borrowed
+    ; receiver whose pointee is T, and s96 lets either flow into the other.
+    ; The three implicit-this fallbacks (sibling method dispatch, implicit
+    ; property access, the multi-segment chain) unwrap it to find T's members;
+    ; asking only for "pointer" made a `this: ref[T]` method read its own
+    ; fields as 0 with rc 0 and no diagnostic.
+    function is_this_wrapper_name(name: String) returns bool
+    {
+        if name = "pointer"
+            return true
+        if name = "ref"
+            return true
+        false
+    }
 
     ; is_primitive_type_name: matches the set the C++ Planner treats as not
     ; requiring an implicit return-page parameter. Used both for layout

@@ -1,0 +1,95 @@
+; Regression: a method whose receiver is declared `this: ref[T]` sees T's own
+; members unqualified (2026-08-23, the `ref[T]` consolidation, step 3).
+;
+; The defect was SILENT in its worst shape and loud in the others, and both
+; halves came from ONE line in plan_function: a `this` parameter was left
+; unwrapped only when its declared type was named "pointer", so a `ref[T]`
+; receiver was wrapped AGAIN into `pointer[ref[T]]`. The three implicit-this
+; fallbacks then unwrapped that to `ref` -- not to T -- and looked T's members
+; up on a type that has none.
+;
+;   bare field read      answered 0, rc 0, no diagnostic   <- the silent one
+;   field in an operator `unknown identifier: k`
+;   member call on field `function not found: ip.twice`
+;   sibling method call  `function not found: sib`
+;
+; `this.k` was correct throughout, because the member-access chain has unwrapped
+; the pointer/ref/Option cascade since s99 -- only the BASE was never asked.
+; That asymmetry is what hid the class: the qualified spelling is the one a
+; reader reaches for when the unqualified one misbehaves.
+;
+; Expected: PASS
+
+define Inner (n: int)
+{
+    init(a: int) set n: a
+    function twice(this) returns int   n * 2
+}
+
+define Deep (n: int) { init(a: int) set n: a }
+define Mid (d: Deep)  { init(a: Deep) set d: a }
+
+define Box (k: int  ip: pointer[Inner]  m: Mid)
+{
+    ; the silent shape: the whole body is one bare field name
+    function bare(this: ref[Box]) returns int          k
+
+    ; the same field inside an operator expression
+    function in_operator(this: ref[Box]) returns int   k * 3
+
+    ; a member CALL through a field, unqualified
+    function via_field(this: ref[Box]) returns int     ip.twice()
+
+    ; a multi-segment chain rooted at a field, unqualified
+    function via_chain(this: ref[Box]) returns int     m.d.n
+
+    ; an unqualified SIBLING method call
+    function sibling(this: ref[Box]) returns int       bare() + 1
+
+    ; the qualified spellings, which were correct all along -- the control
+    function qualified(this: ref[Box]) returns int     this.k
+
+    ; and the pointer receiver, the shape that always worked
+    function ptr_bare(this: pointer[Box]) returns int  k
+}
+
+var inner Inner(7)
+var b Box(4, &inner, Mid(Deep(5)))
+
+if b.bare() <> 4
+{
+    Console.println "FAIL ref this: bare field read"
+    exit 1
+}
+if b.in_operator() <> 12
+{
+    Console.println "FAIL ref this: field in operator"
+    exit 1
+}
+if b.via_field() <> 14
+{
+    Console.println "FAIL ref this: member call through field"
+    exit 1
+}
+if b.via_chain() <> 5
+{
+    Console.println "FAIL ref this: multi-segment chain"
+    exit 1
+}
+if b.sibling() <> 5
+{
+    Console.println "FAIL ref this: sibling method call"
+    exit 1
+}
+if b.qualified() <> 4
+{
+    Console.println "FAIL ref this: qualified field read"
+    exit 1
+}
+if b.ptr_bare() <> 4
+{
+    Console.println "FAIL pointer this: bare field read"
+    exit 1
+}
+
+Console.println "PASS"
