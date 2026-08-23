@@ -1,0 +1,26 @@
+; Regression: arithmetic on a REFERENCE must be diagnosed, not silently
+; miscompiled (2026-08-23, the `ref[T]` consolidation, step 2).
+;
+; `&x` yields ref[T] since this change -- a borrowed reference is what the
+; address-of operator MEANS, and pointer[T] is the implementor's escape hatch.
+; But a ref carries no element stride: the pointer-arithmetic fallback in
+; collapse_operand_sequence# keys on name = "pointer", so a ref LHS fell
+; through with a fresh type var and emit_intrinsic_binary_op's GEP used BYTE
+; stride. Measured on a two-field struct: `&b + 1` stepped 1 byte where the
+; struct is 16, with rc 0 and no diagnostic anywhere.
+;
+; That is why the diagnostic had to land in the SAME commit as `&`-yields-ref:
+; between the two halves the whole tree would compile silently wrong at every
+; site that does pointer arithmetic on an address-of result.
+;
+; The deliberate exit is a cast -- see ref_address_of.scaly, which proves the
+; stride comes back as 16.
+;
+; xfail: arithmetic on a reference
+
+define Box (v: int  w: int)
+
+var b Box(1, 2)
+let p &b
+let q p + 1
+Console.println "unreachable"

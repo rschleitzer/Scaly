@@ -8281,9 +8281,9 @@ define Planner
                             if prefix_name = "&"
                             {
                                 if this.operand_addr_is_frame_local(rest_result)
-                                    set rt: Planner.make_pointer_to_local(rest_result.result_type)
+                                    set rt: Planner.make_ref_to_local(rest_result.result_type)
                                 else
-                                    set rt: Planner.make_pointer_type(rest_result.result_type)
+                                    set rt: Planner.make_ref_type(rest_result.result_type)
                             }
                         }
 
@@ -12436,6 +12436,9 @@ define Planner
                                     set combined_type: result.result_type
                             }
                         }
+                        ; A ref LHS reaches here with a fresh type var and would
+                        ; GEP at BYTE stride -- report_ref_arithmetic#.
+                        this.report_ref_arithmetic(result.result_type, rhs.result_type, op_name, result.loc)
 
                         ; s90: built-in comparison operators on primitive
                         ; types return bool. Without this, the fresh type
@@ -20254,6 +20257,53 @@ define Planner
         ; Conservative on anything it cannot judge (no match, no recorded
         ; parameter types): silence beats a false diagnostic in a gate this
         ; broad.
+        ; report_ref_arithmetic#: `&x` yields ref[T], and arithmetic on a
+        ; BORROWED REFERENCE is not a reference operation -- it is pointer
+        ; arithmetic, which is what `pointer[T]` is for. Without this the
+        ; operand falls past the pointer-arith fallback with a fresh type var,
+        ; and emit_intrinsic_binary_op's GEP then uses BYTE stride: measured,
+        ; `&b + 1` on a two-field struct stepped 1 byte instead of 16, with no
+        ; diagnostic anywhere. That silent miscompile is the whole reason this
+        ; check has to land in the SAME commit as `&`-yields-ref. The exit is a
+        ; deliberate cast -- `(&b as pointer[Box]) + 1` -- which restores the
+        ; element stride, so the twelve hand-rolled buffers in opensp/dazzle
+        ; need one line each and the language needs no exception rule.
+        ; ONE statement at the call site: an inline branch in
+        ; collapse_operand_sequence# perturbs its s178 alloca pool (six -g
+        ; checks, measured).
+        function report_ref_arithmetic(
+            this: Planner,
+            lhs_type: PlannedType,
+            rhs_type: PlannedType,
+            op_name: String,
+            loc: Span
+        )
+        {
+            if lhs_type.name <> "ref"
+                return
+            if Planner.is_integer_type(rhs_type.name) = false
+                return
+            var is_arith false
+            if op_name = "+"
+                set is_arith: true
+            if op_name = "-"
+                set is_arith: true
+            if is_arith = false
+                return
+
+            var sb StringBuilder()
+            ; NO backticks in these literals -- an unescaped backtick opens a
+            ; string interpolation, and a lone one is an unterminated embedded
+            ; expression that fails the MODELER, not the parser.
+            sb.append "arithmetic on a reference: operator "
+            sb.append op_name
+            sb.append " needs a pointer, not a ref. A ref is a borrowed "
+            sb.append "reference and carries no element stride; cast it first "
+            sb.append "(x as pointer[T])"
+            let rmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
         function report_receiver_arity(
             this: Planner,
             is_dispatch: bool,
@@ -32281,6 +32331,51 @@ define Planner
             inner.variable
         )
         Planner.make_pointer_type(local_inner)
+    }
+
+    ; make_ref_type#/make_ref_to_local#: the `ref` twins of make_pointer_type#
+    ; and make_pointer_to_local#. `&x` yields a ref, not a pointer: a borrowed
+    ; reference is what the address-of operator MEANS, and `pointer[T]` is the
+    ; implementor's escape hatch (docs/scaly/chapters/types.xml). They differ
+    ; in the mangled prefix -- "R" against "P", encode_type# -- and in nothing
+    ; else at the LLVM level, where both are `ptr`; types_compatible#'s s96
+    ; rule carries a ref into every position a pointer went, so this is a
+    ; change of what the language SAYS, not of what it emits.
+    function make_ref_type(inner: PlannedType) returns PlannedType
+    {
+        var gens Vector[PlannedType](1)
+        gens.put(0, inner)
+        var sb StringBuilder()
+        sb.append "R"
+        sb.append inner.mangled_name
+        PlannedType(
+            Span(0, 0),
+            "ref",
+            sb.to_string(),
+            &gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            "",
+            null
+        )
+    }
+
+    ; The inner is rebuilt FRESH (never a by-value copy of an existing
+    ; result_type -- the s34/s196 union-struct-copy ABI hazard), exactly as
+    ; make_pointer_to_local# does.
+    function make_ref_to_local(inner: PlannedType) returns PlannedType
+    {
+        let local_inner PlannedType(
+            inner.loc,
+            String(inner.name),
+            String(inner.mangled_name),
+            inner.generics,
+            Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
+            inner.origin,
+            String(inner.array_size),
+            inner.variable
+        )
+        Planner.make_ref_type(local_inner)
     }
 
     ; make_ref_to_local_inner#: rebuild a reference-like type (pointer[X] or

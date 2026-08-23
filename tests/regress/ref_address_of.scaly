@@ -1,0 +1,75 @@
+; Regression: `&x` yields ref[T], and everything a pointer used to reach is
+; still reachable (2026-08-23, the `ref[T]` consolidation, step 2).
+;
+; Before this, `&` produced pointer[T] and there was NO expression in the
+; language that produced a ref -- the only producers were the six container
+; accessors that DECLARE it as a return type. A ref could be declared, not
+; made, which is why the corpus rationally chose the pointer 17 550 to 800.
+;
+; Nothing here needs a cast: types_compatible#'s s96 rule is symmetric, so a
+; ref flows into every parameter position a pointer flowed into. The one thing
+; a ref deliberately cannot do is arithmetic -- xfail_ref_arithmetic.scaly --
+; and the exit from that is the cast proven at the bottom.
+;
+; Expected: PASS
+
+define Box (v: int  w: int)
+
+function take_ref(r: ref[Box]) returns int          r.v
+function take_ptr(p: pointer[Box]) returns int      p.v
+function take_ptr_opt(p: pointer[Box]?) returns int p.v
+function take_ref_opt(r: ref[Box]?) returns int     r.v
+
+var b Box(9, 2)
+
+; The address-of result reaches all four parameter shapes.
+if take_ref(&b) <> 9
+{
+    Console.println "FAIL &x -> ref[T]"
+    exit 1
+}
+if take_ptr(&b) <> 9
+{
+    Console.println "FAIL &x -> pointer[T]"
+    exit 1
+}
+if take_ptr_opt(&b) <> 9
+{
+    Console.println "FAIL &x -> pointer[T]?"
+    exit 1
+}
+if take_ref_opt(&b) <> 9
+{
+    Console.println "FAIL &x -> ref[T]?"
+    exit 1
+}
+
+; Reading and WRITING through the address-of result still work.
+; `var`, NOT `let`: a store through a LET-bound address is a separate, still
+; open defect (SIGSEGV, `var` is correct) -- it predates this change and
+; reproduces identically on the compiler before it. Writing `let` here made
+; this test crash and look like a regression of the ref change; it was not.
+var r &b
+if r.v <> 9
+{
+    Console.println "FAIL read through &x"
+    exit 1
+}
+set r.v: 41
+if b.v <> 41
+{
+    Console.println "FAIL store through &x"
+    exit 1
+}
+
+; The deliberate exit: a cast restores pointer arithmetic AND its stride. 16 is
+; the two-field struct's size -- under the ref-stride defect this read 1.
+let p (&b as pointer[Box])
+let q p + 1
+if ((q as size_t) - (p as size_t)) <> (16 as size_t)
+{
+    Console.println "FAIL cast exit does not restore the element stride"
+    exit 1
+}
+
+Console.println "PASS"
