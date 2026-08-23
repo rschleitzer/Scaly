@@ -1,0 +1,23 @@
+; Regression: null may not be assigned to a NON-OPTIONAL reference
+; (2026-08-23, the `ref[T]` consolidation, step 4).
+;
+; `docs/scaly/chapters/types.xml` has always reserved the nullable spelling
+; `ref[T]?` for a slot that may hold nothing, and nothing enforced it: ref and
+; pointer are one representation, so null flowed into either. The step-3 port
+; conversion therefore carried the ports' nullability across unchanged and
+; 1 018 sites began claiming a reference exists where the code stores null.
+;
+; The gate judges the bare `null` LITERAL against a declared `ref[T]` at the
+; four positions where a target type is in hand: a typed binding, a `set`, an
+; explicit `return` and the implicit tail return. The exits are the `?` form
+; (null_into_ref_ok.scaly proves all four) and, where the caller has already
+; proven non-null, the explicit `x as ref[T]` unwrap.
+;
+; xfail: null assigned to a non-optional reference
+
+define Box (v: int)
+
+var b Box(7)
+var r: ref[Box] &b
+set r: null
+Console.println "unreachable"

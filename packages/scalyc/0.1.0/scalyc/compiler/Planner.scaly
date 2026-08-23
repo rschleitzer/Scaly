@@ -20090,6 +20090,10 @@ define Planner
             if is_stack_array_decl = false
                 this.add_equality_constraint(binding_type, collapsed.result_type, b.span)
 
+            ; A declared `ref[T]` initialized with null -- report_null_into_ref#.
+            if is_stack_array_decl = false
+                this.report_null_into_ref(binding_type, collapsed, b.span)
+
             ; Register the local in the current scope.
             if planned_item.name <> null
             {
@@ -20257,6 +20261,67 @@ define Planner
         ; Conservative on anything it cannot judge (no match, no recorded
         ; parameter types): silence beats a false diagnostic in a gate this
         ; broad.
+        ; report_null_into_ref#: `ref[T]` is a BORROWED REFERENCE and the docs
+        ; have always said so -- `docs/scaly/chapters/types.xml` reserves the
+        ; nullable spelling `ref[T]?` for a slot that may hold nothing. Nothing
+        ; enforced it, because `ref` and `pointer` are one representation and
+        ; null flows into either; so the 2026-08-23 port conversion carried the
+        ; ports' nullability across unchanged and 630-odd declarations began
+        ; claiming a reference exists where the code stores null. This makes the
+        ; claim checkable at the four positions where a TARGET TYPE is in hand.
+        ;
+        ; Deliberately narrow: it judges the bare `null` LITERAL against a
+        ; declared `ref[T]`, not the general flow of an Option into a
+        ; non-optional. The wider question -- may a `ref[T]?` be passed where a
+        ; `ref[T]` is declared -- is a separate one and is still allowed, so
+        ; this is a diagnostic about DECLARATIONS, not yet a non-null proof.
+        ; An `Option[ref[T]]` target (the `?` spelling, Modeler s113) is exactly
+        ; what the fix is, so it must never fire on one -- the name test does
+        ; that, since the wrapper arrives named "Option".
+        ;
+        ; ONE statement at each call site: an inline branch in the hot planners
+        ; perturbs the s178 alloca pool (six -g checks, measured).
+        function report_null_into_ref(
+            this: Planner,
+            target_type: PlannedType,
+            source: PlannedOperand,
+            loc: Span
+        )
+        {
+            if target_type.name <> "ref"
+                return
+            if this.operand_is_null_constant(source) = false
+                return
+            ; A GENERIC BODY being instantiated is not a source declaration.
+            ; Measured: the stdlib's six container accessors DO declare the
+            ; honest `returns ref[T]?`, but substituting T loses the Option
+            ; wrapper, so `current_return_type` arrives as a plain
+            ; `ref[ELObj]` and this check fired on `Vector.[]`, `Array.[]`
+            ; and `Slice.[]` -- three stdlib spans, reported once per element
+            ; type and rendered against the ROOT file's text, which is why
+            ; they came out pointing at `use` lines in the port. The wrapper
+            ; loss is its own open question (wish list); until it is answered
+            ; this check judges only what a human WROTE.
+            if instantiating_structures.length > 0
+                return
+            if instantiating_methods.length > 0
+                return
+
+            var sb StringBuilder()
+            ; NO backticks in these literals -- an unescaped backtick opens a
+            ; string interpolation, and a lone one fails the MODELER.
+            let tname Planner.get_readable_name(target_type)
+            sb.append "null assigned to a non-optional reference: "
+            sb.append tname
+            sb.append " is a borrowed reference and must refer to something. "
+            sb.append "Declare the nullable form ("
+            sb.append tname
+            sb.append "?) for a slot that may hold nothing, or a pointer when "
+            sb.append "it is a raw address"
+            let rmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
         ; report_ref_arithmetic#: `&x` yields ref[T], and arithmetic on a
         ; BORROWED REFERENCE is not a reference operation -- it is pointer
         ; arithmetic, which is what `pointer[T]` is for. Without this the
@@ -20457,6 +20522,11 @@ define Planner
                     else
                         0
 
+            ; A `set` whose target is a declared `ref[T]` and whose source is
+            ; the bare null literal -- report_null_into_ref#.
+            if a.target.length > 0
+                this.report_null_into_ref(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc)
+
             ; Unknown identifier as the WHOLE source of a `set`: a bare
             ; single-operand RHS has no binary operator whose collapse
             ; check would catch it — `set p: TBL` with TBL naming a
@@ -20484,6 +20554,13 @@ define Planner
             ; a return type; a `set` action (target present) is never a return.
             ; Mirrors the plan_return# fold — without it the string POINTER
             ; silently truncates into the char return slot.
+            ; The IMPLICIT return: a bare `null` as the tail of a function
+            ; declared `returns ref[T]` -- report_null_into_ref#.
+            if do_tail_check
+                if a.target.length = 0
+                    if this.current_return_type <> null
+                        this.report_null_into_ref((*this.current_return_type), planned_source_collapsed, planned_source_collapsed.loc)
+
             if do_tail_check
                 if a.target.length = 0
                     if this.current_return_type <> null
@@ -24708,6 +24785,11 @@ define Planner
             ; validated CharacterConstant, matching the `as char`, binary-
             ; comparison and annotated-binding folds. Without the fold the
             ; string POINTER silently truncates into the char return slot.
+            ; An explicit `return null` from a function declared `returns
+            ; ref[T]` -- report_null_into_ref#.
+            if this.current_return_type <> null
+                this.report_null_into_ref((*this.current_return_type), planned_collapsed, planned_collapsed.loc)
+
             if this.current_return_type <> null
             {
                 let rrt (*this.current_return_type)

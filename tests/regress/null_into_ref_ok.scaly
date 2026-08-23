@@ -1,0 +1,90 @@
+; Regression: the four positions the null-into-ref gate judges, each written
+; the way the gate asks for, plus the deliberate unwrap
+; (2026-08-23, the `ref[T]` consolidation, step 4).
+;
+; The negative side is xfail_null_into_ref.scaly. This side is the one that
+; matters for the port: 1 018 declarations across opensp+dazzle were made
+; optional by exactly these four shapes, so if any of them stops working the
+; whole conversion is unbuildable.
+;
+; The last case is the escape hatch. Scaly has no flow narrowing, so a value
+; the CALLER has already proven non-null still has optional type; `x as ref[T]`
+; records that proof, the way `(&b as pointer[T])` records the deliberate exit
+; from the arithmetic gate. Six sites in opensp need it.
+;
+; Expected: PASS
+
+define Box (v: int  next: ref[Box]?)
+{
+    init(a: int) { set v: a  set next: null }
+}
+
+; (1) a typed binding initialized with null
+; (2) a `set` of null
+; (3) an explicit `return null`
+; (4) the implicit tail null
+function walk(start: ref[Box]?, want: int) returns ref[Box]?
+{
+    var cur: ref[Box]? start
+    while cur <> null
+    {
+        if cur.v = want
+            return cur
+        set cur: cur.next
+    }
+    null
+}
+
+function first_or_null(b: ref[Box]?) returns ref[Box]?
+{
+    if b = null
+        return null
+    b
+}
+
+; the unwrap: a non-optional parameter reached from a proven-non-null optional
+function needs_plain(b: ref[Box]) returns int   b.v
+
+var b1 Box(1)
+var b2 Box(2)
+set b1.next: &b2
+
+let found walk(&b1, 2)
+if found = null
+{
+    Console.println "FAIL walk found nothing"
+    exit 1
+}
+if found.v <> 2
+{
+    Console.println "FAIL walk found the wrong node"
+    exit 1
+}
+if walk(&b1, 99) <> null
+{
+    Console.println "FAIL walk should answer null"
+    exit 1
+}
+if first_or_null(null) <> null
+{
+    Console.println "FAIL explicit return null"
+    exit 1
+}
+if first_or_null(&b1) = null
+{
+    Console.println "FAIL implicit tail"
+    exit 1
+}
+if needs_plain(found as ref[Box]) <> 2
+{
+    Console.println "FAIL the as-ref unwrap"
+    exit 1
+}
+; a null-defaulted optional FIELD, the 332-site shape
+if b2.next <> null
+{
+    Console.println "FAIL optional field default"
+    exit 1
+}
+
+Console.println "PASS"
