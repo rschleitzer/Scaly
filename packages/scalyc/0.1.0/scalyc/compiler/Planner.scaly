@@ -35963,12 +35963,18 @@ define Planner
         if head.member_access <> null
             return false
         var head_is_type: bool false
+        var head_is_ctor_name: bool false
         choose head.expression
             when t: scalyc.compiler.Model.Type
+            {
                 set head_is_type: true
+                set head_is_ctor_name: Planner.type_name_reads_as_concept(t)
+            }
             else
                 0
         if head_is_type = false
+            return false
+        if head_is_ctor_name = false
             return false
         var tuple_index: size_t 1
         let maybe_matrix ops.get 1
@@ -35988,6 +35994,49 @@ define Planner
                 return true
             else
                 0
+        false
+    }
+    ; Does this Type name read as a CONCEPT rather than as a value? The question
+    ; only arises for a DOTTED head, where Model cannot tell `tab.at(i)` (a
+    ; method call on a field) from `ns.Type(i)` (a qualified construction) --
+    ; the parser emits both as one Type whose `name` carries the segments and
+    ; whose member_access is null (Form B, the shape the tree-builders emit).
+    ;
+    ; A SINGLE segment is always treated as a concept, because an unqualified
+    ; `foo(1)` may be a free-function call that needs our page just as much as a
+    ; construction would; there is nothing to gain by splitting them.
+    ;
+    ; For a dotted head the LAST segment decides, on the capitalisation the
+    ; whole tree already follows (and that `type_mentions_generic_param#` and
+    ; `is_concept_parameter_name#` already depend on): `Lifetime.Unspecified`
+    ; and `scaly.containers.String` are constructions, `tab.at` and `d.get_v`
+    ; are calls. This is the ONE place in the page rules where a NAMING
+    ; convention is load-bearing, and it is worth stating why it is worth it:
+    ; without it every accessor that calls a method WITH ARGUMENTS reads as
+    ; allocating and keeps a page it does not need -- which is most of the
+    ; nullable accessors the ports are full of.
+    function type_name_reads_as_concept(t: scalyc.compiler.Model.Type) returns bool
+    {
+        if t.name.length = 0
+            return false
+        if t.name.length = 1
+            return true
+        let last_ptr t.name.get(t.name.length - 1)
+        if last_ptr = null
+            return true
+        let last (*last_ptr)
+        if last.get_length() = 0
+            return true
+        ; the tree's own uppercase test, verbatim from
+        ; is_generic_type_param_name -- a String.get compared against the
+        ; numeric bounds, no char cast. `ch < ("A" as char)` instead crashes
+        ; llc with "Do not know how to promote this operator's operand!".
+        let c last.get 0
+        if c >= 65
+        {
+            if c <= 90
+                return true
+        }
         false
     }
     function operand_may_allocate(op: Operand) returns bool
