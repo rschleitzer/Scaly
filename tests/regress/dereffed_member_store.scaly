@@ -1,0 +1,112 @@
+; Regression: a store through a PARENTHESIZED target must arrive (2026-08-24).
+;
+; `set (*p).v: 77` was a SILENT NO-OP -- rc 0, no diagnostic, and no store at
+; all in the emitted body. The class is wider than the deref: `set (p).v: 55`,
+; parentheses around a plain variable with no star anywhere, was dropped the
+; same way. A parenthesized operand is modeled as a Tuple with ONE anonymous
+; component, and the emitter's assignment-target dispatch has arms for
+; Variable / Call / GlobalRef only -- a Tuple fell into its silent `else`.
+;
+; The asymmetry is the whole defect: in VALUE position the same grouping is
+; CORRECT, because emit_tuple's s160 arm loads the struct out of `(*p)`. So
+; `let x (*p).v` read the right field while `set (*p).v: 77` wrote into that
+; loaded COPY. Reading worked, writing evaporated -- and this class has been
+; paid for twice already (root_pages' heap-trace table, whose comment describes
+; it, and packages/tscaly's SymbolTable.set_entry, where the broken store hid a
+; wrong CALL and the two defects cancelled over a 13 000-case corpus).
+;
+; Fix: collapse_grouping_target# (Planner) peels every grouping level in the
+; target and concatenates the member-access chains, so the store travels the
+; path `set p.v:` already travels; plus the `*`-with-a-chain branch in the
+; Emitter, which must GEP through the deref's ARGUMENT -- emit_call on a `*`
+; hands back a pointer to deref.tmp, i.e. the copy again.
+;
+; Every check writes a DISTINCT value into a DISTINCT field: a store landing at
+; the wrong offset (field 0 is what a whole-pointee store would hit by accident)
+; fails instead of passing.
+;
+; Expected: PASS
+
+define Inner (k: int  m: int)
+define Outer (ip: pointer[Inner]  n: int)
+define Box (v: int  w: int)
+
+var b Box(9, 2)
+var p (&b as pointer[Box])
+
+; The unparenthesized form, which always worked -- it must stay working.
+set p.v: 11
+if b.v <> 11
+{
+    Console.println "FAIL set p.v"
+    exit 1
+}
+
+; Parentheses around a plain pointer variable: no star involved at all.
+set (p).v: 22
+if b.v <> 22
+{
+    Console.println "FAIL set (p).v"
+    exit 1
+}
+
+; The deref form. Field 0 ...
+set (*p).v: 33
+if b.v <> 33
+{
+    Console.println "FAIL set (*p).v"
+    exit 1
+}
+; ... and field 1, which a whole-pointee store cannot hit by accident.
+set (*p).w: 44
+if b.w <> 44
+{
+    Console.println "FAIL set (*p).w"
+    exit 1
+}
+
+; Reading through the grouping was always right and must stay right.
+let rv (*p).v
+if rv <> 33
+{
+    Console.println "FAIL read (*p).v"
+    exit 1
+}
+
+var i Inner(1, 2)
+var o Outer(&i, 3)
+
+; The INNER operand already carries a chain hop; the grouping adds its own.
+; This is the concatenation collapse_grouping_target# performs.
+set (o.ip).k: 55
+if i.k <> 55
+{
+    Console.println "FAIL set (o.ip).k"
+    exit 1
+}
+
+; Deref plus an inner chain, and the second field again.
+set (*o.ip).m: 66
+if i.m <> 66
+{
+    Console.println "FAIL set (*o.ip).m"
+    exit 1
+}
+
+; Nested groupings: one peel is not enough, the collapse loops.
+set ((o.ip)).k: 77
+if i.k <> 77
+{
+    Console.println "FAIL set ((o.ip)).k"
+    exit 1
+}
+
+; The auto-deref chain THROUGH a pointer field, unparenthesized -- unchanged.
+set o.ip.m: 88
+if i.m <> 88
+{
+    Console.println "FAIL set o.ip.m"
+    exit 1
+}
+
+Console.println "PASS"

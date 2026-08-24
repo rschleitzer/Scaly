@@ -17220,6 +17220,35 @@ define Emitter
                             ; Handle dereference assignment like *ptr = value
                             if call.name = "*"
                             {
+                                ; `set (*p).f: v` -- the planner collapses the
+                                ; parenthesized grouping (collapse_grouping_
+                                ; target#), so the target arrives as the `*`
+                                ; call itself CARRYING the field chain. The
+                                ; `call.name <> "*"` branch above must not be
+                                ; reused for it: emit_call on a `*` returns a
+                                ; pointer to a COPY (emit_intrinsic_unary_op
+                                ; materialises deref.tmp for a laid-out struct,
+                                ; which is exactly why the read side works and
+                                ; the write side evaporated). GEP through the
+                                ; deref's ARGUMENT instead -- that pointer IS
+                                ; the address the author named -- so this store
+                                ; lands where `set p.f: v` lands.
+                                if target_op.member_access <> null
+                                    if target_op.member_access.length > 0
+                                        if call.args <> null
+                                            if call.args.length = 1
+                                            {
+                                                let d_arg_opt call.args.get 0
+                                                if d_arg_opt <> null
+                                                {
+                                                    let d_arg d_arg_opt.unwrap()
+                                                    let d_base emit_operand(d_arg)
+                                                    if d_base.handle = null
+                                                        return value
+                                                    let d_pv PlannedVariable(call.loc, call.name, d_arg.result_type, true)
+                                                    return emit_member_assignment(d_base, d_pv, target_op.member_access, value)
+                                                }
+                                            }
                                 if call.args <> null
                                 {
                                     if call.args.length = 1

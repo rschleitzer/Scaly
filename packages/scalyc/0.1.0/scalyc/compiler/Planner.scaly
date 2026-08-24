@@ -20774,6 +20774,121 @@ define Planner
             }
         }
 
+        ; collapse_grouping_target#: a PARENTHESIZED `set` target is a
+        ; GROUPING, not a value. `set (p).v: 55` means what `set p.v: 55`
+        ; means and `set (*p).v: 77` means the store the author wrote -- but
+        ; the emitter's target dispatch has arms for Variable / Call /
+        ; GlobalRef only, so a Tuple target fell into its silent `else` and
+        ; the WHOLE statement was dropped: rc 0, no diagnostic, no store in
+        ; the emitted body at all (measured -- the `set` is simply absent
+        ; from `main`).
+        ;
+        ; In VALUE position the same grouping is CORRECT and that asymmetry
+        ; is the whole defect: emit_tuple's s160 arm loads the struct out of
+        ; `(*p)`, so `let x (*p).v` READS the right field while
+        ; `set (*p).v: 77` writes into that loaded COPY. Reading works,
+        ; writing evaporates.
+        ;
+        ; Unwrap a single ANONYMOUS component holding a single operand and
+        ; hand the inner expression on with the two member-access chains
+        ; CONCATENATED, so the store travels the same path `set p.v:` and
+        ; `set accessor(i).f:` already travel. A NAMED component is a real
+        ; construction, never a grouping, and is left alone.
+        ;
+        ; This also puts the target in front of the checks below that choose
+        ; on its expr -- the unknown-assignment-target gate, the integer /
+        ; float / cstr retypes, and the frame-external STORE analysis, all of
+        ; which a Tuple slipped past.
+        function collapse_grouping_target(this: Planner, operand: PlannedOperand) returns PlannedOperand
+        {
+            ; Peel every grouping LEVEL, outermost first, remembering each one:
+            ; `((o.ip)).k` nests, and a single peel left the doubly-parenthesized
+            ; form still a Tuple and therefore still silently dropped (measured).
+            ; A LOOP rather than recursion on purpose -- the result carries `&`
+            ; of a local, and across recursive frames that lands on the wrong
+            ; page; and the returned struct is built EXACTLY ONCE, per the
+            ; small-struct-return rule.
+            var levels Array[PlannedOperand]()
+            var cur: PlannedOperand operand
+            levels.add(cur)
+            var again: bool true
+            while again
+            {
+                set again: false
+                choose cur.expr
+                    when tup: PlannedTuple
+                    {
+                        if tup.components <> null
+                        {
+                            let comps (*tup.components)
+                            if comps.length = 1
+                            {
+                                let cp_ptr comps.get 0
+                                if cp_ptr <> null
+                                {
+                                    let cp (*cp_ptr)
+                                    ; A NAMED component is a real construction,
+                                    ; never a grouping -- leave it alone.
+                                    if cp.name = null
+                                        if cp.value <> null
+                                        {
+                                            let vops (*cp.value)
+                                            if vops.length = 1
+                                            {
+                                                let in_ptr vops.get 0
+                                                if in_ptr <> null
+                                                {
+                                                    set cur: (*in_ptr)
+                                                    levels.add(cur)
+                                                    set again: true
+                                                }
+                                            }
+                                        }
+                                }
+                            }
+                        }
+                    }
+                    else
+                        0
+            }
+            if levels.length = 1
+                return operand
+
+            ; Concatenate INNERMOST-first: `(o.ip).k` is o's chain [ip] followed
+            ; by the grouping's own [k]. levels holds them outermost-first, so
+            ; walk it backwards.
+            var merged Array[PlannedMemberAccess]()
+            var li: size_t levels.length
+            while li > 0
+            {
+                set li: li - 1
+                let lv_ptr levels.get li
+                if lv_ptr <> null
+                {
+                    let lv (*lv_ptr)
+                    if lv.member_access <> null
+                    {
+                        let lc (*lv.member_access)
+                        var ci: size_t 0
+                        while ci < lc.length
+                        {
+                            let e_ptr lc.get ci
+                            if e_ptr <> null
+                                merged.add(*e_ptr)
+                            set ci: ci + 1
+                        }
+                    }
+                }
+            }
+            var merged_holder Vector[PlannedMemberAccess](merged)
+            PlannedOperand(
+                operand.loc,
+                cur.expr,
+                &merged_holder,
+                operand.result_type
+            )
+        }
+
         function plan_action(this: Planner, a: Action) returns PlannedAction
         {
             ; Read-and-clear the tail-return flag: only THIS (outermost body)
@@ -20790,7 +20905,9 @@ define Planner
             var planned_source_collapsed this.collapse_operand_sequence(planned_source_flat)
 
             let planned_target_flat this.plan_operands(a.target)
-            let planned_target_collapsed this.collapse_operand_sequence(planned_target_flat)
+            let planned_target_grouped this.collapse_operand_sequence(planned_target_flat)
+            ; A parenthesized target is a GROUPING -- collapse_grouping_target#.
+            let planned_target_collapsed this.collapse_grouping_target(planned_target_grouped)
 
             ; Unknown assignment target: a `set` target that collapsed to a
             ; bare Type expression names nothing assignable — locals plan
