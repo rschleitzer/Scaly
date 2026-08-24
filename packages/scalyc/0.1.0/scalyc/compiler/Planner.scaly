@@ -31056,7 +31056,7 @@ define Planner
                     if Planner.body_references_rp(f2)
                         set is_direct: true
                     if f2.returns_ <> null
-                        if Planner.is_ref_or_pointer_type((*f2.returns_))
+                        if Planner.is_reference_shaped_return((*f2.returns_))
                             if Planner.body_has_call_lifetime(f2)
                                 set is_direct: true
                     if Planner.body_returns_value_ctor_as_pointer(f2)
@@ -31085,7 +31085,7 @@ define Planner
                     if Planner.body_references_rp(f3)
                         set f3_direct: true
                     if f3.returns_ <> null
-                        if Planner.is_ref_or_pointer_type((*f3.returns_))
+                        if Planner.is_reference_shaped_return((*f3.returns_))
                             if Planner.body_has_call_lifetime(f3)
                                 set f3_direct: true
                     if Planner.body_returns_value_ctor_as_pointer(f3)
@@ -34433,8 +34433,36 @@ define Planner
         if Planner.is_generic_type_param_name(joined)
             return false
 
-        if Planner.is_npo_option_generic_pointee(ret_type)
-            return false
+        ; An NPO return -- `ref[T]?` / `pointer[T]?`, which s113 wraps into
+        ; `Option[ref[T]]` at Model level -- hands back a REFERENCE, and the
+        ; return TYPE cannot say whether the pointee needs storage. This rule
+        ; used to answer YES for every one of them, which is where the tree's
+        ; ABI rule comes from ("spell a nullable return `pointer[T]`"): the
+        ; honest spelling cost a caller page, and a region frame is contagious
+        ; across the whole function.
+        ;
+        ; The page was never a decision about NPO. It is a stage-0 artifact --
+        ; Modeler's s113 comment says the wrap exists SO THAT this rule fires
+        ; and the mangle matches what libscaly.a defines. The question that
+        ; actually matters is whether the BODY allocates anything, and that is
+        ; a body question, so ask the body. Everything the body scan cannot
+        ; account for answers YES (see body_may_allocate), and the other six
+        ; rules of function_needs_caller_page still run on top of this one, so
+        ; a `#` in the body, a returned page-needing call or a stored-away
+        ; argument each still grant the page on their own.
+        if Planner.is_npo_option_type(ret_type)
+        {
+            ; A GENERIC pointee is proven without looking at the body at all --
+            ; such a function cannot construct a T, so keep that as the fast
+            ; path. Dropping it and letting the body scan answer instead costs
+            ; the 2026-08-23 win for HashMap/HashMapBuilder.get, whose bodies
+            ; call an unqualified `hash(...)` -- a shape the scan cannot tell
+            ; from a construction and therefore reads as allocating (measured:
+            ; 7 stdlib symbols took their page back).
+            if Planner.is_npo_option_generic_pointee(ret_type)
+                return false
+            return Planner.body_may_allocate(func)
+        }
 
         true
     }
@@ -34484,6 +34512,18 @@ define Planner
         Planner.is_ref_or_pointer_type(inner_type)
     }
 
+    ; is_reference_shaped_return: a return type that hands back a REFERENCE
+    ; rather than a value -- `ref[T]`, `pointer[T]`, and the NPO forms
+    ; `ref[T]?` / `pointer[T]?`, which arrive here as `Option[ref[T]]` because
+    ; s113 wraps every `T?` at Model level.
+    ;
+    ; The wrapper carries no tag and no storage, so every rule that asks "is
+    ; this a reference return?" has to ask THROUGH it. The three page rules
+    ; that gate on it -- rule 4's `#`-in-body scan plus its two prepass copies,
+    ; and body_returns_page_needing_call -- were blind to the NPO forms all
+    ; along, and it never showed because rule 1 claimed them unconditionally.
+    ; It shows the moment that claim becomes conditional: an NPO builder would
+    ; keep its `#` construction and lose the page it allocates on.
     ; is_npo_option_generic_pointee: `ref[T]?` / `pointer[T]?` whose POINTEE is
     ; a generic type PARAMETER. This is the one shape where the s113 wrap's
     ; implicit caller page is provably dead weight, so needs_implicit_return_page
@@ -34539,6 +34579,13 @@ define Planner
             return false
         let pn (*pn_ptr)
         Planner.is_generic_type_param_name(pn)
+    }
+
+    function is_reference_shaped_return(t: scalyc.compiler.Model.Type) returns bool
+    {
+        if Planner.is_ref_or_pointer_type(t)
+            return true
+        Planner.is_npo_option_type(t)
     }
 
     function is_ref_or_pointer_type(t: scalyc.compiler.Model.Type) returns bool
@@ -35528,6 +35575,276 @@ define Planner
         false
     }
 
+    ; ---- allocation scan ------------------------------------------------------
+    ; Does this body allocate ANYTHING? It is the question the caller-page rule
+    ; for an NPO return has to ask, and asking it is what lets `ref[T]?` stop
+    ; costing a page (see needs_implicit_return_page).
+    ;
+    ; ★★★The POLARITY is the load-bearing part and it is the opposite of what a
+    ; "detect the shapes that need a page" rule would do. A MISS in that
+    ; direction is a page that is not granted, i.e. a value built on a frame
+    ; that dies -- a memory fault, not a diagnostic, and the escape checker does
+    ; not catch them all (the generated `parse_*_list` family slips through it).
+    ; So this scan proves the NEGATIVE and every gap answers YES: an expression
+    ; arm it does not explicitly account for as allocation-free is treated as
+    ; allocating. Adding a new Expression arm therefore keeps the page by
+    ; default and cannot silently drop one.
+    ;
+    ; A CONSTRUCTION is recognised on the operand SEQUENCE, not on one operand:
+    ; a member-access-free Type head, optionally a Matrix (the generic
+    ; arguments -- the s107 split, three operands, not two), then a Tuple. That
+    ; same shape is also an unqualified free-function CALL, which Model cannot
+    ; tell apart from a construction, and it is deliberately NOT told apart:
+    ; both may need our page, so both keep it. A METHOD call (`d.get_value()`)
+    ; carries a member_access and is therefore not this shape -- that is what
+    ; leaves the pure accessors, the target class, exempt.
+    function body_may_allocate(func: Function) returns bool
+    {
+        if Planner.is_extern_impl(func.implementation)
+            return false
+        choose func.implementation
+            when a: Action
+                return Planner.action_may_allocate(a)
+            else
+                0
+        true
+    }
+    function action_may_allocate(a: Action) returns bool
+    {
+        if Planner.ops_may_allocate(a.source)
+            return true
+        Planner.ops_may_allocate(a.target)
+    }
+    function binding_may_allocate(b: Binding) returns bool
+    {
+        Planner.ops_may_allocate(b.operation)
+    }
+    function statement_may_allocate(st: Statement) returns bool
+    {
+        choose st
+            when a: Action
+                return Planner.action_may_allocate(a)
+            when bi: Binding
+                return Planner.binding_may_allocate(bi)
+            when br: Break
+                return Planner.ops_may_allocate(br.result)
+            when co: Continue
+                return false
+            when re: Return
+                return Planner.ops_may_allocate(re.result)
+            when th: Throw
+                return Planner.ops_may_allocate(th.result)
+            else
+                0
+        true
+    }
+    function ops_may_allocate(ops: Vector[Operand]) returns bool
+    {
+        if Planner.ops_are_construction(ops)
+            return true
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+                if Planner.operand_may_allocate((*op_ptr))
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    ; The construction/call SHAPE: Type head without member access, an optional
+    ; Matrix of generic arguments, then a Tuple.
+    function ops_are_construction(ops: Vector[Operand]) returns bool
+    {
+        if ops.length < 2
+            return false
+        let head_ptr ops.get 0
+        if head_ptr = null
+            return false
+        let head (*head_ptr)
+        if head.member_access <> null
+            return false
+        var head_is_type: bool false
+        choose head.expression
+            when t: scalyc.compiler.Model.Type
+                set head_is_type: true
+            else
+                0
+        if head_is_type = false
+            return false
+        var tuple_index: size_t 1
+        let maybe_matrix ops.get 1
+        if maybe_matrix <> null
+            choose (*maybe_matrix).expression
+                when mx: Matrix
+                    set tuple_index: 2
+                else
+                    0
+        if tuple_index >= ops.length
+            return false
+        let cand ops.get tuple_index
+        if cand = null
+            return false
+        choose (*cand).expression
+            when tup: Tuple
+                return true
+            else
+                0
+        false
+    }
+    function operand_may_allocate(op: Operand) returns bool
+    {
+        choose op.expression
+            ; allocation-free leaves. A bare Type is a NAME reference -- the
+            ; construction it may head is decided on the sequence, above. Is/As/
+            ; SizeOf/AlignOf carry a Type and no nested operand, because the
+            ; value they act on is the PRECEDING operand of the same flat
+            ; sequence, which this walk visits on its own.
+            when c: Constant
+                return false
+            when t: scalyc.compiler.Model.Type
+                return false
+            when isx: Is
+                return false
+            when asx: As
+                return false
+            when so: SizeOf
+                return false
+            when ao: AlignOf
+                return false
+            when tup: Tuple
+            {
+                var i: size_t 0
+                while i < tup.components.length
+                {
+                    let cp tup.components.get i
+                    if cp <> null
+                        if Planner.ops_may_allocate((*cp).value)
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
+            when mx: Matrix
+            {
+                var i: size_t 0
+                while i < mx.operations.length
+                {
+                    let rp_ptr mx.operations.get i
+                    if rp_ptr <> null
+                        if Planner.ops_may_allocate((*rp_ptr))
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
+            when b: Block
+            {
+                var i: size_t 0
+                while i < b.statements.length
+                {
+                    let sp b.statements.get i
+                    if sp <> null
+                        if Planner.statement_may_allocate(sp.unwrap())
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
+            when iff: scalyc.compiler.Model.If
+            {
+                if Planner.ops_may_allocate(iff.condition)
+                    return true
+                if Planner.statement_may_allocate(iff.consequent)
+                    return true
+                if iff.alternative <> null
+                    if Planner.statement_may_allocate((*iff.alternative))
+                        return true
+                return false
+            }
+            when ch: Choose
+            {
+                if Planner.ops_may_allocate(ch.condition)
+                    return true
+                var i: size_t 0
+                while i < ch.cases.length
+                {
+                    let wp ch.cases.get i
+                    if wp <> null
+                        if Planner.statement_may_allocate((*wp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if ch.alternative <> null
+                    if Planner.statement_may_allocate((*ch.alternative))
+                        return true
+                return false
+            }
+            when m: Match
+            {
+                if Planner.ops_may_allocate(m.condition)
+                    return true
+                var i: size_t 0
+                while i < m.branches.length
+                {
+                    let bp m.branches.get i
+                    if bp <> null
+                        if Planner.statement_may_allocate((*bp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if m.alternative <> null
+                    if Planner.statement_may_allocate((*m.alternative))
+                        return true
+                return false
+            }
+            when fo: For
+            {
+                if Planner.ops_may_allocate(fo.expression)
+                    return true
+                if Planner.action_may_allocate(fo.action)
+                    return true
+                return false
+            }
+            when wh: While
+            {
+                if Planner.binding_may_allocate(wh.condition)
+                    return true
+                if Planner.action_may_allocate(wh.action)
+                    return true
+                return false
+            }
+            when rep: Repeat
+            {
+                if Planner.action_may_allocate(rep.action)
+                    return true
+                return false
+            }
+            when tr: Try
+            {
+                if Planner.binding_may_allocate(tr.binding)
+                    return true
+                var i: size_t 0
+                while i < tr.catches.length
+                {
+                    let wp tr.catches.get i
+                    if wp <> null
+                        if Planner.statement_may_allocate((*wp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if tr.alternative <> null
+                    if Planner.statement_may_allocate((*tr.alternative))
+                        return true
+                return false
+            }
+            else
+                0
+        ; New, Lambda, and any arm added later: assume it allocates.
+        true
+    }
+
     ; WP7: does a `pointer[T]`-returning function's body TAIL construct T by
     ; value (no lifetime marker)? `function create() returns pointer[Node]
     ; { Node(data) }`. The emitter would otherwise take the address of a stack
@@ -35546,7 +35863,20 @@ define Planner
             return false
         if func.returns_ = null
             return false
-        let rt (*func.returns_)
+        var rt: scalyc.compiler.Model.Type (*func.returns_)
+        ; Peel s113's `Option[...]` wrapper: an NPO return IS a reference
+        ; return, and the pointee -- not the wrapper -- is what this asks about.
+        if Planner.is_npo_option_type(rt)
+            if rt.generics <> null
+            {
+                let ogens (*rt.generics)
+                if ogens.length > 0
+                {
+                    let oinner ogens.get 0
+                    if oinner <> null
+                        set rt: (*oinner)
+                }
+            }
         ; return type must be pointer[T]; extract the pointee name.
         if Planner.is_ref_or_pointer_type(rt) = false
             return false
@@ -36851,7 +37181,7 @@ define Planner
         if func.returns_ = null
             return false
         let rt (*func.returns_)
-        if Planner.is_ref_or_pointer_type(rt) = false
+        if Planner.is_reference_shaped_return(rt) = false
             return false
         choose func.implementation
             when a: Action
@@ -37147,7 +37477,7 @@ define Planner
         ; `#` decl (the `#` needs an rp), so page_parameter is set and has_page is
         ; true regardless.
         if func.returns_ <> null
-            if Planner.is_ref_or_pointer_type((*func.returns_))
+            if Planner.is_reference_shaped_return((*func.returns_))
                 if Planner.body_has_call_lifetime(func)
                     return true
         ; WP7: a `pointer[T]`-return whose tail constructs T by value needs the
