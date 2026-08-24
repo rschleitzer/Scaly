@@ -192246,9 +192246,9 @@ if.end35:                                         ; preds = %if.then29
 
 define linkonce_odr void @_ZN7Planner13plan_operatorEPN4scaly6memory4PageE8Operator6OptionIR11PlannedTypeE(ptr noalias sret(%_Z15PlannedOperator) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %tuple191 = alloca %_Z15PlannedOperator, align 8
-  %sret.result180 = alloca { ptr }, align 8
-  %sret.result176 = alloca %_Z21PlannedImplementation, align 8
+  %tuple195 = alloca %_Z15PlannedOperator, align 8
+  %sret.result184 = alloca { ptr }, align 8
+  %sret.result179 = alloca %_Z21PlannedImplementation, align 8
   %box.src173 = alloca %_Z11PlannedType, align 8
   %wrapped_frame171 = alloca { ptr, ptr }, align 8
   %throws_type = alloca ptr, align 8
@@ -192671,50 +192671,57 @@ if.then166:                                       ; preds = %if.end157
   br label %if.end167
 
 if.end167:                                        ; preds = %if.then166, %if.end157
-  %field.inplace177 = getelementptr inbounds nuw %_Z8Operator, ptr %3, i32 0, i32 7
-  call void @_ZN7Planner19plan_implementationEPN4scaly6memory4PageE14Implementation(ptr noalias sret(%_Z21PlannedImplementation) %sret.result176, ptr %1, ptr %2, ptr %field.inplace177)
+  %load.struct176 = load %_Z7Planner, ptr %2, align 8
+  %current_return_type = extractvalue %_Z7Planner %load.struct176, 12
+  %return_type177 = load ptr, ptr %return_type, align 8
+  %current_return_type178 = getelementptr inbounds nuw %_Z7Planner, ptr %2, i32 0, i32 12
+  store ptr %return_type177, ptr %current_return_type178, align 8
+  %field.inplace180 = getelementptr inbounds nuw %_Z8Operator, ptr %3, i32 0, i32 7
+  call void @_ZN7Planner19plan_implementationEPN4scaly6memory4PageE14Implementation(ptr noalias sret(%_Z21PlannedImplementation) %sret.result179, ptr %1, ptr %2, ptr %field.inplace180)
+  %current_return_type181 = getelementptr inbounds nuw %_Z7Planner, ptr %2, i32 0, i32 12
+  store ptr %current_return_type, ptr %current_return_type181, align 8
   call void @_ZN7Planner9pop_scopeEv(ptr %2)
-  %type_substitutions178 = getelementptr inbounds nuw %_Z7Planner, ptr %2, i32 0, i32 3
-  %length179 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %type_substitutions178, i32 0, i32 0
-  store i64 %length, ptr %length179, align 8
-  %field.inplace181 = getelementptr inbounds nuw %_Z8Operator, ptr %3, i32 0, i32 2
+  %type_substitutions182 = getelementptr inbounds nuw %_Z7Planner, ptr %2, i32 0, i32 3
+  %length183 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %type_substitutions182, i32 0, i32 0
+  store i64 %length, ptr %length183, align 8
+  %field.inplace185 = getelementptr inbounds nuw %_Z8Operator, ptr %3, i32 0, i32 2
   %addr.heap = load ptr, ptr %tn_holder, align 8
-  %op_has_page182 = load i1, ptr %op_has_page, align 1
-  call void @_ZN7Planner21mangle_operator_pagedEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemEE6OptionIR11PlannedTypeEb(ptr noalias sret({ ptr }) %sret.result180, ptr %1, ptr %field.inplace181, ptr %addr.heap, ptr %4, i1 %op_has_page182)
-  %load.struct183 = load %_Z8Operator, ptr %3, align 8
-  %span184 = extractvalue %_Z8Operator %load.struct183, 0
-  %load.struct185 = load %_Z8Operator, ptr %3, align 8
-  %private_ = extractvalue %_Z8Operator %load.struct185, 1
-  %load.struct186 = load %_Z8Operator, ptr %3, align 8
-  %name187 = extractvalue %_Z8Operator %load.struct186, 2
-  %addr.heap188 = load ptr, ptr %tn_holder, align 8
-  %return_type189 = load ptr, ptr %return_type, align 8
-  %throws_type190 = load ptr, ptr %throws_type, align 8
-  %tuple.field192 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 0
-  store %_Z4Span %span184, ptr %tuple.field192, align 1
-  %tuple.field193 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 1
-  store i1 %private_, ptr %tuple.field193, align 1
-  %tuple.field194 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 2
-  store { ptr } %name187, ptr %tuple.field194, align 1
-  %field.load = load { ptr }, ptr %sret.result180, align 8
-  %tuple.field195 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 3
-  store { ptr } %field.load, ptr %tuple.field195, align 1
-  %tuple.field196 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 4
-  store ptr %addr.heap188, ptr %tuple.field196, align 1
-  %tuple.field197 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 5
-  store ptr %return_type189, ptr %tuple.field197, align 1
-  %tuple.field198 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 6
-  store ptr %throws_type190, ptr %tuple.field198, align 1
-  %field.load199 = load %_Z21PlannedImplementation, ptr %sret.result176, align 1
-  %tuple.field200 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 7
-  store %_Z21PlannedImplementation %field.load199, ptr %tuple.field200, align 1
-  %tuple.field201 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 8
-  store ptr null, ptr %tuple.field201, align 1
-  %tuple.field202 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple191, i32 0, i32 9
-  store ptr null, ptr %tuple.field202, align 1
-  %tuple.val203 = load %_Z15PlannedOperator, ptr %tuple191, align 8
+  %op_has_page186 = load i1, ptr %op_has_page, align 1
+  call void @_ZN7Planner21mangle_operator_pagedEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemEE6OptionIR11PlannedTypeEb(ptr noalias sret({ ptr }) %sret.result184, ptr %1, ptr %field.inplace185, ptr %addr.heap, ptr %4, i1 %op_has_page186)
+  %load.struct187 = load %_Z8Operator, ptr %3, align 8
+  %span188 = extractvalue %_Z8Operator %load.struct187, 0
+  %load.struct189 = load %_Z8Operator, ptr %3, align 8
+  %private_ = extractvalue %_Z8Operator %load.struct189, 1
+  %load.struct190 = load %_Z8Operator, ptr %3, align 8
+  %name191 = extractvalue %_Z8Operator %load.struct190, 2
+  %addr.heap192 = load ptr, ptr %tn_holder, align 8
+  %return_type193 = load ptr, ptr %return_type, align 8
+  %throws_type194 = load ptr, ptr %throws_type, align 8
+  %tuple.field196 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 0
+  store %_Z4Span %span188, ptr %tuple.field196, align 1
+  %tuple.field197 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 1
+  store i1 %private_, ptr %tuple.field197, align 1
+  %tuple.field198 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 2
+  store { ptr } %name191, ptr %tuple.field198, align 1
+  %field.load = load { ptr }, ptr %sret.result184, align 8
+  %tuple.field199 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 3
+  store { ptr } %field.load, ptr %tuple.field199, align 1
+  %tuple.field200 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 4
+  store ptr %addr.heap192, ptr %tuple.field200, align 1
+  %tuple.field201 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 5
+  store ptr %return_type193, ptr %tuple.field201, align 1
+  %tuple.field202 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 6
+  store ptr %throws_type194, ptr %tuple.field202, align 1
+  %field.load203 = load %_Z21PlannedImplementation, ptr %sret.result179, align 1
+  %tuple.field204 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 7
+  store %_Z21PlannedImplementation %field.load203, ptr %tuple.field204, align 1
+  %tuple.field205 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 8
+  store ptr null, ptr %tuple.field205, align 1
+  %tuple.field206 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %tuple195, i32 0, i32 9
+  store ptr null, ptr %tuple.field206, align 1
+  %tuple.val207 = load %_Z15PlannedOperator, ptr %tuple195, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store %_Z15PlannedOperator %tuple.val203, ptr %0, align 1
+  store %_Z15PlannedOperator %tuple.val207, ptr %0, align 1
   ret void
 }
 
@@ -212679,12 +212686,12 @@ if.end56:                                         ; preds = %if.then55, %if.then
 define linkonce_odr void @_ZN7Planner20report_null_into_refE11PlannedType14PlannedOperand4Span(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %wrapped_frame = alloca { ptr, ptr }, align 8
-  %sret.result23 = alloca { ptr }, align 8
-  %arg.tmp22 = alloca { ptr }, align 8
-  %arg.tmp20 = alloca { ptr }, align 8
-  %arg.tmp17 = alloca { ptr }, align 8
+  %sret.result16 = alloca { ptr }, align 8
   %arg.tmp15 = alloca { ptr }, align 8
-  %arg.tmp12 = alloca { ptr }, align 8
+  %arg.tmp13 = alloca { ptr }, align 8
+  %arg.tmp10 = alloca { ptr }, align 8
+  %arg.tmp8 = alloca { ptr }, align 8
+  %arg.tmp5 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -212712,62 +212719,40 @@ if.then2:                                         ; preds = %if.end
   ret void
 
 if.end3:                                          ; preds = %if.end
-  %load.struct = load %_Z7Planner, ptr %0, align 8
-  %instantiating_structures = extractvalue %_Z7Planner %load.struct, 31
-  %length = extractvalue %_Z5ArrayI6StringE %instantiating_structures, 0
-  %gt = icmp ugt i64 %length, 0
-  br i1 %gt, label %if.then4, label %if.end5
-
-if.then4:                                         ; preds = %if.end3
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret void
-
-if.end5:                                          ; preds = %if.end3
-  %load.struct6 = load %_Z7Planner, ptr %0, align 8
-  %instantiating_methods = extractvalue %_Z7Planner %load.struct6, 32
-  %length7 = extractvalue %_Z5ArrayI6StringE %instantiating_methods, 0
-  %gt8 = icmp ugt i64 %length7, 0
-  br i1 %gt8, label %if.then9, label %if.end10
-
-if.then9:                                         ; preds = %if.end5
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret void
-
-if.end10:                                         ; preds = %if.end5
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   call void @_ZN7Planner17get_readable_nameEPN4scaly6memory4PageE11PlannedType(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %1)
+  %sb4 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.853 }, ptr %arg.tmp5, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %arg.tmp5)
+  %sb6 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %sret.result)
+  %sb7 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.854 }, ptr %arg.tmp8, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %arg.tmp8)
+  %sb9 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.855 }, ptr %arg.tmp10, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb9, ptr %arg.tmp10)
   %sb11 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.853 }, ptr %arg.tmp12, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %arg.tmp12)
-  %sb13 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb13, ptr %sret.result)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result)
+  %sb12 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.856 }, ptr %arg.tmp13, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb12, ptr %arg.tmp13)
   %sb14 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.854 }, ptr %arg.tmp15, align 1
+  store { ptr } { ptr @.sconst.857 }, ptr %arg.tmp15, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %arg.tmp15)
-  %sb16 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.855 }, ptr %arg.tmp17, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb16, ptr %arg.tmp17)
-  %sb18 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb18, ptr %sret.result)
-  %sb19 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.856 }, ptr %arg.tmp20, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb19, ptr %arg.tmp20)
-  %sb21 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.857 }, ptr %arg.tmp22, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb21, ptr %arg.tmp22)
-  %sb24 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result23, ptr %frame, ptr %sb24)
+  %sb17 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %frame, ptr %sb17)
   %own_page = call ptr @_Z3getPv(ptr %0)
   store ptr %own_page, ptr %wrapped_frame, align 8
   %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
   store ptr null, ptr %wrapped.parent, align 8
-  %forced_page25 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region26 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1E6String(ptr %struct.region26, ptr %sret.result23)
-  call void @_ZN7Planner14add_diagnosticE4Span6String(ptr %0, ptr %3, ptr %struct.region26)
+  %forced_page18 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region19 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1E6String(ptr %struct.region19, ptr %sret.result16)
+  call void @_ZN7Planner14add_diagnosticE4Span6String(ptr %0, ptr %3, ptr %struct.region19)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
