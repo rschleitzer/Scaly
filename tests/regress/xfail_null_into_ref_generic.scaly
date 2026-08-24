@@ -1,0 +1,44 @@
+; xfail: null assigned to a non-optional reference
+;
+; A GENERIC body that declares `returns ref[T]` and returns null is a lie about
+; a declaration, exactly as a concrete one is, and nothing pinned that half.
+;
+; ★ It is reported 3 times: the TEMPLATE pass names `ref[T]` and each
+; instantiation names `ref[Thing]`, all at the same source line. That
+; duplication is the measured price of dropping the instantiating-body
+; exemption, and it was accepted because that exemption also MASKED a stale
+; `current_return_type` (see null_into_ref_operator.scaly). One report is
+; prettier; a gate that can fail is worth more.
+;
+; ★★ The exemption's stated reason USED to be that substituting T loses the
+; `Option` wrapper. Measured 2026-08-24: it does not — `plan_type` keeps the
+; wrapper at every one of the 436 `returns ref[T]?` sites in packages/dazzle.
+; The 27 findings that motivated it came from plan_operator never installing
+; `current_return_type`; see tests/regress/null_into_ref_operator.scaly, which
+; IS two-sided.
+;
+; The honest spelling here is `returns pointer[T]`: a nullable RETURN must not
+; be `ref[T]?`, because `Option[ref[T]]` is not primitive and a function
+; returning one acquires an implicit caller page.
+
+define Holder[T]
+(
+    slot: pointer[T]
+)
+{
+    init(p: pointer[T])  set slot: p
+
+    function fetch(this: Holder[T], i: size_t) returns ref[T]
+    {
+        if i > 0
+            return null
+        slot
+    }
+}
+
+define Thing (v: int)
+
+let t Thing(7)
+let h Holder[Thing](&t)
+let r h.fetch(0)
+print "unreachable"

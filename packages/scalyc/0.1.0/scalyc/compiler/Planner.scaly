@@ -5027,6 +5027,31 @@ define Planner
                 let saved_iso_base scope_isolation_base
                 set scope_isolation_base: scope_bindings.length
 
+                ; ...and isolate the SOURCE FILE the same way, for the same
+                ; reason one line up: this body is planned outside the module
+                ; walk that maintains `file`, so every diagnostic raised in it
+                ; was formatted against whatever file the planner happened to
+                ; be in. A `Span` carries only offsets (no file), so the result
+                ; is not an off-by-a-few line -- it is a location in the wrong
+                ; FILE. Measured before the fix: a lying accessor in a
+                ; dependent package reported at `prog.scaly:10:1` in a PROGRAM
+                ; root, a file with nine lines, because the renderer clamps the
+                ; offset to the source length.
+                ;
+                ; ★ The same wrong context is already compensated on the other
+                ; side -- use_vis_check goes deliberately LENIENT while
+                ; instantiating, because "a generic's body is planned
+                ; mid-module and must see its OWN module's names". This answers
+                ; the fact instead of working around it.
+                let saved_ifile this.file
+                let iofile_ptr this.concept_origin_file(concept_name)
+                if iofile_ptr <> null
+                {
+                    let iofile (*iofile_ptr)
+                    if iofile.get_length() > 0
+                        set this.file: String^this(iofile)
+                }
+
                 choose c.definition
                     when s: Structure
                     {
@@ -5042,6 +5067,7 @@ define Planner
                         0
 
                 set scope_isolation_base: saved_iso_base
+                set this.file: saved_ifile
 
                 ; Pop substitutions back to what the caller had.
                 set type_substitutions.length: saved_subst_len
@@ -20312,20 +20338,35 @@ define Planner
                 return
             if this.operand_is_null_constant(source) = false
                 return
-            ; A GENERIC BODY being instantiated is not a source declaration.
-            ; Measured: the stdlib's six container accessors DO declare the
-            ; honest `returns ref[T]?`, but substituting T loses the Option
-            ; wrapper, so `current_return_type` arrives as a plain
-            ; `ref[ELObj]` and this check fired on `Vector.[]`, `Array.[]`
-            ; and `Slice.[]` -- three stdlib spans, reported once per element
-            ; type and rendered against the ROOT file's text, which is why
-            ; they came out pointing at `use` lines in the port. The wrapper
-            ; loss is its own open question (wish list); until it is answered
-            ; this check judges only what a human WROTE.
-            if instantiating_structures.length > 0
-                return
-            if instantiating_methods.length > 0
-                return
+            ; ★★★ THE EXEMPTION THAT STOOD HERE IS GONE, AND ITS REASON WAS
+            ; REFUTED BEFORE IT WAS REMOVED (2026-08-24). It skipped every
+            ; instantiating body, on the stated ground that substituting T
+            ; loses the `Option` wrapper so `current_return_type` arrives as a
+            ; plain `ref[ELObj]`. Measured: the wrapper is NEVER lost --
+            ; `plan_type` keeps it at every one of the 436 `returns ref[T]?`
+            ; sites in packages/dazzle, because `apply_name_substitution`
+            ; preserves the outer name and recurses only into the generics.
+            ; The 27 findings in dazzle (and 3 in opensp) that motivated it
+            ; came from `plan_operator` never installing `current_return_type`
+            ; at all, so `Vector.operator[]`'s `return null` (Vector.scaly:161)
+            ; was judged against the CALLER's return type and printed against
+            ; the CALLER's file. Fixed at its source in plan_operator; with
+            ; that, this check reports ZERO findings over all six package roots.
+            ;
+            ; ★★ REMOVING IT COSTS DUPLICATE REPORTS AND THAT IS ACCEPTED, with
+            ; the number measured rather than guessed: a generic body that
+            ; genuinely lies is reported 3 times instead of once
+            ; (tests/regress/xfail_null_into_ref_generic.scaly -- the template
+            ; pass names `ref[T]`, then each instantiation names `ref[Thing]`,
+            ; all at the same source line). The exemption bought exactly that
+            ; deduplication and nothing else -- it is NOT what makes a generic
+            ; lie reportable, since the template pass is not an instantiation.
+            ; ★★★What it also bought was MASKING: with it in place the stale
+            ; subject above was invisible, so the plan_operator fix could not
+            ; be gated by anything (see tests/regress/null_into_ref_operator.scaly,
+            ; which is two-sided only because these lines are gone). A guard
+            ; that hides the class it sits in front of costs more than the
+            ; duplicates it saves.
 
             var sb StringBuilder()
             ; NO backticks in these literals -- an unescaped backtick opens a
@@ -28758,7 +28799,28 @@ define Planner
                 set throws_type: &^this this.plan_type(tt)
             }
 
+            ; The body must be planned against THIS operator's return type.
+            ; plan_function does the same save/set/restore; plan_operator did
+            ; NOT, so the field still held the ENCLOSING function's return type
+            ; -- plan_operator is reached from a call site inside a function
+            ; body (lazy instantiation), so the enclosing frame is live.
+            ;
+            ; Measured on packages/dazzle before the fix: `Vector.operator[]`'s
+            ; `return null` (Vector.scaly:161) was judged against a caller's
+            ; `ref[StringC]` / `ref[ELObj]` / `ref[ComponentName]` -- 27 false
+            ; diagnostics in dazzle and 3 in opensp, each printed against the
+            ; CALLER's file because a Span carries no file of its own.
+            ;
+            ; ★ The same field also decides the caller-page TAIL PROMOTION
+            ; (`crt.name = "pointer"`, two sites), the char/u8 conversion of a
+            ; tail literal and the escaping-closure detection -- so a stale
+            ; value here is a memory question, not only a diagnostic subject.
+            ; Latent in this tree: all six package roots emit BYTE-IDENTICALLY
+            ; across this fix, because no operator body's tail depends on it.
+            let saved_return_type this.current_return_type
+            set this.current_return_type: return_type
             let planned_impl this.plan_implementation(op.implementation)
+            set this.current_return_type: saved_return_type
 
             this.pop_scope()
             set type_substitutions.length: saved_subst_len
@@ -30370,6 +30432,27 @@ define Planner
         ; Intrinsic concepts (built-in types) are represented by a Type
         ; variant carrying a void placeholder until a proper Intrinsic
         ; variant is added to PlannedDefinition.
+        ; concept_origin_file: the source file the concept of this NAME was
+        ; registered from, or null when the origin is unknown. Read the same way
+        ; lookup_concept reads the concept itself -- the O(1) hashed index, whose
+        ; LAST-wins semantics must match, since a name registered twice (the s95
+        ; Namespace+Structure pair) has to answer with the same entry's file.
+        ; `concept_origin_files` runs in LOCKSTEP with `concepts`.
+        ;
+        ; A nullable RETURN is a `pointer`, never `ref[T]?`: `Option[ref[T]]` is
+        ; not primitive, so returning one would give this function an implicit
+        ; caller page.
+        function concept_origin_file(this: Planner, name: String) returns pointer[String]
+        {
+            let idx concept_index.lookup name
+            if idx < 0
+                return null
+            let i idx as size_t
+            if i >= concept_origin_files.length
+                return null
+            concept_origin_files.get i
+        }
+
         function plan_concept(this: Planner, c: Concept) returns PlannedConcept
         {
             ; s107: generic data-class concepts (Structure with no

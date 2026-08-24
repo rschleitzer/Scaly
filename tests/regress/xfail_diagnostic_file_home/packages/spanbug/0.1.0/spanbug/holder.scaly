@@ -1,0 +1,18 @@
+; A generic accessor that LIES: it declares a NON-optional reference and
+; returns null. The instantiation of its body happens outside the module walk
+; that maintains the planner's current file, so before the fix the diagnostic
+; was rendered against the PROGRAM root's text.
+define Holder[T]
+(
+    slot: pointer[T]
+)
+{
+    init(p: pointer[T])  set slot: p
+
+    function fetch(this: Holder[T], i: size_t) returns ref[T]
+    {
+        if i > 0
+            return null
+        slot
+    }
+}

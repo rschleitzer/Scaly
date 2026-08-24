@@ -1,0 +1,33 @@
+; A container SUBSCRIPT instantiated from inside a function that itself returns
+; a plain `ref[T]` must compile: the operator's `return null` belongs to the
+; operator's own `returns ref[T]?`, not to the caller's return type.
+;
+; plan_operator did not install `current_return_type` around the body, so the
+; field still held the ENCLOSING function's type and report_null_into_ref#
+; judged `Vector.operator[]`'s `return null` against `ref[Box]`. It cost 27
+; false diagnostics in packages/dazzle and 3 in packages/opensp, each printed
+; against the CALLER's file because a Span carries no file of its own.
+;
+; This fixture is the caller shape, minimally: a `ref[Box]`-returning function
+; that reaches a `Vector[Box]` subscript. On the compiler before the fix it is
+; rejected with `null assigned to a non-optional reference: ref[Box]`.
+
+define Box (v: int)
+
+function pick(page, items: ref[Vector[Box]], i: size_t) returns ref[Box]
+{
+    let hit (*items)[i]
+    if hit <> null
+        return hit
+    Box#(0)
+}
+
+var list List[Box]()
+let b1 Box(11)
+list.add b1
+let b2 Box(22)
+list.add b2
+let items Vector[Box](list)
+let got pick(&items, 1)
+if got.v = 22
+    print "PASS"

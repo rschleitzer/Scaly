@@ -1,0 +1,38 @@
+; xfail: spanbug/holder.scaly:15:13: error: null assigned to a non-optional reference
+;
+; env: SCALY_HOME=tests/regress/xfail_diagnostic_file_home
+; args: --no-prelude
+;
+; Regression: a diagnostic raised while planning an INSTANTIATED generic body
+; must name the file that body was WRITTEN in (2026-08-24).
+;
+; A `Span` carries only offsets, no file, so `add_diagnostic` stamps the
+; planner's CURRENT file — and `plan_module#` maintains that only for the module
+; walk. A generic concept is instantiated LAZILY from a call site, i.e. outside
+; that walk, so every diagnostic from an instantiated body was formatted against
+; whatever file the planner happened to be in. In a PROGRAM root that is the
+; program, and the result is not an off-by-a-few line: it is the wrong FILE.
+;
+; ★ The whole assertion of this fixture is the PATH, which is why the xfail
+; substring carries file, line AND column. Before the fix the same compile
+; answers `xfail_diagnostic_file.scaly:10:74` — an offset in THIS file's comment
+; block, which is exactly what makes the class hard to recognise: a well-formed
+; location in the wrong file. (Where the offset exceeds the program's length the
+; renderer clamps it, so a shorter root reports its own last line instead — a
+; nine-line answer for an eight-line file was the shape it was first seen in.)
+;
+; ★★ It needs its own SCALY_HOME, because the wrong file and the right one must
+; be different files — and therefore `--no-prelude`, since a home holding only
+; this fixture's package has no stdlib. The lie itself is in
+; `<home>/packages/spanbug/0.1.0/spanbug/holder.scaly:15`, a `returns ref[T]`
+; whose body answers null; `report_null_into_ref#` is simply a convenient
+; diagnostic to raise from inside an instantiated body.
+
+package spanbug 0.1.0
+use spanbug.holder.Holder
+
+define Thing (v: int)
+
+let t Thing(7)
+let h Holder[Thing](&t)
+let r h.fetch(0)

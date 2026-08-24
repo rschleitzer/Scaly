@@ -28,7 +28,13 @@ for f in tests/regress/*.scaly; do
       # test does not depend on the caller's `ulimit -s`.
       env_args=()
       while IFS= read -r kv; do [ -n "$kv" ] && env_args+=("$kv"); done < <(sed -n 's/^; env: //p' "$f")
-      err=$(env "${env_args[@]}" "$STAGE" -o "$bin" "$f" 2>&1); rc=$?
+      # `; args: <flags>` (repeatable) passes compiler flags. Needed when the
+      # fixture is a PROGRAM ROOT of its own SCALY_HOME: a home holding only the
+      # fixture's package has no prelude, so the compile would fail with
+      # "prelude not found" — the wrong reason for an xfail to pass.
+      arg_args=()
+      while IFS= read -r a; do [ -n "$a" ] && arg_args+=($a); done < <(sed -n 's/^; args: //p' "$f")
+      err=$(env "${env_args[@]}" "$STAGE" "${arg_args[@]}" -o "$bin" "$f" 2>&1); rc=$?
       if [ $rc -ne 0 ] && printf '%s' "$err" | grep -qF "$want"; then
         pass=$((pass+1))
       else
