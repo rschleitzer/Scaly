@@ -103279,7 +103279,7 @@ if.then2:                                         ; preds = %if.end
   ret i1 true
 
 if.end3:                                          ; preds = %if.end
-  %call4 = call i1 @_ZN7symbols17name_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %4, ptr %5)
+  %call4 = call i1 @_ZN7symbols17name_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %0, ptr %4, ptr %5)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 %call4
 }
@@ -114581,15 +114581,10 @@ if.end10:                                         ; preds = %if.then6
 
 define linkonce_odr i1 @_ZN8semantic15union_has_startEPN4scaly6memory4PageE11UnionSyntaxm(ptr %0, ptr %1, i64 %2) {
 entry:
-  %frame = alloca { ptr, ptr }, align 8
-  store ptr null, ptr %frame, align 8
-  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr %0, ptr %frame.parent, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %0)
   %field.inplace = getelementptr inbounds nuw %_Z11UnionSyntax, ptr %1, i32 0, i32 3
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i1 @_ZN8semantic14body_has_startEPN4scaly6memory4PageE6OptionIR10BodySyntaxEm(ptr %frame, ptr %deref.recv, i64 %2)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %call = call i1 @_ZN8semantic14body_has_startEPN4scaly6memory4PageE6OptionIR10BodySyntaxEm(ptr %0, ptr %deref.recv, i64 %2)
   ret i1 %call
 }
 
