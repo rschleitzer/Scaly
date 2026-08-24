@@ -440,16 +440,22 @@ def walked_returns(files):
     Name-only resolution, like nullable_returns: a collision errs toward
     `pointer`, the conservative direction."""
     out = set()
+    # The RECEIVER of the call is an arbitrary expression, not a dotted
+    # identifier chain: `let dl (*entp).internal_def_locs()` is the shape that
+    # actually occurs, and a regex anchored on `name.name(` misses it. So take
+    # the whole initializer and mark EVERY routine it names -- an
+    # over-approximation, which is the conservative direction here (more
+    # pointers, never fewer).
     bind = re.compile(r'^\s*(?:let|var)\s+([A-Za-z_][A-Za-z0-9_]*)'
-                      r'(?:\s*:[^\n]*?)?\s+'
-                      r'(?:[A-Za-z_][A-Za-z0-9_]*\.)*([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.M)
+                      r'(?:\s*:[^\n]*?)?\s+(.*)$', re.M)
     for f in files:
         for s_ in f.sig:
             body = f.body(s_, False)
             for m in bind.finditer(body):
-                local, callee = m.group(1), m.group(2)
+                local, init = m.group(1), m.group(2)
                 if walked(local, body):
-                    out.add(callee)
+                    for c in re.finditer(r'([A-Za-z_][A-Za-z0-9_]*)\s*\(', init):
+                        out.add(c.group(1))
         # a result walked without a binding: `*(e.get_def_locs() + i)`
         text = '\n'.join(f.lines)
         for m in re.finditer(r'\*\s*\(\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)*'

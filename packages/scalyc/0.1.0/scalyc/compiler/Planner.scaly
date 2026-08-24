@@ -20397,6 +20397,26 @@ define Planner
         ; ONE statement at the call site: an inline branch in
         ; collapse_operand_sequence# perturbs its s178 alloca pool (six -g
         ; checks, measured).
+        ; Is this planned type an `Option` whose sole generic argument is a
+        ; `ref`, i.e. the NPO spelling `ref[T]?`? The Emitter asks the same
+        ; question as `is_npo_option`; this is the Planner-side twin over a
+        ; PlannedType. A `pointer[T]?` is deliberately NOT included: a pointer
+        ; carries its element stride and arithmetic on it is legal.
+        function planned_type_is_npo_ref(t: PlannedType) returns bool
+        {
+            if t.name <> "Option"
+                return false
+            if t.generics = null
+                return false
+            let gens (*t.generics)
+            if gens.length <> 1
+                return false
+            let inner_ptr gens.get 0
+            if inner_ptr = null
+                return false
+            let inner (*inner_ptr)
+            inner.name = "ref"
+        }
         function report_ref_arithmetic(
             this: Planner,
             lhs_type: PlannedType,
@@ -20405,7 +20425,25 @@ define Planner
             loc: Span
         )
         {
-            if lhs_type.name <> "ref"
+            ; The NULLABLE spelling is the same reference and is caught here
+            ; too. s113 wraps `ref[T]?` into `Option[ref[T]]`, so a name test
+            ; for "ref" does not see it -- the fourth time that seam has hidden
+            ; a pointer-shaped thing under a name no name-test knows (cf. the
+            ; `&`-on-an-optional-cell emitter arm, the `this`-wrapper predicate
+            ; and the method-arg gate). Measured before this: `let dl f()` with
+            ; `f` returning `ref[Loc]?` and `*(dl + 1)` emitted
+            ; `getelementptr i8 … i64 1` -- BYTE stride where the struct is 16 --
+            ; with rc 0 and no word, i.e. exactly the silent miscompile this
+            ; diagnostic was written to end. It surfaced in packages/opensp as
+            ; `Emitter: unknown unary operator: <>` in a function four
+            ; statements further on, which names neither the operand nor the
+            ; line.
+            var lhs_is_ref: bool false
+            if lhs_type.name = "ref"
+                set lhs_is_ref: true
+            if Planner.planned_type_is_npo_ref(lhs_type)
+                set lhs_is_ref: true
+            if lhs_is_ref = false
                 return
             if Planner.is_integer_type(rhs_type.name) = false
                 return

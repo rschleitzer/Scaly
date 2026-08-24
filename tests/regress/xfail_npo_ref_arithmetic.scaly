@@ -1,0 +1,31 @@
+; xfail: arithmetic on a reference
+; Regression: arithmetic on a NULLABLE ref (2026-08-24).
+;
+; `ref[T]?` is Option[ref[T]] after the s113 wrap, so report_ref_arithmetic's
+; name test for "ref" did not see it and `*(dl + 1)` emitted
+; `getelementptr i8 ..., i64 1` — BYTE stride where the struct is 16 — with
+; rc 0 and no diagnostic. It surfaced in packages/opensp as
+; `Emitter: unknown unary operator: <>` in a function four statements further
+; on, naming neither the operand nor the line.
+;
+; The bare `ref[T]` form has been diagnosed since 2026-08-23
+; (xfail_ref_arithmetic.scaly); this is its nullable twin.
+
+define Loc (n: int  m: int)
+
+function pick(b: pointer[Loc]) returns ref[Loc]?
+    b as ref[Loc]
+
+function probe(b: pointer[Loc]) returns int
+{
+    let dl pick(b)
+    if dl <> null
+    {
+        let nl *(dl + 1)
+        return nl.n
+    }
+    0
+}
+
+var a Loc(1, 2)
+scaly_eputi(probe(&a))
