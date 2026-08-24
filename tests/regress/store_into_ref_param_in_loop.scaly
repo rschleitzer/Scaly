@@ -1,0 +1,86 @@
+; Regression: a store into a ref PARAMETER inside a `while` (2026-08-24).
+;
+; proc_needs_caller_page_for_storage's body scan used to walk the body's
+; top-level statements and ONE Block level, so a store in a loop — the ordinary
+; shape of a collector — was not seen and the function got no caller page. The
+; Strings it builds for the caller then land on its own frame, which is
+; released on return; the churn loop below recycles that page before the
+; read-back. The sibling fixture nonvoid_store_into_ref_param.scaly pins the
+; same rule at the SHALLOW depth.
+;
+; The deep walk requires the store's ARGUMENT to actually build something: a
+; loop doing `deps.add(scalar)` into a caller-owned array needs no page of
+; ours, and granting one propagates into dazzle's `Primitive::dispatch`, whose
+; thin-shell arms may not require a caller page. Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Array
+use scaly.containers.Vector
+
+function collect(out: pointer[Array[String]], n: size_t) returns bool
+{
+    var i: size_t 0
+    while i < n
+    {
+        out.add(String("payload"))
+        set i: i + 1
+    }
+    true
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var junk Vector[String](3)
+        junk.put(0, "xxxxx")
+        junk.put(1, "yyyyy")
+        junk.put(2, "zzzzz")
+        let jp junk.get 0
+        if jp <> null
+            set total: total + (*jp).get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    var acc Array[String]()
+    if collect(&acc, 4) = false
+        return 1
+    let c churn(60)
+    if c = 0
+        return 2
+    if acc.get_length() <> 4
+        return 3
+    var i: size_t 0
+    while i < acc.get_length()
+    {
+        let ep acc.get i
+        if ep = null
+            return 4
+        if (*ep).equals("payload") = false
+            return 5
+        set i: i + 1
+    }
+    0
+}
+
+let rc check()
+if rc = 0
+    print "PASS"
+if rc = 1
+    print "FAIL1"
+if rc = 2
+    print "FAIL2"
+if rc = 3
+    print "FAIL3"
+if rc = 4
+    print "FAIL4"
+if rc = 5
+    print "FAIL5"

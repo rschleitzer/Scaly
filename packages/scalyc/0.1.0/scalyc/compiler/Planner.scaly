@@ -34708,10 +34708,10 @@ define Planner
                     0
         false
     }
-    ; Walk a body Action: either a single Block operand (the common
-    ; multi-statement body) whose top-level Action statements are scanned, or a
-    ; direct store operand sequence (single-statement body).
-    function action_stores_into_ref_param(func: Function, a: Action) returns bool
+    ; The SHALLOW store scan, kept for the one caller that must not change: a
+    ; body's top-level statements plus one Block level, matching the shape and
+    ; not what is stored. This is the answer void storers have had all along.
+    function action_shallow_store(func: Function, a: Action) returns bool
     {
         if Planner.op_seq_stores_into_ref_param(func, a.source)
             return true
@@ -34744,6 +34744,233 @@ define Planner
         }
         false
     }
+    ; Walk a body for a store into a ref PARAMETER. DEEP: every statement and
+    ; every operand, so a store inside a `while`, a `choose` arm or a nested
+    ; block counts. It used to walk the body's top-level statements and ONE
+    ; Block level only, and the miss was silent in the one direction that is a
+    ; memory fault -- no page, so a value the callee builds FOR THE CALLER lands
+    ; on a frame that is released on return. The arm list below is closed (every
+    ; Expression arm that can contain a statement or an operand is handled), so
+    ; completeness needs no conservative fallback.
+    ;
+    ; `require_build` carries proc_needs_caller_page_for_storage's void/non-void
+    ; split into ONE traversal, so both questions are asked of exactly the same
+    ; store sites: a void storer fires on the shape alone, a non-void one must
+    ; also BUILD something at the store.
+    function action_stores_into_ref_param(func: Function, a: Action, require_build: bool) returns bool
+    {
+        if Planner.ops_store_into_ref_param(func, a.source, require_build)
+            return true
+        Planner.ops_store_into_ref_param(func, a.target, require_build)
+    }
+    function binding_stores_into_ref_param(func: Function, b: Binding, require_build: bool) returns bool
+    {
+        Planner.ops_store_into_ref_param(func, b.operation, require_build)
+    }
+    function statement_stores_into_ref_param(func: Function, st: Statement, require_build: bool) returns bool
+    {
+        choose st
+            when a: Action
+                return Planner.action_stores_into_ref_param(func, a, require_build)
+            when bi: Binding
+                return Planner.binding_stores_into_ref_param(func, bi, require_build)
+            when br: Break
+                return Planner.ops_store_into_ref_param(func, br.result, require_build)
+            when co: Continue
+                return false
+            when re: Return
+                return Planner.ops_store_into_ref_param(func, re.result, require_build)
+            when th: Throw
+                return Planner.ops_store_into_ref_param(func, th.result, require_build)
+            else
+                0
+        false
+    }
+    function ops_store_into_ref_param(func: Function, ops: Vector[Operand], require_build: bool) returns bool
+    {
+        if Planner.op_seq_stores_into_ref_param(func, ops)
+        {
+            if require_build = false
+                return true
+            if Planner.op_seq_store_builds_value(func, ops)
+                return true
+        }
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+                if Planner.operand_stores_into_ref_param(func, (*op_ptr), require_build)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    function operand_stores_into_ref_param(func: Function, op: Operand, require_build: bool) returns bool
+    {
+        choose op.expression
+            ; leaves: nothing inside them can be a store.
+            when c: Constant
+                return false
+            when t: scalyc.compiler.Model.Type
+                return false
+            when isx: Is
+                return false
+            when asx: As
+                return false
+            when so: SizeOf
+                return false
+            when ao: AlignOf
+                return false
+            when tup: Tuple
+            {
+                var i: size_t 0
+                while i < tup.components.length
+                {
+                    let cp tup.components.get i
+                    if cp <> null
+                        if Planner.ops_store_into_ref_param(func, (*cp).value, require_build)
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
+            when mx: Matrix
+            {
+                var i: size_t 0
+                while i < mx.operations.length
+                {
+                    let rp_ptr mx.operations.get i
+                    if rp_ptr <> null
+                        if Planner.ops_store_into_ref_param(func, (*rp_ptr), require_build)
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
+            when b: Block
+            {
+                var i: size_t 0
+                while i < b.statements.length
+                {
+                    let sp b.statements.get i
+                    if sp <> null
+                        if Planner.statement_stores_into_ref_param(func, sp.unwrap(), require_build)
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
+            when iff: scalyc.compiler.Model.If
+            {
+                if Planner.ops_store_into_ref_param(func, iff.condition, require_build)
+                    return true
+                if Planner.statement_stores_into_ref_param(func, iff.consequent, require_build)
+                    return true
+                if iff.alternative <> null
+                    if Planner.statement_stores_into_ref_param(func, (*iff.alternative), require_build)
+                        return true
+                return false
+            }
+            when ch: Choose
+            {
+                if Planner.ops_store_into_ref_param(func, ch.condition, require_build)
+                    return true
+                var i: size_t 0
+                while i < ch.cases.length
+                {
+                    let wp ch.cases.get i
+                    if wp <> null
+                        if Planner.statement_stores_into_ref_param(func, (*wp).consequent, require_build)
+                            return true
+                    set i: i + 1
+                }
+                if ch.alternative <> null
+                    if Planner.statement_stores_into_ref_param(func, (*ch.alternative), require_build)
+                        return true
+                return false
+            }
+            when m: Match
+            {
+                if Planner.ops_store_into_ref_param(func, m.condition, require_build)
+                    return true
+                var i: size_t 0
+                while i < m.branches.length
+                {
+                    let bp m.branches.get i
+                    if bp <> null
+                        if Planner.statement_stores_into_ref_param(func, (*bp).consequent, require_build)
+                            return true
+                    set i: i + 1
+                }
+                if m.alternative <> null
+                    if Planner.statement_stores_into_ref_param(func, (*m.alternative), require_build)
+                        return true
+                return false
+            }
+            when fo: For
+            {
+                if Planner.ops_store_into_ref_param(func, fo.expression, require_build)
+                    return true
+                if Planner.action_stores_into_ref_param(func, fo.action, require_build)
+                    return true
+                return false
+            }
+            when wh: While
+            {
+                if Planner.binding_stores_into_ref_param(func, wh.condition, require_build)
+                    return true
+                if Planner.action_stores_into_ref_param(func, wh.action, require_build)
+                    return true
+                return false
+            }
+            when rep: Repeat
+            {
+                if Planner.action_stores_into_ref_param(func, rep.action, require_build)
+                    return true
+                return false
+            }
+            when tr: Try
+            {
+                if Planner.binding_stores_into_ref_param(func, tr.binding, require_build)
+                    return true
+                var i: size_t 0
+                while i < tr.catches.length
+                {
+                    let wp tr.catches.get i
+                    if wp <> null
+                        if Planner.statement_stores_into_ref_param(func, (*wp).consequent, require_build)
+                            return true
+                    set i: i + 1
+                }
+                if tr.alternative <> null
+                    if Planner.statement_stores_into_ref_param(func, (*tr.alternative), require_build)
+                        return true
+                return false
+            }
+            when nw: New
+            {
+                var i: size_t 0
+                while i < nw.arguments.components.length
+                {
+                    let cp nw.arguments.components.get i
+                    if cp <> null
+                        if Planner.ops_store_into_ref_param(func, (*cp).value, require_build)
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
+            when la: Lambda
+            {
+                if Planner.action_stores_into_ref_param(func, la.body, require_build)
+                    return true
+                return false
+            }
+            else
+                0
+        false
+    }
     function proc_needs_caller_page_for_storage(func: Function) returns bool
     {
         ; NOT gated on a void return any more. The gate read "false for non-void
@@ -34762,7 +34989,28 @@ define Planner
         choose func.implementation
             when a: Action
             {
-                if Planner.action_stores_into_ref_param(func, a) = false
+                ; TWO questions, and the split is by DEPTH, not by return type.
+                ;
+                ; (1) The SHALLOW shape-only answer a VOID storer has always had
+                ; -- top-level statements and one Block level, shape alone, no
+                ; look at what is stored. Kept verbatim, because tightening a
+                ; site that fires TODAY could take a page away, and that is the
+                ; one direction that is a memory fault. It is also what covers
+                ; `out.add(s)` where `s` is a local bound to a construction: the
+                ; argument is a bare name, so no build is visible at the store.
+                ;
+                ; (2) Everything the DEEP walk finds -- inside a `while`, a
+                ; `choose` arm, a nested block -- must additionally BUILD
+                ; something at the store. Without that condition the deep walk
+                ; grants +332 pages in dazzle and +233 in opensp, because the
+                ; shape alone is far too broad on the hot paths: a loop doing
+                ; `deps.add(ind)` puts a SCALAR into an array the caller owns
+                ; and needs no page of ours. Turning a rare false positive into
+                ; a frequent one is not what deepening the scan is for.
+                if func.returns_ = null
+                    if Planner.action_shallow_store(func, a)
+                        return true
+                if Planner.action_stores_into_ref_param(func, a, true) = false
                     return false
                 ; A VOID storer keeps the coarse answer it has always had --
                 ; tightening it could take a page AWAY from one, the one
@@ -34777,49 +35025,10 @@ define Planner
                 ; whole function (the dazzle dispatch condition). Measured
                 ; without this: +13 pages in dazzle, +5 in opensp, `dispatch`
                 ; and `prim_call` among them.
-                if func.returns_ = null
-                    return true
-                return Planner.action_store_builds_value(func, a)
+                return true
             }
             else
                 0
-        false
-    }
-    ; Does a store into a ref parameter carry a freshly BUILT value? Walks the
-    ; same two body shapes action_stores_into_ref_param walks and asks
-    ; ops_may_allocate of the store's ARGUMENTS -- the operand after the
-    ; `recv.put`/`recv.add` head.
-    function action_store_builds_value(func: Function, a: Action) returns bool
-    {
-        if Planner.op_seq_store_builds_value(func, a.source)
-            return true
-        if a.source.length = 1
-        {
-            let op_ptr a.source.get 0
-            if op_ptr <> null
-            {
-                let op (*op_ptr)
-                choose op.expression
-                    when b: Block
-                    {
-                        var i: size_t 0
-                        while i < b.statements.length
-                        {
-                            let sp b.statements.get i
-                            if sp <> null
-                                choose sp.unwrap()
-                                    when sa: Action
-                                        if Planner.op_seq_store_builds_value(func, sa.source)
-                                            return true
-                                    else
-                                        0
-                            set i: i + 1
-                        }
-                    }
-                    else
-                        0
-            }
-        }
         false
     }
     function op_seq_store_builds_value(func: Function, ops: Vector[Operand]) returns bool
