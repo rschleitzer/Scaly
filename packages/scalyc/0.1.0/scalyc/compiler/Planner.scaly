@@ -27931,12 +27931,25 @@ define Planner
             ; it dangles on the local page. plan_action# reads-and-clears the
             ; flag so only the outermost body action promotes.
             let saved_ptr this.promote_tail_return
-            var f_promote_tail Planner.needs_implicit_return_page(f)
-            ; WP7: also promote the tail of a pointer[T]-return whose tail is a
-            ; value construction of T (see body_returns_value_ctor_as_pointer).
-            if f_promote_tail = false
-                if Planner.body_returns_value_ctor_as_pointer(f)
-                    set f_promote_tail: true
+            ; The question tail promotion has to ask is whether this function
+            ; OWNS a caller page, and that is the SAME disjunction has_page is
+            ; built from below: a DECLARED page (`function f(rp, ...)`) counts
+            ; exactly as much as an inferred one. Reading needs_implicit_return_
+            ; page -- rule 1 of the seven in function_needs_caller_page -- tied
+            ; the PLACEMENT of a tail construction to a rule about the return
+            ; TYPE, so a function that owns its page for any other reason
+            ; promoted or not depending on WHICH rule answered. Measured cost of
+            ; the narrow reading: giving fifteen functions an explicit `rp` when
+            ; an experiment dropped their inferred page kept the page and
+            ; silently lost the promotion -- every tail construction landed on
+            ; the local frame, and the compiler that built from it died on its
+            ; own source with SIGBUS. (WP7 is rule 5, so the OR that used to
+            ; stand here is subsumed, not dropped.)
+            var f_promote_tail: bool false
+            if f.page_parameter <> null
+                set f_promote_tail: true
+            if Planner.function_needs_caller_page(this, f)
+                set f_promote_tail: true
             set this.promote_tail_return: f_promote_tail
             ; Hole-1 (2026-07-02f): the tail ref-escape CHECK runs for every
             ; function with a return type, not just page-owning-value returns
@@ -35603,7 +35616,26 @@ define Planner
         if ops.length >= 2
         {
             let head_ptr ops.get 0
-            let next_ptr ops.get 1
+            ; A GENERIC construction is THREE operands, not two: `Vector[int](acc)`
+            ; models as Type(Vector) + Matrix([int]) + Tuple(acc) -- the s107 split
+            ; that already forced the `^rp` scan to read Matrix.life instead of the
+            ; leading Type's lifetime. Reading operand 1 unconditionally made this
+            ; check see the Matrix where it wanted the Tuple, so it answered NO for
+            ; every CONTAINER construction -- i.e. for the shape it exists to catch.
+            ; That is the measured gap behind its own comment's claim that it does
+            ; not fire "even for the `pointer[T]` shape it was written for":
+            ; `returns pointer[Vector[int]] { ... Vector[int](acc) }` got no page.
+            var tuple_index: size_t 1
+            let maybe_matrix ops.get 1
+            if maybe_matrix <> null
+                choose (*maybe_matrix).expression
+                    when mx: Matrix
+                        set tuple_index: 2
+                    else
+                        0
+            if tuple_index >= ops.length
+                return false
+            let next_ptr ops.get tuple_index
             if head_ptr <> null
                 if next_ptr <> null
                 {
