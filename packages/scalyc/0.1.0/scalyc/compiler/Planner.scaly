@@ -34746,15 +34746,103 @@ define Planner
     }
     function proc_needs_caller_page_for_storage(func: Function) returns bool
     {
-        if func.returns_ <> null
-            return false
+        ; NOT gated on a void return any more. The gate read "false for non-void
+        ; (needs_implicit_return_page covers those)", and that was never true of
+        ; the returns rule 1 calls PRIMITIVE -- a `bool`/`size_t`/`pointer[T]`/
+        ; `ref[T]`-returning procedure that stores a freshly built value into a
+        ; ref parameter was covered by nothing -- and it stopped being true of
+        ; the NPO class when rule 1 started asking the body. Whether a body
+        ; stores a construction into a caller's container is a question about
+        ; the BODY; the return type never had anything to do with it. The rule
+        ; only ever GRANTS a page, so widening it cannot drop one.
         if Planner.is_extern_impl(func.implementation)
             return false
         if Planner.has_ref_pointer_param(func) = false
             return false
         choose func.implementation
             when a: Action
-                return Planner.action_stores_into_ref_param(func, a)
+            {
+                if Planner.action_stores_into_ref_param(func, a) = false
+                    return false
+                ; A VOID storer keeps the coarse answer it has always had --
+                ; tightening it could take a page AWAY from one, the one
+                ; direction that is a memory fault. A NON-void one is new here
+                ; and has to show that something is actually BUILT at the store,
+                ; because the shape alone is far too broad on the hot paths:
+                ; `VM.stack_actual`'s `deps.add(ind)` puts a SCALAR into an array
+                ; the caller owns and needs no page of ours, and granting it one
+                ; propagates through the transitive sets into `Primitive::
+                ; dispatch` -- whose thin-shell arms may not require the caller
+                ; page at all, because a region frame is contagious across the
+                ; whole function (the dazzle dispatch condition). Measured
+                ; without this: +13 pages in dazzle, +5 in opensp, `dispatch`
+                ; and `prim_call` among them.
+                if func.returns_ = null
+                    return true
+                return Planner.action_store_builds_value(func, a)
+            }
+            else
+                0
+        false
+    }
+    ; Does a store into a ref parameter carry a freshly BUILT value? Walks the
+    ; same two body shapes action_stores_into_ref_param walks and asks
+    ; ops_may_allocate of the store's ARGUMENTS -- the operand after the
+    ; `recv.put`/`recv.add` head.
+    function action_store_builds_value(func: Function, a: Action) returns bool
+    {
+        if Planner.op_seq_store_builds_value(func, a.source)
+            return true
+        if a.source.length = 1
+        {
+            let op_ptr a.source.get 0
+            if op_ptr <> null
+            {
+                let op (*op_ptr)
+                choose op.expression
+                    when b: Block
+                    {
+                        var i: size_t 0
+                        while i < b.statements.length
+                        {
+                            let sp b.statements.get i
+                            if sp <> null
+                                choose sp.unwrap()
+                                    when sa: Action
+                                        if Planner.op_seq_store_builds_value(func, sa.source)
+                                            return true
+                                    else
+                                        0
+                            set i: i + 1
+                        }
+                    }
+                    else
+                        0
+            }
+        }
+        false
+    }
+    function op_seq_store_builds_value(func: Function, ops: Vector[Operand]) returns bool
+    {
+        if Planner.op_seq_stores_into_ref_param(func, ops) = false
+            return false
+        let arg_ptr ops.get 1
+        if arg_ptr = null
+            return false
+        choose (*arg_ptr).expression
+            when tup: Tuple
+            {
+                var i: size_t 0
+                while i < tup.components.length
+                {
+                    let cp tup.components.get i
+                    if cp <> null
+                        if Planner.ops_may_allocate((*cp).value)
+                            return true
+                    set i: i + 1
+                }
+                return false
+            }
             else
                 0
         false

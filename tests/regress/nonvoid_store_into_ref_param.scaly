@@ -1,0 +1,91 @@
+; Regression: a NON-VOID function that stores a freshly BUILT value into a ref
+; parameter needs the caller's page (2026-08-24).
+;
+; proc_needs_caller_page_for_storage used to bail on any non-void return, with
+; the reason "needs_implicit_return_page covers those" — which was never true
+; of the returns rule 1 calls PRIMITIVE (bool here), and stopped being true of
+; the NPO class when rule 1 started asking the body. Without the page the
+; String built in `collect` lands on collect's OWN frame, which is released on
+; return, and the churn loop below recycles that page before the read-back.
+;
+; The rule is deliberately narrow for non-void: the store's ARGUMENT must
+; actually build something. A `deps.add(scalar)` into a caller-owned array
+; needs no page of ours, and granting one propagates through the transitive
+; page sets into dazzle's `Primitive::dispatch`, whose thin-shell arms may not
+; require a caller page (a region frame is contagious across the function).
+; Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Array
+use scaly.containers.Vector
+
+; The four stores are written out rather than looped: the scan behind this
+; rule is SHALLOW — it walks the body's top-level statements and one Block
+; level, not into a `while` — so a store inside a loop is not seen. That is a
+; pre-existing limit of action_stores_into_ref_param, not something this
+; fixture is asserting.
+function collect(out: pointer[Array[String]], n: size_t) returns bool
+{
+    out.add(String("payload"))
+    out.add(String("payload"))
+    out.add(String("payload"))
+    out.add(String("payload"))
+    true
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var junk Vector[String](3)
+        junk.put(0, "xxxxx")
+        junk.put(1, "yyyyy")
+        junk.put(2, "zzzzz")
+        let jp junk.get 0
+        if jp <> null
+            set total: total + (*jp).get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    var acc Array[String]()
+    if collect(&acc, 4) = false
+        return 1
+    let c churn(60)
+    if c = 0
+        return 2
+    if acc.get_length() <> 4
+        return 3
+    var i: size_t 0
+    while i < acc.get_length()
+    {
+        let ep acc.get i
+        if ep = null
+            return 4
+        if (*ep).equals("payload") = false
+            return 5
+        set i: i + 1
+    }
+    0
+}
+
+let rc check()
+if rc = 0
+    print "PASS"
+if rc = 1
+    print "FAIL1"
+if rc = 2
+    print "FAIL2"
+if rc = 3
+    print "FAIL3"
+if rc = 4
+    print "FAIL4"
+if rc = 5
+    print "FAIL5"
