@@ -5027,6 +5027,31 @@ define Planner
                 let saved_iso_base scope_isolation_base
                 set scope_isolation_base: scope_bindings.length
 
+                ; ...and isolate the SOURCE FILE the same way, for the same
+                ; reason one line up: this body is planned outside the module
+                ; walk that maintains `file`, so every diagnostic raised in it
+                ; was formatted against whatever file the planner happened to
+                ; be in. A `Span` carries only offsets (no file), so the result
+                ; is not an off-by-a-few line -- it is a location in the wrong
+                ; FILE. Measured before the fix: a lying accessor in a
+                ; dependent package reported at `prog.scaly:10:1` in a PROGRAM
+                ; root, a file with nine lines, because the renderer clamps the
+                ; offset to the source length.
+                ;
+                ; ★ The same wrong context is already compensated on the other
+                ; side -- use_vis_check goes deliberately LENIENT while
+                ; instantiating, because "a generic's body is planned
+                ; mid-module and must see its OWN module's names". This answers
+                ; the fact instead of working around it.
+                let saved_ifile this.file
+                let iofile_ptr this.concept_origin_file(concept_name)
+                if iofile_ptr <> null
+                {
+                    let iofile (*iofile_ptr)
+                    if iofile.get_length() > 0
+                        set this.file: String^this(iofile)
+                }
+
                 choose c.definition
                     when s: Structure
                     {
@@ -5042,6 +5067,7 @@ define Planner
                         0
 
                 set scope_isolation_base: saved_iso_base
+                set this.file: saved_ifile
 
                 ; Pop substitutions back to what the caller had.
                 set type_substitutions.length: saved_subst_len
@@ -30289,6 +30315,27 @@ define Planner
         ; Intrinsic concepts (built-in types) are represented by a Type
         ; variant carrying a void placeholder until a proper Intrinsic
         ; variant is added to PlannedDefinition.
+        ; concept_origin_file: the source file the concept of this NAME was
+        ; registered from, or null when the origin is unknown. Read the same way
+        ; lookup_concept reads the concept itself -- the O(1) hashed index, whose
+        ; LAST-wins semantics must match, since a name registered twice (the s95
+        ; Namespace+Structure pair) has to answer with the same entry's file.
+        ; `concept_origin_files` runs in LOCKSTEP with `concepts`.
+        ;
+        ; A nullable RETURN is a `pointer`, never `ref[T]?`: `Option[ref[T]]` is
+        ; not primitive, so returning one would give this function an implicit
+        ; caller page.
+        function concept_origin_file(this: Planner, name: String) returns pointer[String]
+        {
+            let idx concept_index.lookup name
+            if idx < 0
+                return null
+            let i idx as size_t
+            if i >= concept_origin_files.length
+                return null
+            concept_origin_files.get i
+        }
+
         function plan_concept(this: Planner, c: Concept) returns PlannedConcept
         {
             ; s107: generic data-class concepts (Structure with no
