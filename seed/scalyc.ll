@@ -240274,7 +240274,7 @@ if.end6:                                          ; preds = %if.end3
 
 define linkonce_odr i1 @_ZN7Planner34proc_needs_caller_page_for_storageE8Function(ptr %0) {
 entry:
-  %arg.tmp12 = alloca %_Z6Action, align 8
+  %arg.tmp11 = alloca %_Z6Action, align 8
   %arg.tmp = alloca %_Z6Action, align 8
   %choose.union = alloca %_Z14Implementation, align 8
   %field.inplace = getelementptr inbounds nuw %_Z8Function, ptr %0, i32 0, i32 10
@@ -240312,27 +240312,33 @@ choose.else:                                      ; preds = %if.end3
 choose.when:                                      ; preds = %if.end3
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z14Implementation, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z6Action, ptr %"variant.c_data().ptr", align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z6Action, ptr null, i32 1) to i64), i1 false)
-  %call4 = call i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Action(ptr %0, ptr %arg.tmp)
-  %eq5 = icmp eq i1 %call4, false
+  %load.struct4 = load %_Z8Function, ptr %0, align 8
+  %returns_ = extractvalue %_Z8Function %load.struct4, 7
+  %eq5 = icmp eq ptr %returns_, null
   br i1 %eq5, label %if.then6, label %if.end7
 
 if.then6:                                         ; preds = %choose.when
-  ret i1 false
+  store %_Z6Action %variant.val, ptr %arg.tmp, align 1
+  %call8 = call i1 @_ZN7Planner20action_shallow_storeE8Function6Action(ptr %0, ptr %arg.tmp)
+  br i1 %call8, label %if.then9, label %if.end10
 
-if.end7:                                          ; preds = %choose.when
-  %load.struct8 = load %_Z8Function, ptr %0, align 8
-  %returns_ = extractvalue %_Z8Function %load.struct8, 7
-  %eq9 = icmp eq ptr %returns_, null
-  br i1 %eq9, label %if.then10, label %if.end11
+if.end7:                                          ; preds = %if.end10, %choose.when
+  store %_Z6Action %variant.val, ptr %arg.tmp11, align 1
+  %call12 = call i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Actionb(ptr %0, ptr %arg.tmp11, i1 true)
+  %eq13 = icmp eq i1 %call12, false
+  br i1 %eq13, label %if.then14, label %if.end15
 
-if.then10:                                        ; preds = %if.end7
+if.then9:                                         ; preds = %if.then6
   ret i1 true
 
-if.end11:                                         ; preds = %if.end7
-  store %_Z6Action %variant.val, ptr %arg.tmp12, align 1
-  %call13 = call i1 @_ZN7Planner25action_store_builds_valueE8Function6Action(ptr %0, ptr %arg.tmp12)
-  ret i1 %call13
+if.end10:                                         ; preds = %if.then6
+  br label %if.end7
+
+if.then14:                                        ; preds = %if.end7
+  ret i1 false
+
+if.end15:                                         ; preds = %if.end7
+  ret i1 true
 }
 
 define linkonce_odr i1 @_ZN7Planner26is_reference_shaped_returnE4Type(ptr %0) {
@@ -246756,7 +246762,7 @@ if.end75:                                         ; preds = %if.then71
   br label %if.end72
 }
 
-define linkonce_odr i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Action(ptr %0, ptr %1) {
+define linkonce_odr i1 @_ZN7Planner20action_shallow_storeE8Function6Action(ptr %0, ptr %1) {
 entry:
   %arg.tmp23 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp = alloca %_Z6VectorI9StatementE, align 8
@@ -246868,116 +246874,153 @@ if.end26:                                         ; preds = %if.else
   br label %choose.end17
 }
 
-define linkonce_odr i1 @_ZN7Planner25action_store_builds_valueE8Function6Action(ptr %0, ptr %1) {
+define linkonce_odr i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %1, i1 %2) {
 entry:
-  %arg.tmp23 = alloca %_Z6VectorI7OperandE, align 8
-  %arg.tmp = alloca %_Z6VectorI9StatementE, align 8
   %i = alloca i64, align 8
-  %choose.union = alloca %_Z10Expression, align 8
-  %deref.tmp = alloca %_Z7Operand, align 8
+  %call = call i1 @_ZN7Planner28op_seq_stores_into_ref_paramE8Function6VectorI7OperandE(ptr %0, ptr %1)
+  br i1 %call, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %eq = icmp eq i1 %2, false
+  br i1 %eq, label %if.then1, label %if.end2
+
+if.end:                                           ; preds = %if.end5, %entry
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+if.then1:                                         ; preds = %if.then
+  ret i1 true
+
+if.end2:                                          ; preds = %if.then
+  %call3 = call i1 @_ZN7Planner25op_seq_store_builds_valueE8Function6VectorI7OperandE(ptr %0, ptr %1)
+  br i1 %call3, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end2
+  ret i1 true
+
+if.end5:                                          ; preds = %if.end2
+  br label %if.end
+
+while.cond:                                       ; preds = %if.end10, %if.end
+  %i6 = load i64, ptr %i, align 8
+  %load.struct = load %_Z6VectorI7OperandE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI7OperandE %load.struct, 0
+  %lt = icmp ult i64 %i6, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i7 = load i64, ptr %i, align 8
+  %call8 = call ptr @_ZN6VectorI7OperandE3getEm(ptr %1, i64 %i7)
+  %ne = icmp ne ptr %call8, null
+  br i1 %ne, label %if.then9, label %if.end10
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then9:                                         ; preds = %while.body
+  %call11 = call i1 @_ZN7Planner29operand_stores_into_ref_paramE8Function7Operandb(ptr %0, ptr %call8, i1 %2)
+  br i1 %call11, label %if.then12, label %if.end13
+
+if.end10:                                         ; preds = %if.end13, %while.body
+  %i14 = load i64, ptr %i, align 8
+  %add = add i64 %i14, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+if.then12:                                        ; preds = %if.then9
+  ret i1 true
+
+if.end13:                                         ; preds = %if.then9
+  br label %if.end10
+}
+
+define linkonce_odr i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Actionb(ptr %0, ptr %1, i1 %2) {
+entry:
   %field.inplace = getelementptr inbounds nuw %_Z6Action, ptr %1, i32 0, i32 0
-  %call = call i1 @_ZN7Planner25op_seq_store_builds_valueE8Function6VectorI7OperandE(ptr %0, ptr %field.inplace)
+  %call = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %field.inplace, i1 %2)
   br i1 %call, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret i1 true
 
 if.end:                                           ; preds = %entry
-  %load.struct = load %_Z6Action, ptr %1, align 8
-  %source = extractvalue %_Z6Action %load.struct, 0
-  %length = extractvalue %_Z6VectorI7OperandE %source, 0
-  %eq = icmp eq i64 %length, 1
-  br i1 %eq, label %if.then1, label %if.end2
+  %field.inplace1 = getelementptr inbounds nuw %_Z6Action, ptr %1, i32 0, i32 1
+  %call2 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %field.inplace1, i1 %2)
+  ret i1 %call2
+}
 
-if.then1:                                         ; preds = %if.end
-  %field.inplace3 = getelementptr inbounds nuw %_Z6Action, ptr %1, i32 0, i32 0
-  %call4 = call ptr @_ZN6VectorI7OperandE3getEm(ptr %field.inplace3, i64 0)
-  %ne = icmp ne ptr %call4, null
-  br i1 %ne, label %if.then5, label %if.end6
+define linkonce_odr i1 @_ZN7Planner29binding_stores_into_ref_paramE8Function7Bindingb(ptr %0, ptr %1, i1 %2) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z7Binding, ptr %1, i32 0, i32 3
+  %call = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %field.inplace, i1 %2)
+  ret i1 %call
+}
 
-if.end2:                                          ; preds = %if.end6, %if.end
-  ret i1 false
-
-if.then5:                                         ; preds = %if.then1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call4, i64 ptrtoint (ptr getelementptr (%_Z7Operand, ptr null, i32 1) to i64), i1 false)
-  %grp.deref.val = load %_Z7Operand, ptr %deref.tmp, align 8
-  %expression = extractvalue %_Z7Operand %grp.deref.val, 1
-  store %_Z10Expression %expression, ptr %choose.union, align 1
-  %tag.ptr = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 0
+define linkonce_odr i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %1, i1 %2) {
+entry:
+  %arg.tmp9 = alloca %_Z6VectorI7OperandE, align 8
+  %arg.tmp4 = alloca %_Z7Binding, align 8
+  %arg.tmp = alloca %_Z6Action, align 8
+  %tag.ptr = getelementptr inbounds nuw %_Z9Statement, ptr %1, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 4, label %choose.when
+    i8 0, label %choose.when
+    i8 1, label %choose.when1
+    i8 2, label %choose.when6
+    i8 3, label %choose.when11
+    i8 4, label %choose.when14
+    i8 5, label %choose.when19
   ]
 
-if.end6:                                          ; preds = %choose.end, %if.then1
-  br label %if.end2
+choose.end:                                       ; preds = %choose.else
+  %choose.value = phi i64 [ 0, %choose.else ]
+  ret i1 false
 
-choose.end:                                       ; preds = %choose.else, %while.exit
-  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %while.exit ]
-  br label %if.end6
-
-choose.else:                                      ; preds = %if.then5
+choose.else:                                      ; preds = %entry
   br label %choose.end
 
-choose.when:                                      ; preds = %if.then5
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
-  %variant.val = load %_Z5Block, ptr %"variant.c_data().ptr", align 8
-  store i64 0, ptr %i, align 1
-  br label %while.cond
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9Statement, ptr %1, i32 0, i32 1
+  %variant.val = load %_Z6Action, ptr %"variant.c_data().ptr", align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z6Action, ptr null, i32 1) to i64), i1 false)
+  %call = call i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Actionb(ptr %0, ptr %arg.tmp, i1 %2)
+  ret i1 %call
 
-while.cond:                                       ; preds = %if.end14, %choose.when
-  %i7 = load i64, ptr %i, align 8
-  %statements = extractvalue %_Z5Block %variant.val, 1
-  %length8 = extractvalue %_Z6VectorI9StatementE %statements, 0
-  %lt = icmp ult i64 %i7, %length8
-  br i1 %lt, label %while.body, label %while.exit
+choose.when1:                                     ; preds = %entry
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z9Statement, ptr %1, i32 0, i32 1
+  %variant.val3 = load %_Z7Binding, ptr %"variant.c_data().ptr2", align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp4, ptr align 1 %"variant.c_data().ptr2", i64 ptrtoint (ptr getelementptr (%_Z7Binding, ptr null, i32 1) to i64), i1 false)
+  %call5 = call i1 @_ZN7Planner29binding_stores_into_ref_paramE8Function7Bindingb(ptr %0, ptr %arg.tmp4, i1 %2)
+  ret i1 %call5
 
-while.body:                                       ; preds = %while.cond
-  %statements9 = extractvalue %_Z5Block %variant.val, 1
-  store %_Z6VectorI9StatementE %statements9, ptr %arg.tmp, align 1
-  %i10 = load i64, ptr %i, align 8
-  %call11 = call ptr @_ZN6VectorI9StatementE3getEm(ptr %arg.tmp, i64 %i10)
-  %ne12 = icmp ne ptr %call11, null
-  br i1 %ne12, label %if.then13, label %if.end14
+choose.when6:                                     ; preds = %entry
+  %"variant.c_data().ptr7" = getelementptr inbounds nuw %_Z9Statement, ptr %1, i32 0, i32 1
+  %variant.val8 = load %_Z5Break, ptr %"variant.c_data().ptr7", align 8
+  %result = extractvalue %_Z5Break %variant.val8, 1
+  store %_Z6VectorI7OperandE %result, ptr %arg.tmp9, align 1
+  %call10 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp9, i1 %2)
+  ret i1 %call10
 
-while.exit:                                       ; preds = %while.cond
-  br label %choose.end
+choose.when11:                                    ; preds = %entry
+  %"variant.c_data().ptr12" = getelementptr inbounds nuw %_Z9Statement, ptr %1, i32 0, i32 1
+  %variant.val13 = load %_Z8Continue, ptr %"variant.c_data().ptr12", align 8
+  ret i1 false
 
-if.then13:                                        ; preds = %while.body
-  %tag.ptr15 = getelementptr inbounds nuw %_Z9Statement, ptr %call11, i32 0, i32 0
-  %tag16 = load i8, ptr %tag.ptr15, align 1
-  switch i8 %tag16, label %choose.else18 [
-    i8 0, label %choose.when19
-  ]
+choose.when14:                                    ; preds = %entry
+  %"variant.c_data().ptr15" = getelementptr inbounds nuw %_Z9Statement, ptr %1, i32 0, i32 1
+  %variant.val16 = load %_Z6Return, ptr %"variant.c_data().ptr15", align 8
+  %result17 = extractvalue %_Z6Return %variant.val16, 1
+  store %_Z6VectorI7OperandE %result17, ptr %arg.tmp9, align 1
+  %call18 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp9, i1 %2)
+  ret i1 %call18
 
-if.end14:                                         ; preds = %choose.end17, %while.body
-  %i27 = load i64, ptr %i, align 8
-  %add = add i64 %i27, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-choose.end17:                                     ; preds = %choose.else18, %if.end26
-  br label %if.end14
-
-choose.else18:                                    ; preds = %if.then13
-  br label %choose.end17
-
-choose.when19:                                    ; preds = %if.then13
-  %"variant.c_data().ptr20" = getelementptr inbounds nuw %_Z9Statement, ptr %call11, i32 0, i32 1
-  %variant.val21 = load %_Z6Action, ptr %"variant.c_data().ptr20", align 8
-  %source22 = extractvalue %_Z6Action %variant.val21, 0
-  store %_Z6VectorI7OperandE %source22, ptr %arg.tmp23, align 1
-  %call24 = call i1 @_ZN7Planner25op_seq_store_builds_valueE8Function6VectorI7OperandE(ptr %0, ptr %arg.tmp23)
-  br i1 %call24, label %if.then25, label %if.else
-
-if.then25:                                        ; preds = %choose.when19
-  ret i1 true
-
-if.else:                                          ; preds = %choose.when19
-  br label %if.end26
-
-if.end26:                                         ; preds = %if.else
-  br label %choose.end17
+choose.when19:                                    ; preds = %entry
+  %"variant.c_data().ptr20" = getelementptr inbounds nuw %_Z9Statement, ptr %1, i32 0, i32 1
+  %variant.val21 = load %_Z5Throw, ptr %"variant.c_data().ptr20", align 8
+  %result22 = extractvalue %_Z5Throw %variant.val21, 1
+  store %_Z6VectorI7OperandE %result22, ptr %arg.tmp9, align 1
+  %call23 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp9, i1 %2)
+  ret i1 %call23
 }
 
 define linkonce_odr i1 @_ZN7Planner25op_seq_store_builds_valueE8Function6VectorI7OperandE(ptr %0, ptr %1) {
@@ -247064,6 +247107,590 @@ if.then15:                                        ; preds = %if.then9
 
 if.end16:                                         ; preds = %if.then9
   br label %if.end10
+}
+
+define linkonce_odr i1 @_ZN7Planner29operand_stores_into_ref_paramE8Function7Operandb(ptr %0, ptr %1, i1 %2) {
+entry:
+  %arg.tmp261 = alloca %_Z6Action, align 8
+  %arg.tmp252 = alloca %_Z6VectorI7OperandE, align 8
+  %deref.tmp249 = alloca %_Z9Component, align 8
+  %arg.tmp218 = alloca %_Z9Statement, align 8
+  %deref.tmp215 = alloca %_Z4When, align 8
+  %arg.tmp199 = alloca %_Z7Binding, align 8
+  %arg.tmp192 = alloca %_Z6Action, align 8
+  %arg.tmp184 = alloca %_Z6Action, align 8
+  %arg.tmp179 = alloca %_Z7Binding, align 8
+  %arg.tmp171 = alloca %_Z6Action, align 8
+  %arg.tmp167 = alloca %_Z6VectorI7OperandE, align 8
+  %arg.tmp149 = alloca %_Z9Statement, align 8
+  %deref.tmp146 = alloca %_Z6Branch, align 8
+  %arg.tmp140 = alloca %_Z6VectorI6BranchE, align 8
+  %arg.tmp129 = alloca %_Z6VectorI7OperandE, align 8
+  %arg.tmp111 = alloca %_Z9Statement, align 8
+  %deref.tmp108 = alloca %_Z4When, align 8
+  %arg.tmp102 = alloca %_Z6VectorI4WhenE, align 8
+  %arg.tmp91 = alloca %_Z6VectorI7OperandE, align 8
+  %arg.tmp76 = alloca %_Z9Statement, align 8
+  %arg.tmp72 = alloca %_Z6VectorI7OperandE, align 8
+  %arg.tmp58 = alloca %_Z6VectorI9StatementE, align 8
+  %arg.tmp37 = alloca %_Z6VectorI6VectorI7OperandEE, align 8
+  %arg.tmp22 = alloca %_Z6VectorI7OperandE, align 8
+  %deref.tmp = alloca %_Z9Component, align 8
+  %arg.tmp = alloca %_Z6VectorI9ComponentE, align 8
+  %i = alloca i64, align 8
+  %load.struct = load %_Z7Operand, ptr %1, align 8
+  %expression = extractvalue %_Z7Operand %load.struct, 1
+  %choose.union = alloca %_Z10Expression, align 8
+  store %_Z10Expression %expression, ptr %choose.union, align 1
+  %tag.ptr = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 0
+  %tag = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag, label %choose.else [
+    i8 0, label %choose.when
+    i8 1, label %choose.when1
+    i8 13, label %choose.when4
+    i8 14, label %choose.when7
+    i8 11, label %choose.when10
+    i8 12, label %choose.when13
+    i8 2, label %choose.when16
+    i8 3, label %choose.when27
+    i8 4, label %choose.when48
+    i8 5, label %choose.when69
+    i8 7, label %choose.when87
+    i8 6, label %choose.when125
+    i8 8, label %choose.when163
+    i8 9, label %choose.when175
+    i8 17, label %choose.when188
+    i8 10, label %choose.when196
+    i8 15, label %choose.when232
+    i8 16, label %choose.when258
+  ]
+
+choose.end:                                       ; preds = %choose.else
+  %choose.value = phi i64 [ 0, %choose.else ]
+  ret i1 false
+
+choose.else:                                      ; preds = %entry
+  br label %choose.end
+
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val = load %_Z8Constant, ptr %"variant.c_data().ptr", align 1
+  ret i1 false
+
+choose.when1:                                     ; preds = %entry
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val3 = load %_Z4Type, ptr %"variant.c_data().ptr2", align 8
+  ret i1 false
+
+choose.when4:                                     ; preds = %entry
+  %"variant.c_data().ptr5" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val6 = load %_Z2Is, ptr %"variant.c_data().ptr5", align 8
+  ret i1 false
+
+choose.when7:                                     ; preds = %entry
+  %"variant.c_data().ptr8" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val9 = load %_Z2As, ptr %"variant.c_data().ptr8", align 8
+  ret i1 false
+
+choose.when10:                                    ; preds = %entry
+  %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val12 = load %_Z6SizeOf, ptr %"variant.c_data().ptr11", align 8
+  ret i1 false
+
+choose.when13:                                    ; preds = %entry
+  %"variant.c_data().ptr14" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val15 = load %_Z7AlignOf, ptr %"variant.c_data().ptr14", align 8
+  ret i1 false
+
+choose.when16:                                    ; preds = %entry
+  %"variant.c_data().ptr17" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val18 = load %_Z5Tuple, ptr %"variant.c_data().ptr17", align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %choose.when16
+  %i19 = load i64, ptr %i, align 8
+  %components = extractvalue %_Z5Tuple %variant.val18, 1
+  %length = extractvalue %_Z6VectorI9ComponentE %components, 0
+  %lt = icmp ult i64 %i19, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %components20 = extractvalue %_Z5Tuple %variant.val18, 1
+  store %_Z6VectorI9ComponentE %components20, ptr %arg.tmp, align 1
+  %i21 = load i64, ptr %i, align 8
+  %call = call ptr @_ZN6VectorI9ComponentE3getEm(ptr %arg.tmp, i64 %i21)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then:                                          ; preds = %while.body
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z9Component, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val = load %_Z9Component, ptr %deref.tmp, align 8
+  %value = extractvalue %_Z9Component %grp.deref.val, 2
+  store %_Z6VectorI7OperandE %value, ptr %arg.tmp22, align 1
+  %call23 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp22, i1 %2)
+  br i1 %call23, label %if.then24, label %if.end25
+
+if.end:                                           ; preds = %if.end25, %while.body
+  %i26 = load i64, ptr %i, align 8
+  %add = add i64 %i26, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+if.then24:                                        ; preds = %if.then
+  ret i1 true
+
+if.end25:                                         ; preds = %if.then
+  br label %if.end
+
+choose.when27:                                    ; preds = %entry
+  %"variant.c_data().ptr28" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val29 = load %_Z6Matrix, ptr %"variant.c_data().ptr28", align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond30
+
+while.cond30:                                     ; preds = %if.end42, %choose.when27
+  %i33 = load i64, ptr %i, align 8
+  %operations = extractvalue %_Z6Matrix %variant.val29, 1
+  %length34 = extractvalue %_Z6VectorI6VectorI7OperandEE %operations, 0
+  %lt35 = icmp ult i64 %i33, %length34
+  br i1 %lt35, label %while.body31, label %while.exit32
+
+while.body31:                                     ; preds = %while.cond30
+  %operations36 = extractvalue %_Z6Matrix %variant.val29, 1
+  store %_Z6VectorI6VectorI7OperandEE %operations36, ptr %arg.tmp37, align 1
+  %i38 = load i64, ptr %i, align 8
+  %call39 = call ptr @_ZN6VectorI6VectorI7OperandEE3getEm(ptr %arg.tmp37, i64 %i38)
+  %ne40 = icmp ne ptr %call39, null
+  br i1 %ne40, label %if.then41, label %if.end42
+
+while.exit32:                                     ; preds = %while.cond30
+  ret i1 false
+
+if.then41:                                        ; preds = %while.body31
+  %call43 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %call39, i1 %2)
+  br i1 %call43, label %if.then44, label %if.end45
+
+if.end42:                                         ; preds = %if.end45, %while.body31
+  %i46 = load i64, ptr %i, align 8
+  %add47 = add i64 %i46, 1
+  store i64 %add47, ptr %i, align 1
+  br label %while.cond30
+
+if.then44:                                        ; preds = %if.then41
+  ret i1 true
+
+if.end45:                                         ; preds = %if.then41
+  br label %if.end42
+
+choose.when48:                                    ; preds = %entry
+  %"variant.c_data().ptr49" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val50 = load %_Z5Block, ptr %"variant.c_data().ptr49", align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond51
+
+while.cond51:                                     ; preds = %if.end63, %choose.when48
+  %i54 = load i64, ptr %i, align 8
+  %statements = extractvalue %_Z5Block %variant.val50, 1
+  %length55 = extractvalue %_Z6VectorI9StatementE %statements, 0
+  %lt56 = icmp ult i64 %i54, %length55
+  br i1 %lt56, label %while.body52, label %while.exit53
+
+while.body52:                                     ; preds = %while.cond51
+  %statements57 = extractvalue %_Z5Block %variant.val50, 1
+  store %_Z6VectorI9StatementE %statements57, ptr %arg.tmp58, align 1
+  %i59 = load i64, ptr %i, align 8
+  %call60 = call ptr @_ZN6VectorI9StatementE3getEm(ptr %arg.tmp58, i64 %i59)
+  %ne61 = icmp ne ptr %call60, null
+  br i1 %ne61, label %if.then62, label %if.end63
+
+while.exit53:                                     ; preds = %while.cond51
+  ret i1 false
+
+if.then62:                                        ; preds = %while.body52
+  %call64 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %call60, i1 %2)
+  br i1 %call64, label %if.then65, label %if.end66
+
+if.end63:                                         ; preds = %if.end66, %while.body52
+  %i67 = load i64, ptr %i, align 8
+  %add68 = add i64 %i67, 1
+  store i64 %add68, ptr %i, align 1
+  br label %while.cond51
+
+if.then65:                                        ; preds = %if.then62
+  ret i1 true
+
+if.end66:                                         ; preds = %if.then62
+  br label %if.end63
+
+choose.when69:                                    ; preds = %entry
+  %"variant.c_data().ptr70" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val71 = load %_Z2If, ptr %"variant.c_data().ptr70", align 8
+  %condition = extractvalue %_Z2If %variant.val71, 1
+  store %_Z6VectorI7OperandE %condition, ptr %arg.tmp72, align 1
+  %call73 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp72, i1 %2)
+  br i1 %call73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %choose.when69
+  ret i1 true
+
+if.end75:                                         ; preds = %choose.when69
+  %consequent = extractvalue %_Z2If %variant.val71, 3
+  store %_Z9Statement %consequent, ptr %arg.tmp76, align 1
+  %call77 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %arg.tmp76, i1 %2)
+  br i1 %call77, label %if.then78, label %if.end79
+
+if.then78:                                        ; preds = %if.end75
+  ret i1 true
+
+if.end79:                                         ; preds = %if.end75
+  %alternative = extractvalue %_Z2If %variant.val71, 4
+  %ne80 = icmp ne ptr %alternative, null
+  br i1 %ne80, label %if.then81, label %if.end82
+
+if.then81:                                        ; preds = %if.end79
+  %alternative83 = extractvalue %_Z2If %variant.val71, 4
+  %call84 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %alternative83, i1 %2)
+  br i1 %call84, label %if.then85, label %if.end86
+
+if.end82:                                         ; preds = %if.end86, %if.end79
+  ret i1 false
+
+if.then85:                                        ; preds = %if.then81
+  ret i1 true
+
+if.end86:                                         ; preds = %if.then81
+  br label %if.end82
+
+choose.when87:                                    ; preds = %entry
+  %"variant.c_data().ptr88" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val89 = load %_Z6Choose, ptr %"variant.c_data().ptr88", align 8
+  %condition90 = extractvalue %_Z6Choose %variant.val89, 1
+  store %_Z6VectorI7OperandE %condition90, ptr %arg.tmp91, align 1
+  %call92 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp91, i1 %2)
+  br i1 %call92, label %if.then93, label %if.end94
+
+if.then93:                                        ; preds = %choose.when87
+  ret i1 true
+
+if.end94:                                         ; preds = %choose.when87
+  store i64 0, ptr %i, align 1
+  br label %while.cond95
+
+while.cond95:                                     ; preds = %if.end107, %if.end94
+  %i98 = load i64, ptr %i, align 8
+  %cases = extractvalue %_Z6Choose %variant.val89, 2
+  %length99 = extractvalue %_Z6VectorI4WhenE %cases, 0
+  %lt100 = icmp ult i64 %i98, %length99
+  br i1 %lt100, label %while.body96, label %while.exit97
+
+while.body96:                                     ; preds = %while.cond95
+  %cases101 = extractvalue %_Z6Choose %variant.val89, 2
+  store %_Z6VectorI4WhenE %cases101, ptr %arg.tmp102, align 1
+  %i103 = load i64, ptr %i, align 8
+  %call104 = call ptr @_ZN6VectorI4WhenE3getEm(ptr %arg.tmp102, i64 %i103)
+  %ne105 = icmp ne ptr %call104, null
+  br i1 %ne105, label %if.then106, label %if.end107
+
+while.exit97:                                     ; preds = %while.cond95
+  %alternative117 = extractvalue %_Z6Choose %variant.val89, 3
+  %ne118 = icmp ne ptr %alternative117, null
+  br i1 %ne118, label %if.then119, label %if.end120
+
+if.then106:                                       ; preds = %while.body96
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp108, ptr align 1 %call104, i64 ptrtoint (ptr getelementptr (%_Z4When, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val109 = load %_Z4When, ptr %deref.tmp108, align 8
+  %consequent110 = extractvalue %_Z4When %grp.deref.val109, 3
+  store %_Z9Statement %consequent110, ptr %arg.tmp111, align 1
+  %call112 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %arg.tmp111, i1 %2)
+  br i1 %call112, label %if.then113, label %if.end114
+
+if.end107:                                        ; preds = %if.end114, %while.body96
+  %i115 = load i64, ptr %i, align 8
+  %add116 = add i64 %i115, 1
+  store i64 %add116, ptr %i, align 1
+  br label %while.cond95
+
+if.then113:                                       ; preds = %if.then106
+  ret i1 true
+
+if.end114:                                        ; preds = %if.then106
+  br label %if.end107
+
+if.then119:                                       ; preds = %while.exit97
+  %alternative121 = extractvalue %_Z6Choose %variant.val89, 3
+  %call122 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %alternative121, i1 %2)
+  br i1 %call122, label %if.then123, label %if.end124
+
+if.end120:                                        ; preds = %if.end124, %while.exit97
+  ret i1 false
+
+if.then123:                                       ; preds = %if.then119
+  ret i1 true
+
+if.end124:                                        ; preds = %if.then119
+  br label %if.end120
+
+choose.when125:                                   ; preds = %entry
+  %"variant.c_data().ptr126" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val127 = load %_Z5Match, ptr %"variant.c_data().ptr126", align 8
+  %condition128 = extractvalue %_Z5Match %variant.val127, 1
+  store %_Z6VectorI7OperandE %condition128, ptr %arg.tmp129, align 1
+  %call130 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp129, i1 %2)
+  br i1 %call130, label %if.then131, label %if.end132
+
+if.then131:                                       ; preds = %choose.when125
+  ret i1 true
+
+if.end132:                                        ; preds = %choose.when125
+  store i64 0, ptr %i, align 1
+  br label %while.cond133
+
+while.cond133:                                    ; preds = %if.end145, %if.end132
+  %i136 = load i64, ptr %i, align 8
+  %branches = extractvalue %_Z5Match %variant.val127, 2
+  %length137 = extractvalue %_Z6VectorI6BranchE %branches, 0
+  %lt138 = icmp ult i64 %i136, %length137
+  br i1 %lt138, label %while.body134, label %while.exit135
+
+while.body134:                                    ; preds = %while.cond133
+  %branches139 = extractvalue %_Z5Match %variant.val127, 2
+  store %_Z6VectorI6BranchE %branches139, ptr %arg.tmp140, align 1
+  %i141 = load i64, ptr %i, align 8
+  %call142 = call ptr @_ZN6VectorI6BranchE3getEm(ptr %arg.tmp140, i64 %i141)
+  %ne143 = icmp ne ptr %call142, null
+  br i1 %ne143, label %if.then144, label %if.end145
+
+while.exit135:                                    ; preds = %while.cond133
+  %alternative155 = extractvalue %_Z5Match %variant.val127, 3
+  %ne156 = icmp ne ptr %alternative155, null
+  br i1 %ne156, label %if.then157, label %if.end158
+
+if.then144:                                       ; preds = %while.body134
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp146, ptr align 1 %call142, i64 ptrtoint (ptr getelementptr (%_Z6Branch, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val147 = load %_Z6Branch, ptr %deref.tmp146, align 8
+  %consequent148 = extractvalue %_Z6Branch %grp.deref.val147, 2
+  store %_Z9Statement %consequent148, ptr %arg.tmp149, align 1
+  %call150 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %arg.tmp149, i1 %2)
+  br i1 %call150, label %if.then151, label %if.end152
+
+if.end145:                                        ; preds = %if.end152, %while.body134
+  %i153 = load i64, ptr %i, align 8
+  %add154 = add i64 %i153, 1
+  store i64 %add154, ptr %i, align 1
+  br label %while.cond133
+
+if.then151:                                       ; preds = %if.then144
+  ret i1 true
+
+if.end152:                                        ; preds = %if.then144
+  br label %if.end145
+
+if.then157:                                       ; preds = %while.exit135
+  %alternative159 = extractvalue %_Z5Match %variant.val127, 3
+  %call160 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %alternative159, i1 %2)
+  br i1 %call160, label %if.then161, label %if.end162
+
+if.end158:                                        ; preds = %if.end162, %while.exit135
+  ret i1 false
+
+if.then161:                                       ; preds = %if.then157
+  ret i1 true
+
+if.end162:                                        ; preds = %if.then157
+  br label %if.end158
+
+choose.when163:                                   ; preds = %entry
+  %"variant.c_data().ptr164" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val165 = load %_Z3For, ptr %"variant.c_data().ptr164", align 8
+  %expression166 = extractvalue %_Z3For %variant.val165, 2
+  store %_Z6VectorI7OperandE %expression166, ptr %arg.tmp167, align 1
+  %call168 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp167, i1 %2)
+  br i1 %call168, label %if.then169, label %if.end170
+
+if.then169:                                       ; preds = %choose.when163
+  ret i1 true
+
+if.end170:                                        ; preds = %choose.when163
+  %action = extractvalue %_Z3For %variant.val165, 3
+  store %_Z6Action %action, ptr %arg.tmp171, align 1
+  %call172 = call i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Actionb(ptr %0, ptr %arg.tmp171, i1 %2)
+  br i1 %call172, label %if.then173, label %if.end174
+
+if.then173:                                       ; preds = %if.end170
+  ret i1 true
+
+if.end174:                                        ; preds = %if.end170
+  ret i1 false
+
+choose.when175:                                   ; preds = %entry
+  %"variant.c_data().ptr176" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val177 = load %_Z5While, ptr %"variant.c_data().ptr176", align 8
+  %condition178 = extractvalue %_Z5While %variant.val177, 1
+  store %_Z7Binding %condition178, ptr %arg.tmp179, align 1
+  %call180 = call i1 @_ZN7Planner29binding_stores_into_ref_paramE8Function7Bindingb(ptr %0, ptr %arg.tmp179, i1 %2)
+  br i1 %call180, label %if.then181, label %if.end182
+
+if.then181:                                       ; preds = %choose.when175
+  ret i1 true
+
+if.end182:                                        ; preds = %choose.when175
+  %action183 = extractvalue %_Z5While %variant.val177, 2
+  store %_Z6Action %action183, ptr %arg.tmp184, align 1
+  %call185 = call i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Actionb(ptr %0, ptr %arg.tmp184, i1 %2)
+  br i1 %call185, label %if.then186, label %if.end187
+
+if.then186:                                       ; preds = %if.end182
+  ret i1 true
+
+if.end187:                                        ; preds = %if.end182
+  ret i1 false
+
+choose.when188:                                   ; preds = %entry
+  %"variant.c_data().ptr189" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val190 = load %_Z6Repeat, ptr %"variant.c_data().ptr189", align 8
+  %action191 = extractvalue %_Z6Repeat %variant.val190, 1
+  store %_Z6Action %action191, ptr %arg.tmp192, align 1
+  %call193 = call i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Actionb(ptr %0, ptr %arg.tmp192, i1 %2)
+  br i1 %call193, label %if.then194, label %if.end195
+
+if.then194:                                       ; preds = %choose.when188
+  ret i1 true
+
+if.end195:                                        ; preds = %choose.when188
+  ret i1 false
+
+choose.when196:                                   ; preds = %entry
+  %"variant.c_data().ptr197" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val198 = load %_Z3Try, ptr %"variant.c_data().ptr197", align 8
+  %binding = extractvalue %_Z3Try %variant.val198, 1
+  store %_Z7Binding %binding, ptr %arg.tmp199, align 1
+  %call200 = call i1 @_ZN7Planner29binding_stores_into_ref_paramE8Function7Bindingb(ptr %0, ptr %arg.tmp199, i1 %2)
+  br i1 %call200, label %if.then201, label %if.end202
+
+if.then201:                                       ; preds = %choose.when196
+  ret i1 true
+
+if.end202:                                        ; preds = %choose.when196
+  store i64 0, ptr %i, align 1
+  br label %while.cond203
+
+while.cond203:                                    ; preds = %if.end214, %if.end202
+  %i206 = load i64, ptr %i, align 8
+  %catches = extractvalue %_Z3Try %variant.val198, 2
+  %length207 = extractvalue %_Z6VectorI4WhenE %catches, 0
+  %lt208 = icmp ult i64 %i206, %length207
+  br i1 %lt208, label %while.body204, label %while.exit205
+
+while.body204:                                    ; preds = %while.cond203
+  %catches209 = extractvalue %_Z3Try %variant.val198, 2
+  store %_Z6VectorI4WhenE %catches209, ptr %arg.tmp102, align 1
+  %i210 = load i64, ptr %i, align 8
+  %call211 = call ptr @_ZN6VectorI4WhenE3getEm(ptr %arg.tmp102, i64 %i210)
+  %ne212 = icmp ne ptr %call211, null
+  br i1 %ne212, label %if.then213, label %if.end214
+
+while.exit205:                                    ; preds = %while.cond203
+  %alternative224 = extractvalue %_Z3Try %variant.val198, 3
+  %ne225 = icmp ne ptr %alternative224, null
+  br i1 %ne225, label %if.then226, label %if.end227
+
+if.then213:                                       ; preds = %while.body204
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp215, ptr align 1 %call211, i64 ptrtoint (ptr getelementptr (%_Z4When, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val216 = load %_Z4When, ptr %deref.tmp215, align 8
+  %consequent217 = extractvalue %_Z4When %grp.deref.val216, 3
+  store %_Z9Statement %consequent217, ptr %arg.tmp218, align 1
+  %call219 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %arg.tmp218, i1 %2)
+  br i1 %call219, label %if.then220, label %if.end221
+
+if.end214:                                        ; preds = %if.end221, %while.body204
+  %i222 = load i64, ptr %i, align 8
+  %add223 = add i64 %i222, 1
+  store i64 %add223, ptr %i, align 1
+  br label %while.cond203
+
+if.then220:                                       ; preds = %if.then213
+  ret i1 true
+
+if.end221:                                        ; preds = %if.then213
+  br label %if.end214
+
+if.then226:                                       ; preds = %while.exit205
+  %alternative228 = extractvalue %_Z3Try %variant.val198, 3
+  %call229 = call i1 @_ZN7Planner31statement_stores_into_ref_paramE8Function9Statementb(ptr %0, ptr %alternative228, i1 %2)
+  br i1 %call229, label %if.then230, label %if.end231
+
+if.end227:                                        ; preds = %if.end231, %while.exit205
+  ret i1 false
+
+if.then230:                                       ; preds = %if.then226
+  ret i1 true
+
+if.end231:                                        ; preds = %if.then226
+  br label %if.end227
+
+choose.when232:                                   ; preds = %entry
+  %"variant.c_data().ptr233" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val234 = load %_Z3New, ptr %"variant.c_data().ptr233", align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond235
+
+while.cond235:                                    ; preds = %if.end248, %choose.when232
+  %i238 = load i64, ptr %i, align 8
+  %arguments = extractvalue %_Z3New %variant.val234, 2
+  %components239 = extractvalue %_Z5Tuple %arguments, 1
+  %length240 = extractvalue %_Z6VectorI9ComponentE %components239, 0
+  %lt241 = icmp ult i64 %i238, %length240
+  br i1 %lt241, label %while.body236, label %while.exit237
+
+while.body236:                                    ; preds = %while.cond235
+  %arguments242 = extractvalue %_Z3New %variant.val234, 2
+  %components243 = extractvalue %_Z5Tuple %arguments242, 1
+  store %_Z6VectorI9ComponentE %components243, ptr %arg.tmp, align 1
+  %i244 = load i64, ptr %i, align 8
+  %call245 = call ptr @_ZN6VectorI9ComponentE3getEm(ptr %arg.tmp, i64 %i244)
+  %ne246 = icmp ne ptr %call245, null
+  br i1 %ne246, label %if.then247, label %if.end248
+
+while.exit237:                                    ; preds = %while.cond235
+  ret i1 false
+
+if.then247:                                       ; preds = %while.body236
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp249, ptr align 1 %call245, i64 ptrtoint (ptr getelementptr (%_Z9Component, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val250 = load %_Z9Component, ptr %deref.tmp249, align 8
+  %value251 = extractvalue %_Z9Component %grp.deref.val250, 2
+  store %_Z6VectorI7OperandE %value251, ptr %arg.tmp252, align 1
+  %call253 = call i1 @_ZN7Planner24ops_store_into_ref_paramE8Function6VectorI7OperandEb(ptr %0, ptr %arg.tmp252, i1 %2)
+  br i1 %call253, label %if.then254, label %if.end255
+
+if.end248:                                        ; preds = %if.end255, %while.body236
+  %i256 = load i64, ptr %i, align 8
+  %add257 = add i64 %i256, 1
+  store i64 %add257, ptr %i, align 1
+  br label %while.cond235
+
+if.then254:                                       ; preds = %if.then247
+  ret i1 true
+
+if.end255:                                        ; preds = %if.then247
+  br label %if.end248
+
+choose.when258:                                   ; preds = %entry
+  %"variant.c_data().ptr259" = getelementptr inbounds nuw %_Z10Expression, ptr %choose.union, i32 0, i32 1
+  %variant.val260 = load %_Z6Lambda, ptr %"variant.c_data().ptr259", align 8
+  %body = extractvalue %_Z6Lambda %variant.val260, 2
+  store %_Z6Action %body, ptr %arg.tmp261, align 1
+  %call262 = call i1 @_ZN7Planner28action_stores_into_ref_paramE8Function6Actionb(ptr %0, ptr %arg.tmp261, i1 %2)
+  br i1 %call262, label %if.then263, label %if.end264
+
+if.then263:                                       ; preds = %choose.when258
+  ret i1 true
+
+if.end264:                                        ; preds = %choose.when258
+  ret i1 false
 }
 
 define linkonce_odr i1 @_ZN7Planner16ops_may_allocateE6VectorI7OperandE(ptr %0) {
