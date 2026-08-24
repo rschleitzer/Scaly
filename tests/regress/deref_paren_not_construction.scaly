@@ -1,0 +1,122 @@
+; Regression: a PREFIX OPERATOR applied to a parenthesized expression is not a
+; construction, and a body that ALSO builds still gets its caller page
+; (2026-08-24).
+;
+; body_may_allocate recognises a construction on the operand SEQUENCE -- a
+; member-access-free Type head, optionally a Matrix, then a Tuple -- and a
+; single-segment head used to read as a concept unconditionally. `*(buf + i)`
+; has exactly that shape: `*` is an ordinary identifier (an operator IS an
+; identifier, one made only of the eleven operator characters), so the
+; ordinary spelling of an indexed read through a hand-walked buffer read as a
+; construction and cost its function a caller page -- while the same
+; expression bound to a local first did not.
+;
+; The two halves have to be asserted together, because the DANGEROUS direction
+; is over-reach: `make` derefs the same way and then BUILDS its result, so it
+; must still receive the page. Without one, the Elem it constructs lands on
+; make's own frame, which is released on return, and the churn loop recycles
+; that page before the read-back.
+;
+; Measured across the fix, in the emitted IR of this very file:
+;   at    _ZN6Holder2atEPN4scaly6memory4PageEm  ->  _ZN6Holder2atEm
+;   make  _ZN6Holder4makeEPN4scaly6memory4PageEm     (unchanged, both sides)
+; The `at` half is therefore an EMISSION claim -- a page nobody needs is waste,
+; not a fault, so no runtime assertion can see it; what this file runs is the
+; other half, where a lost page WOULD be a fault.
+; Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Array
+use scaly.containers.Vector
+use scaly.memory.Page
+
+define Elem (v: int)
+
+define Holder (buf: pointer[Elem], n: size_t)
+{
+    ; pure buffer walk. Nothing is built, so no page is owed -- and the
+    ; parenthesized deref must not be mistaken for `Elem(...)`.
+    function at(this: Holder, i: size_t) returns ref[Elem]?
+    {
+        if i >= n
+            return null
+        *(buf + i)
+    }
+
+    ; the SAME deref shape, but the tail constructs: the page must survive.
+    function make(this: Holder, i: size_t) returns ref[Elem]?
+    {
+        if i >= n
+            return null
+        let src *(buf + i)
+        Elem(src.v * 2)
+    }
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var junk Vector[String](3)
+        junk.put(0, "xxxxx")
+        junk.put(1, "yyyyy")
+        junk.put(2, "zzzzz")
+        let jp junk.get 0
+        if jp <> null
+            set total: total + (*jp).get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    var raw Elem[4]
+    var k: size_t 0
+    while k < 4
+    {
+        set (raw as pointer[Elem] + k).v: (k as int) + 1
+        set k: k + 1
+    }
+    let h Holder(raw as pointer[Elem], 4)
+
+    ; the borrowed read
+    let e2 h.at 2
+    if e2 = null
+        return 1
+    if e2.v <> 3
+        return 2
+    if h.at(4) <> null
+        return 3
+
+    ; the built result must outlive make's frame
+    let m h.make 3
+    if m = null
+        return 4
+    let c churn(60)
+    if c = 0
+        return 5
+    if m.v <> 8
+        return 6
+    0
+}
+
+let rc check()
+if rc = 0
+    print "PASS"
+if rc = 1
+    print "FAIL1"
+if rc = 2
+    print "FAIL2"
+if rc = 3
+    print "FAIL3"
+if rc = 4
+    print "FAIL4"
+if rc = 5
+    print "FAIL5"
+if rc = 6
+    print "FAIL6"

@@ -36058,7 +36058,29 @@ define Planner
         if t.name.length = 0
             return false
         if t.name.length = 1
+        {
+            ; …with ONE exception, and it is the shape the ports are full of:
+            ; a PREFIX OPERATOR applied to a parenthesized expression is a Type
+            ; head followed by a Tuple, i.e. the construction shape exactly.
+            ; `*(buf.get_buffer() + i)` -- the ordinary spelling of an indexed
+            ; read through a hand-walked buffer -- therefore read as a
+            ; construction and cost its function a caller page, while the same
+            ; expression bound to a local first (`let p buf + i` … `*p`) did
+            ; not. An operator is an identifier made EXCLUSIVELY of the eleven
+            ; operator characters, and that character class is the whole
+            ; definition (lexer.scaly's scan_operator), so the two classes are
+            ; disjoint: a name passing that test can be neither a concept nor a
+            ; free function, and there is nothing here for a page to allocate.
+            ; This does not widen the scan's gap -- an operator in INFIX
+            ; position (`a + b`) has never been counted, because the head is
+            ; then the left operand; only the parenthesized prefix form matched
+            ; by accident of shape.
+            let only_ptr t.name.get 0
+            if only_ptr <> null
+                if Planner.name_reads_as_operator((*only_ptr))
+                    return false
             return true
+        }
         let last_ptr t.name.get(t.name.length - 1)
         if last_ptr = null
             return true
@@ -36076,6 +36098,51 @@ define Planner
                 return true
         }
         false
+    }
+    ; An OPERATOR name: an identifier made exclusively of the eleven operator
+    ; characters `+ - * / = % & | ~ < >`. That class IS the language's
+    ; definition of an operator -- there is no operator token class, an
+    ; operator IS an identifier, and `advance` branches on letter vs operator
+    ; char so the two are disjoint by construction. `^` is deliberately absent
+    ; (it is the lifetime sigil, never an operator char); the list must agree
+    ; with lexer.scaly's scan_operator and with scalyls' grammar.is_op_char.
+    function name_reads_as_operator(n: String) returns bool
+    {
+        let len n.get_length()
+        if len = 0
+            return false
+        var i: size_t 0
+        while i < len
+        {
+            let c n.get i
+            var ok: bool false
+            if c = 43
+                set ok: true
+            if c = 45
+                set ok: true
+            if c = 42
+                set ok: true
+            if c = 47
+                set ok: true
+            if c = 61
+                set ok: true
+            if c = 37
+                set ok: true
+            if c = 38
+                set ok: true
+            if c = 124
+                set ok: true
+            if c = 126
+                set ok: true
+            if c = 60
+                set ok: true
+            if c = 62
+                set ok: true
+            if ok = false
+                return false
+            set i: i + 1
+        }
+        true
     }
     function operand_may_allocate(op: Operand) returns bool
     {
