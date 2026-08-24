@@ -1,0 +1,40 @@
+; xfail: no matching initializer for Holder with 2 argument(s)
+;
+; Regression: an init of the RIGHT ARITY that matches no argument TYPE used to
+; fall through to the positional-tuple path silently (2026-08-24).
+;
+; The two count branches of fill_default_components# judge too few and too many
+; arguments; EXACT arity with a type mismatch was judged by nothing. `ref[T]?`
+; IS `Option[ref[T]]`, a different type from `ref[T]`, so an init whose
+; parameter does not mirror its field's nullability matches no construction
+; that passes a nullable value -- and the construction becomes a bare tuple,
+; with the init BODY never running. rc 0, no diagnostic, and the result is
+; right only where the init happens to assign in FIELD ORDER.
+;
+; Found by a package-wide `pointer` -> `ref` rename, and NOT by any suite: all
+; five tscaly yardsticks stayed green over 17962 units with such a construction
+; in the tree. What found it was ONE init call missing from the emitted IR.
+
+package scaly 0.1.0
+
+define Leaf (v: int)
+
+define Holder (leaf: ref[Leaf]?  n: int)
+{
+    ; the parameter does NOT mirror the field: `ref[Leaf]` against `ref[Leaf]?`
+    init(l: ref[Leaf], k: int)
+    {
+        set leaf: l
+        set n: k * 10
+    }
+}
+
+function build(maybe: ref[Leaf]?) returns int
+{
+    let h Holder(maybe, 4)
+    h.n
+}
+
+var anchor Leaf(1)
+let r build(&anchor)
+print r

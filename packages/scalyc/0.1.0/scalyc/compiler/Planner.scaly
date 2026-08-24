@@ -3763,7 +3763,8 @@ define Planner
             struct_name: String,
             loc: Span,
             provided: ref[Vector[PlannedComponent]]?,
-            ctor_type: PlannedType
+            ctor_type: PlannedType,
+            arg_types: Vector[PlannedType]
         ) returns ref[Vector[PlannedComponent]]?
         {
             let concept_ref this.lookup_concept(struct_name)
@@ -3894,6 +3895,107 @@ define Planner
                         }
                         var filled_vec Vector[PlannedComponent](filled)
                         set out_ref: &filled_vec
+                    }
+                    if provided_count = s.properties.length
+                    {
+                        ; EXACT arity on the positional-tuple FALLTHROUGH — the
+                        ; case the two count branches around this one cannot
+                        ; see, and the one a package-wide rename produces. The
+                        ; count is RIGHT and no init matched anyway, so the
+                        ; mismatch is by TYPE: `ListRange(list, pos, end)` with
+                        ; `list` a `ref[Array[X]]?` against an init declaring a
+                        ; plain `ref[Array[X]]` — `ref[T]?` IS `Option[ref[T]]`,
+                        ; a different type, so check_initializer_match rejects
+                        ; it and the construction becomes a bare tuple. The
+                        ; init BODY never runs, and the result is right only
+                        ; where that init happens to assign in FIELD ORDER;
+                        ; where it does not, argument i lands in field i.
+                        ;
+                        ; Silent until 2026-08-24, in the worst possible way:
+                        ; every one of tscaly's five yardsticks stayed green
+                        ; with such a construction in the tree, and what found
+                        ; it was ONE init call missing from the emitted IR
+                        ; (139 -> 138). A diagnostic is what makes the class
+                        ; findable at its own line instead of by counting
+                        ; instructions.
+                        ;
+                        ; ★The gate is an init of THE SAME ARITY, not merely
+                        ; the existence of one, and the difference is what
+                        ; separates a defect from the ordinary idiom.
+                        ; `Slice[T]` declares `init()` and is nevertheless
+                        ; built as `Slice[T](data + from, to - from)` — the
+                        ; documented positional construction of a data class,
+                        ; correct, and no init of arity 2 could ever have
+                        ; matched it. Where an init of the RIGHT arity exists
+                        ; and still did not match, the only thing left to
+                        ; disagree about is the TYPES, which is precisely the
+                        ; class this reports. (Measured: gating on existence
+                        ; alone reports the stdlib's own `Slice`, twice.)
+                        ;
+                        ; Also suppressed over an uninstantiated generic
+                        ; TEMPLATE, the same exemption the too-few branch
+                        ; carries and for the same reason: with `K`/`V` unbound
+                        ; no init can match by type, and every instantiation is
+                        ; planned separately and IS checked.
+                        var report_exact: bool false
+                        var ii2: size_t 0
+                        while ii2 < s.initializers.length
+                        {
+                            let ini2_ptr s.initializers.get ii2
+                            if ini2_ptr <> null
+                                if ini2_ptr.input.length = provided_count
+                                    set report_exact: true
+                            set ii2: ii2 + 1
+                        }
+                        if Planner.type_mentions_generic_param(ctor_type)
+                            set report_exact: false
+                        ; ★And every ARGUMENT type has to be resolved, the same
+                        ; restriction report_method_arg_types# carries: a fresh
+                        ; type variable, an empty name or a `void` matches
+                        ; nothing, so an init rejected over one says something
+                        ; about the PLANNER's knowledge and not about the code.
+                        ; Without this the compiler's own `Modeler.scaly`
+                        ; reports a String copy-construction that is correct.
+                        if arg_types.length <> provided_count
+                            set report_exact: false
+                        var argi: size_t 0
+                        while argi < arg_types.length
+                        {
+                            let at_ptr arg_types.get argi
+                            if at_ptr = null
+                                set report_exact: false
+                            if at_ptr <> null
+                            {
+                                if at_ptr.name.length = 0
+                                    set report_exact: false
+                                if at_ptr.name = "void"
+                                    set report_exact: false
+                                if Planner.type_mentions_generic_param((*at_ptr))
+                                    set report_exact: false
+                                ; ★And a bare `null` literal, which plans as
+                                ; `pointer[void]` (make_null_type, mangled
+                                ; "Pv"). It is compatible with every pointer
+                                ; and ref parameter by intent and with none of
+                                ; them by types_compatible, so an init rejected
+                                ; over one says nothing: `IdentifierData(null,
+                                ; 0)` against `init(t: pointer[char], n: int)`
+                                ; is correct code, four times in tscaly's
+                                ; parser alone.
+                                if at_ptr.mangled_name = "Pv"
+                                    set report_exact: false
+                            }
+                            set argi: argi + 1
+                        }
+                        if report_exact
+                        {
+                            var esb StringBuilder()
+                            esb.append "no matching initializer for "
+                            esb.append struct_name
+                            esb.append " with "
+                            esb.append provided_count
+                            esb.append " argument(s): the argument types match no declared init"
+                            this.add_diagnostic(loc, esb.to_string())
+                        }
                     }
                     if provided_count > s.properties.length
                     {
@@ -9219,7 +9321,7 @@ define Planner
                             ; (`Config()` / `Config(true)` with defaulted fields).
                             ; No-op for a full construction or a plain tuple.
                             ; Mirrors stage-0 Planner.cpp:9229-9275.
-                            set components_holder: this.fill_default_components(fn_name, second.loc, components_holder, ctor_struct_type)
+                            set components_holder: this.fill_default_components(fn_name, second.loc, components_holder, ctor_struct_type, ctor_arg_types)
 
                             ; Propagate the type's lifetime into the tuple.
                             ; ctor_struct_type carries the lifetime from the
@@ -31960,8 +32062,19 @@ define Planner
     ; a pointer parameter.
     function region_value_matches_pointer(param_type: PlannedType, arg_type: PlannedType) returns bool
     {
+        ; ★`ref` as well as `pointer` since 2026-08-24. This helper was written
+        ; in 2026-08-02 for `pointer[T]`, and the tree's borrowed references
+        ; have since become `ref[T]` — so an init parameter spelled the way the
+        ; doctrine now demands could not receive a page-hosted construction,
+        ; and `Recognizer^host(tb.extract_trie(), part)` fell through to the
+        ; positional-tuple path with its init body never running. Silent; the
+        ; exact-arity gate in fill_default_components# is what surfaced it.
+        ; The two spellings are interchangeable at every other type test in
+        ; this file (types_compatible's s96 rule is symmetric), so treating
+        ; them differently HERE was the anomaly.
         if param_type.name <> "pointer"
-            return false
+            if param_type.name <> "ref"
+                return false
         var hosted: bool false
         choose arg_type.life
             when c: Call

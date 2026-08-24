@@ -1,0 +1,77 @@
+; Positive control for xfail_init_arity_type_mismatch: the same construction
+; with the init parameter MIRRORING its field is accepted, the init BODY runs
+; (n = k * 10, which a positional-tuple fallthrough would not do), and a
+; page-hosted construction still reaches a `ref[T]` init parameter -- the
+; region_value_matches_pointer# arm that used to demand `pointer` (2026-08-24).
+;
+; The third construction is the shape that must stay SILENT: a concept whose
+; declared inits all have a DIFFERENT arity is built positionally BY DESIGN,
+; which is what the stdlib's own `Slice[T](data + from, to - from)` does
+; against its `init()`.
+; Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.memory.Page
+
+define Leaf (v: int)
+
+define Holder (leaf: ref[Leaf]?  n: int)
+{
+    init(l: ref[Leaf]?, k: int)
+    {
+        set leaf: l
+        set n: k * 10
+    }
+}
+
+define Pinned (leaf: ref[Leaf]  n: int)
+{
+    init(l: ref[Leaf], k: int)
+    {
+        set leaf: l
+        set n: k + 100
+    }
+}
+
+define Plain (a: int  b: int)
+{
+    init()
+    {
+        set a: 0
+        set b: 0
+    }
+}
+
+function build(maybe: ref[Leaf]?, host: pointer[Page]) returns int
+{
+    let h Holder(maybe, 4)
+    if h.n <> 40
+        return 1
+    ; a page-hosted construction handed to a `ref[Leaf]` init parameter
+    let p Pinned(Leaf^host(7), 5)
+    if p.n <> 105
+        return 2
+    if p.leaf.v <> 7
+        return 3
+    ; arity mismatch against the only declared init: the data-class form
+    let q Plain(3, 4)
+    if q.a <> 3
+        return 4
+    if q.b <> 4
+        return 5
+    0
+}
+
+function check() returns int
+{
+    var anchor Leaf(1)
+    let host Page.get(&anchor as pointer[void])
+    build(&anchor, host)
+}
+
+let rc check()
+if rc = 0
+    print "PASS"
+if rc <> 0
+    print "FAIL"
