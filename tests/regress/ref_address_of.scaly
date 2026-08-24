@@ -45,10 +45,12 @@ if take_ref_opt(&b) <> 9
 }
 
 ; Reading and WRITING through the address-of result still work.
-; `var`, NOT `let`: a store through a LET-bound address is a separate, still
-; open defect (SIGSEGV, `var` is correct) -- it predates this change and
-; reproduces identically on the compiler before it. Writing `let` here made
-; this test crash and look like a regression of the ref change; it was not.
+; This used to say `var`, NOT `let`, because a store through a LET-bound
+; address SIGSEGV'd -- a defect older than the ref change, which made writing
+; `let` here look like a regression of it. CLOSED 2026-08-24: the pointer-slot
+; load in emit_member_address now asks the ALLOCATED TYPE instead of merely
+; "is this an alloca", and both spellings are correct. `let` is covered by
+; let_bound_pointer_store.scaly; `var` stays here so both keep a home.
 var r &b
 if r.v <> 9
 {

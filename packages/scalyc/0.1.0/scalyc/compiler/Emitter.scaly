@@ -17546,13 +17546,32 @@ define Emitter
                 ; _bucket's `set sb.prev`, where sb = aligned_alloc result, gave
                 ; `load ptr, %call` of uninitialised bucket memory → SIGSEGV).
                 ; `this` is always the raw pointer arg, never loaded.
+                ; ...and ONLY when that alloca is a slot HOLDING a pointer.
+                ; Being an alloca is not the same question: `let p &b` folds the
+                ; binding to `%b` itself, which IS an alloca -- of the BOX -- so
+                ; the test fired, `load ptr, ptr %b` read the object's first
+                ; eight bytes (the value 9) as an address and the following
+                ; store went to address 9. SIGSEGV, while the identical `var p
+                ; &b` was correct because it has a real `%p = alloca ptr` to
+                ; load from. Ask the ALLOCATED TYPE instead: `ptr` is a slot
+                ; holding a pointer (a `var` pointer local, a stored param) and
+                ; must be loaded; a struct alloca IS the address the author
+                ; named and must not be.
                 if is_this = false
                 {
                     let mp_is_alloca LLVMIsAAllocaInst(current_ptr)
                     if mp_is_alloca.handle <> null
                     {
-                        let ptr_type LLVMPointerTypeInContext(context, 0)
-                        set current_ptr: LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load")
+                        let slot_ty LLVMGetAllocatedType(current_ptr)
+                        var slot_holds_pointer: bool false
+                        if slot_ty.handle <> null
+                            if LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Pointer()
+                                set slot_holds_pointer: true
+                        if slot_holds_pointer
+                        {
+                            let ptr_type LLVMPointerTypeInContext(context, 0)
+                            set current_ptr: LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load")
+                        }
                     }
                 }
                 ; Inner generic = struct type for GEP.

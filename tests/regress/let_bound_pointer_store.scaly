@@ -1,0 +1,99 @@
+; Regression: a member store through a LET-bound address must arrive
+; (2026-08-24). It SIGSEGV'd, while the identical `var` spelling was correct.
+;
+; `emit_member_address` loads the pointer out of its slot before GEPing, and
+; gated that load on "is this value an alloca instruction". That is not the
+; same question: `let p &b` folds the binding to `%b` ITSELF -- which is an
+; alloca, of the BOX -- so the load fired, read the object's first eight bytes
+; as an address, and the store went wherever that pointed. `var p &b` has a
+; real `%p = alloca ptr` to load from and was always right.
+;
+; The guard now asks the ALLOCATED TYPE: a `ptr` slot (a `var` pointer local, a
+; stored parameter) is loaded; a struct alloca IS the address the author named
+; and is not.
+;
+; Both the pointer and the ref spelling are covered -- `&x` yields ref[T] since
+; the ref consolidation, so the ref form is what plain address-of produces and
+; it crashed the same way.
+;
+; NOT a question of whether a `let` pointer may be stored through: it may, and
+; the RBMM runtime itself depends on it -- `root_pages.create_stack_bucket`
+; binds `let sb mem as pointer[StackBucketHeader]` and writes `set sb.prev:`.
+; That shape (a let-bound pointer that is NOT an alloca) always worked and is
+; exercised by every allocation this test performs.
+;
+; Expected: PASS
+
+define Box (v: int  w: int)
+
+var b Box(9, 2)
+
+; The ref that plain address-of yields.
+let r &b
+set r.v: 11
+if b.v <> 11
+{
+    Console.println "FAIL store through a let-bound ref"
+    exit 1
+}
+; Second field, so a wrong offset cannot pass as a right one.
+set r.w: 22
+if b.w <> 22
+{
+    Console.println "FAIL store through a let-bound ref, field 1"
+    exit 1
+}
+
+; The explicit pointer spelling.
+let p (&b as pointer[Box])
+set p.v: 33
+if b.v <> 33
+{
+    Console.println "FAIL store through a let-bound pointer"
+    exit 1
+}
+set p.w: 44
+if b.w <> 44
+{
+    Console.println "FAIL store through a let-bound pointer, field 1"
+    exit 1
+}
+
+; Reading through both was always correct and must stay correct.
+if r.v <> 33
+{
+    Console.println "FAIL read through a let-bound ref"
+    exit 1
+}
+if p.w <> 44
+{
+    Console.println "FAIL read through a let-bound pointer"
+    exit 1
+}
+
+; The `var` spelling, which was the working one -- it must not regress.
+var q &b
+set q.v: 55
+if b.v <> 55
+{
+    Console.println "FAIL store through a var-bound ref"
+    exit 1
+}
+
+; A let-bound pointer that is NOT an alloca: the create_stack_bucket shape.
+; Its slot is an SSA value, so no load may be emitted for it either.
+var other Box(0, 0)
+let o2 (&other as pointer[Box])
+set o2.v: 66
+if other.v <> 66
+{
+    Console.println "FAIL store through a second let-bound pointer"
+    exit 1
+}
+if b.v <> 55
+{
+    Console.println "FAIL the two pointers aliased"
+    exit 1
+}
+
+Console.println "PASS"
