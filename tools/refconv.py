@@ -16,7 +16,18 @@
 # are in packages/tscaly/CLAUDE.md §3.5dj.
 #
 # THIS IS NOT EMISSION-NEUTRAL: `encode_type` mangles `pointer`->"P" and
-# `ref`->"R", so every converted signature gets a new symbol name.  Convert a
+# `ref`->"R", so every converted signature gets a new symbol name.
+#
+# ★A nullable RETURN converts to `ref[T]?` since 2026-08-24.  It used to stay a
+# `pointer` because an NPO return cost the function an implicit caller page;
+# that page is now decided by the body, not by the return type, so the reason is
+# gone.  What did NOT change: a nullable return is still the position where a
+# WRONG conversion is expensive, because the value flows on -- the locals bound
+# to such a call change type with it, and the parameters and fields those locals
+# reach have to move in the SAME pass.  That is why this tool converts whole
+# DECLARATION sets rather than signatures; a sed over `returns pointer[X]` alone
+# produces `function not found` and `no matching initializer` (measured on
+# opensp: 75 rewritten returns, 5 hard diagnostics).  Convert a
 # package in ONE go.  A PORT package cannot move the compiler image (cycle.sh
 # compiles packages/scaly and packages/scalyc only), so no seed is owed for one.
 #
@@ -464,7 +475,17 @@ def main(root, apply=False):
                 elif pos == 'returns':
                     if li not in f.sig:  verdict, why = 'pointer', 'returns-no-body'
                     elif f.sig[li][0] in retnull:
-                        verdict, why = 'pointer', 'nullable-return'
+                        # A nullable RETURN was held at `pointer` for an ABI
+                        # reason that no longer exists: `ref[T]?` is
+                        # Option[ref[T]], and a function returning one used to
+                        # acquire an implicit caller page (contagious across the
+                        # whole function -- it is what broke the JIT's ABI-pinned
+                        # `jit_*` helpers).  Since 2026-08-24 that page is
+                        # decided by the BODY (Planner.body_may_allocate), so a
+                        # routine that only hands back storage which already
+                        # exists -- the shape nearly every nullable accessor has
+                        # -- pays nothing for the honest spelling.
+                        verdict, why = 'ref?', 'nullable-return'
                     else:                verdict, why = 'ref', 'return'
                 elif nm is None:         verdict, why = 'pointer', 'no-name'
                 elif li in f.sig:                                   # PARAMETER
