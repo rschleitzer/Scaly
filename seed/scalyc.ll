@@ -250867,47 +250867,192 @@ if.end:                                           ; preds = %entry
   br i1 %eq4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end
-  ret i1 true
+  %field.inplace = getelementptr inbounds nuw %_Z4Type, ptr %0, i32 0, i32 1
+  %call = call ptr @_ZN6VectorI6StringE3getEm(ptr %field.inplace, i64 0)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then7, label %if.end8
 
 if.end6:                                          ; preds = %if.end
-  %field.inplace = getelementptr inbounds nuw %_Z4Type, ptr %0, i32 0, i32 1
-  %load.struct7 = load %_Z4Type, ptr %0, align 8
-  %name8 = extractvalue %_Z4Type %load.struct7, 1
-  %length9 = extractvalue %_Z6VectorI6StringE %name8, 0
-  %sub = sub i64 %length9, 1
-  %call = call ptr @_ZN6VectorI6StringE3getEm(ptr %field.inplace, i64 %sub)
-  %eq10 = icmp eq ptr %call, null
-  br i1 %eq10, label %if.then11, label %if.end12
+  %field.inplace12 = getelementptr inbounds nuw %_Z4Type, ptr %0, i32 0, i32 1
+  %load.struct13 = load %_Z4Type, ptr %0, align 8
+  %name14 = extractvalue %_Z4Type %load.struct13, 1
+  %length15 = extractvalue %_Z6VectorI6StringE %name14, 0
+  %sub = sub i64 %length15, 1
+  %call16 = call ptr @_ZN6VectorI6StringE3getEm(ptr %field.inplace12, i64 %sub)
+  %eq17 = icmp eq ptr %call16, null
+  br i1 %eq17, label %if.then18, label %if.end19
 
-if.then11:                                        ; preds = %if.end6
+if.then7:                                         ; preds = %if.then5
+  %call9 = call i1 @_ZN7Planner22name_reads_as_operatorE6String(ptr %call)
+  br i1 %call9, label %if.then10, label %if.end11
+
+if.end8:                                          ; preds = %if.end11, %if.then5
   ret i1 true
 
-if.end12:                                         ; preds = %if.end6
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %call13 = call i64 @_ZN6String10get_lengthEv(ptr %deref.tmp)
-  %eq14 = icmp eq i64 %call13, 0
-  br i1 %eq14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end12
-  ret i1 true
-
-if.end16:                                         ; preds = %if.end12
-  %call17 = call i8 @_ZN6String3getEm(ptr %deref.tmp, i64 0)
-  %ge = icmp uge i8 %call17, 65
-  br i1 %ge, label %if.then18, label %if.end19
-
-if.then18:                                        ; preds = %if.end16
-  %le = icmp ule i8 %call17, 90
-  br i1 %le, label %if.then20, label %if.end21
-
-if.end19:                                         ; preds = %if.end21, %if.end16
+if.then10:                                        ; preds = %if.then7
   ret i1 false
 
-if.then20:                                        ; preds = %if.then18
+if.end11:                                         ; preds = %if.then7
+  br label %if.end8
+
+if.then18:                                        ; preds = %if.end6
   ret i1 true
 
-if.end21:                                         ; preds = %if.then18
-  br label %if.end19
+if.end19:                                         ; preds = %if.end6
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %call20 = call i64 @_ZN6String10get_lengthEv(ptr %deref.tmp)
+  %eq21 = icmp eq i64 %call20, 0
+  br i1 %eq21, label %if.then22, label %if.end23
+
+if.then22:                                        ; preds = %if.end19
+  ret i1 true
+
+if.end23:                                         ; preds = %if.end19
+  %call24 = call i8 @_ZN6String3getEm(ptr %deref.tmp, i64 0)
+  %ge = icmp uge i8 %call24, 65
+  br i1 %ge, label %if.then25, label %if.end26
+
+if.then25:                                        ; preds = %if.end23
+  %le = icmp ule i8 %call24, 90
+  br i1 %le, label %if.then27, label %if.end28
+
+if.end26:                                         ; preds = %if.end28, %if.end23
+  ret i1 false
+
+if.then27:                                        ; preds = %if.then25
+  ret i1 true
+
+if.end28:                                         ; preds = %if.then25
+  br label %if.end26
+}
+
+define linkonce_odr i1 @_ZN7Planner22name_reads_as_operatorE6String(ptr %0) {
+entry:
+  %ok = alloca i1, align 1
+  %i = alloca i64, align 8
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
+  %eq = icmp eq i64 %call, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end40, %if.end
+  %i1 = load i64, ptr %i, align 8
+  %lt = icmp ult i64 %i1, %call
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %call3 = call i8 @_ZN6String3getEm(ptr %0, i64 %i2)
+  store i1 false, ptr %ok, align 1
+  %eq4 = icmp eq i8 %call3, 43
+  br i1 %eq4, label %if.then5, label %if.end6
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 true
+
+if.then5:                                         ; preds = %while.body
+  store i1 true, ptr %ok, align 1
+  br label %if.end6
+
+if.end6:                                          ; preds = %if.then5, %while.body
+  %eq7 = icmp eq i8 %call3, 45
+  br i1 %eq7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end6
+  store i1 true, ptr %ok, align 1
+  br label %if.end9
+
+if.end9:                                          ; preds = %if.then8, %if.end6
+  %eq10 = icmp eq i8 %call3, 42
+  br i1 %eq10, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %if.end9
+  store i1 true, ptr %ok, align 1
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %if.end9
+  %eq13 = icmp eq i8 %call3, 47
+  br i1 %eq13, label %if.then14, label %if.end15
+
+if.then14:                                        ; preds = %if.end12
+  store i1 true, ptr %ok, align 1
+  br label %if.end15
+
+if.end15:                                         ; preds = %if.then14, %if.end12
+  %eq16 = icmp eq i8 %call3, 61
+  br i1 %eq16, label %if.then17, label %if.end18
+
+if.then17:                                        ; preds = %if.end15
+  store i1 true, ptr %ok, align 1
+  br label %if.end18
+
+if.end18:                                         ; preds = %if.then17, %if.end15
+  %eq19 = icmp eq i8 %call3, 37
+  br i1 %eq19, label %if.then20, label %if.end21
+
+if.then20:                                        ; preds = %if.end18
+  store i1 true, ptr %ok, align 1
+  br label %if.end21
+
+if.end21:                                         ; preds = %if.then20, %if.end18
+  %eq22 = icmp eq i8 %call3, 38
+  br i1 %eq22, label %if.then23, label %if.end24
+
+if.then23:                                        ; preds = %if.end21
+  store i1 true, ptr %ok, align 1
+  br label %if.end24
+
+if.end24:                                         ; preds = %if.then23, %if.end21
+  %eq25 = icmp eq i8 %call3, 124
+  br i1 %eq25, label %if.then26, label %if.end27
+
+if.then26:                                        ; preds = %if.end24
+  store i1 true, ptr %ok, align 1
+  br label %if.end27
+
+if.end27:                                         ; preds = %if.then26, %if.end24
+  %eq28 = icmp eq i8 %call3, 126
+  br i1 %eq28, label %if.then29, label %if.end30
+
+if.then29:                                        ; preds = %if.end27
+  store i1 true, ptr %ok, align 1
+  br label %if.end30
+
+if.end30:                                         ; preds = %if.then29, %if.end27
+  %eq31 = icmp eq i8 %call3, 60
+  br i1 %eq31, label %if.then32, label %if.end33
+
+if.then32:                                        ; preds = %if.end30
+  store i1 true, ptr %ok, align 1
+  br label %if.end33
+
+if.end33:                                         ; preds = %if.then32, %if.end30
+  %eq34 = icmp eq i8 %call3, 62
+  br i1 %eq34, label %if.then35, label %if.end36
+
+if.then35:                                        ; preds = %if.end33
+  store i1 true, ptr %ok, align 1
+  br label %if.end36
+
+if.end36:                                         ; preds = %if.then35, %if.end33
+  %ok37 = load i1, ptr %ok, align 1
+  %eq38 = icmp eq i1 %ok37, false
+  br i1 %eq38, label %if.then39, label %if.end40
+
+if.then39:                                        ; preds = %if.end36
+  ret i1 false
+
+if.end40:                                         ; preds = %if.end36
+  %i41 = load i64, ptr %i, align 8
+  %add = add i64 %i41, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
 }
 
 define linkonce_odr i1 @_ZN7Planner22ops_tail_is_value_ctorE6VectorI7OperandE6String(ptr %0, ptr %1) {
