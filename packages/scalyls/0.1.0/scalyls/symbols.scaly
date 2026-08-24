@@ -74,6 +74,42 @@ mutable prof_fresh: int 0
 mutable prof_sig: int 0
 mutable prof_bytes: int 0
 
+; ---- the LINE CURSOR (offset_to_pos#'s fast path) -----------------------
+;
+; ★WHY IT EXISTS. offset_to_pos# walks the source from byte 0 for every offset
+; it converts, and workspace_symbols_in_file# converts TWO offsets per symbol
+; against ONE source — so building a file's cached symbol blob costs
+; O(symbols x bytes). Measured 2026-08-24 on this tree: one inlayHint over
+; packages/scaly/.../Vector.scaly builds the blob for every .scaly file under
+; packages/ and took 89 s, past the worker's 60 s budget, so the request
+; answered EMPTY and the worker was respawned WITHOUT its index — which means
+; the next request pays the whole price again and no request can ever finish.
+; A synthetic file of N equal declarations timed 0.2 / 0.5 / 1.7 / 6.5 s for
+; N = 250 / 500 / 1000 / 2000, i.e. exactly quadratic, and short-circuiting
+; offset_to_pos# alone took a 34.5 s two-package request to 1.2 s.
+;
+; WHAT IT IS. The last converted offset plus its line/column, so the next
+; conversion walks the DISTANCE between the two instead of the whole file.
+; Both directions, because the order is not monotone: ws_definition# emits a
+; concept's own span [start, end] before its members' spans, which start
+; INSIDE it. The total walk is then proportional to the file, not to its
+; square.
+;
+; ★SOUNDNESS. The cursor is keyed on the source's BUFFER ADDRESS and length,
+; which is only an identity while that buffer is LIVE — a freed buffer's
+; address can come back on another String. That is why the cursor is armed by
+; an explicit window (line_cursor_begin#/line_cursor_end#) around
+; workspace_symbols_in_file#, where `source` is the parameter and therefore
+; alive throughout: a String sharing its address inside that window IS that
+; allocation. Outside the window the cursor is off and offset_to_pos# walks
+; from 0 exactly as before, so every other caller is unaffected.
+mutable lc_data: pointer[u8] null
+mutable lc_len: size_t 0
+mutable lc_off: size_t 0
+mutable lc_line: size_t 0
+mutable lc_col: size_t 0
+mutable lc_active: bool false
+
 define symbols
 {
     procedure prof_reset()
@@ -727,6 +763,96 @@ define symbols
         sb.to_string()
     }
 
+    ; Arm the line cursor for `source` — see the LINE CURSOR block at the top of
+    ; this file for why the window is explicit. `source` must stay alive until
+    ; line_cursor_end#, which is what makes the buffer address an identity.
+    procedure line_cursor_begin(source: String)
+    {
+        set lc_data: source.get_buffer()
+        set lc_len: source.get_length()
+        set lc_off: 0
+        set lc_line: 0
+        set lc_col: 0
+        set lc_active: true
+    }
+
+    ; Disarm it. Every later offset_to_pos# walks from 0 again.
+    procedure line_cursor_end()
+    {
+        set lc_active: false
+        set lc_data: null
+        set lc_len: 0
+    }
+
+    ; True when the cursor is armed for exactly this source: same buffer
+    ; address AND same length. Both halves are needed — the length alone would
+    ; accept a different string, and the address alone is only meaningful while
+    ; the buffer is live, which the window guarantees.
+    function line_cursor_holds(source: String, src_len: size_t) returns bool
+    {
+        if lc_active = false
+            return false
+        if lc_len <> src_len
+            return false
+        let d lc_data
+        if d = null
+            return false
+        d = source.get_buffer()
+    }
+
+    ; The column of `lf` — the offset of an LF byte — i.e. the distance back to
+    ; the byte after the previous LF. Bounded by one line's length, and reached
+    ; only when a BACKWARD step crosses a line boundary.
+    function line_cursor_column_before(data: pointer[u8], lf: size_t) returns size_t
+    {
+        var i lf
+        while i > 0
+        {
+            if *(data + (i - 1)) = (0x0A as u8)
+                return lf - i
+            set i: i - 1
+        }
+        lf
+    }
+
+    ; Move the armed cursor to `target`, in whichever direction it lies. The
+    ; bytes are read through the buffer pointer rather than String.get#, which
+    ; decodes the varint length prefix TWICE per byte.
+    procedure line_cursor_seek(target: size_t)
+    {
+        let data lc_data
+        while lc_off < target
+        {
+            let c *(data + lc_off)
+            if c = (0x0A as u8)
+            {
+                set lc_line: lc_line + 1
+                set lc_col: 0
+            }
+            if c <> (0x0A as u8)
+                set lc_col: lc_col + 1
+            set lc_off: lc_off + 1
+        }
+        while lc_off > target
+        {
+            set lc_off: lc_off - 1
+            let c *(data + lc_off)
+            ; Stepping back OVER an LF: that LF was counted in the old line
+            ; number and is not in the new one, and the column becomes the
+            ; length of the line the LF closes.
+            if c = (0x0A as u8)
+            {
+                set lc_line: lc_line - 1
+                set lc_col: symbols.line_cursor_column_before(data, lc_off)
+            }
+            ; Otherwise the byte just stepped over is an ordinary one, so the
+            ; column is one smaller — and it cannot be 0 here, since a column of
+            ; 0 means the preceding byte IS an LF.
+            if c <> (0x0A as u8)
+                set lc_col: lc_col - 1
+        }
+    }
+
     ; Byte offset -> {"line":L,"character":C}, both 0-based. ASCII columns
     ; (UTF-16 units == bytes for ASCII). Numeric LF compare (10), never "\n".
     ; Mirrors diagnostics.diag_object#'s offset walk.
@@ -738,18 +864,31 @@ define symbols
         var target offset
         if target > src_len
             set target: src_len
-        var off: size_t 0
-        while off < target
+        var walked false
+        ; The cursor's answer is the same walk, resumed from where the last one
+        ; stopped — see the LINE CURSOR block at the top of this file.
+        if symbols.line_cursor_holds(source, src_len)
         {
-            let c source.get off
-            if c = ("\n" as char)
+            symbols.line_cursor_seek target
+            set line: lc_line
+            set col: lc_col
+            set walked: true
+        }
+        if walked = false
+        {
+            var off: size_t 0
+            while off < target
             {
-                set line: line + 1
-                set col: 0
+                let c source.get off
+                if c = ("\n" as char)
+                {
+                    set line: line + 1
+                    set col: 0
+                }
+                else
+                    set col: col + 1
+                set off: off + 1
             }
-            else
-                set col: col + 1
-            set off: off + 1
         }
 
         var sb StringBuilder()
@@ -9258,6 +9397,11 @@ define symbols
     {
         var p parser.Parser(source)
         var sb StringBuilder()
+        ; The one place that converts thousands of offsets against a single
+        ; source — and `source` is a parameter, so it is alive for the whole
+        ; window the cursor is armed over. See the LINE CURSOR block at the top
+        ; of this file.
+        symbols.line_cursor_begin source
         choose p.parse_program()
             when err: Error {}
             when program: Success
@@ -9286,6 +9430,7 @@ define symbols
                     }
                 }
             }
+        symbols.line_cursor_end()
         sb.to_string()
     }
 
