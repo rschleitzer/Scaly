@@ -391,8 +391,9 @@ def init_param_nullability(files, fverdict):
     arity argument i lands in field i, so an init whose parameters are in a
     different order than the fields writes the WRONG ones.
 
-    Returns {(file_path, sig_line, param_name)} that must carry the `?`."""
-    out = set()
+    Returns two sets of (file_path, sig_line, param_name): those that must carry
+    the `?`, and those that must stay a POINTER because the field does."""
+    out, ptr = set(), set()
     for f in files:
         # enclosing concept of each routine line
         enclosing = {}
@@ -410,11 +411,84 @@ def init_param_nullability(files, fverdict):
             if name != 'init' or rec is None:
                 continue
             body = f.body(i, False)
-            for m in re.finditer(r'\bset\s+([a-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*$',
+            # `set this.locs: locs` is the same store as `set locs: locs` and the
+            # tree writes both; without the optional `this.` the mirror missed
+            # every init that qualifies its target (Text's does).
+            for m in re.finditer(r'\bset\s+(?:this\.)?([a-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*$',
                                  body, re.M):
                 field, param = m.group(1), m.group(2)
-                if fverdict.get((rec, field), ('', ''))[0] == 'ref?':
+                v = fverdict.get((rec, field), ('', ''))[0]
+                if v == 'ref?':
                     out.add((f.path, i, param))
+                elif v == 'pointer':
+                    # The field stays a POINTER (a hand-walked buffer, an
+                    # address-taken cell), so the init parameter that fills it
+                    # must too -- `Text.init(str, locs: ref[Location])` against a
+                    # `locs: pointer[Location]` field is the same disagreement as
+                    # the nullability one above, one property further along.
+                    ptr.add((f.path, i, param))
+    return out, ptr
+
+def walked_returns(files):
+    """Routine name -> is its RESULT walked by a caller?  The `returns` position
+    carries no name, and the buffer it hands out may be walked in a DIFFERENT
+    file than the one that declares the field -- `InternalEntity.def_locs` is
+    stored plainly and only `get_def_locs()`'s result is stepped through, so
+    neither the field scan nor returns_field_verdicts can see it.  Ask the call
+    sites instead: a local bound to a call and then walked marks that callee.
+
+    Name-only resolution, like nullable_returns: a collision errs toward
+    `pointer`, the conservative direction."""
+    out = set()
+    bind = re.compile(r'^\s*(?:let|var)\s+([A-Za-z_][A-Za-z0-9_]*)'
+                      r'(?:\s*:[^\n]*?)?\s+'
+                      r'(?:[A-Za-z_][A-Za-z0-9_]*\.)*([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.M)
+    for f in files:
+        for s_ in f.sig:
+            body = f.body(s_, False)
+            for m in bind.finditer(body):
+                local, callee = m.group(1), m.group(2)
+                if walked(local, body):
+                    out.add(callee)
+        # a result walked without a binding: `*(e.get_def_locs() + i)`
+        text = '\n'.join(f.lines)
+        for m in re.finditer(r'\*\s*\(\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)*'
+                             r'([A-Za-z_][A-Za-z0-9_]*)\s*\([^()]*\)\s*[+\-]', text):
+            out.add(m.group(1))
+    return out
+
+def returns_field_verdicts(files, fverdict):
+    """A `returns` carries no NAME, so no name rule can reach it -- and that is
+    exactly the position where a hand-walked buffer escapes the classification:
+    `Text.locs` stays a pointer while `get_locs()` did not, and every caller
+    then inherited a ref it walks (root CLAUDE.md names this pair).  Link the
+    two by the BODY: an accessor whose whole body is a bare field read hands out
+    that field, so it inherits the field's verdict.
+
+    Returns {(file_path, sig_line): verdict} for the accessors it can decide."""
+    out = {}
+    for f in files:
+        enclosing, stack = {}, []
+        for i, line in enumerate(f.lines):
+            if is_comment(line):
+                continue
+            m = re.match(r'^(\s*)define\s+([A-Za-z_][A-Za-z0-9_]*)', line)
+            if m:
+                stack = [(len(m.group(1)), m.group(2))]
+            if i in f.sig:
+                enclosing[i] = stack[-1][1] if stack else None
+        for i, rec in enclosing.items():
+            if rec is None:
+                continue
+            body = f.body(i, False)
+            names = set()
+            for m in re.finditer(r'^\s*(?:return\s+)?(?:this\.)?([a-z_][A-Za-z0-9_]*)\s*$',
+                                 body, re.M):
+                names.add(m.group(1))
+            for nm in names:
+                v = fverdict.get((rec, nm), ('', ''))[0]
+                if v == 'pointer':
+                    out[(f.path, i)] = ('pointer', 'returns-walked-field')
     return out
 
 # ---------- hazards ---------------------------------------------------------
@@ -432,8 +506,19 @@ def nulled(nm, text):
 def dot_hazard(field, all_text):
     f = re.escape(field)
     addr = re.search(r'&\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\b', all_text)
+    # A hand-walked buffer FIELD is not always written with a dot: inside its
+    # own record's methods it is reached through an implicit `this`, so
+    # `names_v + rni` and `this.names_v + (i as size_t)` are the same buffer and
+    # only the second carries one.  Nor is it always dereferenced on the spot --
+    # `let slot this.names_v + (i as size_t)` walks it by plain arithmetic and
+    # stores through the local.  Both shapes went unseen and turned four
+    # `StringC` buffers in opensp's Syntax into refs; the compiler caught it
+    # (18x "arithmetic on a reference"), which is the only reason this was not
+    # a silent byte-stride miscompile.  `walked` carries the bare-name forms.
     walk = (re.search(r'\.' + f + r'\s*\[', all_text) or
-            re.search(r'\*\s*\(\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\s*[+\-]', all_text))
+            re.search(r'\*\s*\(\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\s*[+\-]', all_text) or
+            re.search(r'\.' + f + r'\s*[+\-]\s+\w', all_text) or
+            walked(field, all_text))
     null = (re.search(r'\.' + f + r'\b\s*(?:<>|=)\s*null\b', all_text) or
             re.search(r'\bset\s+[^\n]*\.' + f + r'\s*:\s*null\b', all_text))
     return bool(addr), bool(walk), bool(null)
@@ -453,7 +538,9 @@ def main(root, apply=False):
     retnull  = nullable_returns(files)
     fnull    = field_nullability(files, props, retnull)
     fverdict = field_verdicts(files, all_text, fnull)
-    initnull = init_param_nullability(files, fverdict)
+    initnull, initptr = init_param_nullability(files, fverdict)
+    retfield = returns_field_verdicts(files, fverdict)
+    retwalk  = walked_returns(files)
     tally, decisions = collections.Counter(), []
 
     for f in files:
@@ -474,6 +561,10 @@ def main(root, apply=False):
                 elif pos == 'other':     verdict, why = 'pointer', 'unclassified'
                 elif pos == 'returns':
                     if li not in f.sig:  verdict, why = 'pointer', 'returns-no-body'
+                    elif (f.path, li) in retfield:
+                        verdict, why = retfield[(f.path, li)]
+                    elif f.sig[li][0] in retwalk:
+                        verdict, why = 'pointer', 'returns-walked'
                     elif f.sig[li][0] in retnull:
                         # A nullable RETURN was held at `pointer` for an ABI
                         # reason that no longer exists: `ref[T]?` is
@@ -490,7 +581,9 @@ def main(root, apply=False):
                 elif nm is None:         verdict, why = 'pointer', 'no-name'
                 elif li in f.sig:                                   # PARAMETER
                     b = f.body(li)
-                    if addr_taken(nm, b):  verdict, why = 'pointer', 'param-addr-taken'
+                    if (f.path, li, nm) in initptr:
+                        verdict, why = 'pointer', 'init-param-mirrors-field'
+                    elif addr_taken(nm, b):  verdict, why = 'pointer', 'param-addr-taken'
                     elif walked(nm, b):    verdict, why = 'pointer', 'param-walked'
                     elif (f.path, li, nm) in initnull:
                         verdict, why = 'ref?', 'init-param-mirrors-field'
