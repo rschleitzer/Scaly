@@ -120,6 +120,10 @@ STAY_CONTAINER = {
 }
 STAY_HEADS = (STAY_PRIMITIVE | STAY_INDIRECTION | STAY_RUNTIME
               | STAY_GENERIC_PARAM | STAY_CONTAINER)
+
+# Class B is opt-in (`--elements`): it changes container INSTANTIATIONS, so it
+# is not emission-neutral and wants its own validation round.
+CLASS_B = '--elements' in sys.argv
 ROUTINE = re.compile(r'^(\s*)(function|procedure|operator|init)\b')
 LOCALDECL = re.compile(r"^\s*(let|var)\s+('[^']+'|[A-Za-z_][A-Za-z0-9_]*)\s*:")
 NULLCAST  = re.compile(r"^(\s*)(let|var)\s+('[^']+'|[A-Za-z_][A-Za-z0-9_]*)\s+null\s+as\s+(?=pointer\[)")
@@ -762,6 +766,92 @@ def name_declares(nm, f, li, void_rets, void_props, depth):
             return ''
     return 'pointer[void]' if nm in void_props else ''
 
+# Container heads whose GENERIC ARGUMENT is an element (or a mapped value).
+# `pointer[X]` there is a container OF references, and the faithful spelling is
+# the NULLABLE one: a pointer element can be null, `ref[X]?` can be null, and
+# the two have the same 8-byte layout (measured).  Uniformly `?`, never a
+# per-container guess -- deciding which containers can hold a null would need
+# evidence from every reader and writer of that container, and choosing the
+# NON-optional form wrongly is silent (a null-valued variable stored into a
+# `ref[X]` element compiles rc 0 and the element is null at run time).
+ELEMENT_HEADS = {
+    'Array', 'Vector', 'Slice', 'List', 'HashMap', 'HashMapBuilder',
+    'HashSet', 'HashSetBuilder', 'BuilderList',
+}
+
+def code_part(line):
+    """(code, tail) split at the first comment/quote-safe `;`, so a trailing
+    comment is never rewritten."""
+    i, n = 0, len(line)
+    while i < n:
+        c = line[i]
+        if c == '"':
+            i += 1
+            while i < n:
+                if line[i] == '\\': i += 2; continue
+                if line[i] == '"':  i += 1; break
+                i += 1
+            continue
+        if c == "'":
+            i += 1
+            while i < n and line[i] != "'": i += 1
+            i += 1
+            continue
+        if c == ';':
+            return line[:i], line[i:]
+        i += 1
+    return line, ''
+
+def _balanced(s, i):
+    """s[i] == '['; index just past the matching ']', or -1."""
+    d = 0
+    for k in range(i, len(s)):
+        if s[k] == '[': d += 1
+        elif s[k] == ']':
+            d -= 1
+            if d == 0: return k
+    return -1
+
+def rewrite_elements(line):
+    """`Array[pointer[X]]` -> `Array[ref[X]?]`, recursively, in the CODE part.
+
+    Class B (2026-08-25).  A generic ARGUMENT used to stay a pointer on the
+    strength of an observation -- "the converted ports hold ZERO [ref[...]]" --
+    which is not a reason.  Measured before converting: `Array[ref[X]?]`
+    accepts every idiom these ports use on such a container (a bare `null`
+    literal, a null-valued variable, `set *(buf + i): null` to clear a slot,
+    `put`, `get`, the null test, a field read through the Option, and an
+    element handed to a NON-optional `ref` parameter), at the same 8 bytes.
+
+    ★A `pointer[void]` element is NOT converted: `ref[void]?` is not a
+    reference to anything.  Neither is any other STAY head.
+    """
+    code, tail = code_part(line)
+    out, i, n = [], 0, len(code)
+    while i < n:
+        m = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\[').search(code, i)
+        if not m:
+            out.append(code[i:]); break
+        head = m.group(1)
+        open_i = m.end() - 1
+        close_i = _balanced(code, open_i)
+        if head not in ELEMENT_HEADS or close_i < 0:
+            out.append(code[i:m.end()]); i = m.end(); continue
+        inner = code[open_i + 1:close_i]
+        args, rebuilt = split_args(inner), []
+        for a in args:
+            a = rewrite_elements(a)                       # nested containers
+            st = a.strip()
+            if st.startswith('pointer['):
+                pi, pend = inner_of(st, 0)
+                if pend == len(st) and pi is not None and head_of(pi) not in STAY_HEADS:
+                    a = a.replace('pointer[' + pi + ']', 'ref[' + pi + ']?', 1)
+            rebuilt.append(a)
+        sep = ', ' if len(args) > 1 else ''
+        out.append(code[i:open_i + 1] + sep.join(rebuilt) + ']')
+        i = close_i + 1
+    return ''.join(out) + tail
+
 def scan_scope(field, rec, rectexts, dotted_foreign):
     """The text a field's WALK evidence may be read from: its own record's block
     when nothing reaches the name through a foreign receiver, else None (which
@@ -833,6 +923,22 @@ def main(root, apply=False):
             # (measured: same reads, same null tests, same PASS); the
             # annotated one says what the slot IS instead of what a null was
             # cast to, which is what lets the field/param rules see it at all.
+            # Class B: container ELEMENTS.  Runs before the pointer scan so a
+            # converted element is never revisited by it, and it is its own
+            # recursion, so `Array[pointer[Array[pointer[X]]]]` settles in one
+            # pass -- the pointer scan skips a nested occurrence (`i = end`),
+            # which would otherwise leave the inner one for a SECOND run and
+            # break idempotence.
+            if CLASS_B:
+                rewritten = rewrite_elements(line)
+                if rewritten != line:
+                    nconv = line.count('pointer[') - rewritten.count('pointer[')
+                    tally[('ref?', 'container-element')] += nconv
+                    for _ in range(nconv):
+                        decisions.append((f.path, li + 1, 'ref?', 'container-element', '', ''))
+                    f.lines[li] = rewritten
+                    line = rewritten
+
             m = NULLCAST.match(line)
             if m and li in f.owner:
                 inner, end = inner_of(line, line.index('pointer[', m.end(3)))
@@ -952,4 +1058,5 @@ def main(root, apply=False):
         for d in decisions:
             fh.write('\t'.join(str(x) for x in d) + '\n')
 
+CLASS_B = '--elements' in sys.argv
 main(sys.argv[1], apply='--apply' in sys.argv)
