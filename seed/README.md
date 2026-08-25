@@ -60,11 +60,26 @@ the Linux rate:
 - 🔹 `aarch64-linux-gnu` — best-effort (was a CI leg until 2026-08-04). Its two
   halves are each verified above: the AArch64 codegen via `arm64-apple-darwin`,
   the ELF/glibc side via `x86_64-linux-gnu`.
-- 🔹 `x86_64-apple-darwin` — best-effort, never had a runner. Its halves: the
-  x86_64 System-V codegen via `x86_64-linux-gnu`, Mach-O/darwin via
-  `arm64-apple-darwin`.
+- ✅ `x86_64-apple-darwin` — verified by `tests/target/rosetta.sh` on the arm64
+  dev box: it cross-emits the runtime and the AOT corpus with `--target`, links
+  with `clang -arch x86_64`, and RUNS the result under Rosetta 2 (53 tests
+  against their `; Expected:` ground truth). It needs no Intel hardware, and it
+  used to read "best-effort, never had a runner. Its halves: the x86_64
+  System-V codegen via `x86_64-linux-gnu`, Mach-O/darwin via
+  `arm64-apple-darwin`." ★That sentence was an ARGUMENT, not a measurement —
+  the two halves being covered says nothing about their combination, which is
+  the whole content of a target.
 
 Object EMISSION for all four is checked in CI by `tests/target/run.sh`
-(`--target` cross-emit). To verify a best-effort target explicitly, run
+(`--target` cross-emit) — a claim about the object FORMAT, which says nothing
+about whether the code runs. To verify a best-effort target explicitly, run
 `tools/build-from-seed.sh` + `tools/verify-seed.sh` on a host of that target —
 a container is enough for `aarch64-linux-gnu` on an arm64 Mac.
+
+The Rosetta route works because three facts line up, and it is worth naming all
+three because losing any one takes the gate with it: the seed is TRIPLE-LESS so
+`--target` retargets it; macOS ships a UNIVERSAL SDK so `clang -arch x86_64`
+links; and Rosetta 2 executes the result. The C shims are picked by `uname -m`,
+i.e. the HOST, so they take a `SCALY_ARCH` override
+(`tools/{fcontext,eio,ctime}.sh`) — without it the archive carries arm64
+objects and the link fails. Unset, the shims behave byte-identically.

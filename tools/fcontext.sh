@@ -23,12 +23,38 @@ FIB=packages/scaly/0.1.0/scaly/fiber
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*|Windows*) SRC=$FIB/fcontext_x86_64_win.S ;;
   *)
-    case "$(uname -m)" in
+    case "${SCALY_ARCH:-$(uname -m)}" in
       arm64|aarch64) SRC=$FIB/fcontext_arm64.S ;;
       x86_64|amd64)  SRC=$FIB/fcontext_x86_64.S ;;
-      *) echo "fcontext: FAIL — unsupported architecture $(uname -m)"; exit 1 ;;
+      *) echo "fcontext: FAIL — unsupported architecture ${SCALY_ARCH:-$(uname -m)}"; exit 1 ;;
     esac
     ;;
 esac
 
-${CLANG:-clang} -c "$SRC" -o "$OUT"
+# ★`SCALY_ARCH` cross-builds this shim for another ARCH on the same host. The
+# scripts otherwise read `uname -m`, i.e. the HOST, which is right for every
+# normal build and is exactly what blocks the one useful cross case: an Apple
+# Silicon box can produce and RUN x86_64-apple-darwin (universal SDK plus
+# Rosetta 2), the only one of the four LP64 targets that has never had a
+# runner. See tests/target/rosetta.sh.
+#
+# ★It is `SCALY_ARCH` and not `ARCH` on purpose: a bare `ARCH` is a name a
+# developer environment may already EXPORT, and an exported name silently
+# steers a script that only meant to read its own variable (the `LIB` trap in
+# the root CLAUDE.md, same shape).
+#
+# ★`-arch` is a Darwin/clang facility, not a general cross-compile switch: it
+# works because macOS ships a universal SDK. Setting SCALY_ARCH anywhere else
+# is refused rather than half-honoured — cross-building the C shims on Linux
+# needs a real cross toolchain, and a flag that quietly did nothing would make
+# the resulting archive wrong in a way only the link reports.
+ARCHFLAG=""
+if [ -n "${SCALY_ARCH:-}" ]; then
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "$(basename "$0"): FAIL — SCALY_ARCH is Darwin-only (universal SDK); host is $(uname -s)" >&2
+        exit 1
+    fi
+    ARCHFLAG="-arch $SCALY_ARCH"
+fi
+
+${CLANG:-clang} $ARCHFLAG -c "$SRC" -o "$OUT"
