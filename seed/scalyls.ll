@@ -3367,7 +3367,7 @@ if.end:                                           ; preds = %while.body
   br label %while.cond
 }
 
-define linkonce_odr void @_ZN4json11parse_valueEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN4json11parse_valueEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %0, ptr %1, ptr %2) {
 entry:
   %tuple31 = alloca %_Z8JsonNull, align 8
   %sret.result12 = alloca { ptr }, align 8
@@ -3375,8 +3375,8 @@ entry:
   %tuple = alloca %_Z8JsonNull, align 8
   %variant.ptr = alloca %_Z9JsonValue, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
+  call void @_ZN4json7skip_wsER10JsonParser(ptr %2)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
   %eq = icmp eq i8 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
@@ -3398,7 +3398,7 @@ if.end:                                           ; preds = %entry
   br i1 %eq1, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
-  call void @_ZN4json12parse_objectEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4json12parse_objectEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %2)
   %sret.body = load %_Z9JsonValue, ptr %sret.result, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3408,7 +3408,7 @@ if.end3:                                          ; preds = %if.end
   br i1 %eq4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end3
-  call void @_ZN4json11parse_arrayEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4json11parse_arrayEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %2)
   %sret.body7 = load %_Z9JsonValue, ptr %sret.result, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3420,7 +3420,7 @@ if.end6:                                          ; preds = %if.end3
 if.then9:                                         ; preds = %if.end6
   %variant.tag.ptr11 = getelementptr inbounds nuw %_Z9JsonValue, ptr %sret.result, i32 0, i32 0
   store i8 3, ptr %variant.tag.ptr11, align 1
-  call void @_ZN4json12parse_stringEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %2)
+  call void @_ZN4json12parse_stringEPN4scaly6memory4PageER10JsonParser(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %2)
   %variant.data.ptr13 = getelementptr inbounds nuw %_Z9JsonValue, ptr %sret.result, i32 0, i32 1
   %variant.payload = load { ptr }, ptr %sret.result12, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr13, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -3429,7 +3429,7 @@ if.then9:                                         ; preds = %if.end6
   ret void
 
 if.end10:                                         ; preds = %if.end6
-  %call15 = call i1 @_ZN4json13match_literalEP10JsonParserP10const_char(ptr %2, ptr @.str.2)
+  %call15 = call i1 @_ZN4json13match_literalER10JsonParserP10const_char(ptr %2, ptr @.str.2)
   br i1 %call15, label %if.then16, label %if.end17
 
 if.then16:                                        ; preds = %if.end10
@@ -3442,7 +3442,7 @@ if.then16:                                        ; preds = %if.end10
   ret void
 
 if.end17:                                         ; preds = %if.end10
-  %call21 = call i1 @_ZN4json13match_literalEP10JsonParserP10const_char(ptr %2, ptr @.str.3)
+  %call21 = call i1 @_ZN4json13match_literalER10JsonParserP10const_char(ptr %2, ptr @.str.3)
   br i1 %call21, label %if.then22, label %if.end23
 
 if.then22:                                        ; preds = %if.end17
@@ -3455,7 +3455,7 @@ if.then22:                                        ; preds = %if.end17
   ret void
 
 if.end23:                                         ; preds = %if.end17
-  %call27 = call i1 @_ZN4json13match_literalEP10JsonParserP10const_char(ptr %2, ptr @.str.4)
+  %call27 = call i1 @_ZN4json13match_literalER10JsonParserP10const_char(ptr %2, ptr @.str.4)
   br i1 %call27, label %if.then28, label %if.end29
 
 if.then28:                                        ; preds = %if.end23
@@ -3484,7 +3484,7 @@ lor.end:                                          ; preds = %lor.rhs, %if.end29
 if.then37:                                        ; preds = %lor.end
   %variant.tag.ptr39 = getelementptr inbounds nuw %_Z9JsonValue, ptr %sret.result, i32 0, i32 0
   store i8 2, ptr %variant.tag.ptr39, align 1
-  %call40 = call i64 @_ZN4json12parse_numberEP10JsonParser(ptr %2)
+  %call40 = call i64 @_ZN4json12parse_numberER10JsonParser(ptr %2)
   %variant.data.ptr41 = getelementptr inbounds nuw %_Z9JsonValue, ptr %sret.result, i32 0, i32 1
   store i64 %call40, ptr %variant.data.ptr41, align 1
   %variant.val42 = load %_Z9JsonValue, ptr %sret.result, align 1
@@ -3515,15 +3515,15 @@ entry:
   %p = alloca %_Z10JsonParser, align 8
   store %_Z10JsonParser %tuple.val, ptr %p, align 1
   %sret.result = alloca %_Z9JsonValue, align 8
-  call void @_ZN4json11parse_valueEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %p)
+  call void @_ZN4json11parse_valueEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %p)
   %sret.body = load %_Z9JsonValue, ptr %sret.result, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
-define linkonce_odr void @_ZN4json7skip_wsEP10JsonParser(ptr %0) {
+define linkonce_odr void @_ZN4json7skip_wsER10JsonParser(ptr %0) {
 entry:
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %c = alloca i8, align 1
   store i8 %call, ptr %c, align 1
   br label %while.cond
@@ -3534,8 +3534,8 @@ while.cond:                                       ; preds = %while.body, %entry
   br i1 %eq, label %lor.end, label %lor.rhs
 
 while.body:                                       ; preds = %lor.end10
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
-  %call14 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
+  %call14 = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   store i8 %call14, ptr %c, align 1
   br label %while.cond
 
@@ -3570,7 +3570,7 @@ lor.end10:                                        ; preds = %lor.rhs9, %lor.end5
   br i1 %lor.result13, label %while.body, label %while.exit
 }
 
-define linkonce_odr i8 @_ZN4json4peekEP10JsonParser(ptr %0) {
+define linkonce_odr i8 @_ZN4json4peekER10JsonParser(ptr %0) {
 entry:
   %load.struct = load %_Z10JsonParser, ptr %0, align 8
   %pos = extractvalue %_Z10JsonParser %load.struct, 1
@@ -3590,7 +3590,7 @@ if.end:                                           ; preds = %entry
   ret i8 %call3
 }
 
-define linkonce_odr void @_ZN4json12parse_objectEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN4json12parse_objectEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %0, ptr %1, ptr %2) {
 entry:
   %deref.tmp = alloca %_Z10JsonMember, align 8
   %i = alloca i64, align 8
@@ -3600,8 +3600,8 @@ entry:
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %sret.result = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 123)
-  call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
+  call void @_ZN4json6expectER10JsonParser2u8(ptr %2, i8 123)
+  call void @_ZN4json7skip_wsER10JsonParser(ptr %2)
   %forced_page1 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z4ListI10JsonMemberE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4ListI10JsonMemberE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds nuw %_Z4ListI10JsonMemberE, ptr %tuple.region, i32 0, i32 0
@@ -3610,12 +3610,12 @@ entry:
   store ptr %tuple.region, ptr %members, align 1
   %count = alloca i64, align 8
   store i64 0, ptr %count, align 1
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
   %eq = icmp eq i8 %call, 125
   br i1 %eq, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -3630,11 +3630,11 @@ while.cond:                                       ; preds = %if.end12, %if.else
   br i1 true, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
-  call void @_ZN4json12parse_stringEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2)
-  call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
-  call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 58)
-  call void @_ZN4json11parse_valueEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %1, ptr %2)
+  call void @_ZN4json7skip_wsER10JsonParser(ptr %2)
+  call void @_ZN4json12parse_stringEPN4scaly6memory4PageER10JsonParser(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4json7skip_wsER10JsonParser(ptr %2)
+  call void @_ZN4json6expectER10JsonParser2u8(ptr %2, i8 58)
+  call void @_ZN4json11parse_valueEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %1, ptr %2)
   %members3 = load ptr, ptr %members, align 8
   %forced_page4 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %tuple.region5 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page4, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10JsonMember }, ptr null, i64 0, i32 1) to i64))
@@ -3648,8 +3648,8 @@ while.body:                                       ; preds = %while.cond
   %count9 = load i64, ptr %count, align 8
   %add = add i64 %count9, 1
   store i64 %add, ptr %count, align 1
-  call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
-  %call10 = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
+  call void @_ZN4json7skip_wsER10JsonParser(ptr %2)
+  %call10 = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
   %ne = icmp ne i8 %call10, 44
   br i1 %ne, label %if.then11, label %if.end12
 
@@ -3657,11 +3657,11 @@ while.exit:                                       ; preds = %if.then11, %while.c
   br label %if.end
 
 if.then11:                                        ; preds = %while.body
-  call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 125)
+  call void @_ZN4json6expectER10JsonParser2u8(ptr %2, i8 125)
   br label %while.exit
 
 if.end12:                                         ; preds = %while.body
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   br label %while.cond
 
 if.then15:                                        ; preds = %if.end
@@ -3722,7 +3722,7 @@ while.exit26:                                     ; preds = %while.cond24
   ret void
 }
 
-define linkonce_odr void @_ZN4json11parse_arrayEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN4json11parse_arrayEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %0, ptr %1, ptr %2) {
 entry:
   %variant.ptr = alloca %_Z9JsonValue, align 8
   %i = alloca i64, align 8
@@ -3731,8 +3731,8 @@ entry:
   %tuple = alloca %_Z9JsonArray, align 8
   %sret.result = alloca %_Z9JsonValue, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 91)
-  call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
+  call void @_ZN4json6expectER10JsonParser2u8(ptr %2, i8 91)
+  call void @_ZN4json7skip_wsER10JsonParser(ptr %2)
   %forced_page1 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z4ListI9JsonValueE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4ListI9JsonValueE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds nuw %_Z4ListI9JsonValueE, ptr %tuple.region, i32 0, i32 0
@@ -3741,12 +3741,12 @@ entry:
   store ptr %tuple.region, ptr %items, align 1
   %count = alloca i64, align 8
   store i64 0, ptr %count, align 1
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
   %eq = icmp eq i8 %call, 93
   br i1 %eq, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   br label %if.end
 
 if.else:                                          ; preds = %entry
@@ -3761,14 +3761,14 @@ while.cond:                                       ; preds = %if.end6, %if.else
   br i1 true, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  call void @_ZN4json11parse_valueEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4json11parse_valueEPN4scaly6memory4PageER10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %1, ptr %2)
   %items2 = load ptr, ptr %items, align 8
   call void @_ZN4ListI9JsonValueE3addE9JsonValue(ptr %items2, ptr %sret.result)
   %count3 = load i64, ptr %count, align 8
   %add = add i64 %count3, 1
   store i64 %add, ptr %count, align 1
-  call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
-  %call4 = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
+  call void @_ZN4json7skip_wsER10JsonParser(ptr %2)
+  %call4 = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
   %ne = icmp ne i8 %call4, 44
   br i1 %ne, label %if.then5, label %if.end6
 
@@ -3776,11 +3776,11 @@ while.exit:                                       ; preds = %if.then5, %while.co
   br label %if.end
 
 if.then5:                                         ; preds = %while.body
-  call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 93)
+  call void @_ZN4json6expectER10JsonParser2u8(ptr %2, i8 93)
   br label %while.exit
 
 if.end6:                                          ; preds = %while.body
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   br label %while.cond
 
 if.then9:                                         ; preds = %if.end
@@ -3841,7 +3841,7 @@ while.exit20:                                     ; preds = %while.cond18
   ret void
 }
 
-define linkonce_odr void @_ZN4json12parse_stringEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN4json12parse_stringEPN4scaly6memory4PageER10JsonParser(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
   %sret.result28 = alloca { ptr }, align 8
   %sret.result13 = alloca { ptr }, align 8
@@ -3852,7 +3852,7 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr %1, ptr %frame.parent, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
   %ne = icmp ne i8 %call, 34
   br i1 %ne, label %if.then, label %if.end
 
@@ -3868,7 +3868,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   %forced_page2 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
   %struct.region3 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page2, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region3)
@@ -3879,7 +3879,7 @@ while.cond:                                       ; preds = %if.end18, %if.end
   br i1 true, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %call4 = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
+  %call4 = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
   %eq = icmp eq i8 %call4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -3906,7 +3906,7 @@ if.end6:                                          ; preds = %while.body
   br i1 %eq10, label %if.then11, label %if.end12
 
 if.then11:                                        ; preds = %if.end6
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %sb14)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
@@ -3919,16 +3919,16 @@ if.end12:                                         ; preds = %if.end6
   br i1 %eq16, label %if.then17, label %if.else
 
 if.then17:                                        ; preds = %if.end12
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
-  %call19 = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
+  %call19 = call i8 @_ZN4json4peekER10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   %eq20 = icmp eq i8 %call19, 117
   br i1 %eq20, label %if.then21, label %if.else22
 
 if.else:                                          ; preds = %if.end12
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb27, i8 %call4)
-  call void @_ZN4json7advanceEP10JsonParser(ptr %2)
+  call void @_ZN4json7advanceER10JsonParser(ptr %2)
   br label %if.end18
 
 if.end18:                                         ; preds = %if.else, %if.end23
@@ -3936,7 +3936,7 @@ if.end18:                                         ; preds = %if.else, %if.end23
 
 if.then21:                                        ; preds = %if.then17
   %addr.heap = load ptr, ptr %sb, align 8
-  %call24 = call i64 @_ZN4json19read_unicode_escapeEP10JsonParser(ptr %2)
+  %call24 = call i64 @_ZN4json19read_unicode_escapeER10JsonParser(ptr %2)
   call void @_ZN4json11append_utf8EP13StringBuilder3i64(ptr %addr.heap, i64 %call24)
   br label %if.end23
 
@@ -3950,7 +3950,7 @@ if.end23:                                         ; preds = %if.else22, %if.then
   br label %if.end18
 }
 
-define linkonce_odr i1 @_ZN4json13match_literalEP10JsonParserP10const_char(ptr %0, ptr %1) {
+define linkonce_odr i1 @_ZN4json13match_literalER10JsonParserP10const_char(ptr %0, ptr %1) {
 entry:
   %call = call i64 @strlen(ptr %1)
   %i = alloca i64, align 8
@@ -4020,18 +4020,18 @@ lor.end:                                          ; preds = %lor.rhs, %entry
   ret i1 %lor.result
 }
 
-define linkonce_odr i64 @_ZN4json12parse_numberEP10JsonParser(ptr %0) {
+define linkonce_odr i64 @_ZN4json12parse_numberER10JsonParser(ptr %0) {
 entry:
   %value = alloca i64, align 8
   %negative = alloca i1, align 1
   store i1 false, ptr %negative, align 1
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %eq = icmp eq i8 %call, 45
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   store i1 true, ptr %negative, align 1
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -4039,28 +4039,28 @@ if.end:                                           ; preds = %if.then, %entry
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %if.end
-  %call1 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call1 = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %call2 = call i1 @_ZN4json8is_digitE2u8(i8 %call1)
   br i1 %call2, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %value3 = load i64, ptr %value, align 8
   %mul = mul i64 %value3, 10
-  %call4 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call4 = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %sub = sub i8 %call4, 48
   %as.zext = zext i8 %sub to i64
   %add = add i64 %mul, %as.zext
   store i64 %add, ptr %value, align 1
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  %call5 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call5 = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %eq6 = icmp eq i8 %call5, 46
   br i1 %eq6, label %if.then7, label %if.end8
 
 if.then7:                                         ; preds = %while.exit
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
   br label %while.cond9
 
 if.end8:                                          ; preds = %while.exit11, %while.exit
@@ -4068,12 +4068,12 @@ if.end8:                                          ; preds = %while.exit11, %whil
   br i1 %negative14, label %if.then15, label %if.end16
 
 while.cond9:                                      ; preds = %while.body10, %if.then7
-  %call12 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call12 = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %call13 = call i1 @_ZN4json8is_digitE2u8(i8 %call12)
   br i1 %call13, label %while.body10, label %while.exit11
 
 while.body10:                                     ; preds = %while.cond9
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
   br label %while.cond9
 
 while.exit11:                                     ; preds = %while.cond9
@@ -4089,14 +4089,14 @@ if.end16:                                         ; preds = %if.end8
   ret i64 %value19
 }
 
-define linkonce_odr void @_ZN4json6expectEP10JsonParser2u8(ptr %0, i8 %1) {
+define linkonce_odr void @_ZN4json6expectER10JsonParser2u8(ptr %0, i8 %1) {
 entry:
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %eq = icmp eq i8 %call, %1
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -4237,7 +4237,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN4json7advanceEP10JsonParser(ptr %0) {
+define linkonce_odr void @_ZN4json7advanceER10JsonParser(ptr %0) {
 entry:
   %load.struct = load %_Z10JsonParser, ptr %0, align 8
   %pos = extractvalue %_Z10JsonParser %load.struct, 1
@@ -4386,9 +4386,9 @@ entry:
 
 declare void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }), ptr, ptr)
 
-define linkonce_odr i64 @_ZN4json19read_unicode_escapeEP10JsonParser(ptr %0) {
+define linkonce_odr i64 @_ZN4json19read_unicode_escapeER10JsonParser(ptr %0) {
 entry:
-  %call = call i64 @_ZN4json9read_hex4EP10JsonParser(ptr %0)
+  %call = call i64 @_ZN4json9read_hex4ER10JsonParser(ptr %0)
   %lt = icmp slt i64 %call, 55296
   br i1 %lt, label %if.then, label %if.end
 
@@ -4412,7 +4412,7 @@ if.then4:                                         ; preds = %if.end2
 if.end5:                                          ; preds = %if.end2
   %load.struct = load %_Z10JsonParser, ptr %0, align 8
   %pos = extractvalue %_Z10JsonParser %load.struct, 1
-  %call6 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call6 = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %ne = icmp ne i8 %call6, 92
   br i1 %ne, label %if.then7, label %if.end8
 
@@ -4420,8 +4420,8 @@ if.then7:                                         ; preds = %if.end5
   ret i64 65533
 
 if.end8:                                          ; preds = %if.end5
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
-  %call9 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
+  %call9 = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
   %ne10 = icmp ne i8 %call9, 117
   br i1 %ne10, label %if.then11, label %if.end12
 
@@ -4431,8 +4431,8 @@ if.then11:                                        ; preds = %if.end8
   ret i64 65533
 
 if.end12:                                         ; preds = %if.end8
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
-  %call14 = call i64 @_ZN4json9read_hex4EP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
+  %call14 = call i64 @_ZN4json9read_hex4ER10JsonParser(ptr %0)
   %lt15 = icmp slt i64 %call14, 56320
   br i1 %lt15, label %if.then16, label %if.end17
 
@@ -4626,7 +4626,7 @@ if.end16:                                         ; preds = %lor.end12
   ret i64 0
 }
 
-define linkonce_odr i64 @_ZN4json9read_hex4EP10JsonParser(ptr %0) {
+define linkonce_odr i64 @_ZN4json9read_hex4ER10JsonParser(ptr %0) {
 entry:
   %value = alloca i64, align 8
   store i64 0, ptr %value, align 1
@@ -4640,8 +4640,8 @@ while.cond:                                       ; preds = %while.body, %entry
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  %call = call i8 @_ZN4json4peekER10JsonParser(ptr %0)
+  call void @_ZN4json7advanceER10JsonParser(ptr %0)
   %value2 = load i64, ptr %value, align 8
   %mul = mul i64 %value2, 16
   %call3 = call i64 @_ZN4json9hex_valueE2u8(i8 %call)
@@ -10862,7 +10862,7 @@ choose.when18:                                    ; preds = %if.end10
   call void @_ZN7PlannerC1E6String(ptr %struct.region21, ptr %2)
   store ptr %struct.region21, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result19)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result19)
   %planner22 = load ptr, ptr %planner, align 8
   %call23 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner22, ptr %sret.result19)
   store i64 0, ptr %di, align 1
@@ -11160,7 +11160,7 @@ choose.when16:                                    ; preds = %if.end8
   call void @_ZN7PlannerC1E6String(ptr %struct.region19, ptr %2)
   store ptr %struct.region19, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result17)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result17)
   %planner20 = load ptr, ptr %planner, align 8
   %call21 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner20, ptr %sret.result17)
   store i64 0, ptr %di, align 1
@@ -11187,7 +11187,7 @@ while.exit:                                       ; preds = %while.cond
   %extra42 = load ptr, ptr %extra, align 8
   %addr.gep = getelementptr inbounds nuw %_Z7Program, ptr %sret.result17, i32 0, i32 1
   %addr.heap44 = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics21sibling_notificationsEPN4scaly6memory4PageEP6Module6String6StringP7Planner(ptr noalias sret({ ptr }) %sret.result43, ptr %frame, ptr %addr.gep, ptr %2, ptr %3, ptr %addr.heap44)
+  call void @_ZN11diagnostics21sibling_notificationsEPN4scaly6memory4PageER6Module6String6StringR7Planner(ptr noalias sret({ ptr }) %sret.result43, ptr %frame, ptr %addr.gep, ptr %2, ptr %3, ptr %addr.heap44)
   call void @_ZN13StringBuilder6appendE6String(ptr %extra42, ptr %sret.result43)
   br label %choose.end
 
@@ -59970,7 +59970,7 @@ if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
 }
 
-define linkonce_odr void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %0, ptr %1) {
 entry:
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -60009,7 +60009,7 @@ if.end:                                           ; preds = %if.then, %while.bod
 
 declare ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr, ptr, ptr)
 
-define linkonce_odr void @_ZN11diagnostics21sibling_notificationsEPN4scaly6memory4PageEP6Module6String6StringP7Planner(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
+define linkonce_odr void @_ZN11diagnostics21sibling_notificationsEPN4scaly6memory4PageER6Module6String6StringR7Planner(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
 entry:
   %sret.result21 = alloca { ptr }, align 8
   %sret.result10 = alloca { ptr }, align 8
@@ -60026,7 +60026,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   call void @_ZN11diagnostics14subtree_prefixEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %3)
   %sret.result2 = alloca { ptr }, align 8
-  call void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageEP6Module(ptr noalias sret({ ptr }) %sret.result2, ptr %frame, ptr %2)
+  call void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageER6Module(ptr noalias sret({ ptr }) %sret.result2, ptr %frame, ptr %2)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result2)
   %fstart = alloca i64, align 8
   store i64 0, ptr %fstart, align 1
@@ -60090,7 +60090,7 @@ if.end16:                                         ; preds = %if.end19, %if.then8
 
 if.then18:                                        ; preds = %if.then15
   %sb20 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics20sibling_notificationEPN4scaly6memory4PageE6StringP7Planner(ptr noalias sret({ ptr }) %sret.result21, ptr %frame, ptr %sret.result10, ptr %5)
+  call void @_ZN11diagnostics20sibling_notificationEPN4scaly6memory4PageE6StringR7Planner(ptr noalias sret({ ptr }) %sret.result21, ptr %frame, ptr %sret.result10, ptr %5)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb20, ptr %sret.result21)
   br label %if.end19
 
@@ -60323,7 +60323,7 @@ if.then70:                                        ; preds = %if.end53
   call void @_ZN7PlannerC1E6String(ptr %struct.region75, ptr %sret.result23)
   store ptr %struct.region75, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result72)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result72)
   %planner76 = load ptr, ptr %planner, align 8
   %call77 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner76, ptr %sret.result72)
   store i64 0, ptr %di, align 1
@@ -60352,7 +60352,7 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %addr.gep = getelementptr inbounds nuw %_Z7Program, ptr %sret.result72, i32 0, i32 1
   %addr.heap97 = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics21sibling_notificationsEPN4scaly6memory4PageEP6Module6String6StringP7Planner(ptr noalias sret({ ptr }) %sret.result54, ptr %1, ptr %addr.gep, ptr %sret.result23, ptr %sret.result23, ptr %addr.heap97)
+  call void @_ZN11diagnostics21sibling_notificationsEPN4scaly6memory4PageER6Module6String6StringR7Planner(ptr noalias sret({ ptr }) %sret.result54, ptr %1, ptr %addr.gep, ptr %sret.result23, ptr %sret.result23, ptr %addr.heap97)
   %set.dest98 = load ptr, ptr %extra, align 8
   %set.thru99 = load { ptr }, ptr %sret.result54, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest98, ptr align 1 %sret.result54, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -60593,7 +60593,7 @@ if.end3:                                          ; preds = %if.then2, %if.then
   br label %if.end
 }
 
-define linkonce_odr void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageEP6Module(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageER6Module(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
   %sret.result26 = alloca { ptr }, align 8
   %sret.result23 = alloca { ptr }, align 8
@@ -60639,7 +60639,7 @@ while.exit:                                       ; preds = %while.cond
 
 if.then:                                          ; preds = %while.body
   %sb7 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageEP6Module(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %call)
+  call void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageER6Module(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %call)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %sret.result)
   br label %if.end
 
@@ -60674,7 +60674,7 @@ while.exit11:                                     ; preds = %while.cond9
 
 if.then20:                                        ; preds = %while.body10
   %sb22 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics19member_module_filesEPN4scaly6memory4PageEP6Member(ptr noalias sret({ ptr }) %sret.result23, ptr %frame, ptr %call18)
+  call void @_ZN11diagnostics19member_module_filesEPN4scaly6memory4PageER6Member(ptr noalias sret({ ptr }) %sret.result23, ptr %frame, ptr %call18)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb22, ptr %sret.result23)
   br label %if.end21
 
@@ -60698,7 +60698,7 @@ if.end:                                           ; preds = %entry
   ret i1 %call1
 }
 
-define linkonce_odr void @_ZN11diagnostics20sibling_notificationEPN4scaly6memory4PageE6StringP7Planner(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN11diagnostics20sibling_notificationEPN4scaly6memory4PageE6StringR7Planner(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %sret.result54 = alloca { ptr }, align 8
   %sret.result51 = alloca { ptr }, align 8
@@ -60975,7 +60975,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN11diagnostics19member_module_filesEPN4scaly6memory4PageEP6Member(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN11diagnostics19member_module_filesEPN4scaly6memory4PageER6Member(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
   %sret.result3 = alloca { ptr }, align 8
   %addr.tmp = alloca %_Z10Definition, align 8
@@ -61013,12 +61013,12 @@ choose.when:                                      ; preds = %entry
   %sb2 = load ptr, ptr %sb, align 8
   %definition = extractvalue %_Z7Concept %variant.val, 4
   store %_Z10Definition %definition, ptr %addr.tmp, align 1
-  call void @_ZN11diagnostics23definition_module_filesEPN4scaly6memory4PageEP10Definition(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %addr.tmp)
+  call void @_ZN11diagnostics23definition_module_filesEPN4scaly6memory4PageER10Definition(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %addr.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN11diagnostics23definition_module_filesEPN4scaly6memory4PageEP10Definition(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN11diagnostics23definition_module_filesEPN4scaly6memory4PageER10Definition(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
   %sret.result24 = alloca { ptr }, align 8
   %sret.result21 = alloca { ptr }, align 8
@@ -61081,7 +61081,7 @@ while.exit:                                       ; preds = %while.cond
 
 if.then:                                          ; preds = %while.body
   %sb5 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageEP6Module(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %call)
+  call void @_ZN11diagnostics12module_filesEPN4scaly6memory4PageER6Module(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %call)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb5, ptr %sret.result)
   br label %if.end
 
@@ -61111,7 +61111,7 @@ while.exit9:                                      ; preds = %while.cond7
 
 if.then18:                                        ; preds = %while.body8
   %sb20 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics19member_module_filesEPN4scaly6memory4PageEP6Member(ptr noalias sret({ ptr }) %sret.result21, ptr %frame, ptr %call16)
+  call void @_ZN11diagnostics19member_module_filesEPN4scaly6memory4PageER6Member(ptr noalias sret({ ptr }) %sret.result21, ptr %frame, ptr %call16)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb20, ptr %sret.result21)
   br label %if.end19
 
@@ -61771,7 +61771,7 @@ if.end2:                                          ; preds = %if.then
   br label %if.end
 }
 
-define linkonce_odr void @_ZN8symindex8set_blobEP7IdxSlot6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN8symindex8set_blobER7IdxSlot6String(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z7IdxSlot, ptr %0, align 8
   %blob_data = extractvalue %_Z7IdxSlot %load.struct, 3
@@ -61814,7 +61814,7 @@ if.end9:                                          ; preds = %if.then8, %if.then4
   br label %if.end5
 }
 
-define linkonce_odr void @_ZN8symindex8set_pathEP7IdxSlot6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN8symindex8set_pathER7IdxSlot6String(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z7IdxSlot, ptr %0, align 8
   %path_data = extractvalue %_Z7IdxSlot %load.struct, 0
@@ -61876,7 +61876,7 @@ if.end:                                           ; preds = %entry
 if.then1:                                         ; preds = %if.end
   %global.load3 = load ptr, ptr @idx_slots, align 8
   %ptr.add = getelementptr inbounds %_Z7IdxSlot, ptr %global.load3, i64 %call
-  call void @_ZN8symindex8set_blobEP7IdxSlot6String(ptr %ptr.add, ptr %2)
+  call void @_ZN8symindex8set_blobER7IdxSlot6String(ptr %ptr.add, ptr %2)
   %chash = getelementptr inbounds nuw %_Z7IdxSlot, ptr %ptr.add, i32 0, i32 2
   store i64 %1, ptr %chash, align 8
   ret void
@@ -61903,8 +61903,8 @@ while.exit:                                       ; preds = %while.cond
   ret void
 
 if.then9:                                         ; preds = %while.body
-  call void @_ZN8symindex8set_pathEP7IdxSlot6String(ptr %ptr.add7, ptr %0)
-  call void @_ZN8symindex8set_blobEP7IdxSlot6String(ptr %ptr.add7, ptr %2)
+  call void @_ZN8symindex8set_pathER7IdxSlot6String(ptr %ptr.add7, ptr %0)
+  call void @_ZN8symindex8set_blobER7IdxSlot6String(ptr %ptr.add7, ptr %2)
   %chash11 = getelementptr inbounds nuw %_Z7IdxSlot, ptr %ptr.add7, i32 0, i32 2
   store i64 %1, ptr %chash11, align 8
   %used12 = getelementptr inbounds nuw %_Z7IdxSlot, ptr %ptr.add7, i32 0, i32 5
@@ -62095,7 +62095,7 @@ if.end2:                                          ; preds = %if.end
   ret void
 }
 
-define linkonce_odr void @_ZN8symindex12set_dir_pathEP7DirSlot6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN8symindex12set_dir_pathER7DirSlot6String(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z7DirSlot, ptr %0, align 8
   %path_data = extractvalue %_Z7DirSlot %load.struct, 0
@@ -62138,7 +62138,7 @@ if.end9:                                          ; preds = %if.then8, %if.then4
   br label %if.end5
 }
 
-define linkonce_odr void @_ZN8symindex12set_dir_listEP7DirSlot6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN8symindex12set_dir_listER7DirSlot6String(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z7DirSlot, ptr %0, align 8
   %list_data = extractvalue %_Z7DirSlot %load.struct, 2
@@ -62272,8 +62272,8 @@ if.end29:                                         ; preds = %if.then28, %while.e
   %global.load30 = load ptr, ptr @dir_slots, align 8
   %target31 = load i64, ptr %target, align 8
   %ptr.add32 = getelementptr inbounds %_Z7DirSlot, ptr %global.load30, i64 %target31
-  call void @_ZN8symindex12set_dir_pathEP7DirSlot6String(ptr %ptr.add32, ptr %0)
-  call void @_ZN8symindex12set_dir_listEP7DirSlot6String(ptr %ptr.add32, ptr %1)
+  call void @_ZN8symindex12set_dir_pathER7DirSlot6String(ptr %ptr.add32, ptr %0)
+  call void @_ZN8symindex12set_dir_listER7DirSlot6String(ptr %ptr.add32, ptr %1)
   %used33 = getelementptr inbounds nuw %_Z7DirSlot, ptr %ptr.add32, i32 0, i32 4
   store i1 true, ptr %used33, align 1
   %global.load34 = load i64, ptr @idx_epoch, align 8
@@ -111566,7 +111566,7 @@ if.end230:                                        ; preds = %if.else229, %if.the
   br label %if.end225
 }
 
-define linkonce_odr i64 @_ZN6format17unwind_to_bracketEP5ArrayImEm(ptr %0, i64 %1) {
+define linkonce_odr i64 @_ZN6format17unwind_to_bracketER5ArrayImEm(ptr %0, i64 %1) {
 entry:
   br label %while.cond
 
@@ -111614,7 +111614,7 @@ if.end11:                                         ; preds = %while.exit
   ret i64 0
 }
 
-define linkonce_odr i64 @_ZN6format8top_kindEP5ArrayImE(ptr %0) {
+define linkonce_odr i64 @_ZN6format8top_kindER5ArrayImE(ptr %0) {
 entry:
   %call = call i64 @_ZN5ArrayImE10get_lengthEv(ptr %0)
   %eq = icmp eq i64 %call, 0
@@ -111638,7 +111638,7 @@ if.end4:                                          ; preds = %if.end
   ret i64 %call5
 }
 
-define linkonce_odr i64 @_ZN6format9pop_frameEP5ArrayImE(ptr %0) {
+define linkonce_odr i64 @_ZN6format9pop_frameER5ArrayImE(ptr %0) {
 entry:
   %call = call i64 @_ZN5ArrayImE10get_lengthEv(ptr %0)
   %eq = icmp eq i64 %call, 0
@@ -111665,7 +111665,7 @@ if.end5:                                          ; preds = %if.end
   ret i64 %call6
 }
 
-define linkonce_odr i1 @_ZN6format17top_paren_cancelsEP5ArrayImE(ptr %0) {
+define linkonce_odr i1 @_ZN6format17top_paren_cancelsER5ArrayImE(ptr %0) {
 entry:
   %call = call i64 @_ZN5ArrayImE10get_lengthEv(ptr %0)
   %eq = icmp eq i64 %call, 0
@@ -111993,7 +111993,7 @@ while.cond115:                                    ; preds = %while.body116, %if.
 while.body116:                                    ; preds = %while.cond115
   %addr.heap = load ptr, ptr %stack, align 8
   %level120 = load i64, ptr %level, align 8
-  %call121 = call i64 @_ZN6format17unwind_to_bracketEP5ArrayImEm(ptr %addr.heap, i64 %level120)
+  %call121 = call i64 @_ZN6format17unwind_to_bracketER5ArrayImEm(ptr %addr.heap, i64 %level120)
   store i64 %call121, ptr %level, align 1
   %n122 = load i64, ptr %n, align 8
   %add123 = add i64 %n122, 1
@@ -112021,7 +112021,7 @@ if.end129:                                        ; preds = %if.end160, %if.end1
 
 if.then132:                                       ; preds = %if.then127
   %addr.heap134 = load ptr, ptr %stack, align 8
-  %call135 = call i64 @_ZN6format8top_kindEP5ArrayImE(ptr %addr.heap134)
+  %call135 = call i64 @_ZN6format8top_kindER5ArrayImE(ptr %addr.heap134)
   %eq136 = icmp eq i64 %call135, 1
   br i1 %eq136, label %if.then137, label %if.end138
 
@@ -112033,7 +112033,7 @@ if.end133:                                        ; preds = %if.end138, %if.then
 
 if.then137:                                       ; preds = %if.then132
   %addr.heap139 = load ptr, ptr %stack, align 8
-  %call140 = call i64 @_ZN6format9pop_frameEP5ArrayImE(ptr %addr.heap139)
+  %call140 = call i64 @_ZN6format9pop_frameER5ArrayImE(ptr %addr.heap139)
   store i64 %call140, ptr %level, align 1
   br label %if.end138
 
@@ -112042,7 +112042,7 @@ if.end138:                                        ; preds = %if.then137, %if.the
 
 if.then144:                                       ; preds = %if.end133
   %addr.heap146 = load ptr, ptr %stack, align 8
-  %call147 = call i64 @_ZN6format8top_kindEP5ArrayImE(ptr %addr.heap146)
+  %call147 = call i64 @_ZN6format8top_kindER5ArrayImE(ptr %addr.heap146)
   %eq148 = icmp eq i64 %call147, 1
   br i1 %eq148, label %if.then149, label %if.end150
 
@@ -112051,7 +112051,7 @@ if.end145:                                        ; preds = %if.end150, %if.end1
 
 if.then149:                                       ; preds = %if.then144
   %addr.heap151 = load ptr, ptr %stack, align 8
-  %call152 = call i1 @_ZN6format17top_paren_cancelsEP5ArrayImE(ptr %addr.heap151)
+  %call152 = call i1 @_ZN6format17top_paren_cancelsER5ArrayImE(ptr %addr.heap151)
   br i1 %call152, label %if.then153, label %if.end154
 
 if.end150:                                        ; preds = %if.end154, %if.then144
@@ -112059,7 +112059,7 @@ if.end150:                                        ; preds = %if.end154, %if.then
 
 if.then153:                                       ; preds = %if.then149
   %addr.heap155 = load ptr, ptr %stack, align 8
-  %call156 = call i64 @_ZN6format9pop_frameEP5ArrayImE(ptr %addr.heap155)
+  %call156 = call i64 @_ZN6format9pop_frameER5ArrayImE(ptr %addr.heap155)
   store i64 %call156, ptr %level, align 1
   br label %if.end154
 
@@ -112074,13 +112074,13 @@ if.end160:                                        ; preds = %while.exit163, %if.
 
 while.cond161:                                    ; preds = %while.body162, %if.then159
   %addr.heap164 = load ptr, ptr %stack, align 8
-  %call165 = call i64 @_ZN6format8top_kindEP5ArrayImE(ptr %addr.heap164)
+  %call165 = call i64 @_ZN6format8top_kindER5ArrayImE(ptr %addr.heap164)
   %eq166 = icmp eq i64 %call165, 2
   br i1 %eq166, label %while.body162, label %while.exit163
 
 while.body162:                                    ; preds = %while.cond161
   %addr.heap167 = load ptr, ptr %stack, align 8
-  %call168 = call i64 @_ZN6format9pop_frameEP5ArrayImE(ptr %addr.heap167)
+  %call168 = call i64 @_ZN6format9pop_frameER5ArrayImE(ptr %addr.heap167)
   store i64 %call168, ptr %level, align 1
   br label %while.cond161
 
@@ -112205,7 +112205,7 @@ while.cond223:                                    ; preds = %while.body224, %whi
 while.body224:                                    ; preds = %while.cond223
   %addr.heap229 = load ptr, ptr %stack, align 8
   %level230 = load i64, ptr %level, align 8
-  %call231 = call i64 @_ZN6format17unwind_to_bracketEP5ArrayImEm(ptr %addr.heap229, i64 %level230)
+  %call231 = call i64 @_ZN6format17unwind_to_bracketER5ArrayImEm(ptr %addr.heap229, i64 %level230)
   store i64 %call231, ptr %level, align 1
   %m232 = load i64, ptr %m, align 8
   %add233 = add i64 %m232, 1
@@ -112229,13 +112229,13 @@ if.end238:                                        ; preds = %while.exit241, %whi
 
 while.cond239:                                    ; preds = %while.body240, %if.then237
   %addr.heap242 = load ptr, ptr %stack, align 8
-  %call243 = call i64 @_ZN6format8top_kindEP5ArrayImE(ptr %addr.heap242)
+  %call243 = call i64 @_ZN6format8top_kindER5ArrayImE(ptr %addr.heap242)
   %eq244 = icmp eq i64 %call243, 1
   br i1 %eq244, label %while.body240, label %while.exit241
 
 while.body240:                                    ; preds = %while.cond239
   %addr.heap245 = load ptr, ptr %stack, align 8
-  %call246 = call i64 @_ZN6format9pop_frameEP5ArrayImE(ptr %addr.heap245)
+  %call246 = call i64 @_ZN6format9pop_frameER5ArrayImE(ptr %addr.heap245)
   store i64 %call246, ptr %level, align 1
   br label %while.cond239
 
@@ -112347,13 +112347,13 @@ if.end303:                                        ; preds = %while.exit306, %if.
 
 while.cond304:                                    ; preds = %while.body305, %if.then302
   %addr.heap307 = load ptr, ptr %stack, align 8
-  %call308 = call i64 @_ZN6format8top_kindEP5ArrayImE(ptr %addr.heap307)
+  %call308 = call i64 @_ZN6format8top_kindER5ArrayImE(ptr %addr.heap307)
   %eq309 = icmp eq i64 %call308, 1
   br i1 %eq309, label %while.body305, label %while.exit306
 
 while.body305:                                    ; preds = %while.cond304
   %addr.heap310 = load ptr, ptr %stack, align 8
-  %call311 = call i64 @_ZN6format9pop_frameEP5ArrayImE(ptr %addr.heap310)
+  %call311 = call i64 @_ZN6format9pop_frameER5ArrayImE(ptr %addr.heap310)
   store i64 %call311, ptr %level, align 1
   br label %while.cond304
 
@@ -113170,7 +113170,7 @@ choose.when12:                                    ; preds = %if.end
   call void @_ZN7PlannerC1E6String(ptr %struct.region16, ptr %3)
   store ptr %struct.region16, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result13)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result13)
   %planner17 = load ptr, ptr %planner, align 8
   %call18 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner17, ptr %sret.result13)
   %ne = icmp ne ptr %call18, null
@@ -114075,7 +114075,7 @@ choose.when4:                                     ; preds = %if.end
   call void @_ZN7PlannerC1E6String(ptr %struct.region8, ptr %2)
   store ptr %struct.region8, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result6)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result6)
   %planner9 = load ptr, ptr %planner, align 8
   %call10 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner9, ptr %sret.result6)
   %ne = icmp ne ptr %call10, null
@@ -128025,7 +128025,7 @@ if.end34:                                         ; preds = %if.then33, %if.end2
   %mangled_name = extractvalue %_Z15PlannedFunction %load.struct35, 4
   %addr.heap = load ptr, ptr %seen, align 8
   store { ptr } %mangled_name, ptr %arg.tmp, align 1
-  %call36 = call i1 @_ZN8instlens13contains_nameEP5ArrayI6StringE6String(ptr %addr.heap, ptr %arg.tmp)
+  %call36 = call i1 @_ZN8instlens13contains_nameER5ArrayI6StringE6String(ptr %addr.heap, ptr %arg.tmp)
   %eq37 = icmp eq i1 %call36, false
   br i1 %eq37, label %if.then38, label %if.end39
 
@@ -128046,7 +128046,7 @@ if.end39:                                         ; preds = %if.end46, %if.end34
 
 if.then45:                                        ; preds = %if.then38
   %addr.heap47 = load ptr, ptr %types, align 8
-  %call48 = call i1 @_ZN8instlens13contains_nameEP5ArrayI6StringE6String(ptr %addr.heap47, ptr %arg.tmp42)
+  %call48 = call i1 @_ZN8instlens13contains_nameER5ArrayI6StringE6String(ptr %addr.heap47, ptr %arg.tmp42)
   %eq49 = icmp eq i1 %call48, false
   br i1 %eq49, label %if.then50, label %if.end51
 
@@ -128375,7 +128375,7 @@ if.end58:                                         ; preds = %if.then57, %if.then
   br label %if.end54
 }
 
-define linkonce_odr i1 @_ZN8instlens13contains_nameEP5ArrayI6StringE6String(ptr %0, ptr %1) {
+define linkonce_odr i1 @_ZN8instlens13contains_nameER5ArrayI6StringE6String(ptr %0, ptr %1) {
 entry:
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -133714,7 +133714,7 @@ choose.when24:                                    ; preds = %if.end10
   call void @_ZN7PlannerC1E6String(ptr %struct.region28, ptr %sret.result4)
   store ptr %struct.region28, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result26)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result26)
   %planner29 = load ptr, ptr %planner, align 8
   %call30 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner29, ptr %sret.result26)
   %ne = icmp ne ptr %call30, null
@@ -133739,7 +133739,7 @@ if.then37:                                        ; preds = %if.end
   call void @_ZN7PlannerC1E6String(ptr %struct.region40, ptr %2)
   store ptr %struct.region40, ptr %rp2, align 1
   %addr.heap41 = load ptr, ptr %rp2, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap41, ptr %sret.result26)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap41, ptr %sret.result26)
   %planner42 = load ptr, ptr %rp2, align 8
   %call43 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner42, ptr %sret.result26)
   %ne44 = icmp ne ptr %call43, null
@@ -136195,7 +136195,7 @@ choose.when11:                                    ; preds = %if.end5
   call void @_ZN7PlannerC1E6String(ptr %struct.region15, ptr %2)
   store ptr %struct.region15, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result12)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result12)
   %planner16 = load ptr, ptr %planner, align 8
   %call17 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner16, ptr %sret.result12)
   %ne = icmp ne ptr %call17, null
@@ -136280,7 +136280,7 @@ choose.when5:                                     ; preds = %if.end
   call void @_ZN7PlannerC1E6String(ptr %struct.region9, ptr %2)
   store ptr %struct.region9, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result6)
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result6)
   %planner10 = load ptr, ptr %planner, align 8
   %call11 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner10, ptr %sret.result6)
   %ne = icmp ne ptr %call11, null
@@ -137774,7 +137774,7 @@ if.end9:                                          ; preds = %if.then4
   br label %if.end5
 }
 
-define linkonce_odr void @_ZN8docstore8set_textEP7DocSlot6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN8docstore8set_textER7DocSlot6String(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z7DocSlot, ptr %0, align 8
   %text_data = extractvalue %_Z7DocSlot %load.struct, 2
@@ -137817,7 +137817,7 @@ if.end9:                                          ; preds = %if.then8, %if.then4
   br label %if.end5
 }
 
-define linkonce_odr void @_ZN8docstore7set_uriEP7DocSlot6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN8docstore7set_uriER7DocSlot6String(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z7DocSlot, ptr %0, align 8
   %uri_data = extractvalue %_Z7DocSlot %load.struct, 0
@@ -137879,7 +137879,7 @@ if.end:                                           ; preds = %entry
 if.then1:                                         ; preds = %if.end
   %global.load3 = load ptr, ptr @doc_slots, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load3, i64 %call
-  call void @_ZN8docstore8set_textEP7DocSlot6String(ptr %ptr.add, ptr %1)
+  call void @_ZN8docstore8set_textER7DocSlot6String(ptr %ptr.add, ptr %1)
   ret void
 
 if.end2:                                          ; preds = %if.end
@@ -137904,8 +137904,8 @@ while.exit:                                       ; preds = %while.cond
   ret void
 
 if.then9:                                         ; preds = %while.body
-  call void @_ZN8docstore7set_uriEP7DocSlot6String(ptr %ptr.add7, ptr %0)
-  call void @_ZN8docstore8set_textEP7DocSlot6String(ptr %ptr.add7, ptr %1)
+  call void @_ZN8docstore7set_uriER7DocSlot6String(ptr %ptr.add7, ptr %0)
+  call void @_ZN8docstore8set_textER7DocSlot6String(ptr %ptr.add7, ptr %1)
   %used11 = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add7, i32 0, i32 4
   store i1 true, ptr %used11, align 1
   %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add7, i32 0, i32 5

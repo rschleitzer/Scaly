@@ -1933,7 +1933,7 @@ if.end2:                                          ; preds = %if.end
   ret void
 }
 
-define linkonce_odr ptr @_Z23scaly_trace_find_or_addP10const_char(ptr %0) {
+define linkonce_odr ptr @_Z23scaly_trace_find_or_addPN4scaly6memory4PageEP10const_char(ptr %0, ptr %1) {
 entry:
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -1951,7 +1951,7 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %global.load2, i64 %i3
   %field.inplace = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i32 @strcmp(ptr %deref.recv, ptr %0)
+  %call = call i32 @strcmp(ptr %deref.recv, ptr %1)
   %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
@@ -1976,7 +1976,7 @@ if.end7:                                          ; preds = %while.exit
   %global.load8 = load ptr, ptr @trace_entries, align 8
   %global.load9 = load i64, ptr @trace_count, align 8
   %ptr.add10 = getelementptr inbounds %_Z10TraceEntry, ptr %global.load8, i64 %global.load9
-  %call11 = call ptr @strdup(ptr %0)
+  %call11 = call ptr @strdup(ptr %1)
   %name = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add10, i32 0, i32 0
   store ptr %call11, ptr %name, align 8
   %push_count = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add10, i32 0, i32 1
@@ -2000,7 +2000,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call ptr @_Z23scaly_trace_find_or_addP10const_char(ptr %0)
+  %call = call ptr @_Z23scaly_trace_find_or_addPN4scaly6memory4PageEP10const_char(ptr null, ptr %0)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then1, label %if.end2
 
@@ -2027,7 +2027,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call ptr @_Z23scaly_trace_find_or_addP10const_char(ptr %0)
+  %call = call ptr @_Z23scaly_trace_find_or_addPN4scaly6memory4PageEP10const_char(ptr null, ptr %0)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then1, label %if.end2
 
@@ -2178,7 +2178,7 @@ entry:
   ret void
 }
 
-define linkonce_odr ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %0, ptr %1) {
+define linkonce_odr ptr @_Z28scaly_heap_trace_find_or_addPN4scaly6memory4PageER15HeapTraceHeaderP10const_char(ptr %0, ptr %1, ptr %2) {
 entry:
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -2186,24 +2186,24 @@ entry:
 
 while.cond:                                       ; preds = %if.end, %entry
   %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %load.struct = load %_Z15HeapTraceHeader, ptr %1, align 8
   %count = extractvalue %_Z15HeapTraceHeader %load.struct, 1
   %lt = icmp slt i64 %i1, %count
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct2 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %load.struct2 = load %_Z15HeapTraceHeader, ptr %1, align 8
   %entries = extractvalue %_Z15HeapTraceHeader %load.struct2, 2
   %i3 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z10TraceEntry, ptr %entries, i64 %i3
   %field.inplace = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i32 @strcmp(ptr %deref.recv, ptr %1)
+  %call = call i32 @strcmp(ptr %deref.recv, ptr %2)
   %eq = icmp eq i32 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct5 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %load.struct5 = load %_Z15HeapTraceHeader, ptr %1, align 8
   %count6 = extractvalue %_Z15HeapTraceHeader %load.struct5, 1
   %ge = icmp sge i64 %count6, 8192
   br i1 %ge, label %if.then7, label %if.end8
@@ -2221,22 +2221,22 @@ if.then7:                                         ; preds = %while.exit
   ret ptr null
 
 if.end8:                                          ; preds = %while.exit
-  %load.struct9 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %load.struct9 = load %_Z15HeapTraceHeader, ptr %1, align 8
   %entries10 = extractvalue %_Z15HeapTraceHeader %load.struct9, 2
-  %load.struct11 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %load.struct11 = load %_Z15HeapTraceHeader, ptr %1, align 8
   %count12 = extractvalue %_Z15HeapTraceHeader %load.struct11, 1
   %ptr.add13 = getelementptr inbounds %_Z10TraceEntry, ptr %entries10, i64 %count12
-  %call14 = call ptr @strdup(ptr %1)
+  %call14 = call ptr @strdup(ptr %2)
   %name = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add13, i32 0, i32 0
   store ptr %call14, ptr %name, align 8
   %push_count = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add13, i32 0, i32 1
   store i64 0, ptr %push_count, align 8
   %pop_count = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add13, i32 0, i32 2
   store i64 0, ptr %pop_count, align 8
-  %load.struct15 = load %_Z15HeapTraceHeader, ptr %0, align 8
+  %load.struct15 = load %_Z15HeapTraceHeader, ptr %1, align 8
   %count16 = extractvalue %_Z15HeapTraceHeader %load.struct15, 1
   %add17 = add i64 %count16, 1
-  %count18 = getelementptr inbounds nuw %_Z15HeapTraceHeader, ptr %0, i32 0, i32 1
+  %count18 = getelementptr inbounds nuw %_Z15HeapTraceHeader, ptr %1, i32 0, i32 1
   store i64 %add17, ptr %count18, align 8
   ret ptr %ptr.add13
 }
@@ -2254,7 +2254,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %global.load1 = load ptr, ptr @heap_trace, align 8
   call void @_Z15heap_trace_lockP15HeapTraceHeader(ptr %global.load1)
-  %call = call ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %global.load1, ptr %0)
+  %call = call ptr @_Z28scaly_heap_trace_find_or_addPN4scaly6memory4PageER15HeapTraceHeaderP10const_char(ptr null, ptr %global.load1, ptr %0)
   %ne2 = icmp ne ptr %call, null
   br i1 %ne2, label %if.then3, label %if.end4
 
@@ -2284,7 +2284,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %global.load1 = load ptr, ptr @heap_trace, align 8
   call void @_Z15heap_trace_lockP15HeapTraceHeader(ptr %global.load1)
-  %call = call ptr @_Z28scaly_heap_trace_find_or_addP15HeapTraceHeaderP10const_char(ptr %global.load1, ptr %0)
+  %call = call ptr @_Z28scaly_heap_trace_find_or_addPN4scaly6memory4PageER15HeapTraceHeaderP10const_char(ptr null, ptr %global.load1, ptr %0)
   %ne2 = icmp ne ptr %call, null
   br i1 %ne2, label %if.then3, label %if.end4
 
@@ -2737,14 +2737,14 @@ entry:
   ret i64 %deref
 }
 
-define linkonce_odr ptr @_ZN6Region11deserializeEP2u8P4Page(ptr %0, ptr %1) {
+define linkonce_odr ptr @_ZN6Region11deserializeEPN4scaly6memory4PageEP2u8P4Page(ptr %0, ptr %1, ptr %2) {
 entry:
   %np = alloca ptr, align 8
   %r = alloca i64, align 8
   %i = alloca i64, align 8
   %off = alloca i64, align 8
   %v = alloca i64, align 8
-  %ptr.add = getelementptr inbounds i64, ptr %0, i64 0
+  %ptr.add = getelementptr inbounds i64, ptr %1, i64 0
   %deref = load i64, ptr %ptr.add, align 8
   %ne = icmp ne i64 %deref, 211850316889
   br i1 %ne, label %if.then, label %if.end
@@ -2753,7 +2753,7 @@ if.then:                                          ; preds = %entry
   ret ptr null
 
 if.end:                                           ; preds = %entry
-  %ptr.add1 = getelementptr inbounds i64, ptr %0, i64 2
+  %ptr.add1 = getelementptr inbounds i64, ptr %1, i64 2
   %deref2 = load i64, ptr %ptr.add1, align 8
   %eq = icmp eq i64 %deref2, 0
   br i1 %eq, label %if.then3, label %if.end4
@@ -2762,17 +2762,17 @@ if.then3:                                         ; preds = %if.end
   ret ptr null
 
 if.end4:                                          ; preds = %if.end
-  %ptr.add5 = getelementptr inbounds i64, ptr %0, i64 3
+  %ptr.add5 = getelementptr inbounds i64, ptr %1, i64 3
   %deref6 = load i64, ptr %ptr.add5, align 8
-  %as.ptrtoint = ptrtoint ptr %0 to i64
+  %as.ptrtoint = ptrtoint ptr %1 to i64
   %add = add i64 %as.ptrtoint, 32
   %as.inttoptr = inttoptr i64 %add to ptr
   %mul = mul i64 %deref2, 8
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %2, i64 %mul, i64 8)
   %mul7 = mul i64 %deref2, 8
-  %call8 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul7, i64 8)
+  %call8 = call ptr @_ZN4Page8allocateEmm(ptr %2, i64 %mul7, i64 8)
   %mul9 = mul i64 %deref2, 8
-  %call10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul9, i64 8)
+  %call10 = call ptr @_ZN4Page8allocateEmm(ptr %2, i64 %mul9, i64 8)
   store i64 1, ptr %v, align 1
   br label %while.cond
 
@@ -2837,7 +2837,7 @@ while.body27:                                     ; preds = %while.cond26
   br i1 %eq41, label %if.then42, label %if.else
 
 while.exit28:                                     ; preds = %while.cond26
-  %call67 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z14ReceivedRegion, ptr null, i32 1) to i64), i64 8)
+  %call67 = call ptr @_ZN4Page8allocateEmm(ptr %2, i64 ptrtoint (ptr getelementptr (%_Z14ReceivedRegion, ptr null, i32 1) to i64), i64 8)
   %ptr.add68 = getelementptr inbounds i64, ptr %call8, i64 0
   %deref69 = load i64, ptr %ptr.add68, align 8
   %as.inttoptr70 = inttoptr i64 %deref69 to ptr
@@ -2868,7 +2868,7 @@ if.else:                                          ; preds = %while.body27
 
 if.end43:                                         ; preds = %if.end48, %if.then42
   %np49 = load ptr, ptr %np, align 8
-  %as.ptrtoint50 = ptrtoint ptr %0 to i64
+  %as.ptrtoint50 = ptrtoint ptr %1 to i64
   %off51 = load i64, ptr %off, align 8
   %add52 = add i64 %as.ptrtoint50, %off51
   %as.inttoptr53 = inttoptr i64 %add52 to ptr
@@ -23492,7 +23492,7 @@ entry:
 if.then:                                          ; preds = %entry
   %global.load1 = load ptr, ptr @task_default_pool, align 8
   store ptr null, ptr @task_default_pool, align 8
-  call void @_ZN8TaskPool8shutdownEP8TaskPool(ptr %global.load1)
+  call void @_ZN8TaskPool8shutdownER8TaskPool(ptr %global.load1)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -23737,7 +23737,7 @@ if.end2:                                          ; preds = %if.end
   ret ptr %as.inttoptr11
 }
 
-define linkonce_odr void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %0) {
+define linkonce_odr void @_ZN5Fiber14swap_allocatorER5Fiber(ptr %0) {
 entry:
   %global.load = load ptr, ptr @stack_head, align 8
   %global.load1 = load ptr, ptr @stack_top, align 8
@@ -23831,7 +23831,7 @@ entry:
   ret ptr %call
 }
 
-define linkonce_odr i1 @_ZN5Fiber6resumeEP5Fiber(ptr %0) {
+define linkonce_odr i1 @_ZN5Fiber6resumeER5Fiber(ptr %0) {
 entry:
   %load.struct = load %_Z5Fiber, ptr %0, align 8
   %done = extractvalue %_Z5Fiber %load.struct, 5
@@ -23843,7 +23843,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %global.load = load ptr, ptr @current_fiber, align 8
   store ptr %0, ptr @current_fiber, align 8
-  call void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %0)
+  call void @_ZN5Fiber14swap_allocatorER5Fiber(ptr %0)
   %field.inplace = getelementptr inbounds nuw %_Z5Fiber, ptr %0, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %call = call ptr @scaly_jump_context(ptr %deref.recv)
@@ -23867,7 +23867,7 @@ entry:
 define linkonce_odr void @_ZN5Fiber5yieldEv() {
 entry:
   %global.load = load ptr, ptr @current_fiber, align 8
-  call void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %global.load)
+  call void @_ZN5Fiber14swap_allocatorER5Fiber(ptr %global.load)
   %field.inplace = getelementptr inbounds nuw %_Z5Fiber, ptr %global.load, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %call = call ptr @scaly_jump_context(ptr %deref.recv)
@@ -23881,7 +23881,7 @@ entry:
   %global.load = load ptr, ptr @current_fiber, align 8
   %done = getelementptr inbounds nuw %_Z5Fiber, ptr %global.load, i32 0, i32 5
   store i1 true, ptr %done, align 1
-  call void @_ZN5Fiber14swap_allocatorEP5Fiber(ptr %global.load)
+  call void @_ZN5Fiber14swap_allocatorER5Fiber(ptr %global.load)
   %field.inplace = getelementptr inbounds nuw %_Z5Fiber, ptr %global.load, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %call = call ptr @scaly_jump_context(ptr %deref.recv)
@@ -24109,7 +24109,7 @@ entry:
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %0) {
+define linkonce_odr void @_ZN9Scheduler7enqueueER9SchedTask(ptr %0) {
 entry:
   %global.load = load ptr, ptr @current_scheduler, align 8
   %next = getelementptr inbounds nuw %_Z9SchedTask, ptr %0, i32 0, i32 2
@@ -24191,7 +24191,7 @@ entry:
   store ptr %1, ptr %arg, align 8
   %home = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 7
   store ptr %global.load, ptr %home, align 8
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %call)
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %call)
   ret ptr %call
 }
 
@@ -24229,7 +24229,7 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %global.load)
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %global.load)
   call void @_ZN5Fiber5yieldEv()
   br label %if.end
 
@@ -24237,7 +24237,7 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN9Scheduler11wake_remoteEP9Scheduler(ptr %0) {
+define linkonce_odr void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %0) {
 entry:
   %load.struct = load %_Z9Scheduler, ptr %0, align 8
   %eio = extractvalue %_Z9Scheduler %load.struct, 4
@@ -24261,7 +24261,7 @@ if.end4:                                          ; preds = %if.end
   ret void
 }
 
-define linkonce_odr void @_ZN9Scheduler11inject_taskEP9SchedulerP9SchedTask(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN9Scheduler11inject_taskEP9SchedulerR9SchedTask(ptr %0, ptr %1) {
 entry:
   %addr.gep = getelementptr inbounds nuw %_Z9Scheduler, ptr %0, i32 0, i32 7
   br label %repeat.body
@@ -24278,7 +24278,7 @@ repeat.body:                                      ; preds = %if.end, %entry
   br i1 %eq, label %if.then, label %if.end
 
 repeat.exit:                                      ; preds = %if.then
-  call void @_ZN9Scheduler11wake_remoteEP9Scheduler(ptr %0)
+  call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %0)
   ret void
 
 if.then:                                          ; preds = %repeat.body
@@ -24360,7 +24360,7 @@ while.body14:                                     ; preds = %while.cond13
   %load.struct19 = load %_Z9SchedTask, ptr %rev18, align 8
   %next20 = extractvalue %_Z9SchedTask %load.struct19, 2
   %rev21 = load ptr, ptr %rev, align 8
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %rev21)
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %rev21)
   %load.struct22 = load %_Z9Scheduler, ptr %global.load, align 8
   %blocked = extractvalue %_Z9Scheduler %load.struct22, 3
   %sub = sub i64 %blocked, 1
@@ -24378,7 +24378,7 @@ while.exit15:                                     ; preds = %while.cond13
   ret void
 }
 
-define linkonce_odr void @_ZN9Scheduler12wake_waitersEP9SchedTask(ptr %0) {
+define linkonce_odr void @_ZN9Scheduler12wake_waitersER9SchedTask(ptr %0) {
 entry:
   %global.load = load ptr, ptr @current_scheduler, align 8
   %load.struct = load %_Z9SchedTask, ptr %0, align 8
@@ -24397,7 +24397,7 @@ while.body:                                       ; preds = %while.cond
   %load.struct3 = load %_Z9SchedTask, ptr %w2, align 8
   %next = extractvalue %_Z9SchedTask %load.struct3, 2
   %w4 = load ptr, ptr %w, align 8
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %w4)
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %w4)
   %load.struct5 = load %_Z9Scheduler, ptr %global.load, align 8
   %blocked = extractvalue %_Z9Scheduler %load.struct5, 3
   %sub = sub i64 %blocked, 1
@@ -24412,7 +24412,7 @@ while.exit:                                       ; preds = %while.cond
   ret void
 }
 
-define linkonce_odr i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %0) {
+define linkonce_odr i64 @_ZN9Scheduler4reapER9SchedTask(ptr %0) {
 entry:
   %load.struct = load %_Z9SchedTask, ptr %0, align 8
   %disposed = extractvalue %_Z9SchedTask %load.struct, 5
@@ -24444,7 +24444,7 @@ if.end:                                           ; preds = %entry
   store ptr %call, ptr @current_task, align 8
   %field.inplace = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call1 = call i1 @_ZN5Fiber6resumeEP5Fiber(ptr %deref.recv)
+  %call1 = call i1 @_ZN5Fiber6resumeER5Fiber(ptr %deref.recv)
   store ptr null, ptr @current_task, align 8
   %not = xor i1 %call1, true
   br i1 %not, label %if.then2, label %if.end3
@@ -24452,8 +24452,8 @@ if.end:                                           ; preds = %entry
 if.then2:                                         ; preds = %if.end
   %done = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 4
   store i1 true, ptr %done, align 1
-  call void @_ZN9Scheduler12wake_waitersEP9SchedTask(ptr %call)
-  %call4 = call i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %call)
+  call void @_ZN9Scheduler12wake_waitersER9SchedTask(ptr %call)
+  %call4 = call i64 @_ZN9Scheduler4reapER9SchedTask(ptr %call)
   br label %if.end3
 
 if.end3:                                          ; preds = %if.then2, %if.end
@@ -24581,7 +24581,7 @@ if.then34:                                        ; preds = %if.else31
 
 if.else35:                                        ; preds = %if.else31
   %as.inttoptr37 = inttoptr i64 %deref to ptr
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %as.inttoptr37)
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %as.inttoptr37)
   %load.struct38 = load %_Z9Scheduler, ptr %global.load, align 8
   %blocked = extractvalue %_Z9Scheduler %load.struct38, 3
   %sub = sub i64 %blocked, 1
@@ -24657,7 +24657,7 @@ if.end:                                           ; preds = %if.then, %while.exi
   ret void
 }
 
-define linkonce_odr i64 @_ZN9Scheduler4joinEP9SchedTask(ptr %0) {
+define linkonce_odr i64 @_ZN9Scheduler4joinER9SchedTask(ptr %0) {
 entry:
   %global.load = load ptr, ptr @current_task, align 8
   %eq = icmp eq ptr %global.load, null
@@ -24684,7 +24684,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %not1, label %if.then2, label %if.end3
 
 while.exit:                                       ; preds = %while.cond
-  %call4 = call i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %0)
+  %call4 = call i64 @_ZN9Scheduler4reapER9SchedTask(ptr %0)
   ret i64 %call4
 
 if.then2:                                         ; preds = %while.body
@@ -24711,7 +24711,7 @@ if.then8:                                         ; preds = %if.end
   br label %if.end9
 
 if.end9:                                          ; preds = %if.then8, %if.end
-  %call15 = call i64 @_ZN9Scheduler4reapEP9SchedTask(ptr %0)
+  %call15 = call i64 @_ZN9Scheduler4reapER9SchedTask(ptr %0)
   ret i64 %call15
 }
 
@@ -24821,7 +24821,7 @@ if.then19:                                        ; preds = %if.end10
   %task = extractvalue %_Z6IoWork %load.struct23, 4
   %load.struct24 = load %_Z9SchedTask, ptr %task, align 8
   %home = extractvalue %_Z9SchedTask %load.struct24, 7
-  call void @_ZN9Scheduler11inject_taskEP9SchedulerP9SchedTask(ptr %home, ptr %task)
+  call void @_ZN9Scheduler11inject_taskEP9SchedulerR9SchedTask(ptr %home, ptr %task)
   br label %if.end20
 
 if.end20:                                         ; preds = %if.then19, %if.end10
@@ -25589,7 +25589,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN7Channel5routeEP9SchedTask(ptr %0) {
+define linkonce_odr void @_ZN7Channel5routeER9SchedTask(ptr %0) {
 entry:
   call void @_Z14deadlock_eventv()
   %load.struct = load %_Z9SchedTask, ptr %0, align 8
@@ -25600,7 +25600,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %global.load1 = load ptr, ptr @current_scheduler, align 8
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %0)
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %0)
   %load.struct2 = load %_Z9Scheduler, ptr %global.load1, align 8
   %blocked = extractvalue %_Z9Scheduler %load.struct2, 3
   %sub = sub i64 %blocked, 1
@@ -25616,11 +25616,11 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct7 = load %_Z9SchedTask, ptr %0, align 8
   %home8 = extractvalue %_Z9SchedTask %load.struct7, 7
-  call void @_ZN9Scheduler11inject_taskEP9SchedulerP9SchedTask(ptr %home8, ptr %0)
+  call void @_ZN9Scheduler11inject_taskEP9SchedulerR9SchedTask(ptr %home8, ptr %0)
   ret void
 }
 
-define linkonce_odr ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0) {
+define linkonce_odr ptr @_ZN7Channel12pop_receiverER7Channel(ptr %0) {
 entry:
   %load.struct = load %_Z7Channel, ptr %0, align 8
   %recv_head = extractvalue %_Z7Channel %load.struct, 5
@@ -25651,7 +25651,7 @@ if.end6:                                          ; preds = %if.then5, %if.then
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0) {
+define linkonce_odr ptr @_ZN7Channel10pop_senderER7Channel(ptr %0) {
 entry:
   %load.struct = load %_Z7Channel, ptr %0, align 8
   %send_head = extractvalue %_Z7Channel %load.struct, 10
@@ -25785,7 +25785,7 @@ if.end23:                                         ; preds = %if.else, %if.then22
   %count31 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 9
   store i64 %add, ptr %count31, align 8
   call void @_Z14deadlock_eventv()
-  %call32 = call ptr @_ZN7Channel12pop_receiverEP7Channel(ptr %0)
+  %call32 = call ptr @_ZN7Channel12pop_receiverER7Channel(ptr %0)
   %load.struct33 = load %_Z7Channel, ptr %0, align 8
   %recv_sched = extractvalue %_Z7Channel %load.struct33, 7
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
@@ -25793,7 +25793,7 @@ if.end23:                                         ; preds = %if.else, %if.then22
   br i1 %ne34, label %if.then35, label %if.end36
 
 if.then35:                                        ; preds = %if.end23
-  call void @_ZN7Channel5routeEP9SchedTask(ptr %call32)
+  call void @_ZN7Channel5routeER9SchedTask(ptr %call32)
   ret void
 
 if.end36:                                         ; preds = %if.end23
@@ -25809,7 +25809,7 @@ if.end39:                                         ; preds = %if.end43, %if.end36
   ret void
 
 if.then42:                                        ; preds = %if.then38
-  call void @_ZN9Scheduler11wake_remoteEP9Scheduler(ptr %recv_sched)
+  call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %recv_sched)
   br label %if.end43
 
 if.end43:                                         ; preds = %if.then42, %if.then38
@@ -25938,7 +25938,7 @@ while.body:                                       ; preds = %while.cond
   %next12 = getelementptr inbounds nuw %_Z9SchedTask, ptr %ptr.load, i32 0, i32 2
   store ptr null, ptr %next12, align 8
   %chain13 = load ptr, ptr %chain, align 8
-  call void @_ZN7Channel5routeEP9SchedTask(ptr %chain13)
+  call void @_ZN7Channel5routeER9SchedTask(ptr %chain13)
   store ptr %next, ptr %chain, align 1
   br label %while.cond
 
@@ -25958,7 +25958,7 @@ while.body15:                                     ; preds = %while.cond14
   %next23 = getelementptr inbounds nuw %_Z9SchedTask, ptr %ptr.load22, i32 0, i32 2
   store ptr null, ptr %next23, align 8
   %schain24 = load ptr, ptr %schain, align 8
-  call void @_ZN7Channel5routeEP9SchedTask(ptr %schain24)
+  call void @_ZN7Channel5routeER9SchedTask(ptr %schain24)
   store ptr %next21, ptr %schain, align 1
   br label %while.cond14
 
@@ -25975,7 +25975,7 @@ if.end27:                                         ; preds = %if.end30, %while.ex
   ret void
 
 if.then29:                                        ; preds = %if.then26
-  call void @_ZN9Scheduler11wake_remoteEP9Scheduler(ptr %recv_sched)
+  call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %recv_sched)
   br label %if.end30
 
 if.end30:                                         ; preds = %if.then29, %if.then26
@@ -26024,13 +26024,13 @@ if.end6:                                          ; preds = %if.then5, %if.then
   %sub = sub i64 %count, 1
   %count8 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 9
   store i64 %sub, ptr %count8, align 8
-  %call9 = call ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0)
+  %call9 = call ptr @_ZN7Channel10pop_senderER7Channel(ptr %0)
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   %ne10 = icmp ne ptr %call9, null
   br i1 %ne10, label %if.then11, label %if.end12
 
 if.then11:                                        ; preds = %if.end6
-  call void @_ZN7Channel5routeEP9SchedTask(ptr %call9)
+  call void @_ZN7Channel5routeER9SchedTask(ptr %call9)
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.end6
@@ -26151,7 +26151,7 @@ while.exit:                                       ; preds = %while.cond
 
 if.then6:                                         ; preds = %while.body
   %as.inttoptr8 = inttoptr i64 %deref to ptr
-  call void @_ZN9Scheduler7enqueueEP9SchedTask(ptr %as.inttoptr8)
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %as.inttoptr8)
   %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
   %blocked = extractvalue %_Z9Scheduler %load.struct, 3
   %sub = sub i64 %blocked, 1
@@ -26219,13 +26219,13 @@ if.end7:                                          ; preds = %if.then6, %if.then
   %sub = sub i64 %count, 1
   %count9 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 9
   store i64 %sub, ptr %count9, align 8
-  %call10 = call ptr @_ZN7Channel10pop_senderEP7Channel(ptr %0)
+  %call10 = call ptr @_ZN7Channel10pop_senderER7Channel(ptr %0)
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   %ne11 = icmp ne ptr %call10, null
   br i1 %ne11, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end7
-  call void @_ZN7Channel5routeEP9SchedTask(ptr %call10)
+  call void @_ZN7Channel5routeER9SchedTask(ptr %call10)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.end7
@@ -26453,7 +26453,7 @@ entry:
   ret void
 }
 
-define linkonce_odr ptr @_ZN8TaskPool8deque_atEP8TaskPool3i64(ptr %0, i64 %1) {
+define linkonce_odr ptr @_ZN8TaskPool8deque_atER8TaskPool3i64(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z8TaskPool, ptr %0, align 8
   %deques = extractvalue %_Z8TaskPool %load.struct, 0
@@ -26549,7 +26549,7 @@ while.cond:                                       ; preds = %while.body, %if.end
 
 while.body:                                       ; preds = %while.cond
   %i20 = load i64, ptr %i, align 8
-  %call21 = call ptr @_ZN8TaskPool8deque_atEP8TaskPool3i64(ptr %call2, i64 %i20)
+  %call21 = call ptr @_ZN8TaskPool8deque_atER8TaskPool3i64(ptr %call2, i64 %i20)
   %lock = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call21, i32 0, i32 0
   store i64 0, ptr %lock, align 8
   %head = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call21, i32 0, i32 1
@@ -26643,7 +26643,7 @@ if.end:                                           ; preds = %if.then, %entry
   %next_deque6 = getelementptr inbounds nuw %_Z8TaskPool, ptr %0, i32 0, i32 2
   store i64 %add, ptr %next_deque6, align 8
   %idx7 = load i64, ptr %idx, align 8
-  %call8 = call ptr @_ZN8TaskPool8deque_atEP8TaskPool3i64(ptr %0, i64 %idx7)
+  %call8 = call ptr @_ZN8TaskPool8deque_atER8TaskPool3i64(ptr %0, i64 %idx7)
   call void @_ZN9TaskDeque7acquireEP9TaskDeque(ptr %call8)
   %load.struct9 = load %_Z9TaskDeque, ptr %call8, align 8
   %tail = extractvalue %_Z9TaskDeque %load.struct9, 2
@@ -26723,7 +26723,7 @@ if.then:                                          ; preds = %while.body
 
 if.end:                                           ; preds = %if.then, %while.body
   %idx9 = load i64, ptr %idx, align 8
-  %call = call ptr @_ZN8TaskPool8deque_atEP8TaskPool3i64(ptr %0, i64 %idx9)
+  %call = call ptr @_ZN8TaskPool8deque_atER8TaskPool3i64(ptr %0, i64 %idx9)
   call void @_ZN9TaskDeque7acquireEP9TaskDeque(ptr %call)
   %load.struct10 = load %_Z9TaskDeque, ptr %call, align 8
   %head = extractvalue %_Z9TaskDeque %load.struct10, 1
@@ -26781,7 +26781,7 @@ if.end28:                                         ; preds = %if.then27, %if.then
   ret ptr %w29
 }
 
-define linkonce_odr void @_ZN8TaskPool8shutdownEP8TaskPool(ptr %0) {
+define linkonce_odr void @_ZN8TaskPool8shutdownER8TaskPool(ptr %0) {
 entry:
   %load.struct = load %_Z8TaskPool, ptr %0, align 8
   %pipe_write = extractvalue %_Z8TaskPool %load.struct, 6
@@ -27642,7 +27642,7 @@ entry:
   ret i32 %call
 }
 
-define linkonce_odr ptr @_ZN7Cluster5setupE3i32(i32 %0) {
+define linkonce_odr ptr @_ZN7Cluster5setupEPN4scaly6memory4PageE3i32(ptr %0, i32 %1) {
 entry:
   %got = alloca i64, align 8
   %inb9 = alloca ptr, align 8
@@ -27660,12 +27660,12 @@ entry:
   %ptr.add4 = getelementptr inbounds i64, ptr %pre2, i64 2
   store i64 %call, ptr %ptr.add4, align 8
   %pre5 = load ptr, ptr %pre1, align 8
-  %call6 = call i1 @_ZN2Io13tcp_write_allE3i32Pvm(i32 %0, ptr %pre5, i64 24)
+  %call6 = call i1 @_ZN2Io13tcp_write_allE3i32Pvm(i32 %1, ptr %pre5, i64 24)
   %eq = icmp eq i1 %call6, false
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call7 = call i32 @close(i32 %0)
+  %call7 = call i32 @close(i32 %1)
   ret ptr null
 
 if.end:                                           ; preds = %entry
@@ -27687,7 +27687,7 @@ while.body:                                       ; preds = %while.cond
   %as.inttoptr = inttoptr i64 %add to ptr
   %got13 = load i64, ptr %got, align 8
   %sub = sub i64 24, %got13
-  %call14 = call i64 @_ZN2Io4readE3i32Pvm(i32 %0, ptr %as.inttoptr, i64 %sub)
+  %call14 = call i64 @_ZN2Io4readE3i32Pvm(i32 %1, ptr %as.inttoptr, i64 %sub)
   %le = icmp sle i64 %call14, 0
   br i1 %le, label %if.then15, label %if.end16
 
@@ -27699,7 +27699,7 @@ while.exit:                                       ; preds = %while.cond
   br i1 %ne, label %if.then22, label %if.end23
 
 if.then15:                                        ; preds = %while.body
-  %call17 = call i32 @close(i32 %0)
+  %call17 = call i32 @close(i32 %1)
   ret ptr null
 
 if.end16:                                         ; preds = %while.body
@@ -27711,7 +27711,7 @@ if.end16:                                         ; preds = %while.body
 if.then22:                                        ; preds = %while.exit
   call void @_Z11scaly_eputsP10const_char(ptr @.str.67)
   call void @_Z12scaly_eputnlv()
-  %call24 = call i32 @close(i32 %0)
+  %call24 = call i32 @close(i32 %1)
   ret ptr null
 
 if.end23:                                         ; preds = %while.exit
@@ -27726,7 +27726,7 @@ if.then28:                                        ; preds = %if.end23
   call void @_Z11scaly_eputsP10const_char(ptr @.str.69)
   call void @_Z11scaly_eputi3i64(i64 %deref26)
   call void @_Z12scaly_eputnlv()
-  %call30 = call i32 @close(i32 %0)
+  %call30 = call i32 @close(i32 %1)
   ret ptr null
 
 if.end29:                                         ; preds = %if.end23
@@ -27744,7 +27744,7 @@ if.then35:                                        ; preds = %if.end29
   %as.inttoptr38 = inttoptr i64 %deref33 to ptr
   call void @_Z11scaly_eputpPv(ptr %as.inttoptr38)
   call void @_Z12scaly_eputnlv()
-  %call39 = call i32 @close(i32 %0)
+  %call39 = call i32 @close(i32 %1)
   ret ptr null
 
 if.end36:                                         ; preds = %if.end29
@@ -27753,7 +27753,7 @@ if.end36:                                         ; preds = %if.end29
   %lock = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 0
   store i64 0, ptr %lock, align 8
   %fd = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 1
-  store i32 %0, ptr %fd, align 4
+  store i32 %1, ptr %fd, align 4
   %alive = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 2
   store i1 true, ptr %alive, align 1
   %peer_stamp = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 3
@@ -27780,16 +27780,16 @@ if.end36:                                         ; preds = %if.end29
   store i64 0, ptr %reader, align 8
   %down_reason = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 12
   store i64 0, ptr %down_reason, align 8
-  call void @_ZN2Io15set_nonblockingE3i32(i32 %0)
+  call void @_ZN2Io15set_nonblockingE3i32(i32 %1)
   %call46 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z17node_reader_entryPv, ptr %call41)
   %reader47 = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 11
   store i64 %call46, ptr %reader47, align 8
   ret ptr %call41
 }
 
-define linkonce_odr ptr @_ZN7Cluster6acceptE3i32(i32 %0) {
+define linkonce_odr ptr @_ZN7Cluster6acceptEPN4scaly6memory4PageE3i32(ptr %0, i32 %1) {
 entry:
-  %call = call i32 @_ZN2Io6acceptE3i32(i32 %0)
+  %call = call i32 @_ZN2Io6acceptE3i32(i32 %1)
   %lt = icmp slt i32 %call, 0
   br i1 %lt, label %if.then, label %if.end
 
@@ -27797,13 +27797,13 @@ if.then:                                          ; preds = %entry
   ret ptr null
 
 if.end:                                           ; preds = %entry
-  %call1 = call ptr @_ZN7Cluster5setupE3i32(i32 %call)
+  %call1 = call ptr @_ZN7Cluster5setupEPN4scaly6memory4PageE3i32(ptr null, i32 %call)
   ret ptr %call1
 }
 
-define linkonce_odr ptr @_ZN7Cluster7connectEP10const_char3i32(ptr %0, i32 %1) {
+define linkonce_odr ptr @_ZN7Cluster7connectEPN4scaly6memory4PageEP10const_char3i32(ptr %0, ptr %1, i32 %2) {
 entry:
-  %call = call i32 @_ZN2Io12connect_hostEP10const_char3i32(ptr %0, i32 %1)
+  %call = call i32 @_ZN2Io12connect_hostEP10const_char3i32(ptr %1, i32 %2)
   %lt = icmp slt i32 %call, 0
   br i1 %lt, label %if.then, label %if.end
 
@@ -27811,7 +27811,7 @@ if.then:                                          ; preds = %entry
   ret ptr null
 
 if.end:                                           ; preds = %entry
-  %call1 = call ptr @_ZN7Cluster5setupE3i32(i32 %call)
+  %call1 = call ptr @_ZN7Cluster5setupEPN4scaly6memory4PageE3i32(ptr null, i32 %call)
   ret ptr %call1
 }
 
@@ -28123,7 +28123,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN7Cluster12dispose_peerEP8NodePeer(ptr %0) {
+define linkonce_odr void @_ZN7Cluster12dispose_peerER8NodePeer(ptr %0) {
 entry:
   %field.inplace = getelementptr inbounds nuw %_Z8NodePeer, ptr %0, i32 0, i32 11
   %field.val = load i64, ptr %field.inplace, align 8
@@ -28134,7 +28134,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN7Cluster15dispose_messageEP14ReceivedRegion(ptr %0) {
+define linkonce_odr void @_ZN7Cluster15dispose_messageER14ReceivedRegion(ptr %0) {
 entry:
   call void @_ZN14ReceivedRegion7releaseEv(ptr %0)
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
@@ -28161,7 +28161,7 @@ entry:
   ret void
 }
 
-define linkonce_odr i1 @_ZN7Cluster10read_exactEP8NodePeerPvm(ptr %0, ptr %1, i64 %2) {
+define linkonce_odr i1 @_ZN7Cluster10read_exactER8NodePeerPvm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z8NodePeer, ptr %0, align 8
   %fd = extractvalue %_Z8NodePeer %load.struct, 1
@@ -28291,7 +28291,7 @@ if.then15:                                        ; preds = %if.end13
 if.end16:                                         ; preds = %if.end13
   %call = call ptr @_ZN4Page13allocate_pageEv()
   %call17 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %deref7, i64 8)
-  %call18 = call i1 @_ZN7Cluster10read_exactEP8NodePeerPvm(ptr %0, ptr %call17, i64 %deref7)
+  %call18 = call i1 @_ZN7Cluster10read_exactER8NodePeerPvm(ptr %0, ptr %call17, i64 %deref7)
   %eq19 = icmp eq i1 %call18, false
   br i1 %eq19, label %if.then20, label %if.end21
 
@@ -28303,7 +28303,7 @@ if.then20:                                        ; preds = %if.end16
 
 if.end21:                                         ; preds = %if.end16
   %call22 = call ptr @_ZN4Page13allocate_pageEv()
-  %call23 = call ptr @_ZN6Region11deserializeEP2u8P4Page(ptr %call17, ptr %call22)
+  %call23 = call ptr @_ZN6Region11deserializeEPN4scaly6memory4PageEP2u8P4Page(ptr null, ptr %call17, ptr %call22)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call)
   call void @_ZN4Page12release_pageEP4Page(ptr %call)
   %eq24 = icmp eq ptr %call23, null
