@@ -683,7 +683,7 @@ define Fiber
     ; Swap the StackBucket allocator state between the process globals and
     ; the record. Called at every context crossing, keeping the invariant
     ; that the record holds the NON-running side's state.
-    procedure swap_allocator(f: pointer[Fiber])
+    procedure swap_allocator(f: ref[Fiber])
     {
         let h stack_head
         let t stack_top
@@ -699,7 +699,7 @@ define Fiber
     ; and allocates into its own region. The first create installs the
     ; guard-page overflow handler (best-effort diagnostic — a failed
     ; install just keeps the plain-crash behavior).
-    procedure create_sized(host: pointer[Page], fn: pointer[void], size: size_t) returns pointer[Fiber]
+    procedure create_sized(host: pointer[Page], fn: pointer[void], size: size_t) returns ref[Fiber]
     {
         let f host.allocate(sizeof Fiber, alignof Fiber) as pointer[Fiber]
         let guard_size getpagesize() as size_t
@@ -735,7 +735,7 @@ define Fiber
         f
     }
 
-    procedure create(host: pointer[Page], fn: pointer[void]) returns pointer[Fiber]
+    procedure create(host: pointer[Page], fn: pointer[void]) returns ref[Fiber]
     {
         let size FIBER_STACK_SIZE
         Fiber.create_sized(host, fn, size)
@@ -743,7 +743,7 @@ define Fiber
 
     ; Run the fiber until it yields or finishes. Returns true when the
     ; fiber can be resumed again, false once it finished (or was done).
-    procedure resume(f: pointer[Fiber]) returns bool
+    procedure resume(f: ref[Fiber]) returns bool
     {
         if f.done
             return false
@@ -879,9 +879,9 @@ function fiber_guard_hit(addr: pointer[void]) returns i32
 define SchedTask
 (
     entry: pointer[void]         ; the task's zero-argument procedure
-    fiber: pointer[Fiber]
-    next: pointer[SchedTask]
-    waiter: pointer[SchedTask]   ; tasks blocked joining this one
+    fiber: ref[Fiber]
+    next: ref[SchedTask]?
+    waiter: ref[SchedTask]?   ; tasks blocked joining this one
     done: bool
     disposed: bool
     arg: pointer[void]           ; spawn_arg's argument (task_arg reads it)
@@ -910,8 +910,8 @@ procedure scheduler_entry(first_ctx: pointer[void])
 define Scheduler
 (
     host: pointer[Page]          ; task records, fibers, and queue live here
-    head: pointer[SchedTask]     ; FIFO ready queue
-    tail: pointer[SchedTask]
+    head: ref[SchedTask]?     ; FIFO ready queue
+    tail: ref[SchedTask]?
     blocked: int                 ; tasks waiting in a join, send/receive, or Io
     eio: i32                     ; readiness poller fd (-1 until first Io use)
     io_waiting: int              ; tasks parked on fd readiness
@@ -924,7 +924,7 @@ define Scheduler
     ; Create the scheduler on the given page and make it current. All
     ; spawned task records and fiber stacks are anchored on this page,
     ; so they survive any spawning fiber's region teardown.
-    procedure create(host: pointer[Page]) returns pointer[Scheduler]
+    procedure create(host: pointer[Page]) returns ref[Scheduler]
     {
         let s host.allocate(sizeof Scheduler, alignof Scheduler) as pointer[Scheduler]
         set s.host: host
@@ -941,7 +941,7 @@ define Scheduler
     }
 
     ; Append a task to the ready-queue tail (round-robin order).
-    procedure enqueue(t: pointer[SchedTask])
+    procedure enqueue(t: ref[SchedTask])
     {
         let s current_scheduler as pointer[Scheduler]
         set t.next: null
@@ -957,7 +957,7 @@ define Scheduler
     }
 
     ; Pop the ready-queue head (null when the queue is empty).
-    procedure dequeue() returns pointer[SchedTask]
+    procedure dequeue() returns ref[SchedTask]?
     {
         let s current_scheduler as pointer[Scheduler]
         let t s.head
@@ -977,7 +977,7 @@ define Scheduler
     ; Scheduler.task_arg — cast an fd through size_t), and put it at the
     ; ready-queue tail. Callable from the main context and from inside a
     ; running task alike. Non-default stack sizes bypass the stack pool.
-    procedure spawn_sized(fn: pointer[void], arg: pointer[void], size: size_t) returns pointer[SchedTask]
+    procedure spawn_sized(fn: pointer[void], arg: pointer[void], size: size_t) returns ref[SchedTask]
     {
         let s current_scheduler as pointer[Scheduler]
         let host s.host
@@ -995,14 +995,14 @@ define Scheduler
     }
 
     ; spawn_sized with the default stack size.
-    procedure spawn_arg(fn: pointer[void], arg: pointer[void]) returns pointer[SchedTask]
+    procedure spawn_arg(fn: pointer[void], arg: pointer[void]) returns ref[SchedTask]
     {
         let size FIBER_STACK_SIZE
         Scheduler.spawn_sized(fn, arg, size)
     }
 
     ; spawn_arg without an argument.
-    procedure spawn(fn: pointer[void]) returns pointer[SchedTask]
+    procedure spawn(fn: pointer[void]) returns ref[SchedTask]
         Scheduler.spawn_arg(fn, null)
 
     ; The running task's spawn_arg argument (null on the main context).
@@ -1034,7 +1034,7 @@ define Scheduler
     ; are adjusted by its own drain_inject. The receiver armed the wake
     ; handle before parking, so the racy read of home.eio/home.wake sees
     ; initialized values (published by the channel lock).
-    procedure inject_task(home: pointer[Scheduler], t: pointer[SchedTask])
+    procedure inject_task(home: pointer[Scheduler], t: ref[SchedTask])
     {
         let hp &home.inject
         repeat
@@ -1050,7 +1050,7 @@ define Scheduler
     ; Poke a scheduler's wake handle so a poll_io blocked on it returns.
     ; Safe from any thread; a scheduler that never armed a wake (no
     ; channel receive yet) is simply not waiting — nothing to poke.
-    procedure wake_remote(home: pointer[Scheduler])
+    procedure wake_remote(home: ref[Scheduler])
     {
         let q home.eio
         if q = ((0 - 1) as i32)
@@ -1080,7 +1080,7 @@ define Scheduler
                 break
             set h: got
         }
-        var rev null as pointer[SchedTask]
+        var rev: ref[SchedTask]? null
         var t (h as size_t) as pointer[SchedTask]
         while t <> null
         {
@@ -1125,7 +1125,7 @@ define Scheduler
     }
 
     ; Move every task blocked on t back to the ready queue.
-    procedure wake_waiters(t: pointer[SchedTask])
+    procedure wake_waiters(t: ref[SchedTask])
     {
         let s current_scheduler as pointer[Scheduler]
         var w t.waiter
@@ -1252,7 +1252,7 @@ define Scheduler
     ; returned task leaves 0 live pages anyway — its frames unwound
     ; before finish; watch Fiber.freed_bucket_count for the teardown
     ; proof.)
-    procedure reap(t: pointer[SchedTask]) returns int
+    procedure reap(t: ref[SchedTask]) returns int
     {
         if t.disposed
             return 0
@@ -1278,7 +1278,7 @@ define Scheduler
     ; then — it only frees when a caller disposed nothing yet). From
     ; the main context this drives the dispatcher itself; from inside a
     ; task it blocks on t's waiter chain and yields to the dispatcher.
-    procedure join(t: pointer[SchedTask]) returns int
+    procedure join(t: ref[SchedTask]) returns int
     {
         let me current_task as pointer[SchedTask]
         if me = null
@@ -1308,11 +1308,11 @@ define Scheduler
 ; wakes the requester publishes it.
 define IoWork
 (
-    next: pointer[IoWork]
+    next: ref[IoWork]?
     fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
     arg: pointer[void]
     result: pointer[void]
-    task: pointer[SchedTask]     ; the parked requester
+    task: ref[SchedTask]     ; the parked requester
 )
 
 ; A requesting thread's worker pool (milestone 2.5): a spinlocked work
@@ -1324,8 +1324,8 @@ define IoWork
 define IoPool
 (
     lock: u64                    ; spinlock (bucket_lock pattern)
-    head: pointer[IoWork]        ; queued operations, FIFO
-    tail: pointer[IoWork]
+    head: ref[IoWork]?        ; queued operations, FIFO
+    tail: ref[IoWork]?
     pipe_read: i32               ; workers block reading here
     pipe_write: i32              ; one byte written per queued item
     workers: i64                 ; spawned workers (grows to the cap
@@ -1369,7 +1369,7 @@ define IoPool
 ; (safe since milestone 2.3). The loop never returns.
 procedure io_worker(arg: pointer[void]) returns pointer[void]
 {
-    let pl arg as pointer[IoPool]
+    let pl arg as ref[IoPool]
     repeat
     {
         IoPool.acquire(pl)
@@ -1667,7 +1667,7 @@ define Io
         io_offloads
 
     ; This thread's worker pool, created lazily on first offload.
-    procedure ensure_pool() returns pointer[IoPool]
+    procedure ensure_pool() returns ref[IoPool]
     {
         var pl io_pool as pointer[IoPool]
         if pl = null
@@ -1845,7 +1845,7 @@ define Io
 ; queue needs no allocator of its own and nothing to track.
 define ChannelNode
 (
-    next: pointer[ChannelNode]
+    next: ref[ChannelNode]?
     msg: pointer[void]
 )
 
@@ -1892,10 +1892,10 @@ define Channel
     lock: u64                        ; spinlock (bucket_lock pattern)
     senders: i64                     ; live send handles; 0 = closed
     closed: bool
-    head: pointer[ChannelNode]          ; queued messages, FIFO
-    tail: pointer[ChannelNode]
-    recv_head: pointer[SchedTask]    ; parked receivers, FIFO
-    recv_tail: pointer[SchedTask]
+    head: ref[ChannelNode]?          ; queued messages, FIFO
+    tail: ref[ChannelNode]?
+    recv_head: ref[SchedTask]?    ; parked receivers, FIFO
+    recv_tail: ref[SchedTask]?
     ; recv_sched: the receiving thread's scheduler — where a
     ; queued-node send pokes the wake handle.
     recv_sched: pointer[void]
@@ -1908,8 +1908,8 @@ define Channel
     ; read without the lock; count and the FIFO are lock-guarded).
     capacity: i64
     count: i64
-    send_head: pointer[SchedTask]    ; parked senders (full queue), FIFO
-    send_tail: pointer[SchedTask]
+    send_head: ref[SchedTask]?    ; parked senders (full queue), FIFO
+    send_tail: ref[SchedTask]?
 )
 {
     ; The channel spinlock — same CAS pattern as root_pages bucket_lock:
@@ -1934,7 +1934,7 @@ define Channel
     ; the record is shared cross-thread and must not sit in any fiber's
     ; or scheduler's region). Sends never block. The creator holds the
     ; first send handle.
-    procedure create() returns pointer[Channel]
+    procedure create() returns ref[Channel]
     {
         Channel.create_bounded(0)
     }
@@ -1942,7 +1942,7 @@ define Channel
     ; Create a channel with a bounded queue: at most `capacity`
     ; undelivered messages, after which a send BLOCKS until a receiver
     ; frees a slot (backpressure). capacity 0 is unbounded (== create).
-    procedure create_bounded(capacity: i64) returns pointer[Channel]
+    procedure create_bounded(capacity: i64) returns ref[Channel]
     {
         let p Page.allocate_page_traced("Channel.record_page")
         let m p.allocate(sizeof Channel, alignof Channel) as pointer[Channel]
@@ -1984,7 +1984,7 @@ define Channel
     ; Hand a woken receiver back to its dispatcher: same thread →
     ; straight to the ready queue (the counters are ours); other thread
     ; → inject queue + wake (its drain_inject adjusts the counters).
-    procedure route(r: pointer[SchedTask])
+    procedure route(r: ref[SchedTask])
     {
         deadlock_event()
         if r.home = current_scheduler
@@ -1998,7 +1998,7 @@ define Channel
         Scheduler.inject_task(r.home as pointer[Scheduler], r)
     }
 
-    procedure pop_receiver(m: pointer[Channel]) returns pointer[SchedTask]
+    procedure pop_receiver(m: ref[Channel]) returns ref[SchedTask]?
     {
         let t m.recv_head
         if t <> null
@@ -2012,7 +2012,7 @@ define Channel
     }
 
     ; Pop the oldest sender parked on a full queue (null when none).
-    procedure pop_sender(m: pointer[Channel]) returns pointer[SchedTask]
+    procedure pop_sender(m: ref[Channel]) returns ref[SchedTask]?
     {
         let t m.send_head
         if t <> null
@@ -2424,7 +2424,7 @@ define TaskGroup
 {
     ; Create a group on its own heap page. Traps (exit 112) when the
     ; OS refuses a pipe.
-    procedure create() returns pointer[TaskGroup]
+    procedure create() returns ref[TaskGroup]
     {
         let p Page.allocate_page_traced("TaskGroup.record_page")
         let g p.allocate(sizeof TaskGroup, alignof TaskGroup) as pointer[TaskGroup]
@@ -2507,10 +2507,10 @@ define TaskGroup
 ; submitter allocates, workers only read, dispose frees wholesale).
 define TaskItem
 (
-    next: pointer[TaskItem]
+    next: ref[TaskItem]?
     fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
     arg: pointer[void]
-    group: pointer[TaskGroup]
+    group: ref[TaskGroup]
 )
 
 ; One worker's work deque (milestone 3.2): a spinlocked FIFO — the
@@ -2522,8 +2522,8 @@ define TaskItem
 define TaskDeque
 (
     lock: u64                    ; spinlock (bucket_lock pattern)
-    head: pointer[TaskItem]
-    tail: pointer[TaskItem]
+    head: ref[TaskItem]?
+    tail: ref[TaskItem]?
 )
 {
     procedure acquire(d: pointer[TaskDeque])
@@ -2551,7 +2551,7 @@ define TaskDeque
 ; lesson).
 define TaskPool
 (
-    deques: pointer[TaskDeque]   ; nworkers records, on the pool page
+    deques: ref[TaskDeque]   ; nworkers records, on the pool page
     nworkers: i64
     next_deque: i64              ; round-robin submit cursor (a plain
                                  ; load-balancing hint: racy submitters
@@ -2566,7 +2566,7 @@ define TaskPool
 )
 {
     ; The idx-th worker's deque.
-    function deque_at(pl: pointer[TaskPool], idx: i64) returns pointer[TaskDeque]
+    function deque_at(pl: ref[TaskPool], idx: i64) returns ref[TaskDeque]
         ((pl.deques as size_t) + ((idx as size_t) * sizeof TaskDeque)) as pointer[TaskDeque]
 
     ; How many items workers stole from a foreign deque — observability
@@ -2588,7 +2588,7 @@ define TaskPool
     ; Start a pool of nworkers OS threads (clamped to at least one).
     ; Traps (exit 112) when the OS refuses the pipe; a refused thread
     ; traps in Thread.spawn (exit 109).
-    procedure create(nworkers: i64) returns pointer[TaskPool]
+    procedure create(nworkers: i64) returns ref[TaskPool]
     {
         var n nworkers
         if n < 1
@@ -2678,7 +2678,7 @@ define TaskPool
     ; one item exists SOMEWHERE — a scan pass can still race a push in
     ; flight, hence the outer retry loop (bounded by that push's
     ; completion).
-    procedure take(pl: pointer[TaskPool], start: i64) returns pointer[TaskItem]
+    procedure take(pl: pointer[TaskPool], start: i64) returns ref[TaskItem]
     {
         repeat
         {
@@ -2720,7 +2720,7 @@ define TaskPool
     ; Only when no group has work in flight that another thread still
     ; waits on; the pool is gone afterwards — create a new one to
     ; continue.
-    procedure shutdown(pl: pointer[TaskPool])
+    procedure shutdown(pl: ref[TaskPool])
     {
         close(pl.pipe_write as int)
         var i: i64 0
@@ -2745,7 +2745,7 @@ define TaskPool
     ; Reached through the TLS cell task_default_pool (never handed to
     ; another thread's TLS — workers reach the pool via their spawn
     ; cells like any pool).
-    procedure default_pool() returns pointer[TaskPool]
+    procedure default_pool() returns ref[TaskPool]
     {
         if task_default_pool <> null
             return task_default_pool as pointer[TaskPool]

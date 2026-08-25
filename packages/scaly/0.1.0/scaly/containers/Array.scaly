@@ -14,7 +14,7 @@ use scaly.memory.runtime
 
 define ArrayIterator[T]
 (
-    array: pointer[Array[T]]
+    array: ref[Array[T]]
     position: size_t
 )
 {

@@ -6790,7 +6790,7 @@ define Emitter
         ; names in `set` (a dependency-package's provided symbols). Linear scan —
         ; the set is small (one entry per dep-package top-level function) and this
         ; runs once per module declaration at JIT setup.
-        function jit_symbol_in_set(this, sym_set: pointer[Array[String]], name_ptr: pointer[const_char], name_len: size_t) returns bool
+        function jit_symbol_in_set(this, sym_set: ref[Array[String]]?, name_ptr: pointer[const_char], name_len: size_t) returns bool
         {
             if sym_set = null
                 return false
@@ -6830,7 +6830,7 @@ define Emitter
         ; symbol in that set must NOT be stubbed — the ORC object linker resolves
         ; it to the real dependency body; a null-returning stub here would shadow
         ; it (the old jit_dep_bodies false-pass). Everything else is unchanged.
-        procedure emit_jit_stubs(this, dep_symbols: pointer[Array[String]])
+        procedure emit_jit_stubs(this, dep_symbols: ref[Array[String]])
         {
             ; Skip symbols the host process already exports so the ORC process
             ; generator can resolve the REAL function (see the per-symbol note
@@ -6965,7 +6965,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        function jit_run(this, plan: Plan, module_name: String, fn_mangled: String, dep_object_files: pointer[Array[String]], dep_object_symbols: pointer[Array[String]]) returns i64
+        function jit_run(this, plan: Plan, module_name: String, fn_mangled: String, dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) returns i64
         {
             let tsc LLVMOrcCreateNewThreadSafeContext()
             let jit_ctx LLVMOrcThreadSafeContextGetContext(tsc)

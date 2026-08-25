@@ -243,7 +243,7 @@ define Region
     ; that is not a nonzero PAGE_SIZE multiple) — the v1 trust boundary.
     ; Structural pointer violations inside accepted pages fail loud in
     ; fix() instead: by then the frame claims to be a closed region.
-    function deserialize(frame: pointer[u8], host: pointer[Page]) returns pointer[ReceivedRegion]
+    function deserialize(frame: pointer[u8], host: pointer[Page]) returns ref[ReceivedRegion]?
     {
         let h frame as pointer[u64]
         let magic h[0]

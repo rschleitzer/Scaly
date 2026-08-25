@@ -44,8 +44,8 @@ define StackBucketHeader
 
 define HeapBucketHeader
 (
-    prev: pointer[HeapBucketHeader]
-    next: pointer[HeapBucketHeader]
+    prev: ref[HeapBucketHeader]?
+    next: ref[HeapBucketHeader]?
     bitmap: u64
     lock: u64
     dead: u64                      ; owner thread exited; free on last drain
@@ -198,7 +198,7 @@ procedure scaly_eputp(p: pointer[void])
 function stack_bucket_of(p: pointer[Page]) returns pointer[StackBucketHeader]
     (p as size_t & ~BUCKET_MASK) as pointer[StackBucketHeader]
 
-function heap_bucket_of(p: pointer[Page]) returns pointer[HeapBucketHeader]
+function heap_bucket_of(p: pointer[Page]) returns ref[HeapBucketHeader]
     (p as size_t & ~BUCKET_MASK) as pointer[HeapBucketHeader]
 
 ; Atomic primitives (milestone 2.3). These extern names never exist as
@@ -351,7 +351,7 @@ function create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[S
     sb
 }
 
-function create_heap_bucket() returns pointer[HeapBucketHeader]
+function create_heap_bucket() returns ref[HeapBucketHeader]
 {
     let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
@@ -514,7 +514,7 @@ procedure scaly_release_root_page_full(p: pointer[Page])
 define Frame
 (
     page: pointer[Page]           ; null until forced
-    parent: pointer[Frame]        ; the frame this function received, or null
+    parent: ref[Frame]        ; the frame this function received, or null
 )
 
 ; Materialise this frame's page, PARENTS FIRST, and return it.
@@ -637,7 +637,7 @@ procedure scaly_rt_register_trace()
     atexit(&scaly_trace_dump)
 }
 
-function scaly_trace_find_or_add(name: pointer[const_char]) returns pointer[TraceEntry]
+function scaly_trace_find_or_add(name: pointer[const_char]) returns ref[TraceEntry]?
 {
     var i: i64 0
     while i < trace_count
@@ -804,7 +804,7 @@ procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader])
 }
 
 ; Caller holds hdr's lock.
-function scaly_heap_trace_find_or_add(hdr: pointer[HeapTraceHeader], name: pointer[const_char]) returns pointer[TraceEntry]
+function scaly_heap_trace_find_or_add(hdr: ref[HeapTraceHeader], name: pointer[const_char]) returns ref[TraceEntry]?
 {
     var i: i64 0
     while i < hdr.count

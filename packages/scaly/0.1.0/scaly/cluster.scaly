@@ -116,7 +116,7 @@ define NodePeer
 ; The reader thread's entry (free procedure: taken with &).
 procedure node_reader_entry(arg: pointer[void]) returns pointer[void]
 {
-    let p arg as pointer[NodePeer]
+    let p arg as ref[NodePeer]
     Cluster.reader_loop(p)
     null
 }
@@ -176,7 +176,7 @@ define Cluster
     ; Accept one peer: TCP accept, then the frozen-preamble handshake.
     ; Returns null when the connect was refused (mismatch — already
     ; reported loudly) or the transport failed.
-    procedure accept(lfd: i32) returns pointer[NodePeer]
+    procedure accept(lfd: i32) returns ref[NodePeer]?
     {
         let fd Io.accept(lfd)
         if fd < 0
@@ -187,7 +187,7 @@ define Cluster
     ; Connect to host:port (getaddrinfo — real hosts), then the frozen-
     ; preamble handshake. host must be NUL-terminated (a string
     ; literal, or String.to_c_string). Returns null when refused.
-    procedure connect(host: pointer[const_char], port: i32) returns pointer[NodePeer]
+    procedure connect(host: pointer[const_char], port: i32) returns ref[NodePeer]?
     {
         let fd Io.connect_host(host, port)
         if fd < 0
@@ -198,7 +198,7 @@ define Cluster
     ; Both directions run the same handshake: send our preamble
     ; immediately, read theirs, compare BEFORE any other byte is
     ; parsed. Mismatch = loud refuse with both stamps (rule 10).
-    procedure setup(fd: i32) returns pointer[NodePeer]
+    procedure setup(fd: i32) returns ref[NodePeer]?
     {
         var pre u8[24]
         let pw pre as pointer[u64]
@@ -285,7 +285,7 @@ define Cluster
     ; runtime holds the channel's one send handle; peer death retires
     ; it (receivers wake with null). On a peer already down a fresh id
     ; yields a channel born closed.
-    procedure channel(p: pointer[NodePeer], id: u64) returns pointer[Channel]
+    procedure channel(p: pointer[NodePeer], id: u64) returns ref[Channel]
     {
         Cluster.acquire(p)
         var i: size_t 0
@@ -326,7 +326,7 @@ define Cluster
     ; A down-notice channel (memo rule 5): receives ONE NodeDown when
     ; the peer is suspected dead or said goodbye, then closes. On a
     ; peer already down the notice is delivered immediately.
-    procedure monitor(p: pointer[NodePeer]) returns pointer[Channel]
+    procedure monitor(p: pointer[NodePeer]) returns ref[Channel]
     {
         let c Channel.create()
         Cluster.acquire(p)
@@ -464,7 +464,7 @@ define Cluster
     ; (it owns the fd close), then releases the record page. Channels
     ; and monitors from this peer are disposed by their receivers
     ; (Channel.dispose after the null), independently.
-    procedure dispose_peer(p: pointer[NodePeer])
+    procedure dispose_peer(p: ref[NodePeer])
     {
         Thread.join(p.reader)
         let pp Page.get(p as pointer[void])
@@ -475,7 +475,7 @@ define Cluster
     ; Free a received message: the region's pages and the host page
     ; carrying the ReceivedRegion record + map (the channel node rode
     ; on it too).
-    procedure dispose_message(rr: pointer[ReceivedRegion])
+    procedure dispose_message(rr: ref[ReceivedRegion])
     {
         rr.release()
         let hp Page.get(rr as pointer[void])
@@ -497,7 +497,7 @@ define Cluster
     ; Read exactly count bytes; bounded polls keep the suspicion clock
     ; live during a mid-frame stall. False = transport over (EOF,
     ; error, silence past the deadline, or a local close).
-    function read_exact(p: pointer[NodePeer], buf: pointer[void], count: size_t) returns bool
+    function read_exact(p: ref[NodePeer], buf: pointer[void], count: size_t) returns bool
     {
         let fd p.fd
         var done: size_t 0

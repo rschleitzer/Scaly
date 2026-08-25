@@ -13,7 +13,7 @@ define HashMapIterator[K, V]
 
     }
 
-    function next(this: HashMapIterator[K, V]) returns pointer[V]
+    function next(this: HashMapIterator[K, V]) returns ref[V]?
     {
         while true
         {
