@@ -43,6 +43,15 @@ accessor that hands it out.  A generic ARGUMENT stays (`Array[pointer[X]]` — t
 converted ports hold ZERO `[ref[...]]` -- an OBSERVATION, not a proof, and the
 one class still held back by a blanket rule) and an `as pointer[X]` cast stays.
 
+★The OPAQUE-SLOT ROUND TRIP converts too (`cast_from_opaque`): a value read
+back out of a `pointer[void]` slot -- a union payload reused for a second
+purpose, a VM stack cell, a NIC record smuggled through a generic field -- is a
+borrowed reference the moment the cast lands, so its target is `ref[X]`.  The
+`host.allocate(sizeof X, alignof X) as pointer[X]` idiom is EXCLUDED although
+`Page.allocate` also answers `pointer[void]`: that cast is where raw memory
+becomes a typed object, the escape hatch's home position, not a round trip.
+The source stays `pointer[void]` in every case -- only the target moves.
+
 ★A nullable LOCAL is often spelled as a CAST -- `var x null as pointer[X]` --
 and the occurrence then sits after an `as`, so `position` reads it as a cast and
 the class is invisible.  It is the largest single one left after class A (194
@@ -651,6 +660,108 @@ def nulled(nm, text):
                 or re.search(r'\b' + re.escape(nm) + r'\b\s*(?:<>|=)\s*null\b', text)
                 or re.search(r'\bnull\s*(?:<>|=)\s*' + re.escape(nm) + r'\b', text))
 
+def opaque_index(files):
+    """Names whose declared type is UNANIMOUSLY `pointer[void]`: routine names by
+    their `returns`, and property names by their declaration.  Unanimity is the
+    point -- a name declared two ways anywhere in the package is skipped, so an
+    overloaded or reused name can never be read as opaque on the strength of one
+    declaration.  Used only to recognise the OPAQUE-SLOT ROUND TRIP below."""
+    rets, props = collections.defaultdict(set), collections.defaultdict(set)
+    for f in files:
+        for line in f.lines:
+            if is_comment(line):
+                continue
+            c = code_of(line)
+            m = re.search(r'\b(?:function|procedure)\s+([A-Za-z_][A-Za-z0-9_]*)\b'
+                          r'.*\breturns\s+([A-Za-z_][A-Za-z0-9_\[\]\?]*)', c)
+            if m:
+                rets[m.group(1)].add(m.group(2))
+            for m in re.finditer(r'\b([a-z_][A-Za-z0-9_]*)\s*:\s*'
+                                 r'([A-Za-z_][A-Za-z0-9_\[\]\?]*)', c):
+                props[m.group(1)].add(m.group(2))
+    void = lambda d: {k for k, v in d.items() if v == {'pointer[void]'}}
+    return void(rets), void(props)
+
+def cast_from_opaque(line, j, f, li, void_rets, void_props):
+    """Is the value being cast at line[j] read out of a `pointer[void]` slot?
+
+    This is the OPAQUE-SLOT ROUND TRIP -- a slot whose real type the language
+    cannot state at that point (a union payload reused for a second purpose, a
+    VM stack cell, a NIC record smuggled through a generic field), read back as
+    what it is.  Measured 2026-08-25: 242 of the 284 remaining `as pointer[X]`
+    casts in the three ports have this shape, and NOT ONE of their results is
+    walked.  Spelling the target `ref[X]` is emission-neutral (both map to
+    `ptr`, and a cast type is never mangled -- only a DECLARED signature is)
+    and buys a guard: `*(r + 1)` on the result becomes a hard rc-4 instead of
+    silently reading an array that is not there.
+
+    ★The `host.allocate(sizeof X, alignof X) as pointer[X]` idiom is EXCLUDED
+    even though `Page.allocate` also answers `pointer[void]`: that cast is
+    where raw memory becomes a typed object, which is the escape hatch's home
+    position, not a round trip through a slot.
+    """
+    pre = code_of(line)[:j].rstrip()
+    if not pre.endswith('as'):
+        return False
+    pre = pre[:-2].rstrip()
+    if re.search(r'\.\s*allocate\s*\(', pre):
+        return False
+    m = re.search(r'\.\s*([a-z_][A-Za-z0-9_]*)\s*\([^()]*\)$', pre)   # method result
+    if m:
+        return m.group(1) in void_rets
+    m = re.search(r'\.\s*([a-z_][A-Za-z0-9_]*)$', pre)                  # field read
+    if m:
+        return m.group(1) in void_props
+    # A DEREF of a cell holding opaque pointers: `*(buf + i)` / `*p`, where the
+    # walked thing is a `pointer[pointer[void]]`.  The buffer itself stays a
+    # pointer (it is walked); the element read out of it is the opaque value.
+    if pre.lstrip().startswith('*'):
+        m = re.search(r'\*\s*\(?\s*([A-Za-z_][A-Za-z0-9_]*)', pre)
+        return bool(m) and name_declares(m.group(1), f, li, void_rets, void_props, 0) \
+               == 'pointer[pointer[void]]'
+    m = re.search(r'(?<![.*\w])([A-Za-z_][A-Za-z0-9_]*)$', pre)          # plain name
+    if not m:
+        return False
+    return name_declares(m.group(1), f, li, void_rets, void_props, 0) == 'pointer[void]'
+
+def name_declares(nm, f, li, void_rets, void_props, depth):
+    """The declared type of `nm` as seen from line li, or ''.
+
+    ★It follows ONE initializer hop, and that is what the rule needs: this
+    port's ordinary shape is `let ntv x.get_notation()` / `if ntv <> null` /
+    `let nt ntv as pointer[Notation]` -- an UNTYPED local bound from a call, so
+    a search for `let ntv:` finds nothing and 88 sites read as unresolved.  The
+    hop asks the initializer instead.  Depth stops at 2: a longer chain is not
+    something to guess at lexically.
+    """
+    if depth > 2:
+        return ''
+    for k in range(li, max(0, li - 400), -1):
+        src = f.lines[k]
+        if is_comment(src):
+            continue
+        c = code_of(src)
+        for pat in (r'\b(?:let|var)\s+' + re.escape(nm) + r'\s*:\s*([A-Za-z_][A-Za-z0-9_\[\]\?]*)',
+                    r'[(,]\s*'          + re.escape(nm) + r'\s*:\s*([A-Za-z_][A-Za-z0-9_\[\]\?]*)',
+                    r'^\s*'             + re.escape(nm) + r'\s*:\s*([A-Za-z_][A-Za-z0-9_\[\]\?]*)'):
+            d = re.search(pat, c)
+            if d:
+                return d.group(1)
+        d = re.search(r'\b(?:let|var)\s+' + re.escape(nm) + r'\s+(\S.*)$', c)
+        if d:                                       # untyped: ask the initializer
+            init = d.group(1).strip()
+            mm = re.search(r'\.\s*([a-z_][A-Za-z0-9_]*)\s*\([^()]*\)$', init)
+            if mm:
+                return 'pointer[void]' if mm.group(1) in void_rets else ''
+            mm = re.search(r'\.\s*([a-z_][A-Za-z0-9_]*)$', init)
+            if mm:
+                return 'pointer[void]' if mm.group(1) in void_props else ''
+            mm = re.match(r'([A-Za-z_][A-Za-z0-9_]*)$', init)
+            if mm:
+                return name_declares(mm.group(1), f, k, void_rets, void_props, depth + 1)
+            return ''
+    return 'pointer[void]' if nm in void_props else ''
+
 def scan_scope(field, rec, rectexts, dotted_foreign):
     """The text a field's WALK evidence may be read from: its own record's block
     when nothing reaches the name through a foreign receiver, else None (which
@@ -702,6 +813,7 @@ def main(root, apply=False):
     retnull  = nullable_returns(files)
     fnull    = field_nullability(files, props, retnull)
     rectexts, dotted_foreign = record_texts(files)
+    void_rets, void_props = opaque_index(files)
     fverdict = field_verdicts(files, all_text, fnull, rectexts, dotted_foreign)
     initnull, initptr = init_param_nullability(files, fverdict)
     retfield = returns_field_verdicts(files, fverdict)
@@ -746,7 +858,22 @@ def main(root, apply=False):
                 verdict = why = None
                 nm = name_before(line, j) if pos == 'decl' else None
                 if head in STAY_HEADS:   verdict, why = 'pointer', 'stay-type'
-                elif pos == 'cast':      verdict, why = 'pointer', 'cast'
+                elif pos == 'cast':
+                    # The opaque-slot round trip -- see cast_from_opaque.  The
+                    # target follows the SAME nullability rule a local gets,
+                    # because an untyped binding takes its type from the cast:
+                    # a result the body tests against null is `ref[X]?`.
+                    verdict, why = 'pointer', 'cast'
+                    if cast_from_opaque(line, j, f, li, void_rets, void_props):
+                        b  = f.body(f.owner[li]) if li in f.owner else ''
+                        bm = re.match(r'^\s*(?:let|var)\s+(\'[^\']+\'|[A-Za-z_][A-Za-z0-9_]*)\s', line)
+                        bn = bm.group(1).strip("'") if bm else None
+                        if bn and (addr_taken(bn, b) or walked(bn, b)):
+                            verdict, why = 'pointer', 'opaque-cast-walked'
+                        elif bn and nulled(bn, b):
+                            verdict, why = 'ref?', 'opaque-cast'
+                        else:
+                            verdict, why = 'ref', 'opaque-cast'
                 elif pos == 'generic':   verdict, why = 'pointer', 'generic-arg'
                 elif pos == 'other':     verdict, why = 'pointer', 'unclassified'
                 elif pos == 'returns':
