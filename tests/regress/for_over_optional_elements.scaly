@@ -1,0 +1,84 @@
+; Regression: `for x in <container of ref[T]? >` binds the ELEMENT, not the
+; slot address (2026-08-25).
+;
+; plan_for# decides whether the loop variable takes next()'s result or a LOAD
+; from it, and it asked the element type's NAME: scalar, "pointer" or "ref".
+; s113 wraps `ref[T]?` into `Option[ref[T]]`, whose name is "Option", so a
+; container of NULLABLE references took neither branch and the loop variable
+; was bound to the SLOT'S ADDRESS -- the exact defect the 2026-08-09 note in
+; plan_for# describes, re-entered through the wrapper.
+;
+; It is silent for the same reason it was silent then: a slot address is a
+; valid pointer, so `x <> null` answers TRUE for every element and `x.v` reads
+; whatever the slot's bytes point at. Measured before the fix, on this shape:
+; 3 iterations, 0 nulls, and a sum of 122633072928 instead of 6 -- while the
+; identical loop over `Array[pointer[Leaf]]` was correct, which is the
+; asymmetry that named the site.
+;
+; It is load-bearing for the ports: a container of optional references is the
+; ordinary sparse-table shape there, and `Array[ref[T]?]` only became
+; spellable in construction position the same day.
+; Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.memory.Page
+use scaly.containers.Array
+
+define Leaf (v: int)
+
+function probe(page: pointer[Page]) returns int
+{
+    let a Array[ref[Leaf]?]^page()
+    var i 0
+    while i < 3
+    {
+        let g page.allocate(sizeof Leaf, alignof Leaf) as ref[Leaf]
+        set *g: Leaf(i + 1)
+        a.add(g)
+        set i: i + 1
+    }
+    ; a genuinely absent element: the loop must SEE it as null
+    a.add(null)
+
+    var flags 0
+    var n 0
+    var nulls 0
+    var sum 0
+    for x in a
+    {
+        set n: n + 1
+        if x = null
+            set nulls: nulls + 1
+        if x <> null
+            set sum: sum + x.v
+    }
+    if n <> 4
+        set flags: flags + 1
+    if nulls <> 1
+        set flags: flags + 2
+    if sum <> 6
+        set flags: flags + 4
+
+    ; the same container read through the buffer must agree
+    let buf a.get_buffer()
+    var bsum 0
+    var bi: size_t 0
+    while bi < a.get_length()
+    {
+        let e *(buf + bi)
+        if e <> null
+            set bsum: bsum + e.v
+        set bi: bi + 1
+    }
+    if bsum <> 6
+        set flags: flags + 8
+
+    flags
+}
+
+let r probe()
+if r = 0
+    print "PASS\n"
+if r <> 0
+    print "FAIL\n"
