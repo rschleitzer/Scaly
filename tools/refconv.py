@@ -43,6 +43,14 @@ accessor that hands it out.  A generic ARGUMENT stays (`Array[pointer[X]]` — t
 converted ports hold ZERO `[ref[...]]` -- an OBSERVATION, not a proof, and the
 one class still held back by a blanket rule) and an `as pointer[X]` cast stays.
 
+★A nullable LOCAL is often spelled as a CAST -- `var x null as pointer[X]` --
+and the occurrence then sits after an `as`, so `position` reads it as a cast and
+the class is invisible.  It is the largest single one left after class A (194
+sites, 148 of them eligible), and `NULLCAST` in the main loop rewrites the whole
+binding to the annotated form `var x: ref[X]? null`.  The two are equivalent at
+run time (measured); the annotated one says what the SLOT is instead of what a
+null was cast to, which is what lets the field and parameter rules see it.
+
 ★A PARAMETER that only FORWARDS its value to a nullable parameter of another
 routine is itself nullable, and this tool cannot see it: `nulled()` reads the
 routine's OWN body, and a forwarder tests nothing.  Measured on
@@ -105,6 +113,7 @@ STAY_HEADS = (STAY_PRIMITIVE | STAY_INDIRECTION | STAY_RUNTIME
               | STAY_GENERIC_PARAM | STAY_CONTAINER)
 ROUTINE = re.compile(r'^(\s*)(function|procedure|operator|init)\b')
 LOCALDECL = re.compile(r"^\s*(let|var)\s+('[^']+'|[A-Za-z_][A-Za-z0-9_]*)\s*:")
+NULLCAST  = re.compile(r"^(\s*)(let|var)\s+('[^']+'|[A-Za-z_][A-Za-z0-9_]*)\s+null\s+as\s+(?=pointer\[)")
 PROP = re.compile(r"^\s*([a-z_][A-Za-z0-9_]*)\s*:\s*\S")
 
 def code_of(line):
@@ -231,6 +240,84 @@ class File:
         return (self.lines[sigline] + '\n' + t) if with_sig else t
 
 # ---------- global index ----------------------------------------------------
+
+def consume_group(L, i, op, cl):
+    """From line i, skip blank/comment lines; if the next code character opens a
+    group, return the line index where that group closes, else return i."""
+    n, j = len(L), i
+    first = True
+    d = 0
+    while j < n:
+        c = code_of(L[j])
+        if first:
+            c = c[c.index(op) + 1:] if (j == i and op in c) else c
+        for ch in c:
+            if ch == op: d += 1
+            elif ch == cl: d -= 1
+        if j == i and op in code_of(L[i]):
+            d += 1                      # the opener on the define line itself
+        if d > 0:
+            first = False
+            j += 1
+            continue
+        if not first and d <= 0:
+            return j
+        # nothing opened yet: only blanks/comments may separate the define from
+        # its group; anything else means this record has no such group.
+        nxt = L[j].strip() if j > i else ''
+        if j > i and nxt and not is_comment(L[j]):
+            if nxt.startswith(op):
+                d = 0
+                first = False
+                continue
+            return i if j == i + 1 else j - 1
+        j += 1
+    return min(j, n - 1)
+
+def record_texts(files):
+    """recname -> the text of that record's OWN `define` block (property list +
+    the brace body that follows), plus the set of names reached DOTTED with a
+    receiver other than `this` anywhere in the package.
+
+    Why this exists: the WALK evidence for a field used to be a package-wide
+    scan of the BARE name, and `\b` does not exclude a preceding dot -- so
+    `this.ranges + this.ri * 3` in CharsetRegistry held `ISet.ranges`, a
+    different record's field that happens to share a name.  Measured
+    2026-08-25: of the 35 (file, name) pairs the walk held, **not one** had a
+    subscript or an arithmetic use in its own declaring file.  A name is not
+    an identity.
+    """
+    texts, dotted_foreign = {}, set()
+    for f in files:
+        L, n = f.lines, len(f.lines)
+        for i, line in enumerate(L):
+            if is_comment(line):
+                continue
+            m = re.match(r'^(\s*)define\s+([A-Za-z_][A-Za-z0-9_]*)', line)
+            if not m:
+                continue
+            rec = m.group(2)
+            # A record is `define NAME` + an optional PROPERTY LIST in parens +
+            # an optional BODY in braces, and BOTH have to be consumed.  The
+            # first draft counted parens and braces in one depth and therefore
+            # stopped at the property list's `)` -- so the record's own methods
+            # were outside its "own text" and every walk inside them was
+            # invisible.  It released `Syntax.names_v`, a hand-walked StringC
+            # buffer that this file's own dot_hazard comment names as the case
+            # that must stay a pointer.  An instrument whose output looks
+            # plausible is not a working instrument.
+            k = consume_group(L, i, '(', ')')
+            k = consume_group(L, k, '{', '}')
+            texts.setdefault(rec, []).append('\n'.join(L[i:min(k, n - 1) + 1]))
+    for f in files:
+        for line in f.lines:
+            if is_comment(line):
+                continue
+            for m in re.finditer(r'([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*([a-z_][A-Za-z0-9_]*)',
+                                 code_of(line)):
+                if m.group(1) != 'this':
+                    dotted_foreign.add(m.group(2))
+    return {k: '\n'.join(v) for k, v in texts.items()}, dotted_foreign
 
 def load(root):
     files = []
@@ -387,7 +474,7 @@ def field_nullability(files, props, retnull):
                         nullable.add((rec, p))
     return nullable
 
-def field_verdicts(files, all_text, fnull):
+def field_verdicts(files, all_text, fnull, rectexts, dotted_foreign):
     """Decide every record property ONCE, keyed (record, field), so the FIELD
     branch and the init-parameter mirror below read the SAME answer.  Reading the
     field's verdict twice from two predicates is what let the mirror rule miss
@@ -413,7 +500,8 @@ def field_verdicts(files, all_text, fnull):
                 head, pos = head_of(inner), position(line, j)
                 nm = name_before(line, j) if pos == 'decl' else None
                 if nm and head not in STAY_HEADS and pos == 'decl':
-                    addr, walk, dnull = dot_hazard(nm, all_text)
+                    addr, walk, dnull = dot_hazard(
+                        nm, all_text, scan_scope(nm, rec, rectexts, dotted_foreign))
                     if addr:                            v = ('pointer', 'field-addr-taken')
                     elif walk:                          v = ('pointer', 'field-walked')
                     elif dnull or (rec, nm) in fnull:   v = ('ref?', 'field-nullable')
@@ -563,7 +651,23 @@ def nulled(nm, text):
                 or re.search(r'\b' + re.escape(nm) + r'\b\s*(?:<>|=)\s*null\b', text)
                 or re.search(r'\bnull\s*(?:<>|=)\s*' + re.escape(nm) + r'\b', text))
 
-def dot_hazard(field, all_text):
+def scan_scope(field, rec, rectexts, dotted_foreign):
+    """The text a field's WALK evidence may be read from: its own record's block
+    when nothing reaches the name through a foreign receiver, else None (which
+    means the whole package, the conservative answer).  A field reached as
+    `x.f` from elsewhere cannot be judged from its own block, and this tool
+    cannot tell WHICH record such an `x` is -- so it does not guess."""
+    if field in dotted_foreign:
+        return None
+    return rectexts.get(rec)
+
+def dot_hazard(field, all_text, own_text=None):
+    """`own_text` is the DECLARING record's own block.  When the field is never
+    reached dotted from a foreign receiver, that block is the complete evidence
+    and the scan narrows to it -- see record_texts for what the package-wide
+    bare-name scan cost.  Passing None keeps the old package-wide behaviour,
+    which is what a field reached as `x.f` from elsewhere still gets."""
+    scan = all_text if own_text is None else own_text
     f = re.escape(field)
     addr = re.search(r'&\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\b', all_text)
     # A hand-walked buffer FIELD is not always written with a dot: inside its
@@ -575,10 +679,10 @@ def dot_hazard(field, all_text):
     # `StringC` buffers in opensp's Syntax into refs; the compiler caught it
     # (18x "arithmetic on a reference"), which is the only reason this was not
     # a silent byte-stride miscompile.  `walked` carries the bare-name forms.
-    walk = (re.search(r'\.' + f + r'\s*\[', all_text) or
-            re.search(r'\*\s*\(\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\s*[+\-]', all_text) or
-            re.search(r'\.' + f + r'\s*[+\-]\s+\w', all_text) or
-            walked(field, all_text))
+    walk = (re.search(r'\.' + f + r'\s*\[', scan) or
+            re.search(r'\*\s*\(\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\s*[+\-]', scan) or
+            re.search(r'\.' + f + r'\s*[+\-]\s+\w', scan) or
+            walked(field, scan))
     null = (re.search(r'\.' + f + r'\b\s*(?:<>|=)\s*null\b', all_text) or
             re.search(r'\bset\s+[^\n]*\.' + f + r'\s*:\s*null\b', all_text))
     return bool(addr), bool(walk), bool(null)
@@ -597,7 +701,8 @@ def main(root, apply=False):
     props    = record_props(files)
     retnull  = nullable_returns(files)
     fnull    = field_nullability(files, props, retnull)
-    fverdict = field_verdicts(files, all_text, fnull)
+    rectexts, dotted_foreign = record_texts(files)
+    fverdict = field_verdicts(files, all_text, fnull, rectexts, dotted_foreign)
     initnull, initptr = init_param_nullability(files, fverdict)
     retfield = returns_field_verdicts(files, fverdict)
     retwalk  = walked_returns(files)
@@ -606,6 +711,31 @@ def main(root, apply=False):
     for f in files:
         for li, line in enumerate(f.lines):
             if is_comment(line): continue
+
+            # ★A nullable LOCAL spelled as a CAST -- `var x null as pointer[X]`.
+            # The doctrine names this position by hand (a nullable PARAMETER,
+            # FIELD or LOCAL is `ref[T]?`), but the occurrence sits after an
+            # `as`, so `position` reads it as a cast and the whole class -- 194
+            # sites across the three ports, the largest single one left -- was
+            # invisible to every pass.  The two spellings are equivalent
+            # (measured: same reads, same null tests, same PASS); the
+            # annotated one says what the slot IS instead of what a null was
+            # cast to, which is what lets the field/param rules see it at all.
+            m = NULLCAST.match(line)
+            if m and li in f.owner:
+                inner, end = inner_of(line, line.index('pointer[', m.end(3)))
+                head = head_of(inner)
+                nm   = m.group(3).strip("'")
+                rest = line[end:] if end else ''
+                b    = f.body(f.owner[li])
+                if (head not in STAY_HEADS and inner is not None
+                        and (not rest.strip() or rest.lstrip().startswith(';'))
+                        and not addr_taken(nm, b) and not walked(nm, b)):
+                    f.lines[li] = f'{m.group(1)}{m.group(2)} {m.group(3)}: ref[{inner}]? null{rest}'
+                    tally[('ref?', 'local-null-cast')] += 1
+                    decisions.append((f.path, li + 1, 'ref?', 'local-null-cast', head, nm))
+                    continue
+
             out, i, changed = [], 0, False
             while True:
                 j = line.find('pointer[', i)
@@ -665,7 +795,8 @@ def main(root, apply=False):
                     if (rec, nm) in fverdict:
                         verdict, why = fverdict[(rec, nm)]
                     else:
-                        addr, walk, dnull = dot_hazard(nm, all_text)
+                        addr, walk, dnull = dot_hazard(
+                            nm, all_text, scan_scope(nm, rec, rectexts, dotted_foreign))
                         if addr:                 verdict, why = 'pointer', 'field-addr-taken'
                         elif walk:               verdict, why = 'pointer', 'field-walked'
                         elif dnull:              verdict, why = 'ref?', 'field-nullable'
