@@ -113,9 +113,36 @@ STAY_GENERIC_PARAM = {'T'}
 # ten sites across all three ports (4 `pointer[String]` in opensp, 4
 # `pointer[StringBuilder]` and 2 `pointer[Vector]` in tscaly), too few to be
 # worth a measuring round, so they stay unmeasured rather than justified.
+# ★The five BUILDER/Vector heads left this set on 2026-08-25, for the reason
+# `Array` left it: a borrowed reference TO a container is not "a container whose
+# value the callee owns".  Measured before the move, with the hazard detectors
+# already in place (empty the set, run every package): 30 sites, and every one
+# of them a parameter or field the callee only calls methods on --
+# `pointer[StringBuilder]` 26 (scalyls 25, tscaly 1), `pointer[HashMapBuilder]`
+# 3 (Modeler's symbol collector), `pointer[Vector[int]]` 2 (tscaly's hash
+# buckets, nullable).  Not one was walked, address-taken or deref-stored.
+#
+# What STAYS, with the counts that hold it -- these are measured reasons now,
+# not a blanket rule:
+#   String (5)  the OUT-PARAM CELL.  `extract_encoding(..., out: pointer[String])`
+#               sits beside `out_is_find: pointer[bool]`; the callee writes
+#               `set *out:` and the caller hands over `&cell`.  The doctrine
+#               names that cell as a pointer.  ★It is worth knowing that the
+#               ports do NOT hold this line: 41 already-converted `ref[T]`
+#               parameters are deref-stored (dazzle 24, opensp 17), they work,
+#               and every suite is green -- a `ref` IS a pointer at LLVM level.
+#               So this is a doctrine choice, not a correctness one, and the
+#               tree is currently inconsistent about it.  Left as it is rather
+#               than churning two ports to settle a spelling.
+#   Node (5)    the stdlib's INTRUSIVE list node, inside the generic bodies of
+#               List/BuilderList.  Principled to convert, high blast radius for
+#               five declarations; not measured.
+#   List, Slice, HashMap, HashSet, KeyValuePair, Iterator (0)
+#               no `pointer[...]` declaration of any of these exists in the
+#               tree.  They are listed to say so -- an empty class is a fact
+#               worth keeping, because it is what makes the list above complete.
 STAY_CONTAINER = {
-    'Vector','String','StringBuilder','List','Slice','HashMap',
-    'HashMapBuilder','HashSet','HashSetBuilder','BuilderList','Node',
+    'String','List','Slice','HashMap','HashSet','Node',
     'KeyValuePair','Iterator',
 }
 STAY_HEADS = (STAY_PRIMITIVE | STAY_INDIRECTION | STAY_RUNTIME
