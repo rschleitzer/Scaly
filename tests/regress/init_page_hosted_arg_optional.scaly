@@ -1,0 +1,109 @@
+; Regression: a page-hosted construction bound to a local must reach an `init`
+; parameter declared `ref[T]?` exactly as it reaches one declared `ref[T]`
+; (2026-08-25, the pointer[Array[X]] -> ref[Array[X]] conversion).
+;
+; region_value_matches_pointer is what lets `let o Array[T]^host()` -- a VALUE
+; type carrying a placing lifetime -- satisfy a `pointer[T]`/`ref[T]` init
+; parameter. It asked the parameter's NAME, and s113 wraps `ref[T]?` into
+; `Option[ref[T]]`, whose name is "Option" -- the same seam that has hidden a
+; pointer-shaped thing from four other name tests. So the nullable spelling
+; matched no init and the construction fell through to the positional-tuple
+; path meant for data classes that declare none.
+;
+; An Option ACCEPTS a non-null value, so the wrapper is no reason to refuse
+; one, and the asymmetry between two spellings of one parameter was the tell:
+; Plain below matched, Opt did not. Found on dazzle's SosofoObj, whose `parts` field
+; is honestly nullable.
+;
+; Without the fix this is a hard rc-4 "no matching initializer" (the exact-arity
+; gate) -- before that gate existed it was silent, and correct only because the
+; init happens to assign in field order. Expected: PASS
+
+; ★Every name here is multi-letter on purpose: a concept named with a SINGLE
+; UPPERCASE LETTER reads as a generic type PARAMETER (is_generic_type_param_name),
+; and both the no-matching-initializer gate and is_npo_option_generic_pointee
+; exempt those -- a one-letter probe answers "no finding" and refutes a correct
+; diagnosis. This cost a measuring round twice now.
+
+use scaly.memory.Page
+use scaly.containers.Array
+
+define Leaf (v: int)
+
+; NON-nullable parameter: matched even before the fix -- the control.
+define Plain (o: ref[Array[pointer[Leaf]]], cursor: int)
+{
+    init(o: ref[Array[pointer[Leaf]]])
+    {
+        set this.o: o
+        set this.cursor: 7
+    }
+}
+
+; NULLABLE parameter, mirroring a nullable field: the regression.
+define Opt (o: ref[Array[pointer[Leaf]]]?, cursor: int)
+{
+    init(o: ref[Array[pointer[Leaf]]]?)
+    {
+        set this.o: o
+        set this.cursor: 9
+    }
+}
+
+define Mk ()
+{
+    function build_n(host: pointer[Page]) returns ref[Plain]
+    {
+        let o Array[pointer[Leaf]]^host()
+        let g host.allocate(sizeof Plain, alignof Plain) as pointer[Plain]
+        set *g: Plain(o)
+        g
+    }
+
+    function build_o(host: pointer[Page]) returns ref[Opt]
+    {
+        let o Array[pointer[Leaf]]^host()
+        let g host.allocate(sizeof Opt, alignof Opt) as pointer[Opt]
+        set *g: Opt(o)
+        g
+    }
+
+    ; leave a recognizable pattern in the frame the builders reuse, so a
+    ; skipped init body cannot pass on a zeroed stack slot
+    function scribble() returns u64
+    {
+        var pad u8[256]
+        let pw pad as pointer[u64]
+        var i 0
+        while i < 32
+        {
+            set pw[i]: 0x5A5A5A5A5A5A5A5A as u64
+            set i: i + 1
+        }
+        pw[7]
+    }
+}
+
+function probe(page: pointer[Page]) returns int
+{
+    var flags 0
+    let junk Mk.scribble()
+    if junk = (0 as u64)
+        return 16
+    let n Mk.build_n(page)
+    if n.cursor <> 7
+        set flags: flags + 1
+    let junk2 Mk.scribble()
+    if junk2 = (0 as u64)
+        return 32
+    let o Mk.build_o(page)
+    if o.cursor <> 9
+        set flags: flags + 2
+    flags
+}
+
+let r probe()
+if r = 0
+    print "PASS\n"
+if r <> 0
+    print "FAIL\n"

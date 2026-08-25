@@ -32072,8 +32072,34 @@ define Planner
         ; The two spellings are interchangeable at every other type test in
         ; this file (types_compatible's s96 rule is symmetric), so treating
         ; them differently HERE was the anomaly.
-        if param_type.name <> "pointer"
-            if param_type.name <> "ref"
+        ; ★The NULLABLE spelling is the same borrowed reference and reaches
+        ; here too: s113 wraps `ref[T]?` into `Option[ref[T]]`, so a name test
+        ; for "ref" does not see it -- the same seam that hid a pointer-shaped
+        ; thing from the `&`-on-an-optional-cell emitter arm, the `this`-wrapper
+        ; predicate, the method-arg gate and the ref-arithmetic gate. An Option
+        ; ACCEPTS a non-null value, so the wrapper is no reason to refuse a
+        ; page-hosted construction. Measured on packages/dazzle the day
+        ; `pointer[Array[X]]` became `ref[Array[X]]`: SosofoObj's `parts` is
+        ; honestly nullable, and `SosofoObj(SOSO_PAGE_TYPE, parts, flag_obj)`
+        ; with `let parts Array[pointer[ELObj]]^host()` matched no init, while
+        ; the identical NON-nullable declaration matched -- an asymmetry
+        ; between two spellings of one parameter, which is the tell.
+        var pt: PlannedType param_type
+        if pt.name = "Option"
+        {
+            if pt.generics <> null
+            {
+                let ogens (*pt.generics)
+                if ogens.length = 1
+                {
+                    let oinner ogens.get 0
+                    if oinner <> null
+                        set pt: (*oinner)
+                }
+            }
+        }
+        if pt.name <> "pointer"
+            if pt.name <> "ref"
                 return false
         var hosted: bool false
         choose arg_type.life
@@ -32085,9 +32111,9 @@ define Planner
                 0
         if hosted = false
             return false
-        if param_type.generics = null
+        if pt.generics = null
             return false
-        let pgs (*param_type.generics)
+        let pgs (*pt.generics)
         if pgs.length = 0
             return false
         let pinner_ptr pgs.get 0
