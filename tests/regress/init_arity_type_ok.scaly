@@ -63,11 +63,17 @@ function build(maybe: ref[Leaf]?, host: pointer[Page]) returns int
     0
 }
 
-function check() returns int
+; ★The page comes from the PEELED caller-page parameter, never from
+; `Page.get(&anchor)`: `Leaf` derives no page from its own address, so
+; `anchor` is a STACK value and masking its address to a "page header" answers
+; arbitrary memory -- `Leaf^host(7)` below then writes over it. That spelling
+; made this test fail about 40 % of runs (2 of 5, ASLR-dependent, and PASS
+; every time when run by hand), which is the shape a page-get on a non-hosted
+; object always has.
+function check(page: pointer[Page]) returns int
 {
     var anchor Leaf(1)
-    let host Page.get(&anchor as pointer[void])
-    build(&anchor, host)
+    build(&anchor, page)
 }
 
 let rc check()
