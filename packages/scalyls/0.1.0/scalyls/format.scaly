@@ -733,7 +733,7 @@ define format
     ; The stack is an Array[size_t] of packed frames: push = add, pop = shorten
     ; (the idiom TaskPlanner.scaly uses; Array has no remove_last).
 
-    function top_kind(stack: pointer[Array[size_t]]) returns size_t
+    function top_kind(stack: ref[Array[size_t]]) returns size_t
     {
         let n stack.get_length()
         if n = 0
@@ -744,7 +744,7 @@ define format
         format.frame_kind(*f)
     }
 
-    function top_paren_cancels(stack: pointer[Array[size_t]]) returns bool
+    function top_paren_cancels(stack: ref[Array[size_t]]) returns bool
     {
         let n stack.get_length()
         if n = 0
@@ -756,7 +756,7 @@ define format
     }
 
     ; Pop the top frame and answer the level it recorded.
-    function pop_frame(stack: pointer[Array[size_t]]) returns size_t
+    function pop_frame(stack: ref[Array[size_t]]) returns size_t
     {
         let n stack.get_length()
         if n = 0
@@ -771,7 +771,7 @@ define format
     ; Drop frames until a bracket frame is popped; answer its level. Braceless
     ; frames inside the bracket die with it — the block they were waiting for a
     ; statement in has ended.
-    function unwind_to_bracket(stack: pointer[Array[size_t]], level: size_t) returns size_t
+    function unwind_to_bracket(stack: ref[Array[size_t]], level: size_t) returns size_t
     {
         while stack.get_length() > 0
         {

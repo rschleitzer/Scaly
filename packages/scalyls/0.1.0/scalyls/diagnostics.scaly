@@ -426,7 +426,7 @@ define diagnostics
     ; another root, whose diagnostics this analysis has no business clearing.
     ; Measured on a two-module probe, where prelude.scaly was the only sibling
     ; the first version reported.
-    function sibling_notifications(rp, m: pointer[Module], entry: String, path: String, planner: pointer[Planner.Planner]) returns String
+    function sibling_notifications(rp, m: ref[Module], entry: String, path: String, planner: ref[Planner.Planner]) returns String
     {
         var sb StringBuilder()
 
@@ -465,7 +465,7 @@ define diagnostics
     ; explains why it is done statelessly. A file that carries diagnostics but
     ; cannot be READ yields nothing at all: its offsets index a text we do not
     ; have, the same bargain the head half makes.
-    function sibling_notification(rp, file: String, planner: pointer[Planner.Planner]) returns String
+    function sibling_notification(rp, file: String, planner: ref[Planner.Planner]) returns String
     {
         var sb StringBuilder()
 
@@ -581,7 +581,7 @@ define diagnostics
     ;
     ; model.packages — every `package NAME VERSION` dependency — is not walked at
     ; all: a diagnostic there belongs to that package's own root.
-    function module_files(rp, m: pointer[Module]) returns String
+    function module_files(rp, m: ref[Module]) returns String
     {
         var sb StringBuilder()
         sb.append m.file
@@ -609,7 +609,7 @@ define diagnostics
 
     ; The module files nested inside one member — i.e. inside a namespace, the
     ; only member kind that can declare modules.
-    function member_module_files(rp, mem: pointer[Member]) returns String
+    function member_module_files(rp, mem: ref[Member]) returns String
     {
         var sb StringBuilder()
         choose mem
@@ -624,7 +624,7 @@ define diagnostics
 
     ; The module files of a namespace definition, recursing through nested
     ; namespaces (`define a { define b { module c } }`).
-    function definition_module_files(rp, d: pointer[Definition]) returns String
+    function definition_module_files(rp, d: ref[Definition]) returns String
     {
         var sb StringBuilder()
         choose d
@@ -793,7 +793,7 @@ define diagnostics
 
     ; Register every loaded package's concepts with the planner
     ; (inlined mirror of cli.register_packages).
-    procedure register_packages(planner: pointer[Planner.Planner], model: pointer[Program])
+    procedure register_packages(planner: ref[Planner.Planner], model: ref[Program])
     {
         var i: size_t 0
         while i < model.packages.length

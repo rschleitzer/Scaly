@@ -312,7 +312,7 @@ define instlens
         Planner.get_readable_name it
     }
 
-    function contains_name(seen: pointer[Array[String]], name: String) returns bool
+    function contains_name(seen: ref[Array[String]], name: String) returns bool
     {
         var i: size_t 0
         while i < seen.get_length()

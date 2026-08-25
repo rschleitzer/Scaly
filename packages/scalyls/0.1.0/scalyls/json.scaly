@@ -178,7 +178,7 @@ define json
         json.parse_value(&p)
     }
 
-    function parse_value(rp, p: pointer[JsonParser]) returns JsonValue
+    function parse_value(rp, p: ref[JsonParser]) returns JsonValue
     {
         json.skip_ws p
         let c json.peek p
@@ -213,7 +213,7 @@ define json
         json.null_value()
     }
 
-    function parse_object(rp, p: pointer[JsonParser]) returns JsonValue
+    function parse_object(rp, p: ref[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x7B)         ; '{'
         json.skip_ws p
@@ -261,7 +261,7 @@ define json
         JsonValue.Object(JsonObject(count, buf))
     }
 
-    function parse_array(rp, p: pointer[JsonParser]) returns JsonValue
+    function parse_array(rp, p: ref[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x5B)         ; '['
         json.skip_ws p
@@ -304,7 +304,7 @@ define json
         JsonValue.Array(JsonArray(count, buf))
     }
 
-    function parse_string(rp, p: pointer[JsonParser]) returns String
+    function parse_string(rp, p: ref[JsonParser]) returns String
     {
         if json.peek(p) <> 0x22   ; must open with '"'
         {
@@ -377,7 +377,7 @@ define json
 
     ; Reads the four hex digits of a \uXXXX escape at the cursor (the `u` is
     ; already consumed) and advances past them.
-    function read_hex4(p: pointer[JsonParser]) returns i64
+    function read_hex4(p: ref[JsonParser]) returns i64
     {
         var value: i64 0
         var k 0
@@ -395,7 +395,7 @@ define json
     ; surrogate PAIR (\uD83D\uDE00) into the one codepoint it denotes.
     ; A lone surrogate — which no well-formed document can mean — answers
     ; U+FFFD, so the encoding downstream stays well-formed.
-    function read_unicode_escape(p: pointer[JsonParser]) returns i64
+    function read_unicode_escape(p: ref[JsonParser]) returns i64
     {
         let hi json.read_hex4 p
         if hi < 0xD800
@@ -468,7 +468,7 @@ define json
         sb.append((0x80 | (cp & 0x3F)) as char)
     }
 
-    function parse_number(p: pointer[JsonParser]) returns i64
+    function parse_number(p: ref[JsonParser]) returns i64
     {
         var negative false
         if json.peek(p) = 0x2D  ; '-'
@@ -502,7 +502,7 @@ define json
     ; Low-level cursor helpers
     ; ====================================================================
 
-    function peek(p: pointer[JsonParser]) returns u8
+    function peek(p: ref[JsonParser]) returns u8
     {
         if p.pos >= p.source.get_length()
             return 0 as u8
@@ -510,10 +510,10 @@ define json
         p.source.get p.pos
     }
 
-    function advance(p: pointer[JsonParser])
+    function advance(p: ref[JsonParser])
         set p.pos: p.pos + 1
 
-    function skip_ws(p: pointer[JsonParser])
+    function skip_ws(p: ref[JsonParser])
     {
         ; space 0x20, tab 0x09, LF 0x0A, CR 0x0D
         var c json.peek p
@@ -524,7 +524,7 @@ define json
         }
     }
 
-    function expect(p: pointer[JsonParser], c: u8)
+    function expect(p: ref[JsonParser], c: u8)
     {
         if json.peek(p) = c
         {
@@ -553,7 +553,7 @@ define json
 
     ; Matches `lit` at the cursor; advances past it and returns true on a
     ; hit, leaves the cursor untouched and returns false on a miss.
-    function match_literal(p: pointer[JsonParser], lit: pointer[const_char]) returns bool
+    function match_literal(p: ref[JsonParser], lit: pointer[const_char]) returns bool
     {
         let len strlen lit
         var i: size_t 0

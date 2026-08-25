@@ -211,7 +211,7 @@ define symindex
 
     ; Replace slot `s`'s blob with a fresh malloc'd copy of `blob`'s bytes,
     ; freeing the previous copy. An empty blob leaves blob_data null.
-    procedure set_blob(s: pointer[IdxSlot], blob: String)
+    procedure set_blob(s: ref[IdxSlot], blob: String)
     {
         if s.blob_data <> null
             free(s.blob_data as pointer[void])
@@ -233,7 +233,7 @@ define symindex
 
     ; Set slot `s`'s path to a fresh malloc'd copy of `path`'s bytes, freeing
     ; any previous copy (slots are reused after overflow eviction).
-    procedure set_path(s: pointer[IdxSlot], path: String)
+    procedure set_path(s: ref[IdxSlot], path: String)
     {
         if s.path_data <> null
             free(s.path_data as pointer[void])
@@ -395,7 +395,7 @@ define symindex
         set s.epoch: idx_epoch
     }
 
-    procedure set_dir_path(s: pointer[DirSlot], dir: String)
+    procedure set_dir_path(s: ref[DirSlot], dir: String)
     {
         if s.path_data <> null
             free(s.path_data as pointer[void])
@@ -414,7 +414,7 @@ define symindex
         }
     }
 
-    procedure set_dir_list(s: pointer[DirSlot], listing: String)
+    procedure set_dir_list(s: ref[DirSlot], listing: String)
     {
         if s.list_data <> null
             free(s.list_data as pointer[void])

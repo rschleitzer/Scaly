@@ -139,7 +139,7 @@ define docstore
 
     ; Replace slot `s`'s text with a fresh malloc'd copy of `text`'s content
     ; bytes, freeing the previous copy. An empty text leaves text_data null.
-    procedure set_text(s: pointer[DocSlot], text: String)
+    procedure set_text(s: ref[DocSlot], text: String)
     {
         if s.text_data <> null
             free(s.text_data as pointer[void])
@@ -161,7 +161,7 @@ define docstore
 
     ; Set slot `s`'s uri to a fresh malloc'd copy of `uri`'s content bytes,
     ; freeing any previous copy (slots are reused after didClose).
-    procedure set_uri(s: pointer[DocSlot], uri: String)
+    procedure set_uri(s: ref[DocSlot], uri: String)
     {
         if s.uri_data <> null
             free(s.uri_data as pointer[void])
