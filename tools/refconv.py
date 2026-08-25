@@ -797,6 +797,7 @@ def heap_buffer(nm, text):
     them a correct `ref`.  A `\b` is not a terminator; the following character
     is."""
     e = re.escape(nm)
+    text = code_text(text)
     return bool(
         # bound or assigned FROM an allocator: `let p malloc(n) as pointer[X]`
         re.search(r'^\s*(?:let|var)\s+' + e + r'\b(?:\s*:[^\n]*?)?\s[^\n]*?\b'
@@ -936,7 +937,34 @@ def pointer_sinks(files):
 
 # ---------- hazards ---------------------------------------------------------
 
-def addr_taken(nm, text): return re.search(r'&\s*' + re.escape(nm) + r'\b', text) is not None
+# ★★★EVERY hazard scan reads CODE, never prose.  They used to run over the raw
+# text, so a sentence in a comment held a declaration at `pointer` for good and
+# nothing said which sentence: `GlyphSubstTableRec.pairs` was pinned by its own
+# doc block ("pairs[2i] -> pairs[2i+1]") and `GroveBuildState.prefix` by
+# "prefix[k] is the flat position of member" -- 38 sites across four packages,
+# 27 of them in dazzle, almost all `pointer[Array[X]]` FIELDS, i.e. inside the
+# class-A conversion that had been declared complete.
+#
+# It also retires a note this file used to carry.  The subscript arm was
+# described as conservatively holding "44 of the 1136 class-A sites"; measured
+# after this change it holds NINE, and all nine were comment matches.  ★A
+# conservative rule and a defect look identical from the outside — the count is
+# the only thing that tells them apart, so a rule that claims to be
+# conservative owes a number that is re-measured, not inherited.
+_CODE_CACHE = {}
+def code_text(text):
+    """`text` with block comments removed and every line cut at its `;`."""
+    hit = _CODE_CACHE.get(text)
+    if hit is None:
+        stripped = re.sub(r';\*.*?\*;', ' ', text, flags=re.S)
+        hit = '\n'.join(code_of(x) for x in stripped.split('\n'))
+        if len(_CODE_CACHE) > 64:
+            _CODE_CACHE.clear()
+        _CODE_CACHE[text] = hit
+    return hit
+
+def addr_taken(nm, text):
+    return re.search(r'&\s*' + re.escape(nm) + r'\b', code_text(text)) is not None
 # ★For a CONTAINER head the subscript arm below is a false positive -- `a[i]` on
 # an Array is the container's `operator []`, not pointer arithmetic -- and it is
 # what holds 44 of the 1136 class-A sites at `pointer`.  Left conservative on
@@ -950,10 +978,12 @@ def addr_taken(nm, text): return re.search(r'&\s*' + re.escape(nm) + r'\b', text
 # expects.  No port site is affected: zero `.field[i]` on a `pointer[Array]`
 # declaration exists across all three (checked by name).
 def walked(nm, text):
+    text = code_text(text)
     return bool(re.search(r'\b' + re.escape(nm) + r'\s*\[', text)
                 or re.search(r'\*\s*\(\s*' + re.escape(nm) + r'\s*[+\-]', text)
                 or re.search(r'\b' + re.escape(nm) + r'\s*[+\-]\s+\w', text))
 def nulled(nm, text):
+    text = code_text(text)
     return bool(re.search(r'\bset\s+' + re.escape(nm) + r'\s*:\s*null\b', text)
                 or re.search(r'\b' + re.escape(nm) + r'\b\s*(?:<>|=)\s*null\b', text)
                 or re.search(r'\bnull\s*(?:<>|=)\s*' + re.escape(nm) + r'\b', text))
@@ -1162,7 +1192,8 @@ def dot_hazard(field, all_text, own_text=None):
     and the scan narrows to it -- see record_texts for what the package-wide
     bare-name scan cost.  Passing None keeps the old package-wide behaviour,
     which is what a field reached as `x.f` from elsewhere still gets."""
-    scan = all_text if own_text is None else own_text
+    all_text = code_text(all_text)
+    scan = all_text if own_text is None else code_text(own_text)
     f = re.escape(field)
     addr = re.search(r'&\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\b', all_text)
     # A hand-walked buffer FIELD is not always written with a dot: inside its
@@ -1178,8 +1209,17 @@ def dot_hazard(field, all_text, own_text=None):
             re.search(r'\*\s*\(\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\s*[+\-]', scan) or
             re.search(r'\.' + f + r'\s*[+\-]\s+\w', scan) or
             walked(field, scan))
+    # ★The BARE-NAME forms, for exactly the reason the walk arm above carries
+    # them: inside its own record's methods a field is reached through an
+    # implicit `this`, so `set slots: null` and `if slots = null` never show a
+    # dot.  Without this the stdlib's `HashMap.slots` -- a field the record
+    # itself nulls in one init and tests in four methods -- came out as a
+    # NON-OPTIONAL `ref`, which `Planner.report_null_into_ref#` then rejects
+    # outright.  Scoped to the declaring record's own block, like the walk arm,
+    # so a same-named local elsewhere in the package cannot vote.
     null = (re.search(r'\.' + f + r'\b\s*(?:<>|=)\s*null\b', all_text) or
-            re.search(r'\bset\s+[^\n]*\.' + f + r'\s*:\s*null\b', all_text))
+            re.search(r'\bset\s+[^\n]*\.' + f + r'\s*:\s*null\b', all_text) or
+            nulled(field, scan))
     return bool(addr), bool(walk), bool(null)
 
 def name_before(line, i):
@@ -1204,6 +1244,10 @@ def main(root, apply=False):
     retwalk  = walked_returns(files)
     sinks, allocers = pointer_sinks(files)
     pins = pinned_signatures(root)
+    generic_recs = {m.group(1) for f in files for line in f.lines
+                    if not is_comment(line)
+                    for m in [re.match(r'\s*define\s+([A-Za-z_][A-Za-z0-9_]*)\s*\[', line)]
+                    if m}
     encrec = {f.path: enclosing_records(f) for f in files}
     tally, decisions = collections.Counter(), []
 
@@ -1352,6 +1396,44 @@ def main(root, apply=False):
                     # enough to pay for finding out, and a wrong answer there is
                     # a memory fault rather than a diagnostic.
                     verdict, why = 'pointer', 'module-global'
+                elif (f.record_of.get(li) in generic_recs
+                      and '[' in (inner or '')):                 # GENERIC FIELD
+                    # ★★★A field of a GENERIC concept whose own type nests
+                    # further generics rides a BROKEN substitution path, so it
+                    # stays a pointer until that is fixed -- this is a hold on a
+                    # compiler defect, not a doctrine judgement.
+                    #
+                    # `Planner.apply_name_substitution` rebuilds a type with
+                    # substituted generics but keeps `t.mangled_name`, which
+                    # ENCODES the generic arguments -- so the rebuilt type
+                    # carries the name of the arguments it had BEFORE. Declaring
+                    # `HashMapBuilder[K, V].slots` as
+                    # `ref[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]]?`
+                    # made the compiler emit a load of
+                    # `%_Z6VectorI6VectorI6StringEE` -- another instantiation's
+                    # type -- and a compare through
+                    # `%_Z12KeyValuePairI1K8NameableE`, `K` unsubstituted beside
+                    # a resolved `V`. The extra indirection that mismatch adds
+                    # then handed string BYTES to `String::equals` as an
+                    # address: SIGSEGV at 0x615f796c61637312 ("scaly_a").
+                    #
+                    # ★Three levels of nesting survived and four did not, which
+                    # is why it presents as a property of ONE declaration.
+                    # `HashSet`/`HashSetBuilder`/`HashMap` bootstrapped green
+                    # with the same change and are held anyway: green there is
+                    # evidence about the COMPILER's own instantiations, not
+                    # about the shape.
+                    #
+                    # ★Clearing `mangled_name` is NOT the fix and was measured:
+                    # the propagated value is consumed by subscript-operator
+                    # resolution, and `packages/scaly/tensor.scaly` stops
+                    # compiling ("unexpected operand" on `set gkp[...]: ...`).
+                    # Recomputing it from the substituted generics is the real
+                    # repair, and it moves every generic instantiation in the
+                    # compiler -- its own change, with the two-phase seed
+                    # refresh, because the SEED compiler is what builds stage1
+                    # and a converted stdlib must survive the OLD planner first.
+                    verdict, why = 'pointer', 'generic-substitution-defect'
                 else:                                               # FIELD
                     rec = f.record_of.get(li)
                     if rec is None:
