@@ -1,0 +1,83 @@
+; Regression: a construction whose WHOLE argument is a product -- `Leaf(k * 10)`
+; -- is a construction, not a dereference (2026-08-25).
+;
+; The s160 arm in emit_tuple treats a single anonymous component wrapping
+; `(*ptr)` as a GROUPING rather than a construction, and it recognised the
+; deref by the operator's NAME. But an operator IS an identifier, and `*` names
+; BOTH the unary dereference and the binary multiplication -- so the most
+; ordinary spelling there is matched the arm and was emitted as a load from the
+; product:
+;
+;     %mul          = mul i64 %k, 10
+;     %grp.deref.val = load %_Z4Leaf, i64 %mul     ; address 30
+;
+; rc 0 at compile, SIGSEGV at run time, no diagnostic. The arm's own comment
+; claimed it was "scoped narrowly to a deref inner"; the ARITY is what scopes
+; it -- the deref takes ONE argument, the multiplication two.
+;
+; The tell was that ONE extra pair of parentheses fixed it: `Leaf(((k+1)*10))`
+; was correct while `Leaf((k+1)*10)` crashed, i.e. an asymmetry between two
+; spellings of one expression -- the same tell as the inline-vs-local `*(buf+i)`
+; case. `*` is the only operator affected, which is why `+`, `-`, `/` and `<<`
+; all worked and hid the class.
+;
+; The sibling test deref_paren_not_construction.scaly asserts the arm still
+; fires for a REAL deref; this one asserts it no longer fires for a product.
+; Expected: PASS
+
+define Leaf (v: int)
+
+define Mk ()
+{
+    ; the tail-return shape, which promotes to the caller page
+    function build(k: int) returns ref[Leaf]      Leaf(k * 10)
+}
+
+function probe() returns int
+{
+    var k 2
+    var flags 0
+
+    ; a bare product as the whole argument -- the crashing shape
+    let a Leaf(k * 10)
+    if a.v <> 20
+        set flags: flags + 1
+
+    ; both operands literal
+    let b Leaf(2 * 10)
+    if b.v <> 20
+        set flags: flags + 2
+
+    ; both operands names
+    let c Leaf(k * k)
+    if c.v <> 4
+        set flags: flags + 4
+
+    ; a product with a parenthesised left operand -- the form that first failed
+    let d Leaf((k + 1) * 10)
+    if d.v <> 30
+        set flags: flags + 8
+
+    ; the extra parens that used to be the workaround must still be correct
+    let e Leaf(((k + 1) * 10))
+    if e.v <> 30
+        set flags: flags + 16
+
+    ; a longer sequence was always fine; it must stay fine
+    let f Leaf(k * 10 + 1)
+    if f.v <> 21
+        set flags: flags + 32
+
+    ; through a return, where the construction is promoted to the caller page
+    let g Mk.build(3)
+    if g.v <> 30
+        set flags: flags + 64
+
+    flags
+}
+
+let r probe()
+if r = 0
+    print "PASS\n"
+if r <> 0
+    print "FAIL\n"

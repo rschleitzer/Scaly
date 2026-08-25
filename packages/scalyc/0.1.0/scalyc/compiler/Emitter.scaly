@@ -11603,7 +11603,26 @@ define Emitter
                                         choose ilast.expr
                                             when icall: PlannedCall
                                             {
-                                                if icall.name = "*"
+                                                ; ★The name alone does NOT identify the
+                                                ; deref: `*` is an ordinary identifier and
+                                                ; it names BOTH the unary dereference and
+                                                ; the binary multiplication, so `Leaf(k *
+                                                ; 10)` -- a construction whose whole
+                                                ; argument is a product -- matched this arm
+                                                ; and was emitted as a LOAD FROM THE
+                                                ; PRODUCT: `%mul = mul i64 %k, 10` then
+                                                ; `load %Leaf, i64 %mul`. rc 0 at compile,
+                                                ; SIGSEGV at run time, no diagnostic, for
+                                                ; the most ordinary spelling there is.
+                                                ; The comment above says this arm is
+                                                ; "scoped narrowly to a deref inner"; it was
+                                                ; not, and the ARITY is what scopes it --
+                                                ; the deref takes ONE argument, the
+                                                ; multiplication two.
+                                                var icall_argc: size_t 0
+                                                if icall.args <> null
+                                                    set icall_argc: (*icall.args).length
+                                                if icall.name = "*" and icall_argc < 2
                                                 {
                                                     let deref_val emit_operands imf.value
                                                     if deref_val.handle = null
