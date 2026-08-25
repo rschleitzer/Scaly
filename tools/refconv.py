@@ -40,7 +40,18 @@ a region frame is contagious across the whole function) and for the four shapes
 that stay pointers for a reason: the C boundary, a container whose value the
 callee owns, a cell whose ADDRESS is taken, and a hand-walked buffer plus the
 accessor that hands it out.  A generic ARGUMENT stays (`Array[pointer[X]]` — the
-converted opensp/dazzle hold ZERO `[ref[...]]`) and an `as pointer[X]` cast stays.
+converted ports hold ZERO `[ref[...]]` -- an OBSERVATION, not a proof, and the
+one class still held back by a blanket rule) and an `as pointer[X]` cast stays.
+
+★A PARAMETER that only FORWARDS its value to a nullable parameter of another
+routine is itself nullable, and this tool cannot see it: `nulled()` reads the
+routine's OWN body, and a forwarder tests nothing.  Measured on
+`dazzle_cli.load_stylesheet`, whose two `Array[String]` parameters go straight
+into opensp's `Parser.parse_simple_cat(... ref[Array[String]]?, ...)` while its
+own callers pass `null` -- the conversion gave them the non-nullable spelling
+and the call stopped resolving (`function not found: load_stylesheet`, i.e.
+LOUD).  Fixed by hand; teaching the tool would mean following a call across a
+PACKAGE boundary.
 
 Positions are decided by what PRECEDES an occurrence; the inner type is read
 BRACKET-BALANCED; and every name scan is aimed at the BODY that declares the
@@ -53,14 +64,45 @@ expression is OPTIONAL — a bare `return;` has none").
 """
 import os, re, sys, collections
 
-STAY_HEADS = {
+# A head whose `pointer[...]` stays a pointer, grouped by the REASON it stays.
+# The groups exist because the previous shape of this set -- one flat list --
+# held two classes back by BLANKET RULE rather than by a measured reason, and a
+# reason nobody can name is a reason nobody can retire.
+
+# A pointee that is not a concept at all: a `pointer[char]` is a buffer or a C
+# boundary, never a borrowed reference to an object.
+STAY_PRIMITIVE = {
     'void','char','const_char','bool','int','size_t','float','double',
-    'u8','u16','u32','u64','i8','i16','i32','i64','pointer','ref',
-    'Page','PageList','StackBucketHeader','PageNode',
-    'Array','Vector','String','StringBuilder','List','Slice','HashMap',
-    'HashMapBuilder','HashSet','HashSetBuilder','BuilderList','Node',
-    'KeyValuePair','Iterator','T',
+    'u8','u16','u32','u64','i8','i16','i32','i64',
 }
+# The out-param CELL: the outer pointer is what makes the cell writable, so the
+# inner one has to match (root CLAUDE.md, the four shapes that stay pointers).
+STAY_INDIRECTION = {'pointer','ref'}
+# The RBMM substrate.  `pointer[Page]` is not a taste: the Modeler PEELS a first
+# parameter named page/rp typed exactly that into the implicit caller-page slot,
+# and `T^name(...)` requires a `pointer[Page]`.
+STAY_RUNTIME = {'Page','PageList','StackBucketHeader','PageNode'}
+# A generic parameter's pointee -- `pointer[T]` inside a generic body, where the
+# planner's `is_npo_option_generic_pointee` fast path reads the DECLARED type.
+STAY_GENERIC_PARAM = {'T'}
+# ★`Array` LEFT this set on 2026-08-25 (class A).  It had never been measured --
+# every container name simply sat here -- and the doctrine's exemption is for a
+# container whose VALUE the callee owns, which is a statement about the element
+# and about `get_buffer()`, not about a borrowed reference TO the container.
+# What stands in its place is not a blanket rule but the hazard detectors, which
+# apply to Array exactly as they do to any other concept: a subscripted,
+# address-taken or arithmetic-walked declaration still stays a pointer, decided
+# per site.  The heads still listed here are NOT proven to belong: they are
+# ten sites across all three ports (4 `pointer[String]` in opensp, 4
+# `pointer[StringBuilder]` and 2 `pointer[Vector]` in tscaly), too few to be
+# worth a measuring round, so they stay unmeasured rather than justified.
+STAY_CONTAINER = {
+    'Vector','String','StringBuilder','List','Slice','HashMap',
+    'HashMapBuilder','HashSet','HashSetBuilder','BuilderList','Node',
+    'KeyValuePair','Iterator',
+}
+STAY_HEADS = (STAY_PRIMITIVE | STAY_INDIRECTION | STAY_RUNTIME
+              | STAY_GENERIC_PARAM | STAY_CONTAINER)
 ROUTINE = re.compile(r'^(\s*)(function|procedure|operator|init)\b')
 LOCALDECL = re.compile(r"^\s*(let|var)\s+('[^']+'|[A-Za-z_][A-Za-z0-9_]*)\s*:")
 PROP = re.compile(r"^\s*([a-z_][A-Za-z0-9_]*)\s*:\s*\S")
@@ -500,6 +542,18 @@ def returns_field_verdicts(files, fverdict):
 # ---------- hazards ---------------------------------------------------------
 
 def addr_taken(nm, text): return re.search(r'&\s*' + re.escape(nm) + r'\b', text) is not None
+# ★For a CONTAINER head the subscript arm below is a false positive -- `a[i]` on
+# an Array is the container's `operator []`, not pointer arithmetic -- and it is
+# what holds 44 of the 1136 class-A sites at `pointer`.  Left conservative on
+# purpose, because the arm is right for every other head and because the two
+# spellings genuinely differ: measured 2026-08-25, `a[i]` on a
+# `pointer[Array[X]]` is `*(a + i)` with an ARRAY-sized stride (a fixture reading
+# `let e a[i]` then `*e` reported `member not found: Array.v` -- it had indexed
+# an array OF arrays), while on a `ref[Array[X]]` it dispatches to
+# `Array.operator[]` and answers the element, because a ref cannot do
+# arithmetic.  The conversion therefore makes the subscript MEAN what a reader
+# expects.  No port site is affected: zero `.field[i]` on a `pointer[Array]`
+# declaration exists across all three (checked by name).
 def walked(nm, text):
     return bool(re.search(r'\b' + re.escape(nm) + r'\s*\[', text)
                 or re.search(r'\*\s*\(\s*' + re.escape(nm) + r'\s*[+\-]', text)
