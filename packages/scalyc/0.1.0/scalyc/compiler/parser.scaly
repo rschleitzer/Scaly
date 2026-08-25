@@ -3040,6 +3040,19 @@ define Parser
             when success: Success
                 set operation: success
 
+        let optional_start lexer.position
+        var optional: ref[OptionalSyntax]? null
+        choose parse_optional()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set optional: OptionalSyntax(success.start, success.end)
+
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list()
@@ -3057,7 +3070,7 @@ define Parser
 
         let end lexer.position
 
-        ElementSyntax(start, end, operation, attributes)
+        ElementSyntax(start, end, operation, optional, attributes)
     }
 
     function parse_if(this: Parser) returns IfSyntax throws ParserError

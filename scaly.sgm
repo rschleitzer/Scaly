@@ -346,6 +346,7 @@
 
 <syntax id = Element                      multiple
     <content link = Operand               multiple          property = operation
+    <content link = Optional                       optional property = optional
     <content link = Attribute             multiple optional property = attributes
     <content link = comma                          optional
 

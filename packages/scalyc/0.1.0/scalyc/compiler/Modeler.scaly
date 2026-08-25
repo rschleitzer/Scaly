@@ -379,6 +379,30 @@ define Modeler
     ; Vector/Matrix handling
     ; ============================================================================
 
+    ; wrap_row_in_option: `[<row>?]` -> the operand row for `Option[<row>]`.
+    ; Two cells, which is the shape a nested generic argument already has:
+    ; a bare Type naming Option, then a Matrix holding the original row as its
+    ; single row. Static because it builds only from its arguments.
+    function wrap_row_in_option(row: Vector[Operand], span: Span) returns Vector[Operand]
+    {
+        var inner_rows Vector[Vector[Operand]](1)
+        inner_rows.put(0, row)
+        var path Vector[String](1)
+        path.put(0, "Option")
+        var cells Array[Operand]()
+        cells.add(Operand(
+            span,
+            Expression.Type(Type(span, path, null, Lifetime.Unspecified(Unspecified()))),
+            null
+        ))
+        cells.add(Operand(
+            span,
+            Expression.Matrix(Matrix(span, inner_rows, Lifetime.Unspecified(Unspecified()))),
+            null
+        ))
+        Vector[Operand](cells)
+    }
+
     function handle_vector(syntax: VectorSyntax) returns Matrix
     {
         var count: size_t 0
@@ -397,7 +421,31 @@ define Modeler
                 {
                     let element (*elem_ptr)
                     let ops handle_operands(element.operation)
-                    operations.put(i, ops)
+                    ; s195: a bracket element may carry the `?` sigil, so a
+                    ; GENERIC ARGUMENT in expression position can name an
+                    ; optional type -- `Array[ref[Leaf]?]^page()`. The parser
+                    ; reads `[...]` in that position as a VECTOR LITERAL whose
+                    ; elements are OPERANDS, not as a GenericArguments list
+                    ; (only the planner's s107 merge turns the row back into a
+                    ; Type), so the `?` had nowhere to attach and the same type
+                    ; that every DECLARATION position accepts was a parse error
+                    ; here -- `expected ']'`. Every other spelling worked: the
+                    ; field, the parameter, the annotated local, and the
+                    ; desugared `Array[Option[ref[Leaf]]]` even in this very
+                    ; position, which is what made it a wart rather than a
+                    ; limit.
+                    ;
+                    ; It desugars rather than travelling as a flag: the row
+                    ; becomes `[Type(Option), Matrix([row])]`, which is exactly
+                    ; the nested-generic shape extract_row_to_type# already
+                    ; rebuilds. So Model, Plan and Planner need no change at
+                    ; all, and this mirrors handle_type#'s own s113 wrap one
+                    ; level down -- same reason, same Option, same comment
+                    ; lineage.
+                    if element.optional = null
+                        operations.put(i, ops)
+                    if element.optional <> null
+                        operations.put(i, Modeler.wrap_row_in_option(ops, Span(syntax.start, syntax.end)))
                 }
                 set i: i + 1
             }

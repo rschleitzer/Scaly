@@ -414,6 +414,7 @@ define ElementSyntax
     start: size_t
     end: size_t
     operation: ref[Vector[OperandSyntax]]?
+    optional: ref[OptionalSyntax]?
     attributes: ref[Vector[AttributeSyntax]]?
 )
 
