@@ -202,6 +202,7 @@ class File:
         self.lines = open(path, encoding='utf-8').read().split('\n')
         self.sig   = {}    # sig line -> (name, body_lo, body_hi)
         self.owner = {}    # body line -> sig line
+        self.sigcont = {}  # signature CONTINUATION line -> sig line
         self.record_of = {}  # property line -> record name
         self.index()
 
@@ -212,7 +213,24 @@ class File:
                 continue
             m = re.search(r'\b(function|procedure|operator|init)\s+(\'[^\']+\'|[A-Za-z_][A-Za-z0-9_]*)', line)
             name = m.group(2).strip("'") if m else 'init'
-            j = i + 1
+            # ★A signature that does not close its parenthesis CONTINUES, and
+            # its continuation lines declare parameters like any other.  They
+            # used to reach the decision loop as neither signature nor body, so
+            # they fell through to the FIELD branch and were judged by a scan
+            # for a record that does not exist -- `field-no-record`, a verdict
+            # that cannot be right because the thing is not a field.  Two such
+            # lines carry a `pointer[` across the whole tree, and one of them
+            # (`Planner.leave_concept_generic_scope`) is null-tested in its own
+            # body, so the field reading produced a plain `ref` for a parameter
+            # callers pass `null` to.
+            self.sigend = getattr(self, 'sigend', {})
+            e, d = i, code_of(line).count('(') - code_of(line).count(')')
+            while d > 0 and e + 1 < n:
+                e += 1
+                self.sigcont[e] = i
+                d += code_of(L[e]).count('(') - code_of(L[e]).count(')')
+            self.sigend[i] = e
+            j = e + 1
             while j < n and (not L[j].strip() or is_comment(L[j])): j += 1
             if j >= n:
                 lo = hi = i
@@ -246,6 +264,10 @@ class File:
                     if not is_comment(L[k]) and PROP.match(L[k]):
                         self.record_of[k] = rec
                     k += 1
+
+    def sigtext(self, sigline):
+        return ' '.join(code_of(x) for x in
+                        self.lines[sigline:getattr(self, 'sigend', {}).get(sigline, sigline) + 1])
 
     def body(self, sigline, with_sig=True):
         name, lo, hi = self.sig[sigline]
@@ -640,6 +662,76 @@ def returns_field_verdicts(files, fverdict):
                     out[(f.path, i)] = ('pointer', 'returns-walked-field')
     return out
 
+# ---------- signatures pinned by a hand-written mangled name ----------------
+
+# ★★★A routine whose ITANIUM MANGLED NAME is written out as a string literal
+# somewhere in the tree cannot change its parameter types, because the mangling
+# encodes them: `pointer` is "P" and `ref` is "R", so converting
+# `scaly_force_frame(f: pointer[Frame])` renames it from
+# `_Z17scaly_force_frameP5Frame` to `..R5Frame` while `Emitter.scaly` still
+# emits a call to the P spelling.  Nothing would report that -- `emit_call`
+# synthesizes a callee type from the ARGUMENTS, and the emitter here does not
+# call the routine at all, it LOOKS THE SYMBOL UP BY NAME (`LLVMGetNamedFunction`
+# / `LLVMAddFunction`) -- so the first evidence is an undefined symbol at link
+# time in every program that takes a caller page, i.e. all of them.
+#
+# There are eight such signatures and they are exactly the runtime seam the
+# compiler reaches into without a Scaly call: the region frame pair, the two
+# `send` entry points the Planner emits for channels and cluster peers, and the
+# TaskPool/TaskGroup trio the self-scaling `for` driver calls.  The RETURN is
+# deliberately NOT pinned -- Itanium does not encode a return type, and `ptr` is
+# `ptr` either way -- so an accessor like `TaskPool.default_pool()` still gets
+# the honest spelling.
+def decode_mangled(sym):
+    """`_ZN<len>Class<len>methodE...` / `_Z<len>name...` -> (class, name)."""
+    i = 2
+    nested = sym[i:i + 1] == 'N'
+    if nested: i += 1
+    comps = []
+    while i < len(sym) and sym[i].isdigit():
+        j = i
+        while j < len(sym) and sym[j].isdigit(): j += 1
+        ln = int(sym[i:j])
+        if j + ln > len(sym): return None
+        comps.append(sym[j:j + ln])
+        i = j + ln
+        if not nested: break
+    if not comps: return None
+    return (comps[-2] if len(comps) >= 2 else None, comps[-1])
+
+def pinned_signatures(root):
+    """Scan the WHOLE repository, not just the package being converted: the
+    literal that pins a stdlib signature lives in the COMPILER."""
+    top = root
+    for _ in range(4):
+        if os.path.isdir(os.path.join(top, '.git')): break
+        top = os.path.dirname(os.path.abspath(top)) or '/'
+    pins = set()
+    for dirpath, dirnames, filenames in os.walk(top):
+        dirnames[:] = [d for d in dirnames
+                       if d not in ('.git', 'seed', 'build', 'out', 'retired', 'docs')]
+        for fn in filenames:
+            if not fn.endswith(('.scaly', '.c', '.h')): continue
+            try:
+                text = open(os.path.join(dirpath, fn), encoding='utf-8',
+                            errors='replace').read()
+            except OSError:
+                continue
+            for m in re.finditer(r'"(_Z[A-Za-z0-9_]{3,})"', text):
+                d = decode_mangled(m.group(1))
+                if d: pins.add(d)
+    return pins
+
+def enclosing_records(f):
+    """sig line -> the `define`d concept it sits in (None at module scope)."""
+    out, cur = {}, None
+    for i, line in enumerate(f.lines):
+        if is_comment(line): continue
+        m = re.match(r'^(\s*)define\s+([A-Za-z_][A-Za-z0-9_]*)', line)
+        if m: cur = m.group(2)
+        if i in f.sig: out[i] = cur
+    return out
+
 # ---------- the C boundary, hand-allocated buffers, forwarders --------------
 
 # An `extern` declaration IS the C boundary -- the first of the four shapes that
@@ -661,6 +753,13 @@ def is_extern(line): return bool(EXTERN.search(code_of(line).rstrip()))
 # side, and it reaches the position no name rule does: a `destroy(p)` whose only
 # statement is `free(p as pointer[void])` walks nothing, tests p against null,
 # and was read as a nullable reference.
+# ★`Array[T].get_buffer()` (and the `.data` field behind it) is named in the
+# doctrine as the position that KEEPS its pointer: the buffer is walked with
+# arithmetic, so a value taken from one is a buffer wherever it then travels.
+# The walk need not be in the same body -- `Emitter`'s `param_types_ptr` is set
+# from `param_types.data` and handed straight to `LLVMFunctionType`, where the
+# arithmetic is C's.
+BUFFER_SRC = r'(?:\.data\b|\.get_buffer\s*\(|\.data_ptr\s*\(|\.c_data\s*\(|\.to_c_string\s*\()'
 ALLOC = r'(?:malloc|calloc|realloc|aligned_alloc|scaly_aligned_alloc)'
 FREE  = r'(?:free|scaly_aligned_free)'
 def heap_buffer(nm, text):
@@ -677,6 +776,10 @@ def heap_buffer(nm, text):
                   + ALLOC + r'\s*\(', text, re.M)
         or re.search(r'^\s*set\s+' + e + r'\s*:[^\n]*?\b' + ALLOC + r'\s*\(',
                      text, re.M)
+        # taken from a container's raw BUFFER
+        or re.search(r'^\s*(?:let|var)\s+' + e + r'\b(?:\s*:[^\n]*?)?\s[^\n]*?'
+                     + BUFFER_SRC, text, re.M)
+        or re.search(r'^\s*set\s+' + e + r'\s*:[^\n]*?' + BUFFER_SRC, text, re.M)
         # handed WHOLE to a deallocator: `free(p)` / `free(p as pointer[void])`
         or re.search(r'\b' + FREE + r'\s*\(\s*' + e + r'\s*(?:as\b|\)|,)', text))
 
@@ -757,7 +860,7 @@ def pointer_sinks(files):
     allocers = alloc_returns(files)
     for f in files:
         for i, (name, _, _) in f.sig.items():
-            line = f.lines[i]
+            line = f.sigtext(i)
             names, off = sig_params(line)
             if names is None:
                 continue
@@ -767,9 +870,9 @@ def pointer_sinks(files):
                 if k < off or not nm:
                     continue
                 # is THIS parameter declared pointer[NonStay]?
-                if not re.search(re.escape(nm) + r'\s*:\s*pointer\[', code_of(line)):
+                if not re.search(re.escape(nm) + r'\s*:\s*pointer\[', line):
                     continue
-                if (is_extern(line) or walked(nm, body) or addr_taken(nm, body)
+                if (EXTERN.search(line.rstrip()) or walked(nm, body) or addr_taken(nm, body)
                         or heap_buffer(nm, body)):
                     sinks[name].add(k - off)
                 ptr.add(k - off)
@@ -1073,12 +1176,16 @@ def main(root, apply=False):
     retfield = returns_field_verdicts(files, fverdict)
     retwalk  = walked_returns(files)
     sinks, allocers = pointer_sinks(files)
+    pins = pinned_signatures(root)
+    encrec = {f.path: enclosing_records(f) for f in files}
     tally, decisions = collections.Counter(), []
 
     for f in files:
         for li, line in enumerate(f.lines):
             if is_comment(line): continue
-            extern = is_extern(line)
+            sigline = li if li in f.sig else f.sigcont.get(li)
+            extern = is_extern(line) or (sigline is not None
+                                         and is_extern(f.sigtext(sigline)))
 
             # ★A nullable LOCAL spelled as a CAST -- `var x null as pointer[X]`.
             # The doctrine names this position by hand (a nullable PARAMETER,
@@ -1171,18 +1278,22 @@ def main(root, apply=False):
                         verdict, why = 'ref?', 'nullable-return'
                     else:                verdict, why = 'ref', 'return'
                 elif nm is None:         verdict, why = 'pointer', 'no-name'
-                elif li in f.sig:                                   # PARAMETER
-                    b = f.body(li)
-                    if (f.path, li, nm) in initptr:
+                elif li in f.sig or li in f.sigcont:                # PARAMETER
+                    sl = li if li in f.sig else f.sigcont[li]
+                    b = f.body(sl)
+                    pnames, poff = sig_params(f.sigtext(sl))
+                    rec = encrec[f.path].get(sl)
+                    if ((rec, f.sig[sl][0]) in pins or (None, f.sig[sl][0]) in pins):
+                        verdict, why = 'pointer', 'mangled-name-pinned'
+                    elif (f.path, sl, nm) in initptr:
                         verdict, why = 'pointer', 'init-param-mirrors-field'
                     elif addr_taken(nm, b):  verdict, why = 'pointer', 'param-addr-taken'
                     elif walked(nm, b):    verdict, why = 'pointer', 'param-walked'
                     elif heap_buffer(nm, b): verdict, why = 'pointer', 'param-heap-buffer'
-                    elif (nm in sig_params(f.lines[li])[0]
-                          and (sig_params(f.lines[li])[0].index(nm)
-                               - sig_params(f.lines[li])[1]) in sinks.get(f.sig[li][0], ())):
+                    elif (pnames and nm in pnames
+                          and (pnames.index(nm) - poff) in sinks.get(f.sig[sl][0], ())):
                         verdict, why = 'pointer', 'param-forwarded-to-buffer'
-                    elif (f.path, li, nm) in initnull:
+                    elif (f.path, sl, nm) in initnull:
                         verdict, why = 'ref?', 'init-param-mirrors-field'
                     elif nulled(nm, b):    verdict, why = 'ref?', 'param-nullable'
                     else:                  verdict, why = 'ref', 'param'
@@ -1195,6 +1306,25 @@ def main(root, apply=False):
                     elif init.startswith('null') or nulled(nm, b):
                         verdict, why = 'ref?', 'local-nullable'
                     else:                  verdict, why = 'ref', 'local'
+                elif re.match(r'^\s*(?:mutable|shared)\s', line):   # GLOBAL
+                    # ★A module-level `mutable`/`shared` declaration is not a
+                    # field, and reading it as one gave the three in this tree
+                    # (`heap_head`, `heap_trace`, `deadlock_state`) a plain
+                    # `ref` -- the WRONG verdict twice over: each is initialised
+                    # to `null` and tested against it, so the honest spelling
+                    # would at least be `ref[X]?`.
+                    #
+                    # They stay pointers, and the reason is UNMEASURED rather
+                    # than proven, in the same spirit STAY_CONTAINER records its
+                    # ten sites.  What holds them: an `X?` global is an NPO
+                    # Option behind a `PlannedGlobalRef`, and a member access
+                    # through the wrapper on a GLOBAL base is precisely the
+                    # standing bug pattern the root CLAUDE.md counts six
+                    # sightings of ("a name test that does not know about
+                    # Option").  Three declarations in the RBMM substrate is not
+                    # enough to pay for finding out, and a wrong answer there is
+                    # a memory fault rather than a diagnostic.
+                    verdict, why = 'pointer', 'module-global'
                 else:                                               # FIELD
                     rec = f.record_of.get(li)
                     if rec is None:
