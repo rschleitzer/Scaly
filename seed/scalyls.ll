@@ -3937,7 +3937,7 @@ if.end18:                                         ; preds = %if.else, %if.end23
 if.then21:                                        ; preds = %if.then17
   %addr.heap = load ptr, ptr %sb, align 8
   %call24 = call i64 @_ZN4json19read_unicode_escapeER10JsonParser(ptr %2)
-  call void @_ZN4json11append_utf8EP13StringBuilder3i64(ptr %addr.heap, i64 %call24)
+  call void @_ZN4json11append_utf8ER13StringBuilder3i64(ptr %addr.heap, i64 %call24)
   br label %if.end23
 
 if.else22:                                        ; preds = %if.then17
@@ -4459,7 +4459,7 @@ if.end21:                                         ; preds = %if.end17
   ret i64 %add24
 }
 
-define linkonce_odr void @_ZN4json11append_utf8EP13StringBuilder3i64(ptr %0, i64 %1) {
+define linkonce_odr void @_ZN4json11append_utf8ER13StringBuilder3i64(ptr %0, i64 %1) {
 entry:
   %lt = icmp slt i64 %1, 128
   br i1 %lt, label %if.then, label %if.end
@@ -68686,7 +68686,7 @@ if.end16:                                         ; preds = %if.then11
   br label %if.end12
 }
 
-define linkonce_odr void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %0, ptr %1) {
 entry:
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -68746,7 +68746,7 @@ if.then:                                          ; preds = %entry
   call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result8, ptr %frame, ptr @.str.217)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %sret.result8)
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %5)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %5)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -69387,7 +69387,7 @@ if.then50:                                        ; preds = %while.exit20
 if.end51:                                         ; preds = %if.then50, %while.exit20
   %addr.heap = load ptr, ptr %sb, align 8
   call void @_ZN7symbols15selection_chainEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i64 %call47)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   store i1 false, ptr %first, align 1
   br label %if.end16
 }
@@ -70191,7 +70191,7 @@ if.then26:                                        ; preds = %if.then22
 
 if.end27:                                         ; preds = %if.then26, %if.then22
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   store i1 false, ptr %first, align 1
   br label %if.end23
 }
@@ -70370,7 +70370,7 @@ entry:
   store { ptr } { ptr @.sconst.259 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title2, ptr %arg.tmp)
   %addr.heap = load ptr, ptr %title, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %3)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %3)
   %struct.region3 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region3)
   %text = alloca ptr, align 8
@@ -70380,7 +70380,7 @@ entry:
   store { ptr } { ptr @.sconst.260 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %text4, ptr %arg.tmp5)
   %addr.heap6 = load ptr, ptr %text, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap6, ptr %3)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap6, ptr %3)
   %text7 = load ptr, ptr %text, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %text7, i8 10)
   %sret.result = alloca { ptr }, align 8
@@ -70473,17 +70473,17 @@ if.end15:                                         ; preds = %if.end7
   store ptr %struct.region20, ptr %text, align 1
   %addr.heap = load ptr, ptr %text, align 8
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %arg.tmp10, ptr %frame, ptr %2, i64 %call, i64 %call4)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %arg.tmp10)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %arg.tmp10)
   %text21 = load ptr, ptr %text, align 8
   store { ptr } { ptr @.sconst.237 }, ptr %arg.tmp22, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %text21, ptr %arg.tmp22)
   %addr.heap23 = load ptr, ptr %text, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap23, ptr %arg.tmp)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap23, ptr %arg.tmp)
   %text24 = load ptr, ptr %text, align 8
   store { ptr } { ptr @.sconst.238 }, ptr %arg.tmp25, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %text24, ptr %arg.tmp25)
   %addr.heap26 = load ptr, ptr %text, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap26, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap26, ptr %sret.result)
   %struct.region27 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page19, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region27)
   store ptr %struct.region27, ptr %title, align 1
@@ -70491,7 +70491,7 @@ if.end15:                                         ; preds = %if.end7
   store { ptr } { ptr @.sconst.239 }, ptr %arg.tmp29, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title28, ptr %arg.tmp29)
   %addr.heap30 = load ptr, ptr %title, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap30, ptr %arg.tmp)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap30, ptr %arg.tmp)
   %title31 = load ptr, ptr %title, align 8
   store { ptr } { ptr @.sconst.240 }, ptr %arg.tmp32, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title31, ptr %arg.tmp32)
@@ -70743,13 +70743,13 @@ if.end21:                                         ; preds = %if.end13
   store ptr %struct.region26, ptr %text, align 1
   %addr.heap = load ptr, ptr %text, align 8
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %arg.tmp16, ptr %frame, ptr %2, i64 %call, i64 %call4)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %arg.tmp16)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %arg.tmp16)
   %addr.heap27 = load ptr, ptr %text, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap27, ptr %arg.tmp)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap27, ptr %arg.tmp)
   %text28 = load ptr, ptr %text, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %text28, i8 40)
   %addr.heap29 = load ptr, ptr %text, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap29, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap29, ptr %sret.result)
   %text30 = load ptr, ptr %text, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %text30, i8 41)
   %struct.region31 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page25, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
@@ -70759,7 +70759,7 @@ if.end21:                                         ; preds = %if.end13
   store { ptr } { ptr @.sconst.241 }, ptr %arg.tmp33, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title32, ptr %arg.tmp33)
   %addr.heap34 = load ptr, ptr %title, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap34, ptr %arg.tmp)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap34, ptr %arg.tmp)
   %title37 = load ptr, ptr %title, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %title37)
   %sub = sub i64 %call1, %call
@@ -70906,7 +70906,7 @@ if.then38:                                        ; preds = %while.exit26
   store { ptr } { ptr @.sconst.242 }, ptr %arg.tmp45, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title44, ptr %arg.tmp45)
   %addr.heap = load ptr, ptr %title, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %arg.tmp17)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %arg.tmp17)
   %first46 = load i1, ptr %first, align 1
   %eq47 = icmp eq i1 %first46, false
   br i1 %eq47, label %if.then48, label %if.end49
@@ -70930,7 +70930,7 @@ if.end49:                                         ; preds = %if.then48, %if.then
   %sub = sub i64 %call4, %call2
   %sub56 = sub i64 %add, %call2
   call void @_ZN7symbols16edit_code_actionEPN4scaly6memory4PageE6String6Stringbmmmm6String(ptr noalias sret({ ptr }) %sret.result52, ptr %frame, ptr %3, ptr %sret.result53, i1 %first55, i64 %4, i64 %sub, i64 %4, i64 %sub56, ptr %arg.tmp17)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap51, ptr %sret.result52)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap51, ptr %sret.result52)
   store i1 false, ptr %first, align 1
   br label %if.end39
 }
@@ -71242,7 +71242,7 @@ if.end:                                           ; preds = %if.then, %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb31, ptr %sret.result32)
   %addr.heap = load ptr, ptr %sb, align 8
   call void @_ZN7symbols15position_objectEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result33, ptr %frame, i64 %5, i64 %6)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result33)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result33)
   %sb34 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb34, i8 44)
   %sb35 = load ptr, ptr %sb, align 8
@@ -71250,7 +71250,7 @@ if.end:                                           ; preds = %if.then, %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb35, ptr %sret.result36)
   %addr.heap37 = load ptr, ptr %sb, align 8
   call void @_ZN7symbols15position_objectEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result38, ptr %frame, i64 %7, i64 %8)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap37, ptr %sret.result38)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap37, ptr %sret.result38)
   %sb39 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb39, i8 125)
   %sb40 = load ptr, ptr %sb, align 8
@@ -71522,7 +71522,7 @@ while.exit:                                       ; preds = %while.cond
 if.then5:                                         ; preds = %while.body
   %addr.heap = load ptr, ptr %sb, align 8
   %d7 = load i64, ptr %d, align 8
-  call void @_ZN7symbols20append_candidates_atEP13StringBuilderPm6String6Stringm(ptr %addr.heap, ptr %count, ptr %2, ptr %3, i64 %d7)
+  call void @_ZN7symbols20append_candidates_atER13StringBuilderPm6String6Stringm(ptr %addr.heap, ptr %count, ptr %2, ptr %3, i64 %d7)
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %while.body
@@ -71573,7 +71573,7 @@ if.end8:                                          ; preds = %while.body
   br label %while.cond
 }
 
-define linkonce_odr void @_ZN7symbols20append_candidates_atEP13StringBuilderPm6String6Stringm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN7symbols20append_candidates_atER13StringBuilderPm6String6Stringm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
 entry:
   %sret.result38 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -71682,7 +71682,7 @@ if.end37:                                         ; preds = %if.end42, %if.then3
   br label %if.end33
 
 if.then41:                                        ; preds = %if.then36
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %0, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %0, ptr %sret.result)
   call void @_ZN13StringBuilder6appendEc(ptr %0, i8 10)
   %deref43 = load i64, ptr %1, align 8
   %add44 = add i64 %deref43, 1
@@ -74075,7 +74075,7 @@ if.then56:                                        ; preds = %while.exit43
   %addr.heap = load ptr, ptr %sb, align 8
   %ne59 = load i64, ptr %ne, align 8
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result58, ptr %frame, ptr %2, i64 %call40, i64 %ne59)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result58)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result58)
   %sb60 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb60, i8 10)
   br label %if.end57
@@ -74792,9 +74792,9 @@ if.end:                                           ; preds = %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %2)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %2)
   %addr.heap2 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap2, ptr %3)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap2, ptr %3)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 10)
   %sb4 = load ptr, ptr %sb, align 8
@@ -74883,7 +74883,7 @@ if.end14:                                         ; preds = %while.body6
 
 if.then19:                                        ; preds = %while.exit7
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb21, i8 10)
   br label %if.end20
@@ -81937,7 +81937,7 @@ if.end16:                                         ; preds = %if.then15, %if.then
   store %_Z10PartSyntax %grp.deref.val, ptr %deref.tmp10, align 1
   call void @_ZN7symbols16part_detail_textEPN4scaly6memory4PageE6String10PartSyntax(ptr noalias sret({ ptr }) %sret.result19, ptr %frame, ptr %2, ptr %deref.tmp10)
   call void @_ZN7symbols22completion_item_detailEPN4scaly6memory4PageE6String3i646String(ptr noalias sret({ ptr }) %sret.result18, ptr %frame, ptr %sret.result, i64 5, ptr %sret.result19)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result18)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result18)
   store i1 false, ptr %first, align 1
   br label %if.end13
 }
@@ -81985,11 +81985,11 @@ if.end6:                                          ; preds = %if.end
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb9, i8 44)
   %addr.heap10 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap10, ptr %sret.result1)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap10, ptr %sret.result1)
   %sb12 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sb12)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
@@ -82371,9 +82371,9 @@ if.then36:                                        ; preds = %if.then32
   call void @_ZN13StringBuilder6appendEc(ptr %sb38, i8 44)
   %addr.heap = load ptr, ptr %sb, align 8
   call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result39, ptr %frame, ptr @.str.323)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result39)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result39)
   %addr.heap40 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap40, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap40, ptr %sret.result)
   br label %if.end37
 
 if.end37:                                         ; preds = %if.then36, %if.then32
@@ -82525,7 +82525,7 @@ if.end:                                           ; preds = %entry
   %vb4 = load ptr, ptr %vb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %vb4, i8 10)
   %addr.heap = load ptr, ptr %vb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   %vb5 = load ptr, ptr %vb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %vb5, i8 10)
   %vb6 = load ptr, ptr %vb, align 8
@@ -97243,7 +97243,7 @@ if.then12:                                        ; preds = %if.then8
   store { ptr } zeroinitializer, ptr %arg.tmp19, align 1
   call void @_ZN7symbols7ws_itemEPN4scaly6memory4PageE6String6String6String3i64mm6String6String6String(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %2, ptr %3, ptr %sret.result, i64 8, i64 %call15, i64 %add, ptr %sret.result16, ptr %arg.tmp, ptr %arg.tmp19)
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result17)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result17)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.then8
@@ -101082,7 +101082,7 @@ if.then36:                                        ; preds = %while.body29
   %addr.heap = load ptr, ptr %sb, align 8
   %at41 = load i64, ptr %at, align 8
   call void @_ZN7symbols12call_item_atEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result40, ptr %frame, ptr %2, ptr %3, ptr %sret.result26, i64 %at41)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result40)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result40)
   %sb42 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb42, i8 93)
   %sb44 = load ptr, ptr %sb, align 8
@@ -101183,7 +101183,7 @@ if.then84:                                        ; preds = %while.body78
   %addr.heap89 = load ptr, ptr %sb, align 8
   %dat91 = load i64, ptr %e, align 8
   call void @_ZN7symbols12call_item_atEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result90, ptr %frame, ptr %sret.result74, ptr %sret.result64, ptr %sret.result75, i64 %dat91)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap89, ptr %sret.result90)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap89, ptr %sret.result90)
   %sb92 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb92, i8 93)
   %sb94 = load ptr, ptr %sb, align 8
@@ -101502,7 +101502,7 @@ if.end52:                                         ; preds = %if.then51, %if.then
   br label %if.end48
 }
 
-define linkonce_odr void @_ZN7symbols19append_incoming_forEP13StringBuilderPb6String6String6String(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN7symbols19append_incoming_forER13StringBuilderPb6String6String6String(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %e = alloca i64, align 8
   %sret.result17 = alloca { ptr }, align 8
@@ -101568,12 +101568,12 @@ if.end13:                                         ; preds = %if.then12, %if.then
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %sret.result14)
   %at16 = load i64, ptr %at, align 8
   call void @_ZN7symbols12call_item_atEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result15, ptr %frame, ptr %2, ptr %3, ptr %sret.result, i64 %at16)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %0, ptr %sret.result15)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %0, ptr %sret.result15)
   call void @_ZN13StringBuilder6appendEc(ptr %0, i8 44)
   call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result17, ptr %frame, ptr @.str.430)
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %sret.result17)
   call void @_ZN13StringBuilder6appendEc(ptr %0, i8 91)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %0, ptr %sret.result7)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %0, ptr %sret.result7)
   call void @_ZN13StringBuilder6appendEc(ptr %0, i8 93)
   call void @_ZN13StringBuilder6appendEc(ptr %0, i8 125)
   store i1 false, ptr %1, align 1
@@ -101630,7 +101630,7 @@ entry:
   %first = alloca i1, align 1
   store i1 true, ptr %first, align 1
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols19append_incoming_forEP13StringBuilderPb6String6String6String(ptr %addr.heap, ptr %first, ptr %2, ptr %3, ptr %4)
+  call void @_ZN7symbols19append_incoming_forER13StringBuilderPb6String6String6String(ptr %addr.heap, ptr %first, ptr %2, ptr %3, ptr %4)
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7symbols11uri_to_pathEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %3)
   %binding.load = load { ptr }, ptr %5, align 8
@@ -101718,7 +101718,7 @@ if.then26:                                        ; preds = %if.then23
   call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %sret.result15)
   call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sret.result15)
   %addr.heap30 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols19append_incoming_forEP13StringBuilderPb6String6String6String(ptr %addr.heap30, ptr %first, ptr %sret.result28, ptr %sret.result29, ptr %4)
+  call void @_ZN7symbols19append_incoming_forER13StringBuilderPb6String6String6String(ptr %addr.heap30, ptr %first, ptr %sret.result28, ptr %sret.result29, ptr %4)
   br label %if.end27
 
 if.end27:                                         ; preds = %if.then26, %if.then23
@@ -102187,9 +102187,9 @@ if.end79:                                         ; preds = %if.end83, %if.end70
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region97)
   store ptr %struct.region97, ptr %acc, align 1
   %addr.heap98 = load ptr, ptr %acc, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap98, ptr %seen)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap98, ptr %seen)
   %addr.heap99 = load ptr, ptr %acc, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap99, ptr %sret.result49)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap99, ptr %sret.result49)
   %acc100 = load ptr, ptr %acc, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %acc100, i8 10)
   %acc102 = load ptr, ptr %acc, align 8
@@ -102210,7 +102210,7 @@ if.end83:                                         ; preds = %if.then82, %if.then
   call void @_ZN7symbols3keyEPN4scaly6memory4PageEP10const_char(ptr noalias sret({ ptr }) %sret.result87, ptr %frame, ptr @.str.432)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb86, ptr %sret.result87)
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result75)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result75)
   %sb88 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb88, i8 44)
   %sb89 = load ptr, ptr %sb, align 8
@@ -102220,7 +102220,7 @@ if.end83:                                         ; preds = %if.then82, %if.then
   call void @_ZN13StringBuilder6appendEc(ptr %sb91, i8 91)
   %addr.heap92 = load ptr, ptr %sb, align 8
   call void @_ZN7symbols16call_site_rangesEPN4scaly6memory4PageE6String6Stringmm(ptr noalias sret({ ptr }) %sret.result93, ptr %frame, ptr %2, ptr %sret.result49, i64 %call7, i64 %call8)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap92, ptr %sret.result93)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap92, ptr %sret.result93)
   %sb94 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb94, i8 93)
   %sb95 = load ptr, ptr %sb, align 8
@@ -128370,7 +128370,7 @@ if.end58:                                         ; preds = %if.then57, %if.then
   %ka61 = load i64, ptr %ka, align 8
   store { ptr } zeroinitializer, ptr %arg.tmp62, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6StringP10const_char6String(ptr noalias sret({ ptr }) %sret.result60, ptr %frame, ptr %5, i64 %ka61, i64 8, ptr %sret.result49, ptr @.scaly.empty.cstr, ptr %arg.tmp62)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result60)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result60)
   store i1 false, ptr %first, align 1
   br label %if.end54
 }
@@ -129935,7 +129935,7 @@ if.end17:                                         ; preds = %if.end20, %if.then1
 if.then19:                                        ; preds = %if.then16
   %addr.heap = load ptr, ptr %sb, align 8
   %field.inplace = getelementptr inbounds nuw %_Z15PlannedFunction, ptr %deref.tmp10, i32 0, i32 10
-  call void @_ZN9storelens12collect_implEP13StringBuilder4Plan6String21PlannedImplementation(ptr %addr.heap, ptr %2, ptr %sret.result, ptr %field.inplace)
+  call void @_ZN9storelens12collect_implER13StringBuilder4Plan6String21PlannedImplementation(ptr %addr.heap, ptr %2, ptr %sret.result, ptr %field.inplace)
   br label %if.end20
 
 if.end20:                                         ; preds = %if.then19, %if.then16
@@ -130137,7 +130137,7 @@ if.then28:                                        ; preds = %if.then24
 
 if.end29:                                         ; preds = %if.then28, %if.then24
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result21)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result21)
   store i1 false, ptr %first, align 1
   br label %if.end25
 }
@@ -130379,7 +130379,7 @@ if.end31:                                         ; preds = %if.then30, %if.end2
   br label %if.end18
 }
 
-define linkonce_odr void @_ZN9storelens12collect_implEP13StringBuilder4Plan6String21PlannedImplementation(ptr %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9storelens12collect_implER13StringBuilder4Plan6String21PlannedImplementation(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %arg.tmp = alloca %_Z13PlannedAction, align 8
   %tag.ptr = getelementptr inbounds nuw %_Z21PlannedImplementation, ptr %3, i32 0, i32 0
@@ -130402,7 +130402,7 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z21PlannedImplementation, ptr %3, i32 0, i32 1
   %variant.val = load %_Z13PlannedAction, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN9storelens14collect_actionEP13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp)
+  call void @_ZN9storelens14collect_actionER13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
@@ -130421,7 +130421,7 @@ choose.when7:                                     ; preds = %entry
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN9storelens14collect_actionEP13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9storelens14collect_actionER13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %sret.result8 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -130445,10 +130445,10 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %if.end2, %entry
   %field.inplace18 = getelementptr inbounds nuw %_Z13PlannedAction, ptr %3, i32 0, i32 1
   %deref.recv19 = load ptr, ptr %field.inplace18, align 8
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %deref.recv19)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %deref.recv19)
   %field.inplace20 = getelementptr inbounds nuw %_Z13PlannedAction, ptr %3, i32 0, i32 2
   %deref.recv21 = load ptr, ptr %field.inplace20, align 8
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %deref.recv21)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %deref.recv21)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -130478,7 +130478,7 @@ if.then12:                                        ; preds = %if.then6
   %field.val = load i64, ptr %field.inplace15, align 8
   %field.inplace16 = getelementptr inbounds nuw %_Z13PlannedAction, ptr %3, i32 0, i32 3
   %field.inplace17 = getelementptr inbounds nuw %_Z11PlannedType, ptr %field.inplace16, i32 0, i32 1
-  call void @_ZN9storelens9emit_siteEP13StringBuilderm6String6String6String(ptr %0, i64 %field.val, ptr %sret.result, ptr %field.inplace17, ptr %sret.result8)
+  call void @_ZN9storelens9emit_siteER13StringBuilderm6String6String6String(ptr %0, i64 %field.val, ptr %sret.result, ptr %field.inplace17, ptr %sret.result8)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.then6
@@ -130697,7 +130697,7 @@ if.end35:                                         ; preds = %if.then30
   ret void
 }
 
-define linkonce_odr void @_ZN9storelens9emit_siteEP13StringBuilderm6String6String6String(ptr %0, i64 %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN9storelens9emit_siteER13StringBuilderm6String6String6String(ptr %0, i64 %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -130717,7 +130717,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %deref.tmp5 = alloca %_Z14PlannedOperand, align 8
   %i = alloca i64, align 8
@@ -130752,7 +130752,7 @@ while.exit:                                       ; preds = %while.cond
 if.then3:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp5, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %deref.tmp5, i32 0, i32 1
-  call void @_ZN9storelens12collect_exprEP13StringBuilder4Plan6String17PlannedExpression(ptr %0, ptr %1, ptr %2, ptr %field.inplace)
+  call void @_ZN9storelens12collect_exprER13StringBuilder4Plan6String17PlannedExpression(ptr %0, ptr %1, ptr %2, ptr %field.inplace)
   br label %if.end4
 
 if.end4:                                          ; preds = %if.then3, %while.body
@@ -132491,7 +132491,7 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr void @_ZN9storelens17collect_statementEP13StringBuilder4Plan6String16PlannedStatement(ptr %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9storelens17collect_statementER13StringBuilder4Plan6String16PlannedStatement(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %arg.tmp = alloca %_Z13PlannedAction, align 8
   %tag.ptr = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %3, i32 0, i32 0
@@ -132516,35 +132516,35 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %3, i32 0, i32 1
   %variant.val = load %_Z13PlannedAction, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN9storelens14collect_actionEP13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp)
+  call void @_ZN9storelens14collect_actionER13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
   %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %3, i32 0, i32 1
   %variant.val3 = load %_Z14PlannedBinding, ptr %"variant.c_data().ptr2", align 8
   %operation = extractvalue %_Z14PlannedBinding %variant.val3, 3
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %operation)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %operation)
   br label %choose.end
 
 choose.when4:                                     ; preds = %entry
   %"variant.c_data().ptr5" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %3, i32 0, i32 1
   %variant.val6 = load %_Z12PlannedBreak, ptr %"variant.c_data().ptr5", align 8
   %result = extractvalue %_Z12PlannedBreak %variant.val6, 1
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %result)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %result)
   br label %choose.end
 
 choose.when7:                                     ; preds = %entry
   %"variant.c_data().ptr8" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %3, i32 0, i32 1
   %variant.val9 = load %_Z13PlannedReturn, ptr %"variant.c_data().ptr8", align 8
   %result10 = extractvalue %_Z13PlannedReturn %variant.val9, 1
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %result10)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %result10)
   br label %choose.end
 
 choose.when11:                                    ; preds = %entry
   %"variant.c_data().ptr12" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %3, i32 0, i32 1
   %variant.val13 = load %_Z12PlannedThrow, ptr %"variant.c_data().ptr12", align 8
   %result14 = extractvalue %_Z12PlannedThrow %variant.val13, 1
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %result14)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %result14)
   br label %choose.end
 
 choose.when15:                                    ; preds = %entry
@@ -132553,20 +132553,20 @@ choose.when15:                                    ; preds = %entry
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %ne = icmp ne ptr %3, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN9storelens17collect_statementEP13StringBuilder4Plan6String16PlannedStatement(ptr %0, ptr %1, ptr %2, ptr %3)
+  call void @_ZN9storelens17collect_statementER13StringBuilder4Plan6String16PlannedStatement(ptr %0, ptr %1, ptr %2, ptr %3)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN9storelens12collect_exprEP13StringBuilder4Plan6String17PlannedExpression(ptr %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9storelens12collect_exprER13StringBuilder4Plan6String17PlannedExpression(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %arg.tmp115 = alloca %_Z13PlannedAction, align 8
   %arg.tmp110 = alloca %_Z13PlannedAction, align 8
@@ -132633,7 +132633,7 @@ choose.when10:                                    ; preds = %entry
   %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val12 = load %_Z11PlannedCall, ptr %"variant.c_data().ptr11", align 8
   %args = extractvalue %_Z11PlannedCall %variant.val12, 7
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %args)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %args)
   br label %choose.end
 
 choose.when13:                                    ; preds = %entry
@@ -132672,7 +132672,7 @@ if.then20:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp22, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z16PlannedComponent, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds nuw %_Z16PlannedComponent, ptr %deref.tmp22, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %deref.recv)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %deref.recv)
   br label %if.end21
 
 if.end21:                                         ; preds = %if.then20, %while.body
@@ -132719,7 +132719,7 @@ while.exit36:                                     ; preds = %while.cond34
   br label %if.end32
 
 if.then44:                                        ; preds = %while.body35
-  call void @_ZN9storelens17collect_statementEP13StringBuilder4Plan6String16PlannedStatement(ptr %0, ptr %1, ptr %2, ptr %call42)
+  call void @_ZN9storelens17collect_statementER13StringBuilder4Plan6String16PlannedStatement(ptr %0, ptr %1, ptr %2, ptr %call42)
   br label %if.end45
 
 if.end45:                                         ; preds = %if.then44, %while.body35
@@ -132732,18 +132732,18 @@ choose.when48:                                    ; preds = %entry
   %"variant.c_data().ptr49" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val50 = load %_Z9PlannedIf, ptr %"variant.c_data().ptr49", align 8
   %condition = extractvalue %_Z9PlannedIf %variant.val50, 1
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %condition)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %condition)
   %consequent = extractvalue %_Z9PlannedIf %variant.val50, 3
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %consequent)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %consequent)
   %alternative = extractvalue %_Z9PlannedIf %variant.val50, 4
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative)
   br label %choose.end
 
 choose.when51:                                    ; preds = %entry
   %"variant.c_data().ptr52" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val53 = load %_Z12PlannedMatch, ptr %"variant.c_data().ptr52", align 8
   %condition54 = extractvalue %_Z12PlannedMatch %variant.val53, 1
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %condition54)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %condition54)
   %branches = extractvalue %_Z12PlannedMatch %variant.val53, 2
   %ne55 = icmp ne ptr %branches, null
   br i1 %ne55, label %if.then56, label %if.end57
@@ -132756,7 +132756,7 @@ if.then56:                                        ; preds = %choose.when51
 
 if.end57:                                         ; preds = %while.exit61, %choose.when51
   %alternative76 = extractvalue %_Z12PlannedMatch %variant.val53, 3
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative76)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative76)
   br label %choose.end
 
 while.cond59:                                     ; preds = %if.end70, %if.then56
@@ -132779,7 +132779,7 @@ if.then69:                                        ; preds = %while.body60
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp71, ptr align 1 %call67, i64 ptrtoint (ptr getelementptr (%_Z13PlannedBranch, ptr null, i32 1) to i64), i1 false)
   %field.inplace72 = getelementptr inbounds nuw %_Z13PlannedBranch, ptr %deref.tmp71, i32 0, i32 2
   %deref.recv73 = load ptr, ptr %field.inplace72, align 8
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %deref.recv73)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %deref.recv73)
   br label %if.end70
 
 if.end70:                                         ; preds = %if.then69, %while.body60
@@ -132792,7 +132792,7 @@ choose.when77:                                    ; preds = %entry
   %"variant.c_data().ptr78" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val79 = load %_Z13PlannedChoose, ptr %"variant.c_data().ptr78", align 8
   %condition80 = extractvalue %_Z13PlannedChoose %variant.val79, 1
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %condition80)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %condition80)
   %cases = extractvalue %_Z13PlannedChoose %variant.val79, 2
   %ne81 = icmp ne ptr %cases, null
   br i1 %ne81, label %if.then82, label %if.end83
@@ -132805,7 +132805,7 @@ if.then82:                                        ; preds = %choose.when77
 
 if.end83:                                         ; preds = %while.exit87, %choose.when77
   %alternative102 = extractvalue %_Z13PlannedChoose %variant.val79, 3
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative102)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative102)
   br label %choose.end
 
 while.cond85:                                     ; preds = %if.end96, %if.then82
@@ -132828,7 +132828,7 @@ if.then95:                                        ; preds = %while.body86
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp97, ptr align 1 %call93, i64 ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64), i1 false)
   %field.inplace98 = getelementptr inbounds nuw %_Z11PlannedWhen, ptr %deref.tmp97, i32 0, i32 4
   %deref.recv99 = load ptr, ptr %field.inplace98, align 8
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %deref.recv99)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %deref.recv99)
   br label %if.end96
 
 if.end96:                                         ; preds = %if.then95, %while.body86
@@ -132841,10 +132841,10 @@ choose.when103:                                   ; preds = %entry
   %"variant.c_data().ptr104" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val105 = load %_Z10PlannedFor, ptr %"variant.c_data().ptr104", align 8
   %expr = extractvalue %_Z10PlannedFor %variant.val105, 2
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %expr)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %expr)
   %body = extractvalue %_Z10PlannedFor %variant.val105, 3
   store %_Z13PlannedAction %body, ptr %arg.tmp, align 1
-  call void @_ZN9storelens14collect_actionEP13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp)
+  call void @_ZN9storelens14collect_actionER13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp)
   br label %choose.end
 
 choose.when106:                                   ; preds = %entry
@@ -132852,10 +132852,10 @@ choose.when106:                                   ; preds = %entry
   %variant.val108 = load %_Z12PlannedWhile, ptr %"variant.c_data().ptr107", align 8
   %cond = extractvalue %_Z12PlannedWhile %variant.val108, 1
   %operation = extractvalue %_Z14PlannedBinding %cond, 3
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %operation)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %operation)
   %body109 = extractvalue %_Z12PlannedWhile %variant.val108, 2
   store %_Z13PlannedAction %body109, ptr %arg.tmp110, align 1
-  call void @_ZN9storelens14collect_actionEP13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp110)
+  call void @_ZN9storelens14collect_actionER13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp110)
   br label %choose.end
 
 choose.when111:                                   ; preds = %entry
@@ -132863,7 +132863,7 @@ choose.when111:                                   ; preds = %entry
   %variant.val113 = load %_Z13PlannedRepeat, ptr %"variant.c_data().ptr112", align 8
   %body114 = extractvalue %_Z13PlannedRepeat %variant.val113, 1
   store %_Z13PlannedAction %body114, ptr %arg.tmp115, align 1
-  call void @_ZN9storelens14collect_actionEP13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp115)
+  call void @_ZN9storelens14collect_actionER13StringBuilder4Plan6String13PlannedAction(ptr %0, ptr %1, ptr %2, ptr %arg.tmp115)
   br label %choose.end
 
 choose.when116:                                   ; preds = %entry
@@ -132876,7 +132876,7 @@ choose.when119:                                   ; preds = %entry
   %variant.val121 = load %_Z10PlannedTry, ptr %"variant.c_data().ptr120", align 8
   %cond122 = extractvalue %_Z10PlannedTry %variant.val121, 1
   %operation123 = extractvalue %_Z14PlannedBinding %cond122, 3
-  call void @_ZN9storelens20collect_operands_optEP13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %operation123)
+  call void @_ZN9storelens20collect_operands_optER13StringBuilder4Plan6String6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1, ptr %2, ptr %operation123)
   %catches = extractvalue %_Z10PlannedTry %variant.val121, 2
   %ne124 = icmp ne ptr %catches, null
   br i1 %ne124, label %if.then125, label %if.end126
@@ -132889,7 +132889,7 @@ if.then125:                                       ; preds = %choose.when119
 
 if.end126:                                        ; preds = %while.exit130, %choose.when119
   %alternative144 = extractvalue %_Z10PlannedTry %variant.val121, 3
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative144)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %alternative144)
   br label %choose.end
 
 while.cond128:                                    ; preds = %if.end139, %if.then125
@@ -132912,7 +132912,7 @@ if.then138:                                       ; preds = %while.body129
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp97, ptr align 1 %call136, i64 ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64), i1 false)
   %field.inplace140 = getelementptr inbounds nuw %_Z11PlannedWhen, ptr %deref.tmp97, i32 0, i32 4
   %deref.recv141 = load ptr, ptr %field.inplace140, align 8
-  call void @_ZN9storelens21collect_statement_optEP13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %deref.recv141)
+  call void @_ZN9storelens21collect_statement_optER13StringBuilder4Plan6String6OptionIR16PlannedStatementE(ptr %0, ptr %1, ptr %2, ptr %deref.recv141)
   br label %if.end139
 
 if.end139:                                        ; preds = %if.then138, %while.body129
@@ -132935,25 +132935,25 @@ choose.when151:                                   ; preds = %entry
   %"variant.c_data().ptr152" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val153 = load %_Z9PlannedIs, ptr %"variant.c_data().ptr152", align 8
   %value = extractvalue %_Z9PlannedIs %variant.val153, 4
-  call void @_ZN9storelens19collect_operand_optEP13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %value)
+  call void @_ZN9storelens19collect_operand_optER13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %value)
   br label %choose.end
 
 choose.when154:                                   ; preds = %entry
   %"variant.c_data().ptr155" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val156 = load %_Z9PlannedAs, ptr %"variant.c_data().ptr155", align 8
   %value157 = extractvalue %_Z9PlannedAs %variant.val156, 2
-  call void @_ZN9storelens19collect_operand_optEP13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %value157)
+  call void @_ZN9storelens19collect_operand_optER13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %value157)
   br label %choose.end
 
 choose.when158:                                   ; preds = %entry
   %"variant.c_data().ptr159" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %3, i32 0, i32 1
   %variant.val160 = load %_Z26PlannedVariantConstruction, ptr %"variant.c_data().ptr159", align 8
   %value161 = extractvalue %_Z26PlannedVariantConstruction %variant.val160, 4
-  call void @_ZN9storelens19collect_operand_optEP13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %value161)
+  call void @_ZN9storelens19collect_operand_optER13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %value161)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN9storelens19collect_operand_optEP13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9storelens19collect_operand_optER13StringBuilder4Plan6String6OptionIR14PlannedOperandE(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %deref.tmp = alloca %_Z14PlannedOperand, align 8
   %ne = icmp ne ptr %3, null
@@ -132962,7 +132962,7 @@ entry:
 if.then:                                          ; preds = %entry
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %deref.tmp, i32 0, i32 1
-  call void @_ZN9storelens12collect_exprEP13StringBuilder4Plan6String17PlannedExpression(ptr %0, ptr %1, ptr %2, ptr %field.inplace)
+  call void @_ZN9storelens12collect_exprER13StringBuilder4Plan6String17PlannedExpression(ptr %0, ptr %1, ptr %2, ptr %field.inplace)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -133724,7 +133724,7 @@ if.then31:                                        ; preds = %choose.when24
   %addr.heap33 = load ptr, ptr %sb, align 8
   %file = extractvalue %_Z13ProgramSyntax %throws.success.val, 2
   store %_Z10FileSyntax %file, ptr %arg.tmp34, align 1
-  call void @_ZN10placehints12collect_planEP13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap33, ptr %call30, ptr %arg.tmp34, i1 false)
+  call void @_ZN10placehints12collect_planER13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap33, ptr %call30, ptr %arg.tmp34, i1 false)
   br label %if.end32
 
 if.end32:                                         ; preds = %if.then31, %choose.when24
@@ -133752,7 +133752,7 @@ if.then45:                                        ; preds = %if.then37
   %addr.heap47 = load ptr, ptr %sb, align 8
   %file48 = extractvalue %_Z13ProgramSyntax %throws.success.val, 2
   store %_Z10FileSyntax %file48, ptr %arg.tmp49, align 1
-  call void @_ZN10placehints12collect_planEP13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap47, ptr %call43, ptr %arg.tmp49, i1 true)
+  call void @_ZN10placehints12collect_planER13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap47, ptr %call43, ptr %arg.tmp49, i1 true)
   br label %if.end46
 
 if.end46:                                         ; preds = %if.then45, %if.then37
@@ -134075,7 +134075,7 @@ if.end102:                                        ; preds = %if.then101, %if.the
   %addr.heap = load ptr, ptr %sb, align 8
   %off105 = load i64, ptr %off, align 8
   call void @_ZN7symbols22inlay_note_hint_objectEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result104, ptr %frame, ptr %3, i64 %off105, ptr %sret.result)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result104)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result104)
   store i1 false, ptr %first, align 1
   br label %if.end96
 }
@@ -134250,7 +134250,7 @@ if.then13:                                        ; preds = %while.exit
 
 if.end14:                                         ; preds = %if.then13, %while.exit
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result1)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result1)
   %sb16 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb16, i8 93)
   %sb18 = load ptr, ptr %sb, align 8
@@ -134261,7 +134261,7 @@ if.end14:                                         ; preds = %if.then13, %while.e
   ret void
 }
 
-define linkonce_odr void @_ZN10placehints12collect_planEP13StringBuilder4Plan10FileSyntaxb(ptr %0, ptr %1, ptr %2, i1 %3) {
+define linkonce_odr void @_ZN10placehints12collect_planER13StringBuilder4Plan10FileSyntaxb(ptr %0, ptr %1, ptr %2, i1 %3) {
 entry:
   %deref.tmp76 = alloca %_Z13PlannedGlobal, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -134324,7 +134324,7 @@ if.then12:                                        ; preds = %if.then7
   %page_parameter = extractvalue %_Z15PlannedFunction %load.struct14, 5
   %ne15 = icmp ne ptr %page_parameter, null
   %field.inplace16 = getelementptr inbounds nuw %_Z15PlannedFunction, ptr %deref.tmp9, i32 0, i32 10
-  call void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne15, ptr %field.inplace16)
+  call void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne15, ptr %field.inplace16)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.then7
@@ -134360,7 +134360,7 @@ while.exit26:                                     ; preds = %while.cond24
   br label %if.end21
 
 if.then34:                                        ; preds = %while.body25
-  call void @_ZN10placehints17collect_structureEP13StringBuilder16PlannedStructure10FileSyntax(ptr %0, ptr %call32, ptr %2)
+  call void @_ZN10placehints17collect_structureER13StringBuilder16PlannedStructure10FileSyntax(ptr %0, ptr %call32, ptr %2)
   br label %if.end35
 
 if.end35:                                         ; preds = %if.then34, %while.body25
@@ -134399,7 +134399,7 @@ while.exit46:                                     ; preds = %while.cond44
   br label %if.end41
 
 if.then54:                                        ; preds = %while.body45
-  call void @_ZN10placehints13collect_unionEP13StringBuilder12PlannedUnion10FileSyntax(ptr %0, ptr %call52, ptr %2)
+  call void @_ZN10placehints13collect_unionER13StringBuilder12PlannedUnion10FileSyntax(ptr %0, ptr %call52, ptr %2)
   br label %if.end55
 
 if.end55:                                         ; preds = %if.then54, %while.body45
@@ -134460,7 +134460,7 @@ if.end80:                                         ; preds = %if.end86, %if.then7
 if.then85:                                        ; preds = %if.then79
   %field.inplace87 = getelementptr inbounds nuw %_Z13PlannedGlobal, ptr %deref.tmp76, i32 0, i32 4
   %deref.recv = load ptr, ptr %field.inplace87, align 8
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 false, ptr %deref.recv)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 false, ptr %deref.recv)
   br label %if.end86
 
 if.end86:                                         ; preds = %if.then85, %if.then79
@@ -134503,7 +134503,7 @@ while.exit100:                                    ; preds = %while.cond98
   br label %if.end95
 
 if.then108:                                       ; preds = %while.body99
-  call void @_ZN10placehints17collect_statementEP13StringBuilderb16PlannedStatement(ptr %0, i1 false, ptr %call106)
+  call void @_ZN10placehints17collect_statementER13StringBuilderb16PlannedStatement(ptr %0, i1 false, ptr %call106)
   br label %if.end109
 
 if.end109:                                        ; preds = %if.then108, %while.body99
@@ -134644,7 +134644,7 @@ while.exit38:                                     ; preds = %while.cond36
   br label %if.end35
 }
 
-define linkonce_odr void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 %1, ptr %2) {
 entry:
   %arg.tmp = alloca %_Z13PlannedAction, align 8
   %tag.ptr = getelementptr inbounds nuw %_Z21PlannedImplementation, ptr %2, i32 0, i32 0
@@ -134667,7 +134667,7 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z21PlannedImplementation, ptr %2, i32 0, i32 1
   %variant.val = load %_Z13PlannedAction, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN10placehints14collect_actionEP13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp)
+  call void @_ZN10placehints14collect_actionER13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
@@ -134686,7 +134686,7 @@ choose.when7:                                     ; preds = %entry
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN10placehints17collect_structureEP13StringBuilder16PlannedStructure10FileSyntax(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints17collect_structureER13StringBuilder16PlannedStructure10FileSyntax(ptr %0, ptr %1, ptr %2) {
 entry:
   %deref.tmp83 = alloca %_Z20PlannedDeInitializer, align 8
   %deref.tmp67 = alloca %_Z15PlannedOperator, align 8
@@ -134751,7 +134751,7 @@ if.then12:                                        ; preds = %if.then7
   %page_parameter = extractvalue %_Z15PlannedFunction %load.struct14, 5
   %ne15 = icmp ne ptr %page_parameter, null
   %field.inplace16 = getelementptr inbounds nuw %_Z15PlannedFunction, ptr %deref.tmp9, i32 0, i32 10
-  call void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne15, ptr %field.inplace16)
+  call void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne15, ptr %field.inplace16)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.then7
@@ -134805,7 +134805,7 @@ if.then41:                                        ; preds = %if.then34
   %page_parameter44 = extractvalue %_Z18PlannedInitializer %load.struct43, 2
   %ne45 = icmp ne ptr %page_parameter44, null
   %field.inplace46 = getelementptr inbounds nuw %_Z18PlannedInitializer, ptr %deref.tmp36, i32 0, i32 5
-  call void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne45, ptr %field.inplace46)
+  call void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne45, ptr %field.inplace46)
   br label %if.end42
 
 if.end42:                                         ; preds = %if.then41, %if.then34
@@ -134856,7 +134856,7 @@ if.end66:                                         ; preds = %if.end73, %while.bo
 
 if.then72:                                        ; preds = %if.then65
   %field.inplace74 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %deref.tmp67, i32 0, i32 7
-  call void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 false, ptr %field.inplace74)
+  call void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 false, ptr %field.inplace74)
   br label %if.end73
 
 if.end73:                                         ; preds = %if.then72, %if.then65
@@ -134878,14 +134878,14 @@ if.end80:                                         ; preds = %if.end89, %if.end52
 
 if.then88:                                        ; preds = %if.then79
   %field.inplace90 = getelementptr inbounds nuw %_Z20PlannedDeInitializer, ptr %deref.tmp83, i32 0, i32 2
-  call void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 false, ptr %field.inplace90)
+  call void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 false, ptr %field.inplace90)
   br label %if.end89
 
 if.end89:                                         ; preds = %if.then88, %if.then79
   br label %if.end80
 }
 
-define linkonce_odr void @_ZN10placehints13collect_unionEP13StringBuilder12PlannedUnion10FileSyntax(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints13collect_unionER13StringBuilder12PlannedUnion10FileSyntax(ptr %0, ptr %1, ptr %2) {
 entry:
   %deref.tmp36 = alloca %_Z15PlannedOperator, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -134948,7 +134948,7 @@ if.then12:                                        ; preds = %if.then7
   %page_parameter = extractvalue %_Z15PlannedFunction %load.struct14, 5
   %ne15 = icmp ne ptr %page_parameter, null
   %field.inplace16 = getelementptr inbounds nuw %_Z15PlannedFunction, ptr %deref.tmp9, i32 0, i32 10
-  call void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne15, ptr %field.inplace16)
+  call void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 %ne15, ptr %field.inplace16)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.then7
@@ -134997,14 +134997,14 @@ if.end35:                                         ; preds = %if.end42, %while.bo
 
 if.then41:                                        ; preds = %if.then34
   %field.inplace43 = getelementptr inbounds nuw %_Z15PlannedOperator, ptr %deref.tmp36, i32 0, i32 7
-  call void @_ZN10placehints12collect_implEP13StringBuilderb21PlannedImplementation(ptr %0, i1 false, ptr %field.inplace43)
+  call void @_ZN10placehints12collect_implER13StringBuilderb21PlannedImplementation(ptr %0, i1 false, ptr %field.inplace43)
   br label %if.end42
 
 if.end42:                                         ; preds = %if.then41, %if.then34
   br label %if.end35
 }
 
-define linkonce_odr void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %2) {
 entry:
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
@@ -135036,7 +135036,7 @@ while.exit:                                       ; preds = %while.cond
   ret void
 
 if.then3:                                         ; preds = %while.body
-  call void @_ZN10placehints15collect_operandEP13StringBuilderb14PlannedOperand(ptr %0, i1 %1, ptr %call)
+  call void @_ZN10placehints15collect_operandER13StringBuilderb14PlannedOperand(ptr %0, i1 %1, ptr %call)
   br label %if.end4
 
 if.end4:                                          ; preds = %if.then3, %while.body
@@ -135046,7 +135046,7 @@ if.end4:                                          ; preds = %if.then3, %while.bo
   br label %while.cond
 }
 
-define linkonce_odr void @_ZN10placehints17collect_statementEP13StringBuilderb16PlannedStatement(ptr %0, i1 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints17collect_statementER13StringBuilderb16PlannedStatement(ptr %0, i1 %1, ptr %2) {
 entry:
   %arg.tmp = alloca %_Z13PlannedAction, align 8
   %tag.ptr = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %2, i32 0, i32 0
@@ -135071,35 +135071,35 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %2, i32 0, i32 1
   %variant.val = load %_Z13PlannedAction, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z13PlannedAction, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN10placehints14collect_actionEP13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp)
+  call void @_ZN10placehints14collect_actionER13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
   %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z14PlannedBinding, ptr %"variant.c_data().ptr2", align 8
   %operation = extractvalue %_Z14PlannedBinding %variant.val3, 3
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %operation)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %operation)
   br label %choose.end
 
 choose.when4:                                     ; preds = %entry
   %"variant.c_data().ptr5" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %2, i32 0, i32 1
   %variant.val6 = load %_Z12PlannedBreak, ptr %"variant.c_data().ptr5", align 8
   %result = extractvalue %_Z12PlannedBreak %variant.val6, 1
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %result)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %result)
   br label %choose.end
 
 choose.when7:                                     ; preds = %entry
   %"variant.c_data().ptr8" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %2, i32 0, i32 1
   %variant.val9 = load %_Z13PlannedReturn, ptr %"variant.c_data().ptr8", align 8
   %result10 = extractvalue %_Z13PlannedReturn %variant.val9, 1
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %result10)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %result10)
   br label %choose.end
 
 choose.when11:                                    ; preds = %entry
   %"variant.c_data().ptr12" = getelementptr inbounds nuw %_Z16PlannedStatement, ptr %2, i32 0, i32 1
   %variant.val13 = load %_Z12PlannedThrow, ptr %"variant.c_data().ptr12", align 8
   %result14 = extractvalue %_Z12PlannedThrow %variant.val13, 1
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %result14)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %result14)
   br label %choose.end
 
 choose.when15:                                    ; preds = %entry
@@ -135108,52 +135108,52 @@ choose.when15:                                    ; preds = %entry
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN10placehints14collect_actionEP13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints14collect_actionER13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %2) {
 entry:
   %field.inplace = getelementptr inbounds nuw %_Z13PlannedAction, ptr %2, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %deref.recv)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %deref.recv)
   %field.inplace1 = getelementptr inbounds nuw %_Z13PlannedAction, ptr %2, i32 0, i32 2
   %deref.recv2 = load ptr, ptr %field.inplace1, align 8
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %deref.recv2)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %deref.recv2)
   ret void
 }
 
-define linkonce_odr void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %2) {
 entry:
   %ne = icmp ne ptr %2, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN10placehints17collect_statementEP13StringBuilderb16PlannedStatement(ptr %0, i1 %1, ptr %2)
+  call void @_ZN10placehints17collect_statementER13StringBuilderb16PlannedStatement(ptr %0, i1 %1, ptr %2)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN10placehints15collect_operandEP13StringBuilderb14PlannedOperand(ptr %0, i1 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints15collect_operandER13StringBuilderb14PlannedOperand(ptr %0, i1 %1, ptr %2) {
 entry:
   %field.inplace = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 1
   %field.inplace1 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 0
-  call void @_ZN10placehints12collect_exprEP13StringBuilderb17PlannedExpression4Span(ptr %0, i1 %1, ptr %field.inplace, ptr %field.inplace1)
+  call void @_ZN10placehints12collect_exprER13StringBuilderb17PlannedExpression4Span(ptr %0, i1 %1, ptr %field.inplace, ptr %field.inplace1)
   ret void
 }
 
-define linkonce_odr void @_ZN10placehints19collect_operand_optEP13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints19collect_operand_optER13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %2) {
 entry:
   %ne = icmp ne ptr %2, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN10placehints15collect_operandEP13StringBuilderb14PlannedOperand(ptr %0, i1 %1, ptr %2)
+  call void @_ZN10placehints15collect_operandER13StringBuilderb14PlannedOperand(ptr %0, i1 %1, ptr %2)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN10placehints12collect_exprEP13StringBuilderb17PlannedExpression4Span(ptr %0, i1 %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN10placehints12collect_exprER13StringBuilderb17PlannedExpression4Span(ptr %0, i1 %1, ptr %2, ptr %3) {
 entry:
   %arg.tmp126 = alloca %_Z13PlannedAction, align 8
   %arg.tmp121 = alloca %_Z13PlannedAction, align 8
@@ -135236,12 +135236,12 @@ choose.when10:                                    ; preds = %entry
 if.then:                                          ; preds = %choose.when10
   %loc = extractvalue %_Z11PlannedCall %variant.val12, 0
   %start = extractvalue %_Z4Span %loc, 0
-  call void @_ZN10placehints9emit_siteEP13StringBuilderm6String(ptr %0, i64 %start, ptr %sret.result)
+  call void @_ZN10placehints9emit_siteER13StringBuilderm6String(ptr %0, i64 %start, ptr %sret.result)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %choose.when10
   %args = extractvalue %_Z11PlannedCall %variant.val12, 7
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %args)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %args)
   br label %choose.end
 
 choose.when13:                                    ; preds = %entry
@@ -135256,7 +135256,7 @@ choose.when13:                                    ; preds = %entry
 if.then19:                                        ; preds = %choose.when13
   %loc21 = extractvalue %_Z12PlannedTuple %variant.val15, 0
   %start22 = extractvalue %_Z4Span %loc21, 0
-  call void @_ZN10placehints9emit_siteEP13StringBuilderm6String(ptr %0, i64 %start22, ptr %sret.result)
+  call void @_ZN10placehints9emit_siteER13StringBuilderm6String(ptr %0, i64 %start22, ptr %sret.result)
   br label %if.end20
 
 if.end20:                                         ; preds = %if.then19, %choose.when13
@@ -135293,7 +135293,7 @@ if.then30:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp32, ptr align 1 %call28, i64 ptrtoint (ptr getelementptr (%_Z16PlannedComponent, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds nuw %_Z16PlannedComponent, ptr %deref.tmp32, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %deref.recv)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %deref.recv)
   br label %if.end31
 
 if.end31:                                         ; preds = %if.then30, %while.body
@@ -135340,7 +135340,7 @@ while.exit46:                                     ; preds = %while.cond44
   br label %if.end42
 
 if.then54:                                        ; preds = %while.body45
-  call void @_ZN10placehints17collect_statementEP13StringBuilderb16PlannedStatement(ptr %0, i1 %1, ptr %call52)
+  call void @_ZN10placehints17collect_statementER13StringBuilderb16PlannedStatement(ptr %0, i1 %1, ptr %call52)
   br label %if.end55
 
 if.end55:                                         ; preds = %if.then54, %while.body45
@@ -135353,18 +135353,18 @@ choose.when58:                                    ; preds = %entry
   %"variant.c_data().ptr59" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %2, i32 0, i32 1
   %variant.val60 = load %_Z9PlannedIf, ptr %"variant.c_data().ptr59", align 8
   %condition = extractvalue %_Z9PlannedIf %variant.val60, 1
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %condition)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %condition)
   %consequent = extractvalue %_Z9PlannedIf %variant.val60, 3
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %consequent)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %consequent)
   %alternative = extractvalue %_Z9PlannedIf %variant.val60, 4
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative)
   br label %choose.end
 
 choose.when61:                                    ; preds = %entry
   %"variant.c_data().ptr62" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %2, i32 0, i32 1
   %variant.val63 = load %_Z12PlannedMatch, ptr %"variant.c_data().ptr62", align 8
   %condition64 = extractvalue %_Z12PlannedMatch %variant.val63, 1
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %condition64)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %condition64)
   %branches = extractvalue %_Z12PlannedMatch %variant.val63, 2
   %ne65 = icmp ne ptr %branches, null
   br i1 %ne65, label %if.then66, label %if.end67
@@ -135377,7 +135377,7 @@ if.then66:                                        ; preds = %choose.when61
 
 if.end67:                                         ; preds = %while.exit71, %choose.when61
   %alternative86 = extractvalue %_Z12PlannedMatch %variant.val63, 3
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative86)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative86)
   br label %choose.end
 
 while.cond69:                                     ; preds = %if.end80, %if.then66
@@ -135400,7 +135400,7 @@ if.then79:                                        ; preds = %while.body70
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp81, ptr align 1 %call77, i64 ptrtoint (ptr getelementptr (%_Z13PlannedBranch, ptr null, i32 1) to i64), i1 false)
   %field.inplace82 = getelementptr inbounds nuw %_Z13PlannedBranch, ptr %deref.tmp81, i32 0, i32 2
   %deref.recv83 = load ptr, ptr %field.inplace82, align 8
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %deref.recv83)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %deref.recv83)
   br label %if.end80
 
 if.end80:                                         ; preds = %if.then79, %while.body70
@@ -135413,7 +135413,7 @@ choose.when87:                                    ; preds = %entry
   %"variant.c_data().ptr88" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %2, i32 0, i32 1
   %variant.val89 = load %_Z13PlannedChoose, ptr %"variant.c_data().ptr88", align 8
   %condition90 = extractvalue %_Z13PlannedChoose %variant.val89, 1
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %condition90)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %condition90)
   %cases = extractvalue %_Z13PlannedChoose %variant.val89, 2
   %ne91 = icmp ne ptr %cases, null
   br i1 %ne91, label %if.then92, label %if.end93
@@ -135426,7 +135426,7 @@ if.then92:                                        ; preds = %choose.when87
 
 if.end93:                                         ; preds = %while.exit97, %choose.when87
   %alternative112 = extractvalue %_Z13PlannedChoose %variant.val89, 3
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative112)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative112)
   br label %choose.end
 
 while.cond95:                                     ; preds = %if.end106, %if.then92
@@ -135449,7 +135449,7 @@ if.then105:                                       ; preds = %while.body96
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp107, ptr align 1 %call103, i64 ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64), i1 false)
   %field.inplace108 = getelementptr inbounds nuw %_Z11PlannedWhen, ptr %deref.tmp107, i32 0, i32 4
   %deref.recv109 = load ptr, ptr %field.inplace108, align 8
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %deref.recv109)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %deref.recv109)
   br label %if.end106
 
 if.end106:                                        ; preds = %if.then105, %while.body96
@@ -135462,10 +135462,10 @@ choose.when113:                                   ; preds = %entry
   %"variant.c_data().ptr114" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %2, i32 0, i32 1
   %variant.val115 = load %_Z10PlannedFor, ptr %"variant.c_data().ptr114", align 8
   %expr = extractvalue %_Z10PlannedFor %variant.val115, 2
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %expr)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %expr)
   %body = extractvalue %_Z10PlannedFor %variant.val115, 3
   store %_Z13PlannedAction %body, ptr %arg.tmp116, align 1
-  call void @_ZN10placehints14collect_actionEP13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp116)
+  call void @_ZN10placehints14collect_actionER13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp116)
   br label %choose.end
 
 choose.when117:                                   ; preds = %entry
@@ -135473,10 +135473,10 @@ choose.when117:                                   ; preds = %entry
   %variant.val119 = load %_Z12PlannedWhile, ptr %"variant.c_data().ptr118", align 8
   %cond = extractvalue %_Z12PlannedWhile %variant.val119, 1
   %operation = extractvalue %_Z14PlannedBinding %cond, 3
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %operation)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %operation)
   %body120 = extractvalue %_Z12PlannedWhile %variant.val119, 2
   store %_Z13PlannedAction %body120, ptr %arg.tmp121, align 1
-  call void @_ZN10placehints14collect_actionEP13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp121)
+  call void @_ZN10placehints14collect_actionER13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp121)
   br label %choose.end
 
 choose.when122:                                   ; preds = %entry
@@ -135484,7 +135484,7 @@ choose.when122:                                   ; preds = %entry
   %variant.val124 = load %_Z13PlannedRepeat, ptr %"variant.c_data().ptr123", align 8
   %body125 = extractvalue %_Z13PlannedRepeat %variant.val124, 1
   store %_Z13PlannedAction %body125, ptr %arg.tmp126, align 1
-  call void @_ZN10placehints14collect_actionEP13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp126)
+  call void @_ZN10placehints14collect_actionER13StringBuilderb13PlannedAction(ptr %0, i1 %1, ptr %arg.tmp126)
   br label %choose.end
 
 choose.when127:                                   ; preds = %entry
@@ -135497,7 +135497,7 @@ choose.when130:                                   ; preds = %entry
   %variant.val132 = load %_Z10PlannedTry, ptr %"variant.c_data().ptr131", align 8
   %cond133 = extractvalue %_Z10PlannedTry %variant.val132, 1
   %operation134 = extractvalue %_Z14PlannedBinding %cond133, 3
-  call void @_ZN10placehints20collect_operands_optEP13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %operation134)
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 %1, ptr %operation134)
   %catches = extractvalue %_Z10PlannedTry %variant.val132, 2
   %ne135 = icmp ne ptr %catches, null
   br i1 %ne135, label %if.then136, label %if.end137
@@ -135510,7 +135510,7 @@ if.then136:                                       ; preds = %choose.when130
 
 if.end137:                                        ; preds = %while.exit141, %choose.when130
   %alternative155 = extractvalue %_Z10PlannedTry %variant.val132, 3
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative155)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %alternative155)
   br label %choose.end
 
 while.cond139:                                    ; preds = %if.end150, %if.then136
@@ -135533,7 +135533,7 @@ if.then149:                                       ; preds = %while.body140
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp107, ptr align 1 %call147, i64 ptrtoint (ptr getelementptr (%_Z11PlannedWhen, ptr null, i32 1) to i64), i1 false)
   %field.inplace151 = getelementptr inbounds nuw %_Z11PlannedWhen, ptr %deref.tmp107, i32 0, i32 4
   %deref.recv152 = load ptr, ptr %field.inplace151, align 8
-  call void @_ZN10placehints21collect_statement_optEP13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %deref.recv152)
+  call void @_ZN10placehints21collect_statement_optER13StringBuilderb6OptionIR16PlannedStatementE(ptr %0, i1 %1, ptr %deref.recv152)
   br label %if.end150
 
 if.end150:                                        ; preds = %if.then149, %while.body140
@@ -135556,21 +135556,21 @@ choose.when162:                                   ; preds = %entry
   %"variant.c_data().ptr163" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %2, i32 0, i32 1
   %variant.val164 = load %_Z9PlannedIs, ptr %"variant.c_data().ptr163", align 8
   %value = extractvalue %_Z9PlannedIs %variant.val164, 4
-  call void @_ZN10placehints19collect_operand_optEP13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %value)
+  call void @_ZN10placehints19collect_operand_optER13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %value)
   br label %choose.end
 
 choose.when165:                                   ; preds = %entry
   %"variant.c_data().ptr166" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %2, i32 0, i32 1
   %variant.val167 = load %_Z9PlannedAs, ptr %"variant.c_data().ptr166", align 8
   %value168 = extractvalue %_Z9PlannedAs %variant.val167, 2
-  call void @_ZN10placehints19collect_operand_optEP13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %value168)
+  call void @_ZN10placehints19collect_operand_optER13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %value168)
   br label %choose.end
 
 choose.when169:                                   ; preds = %entry
   %"variant.c_data().ptr170" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %2, i32 0, i32 1
   %variant.val171 = load %_Z26PlannedVariantConstruction, ptr %"variant.c_data().ptr170", align 8
   %value172 = extractvalue %_Z26PlannedVariantConstruction %variant.val171, 4
-  call void @_ZN10placehints19collect_operand_optEP13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %value172)
+  call void @_ZN10placehints19collect_operand_optER13StringBuilderb6OptionIR14PlannedOperandE(ptr %0, i1 %1, ptr %value172)
   br label %choose.end
 }
 
@@ -135597,7 +135597,7 @@ if.end:                                           ; preds = %entry
   ret void
 }
 
-define linkonce_odr void @_ZN10placehints9emit_siteEP13StringBuilderm6String(ptr %0, i64 %1, ptr %2) {
+define linkonce_odr void @_ZN10placehints9emit_siteER13StringBuilderm6String(ptr %0, i64 %1, ptr %2) {
 entry:
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -135910,7 +135910,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   store i1 false, ptr %first, align 1
   br label %if.end
 
@@ -135940,7 +135940,7 @@ if.end7:                                          ; preds = %if.then6, %if.then3
   %addr.heap9 = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.576 }, ptr %arg.tmp, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6StringP10const_char6String(ptr noalias sret({ ptr }) %sret.result10, ptr %frame, ptr %3, i64 0, i64 3, ptr %arg.tmp, ptr @.str.577, ptr %2)
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap9, ptr %sret.result10)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap9, ptr %sret.result10)
   store i1 false, ptr %first, align 1
   br label %if.end4
 }
@@ -136055,7 +136055,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result3)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result3)
   store i1 false, ptr %first, align 1
   br label %if.end
 
@@ -136083,7 +136083,7 @@ if.then10:                                        ; preds = %if.then7
 
 if.end11:                                         ; preds = %if.then10, %if.then7
   %addr.heap13 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap13, ptr %sret.result4)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap13, ptr %sret.result4)
   store i1 false, ptr %first, align 1
   br label %if.end8
 
@@ -136109,7 +136109,7 @@ if.then21:                                        ; preds = %if.then17
 
 if.end22:                                         ; preds = %if.then21, %if.then17
   %addr.heap24 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap24, ptr %sret.result14)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap24, ptr %sret.result14)
   store i1 false, ptr %first, align 1
   br label %if.end18
 }
@@ -136326,7 +136326,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   store i1 false, ptr %first, align 1
   br label %if.end
 
@@ -136354,7 +136354,7 @@ if.then8:                                         ; preds = %if.then5
 
 if.end9:                                          ; preds = %if.then8, %if.then5
   %addr.heap11 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap11, ptr %sret.result2)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap11, ptr %sret.result2)
   store i1 false, ptr %first, align 1
   br label %if.end6
 
@@ -136378,7 +136378,7 @@ if.then19:                                        ; preds = %if.then15
 
 if.end20:                                         ; preds = %if.then19, %if.then15
   %addr.heap22 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap22, ptr %sret.result12)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap22, ptr %sret.result12)
   store i1 false, ptr %first, align 1
   br label %if.end16
 }
@@ -136823,7 +136823,7 @@ if.then13:                                        ; preds = %if.then9
 
 if.end14:                                         ; preds = %if.then13, %if.then9
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols15append_fragmentEP13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result)
   store i1 false, ptr %first, align 1
   br label %if.end10
 }

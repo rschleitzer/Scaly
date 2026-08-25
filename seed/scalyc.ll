@@ -112137,7 +112137,7 @@ choose.end122:                                    ; preds = %choose.else123, %ch
 choose.else123:                                   ; preds = %if.then116
   store %_Z12MemberSyntax %grp.deref.val119, ptr %arg.tmp139, align 1
   %addr.heap = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7Modeler18handle_constituentEPN4scaly6memory4PageE6String12MemberSyntaxP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result138, ptr %1, ptr %3, ptr %arg.tmp139, ptr %addr.heap)
+  call void @_ZN7Modeler18handle_constituentEPN4scaly6memory4PageE6String12MemberSyntaxR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result138, ptr %1, ptr %3, ptr %arg.tmp139, ptr %addr.heap)
   %members140 = load ptr, ptr %members, align 8
   %member_idx141 = load i64, ptr %member_idx, align 8
   call void @_ZN6VectorI6MemberE3putEm6Member(ptr %members140, i64 %member_idx141, ptr %sret.result138)
@@ -112168,7 +112168,7 @@ choose.when133:                                   ; preds = %if.then116
   br label %choose.end122
 }
 
-define linkonce_odr void @_ZN7Modeler18handle_constituentEPN4scaly6memory4PageE6String12MemberSyntaxP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN7Modeler18handle_constituentEPN4scaly6memory4PageE6String12MemberSyntaxR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %variant.ptr79 = alloca %_Z6Member, align 8
   %variant.ptr72 = alloca %_Z6Member, align 8
@@ -112496,7 +112496,7 @@ choose.end:                                       ; preds = %choose.else, %choos
 choose.else:                                      ; preds = %if.then21
   store %_Z17DeclarationSyntax %grp.deref.val, ptr %arg.tmp25, align 1
   %addr.heap26 = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7Modeler18handle_declarationEPN4scaly6memory4PageE6String17DeclarationSyntaxP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result24, ptr %1, ptr %ns_path, ptr %arg.tmp25, ptr %addr.heap26)
+  call void @_ZN7Modeler18handle_declarationEPN4scaly6memory4PageE6String17DeclarationSyntaxR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result24, ptr %1, ptr %ns_path, ptr %arg.tmp25, ptr %addr.heap26)
   %members27 = load ptr, ptr %members, align 8
   %member_idx28 = load i64, ptr %member_idx, align 8
   call void @_ZN6VectorI6MemberE3putEm6Member(ptr %members27, i64 %member_idx28, ptr %sret.result24)
@@ -112514,7 +112514,7 @@ choose.when:                                      ; preds = %if.then21
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN7Modeler18handle_declarationEPN4scaly6memory4PageE6String17DeclarationSyntaxP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN7Modeler18handle_declarationEPN4scaly6memory4PageE6String17DeclarationSyntaxR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %variant.ptr241 = alloca %_Z6Member, align 8
   %variant.ptr234 = alloca %_Z6Member, align 8
@@ -112586,7 +112586,7 @@ choose.when:                                      ; preds = %entry
   %variant.val = load %_Z13PrivateSyntax, ptr %"variant.c_data().ptr", align 8
   %export_ = extractvalue %_Z13PrivateSyntax %variant.val, 2
   store %_Z12ExportSyntax %export_, ptr %arg.tmp, align 1
-  call void @_ZN7Modeler13handle_exportEPN4scaly6memory4PageE6String12ExportSyntaxbP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result, ptr %1, ptr %2, ptr %arg.tmp, i1 true, ptr %4)
+  call void @_ZN7Modeler13handle_exportEPN4scaly6memory4PageE6String12ExportSyntaxbR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result, ptr %1, ptr %2, ptr %arg.tmp, i1 true, ptr %4)
   %choose.arm.load = load %_Z6Member, ptr %sret.result, align 1
   br label %choose.end
 
@@ -112957,7 +112957,7 @@ choose.when231:                                   ; preds = %entry
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN7Modeler13handle_exportEPN4scaly6memory4PageE6String12ExportSyntaxbP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %0, ptr %1, ptr %2, ptr %3, i1 %4, ptr %5) {
+define linkonce_odr void @_ZN7Modeler13handle_exportEPN4scaly6memory4PageE6String12ExportSyntaxbR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %0, ptr %1, ptr %2, ptr %3, i1 %4, ptr %5) {
 entry:
   %variant.ptr79 = alloca %_Z6Member, align 8
   %variant.ptr72 = alloca %_Z6Member, align 8
@@ -113319,7 +113319,7 @@ if.then59:                                        ; preds = %while.body50
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp61, ptr align 1 %call57, i64 ptrtoint (ptr getelementptr (%_Z12MemberSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z12MemberSyntax, ptr %deref.tmp61, align 1
   %addr.heap = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7Modeler18handle_constituentEPN4scaly6memory4PageE6String12MemberSyntaxP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result62, ptr %1, ptr %3, ptr %deref.tmp61, ptr %addr.heap)
+  call void @_ZN7Modeler18handle_constituentEPN4scaly6memory4PageE6String12MemberSyntaxR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result62, ptr %1, ptr %3, ptr %deref.tmp61, ptr %addr.heap)
   %members63 = load ptr, ptr %members, align 8
   %i64 = load i64, ptr %i, align 8
   call void @_ZN6VectorI6MemberE3putEm6Member(ptr %members63, i64 %i64, ptr %sret.result62)
@@ -114520,7 +114520,7 @@ choose.end:                                       ; preds = %choose.else, %choos
 choose.else:                                      ; preds = %if.then21
   store %_Z17DeclarationSyntax %grp.deref.val, ptr %arg.tmp32, align 1
   %addr.heap33 = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7Modeler18handle_declarationEPN4scaly6memory4PageE6String17DeclarationSyntaxP14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result31, ptr %1, ptr %2, ptr %arg.tmp32, ptr %addr.heap33)
+  call void @_ZN7Modeler18handle_declarationEPN4scaly6memory4PageE6String17DeclarationSyntaxR14HashMapBuilderI6String8NameableE(ptr noalias sret(%_Z6Member) %sret.result31, ptr %1, ptr %2, ptr %arg.tmp32, ptr %addr.heap33)
   %members34 = load ptr, ptr %members, align 8
   %member_idx35 = load i64, ptr %member_idx, align 8
   call void @_ZN6VectorI6MemberE3putEm6Member(ptr %members34, i64 %member_idx35, ptr %sret.result31)
