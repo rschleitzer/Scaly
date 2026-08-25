@@ -640,6 +640,170 @@ def returns_field_verdicts(files, fverdict):
                     out[(f.path, i)] = ('pointer', 'returns-walked-field')
     return out
 
+# ---------- the C boundary, hand-allocated buffers, forwarders --------------
+
+# An `extern` declaration IS the C boundary -- the first of the four shapes that
+# stay pointers -- and it is decided by the LINE, with no judgement: one seed
+# serves every target, so a declaration's spelling has to match the real
+# prototype and cannot become a Scaly reference.  It was worth a rule of its own
+# because a converted extern is not merely wrong, it is INVISIBLY wrong: nothing
+# checks a call against a declaration (`emit_call` synthesizes the callee's type
+# from the ARGUMENTS), and `tests/abi/run.sh`'s consistency check compares the
+# LLVM shape, where `ref` and `pointer` are both `ptr`.  Found on
+# `scalyls/worker.scaly`'s `poll`, whose own comment says the declaration must
+# stay type-identical to `scaly/fiber.scaly`'s.
+EXTERN = re.compile(r'\bextern\s*$')
+def is_extern(line): return bool(EXTERN.search(code_of(line).rstrip()))
+
+# malloc's answer is a hand-allocated BUFFER, the fourth shape that stays a
+# pointer, and the allocation is the proof -- no arithmetic has to appear in the
+# same body for the value to be one.  `free` is the same fact from the other
+# side, and it reaches the position no name rule does: a `destroy(p)` whose only
+# statement is `free(p as pointer[void])` walks nothing, tests p against null,
+# and was read as a nullable reference.
+ALLOC = r'(?:malloc|calloc|realloc|aligned_alloc|scaly_aligned_alloc)'
+FREE  = r'(?:free|scaly_aligned_free)'
+def heap_buffer(nm, text):
+    """★The name must be the WHOLE thing allocated or freed, never the BASE of a
+    dotted chain.  The first draft asked `\bfree\s*\(\s*nm\b` and matched
+    `free(s.text_data as pointer[void])`, reading a single borrowed slot as the
+    buffer because a FIELD of it is one -- seven sites in scalyls, every one of
+    them a correct `ref`.  A `\b` is not a terminator; the following character
+    is."""
+    e = re.escape(nm)
+    return bool(
+        # bound or assigned FROM an allocator: `let p malloc(n) as pointer[X]`
+        re.search(r'^\s*(?:let|var)\s+' + e + r'\b(?:\s*:[^\n]*?)?\s[^\n]*?\b'
+                  + ALLOC + r'\s*\(', text, re.M)
+        or re.search(r'^\s*set\s+' + e + r'\s*:[^\n]*?\b' + ALLOC + r'\s*\(',
+                     text, re.M)
+        # handed WHOLE to a deallocator: `free(p)` / `free(p as pointer[void])`
+        or re.search(r'\b' + FREE + r'\s*\(\s*' + e + r'\s*(?:as\b|\)|,)', text))
+
+def alloc_returns(files):
+    """Routine names that hand out storage they allocated themselves.  The
+    ACCESSOR that hands a buffer out is named in the doctrine beside the buffer,
+    and a `returns` carries no name for `heap_buffer` to test -- so ask the body
+    whether a local bound from an allocator leaves it."""
+    out = set()
+    for f in files:
+        for i, (name, _, _) in f.sig.items():
+            body = f.body(i, False)
+            for m in re.finditer(r'^\s*(?:let|var)\s+([A-Za-z_][A-Za-z0-9_]*)'
+                                 r'(?:\s*:[^\n]*?)?\s+[^\n]*?\b' + ALLOC + r'\s*\(',
+                                 body, re.M):
+                local = m.group(1)
+                if re.search(r'^\s*(?:return\s+)?' + re.escape(local) + r'\s*$',
+                             body, re.M):
+                    out.add(name)
+    return out
+
+def split_args(s):
+    """Split a call's argument text at depth 0.  Returns [] for an empty list."""
+    out, depth, cur = [], 0, []
+    for ch in s:
+        if ch in '([': depth += 1
+        elif ch in ')]': depth -= 1
+        if ch == ',' and depth == 0:
+            out.append(''.join(cur)); cur = []
+        else:
+            cur.append(ch)
+    tail = ''.join(cur).strip()
+    if tail or out:
+        out.append(tail)
+    return [a.strip() for a in out]
+
+def sig_params(line):
+    """Parameter NAMES of a routine signature, in declaration order.  The peel
+    matters: a first parameter named `this`, `rp` or `page` is supplied by the
+    caller implicitly, so a CALL SITE's argument 0 is the routine's parameter 1
+    -- which is what lets a sink be recorded as an ARGUMENT index and compared
+    across the dotted and undotted spellings alike."""
+    c = code_of(line)
+    j = c.find('(')
+    if j < 0:
+        return None, 0
+    depth, k = 0, j
+    while k < len(c):
+        if c[k] == '(': depth += 1
+        elif c[k] == ')':
+            depth -= 1
+            if depth == 0: break
+        k += 1
+    names = []
+    for a in split_args(c[j + 1:k]):
+        m = re.match(r"^('[^']+'|[A-Za-z_][A-Za-z0-9_]*)", a)
+        names.append(m.group(1).strip("'") if m else '')
+    off = 1 if names[:1] and names[0] in ('this', 'rp', 'page') else 0
+    return names, off
+
+def pointer_sinks(files):
+    """Call-ARGUMENT indices that must stay pointers, propagated to a fixpoint.
+
+    ★This is the class the tool used to name as unreachable ("a PARAMETER that
+    only FORWARDS its value ... this tool cannot see it: `nulled()` reads the
+    routine's OWN body, and a forwarder tests nothing").  That was true only of
+    a forward across a PACKAGE boundary.  Inside one package the callee is right
+    there, so the answer is a fixpoint rather than a guess: seed the sinks with
+    the parameters a body itself proves are buffers -- walked, address-taken,
+    allocated or freed, or declared `extern` -- and then let every forwarder
+    inherit its callee's verdict until nothing moves.
+
+    Indices are ARGUMENT indices, so the `this`/`rp`/`page` peel is applied once
+    here and a caller never has to know which spelling a callee was written in.
+    Overloads merge conservatively (any overload's sink is the name's sink),
+    which is the direction this whole tool errs in: more pointers, never fewer."""
+    routines, sinks = [], collections.defaultdict(set)
+    allocers = alloc_returns(files)
+    for f in files:
+        for i, (name, _, _) in f.sig.items():
+            line = f.lines[i]
+            names, off = sig_params(line)
+            if names is None:
+                continue
+            body = f.body(i, False)
+            ptr = set()
+            for k, nm in enumerate(names):
+                if k < off or not nm:
+                    continue
+                # is THIS parameter declared pointer[NonStay]?
+                if not re.search(re.escape(nm) + r'\s*:\s*pointer\[', code_of(line)):
+                    continue
+                if (is_extern(line) or walked(nm, body) or addr_taken(nm, body)
+                        or heap_buffer(nm, body)):
+                    sinks[name].add(k - off)
+                ptr.add(k - off)
+            routines.append((f, i, name, names, off, body, ptr))
+
+    calls = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*\(')
+    moved = True
+    while moved:
+        moved = False
+        for f, i, name, names, off, body, ptr in routines:
+            for m in calls.finditer(body):
+                callee = m.group(1)
+                if callee not in sinks:
+                    continue
+                depth, k = 0, m.end() - 1
+                while k < len(body):
+                    if body[k] == '(': depth += 1
+                    elif body[k] == ')':
+                        depth -= 1
+                        if depth == 0: break
+                    k += 1
+                args = split_args(body[m.end():k])
+                for a_i in sinks[callee]:
+                    if a_i >= len(args):
+                        continue
+                    arg = args[a_i]
+                    if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', arg):
+                        continue
+                    if arg in names:
+                        p_i = names.index(arg) - off
+                        if p_i >= 0 and p_i in ptr and p_i not in sinks[name]:
+                            sinks[name].add(p_i); moved = True
+    return sinks, allocers
+
 # ---------- hazards ---------------------------------------------------------
 
 def addr_taken(nm, text): return re.search(r'&\s*' + re.escape(nm) + r'\b', text) is not None
@@ -908,11 +1072,13 @@ def main(root, apply=False):
     initnull, initptr = init_param_nullability(files, fverdict)
     retfield = returns_field_verdicts(files, fverdict)
     retwalk  = walked_returns(files)
+    sinks, allocers = pointer_sinks(files)
     tally, decisions = collections.Counter(), []
 
     for f in files:
         for li, line in enumerate(f.lines):
             if is_comment(line): continue
+            extern = is_extern(line)
 
             # ★A nullable LOCAL spelled as a CAST -- `var x null as pointer[X]`.
             # The doctrine names this position by hand (a nullable PARAMETER,
@@ -964,6 +1130,7 @@ def main(root, apply=False):
                 verdict = why = None
                 nm = name_before(line, j) if pos == 'decl' else None
                 if head in STAY_HEADS:   verdict, why = 'pointer', 'stay-type'
+                elif extern:             verdict, why = 'pointer', 'extern-decl'
                 elif pos == 'cast':
                     # The opaque-slot round trip -- see cast_from_opaque.  The
                     # target follows the SAME nullability rule a local gets,
@@ -988,6 +1155,8 @@ def main(root, apply=False):
                         verdict, why = retfield[(f.path, li)]
                     elif f.sig[li][0] in retwalk:
                         verdict, why = 'pointer', 'returns-walked'
+                    elif f.sig[li][0] in allocers:
+                        verdict, why = 'pointer', 'returns-allocated'
                     elif f.sig[li][0] in retnull:
                         # A nullable RETURN was held at `pointer` for an ABI
                         # reason that no longer exists: `ref[T]?` is
@@ -1008,6 +1177,11 @@ def main(root, apply=False):
                         verdict, why = 'pointer', 'init-param-mirrors-field'
                     elif addr_taken(nm, b):  verdict, why = 'pointer', 'param-addr-taken'
                     elif walked(nm, b):    verdict, why = 'pointer', 'param-walked'
+                    elif heap_buffer(nm, b): verdict, why = 'pointer', 'param-heap-buffer'
+                    elif (nm in sig_params(f.lines[li])[0]
+                          and (sig_params(f.lines[li])[0].index(nm)
+                               - sig_params(f.lines[li])[1]) in sinks.get(f.sig[li][0], ())):
+                        verdict, why = 'pointer', 'param-forwarded-to-buffer'
                     elif (f.path, li, nm) in initnull:
                         verdict, why = 'ref?', 'init-param-mirrors-field'
                     elif nulled(nm, b):    verdict, why = 'ref?', 'param-nullable'
@@ -1017,6 +1191,7 @@ def main(root, apply=False):
                     init = line[end:].strip() if end else ''
                     if addr_taken(nm, b):  verdict, why = 'pointer', 'local-addr-taken'
                     elif walked(nm, b):    verdict, why = 'pointer', 'local-walked'
+                    elif heap_buffer(nm, b): verdict, why = 'pointer', 'local-heap-buffer'
                     elif init.startswith('null') or nulled(nm, b):
                         verdict, why = 'ref?', 'local-nullable'
                     else:                  verdict, why = 'ref', 'local'
