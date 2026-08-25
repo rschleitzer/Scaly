@@ -1173,7 +1173,7 @@ define Planner
 
         function leave_concept_generic_scope(
             this: Planner,
-            snapshot: pointer[Array[KeyValuePair[String, PlannedType]]]
+            snapshot: ref[Array[KeyValuePair[String, PlannedType]]]?
         )
         {
             if snapshot = null
@@ -30734,18 +30734,44 @@ define Planner
                                 if p.type <> null
                                 {
                                     let pt (*p.type)
-                                    if pt.name.length > 0
+                                    var fs: size_t 0
+                                    var fa: size_t 0
+                                    ; An `X?` property is Option[ref[X]] /
+                                    ; Option[pointer[X]] at Model level (s113), and
+                                    ; the NPO gives it a BARE POINTER layout — no
+                                    ; tag, 8 bytes. Sizing it by the LAST NAME
+                                    ; SEGMENT asks `Option`, which resolves to the
+                                    ; real tagged union and answers 16, so a record
+                                    ; holding one nullable reference measured 8 bytes
+                                    ; too large in every root that did not lay the
+                                    ; record out itself. In-package the size is a
+                                    ; DataLayout GEP over the emitted struct, so the
+                                    ; two spellings of ONE record disagreed:
+                                    ; `sizeof IoWork` was 40 inside packages/scaly
+                                    ; and 48 through `use scaly.fiber.IoWork`. Ask the
+                                    ; SHAPE, not the name — the seventh sighting of
+                                    ; that pattern (root CLAUDE.md counts six).
+                                    if Planner.is_npo_option_type(pt)
                                     {
-                                        let last_p pt.name.get(pt.name.length - 1)
-                                        if last_p <> null
+                                        set fs: 8
+                                        set fa: 8
+                                    }
+                                    if fa = 0
+                                        if pt.name.length > 0
                                         {
-                                            let pn (*last_p)
-                                            let fs this.compute_payload_size(pn)
-                                            let fa Planner.get_primitive_alignment(pn)
-                                            set offset: Planner.align_offset(offset, fa) + fs
-                                            if fa > sa
-                                                set sa: fa
+                                            let last_p pt.name.get(pt.name.length - 1)
+                                            if last_p <> null
+                                            {
+                                                let pn (*last_p)
+                                                set fs: this.compute_payload_size(pn)
+                                                set fa: Planner.get_primitive_alignment(pn)
+                                            }
                                         }
+                                    if fa > 0
+                                    {
+                                        set offset: Planner.align_offset(offset, fa) + fs
+                                        if fa > sa
+                                            set sa: fa
                                     }
                                 }
                             }
@@ -30780,20 +30806,31 @@ define Planner
                                 if uv.type <> null
                                 {
                                     let uvt (*uv.type)
-                                    if uvt.name.length > 0
+                                    ; Same NPO question as the Structure arm above:
+                                    ; a variant whose payload is `X?` carries a bare
+                                    ; pointer, not the 16-byte tagged Option.
+                                    var uvsz: size_t 0
+                                    var uval: size_t 0
+                                    if Planner.is_npo_option_type(uvt)
                                     {
-                                        let uvn_ptr uvt.name.get(uvt.name.length - 1)
-                                        if uvn_ptr <> null
-                                        {
-                                            let uvn (*uvn_ptr)
-                                            let uvsz this.compute_payload_size(uvn)
-                                            let uval Planner.get_primitive_alignment(uvn)
-                                            if uvsz > max_payload
-                                                set max_payload: uvsz
-                                            if uval > max_palign
-                                                set max_palign: uval
-                                        }
+                                        set uvsz: 8
+                                        set uval: 8
                                     }
+                                    if uval = 0
+                                        if uvt.name.length > 0
+                                        {
+                                            let uvn_ptr uvt.name.get(uvt.name.length - 1)
+                                            if uvn_ptr <> null
+                                            {
+                                                let uvn (*uvn_ptr)
+                                                set uvsz: this.compute_payload_size(uvn)
+                                                set uval: Planner.get_primitive_alignment(uvn)
+                                            }
+                                        }
+                                    if uvsz > max_payload
+                                        set max_payload: uvsz
+                                    if uval > max_palign
+                                        set max_palign: uval
                                 }
                             }
                             set ui: ui + 1
