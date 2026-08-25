@@ -260,7 +260,7 @@ define storelens
         sb.to_string()
     }
 
-    procedure collect_impl(sb: pointer[StringBuilder], plan: Plan, params: String, impl: PlannedImplementation)
+    procedure collect_impl(sb: ref[StringBuilder], plan: Plan, params: String, impl: PlannedImplementation)
     {
         choose impl
             when action: Action
@@ -276,7 +276,7 @@ define storelens
     ; The one place that decides. A function BODY is also a PlannedAction, and
     ; so is a for/while/repeat body — all of them target-less, which is what
     ; keeps them out of here without a special case.
-    procedure collect_action(sb: pointer[StringBuilder], plan: Plan, params: String, act: PlannedAction)
+    procedure collect_action(sb: ref[StringBuilder], plan: Plan, params: String, act: PlannedAction)
     {
         if act.target <> null
         {
@@ -564,7 +564,7 @@ define storelens
     ; The rest of the walk — the arms that only recurse.
     ; ====================================================================
 
-    procedure collect_statement(sb: pointer[StringBuilder], plan: Plan, params: String, stmt: PlannedStatement)
+    procedure collect_statement(sb: ref[StringBuilder], plan: Plan, params: String, stmt: PlannedStatement)
     {
         choose stmt
             when a: Action
@@ -581,7 +581,7 @@ define storelens
                 0
     }
 
-    procedure collect_statement_opt(sb: pointer[StringBuilder], plan: Plan, params: String, opt: ref[PlannedStatement]?)
+    procedure collect_statement_opt(sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedStatement]?)
     {
         if opt <> null
         {
@@ -590,7 +590,7 @@ define storelens
         }
     }
 
-    procedure collect_operands_opt(sb: pointer[StringBuilder], plan: Plan, params: String, opt: ref[Vector[PlannedOperand]]?)
+    procedure collect_operands_opt(sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[Vector[PlannedOperand]]?)
     {
         if opt = null
             return
@@ -608,7 +608,7 @@ define storelens
         }
     }
 
-    procedure collect_operand_opt(sb: pointer[StringBuilder], plan: Plan, params: String, opt: ref[PlannedOperand]?)
+    procedure collect_operand_opt(sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedOperand]?)
     {
         if opt <> null
         {
@@ -618,7 +618,7 @@ define storelens
         }
     }
 
-    procedure collect_expr(sb: pointer[StringBuilder], plan: Plan, params: String, expr: PlannedExpression)
+    procedure collect_expr(sb: ref[StringBuilder], plan: Plan, params: String, expr: PlannedExpression)
     {
         choose expr
             when k: Constant
@@ -762,7 +762,7 @@ define storelens
     ; The blob.
     ; ====================================================================
 
-    procedure emit_site(sb: pointer[StringBuilder], offset: size_t, param: String, stored: String, carrier: String)
+    procedure emit_site(sb: ref[StringBuilder], offset: size_t, param: String, stored: String, carrier: String)
     {
         sb.append(json.format_i64(offset as i64))
         sb.append(0x09 as char)

@@ -1522,7 +1522,7 @@ define symbols
 
     ; Append every buffer identifier whose distance from `name` is exactly `d`,
     ; skipping duplicates and stopping at three in total.
-    procedure append_candidates_at(sb: pointer[StringBuilder], count: pointer[size_t], source: String, name: String, d: size_t)
+    procedure append_candidates_at(sb: ref[StringBuilder], count: pointer[size_t], source: String, name: String, d: size_t)
     {
         let n source.get_length()
         var i: size_t 0
@@ -4160,7 +4160,7 @@ define symbols
     ; the top of this file: a single StringBuilder.append(String) that more than
     ; doubles the buffer takes Array.add's manual-grow path, which SIGSEGVs past
     ; one exclusive page, and a member list is exactly a potentially-large piece.
-    procedure append_fragment(sb: pointer[StringBuilder], fragment: String)
+    procedure append_fragment(sb: ref[StringBuilder], fragment: String)
     {
         var i: size_t 0
         let n fragment.get_length()
@@ -11197,7 +11197,7 @@ define symbols
 
     ; One file's contribution: for each routine that calls `name`, a
     ; CallHierarchyIncomingCall {"from":<item>,"fromRanges":[...]}.
-    procedure append_incoming_for(sb: pointer[StringBuilder], first: pointer[bool], source: String, uri: String, name: String)
+    procedure append_incoming_for(sb: ref[StringBuilder], first: pointer[bool], source: String, uri: String, name: String)
     {
         ; Cheap pre-gate: a file that never writes the name cannot call it.
         if symbols.contains_token(source, name) = false

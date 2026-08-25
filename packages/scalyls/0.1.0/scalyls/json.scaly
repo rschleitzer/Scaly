@@ -442,7 +442,7 @@ define json
     ; first hit onwards EVERY offset was wrong: diagnostics, hover, all of it.
     ; A length that merely looks plausible is the failure mode, so the gate in
     ; tests/lsp/run.sh checks the BYTE COUNT, not only the content.
-    procedure append_utf8(sb: pointer[StringBuilder], cp: i64)
+    procedure append_utf8(sb: ref[StringBuilder], cp: i64)
     {
         if cp < 0x80
         {
