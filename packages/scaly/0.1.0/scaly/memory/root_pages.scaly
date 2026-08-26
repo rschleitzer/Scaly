@@ -514,7 +514,7 @@ procedure scaly_release_root_page_full(p: pointer[Page])
 define Frame
 (
     page: pointer[Page]           ; null until forced
-    parent: ref[Frame]        ; the frame this function received, or null
+    parent: ref[Frame]?       ; the frame this function received, or null
 )
 
 ; Materialise this frame's page, PARENTS FIRST, and return it.
@@ -564,7 +564,13 @@ procedure scaly_force_frame(f: pointer[Frame]) returns pointer[Page]
         return p
     let parent f.parent
     if parent <> null
-        scaly_force_frame parent
+        ; The unwrap is the price of `parent` being honestly nullable, and it
+        ; MUST keep its parentheses: a parenless single-argument call swallows
+        ; the operand, so `scaly_force_frame parent as pointer[Frame]` would
+        ; parse as `(scaly_force_frame parent) as pointer[Frame]`.
+        ; scaly_force_frame's own signature is frozen -- its Itanium mangled
+        ; name is written out as a string literal in the Emitter.
+        scaly_force_frame(parent as pointer[Frame])
     let fresh Page.allocate_root_page()
     set f.page: fresh
     fresh
