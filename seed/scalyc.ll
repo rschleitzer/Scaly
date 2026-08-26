@@ -215466,9 +215466,9 @@ choose.when27:                                    ; preds = %choose.when18
 
 define linkonce_odr void @_ZN7Planner21check_tail_ref_escapeE14PlannedOperand4Span(ptr %0, ptr %1, ptr %2) {
 entry:
-  %arg.tmp133 = alloca { ptr }, align 8
+  %arg.tmp140 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  %choose.union114 = alloca %_Z17PlannedExpression, align 8
+  %choose.union121 = alloca %_Z17PlannedExpression, align 8
   %already_promoted = alloca i1, align 1
   %leaf_escapes = alloca i1, align 1
   %deref.tmp59 = alloca %_Z13PlannedBranch, align 8
@@ -215712,97 +215712,110 @@ if.then92:                                        ; preds = %choose.end
   ret void
 
 if.end93:                                         ; preds = %choose.end
+  %load.struct94 = load %_Z7Planner, ptr %0, align 8
+  %current_return_type = extractvalue %_Z7Planner %load.struct94, 12
+  %ne95 = icmp ne ptr %current_return_type, null
+  br i1 %ne95, label %if.then96, label %if.end97
+
+if.then96:                                        ; preds = %if.end93
+  %load.struct98 = load %_Z7Planner, ptr %0, align 8
+  %current_return_type99 = extractvalue %_Z7Planner %load.struct98, 12
+  %field.inplace = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %1, i32 0, i32 0
+  call void @_ZN7Planner20report_null_into_refE11PlannedType14PlannedOperand4Span(ptr %0, ptr %current_return_type99, ptr %1, ptr %field.inplace)
+  br label %if.end97
+
+if.end97:                                         ; preds = %if.then96, %if.end93
   store i1 false, ptr %leaf_escapes, align 1
-  %field.inplace = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %1, i32 0, i32 3
-  %call94 = call i1 @_ZN7Planner20is_local_ref_pointerE11PlannedType(ptr %field.inplace)
-  br i1 %call94, label %if.then95, label %if.end96
+  %field.inplace100 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %1, i32 0, i32 3
+  %call101 = call i1 @_ZN7Planner20is_local_ref_pointerE11PlannedType(ptr %field.inplace100)
+  br i1 %call101, label %if.then102, label %if.end103
 
-if.then95:                                        ; preds = %if.end93
-  %call97 = call i64 @_ZN7Planner17region_of_operandE14PlannedOperand(ptr %0, ptr %1)
-  %call98 = call i64 @_ZN7Planner26required_region_for_escapeEv()
-  %lt99 = icmp ult i64 %call97, %call98
-  br i1 %lt99, label %if.then100, label %if.end101
+if.then102:                                       ; preds = %if.end97
+  %call104 = call i64 @_ZN7Planner17region_of_operandE14PlannedOperand(ptr %0, ptr %1)
+  %call105 = call i64 @_ZN7Planner26required_region_for_escapeEv()
+  %lt106 = icmp ult i64 %call104, %call105
+  br i1 %lt106, label %if.then107, label %if.end108
 
-if.end96:                                         ; preds = %if.end101, %if.end93
-  %leaf_escapes102 = load i1, ptr %leaf_escapes, align 1
-  %eq = icmp eq i1 %leaf_escapes102, false
-  br i1 %eq, label %if.then103, label %if.end104
+if.end103:                                        ; preds = %if.end108, %if.end97
+  %leaf_escapes109 = load i1, ptr %leaf_escapes, align 1
+  %eq = icmp eq i1 %leaf_escapes109, false
+  br i1 %eq, label %if.then110, label %if.end111
 
-if.then100:                                       ; preds = %if.then95
+if.then107:                                       ; preds = %if.then102
   store i1 true, ptr %leaf_escapes, align 1
-  br label %if.end101
+  br label %if.end108
 
-if.end101:                                        ; preds = %if.then100, %if.then95
-  br label %if.end96
+if.end108:                                        ; preds = %if.then107, %if.then102
+  br label %if.end103
 
-if.then103:                                       ; preds = %if.end96
-  %call105 = call i1 @_ZN7Planner33operand_reads_tainted_local_fieldE14PlannedOperand(ptr %0, ptr %1)
-  br i1 %call105, label %if.then106, label %if.end107
+if.then110:                                       ; preds = %if.end103
+  %call112 = call i1 @_ZN7Planner33operand_reads_tainted_local_fieldE14PlannedOperand(ptr %0, ptr %1)
+  br i1 %call112, label %if.then113, label %if.end114
 
-if.end104:                                        ; preds = %if.end107, %if.end96
-  %leaf_escapes108 = load i1, ptr %leaf_escapes, align 1
-  %eq109 = icmp eq i1 %leaf_escapes108, false
-  br i1 %eq109, label %if.then110, label %if.end111
+if.end111:                                        ; preds = %if.end114, %if.end103
+  %leaf_escapes115 = load i1, ptr %leaf_escapes, align 1
+  %eq116 = icmp eq i1 %leaf_escapes115, false
+  br i1 %eq116, label %if.then117, label %if.end118
 
-if.then106:                                       ; preds = %if.then103
+if.then113:                                       ; preds = %if.then110
   store i1 true, ptr %leaf_escapes, align 1
-  br label %if.end107
+  br label %if.end114
 
-if.end107:                                        ; preds = %if.then106, %if.then103
-  br label %if.end104
+if.end114:                                        ; preds = %if.then113, %if.then110
+  br label %if.end111
 
-if.then110:                                       ; preds = %if.end104
+if.then117:                                       ; preds = %if.end111
   ret void
 
-if.end111:                                        ; preds = %if.end104
+if.end118:                                        ; preds = %if.end111
   store i1 false, ptr %already_promoted, align 1
-  %load.struct112 = load %_Z14PlannedOperand, ptr %1, align 8
-  %expr113 = extractvalue %_Z14PlannedOperand %load.struct112, 1
-  store %_Z17PlannedExpression %expr113, ptr %choose.union114, align 1
-  %tag.ptr115 = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %choose.union114, i32 0, i32 0
-  %tag116 = load i8, ptr %tag.ptr115, align 1
-  switch i8 %tag116, label %choose.else118 [
-    i8 2, label %choose.when119
+  %load.struct119 = load %_Z14PlannedOperand, ptr %1, align 8
+  %expr120 = extractvalue %_Z14PlannedOperand %load.struct119, 1
+  store %_Z17PlannedExpression %expr120, ptr %choose.union121, align 1
+  %tag.ptr122 = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %choose.union121, i32 0, i32 0
+  %tag123 = load i8, ptr %tag.ptr122, align 1
+  switch i8 %tag123, label %choose.else125 [
+    i8 2, label %choose.when126
   ]
 
-choose.end117:                                    ; preds = %choose.else118, %if.end125
-  %choose.value126 = phi i64 [ 0, %choose.else118 ], [ undef, %if.end125 ]
-  %call127 = call i1 @_ZN7Planner33operand_reads_tainted_local_fieldE14PlannedOperand(ptr %0, ptr %1)
-  br i1 %call127, label %if.then128, label %if.end129
+choose.end124:                                    ; preds = %choose.else125, %if.end132
+  %choose.value133 = phi i64 [ 0, %choose.else125 ], [ undef, %if.end132 ]
+  %call134 = call i1 @_ZN7Planner33operand_reads_tainted_local_fieldE14PlannedOperand(ptr %0, ptr %1)
+  br i1 %call134, label %if.then135, label %if.end136
 
-choose.else118:                                   ; preds = %if.end111
-  br label %choose.end117
+choose.else125:                                   ; preds = %if.end118
+  br label %choose.end124
 
-choose.when119:                                   ; preds = %if.end111
-  %"variant.c_data().ptr120" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %choose.union114, i32 0, i32 1
-  %variant.val121 = load %_Z15PlannedVariable, ptr %"variant.c_data().ptr120", align 8
-  %field.inplace122 = getelementptr inbounds nuw %_Z7Planner, ptr %0, i32 0, i32 16
-  %name = extractvalue %_Z15PlannedVariable %variant.val121, 1
+choose.when126:                                   ; preds = %if.end118
+  %"variant.c_data().ptr127" = getelementptr inbounds nuw %_Z17PlannedExpression, ptr %choose.union121, i32 0, i32 1
+  %variant.val128 = load %_Z15PlannedVariable, ptr %"variant.c_data().ptr127", align 8
+  %field.inplace129 = getelementptr inbounds nuw %_Z7Planner, ptr %0, i32 0, i32 16
+  %name = extractvalue %_Z15PlannedVariable %variant.val128, 1
   store { ptr } %name, ptr %arg.tmp, align 1
-  %call123 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace122, ptr %arg.tmp)
-  br i1 %call123, label %if.then124, label %if.end125
+  %call130 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace129, ptr %arg.tmp)
+  br i1 %call130, label %if.then131, label %if.end132
 
-if.then124:                                       ; preds = %choose.when119
+if.then131:                                       ; preds = %choose.when126
   store i1 true, ptr %already_promoted, align 1
-  br label %if.end125
+  br label %if.end132
 
-if.end125:                                        ; preds = %if.then124, %choose.when119
-  br label %choose.end117
+if.end132:                                        ; preds = %if.then131, %choose.when126
+  br label %choose.end124
 
-if.then128:                                       ; preds = %choose.end117
+if.then135:                                       ; preds = %choose.end124
   store i1 false, ptr %already_promoted, align 1
-  br label %if.end129
+  br label %if.end136
 
-if.end129:                                        ; preds = %if.then128, %choose.end117
-  %already_promoted130 = load i1, ptr %already_promoted, align 1
-  br i1 %already_promoted130, label %if.then131, label %if.end132
+if.end136:                                        ; preds = %if.then135, %choose.end124
+  %already_promoted137 = load i1, ptr %already_promoted, align 1
+  br i1 %already_promoted137, label %if.then138, label %if.end139
 
-if.then131:                                       ; preds = %if.end129
+if.then138:                                       ; preds = %if.end136
   ret void
 
-if.end132:                                        ; preds = %if.end129
-  store { ptr } { ptr @.sconst.943 }, ptr %arg.tmp133, align 1
-  call void @_ZN7Planner14add_diagnosticE4Span6String(ptr %0, ptr %2, ptr %arg.tmp133)
+if.end139:                                        ; preds = %if.end136
+  store { ptr } { ptr @.sconst.943 }, ptr %arg.tmp140, align 1
+  call void @_ZN7Planner14add_diagnosticE4Span6String(ptr %0, ptr %2, ptr %arg.tmp140)
   ret void
 }
 
