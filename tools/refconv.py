@@ -197,6 +197,17 @@ def position(line, i):
     if b.endswith(':'):             return 'decl'
     if re.search(r'\breturns$', b): return 'returns'
     if re.search(r'\bas$', b):      return 'cast'
+    # ★A `sizeof`/`alignof` OPERAND is the element type of a hand-allocated
+    # buffer OF pointers -- `allocate(n * sizeof pointer[X], alignof
+    # pointer[X]) as pointer[pointer[X]]`.  It is not a declaration of
+    # anything, and it must agree with the cast beside it to the letter, so it
+    # is decided by the shape and never by the field/parameter machinery.
+    if re.search(r'\b(sizeof|alignof)$', b): return 'sizeof'
+    # ★An untyped LOCAL whose operand is `pointer[X][N]` -- the fixed-size
+    # stack array.  The slots are raw storage the frame owns, so the element
+    # stays a pointer for the same reason the heap buffer above does.
+    if re.search(r'\b(let|var)\s+(?:\'[^\']+\'|[A-Za-z_][A-Za-z0-9_]*)$', b):
+        return 'localarray'
     if b.endswith('[') or b.endswith(',') or b.endswith('('): return 'generic'
     return 'other'
 
@@ -1006,6 +1017,18 @@ def opaque_index(files):
                 rets[m.group(1)].add(m.group(2))
             for m in re.finditer(r'\b([a-z_][A-Za-z0-9_]*)\s*:\s*'
                                  r'([A-Za-z_][A-Za-z0-9_\[\]\?]*)', c):
+                # ★A `set NAME: value` is an ASSIGNMENT, and this regex read it
+                # as a declaration of NAME whose type is the first word of the
+                # value -- so `set current_fiber: f as pointer[void]` recorded
+                # `current_fiber -> {pointer[void], f}` and UNANIMITY, the rule
+                # that makes this index trustworthy, failed on the very names
+                # the index exists to find.  Twelve names across the tree, all
+                # of them genuinely `pointer[void]`: the four fiber/scheduler
+                # globals, `stack_pool`, `task_default_pool`, two `pointer[void]`
+                # PARAMETERS, and four opaque locals in the ports.  The
+                # conservatism was a parsing accident, not a reason.
+                if re.search(r'\bset\s+$', c[:m.start(1)]):
+                    continue
                 props[m.group(1)].add(m.group(2))
     void = lambda d: {k for k, v in d.items() if v == {'pointer[void]'}}
     return void(rets), void(props)
@@ -1051,6 +1074,64 @@ def cast_from_opaque(line, j, f, li, void_rets, void_props):
     if not m:
         return False
     return name_declares(m.group(1), f, li, void_rets, void_props, 0) == 'pointer[void]'
+
+def cast_residue(line, j, f, li, void_rets, void_props):
+    """WHY a cast stayed a pointer -- the reason, never a bare `cast`.
+
+    The opaque-slot round trip is recognised by `cast_from_opaque`; everything
+    it declines used to be tallied under one label covering 738 sites, which
+    said nothing about whether the residue was justified or merely unexamined.
+    Measured 2026-08-26 over all six packages, after the `set`-statement fix
+    below restored unanimity to twelve genuinely opaque names:
+
+        501  allocate-site        raw memory becoming a typed object -- the
+                                  escape hatch's home position, deliberately
+                                  never converted.
+         71  null                 `null as pointer[X]`; the LOCAL form is
+                                  rewritten by NULLCAST, the rest are arguments
+                                  and fields where no slot is being declared.
+         41  source-not-a-name    `(h as size_t) as pointer[SchedTask]` and the
+                                  pointer/integer arithmetic of the lock-free
+                                  deque -- not a slot round trip at all.
+         35  source-unresolved    the cast's source is a name this lexical
+                                  scan cannot type (a parameter further than
+                                  400 lines up, a two-hop initializer).
+         55  name-not-unanimous   the blocker with a fix, and the fix is not
+                                  cheap: `nic` (26) and `node` (12) are real
+                                  `pointer[void]` fields (38 of the 55; the
+                                  rest are one- to three-site names), but the
+                                  index is keyed by NAME and those names are
+                                  reused across records with other types, so
+                                  unanimity correctly refuses to answer.  A RECORD-scoped
+                                  index would settle them; it needs the
+                                  receiver's declared type at the cast site,
+                                  i.e. the lexical resolution scalyls does in
+                                  `scoping_type_at#`, and the whole payoff is
+                                  the arithmetic guard on fifty casts.  Left
+                                  measured rather than guessed at.
+
+    ★These are NUMBERS, not a blanket rule: re-run and re-write them rather
+    than inheriting them (root CLAUDE.md -- a rule claiming to be conservative
+    owes a count that was measured again).
+    """
+    pre = code_of(line)[:j].rstrip()
+    if not pre.endswith('as'):
+        return 'cast'
+    pre = pre[:-2].rstrip()
+    if re.search(r'\.\s*allocate\s*\(', pre) or re.search(r'\b(?:aligned_)?alloc\w*\s*\($', pre):
+        return 'cast-allocate-site'
+    if re.search(r'\bnull$', pre):
+        return 'cast-null'
+    m = re.search(r'\.\s*([a-z_][A-Za-z0-9_]*)\s*\([^()]*\)$', pre)
+    if m:
+        return 'cast-name-not-unanimous'
+    m = re.search(r'\.\s*([a-z_][A-Za-z0-9_]*)$', pre)
+    if m:
+        return 'cast-name-not-unanimous'
+    m = re.search(r'(?<![.*\w])([A-Za-z_][A-Za-z0-9_]*)$', pre)
+    if not m:
+        return 'cast-source-not-a-name'
+    return 'cast-source-unresolved'
 
 def name_declares(nm, f, li, void_rets, void_props, depth):
     """The declared type of `nm` as seen from line li, or ''.
@@ -1298,10 +1379,20 @@ def main(root, apply=False):
                     decisions.append((f.path, li + 1, 'ref?', 'local-null-cast', head, nm))
                     continue
 
+            # ★The scan stops where the CODE stops.  `code_part` was written
+            # for class B and says so in its own docstring -- "so a trailing
+            # comment is never rewritten" -- but this, the older and far larger
+            # rewriter, never adopted it: `position` reads `; historically a:
+            # pointer[Thing]` as a `decl` (the text before the occurrence ends
+            # in a colon), hands it to the field machinery and rewrites the
+            # PROSE, counting it as a genuine conversion.  Measured on a probe;
+            # it never fired in the tree, and the guarantee now holds for both
+            # rewriters instead of only the newer one.
+            climit = len(code_part(line)[0])
             out, i, changed = [], 0, False
             while True:
                 j = line.find('pointer[', i)
-                if j < 0:
+                if j < 0 or j >= climit:
                     out.append(line[i:]); break
                 inner, end = inner_of(line, j)
                 head, pos  = head_of(inner), position(line, j)
@@ -1314,7 +1405,8 @@ def main(root, apply=False):
                     # target follows the SAME nullability rule a local gets,
                     # because an untyped binding takes its type from the cast:
                     # a result the body tests against null is `ref[X]?`.
-                    verdict, why = 'pointer', 'cast'
+                    verdict = 'pointer'
+                    why = cast_residue(line, j, f, li, void_rets, void_props)
                     if cast_from_opaque(line, j, f, li, void_rets, void_props):
                         b  = f.body(f.owner[li]) if li in f.owner else ''
                         bm = re.match(r'^\s*(?:let|var)\s+(\'[^\']+\'|[A-Za-z_][A-Za-z0-9_]*)\s', line)
@@ -1326,6 +1418,8 @@ def main(root, apply=False):
                         else:
                             verdict, why = 'ref', 'opaque-cast'
                 elif pos == 'generic':   verdict, why = 'pointer', 'generic-arg'
+                elif pos == 'sizeof':    verdict, why = 'pointer', 'sizeof-operand'
+                elif pos == 'localarray': verdict, why = 'pointer', 'stack-array-element'
                 elif pos == 'other':     verdict, why = 'pointer', 'unclassified'
                 elif pos == 'returns':
                     if li not in f.sig:  verdict, why = 'pointer', 'returns-no-body'
