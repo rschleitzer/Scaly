@@ -1,0 +1,114 @@
+; Regression: `when v: X` over a union arm whose payload is `ref[X]` /
+; `pointer[X]` (2026-08-26).
+;
+; A payload declared `ref[X]` carries the WRAPPER in its own name, so the
+; when-arm's type-name spelling matched nothing, lookup_variant_tag answered
+; -1 and plan_when left the tag at 0. Every such arm dispatched to variant 0
+; IN SILENCE: measured on the two-arm union below, `when a: RecA` took arm 0
+; and `when b: RecB` fell through to the else -- rc 0, no diagnostic. The B3
+; guard in plan_when could not catch it either, because it exempts an arm name
+; that is itself a concept, and the pointee always is.
+;
+; The FIELD-name spelling (`when a: A`) always resolved, which is why the two
+; arms of this shape in the ports -- dazzle's Insn.MakeFlowObj and opensp's
+; MessageArg.Vec, both written with the field name -- were unaffected and the
+; class stayed invisible.
+;
+; All three spellings are asserted together on purpose: the fix is a SECOND
+; pass that runs only after the old rules find nothing, so the two that
+; already worked must keep resolving to the same arm.
+;
+; Expected: PASS
+
+define RecA (x: int) { init(x: int) set this.x: x }
+define RecB (y: int) { init(y: int) set this.y: y }
+
+define ByRef union
+(
+    A: ref[RecA]
+    B: ref[RecB]
+)
+
+define ByValue union
+(
+    A: RecA
+    B: RecB
+)
+
+function mk_a() returns ref[RecA]  RecA#(7)
+function mk_b() returns ref[RecB]  RecB#(9)
+
+; the shape that was broken: arms named by the PAYLOAD TYPE
+function by_type() returns int
+{
+    let ua ByRef.A(mk_a())
+    let ub ByRef.B(mk_b())
+    var acc 0
+    choose ua
+        when a: RecA
+            set acc: acc + 1000 + a.x
+    choose ub
+        when b: RecB
+            set acc: acc + 2000 + b.y
+    acc
+}
+
+; the shape that always worked: arms named by the FIELD
+function by_field() returns int
+{
+    let ua ByRef.A(mk_a())
+    let ub ByRef.B(mk_b())
+    var acc 0
+    choose ua
+        when a: A
+            set acc: acc + 1000 + a.x
+    choose ub
+        when b: B
+            set acc: acc + 2000 + b.y
+    acc
+}
+
+; the by-value control: unchanged by the fix
+function by_value() returns int
+{
+    let ua ByValue.A(RecA(7))
+    let ub ByValue.B(RecB(9))
+    var acc 0
+    choose ua
+        when a: RecA
+            set acc: acc + 1000 + a.x
+    choose ub
+        when b: RecB
+            set acc: acc + 2000 + b.y
+    acc
+}
+
+; a wrong arm name must still fall through rather than hit variant 0
+function unmatched() returns int
+{
+    let ub ByRef.B(mk_b())
+    choose ub
+        when a: RecA
+            return 1
+        else
+            return 0
+    0 - 1
+}
+
+let t by_type()
+let f by_field()
+let v by_value()
+let u unmatched()
+if t <> 3016
+    print "FAIL by_type"
+else
+    if f <> 3016
+        print "FAIL by_field"
+    else
+        if v <> 3016
+            print "FAIL by_value"
+        else
+            if u <> 0
+                print "FAIL unmatched"
+            else
+                print "PASS"

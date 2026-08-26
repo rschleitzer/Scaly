@@ -4678,6 +4678,57 @@ define Planner
                     -1
         }
 
+        ; variant_payload_points_at: does a POINTER-SHAPED variant payload
+        ; point at `variant_name`? A payload declared `ref[X]` / `pointer[X]`
+        ; carries the WRAPPER in its own `name`, so the `when v: X` spelling —
+        ; the one every by-value arm uses — matched nothing, lookup_variant_tag
+        ; answered -1 and plan_when left the tag at 0. Every such arm then
+        ; dispatched to variant 0 in silence: measured on a two-arm union over
+        ; ref payloads, `when a: RecA` took arm 0 and `when b: RecB` fell
+        ; through to the else, rc 0, no diagnostic. The B3 guard in plan_when
+        ; cannot see it either — it exempts an arm name that is itself a
+        ; concept, and X always is.
+        ; ★The two arms of this shape already in the tree (dazzle's
+        ; Insn.MakeFlowObj, opensp's MessageArg.Vec) are unaffected: both are
+        ; written with the arm's FIELD name, which always resolved.
+        ; ★Asked only AFTER a full pass with the old rules has found nothing,
+        ; so every `when` that resolves today resolves to the SAME arm and
+        ; emission does not move.
+        ; ★`Option` is deliberately NOT unwrapped: an optional payload is a
+        ; different value space from the value it may hold, and `when v: X`
+        ; over `V: X?` would bind something that can be absent.
+        function variant_payload_points_at(
+            v_type: ref[scalyc.compiler.Model.Type],
+            variant_name: String
+        ) returns bool
+        {
+            if v_type.name.length <> 1
+                return false
+            let head_ptr v_type.name.get 0
+            if head_ptr = null
+                return false
+            var is_wrapper: bool (*head_ptr) = "ref"
+            if is_wrapper = false
+                set is_wrapper: (*head_ptr) = "pointer"
+            if is_wrapper = false
+                return false
+            if v_type.generics = null
+                return false
+            let gens (*v_type.generics)
+            if gens.length <> 1
+                return false
+            let g_ptr gens.get 0
+            if g_ptr = null
+                return false
+            let g (*g_ptr)
+            if g.name.length = 0
+                return false
+            let last_ptr g.name.get(g.name.length - 1)
+            if last_ptr = null
+                return false
+            (*last_ptr) = variant_name
+        }
+
         ; lookup_variant: find a union variant by name and return its tag.
         ; Returns -1 if the concept is missing or not a Union, or if the
         ; variant name is not present.
@@ -4724,6 +4775,21 @@ define Planner
                                 return i as int
                         }
                         set i: i + 1
+                    }
+                    ; second pass: a POINTER-SHAPED payload named by its
+                    ; POINTEE (see variant_payload_points_at above).
+                    var j: size_t 0
+                    while j < u.variants.length
+                    {
+                        let w_ptr u.variants.get j
+                        if w_ptr <> null
+                            if w_ptr.type <> null
+                            {
+                                let w_type_ptr w_ptr.type
+                                if Planner.variant_payload_points_at((*w_type_ptr), variant_name)
+                                    return j as int
+                            }
+                        set j: j + 1
                     }
                     -1
                 }
@@ -4836,6 +4902,27 @@ define Planner
                             }
                         }
                         set i: i + 1
+                    }
+                    ; second pass: a POINTER-SHAPED payload named by its
+                    ; POINTEE (see variant_payload_points_at above). The
+                    ; binding keeps the DECLARED payload type, i.e. the
+                    ; `ref[X]` — the member-access chain unwraps a ref
+                    ; receiver the way it unwraps every other one.
+                    var j: size_t 0
+                    while j < u.variants.length
+                    {
+                        let w_ptr u.variants.get j
+                        if w_ptr <> null
+                            if w_ptr.type <> null
+                            {
+                                let w_type_ptr w_ptr.type
+                                if Planner.variant_payload_points_at((*w_type_ptr), variant_name)
+                                {
+                                    let wvt (*w_ptr.type)
+                                    return &^this this.plan_type(wvt)
+                                }
+                            }
+                        set j: j + 1
                     }
                     null
                 }
