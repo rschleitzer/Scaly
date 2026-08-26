@@ -761,7 +761,7 @@ define Fiber
     ; allocator state.
     procedure started(first_ctx: pointer[void])
     {
-        let f current_fiber as pointer[Fiber]
+        let f current_fiber as ref[Fiber]
         set f.ctx: first_ctx
     }
 
@@ -769,7 +769,7 @@ define Fiber
     ; the fiber is resumed again.
     procedure yield()
     {
-        let f current_fiber as pointer[Fiber]
+        let f current_fiber as ref[Fiber]
         Fiber.swap_allocator(f)
         set f.ctx: scaly_jump_context(f.ctx)
     }
@@ -779,7 +779,7 @@ define Fiber
     ; function itself ever returned, the switcher traps).
     procedure finish()
     {
-        let f current_fiber as pointer[Fiber]
+        let f current_fiber as ref[Fiber]
         set f.done: true
         Fiber.swap_allocator(f)
         scaly_jump_context(f.ctx)
@@ -857,7 +857,7 @@ define Fiber
 ; falls through to the default action.
 function fiber_guard_hit(addr: pointer[void]) returns i32
 {
-    let f current_fiber as pointer[Fiber]
+    let f current_fiber as ref[Fiber]?
     if f = null
         return 0 as i32
     let lo f.stack_base as size_t
@@ -943,7 +943,7 @@ define Scheduler
     ; Append a task to the ready-queue tail (round-robin order).
     procedure enqueue(t: ref[SchedTask])
     {
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         set t.next: null
         if s.tail = null
         {
@@ -959,7 +959,7 @@ define Scheduler
     ; Pop the ready-queue head (null when the queue is empty).
     procedure dequeue() returns ref[SchedTask]?
     {
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         let t s.head
         if t <> null
         {
@@ -979,7 +979,7 @@ define Scheduler
     ; running task alike. Non-default stack sizes bypass the stack pool.
     procedure spawn_sized(fn: pointer[void], arg: pointer[void], size: size_t) returns ref[SchedTask]
     {
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         let host s.host
         let t host.allocate(sizeof SchedTask, alignof SchedTask) as pointer[SchedTask]
         set t.entry: fn
@@ -1008,7 +1008,7 @@ define Scheduler
     ; The running task's spawn_arg argument (null on the main context).
     procedure task_arg() returns pointer[void]
     {
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         if me = null
             return null
         me.arg
@@ -1018,7 +1018,7 @@ define Scheduler
     ; tail and return to the dispatcher. A no-op on the main context.
     procedure yield()
     {
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         if me <> null
         {
             Scheduler.enqueue(me)
@@ -1127,7 +1127,7 @@ define Scheduler
     ; Move every task blocked on t back to the ready queue.
     procedure wake_waiters(t: ref[SchedTask])
     {
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         var w t.waiter
         while w <> null
         {
@@ -1145,7 +1145,7 @@ define Scheduler
     ; Only ever runs on the main context (the dispatcher).
     procedure poll_io() returns bool
     {
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         var tagbuf u8[512]
         var n: i32 0
         if s.io_waiting > 0
@@ -1231,7 +1231,7 @@ define Scheduler
     {
         if Scheduler.step()
             return true
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         if s.io_waiting > 0
         {
             Scheduler.poll_io()
@@ -1268,7 +1268,7 @@ define Scheduler
         while Scheduler.step_or_wait()
         {
         }
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         if s.blocked > 0
             exit 106
     }
@@ -1280,7 +1280,7 @@ define Scheduler
     ; task it blocks on t's waiter chain and yields to the dispatcher.
     procedure join(t: ref[SchedTask]) returns int
     {
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         if me = null
         {
             while not t.done
@@ -1292,7 +1292,7 @@ define Scheduler
         }
         if not t.done
         {
-            let s current_scheduler as pointer[Scheduler]
+            let s current_scheduler as ref[Scheduler]
             set me.next: t.waiter
             set t.waiter: me
             set s.blocked: s.blocked + 1
@@ -1412,7 +1412,7 @@ define Io
     ; -1 as i32 — the shim's failure value — not cast and check < 0.)
     procedure ensure_poll() returns i32
     {
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         var q s.eio
         if q = ((0 - 1) as i32)
         {
@@ -1441,7 +1441,7 @@ define Io
     procedure ensure_wake() returns i32
     {
         let q Io.ensure_poll()
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         var w s.wake
         if w = ((0 - 1) as i32)
         {
@@ -1499,7 +1499,7 @@ define Io
         var wr: i32 0
         if for_write
             set wr: 1
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         if me = null
         {
             let arc scaly_eio_arm(q, fd, wr, null)
@@ -1512,7 +1512,7 @@ define Io
             ; stage-7 node tests). The null tag is the main context's
             ; own event; poll_io only decrements TASK waiters, so the
             ; count is undone here.
-            let sm current_scheduler as pointer[Scheduler]
+            let sm current_scheduler as ref[Scheduler]
             set sm.io_waiting: sm.io_waiting + 1
             repeat
             {
@@ -1529,7 +1529,7 @@ define Io
         let arc2 scaly_eio_arm(q, fd, wr, me as pointer[void])
         if arc2 <> 0
             exit 107
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         set s.blocked: s.blocked + 1
         set s.io_waiting: s.io_waiting + 1
         Fiber.yield()
@@ -1669,7 +1669,7 @@ define Io
     ; This thread's worker pool, created lazily on first offload.
     procedure ensure_pool() returns ref[IoPool]
     {
-        var pl io_pool as pointer[IoPool]
+        var pl io_pool as ref[IoPool]?
         if pl = null
         {
             let p Page.allocate_page_traced("Io.pool_page")
@@ -1705,7 +1705,7 @@ define Io
     ; region: the requesting frame outlives the call.
     procedure offload(fn: pointer[void], arg: pointer[void]) returns pointer[void]
     {
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         if me = null
             return scaly_call_ptr(fn, arg)
         Io.ensure_wake()
@@ -1758,7 +1758,7 @@ define Io
         ; Park like a channel receive: blocked + chan_parked keep
         ; step_or_wait blocking in the poller until the worker's inject
         ; arrives (drain_inject undoes both counters).
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         set s.blocked: s.blocked + 1
         set s.chan_parked: s.chan_parked + 1
         Fiber.yield()
@@ -1774,7 +1774,7 @@ define Io
     ; reclamation proof for tests.
     function pool_worker_count() returns i64
     {
-        let pl io_pool as pointer[IoPool]
+        let pl io_pool as ref[IoPool]?
         if pl = null
             return 0 as i64
         pl.workers
@@ -1791,7 +1791,7 @@ define Io
     ; while a task is parked on an offloaded operation.
     procedure drain_pool()
     {
-        let pl io_pool as pointer[IoPool]
+        let pl io_pool as ref[IoPool]?
         if pl = null
             return
         close(pl.pipe_write as int)
@@ -1989,7 +1989,7 @@ define Channel
         deadlock_event()
         if r.home = current_scheduler
         {
-            let s current_scheduler as pointer[Scheduler]
+            let s current_scheduler as ref[Scheduler]
             Scheduler.enqueue(r)
             set s.blocked: s.blocked - 1
             set s.chan_parked: s.chan_parked - 1
@@ -2046,7 +2046,7 @@ define Channel
         let n host.allocate(sizeof ChannelNode, alignof ChannelNode) as pointer[ChannelNode]
         set n.next: null
         set n.msg: msg
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         ; A bounded task-sender may park and be woken cross-thread — arm
         ; the wake handle once, before any lock (ensure_wake syscalls and
         ; needs the scheduler). Unbounded and scheduler-less senders skip
@@ -2132,7 +2132,7 @@ define Channel
                     set m.send_tail: me
                 }
                 Channel.release(m)
-                let s current_scheduler as pointer[Scheduler]
+                let s current_scheduler as ref[Scheduler]
                 set s.blocked: s.blocked + 1
                 set s.chan_parked: s.chan_parked + 1
                 Fiber.yield()
@@ -2203,7 +2203,7 @@ define Channel
     procedure receive(m: pointer[Channel]) returns pointer[void]
     {
         Io.ensure_wake()
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         repeat
         {
             Channel.acquire(m)
@@ -2258,7 +2258,7 @@ define Channel
                     set m.recv_tail: me
                 }
                 Channel.release(m)
-                let s current_scheduler as pointer[Scheduler]
+                let s current_scheduler as ref[Scheduler]
                 set s.blocked: s.blocked + 1
                 set s.chan_parked: s.chan_parked + 1
                 Fiber.yield()
@@ -2272,7 +2272,7 @@ define Channel
     ; toward exit 106.
     procedure timed_poll(slice_ms: i32)
     {
-        let s current_scheduler as pointer[Scheduler]
+        let s current_scheduler as ref[Scheduler]
         var tagbuf u8[512]
         let n scaly_eio_wait_timeout(s.eio, tagbuf as pointer[void], 64 as i32, slice_ms)
         if n = ((0 - 1) as i32)
@@ -2309,7 +2309,7 @@ define Channel
     {
         set *timed_out: false
         Io.ensure_wake()
-        let me current_task as pointer[SchedTask]
+        let me current_task as ref[SchedTask]?
         let deadline scaly_eio_now_ns() + ((ms as i64) * (1000000 as i64))
         repeat
         {
@@ -2748,7 +2748,7 @@ define TaskPool
     procedure default_pool() returns ref[TaskPool]
     {
         if task_default_pool <> null
-            return task_default_pool as pointer[TaskPool]
+            return task_default_pool as ref[TaskPool]
         let pl TaskPool.create(TaskPool.ncpu())
         set task_default_pool: pl as pointer[void]
         pl
@@ -2763,7 +2763,7 @@ define TaskPool
     {
         if task_default_pool <> null
         {
-            let pl task_default_pool as pointer[TaskPool]
+            let pl task_default_pool as ref[TaskPool]
             set task_default_pool: null
             TaskPool.shutdown(pl)
         }
