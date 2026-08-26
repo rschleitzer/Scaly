@@ -1,0 +1,26 @@
+; Regression: a `^name` page sigil that names nothing is a hard error
+; (2026-08-26).
+;
+; This used to compile in TOTAL SILENCE and drop the whole statement: the
+; Emitter's resolve_reference_page# found no such name, the construction
+; emitted no value, and the enclosing statement went with it. A function whose
+; body was one such binding came out as a bare `ret i64 0` -- rc 0, no
+; diagnostic, every field of the "constructed" value reading 0.
+;
+; It cost a measuring round the day it was found: `RecA^page(7)` written
+; inside a function that has no `page` in scope was mistaken for a broken
+; union payload, because the symptom is identical -- a value that is there,
+; answers zero, and says nothing.
+;
+; xfail: unknown page name: nosuchpage
+
+define RecA (x: int) { init(x: int) set this.x: x }
+
+function probe() returns int
+{
+    let pa RecA^nosuchpage(7)
+    pa.x
+}
+
+let r probe()
+print "r=`r`"

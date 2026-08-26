@@ -15550,8 +15550,111 @@ define Planner
             tname
         }
 
+        ; report_unknown_page_name#: a `^name` page sigil must NAME something.
+        ; `Foo^nosuchname(7)` used to compile in TOTAL SILENCE and take the
+        ; whole statement with it: the Emitter's resolve_reference_page# found
+        ; nothing, the construction emitted no value, and the enclosing
+        ; statement was dropped -- a function whose body was one such binding
+        ; came out as a bare `ret i64 0`, rc 0, not a word. Same class as the
+        ; unknown-identifier and unknown-assignment-target drops.
+        ; ★It cost a measuring round on 2026-08-26: `let pa RecA^page(7)`
+        ; inside a function with no `page` in scope answered 0 for every field,
+        ; which reads exactly like a broken union payload -- the probe it was
+        ; written for was diagnosing something else entirely.
+        ; Accepted without a scope entry:
+        ;   this      the receiver's own page (the emitter wraps Page.get(this))
+        ;   rp / _rp  the caller-page slot, peeled by the Modeler and
+        ;             SYNTHESIZED by this planner (Lifetime.Reference("rp")),
+        ;             so it legitimately has no binding of its own
+        ; plus a PROPERTY of the receiver concept -- the `^field` form the
+        ; emitter resolves through `this` (opensp's `^host` where host is a
+        ; member). The receiver is read off `this`'s OWN binding, because the
+        ; planner keeps no current-concept the way the emitter does.
+        function report_unknown_page_name(this: Planner, t: Type)
+        {
+            var page_name: String ""
+            var page_span: Span t.span
+            choose t.lifetime
+                when r: Reference
+                {
+                    set page_name: r.location
+                    ; the SIGIL's own span, not the type's: a construction's
+                    ; Type carries span 1:1 here, and a well-formed location in
+                    ; the wrong place is worse than none.
+                    set page_span: r.span
+                }
+                else
+                    return
+            if page_name.length = 0
+                return
+            if page_name = "this"
+                return
+            if page_name = "rp"
+                return
+            if page_name = "_rp"
+                return
+            if this.lookup_local_binding(page_name) <> null
+                return
+            ; The receiver's binding is the WRAPPED form -- `this: Parser`
+            ; plans as pointer[Parser] (Planner.is_this_wrapper_name), and the
+            ; NPO spelling wraps again -- so the concept name is one or two
+            ; generics down. Reading the bare name instead reported all 235
+            ; `^host` sites in opensp and tscaly, where host IS the receiver's
+            ; first property: ask the SHAPE, not the name.
+            let this_ty this.lookup_local(String("this"))
+            if this_ty <> null
+            {
+                var rcv: PlannedType (*this_ty)
+                var hops: int 0
+                while hops < 3
+                {
+                    var wrapped: bool Planner.is_this_wrapper_name(rcv.name)
+                    if wrapped = false
+                        set wrapped: rcv.name = "Option"
+                    if wrapped = false
+                        set hops: 3
+                    else
+                    {
+                        if rcv.generics = null
+                            set hops: 3
+                        else
+                        {
+                            let rgs (*rcv.generics)
+                            if rgs.length = 0
+                                set hops: 3
+                            else
+                            {
+                                let rg_ptr rgs.get 0
+                                if rg_ptr = null
+                                    set hops: 3
+                                else
+                                {
+                                    set rcv: (*rg_ptr)
+                                    set hops: hops + 1
+                                }
+                            }
+                        }
+                    }
+                }
+                if this.get_property_index(rcv.name, page_name) >= 0
+                    return
+            }
+            var sb StringBuilder()
+            sb.append "unknown page name: "
+            sb.append page_name
+            ; NO backticks in these literals -- an unescaped backtick opens a
+            ; string interpolation. Writing this as the receiver name in ticks
+            ; cost one bootstrap: it interpolated the Planner and the arg-type
+            ; gate reported "argument 1 is pointer[Planner], expected char".
+            sb.append " -- a page sigil names a pointer[Page] in scope, the "
+            sb.append "receiver, or a page-typed property of the receiver"
+            let pmsg sb.to_string()
+            this.add_diagnostic(page_span, String^this(pmsg))
+        }
+
         function plan_type(this: Planner, t: Type) returns PlannedType
         {
+            this.report_unknown_page_name(t)
             let base Planner.resolve_type_base(t)
 
             var after_subst: PlannedType base

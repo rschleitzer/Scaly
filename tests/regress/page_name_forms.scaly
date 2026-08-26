@@ -1,0 +1,70 @@
+; Regression: every accepted spelling of the `^` page sigil still resolves
+; (2026-08-26, the companion of xfail_unknown_page_name.scaly).
+;
+; The check that rejects an unknown page name must let through the four forms
+; that legitimately have no local binding of that name:
+;   ^this      the receiver's own page
+;   ^rp        the caller-page slot (peeled by the Modeler, and synthesized by
+;              the planner itself as Lifetime.Reference("rp"))
+;   ^<local>   an ordinary pointer[Page] in scope
+;   ^<field>   a page-typed PROPERTY of the receiver -- opensp writes 232 of
+;              these as `^host`, and reading the receiver's binding without
+;              unwrapping the this-wrapper reported every one of them.
+;
+; Expected: PASS
+
+define Leaf (n: int) { init(n: int) set this.n: n }
+
+define Holder (host: pointer[Page], tag: int)
+{
+    init(host: pointer[Page], tag: int)
+    {
+        set this.host: host
+        set this.tag: tag
+    }
+
+    ; ^<field>: host is a property of the receiver
+    function via_field(this: ref[Holder]) returns int
+    {
+        let l Leaf^host(4)
+        l.n
+    }
+
+    ; ^this: the receiver's own page
+    function via_this(this: ref[Holder]) returns int
+    {
+        let l Leaf^this(5)
+        l.n
+    }
+}
+
+; ^<local>: an ordinary pointer[Page] binding
+function via_local(p: pointer[Page]) returns int
+{
+    let l Leaf^p(6)
+    l.n
+}
+
+; ^rp / the caller page
+function via_caller() returns ref[Leaf]  Leaf#(7)
+
+function drive(host: pointer[Page]) returns int
+{
+    let h Holder^host(host, 0)
+    let a h.via_field()
+    let b h.via_this()
+    let c via_local(host)
+    let d via_caller()
+    a * 1000 + b * 100 + c * 10 + d.n
+}
+
+; a real region page: a String anchors one, Page.get masks to its header
+; (the idiom deref_receiver_opaque_struct.scaly uses). A page taken from
+; address 0 would make every allocation below a scheme rather than a test.
+let anchor String("anchor")
+let host_page Page.get(anchor.data as pointer[void])
+let total drive(host_page)
+if total <> 4567
+    print "FAIL"
+else
+    print "PASS"
