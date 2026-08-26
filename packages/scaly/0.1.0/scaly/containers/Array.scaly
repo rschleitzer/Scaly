@@ -12,9 +12,24 @@ use scaly.memory.runtime
 ; LITERALS (0x20 start / 0x400 max) in the generic bodies: module-level
 ; defines do not resolve inside bodies monomorphized into other packages.
 
+; ★★★`array` is a POINTER on purpose, and it may not be spelled `ref[...]` in
+; either form. `next` tests it against null, so the non-optional `ref` is a
+; declaration that lies -- report_null_test_on_ref# says so, and it was
+; `pointer[Array[T]]` until 7c4240ad converted it. But the nullable `ref[...]?`
+; is worse than wrong here, it MISCOMPILES: an `X?` field adds exactly one
+; generic level, which pushes `plan_structure -> plan_function -> plan_type ->
+; instantiate_generic` into the s116 cycle guard, and that guard short-circuits
+; WITHOUT binding the concept's generic parameters. Measured 2026-08-26 -- with
+; the `?` spelling every instantiation of `next` emits
+; `load %_Z5ArrayIiE` (Array[int]) regardless of T, reading `length` out of the
+; wrong layout; it survived all 217 regress tests because field 0 lines up.
+; The open defect is written up in the root CLAUDE.md; until it is fixed, a
+; nullable slot inside a GENERIC concept whose type nests generics stays a
+; pointer, which is what `tools/refconv.py` holds back as
+; `generic-substitution-defect`.
 define ArrayIterator[T]
 (
-    array: ref[Array[T]]
+    array: pointer[Array[T]]
     position: size_t
 )
 {
