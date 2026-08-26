@@ -12544,6 +12544,13 @@ define Planner
                     if resolved <> null
                         set combined_type: (*resolved)
 
+                    ; A null test against a non-optional `ref[T]` is constant
+                    ; under the declaration -- report_null_test_on_ref#. It sits
+                    ; OUTSIDE the `resolved = null` branch below on purpose: a
+                    ; comparison may resolve to a registered operator, and the
+                    ; declaration is just as wrong when it does.
+                    this.report_null_test_on_ref(result, rhs, op_name, result.loc)
+
 
                     ; Pointer arithmetic fallback: pointer[T] +/- integer
                     ; resolves to pointer[T]. resolve_operator_call# only
@@ -20582,6 +20589,97 @@ define Planner
             sb.append " needs a pointer, not a ref. A ref is a borrowed "
             sb.append "reference and carries no element stride; cast it first "
             sb.append "(x as pointer[T])"
+            let rmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        ; report_null_test_on_ref#: the third gate on a NON-OPTIONAL `ref[T]`,
+        ; and the one that makes the other two enforceable in the ports.
+        ; `report_ref_arithmetic#` forbids `r + 1`; `report_null_into_ref#`
+        ; forbids null flowing IN at the four positions where a target type is
+        ; in hand. Neither can see the position where the lie is actually
+        ; VISIBLE: a body that tests its own non-optional reference against
+        ; null. Under the declaration that comparison is constant -- dead code
+        ; that reads as a live guard -- so it is never anything but a wrong
+        ; declaration.
+        ;
+        ; ★★★Why a checker and not another sweep. The 2026-08-23 conversion
+        ; (a72ed732, "Declare concept refs as ref in the ports") added 4081
+        ; `: ref[...]` declarations across opensp and dazzle and NOT ONE
+        ; `ref[...]?` -- it was a flat `pointer[X]` -> `ref[X]` rewrite with no
+        ; nullability analysis, and `tools/refconv.py`, which has that rule,
+        ; did not exist yet. By the time it did, those sites no longer carried
+        ; the string `pointer[` that is its only trigger, so the tool can never
+        ; revisit them: it is ONE-WAY. Measured 2026-08-26 -- 241 provable
+        ; sites (202 parameters, 20 locals, 19 fields), all of them in exactly
+        ; the two packages that commit touched, and ZERO in the five that
+        ; refconv itself converted. A lexical sweep would leave the class
+        ; reachable again by the next blind rewrite; a planner gate cannot be
+        ; regressed by any tool.
+        ;
+        ; It reports the PROVABLE class only. A parameter that merely FORWARDS
+        ; its value to a nullable parameter of another routine is nullable too
+        ; and tests nothing, so nothing here or in any tool can see it; those
+        ; stay unaudited on purpose rather than being guessed at.
+        ;
+        ; The name test is the right one and for the same reason it is right in
+        ; report_null_into_ref#: the nullable spelling arrives wrapped as
+        ; `Option` (Modeler s113), so asking for "ref" skips exactly the form
+        ; that IS the fix. `pointer[T]` is skipped for a different reason -- a
+        ; pointer may always be null, by design, and `pointer[T]?` likewise.
+        ; ONE statement at the call site: an inline branch in
+        ; collapse_operand_sequence# perturbs its s178 alloca pool (six -g
+        ; checks, measured).
+        function report_null_test_on_ref(
+            this: Planner,
+            lhs: PlannedOperand,
+            rhs: PlannedOperand,
+            op_name: String,
+            loc: Span
+        )
+        {
+            var is_test false
+            if op_name = "="
+                set is_test: true
+            if op_name = "<>"
+                set is_test: true
+            if is_test = false
+                return
+
+            ; Either side may carry the null -- `r = null` and `null = r` are
+            ; the same claim about r.
+            var ref_type: PlannedType lhs.result_type
+            var found false
+            if this.operand_is_null_constant(rhs)
+            {
+                set ref_type: lhs.result_type
+                set found: true
+            }
+            if found = false
+            {
+                if this.operand_is_null_constant(lhs)
+                {
+                    set ref_type: rhs.result_type
+                    set found: true
+                }
+            }
+            if found = false
+                return
+            if ref_type.name <> "ref"
+                return
+
+            var sb StringBuilder()
+            ; NO backticks in these literals -- an unescaped backtick opens a
+            ; string interpolation, and a lone one fails the MODELER.
+            let tname Planner.get_readable_name(ref_type)
+            sb.append "null test on a non-optional reference: "
+            sb.append tname
+            sb.append " is a borrowed reference and always refers to "
+            sb.append "something, so this comparison is constant. Declare the "
+            sb.append "nullable form ("
+            sb.append tname
+            sb.append "?) for a slot that may hold nothing, or a pointer when "
+            sb.append "it is a raw address"
             let rmsg sb.to_string()
             this.add_diagnostic(loc, String^this(rmsg))
         }

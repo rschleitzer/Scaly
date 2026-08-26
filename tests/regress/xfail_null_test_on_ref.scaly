@@ -1,0 +1,32 @@
+; Regression: a NON-OPTIONAL `ref[T]` may not be tested against null
+; (2026-08-26, the third gate on a borrowed reference).
+;
+; `report_ref_arithmetic#` forbids `r + 1` and `report_null_into_ref#` forbids
+; null flowing IN at the four positions where a target type is in hand. Neither
+; sees the position where a wrong declaration is actually VISIBLE: a body that
+; tests its own non-optional reference against null. Under the declaration that
+; comparison is constant -- dead code that reads as a live guard -- so it is
+; never anything but a declaration that lies.
+;
+; The shape below is the real one. `packages/dazzle`'s `Escape.analysable`
+; opened with exactly `if i = null return false` on a parameter declared
+; `ref[Insn]`, and 240 more sites like it survived the 2026-08-23 conversion
+; (a72ed732), which added 4081 `ref[...]` declarations and not one `ref[...]?`.
+;
+; The exit is the nullable spelling; null_test_on_ref_ok.scaly proves it, and
+; proves the gate stays off a `pointer[T]`, which may always be null by design.
+;
+; xfail: null test on a non-optional reference
+
+define Box (v: int)
+
+function analysable(b: ref[Box]) returns bool
+{
+    if b = null
+        return false
+    true
+}
+
+var b Box(7)
+if analysable(&b)
+    Console.println "unreachable"

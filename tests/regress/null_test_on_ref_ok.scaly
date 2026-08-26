@@ -1,0 +1,73 @@
+; Regression: the shapes the null-test gate must stay OFF
+; (2026-08-26, the third gate on a borrowed reference).
+;
+; The negative side is xfail_null_test_on_ref.scaly. This side is the one that
+; decides whether the gate is usable: the nullable spelling `ref[T]?` IS the
+; fix the diagnostic asks for, so firing on it would reject every corrected
+; site, and `pointer[T]` may always be null by design.
+;
+; ★The `?` form arrives wrapped as `Option` (Modeler s113), which is why the
+; gate's name test asks for "ref" rather than testing pointer-shapedness the
+; way `report_ref_arithmetic#` has to -- there the nullable spelling is just as
+; wrong, here it is the whole point.
+;
+; Expected: PASS
+
+define Box (v: int)
+
+; the nullable reference -- the fix, must never fire
+function opt_test(b: ref[Box]?) returns int
+{
+    if b = null
+        return 0
+    b.v
+}
+
+; the same with the null on the LEFT
+function opt_test_rev(b: ref[Box]?) returns int
+{
+    if null <> b
+        return b.v
+    0
+}
+
+; a pointer may always be null
+function ptr_test(b: pointer[Box]) returns int
+{
+    if b = null
+        return 0
+    b.v
+}
+
+; a non-optional ref that is never null-tested stays legal
+function plain(b: ref[Box]) returns int   b.v
+
+var b Box(7)
+
+if opt_test(&b) <> 7
+{
+    Console.println "FAIL nullable ref tested against null"
+    exit 1
+}
+if opt_test(null) <> 0
+{
+    Console.println "FAIL nullable ref given null"
+    exit 1
+}
+if opt_test_rev(&b) <> 7
+{
+    Console.println "FAIL null on the left"
+    exit 1
+}
+if ptr_test(&b as pointer[Box]) <> 7
+{
+    Console.println "FAIL pointer tested against null"
+    exit 1
+}
+if plain(&b) <> 7
+{
+    Console.println "FAIL plain non-optional ref"
+    exit 1
+}
+
+Console.println "PASS"
