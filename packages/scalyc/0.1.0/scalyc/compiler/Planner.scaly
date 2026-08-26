@@ -12544,6 +12544,7 @@ define Planner
                     if resolved <> null
                         set combined_type: (*resolved)
 
+
                     ; Pointer arithmetic fallback: pointer[T] +/- integer
                     ; resolves to pointer[T]. resolve_operator_call# only
                     ; sees registered operators, so primitive ptr-arith
@@ -25239,6 +25240,24 @@ define Planner
                     0
             if recursed
                 return
+
+            ; ★The IMPLICIT tail through a BLOCK or an arm -- report_null_into_ref#.
+            ; That check documents the implicit tail return as one of the four
+            ; positions it judges, and it was judging only the SHALLOW one:
+            ; plan_action# reads its tail flag ONCE, for the body ACTION, so with
+            ; a Block body the `null` that actually reaches `ret` is the block's
+            ; last statement and the direct call never sees it. Measured
+            ; 2026-08-26: `function nb(b: ref[Box]) returns ref[Box]   null` is a
+            ; hard rc 4, while the SAME body written `{ if ...  return b   null }`
+            ; compiled clean -- and dazzle's `Interpreter.lookup_char_entry` was
+            ; live proof, its own tail literally `null` under a declared
+            ; `returns ref[CharPart]`. Exactly the class convert_tail_literal#
+            ; exists for (the three literal conversions were skipped for this
+            ; same shape), so it belongs on the same traversal: this visitor
+            ; already recurses over variant payloads, choose/if/match arms and a
+            ; block's last statement, and already runs on the implicit tail.
+            if this.current_return_type <> null
+                this.report_null_into_ref((*this.current_return_type), op, op.loc)
 
             ; Leaf: judge REFERENCES only — is_local_ref_pointer (a pointer/
             ; ref whose pointee has Local life, i.e. a genuine &<frame-local>)

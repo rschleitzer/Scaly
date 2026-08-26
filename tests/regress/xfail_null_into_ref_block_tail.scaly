@@ -1,0 +1,41 @@
+; Regression: the IMPLICIT tail return through a BLOCK is judged too
+; (2026-08-26, closing a hole in report_null_into_ref#).
+;
+; That check documents four positions -- a typed binding, a `set`, an explicit
+; `return` and the implicit tail return -- and it was judging only the SHALLOW
+; tail. `plan_action#` reads its tail flag ONCE, for the body ACTION, so when
+; the body is a Block the `null` that actually reaches `ret` is the block's
+; LAST STATEMENT and the direct call never saw it.
+;
+; The two spellings measured one keyword apart, before the fix:
+;
+;     function nb(b: ref[Box]) returns ref[Box]   null          ->  rc 4
+;     function nb(b: ref[Box]) returns ref[Box] { ... null }    ->  rc 0
+;
+; A closed limit reads exactly like an open one, which is why this stood: the
+; check's own comment claimed the position it was not covering. It was live --
+; dazzle's `Interpreter.lookup_char_entry` returned a declared non-optional
+; `ref[CharPart]` from a body whose tail is literally `null`.
+;
+; The fix rides check_tail_ref_escape#, the read-only visitor that already
+; recurses over variant payloads, choose/if/match arms and a block's last
+; statement, and already runs on the implicit tail -- the same traversal
+; convert_tail_literal# exists for, and for the same reason.
+;
+; The positive side is null_into_ref_ok.scaly, whose `walk`/`first_or_null`
+; return the nullable form from block bodies and must keep compiling.
+;
+; xfail: null assigned to a non-optional reference
+
+define Box (v: int)
+
+function find_it(b: ref[Box], want: int) returns ref[Box]
+{
+    if b.v = want
+        return b
+    null
+}
+
+var b Box(7)
+let r find_it(&b, 7)
+Console.println "unreachable"
