@@ -37864,7 +37864,19 @@ define Planner
         Planner.ret_page_type_is_page_pointer((*item.type))
     }
 
-    ; `pointer[Page]`, spelled at any qualification depth.
+    ; `pointer[Page]` OR `ref[Page]`, spelled at any qualification depth.
+    ;
+    ; ★Both spellings, because this asks a SHAPE question -- "does this parameter
+    ; hand the callee a region to allocate on" -- and a borrowed page reference
+    ; answers it exactly as a page pointer does. Keyed on the name `pointer`
+    ; alone it silently changed a PAGE DECISION when a port converted its page
+    ; parameters to `ref[Page]`: the callee stopped counting as one that receives
+    ; a page explicitly, so `ret_page_func_needs` fell through to
+    ; `function_needs_caller_page` and gave the CALLER a frame it does not need
+    ; (measured on `VM.resolve_set` / `ProcessContext.push_style_end`, where the
+    ; temporaries of a `while` loop then die one level further out). Its sibling
+    ; `ret_page_type_last_name` already unwraps both. Same class as the six NPO
+    ; sightings in CLAUDE.md: ask the shape, not the name.
     function ret_page_type_is_page_pointer(t: scalyc.compiler.Model.Type) returns bool
     {
         if t.name.length = 0
@@ -37873,7 +37885,12 @@ define Planner
         if np = null
             return false
         let n (*np)
-        if n <> "pointer"
+        var is_ptr_or_ref: bool false
+        if n = "pointer"
+            set is_ptr_or_ref: true
+        if n = "ref"
+            set is_ptr_or_ref: true
+        if is_ptr_or_ref = false
             return false
         if t.generics = null
             return false
