@@ -3775,6 +3775,7 @@ define Planner
             choose c.definition
                 when s: Structure
                 {
+                    this.report_null_into_ref_field(s, arg_types, loc)
                     var provided_count: size_t 0
                     if provided <> null
                         set provided_count: (*provided).length
@@ -9245,6 +9246,7 @@ define Planner
                                         set ctor_cpi: ctor_cpi + 1
                                     }
                                     var ctor_ptypes Vector[PlannedType](ctor_ptypes_arr)
+                                    this.report_null_into_ref_arg(ctor_args_vec, ctor_ptypes)
                                     set ctor_args_vec: this.coerce_string_args_to_cstr(ctor_args_vec, ctor_ptypes)
                                     set ctor_args_vec: this.fold_string_args_to_char(ctor_args_vec, ctor_ptypes)
 
@@ -10967,6 +10969,7 @@ define Planner
                             if ns_coerce_valid
                             {
                                 var ns_cp_holder Vector[PlannedType](ns_coerce_params)
+                                this.report_null_into_ref_arg(call_args, ns_cp_holder)
                                 set call_args: this.coerce_string_args_to_cstr(call_args, ns_cp_holder)
                                 set call_args: this.fold_string_args_to_char(call_args, ns_cp_holder)
                             }
@@ -10976,6 +10979,7 @@ define Planner
                                 let mm_cc (*match_ref)
                                 if mm_cc.parameter_types <> null
                                 {
+                                    this.report_null_into_ref_arg(call_args, (*mm_cc.parameter_types))
                                     set call_args: this.coerce_string_args_to_cstr(call_args, (*mm_cc.parameter_types))
                                     set call_args: this.fold_string_args_to_char(call_args, (*mm_cc.parameter_types))
                                 }
@@ -20698,6 +20702,163 @@ define Planner
             sb.append tname
             sb.append "?) for a slot that may hold nothing, or a pointer when "
             sb.append "it is a raw address"
+            let rmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        ; operand_is_null_through_casts#: a bare `null` LITERAL, seen through
+        ; any number of `as` wrappers. `null as pointer[X]` is the same value
+        ; and the same claim as `null` -- the cast relocates nothing and proves
+        ; nothing -- so a gate that asks operand_is_null_constant# alone can be
+        ; stepped around by spelling the cast, and the corpus PREFERRED that
+        ; spelling: of the 85 argument-position findings swept on 2026-08-27,
+        ; 21 were written `null as pointer[X]`. Same lesson as the trailing-`as`
+        ; class in the page walkers: no question ABOUT a value may be answered
+        ; by the cast sitting on top of it.
+        function operand_is_null_through_casts(this: Planner, op: PlannedOperand) returns bool
+        {
+            if this.operand_is_null_constant(op)
+                return true
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when a: PlannedAs
+                {
+                    if a.value = null
+                        return false
+                    let inner a.value
+                    return this.operand_is_null_through_casts((*inner))
+                }
+                else
+                    return false
+            false
+        }
+
+        ; report_null_into_ref_arg#: the ARGUMENT position -- the ONE place
+        ; null still reaches a non-optional `ref[T]`, and the reason it does is
+        ; deliberate everywhere else. `report_null_into_ref#` judges the four
+        ; positions that carry a DECLARED type, and `type_conformance_accepted#`
+        ; class 2 refuses an Option at those same four; an argument is judged by
+        ; neither, because `null` plans as `pointer[void]` and types_compatible#
+        ; accepts THAT for every pointer and every ref parameter BY INTENT --
+        ; overload resolution rests on it. So the call resolves, plans, mangles
+        ; and emits in silence, and the callee holds a reference its own
+        ; declaration says cannot be null.
+        ;
+        ; Swept before the gate existed (tools/nullref/nullarg.py): 85 sites
+        ; over 40 declarations, and 37 of the 40 NEVER TEST the parameter --
+        ; they forward it -- which is why every body-reading sweep of the
+        ; nullref campaign had missed the whole class. A forwarder tests
+        ; nothing; only its call sites know.
+        ;
+        ; ★Alignment is copied from coerce_string_args_to_cstr# and must stay
+        ; copied: param_types EXCLUDES `this` in every resolution path, so the
+        ; user arguments are TAIL-aligned and a prepended receiver or implicit
+        ; page argument is absorbed by the offset. The two guards are that
+        ; discipline: nothing to say when there are no parameter types, and a
+        ; shorter argument list than parameter list is an arity question the
+        ; arity gates own.
+        ;
+        ; ★Narrow on purpose, in the same two ways report_null_into_ref# is: it
+        ; judges a null LITERAL and not the general flow of an Option (which
+        ; types_compatible# already refuses at a parameter, so every call site
+        ; spells the `x as ref[X]` unwrap), and it never fires on the `?`
+        ; spelling, since the s113 wrapper arrives named "Option".
+        function report_null_into_ref_arg(
+            this: Planner,
+            args: Vector[PlannedOperand],
+            param_types: Vector[PlannedType]
+        )
+        {
+            if param_types.length = 0
+                return
+            if args.length < param_types.length
+                return
+            let offset args.length - param_types.length
+            var ai: size_t offset
+            while ai < args.length
+            {
+                let ap args.get ai
+                if ap <> null
+                {
+                    let pp param_types.get(ai - offset)
+                    if pp <> null
+                    {
+                        let pt (*pp)
+                        let a (*ap)
+                        if pt.name = "ref"
+                            if this.operand_is_null_through_casts(a)
+                                this.report_null_arg(pt, a.loc)
+                    }
+                }
+                set ai: ai + 1
+            }
+        }
+
+        ; report_null_into_ref_field#: the CONSTRUCTION arm of the argument
+        ; gate, and it needs its own because a construction handed a bare
+        ; `null` never reaches the call funnels at all. The init match is what
+        ; diverts it: `null` plans as `pointer[void]` and types_compatible#
+        ; accepts that for NO ref parameter, so `check_initializer_match`
+        ; rejects the init and the construction falls through to the
+        ; POSITIONAL TUPLE path -- where the argument lands in the field
+        ; directly and no declared parameter is ever consulted. That is why
+        ; `Rec(null)` was silent while `obj.m(null)` was not.
+        ;
+        ; ★It asks the ARGUMENT TYPE, not an operand, because this path has no
+        ; operands -- and it can: the bare null literal IS the type
+        ; `pointer[void]` mangled "Pv" (make_null_type), which is the same test
+        ; the "no matching initializer" exemption thirty lines up already makes
+        ; for the same reason. ★A `null` into an OPTIONAL field stays correct
+        ; and stays silent: the s113 wrapper arrives named "Option", so the
+        ; `ref` name test excludes it, exactly as in the other two gates.
+        function report_null_into_ref_field(
+            this: Planner,
+            s: Structure,
+            arg_types: Vector[PlannedType],
+            loc: Span
+        )
+        {
+            var fi: size_t 0
+            while fi < arg_types.length
+            {
+                if fi < s.properties.length
+                {
+                    let at_ptr arg_types.get fi
+                    let pc_ptr s.properties.get fi
+                    if at_ptr <> null
+                    {
+                        if pc_ptr <> null
+                        {
+                            if at_ptr.mangled_name = "Pv"
+                                if pc_ptr.type <> null
+                                {
+                                    let planned_f this.plan_type((*pc_ptr.type))
+                                    if planned_f.name = "ref"
+                                        this.report_null_arg(planned_f, loc)
+                                }
+                        }
+                    }
+                }
+                set fi: fi + 1
+            }
+        }
+
+        ; The message half, split out for the reason report_null_into_ref#
+        ; splits its own: the walk above stays one statement per branch.
+        function report_null_arg(this: Planner, param_type: PlannedType, loc: Span)
+        {
+            var sb StringBuilder()
+            ; NO backticks in these literals -- an unescaped backtick opens a
+            ; string interpolation, and a lone one fails the MODELER.
+            let tname Planner.get_readable_name(param_type)
+            sb.append "null passed to a non-optional reference parameter: "
+            sb.append tname
+            sb.append " is a borrowed reference and must refer to something. "
+            sb.append "Declare the nullable form ("
+            sb.append tname
+            sb.append "?) for a parameter that may receive nothing, or a "
+            sb.append "pointer when it is a raw address"
             let rmsg sb.to_string()
             this.add_diagnostic(loc, String^this(rmsg))
         }

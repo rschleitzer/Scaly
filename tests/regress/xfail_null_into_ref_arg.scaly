@@ -1,0 +1,38 @@
+; Regression: null may not be PASSED to a non-optional reference parameter
+; (2026-08-27, the argument arm of the null-into-ref gate).
+;
+; report_null_into_ref# judges the four positions that carry a DECLARED type,
+; and type_conformance_accepted# class 2 refuses an Option at those same four.
+; An ARGUMENT is judged by neither, and deliberately so: `null` plans as
+; `pointer[void]`, which types_compatible# accepts for every pointer and every
+; ref parameter BY INTENT -- overload resolution rests on that. So the call
+; resolved, planned, mangled and emitted in silence, and the callee held a
+; reference its own declaration says cannot be null.
+;
+; Swept before the gate existed (tools/nullref/nullarg.py): 85 sites over 40
+; declarations, plus 22 more that only the compiler could resolve, because a
+; text tool cannot tell two same-named `make`s apart.
+;
+; The METHOD shape is the one tested here; the sibling shapes (a qualified
+; static, a construction, and the `null as pointer[X]` spelling of the same
+; null) are in xfail_null_into_ref_arg_shapes.scaly. The exit is the `?` form
+; -- null_into_ref_arg_ok.scaly proves it for all of them.
+;
+; xfail: null passed to a non-optional reference parameter
+
+define Alpha (k: int)
+{
+    init(k: int)
+        set this.k: k
+
+    function taken(this: ref[Alpha], other: ref[Alpha]) returns int
+        this.k
+}
+
+function drive() returns int
+{
+    var al Alpha#(7)
+    al.taken(null)
+}
+
+Console.println "unreachable"

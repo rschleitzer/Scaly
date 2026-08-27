@@ -1,0 +1,66 @@
+; Regression: the shapes the argument gate must stay SILENT about
+; (2026-08-27, the argument arm of the null-into-ref gate).
+;
+; The negative sides are xfail_null_into_ref_arg.scaly and
+; xfail_null_into_ref_arg_shapes.scaly. This side is the one that matters for
+; the ports: 62 declarations across dazzle, opensp and tscaly were made
+; optional by exactly these shapes, so if any of them starts reporting, the
+; sweep is unbuildable.
+;
+; Four things must stay quiet:
+;   (1) null into a NULLABLE reference parameter -- the whole point of the `?`
+;   (2) null into a POINTER parameter -- a pointer is nullable by construction
+;   (3) a real reference into a non-optional parameter
+;   (4) the explicit `x as ref[T]` unwrap, which is how a caller that has
+;       proven non-null says so; Scaly has no flow narrowing
+;
+; Expected: PASS
+
+define Alpha (k: int)
+{
+    init(k: int)
+        set this.k: k
+
+    function opt_taken(this: ref[Alpha], other: ref[Alpha]?) returns int
+        this.k
+
+    function ptr_taken(this: ref[Alpha], other: pointer[Alpha]) returns int
+        this.k
+
+    function ref_taken(this: ref[Alpha], other: ref[Alpha]) returns int
+        this.k + other.k
+}
+
+define OptRec (a: ref[Alpha]?)
+{
+    init(a: ref[Alpha]?)
+        set this.a: a
+}
+
+function free_opt(a: ref[Alpha]?) returns int
+{
+    if a = null
+        return 0
+    a.k
+}
+
+function drive() returns int
+{
+    var al Alpha#(7)
+    let one al.opt_taken(null)                  ; (1)
+    let two al.ptr_taken(null)                  ; (2)
+    let three al.ref_taken(&al)                 ; (3)
+    let four OptRec#(null)                      ; (1) through a construction
+    let five free_opt(null)                     ; (1) through a free function
+    var maybe: ref[Alpha]? &al
+    let six al.ref_taken(maybe as ref[Alpha])   ; (4)
+    ; `four.a` is READ only as a null test -- the construction stored the null
+    ; it was handed, so dereferencing it would be the bug this file is about.
+    var built 0
+    if four.a = null
+        set built: 1
+    ((one + two) + (three + five)) + (six + built)
+}
+
+if drive() = 43
+    Console.println "PASS"

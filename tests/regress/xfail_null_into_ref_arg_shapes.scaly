@@ -1,0 +1,42 @@
+; Regression: the argument gate reaches the CONSTRUCTION too, and it needs its
+; own arm to do it (2026-08-27).
+;
+; A construction handed a bare `null` never arrives at the call funnels where
+; report_null_into_ref_arg# sits. The init match is what diverts it: `null`
+; plans as `pointer[void]`, types_compatible# accepts that for NO ref
+; parameter, so check_initializer_match rejects the init and the construction
+; falls through to the POSITIONAL TUPLE path -- where the argument lands in the
+; field directly and no declared parameter is ever consulted. That is why
+; `Rec(null)` was silent on the day `obj.m(null)` became loud, and why
+; report_null_into_ref_field# exists and asks the FIELD.
+;
+; It also covers the cast spelling of the same null: `null as pointer[X]` is
+; the same value and the same claim, the cast relocates nothing, and the
+; corpus PREFERRED that spelling (21 of the 85 swept sites). A gate that asks
+; operand_is_null_constant# alone can be stepped around by writing it.
+;
+; xfail: null passed to a non-optional reference parameter
+
+define Alpha (k: int)
+{
+    init(k: int)
+        set this.k: k
+}
+
+define Rec (a: ref[Alpha])
+{
+    init(a: ref[Alpha])
+        set this.a: a
+}
+
+function free_fn(a: ref[Alpha]) returns int
+    a.k
+
+function drive() returns int
+{
+    let viaCtor Rec#(null)
+    let viaCast free_fn(null as pointer[Alpha])
+    viaCtor.a.k + viaCast
+}
+
+Console.println "unreachable"
