@@ -1,0 +1,25 @@
+; Regression: a `set` whose target is a NON-MUTABLE reference and whose source
+; stores through nothing is a hard error (2026-08-27).
+;
+; The emitter's Variable arm returns without storing when the target is not
+; `is_mutable`, so such a statement is a SILENT no-op. That is how three
+; `store %Entity` vanished out of opensp's parse_external_entity during the
+; deref sweep -- the SGML corpus went 380/380 to 287/380, every failure an
+; entity or a subdoc, with nothing said at the line that caused it.
+;
+; A `var` local may be rebound; a parameter and a `let` may not, so there the
+; only reading left is the store, and a value that is neither the pointee nor
+; a reference of the same type has no reading at all.
+;
+; xfail: cannot assign through this reference
+
+define Box (v: int)
+
+procedure wrong(r: ref[Box], n: int)
+{
+    set r: n
+}
+
+var b Box(1)
+wrong(&b, 5)
+Console.println "unreachable"

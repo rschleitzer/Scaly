@@ -21552,13 +21552,43 @@ define Planner
         {
             if op.result_type.name <> "ref"
                 return false
-            ; A ref TARGET keeps the reference; so does a pointer one, where
-            ; the borrow is the value being asked for.
-            if Planner.type_is_reference_shaped(target_type)
-                return false
             var inner: PlannedType op.result_type
             if Planner.type_strip_one_reference(op.result_type, &inner) = false
                 return false
+            ; ★ The target accepts the REFERENCE ITSELF when its own pointee is
+            ; the operand's pointee -- SAME indirection level. Asking the
+            ; target's SHAPE instead blocked every load whose pointee is itself
+            ; a borrow (`ref[pointer[i64]]` into a `pointer[i64]` slot,
+            ; `ref[ref[X]?]` into a `ref[X]?`), which is exactly the out-cell
+            ; of reference type; asking plain `types_compatible` blocked the
+            ; opposite half, because it is lenient about one level of
+            ; indirection and answers true for `int` against `ref[int]`.
+            ; ★ Peel the NPO wrapper off the TARGET first. `ref[T]?` is
+            ; `Option[ref[T]]`, which `type_strip_one_reference` does not
+            ; recognise, so without this a `returns ref[pointer[void]]?` whose
+            ; tail is `&head.element` looked like a target one level SHALLOWER
+            ; than it is and the reference was loaded away -- `List.get_head`
+            ; came back with the ELEMENT where the caller wants its address.
+            var touter: PlannedType target_type
+            if Planner.planned_type_is_npo_ref(target_type)
+                if target_type.generics <> null
+                {
+                    let tg (*target_type.generics)
+                    if tg.length = 1
+                    {
+                        let tg0 tg.get 0
+                        if tg0 <> null
+                            set touter: (*tg0)
+                    }
+                }
+            var tinner: PlannedType touter
+            if Planner.type_strip_one_reference(touter, &tinner)
+            {
+                if Planner.types_compatible(tinner, inner)
+                    return false
+                if Planner.types_equal_unqualified(tinner, inner)
+                    return false
+            }
             if Planner.types_compatible(target_type, inner)
                 return true
             Planner.types_equal_unqualified(target_type, inner)
@@ -21602,7 +21632,7 @@ define Planner
             m
         }
 
-        function set_target_stores_through(target_type: PlannedType, source_type: PlannedType, target_is_mutable: bool) returns bool
+        function set_target_stores_through(this: Planner, target_type: PlannedType, source_type: PlannedType, target_is_mutable: bool) returns bool
         {
             if target_type.name <> "ref"
                 return false
@@ -21650,7 +21680,70 @@ define Planner
             if Planner.region_value_matches_pointer(target_type, source_type)
                 if target_is_mutable
                     return false
-            Planner.type_conformance_accepted(inner, source_type)
+            if Planner.type_conformance_accepted(inner, source_type)
+                return true
+            ; ★ A VARIANT payload conforms to its union. `set ent:
+            ; Entity.ExternalText(ExternalTextEntity(...))` reports the
+            ; INNERMOST payload's type, which type_conformance_accepted# does
+            ; not judge -- report_type_mismatch# keeps that question in a
+            ; separate acceptor. Without it the store fell through to the
+            ; rebind and DISAPPEARED: three `store %Entity` out of opensp's
+            ; parse_external_entity, and the corpus went 380/380 -> 287/380
+            ; with every entity, subdoc and architecture test failing.
+            this.type_conforms_as_variant(inner, source_type)
+        }
+
+        ; report_unassignable_ref_target#: a `set` whose target is a
+        ; NON-MUTABLE reference and whose source stores through nothing.
+        ;
+        ; The emitter's Variable arm returns without storing when the target is
+        ; not `is_mutable`, so such a statement is a SILENT no-op -- which is
+        ; how three `store %Entity` vanished out of opensp's
+        ; parse_external_entity when a variant payload was not recognised as
+        ; conforming to its union (the corpus went 380/380 to 287/380, every
+        ; failure an entity or a subdoc). The store-through rewrite is what
+        ; normally saves such a statement; when it does not fire, saying so is
+        ; the only thing between the author and a dropped assignment.
+        function report_unassignable_ref_target(
+            this: Planner,
+            target: PlannedOperand,
+            loc: Span
+        )
+        {
+            if target.member_access <> null
+                return
+            ; A POINTER target is the same silent drop -- the emitter's arm
+            ; asks `is_mutable`, not the type -- and that half is OLDER than
+            ; the reference rules. It is what caught the sweep rewriting
+            ; `set *ent: Entity.ExternalText(...)` on a LET-BOUND POINTER: the
+            ; gate had reported a different star on that line, the sweeper's
+            ; first rule matched the target instead, and the store vanished.
+            var target_is_borrow: bool false
+            if target.result_type.name = "ref"
+                set target_is_borrow: true
+            if target.result_type.name = "pointer"
+                set target_is_borrow: true
+            if target_is_borrow = false
+                return
+            if Planner.operand_is_mutable_variable(target)
+                return
+            var is_var: bool false
+            choose target.expr
+                when v: Variable
+                    set is_var: true
+                else
+                    0
+            if is_var = false
+                return
+
+            var sb StringBuilder()
+            ; NO backticks in these literals -- see report_ref_arithmetic#.
+            sb.append "cannot assign through this reference: a set on a "
+            sb.append "non-var reference writes its POINTEE, and this value "
+            sb.append "is neither the pointee nor a reference of the same "
+            sb.append "type. Only a var local may be rebound"
+            let umsg sb.to_string()
+            this.add_diagnostic(loc, String^this(umsg))
         }
 
         function deref_ref_into_pointee(
@@ -22596,13 +22689,26 @@ define Planner
             ; store THROUGH the extracted field: the wild-store shape, 7632
             ; lines of dazzle's root, and the engine segfaulted on its own
             ; codegen. A `set` through a reference names the REFERENCE.
+            var set_stores_through: bool false
             if a.target.length > 0
                 if planned_target_collapsed.member_access = null
-                if Planner.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type, Planner.operand_is_mutable_variable(planned_target_collapsed))
-                    set planned_target_collapsed: this.deref_ref_into_pointee(
-                        Planner.strip_one_reference_or_self(planned_target_collapsed.result_type),
-                        planned_target_collapsed
-                    )
+                    set set_stores_through: this.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type, Planner.operand_is_mutable_variable(planned_target_collapsed))
+            if set_stores_through
+                set planned_target_collapsed: this.deref_ref_into_pointee(
+                    Planner.strip_one_reference_or_self(planned_target_collapsed.result_type),
+                    planned_target_collapsed
+                )
+
+            ; ... and if the target is STILL a reference here, the rewrite did
+            ; not fire and the emitter would drop the statement --
+            ; report_unassignable_ref_target#.
+            ; ★ The FLAG, not the rewritten type. After a successful rewrite
+            ; the target's type is its POINTEE, which for a `ref[pointer[T]]`
+            ; slot is still pointer-shaped -- so re-reading the type reported a
+            ; dropped store on a statement that stores perfectly well.
+            if a.target.length > 0
+                if set_stores_through = false
+                    this.report_unassignable_ref_target(planned_target_collapsed, planned_target_collapsed.loc)
 
             ; A `ref[T]` source into a `T` target is the VALUE, not the
             ; reference -- deref_ref_into_pointee#. Ahead of the conformance
