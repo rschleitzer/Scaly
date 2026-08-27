@@ -2877,6 +2877,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayIcE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceIcE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayIcE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayIcE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
+  %tuple = alloca %_Z5SliceIcE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 declare i64 @_ZN4Page12get_capacityEm(ptr, i64)
 
 define linkonce_odr void @_ZN5ArrayIcEC1Ev(ptr %0) {
@@ -6859,6 +6874,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6StringE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6StringE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6StringE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6StringE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6StringEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
@@ -8160,6 +8190,21 @@ entry:
   call void @_ZN13ArrayIteratorI6VectorI6StringEEC1E6OptionIR5ArrayI6VectorI6StringEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6VectorI6StringEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6VectorI6StringEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6VectorI6StringEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -9753,6 +9798,21 @@ entry:
   call void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1E6OptionIR5ArrayI11BuilderListI4SlotI6StringEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -12453,6 +12513,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String12LocalBindingEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String12LocalBindingEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String12LocalBindingEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String12LocalBindingEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String12LocalBindingEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
@@ -13750,6 +13825,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayImE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceImE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayImE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayImE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayImE %load.struct, 0
+  %tuple = alloca %_Z5SliceImE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceImE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceImE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceImE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceImE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayImEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 0
@@ -15014,6 +15104,21 @@ entry:
   call void @_ZN13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEEC1E6OptionIR5ArrayI12KeyValuePairI6String11PlannedTypeEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String11PlannedTypeEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String11PlannedTypeEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String11PlannedTypeEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String11PlannedTypeEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String11PlannedTypeEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -16284,6 +16389,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI14TypeConstraintE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI14TypeConstraintE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI14TypeConstraintE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 0
+  %tuple = alloca %_Z5SliceI14TypeConstraintE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI14TypeConstraintE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI14TypeConstraintE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI14TypeConstraintE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI14TypeConstraintE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI14TypeConstraintEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
@@ -17551,6 +17671,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairIm11PlannedTypeEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairIm11PlannedTypeEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairIm11PlannedTypeEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairIm11PlannedTypeEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairIm11PlannedTypeEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
@@ -18582,6 +18717,21 @@ entry:
   call void @_ZN13ArrayIteratorI6VectorI7OperandEEC1E6OptionIR5ArrayI6VectorI7OperandEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6VectorI7OperandEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI7OperandEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI7OperandEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI7OperandEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6VectorI7OperandEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6VectorI7OperandEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI7OperandEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6VectorI7OperandEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI7OperandEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6VectorI7OperandEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6VectorI7OperandEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI7OperandEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -19852,6 +20002,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI9StatementE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI9StatementE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI9StatementE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI9StatementE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI9StatementE %load.struct, 0
+  %tuple = alloca %_Z5SliceI9StatementE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9StatementE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI9StatementE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI9StatementE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9StatementE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI9StatementEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 0
@@ -21116,6 +21281,21 @@ entry:
   call void @_ZN13ArrayIteratorI4CaseEC1E6OptionIR5ArrayI4CaseEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI4CaseE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI4CaseE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI4CaseE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI4CaseE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI4CaseE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI4CaseE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI4CaseE %load.struct, 0
+  %tuple = alloca %_Z5SliceI4CaseE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI4CaseE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI4CaseE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI4CaseE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI4CaseE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -22386,6 +22566,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6BranchE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6BranchE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6BranchE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6BranchE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6BranchE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6BranchE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6BranchE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6BranchE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6BranchE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6BranchE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6BranchEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 0
@@ -23650,6 +23845,21 @@ entry:
   call void @_ZN13ArrayIteratorI4WhenEC1E6OptionIR5ArrayI4WhenEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI4WhenE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI4WhenE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI4WhenE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI4WhenE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI4WhenE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI4WhenE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI4WhenE %load.struct, 0
+  %tuple = alloca %_Z5SliceI4WhenE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI4WhenE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI4WhenE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI4WhenE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI4WhenE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -24920,6 +25130,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI4ItemE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI4ItemE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI4ItemE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI4ItemE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI4ItemE %load.struct, 0
+  %tuple = alloca %_Z5SliceI4ItemE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI4ItemE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI4ItemE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI4ItemE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI4ItemE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI4ItemEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 0
@@ -26184,6 +26409,21 @@ entry:
   call void @_ZN13ArrayIteratorI7OperandEC1E6OptionIR5ArrayI7OperandEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI7OperandE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI7OperandE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI7OperandE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI7OperandE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI7OperandE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI7OperandE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI7OperandE %load.struct, 0
+  %tuple = alloca %_Z5SliceI7OperandE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI7OperandE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI7OperandE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI7OperandE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI7OperandE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -27454,6 +27694,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI9ComponentE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI9ComponentE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI9ComponentE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI9ComponentE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI9ComponentE %load.struct, 0
+  %tuple = alloca %_Z5SliceI9ComponentE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9ComponentE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI9ComponentE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI9ComponentE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9ComponentE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI9ComponentEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 0
@@ -28718,6 +28973,21 @@ entry:
   call void @_ZN13ArrayIteratorI9AttributeEC1E6OptionIR5ArrayI9AttributeEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI9AttributeE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI9AttributeE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9AttributeE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI9AttributeE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI9AttributeE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI9AttributeE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI9AttributeE %load.struct, 0
+  %tuple = alloca %_Z5SliceI9AttributeE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9AttributeE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI9AttributeE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI9AttributeE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9AttributeE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -29988,6 +30258,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI16GenericParameterE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI16GenericParameterE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI16GenericParameterE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI16GenericParameterE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI16GenericParameterE %load.struct, 0
+  %tuple = alloca %_Z5SliceI16GenericParameterE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI16GenericParameterE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI16GenericParameterE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI16GenericParameterE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI16GenericParameterE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16GenericParameterEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 0
@@ -31252,6 +31537,21 @@ entry:
   call void @_ZN13ArrayIteratorI3UseEC1E6OptionIR5ArrayI3UseEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI3UseE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI3UseE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI3UseE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI3UseE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI3UseE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI3UseE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI3UseE %load.struct, 0
+  %tuple = alloca %_Z5SliceI3UseE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI3UseE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI3UseE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI3UseE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI3UseE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -32522,6 +32822,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6MemberE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6MemberE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6MemberE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6MemberE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6MemberE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6MemberE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6MemberE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6MemberE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6MemberE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6MemberE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6MemberEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 0
@@ -33789,6 +34104,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI8FunctionE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI8FunctionE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI8FunctionE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI8FunctionE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI8FunctionE %load.struct, 0
+  %tuple = alloca %_Z5SliceI8FunctionE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI8FunctionE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI8FunctionE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI8FunctionE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI8FunctionE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI8FunctionEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 0
@@ -34253,6 +34583,11 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K8NameableEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI1K8NameableEEE) %0, ptr %1, ptr %2) {
+entry:
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K8NameableEEEC1Ev(ptr %0) {
 entry:
   ret void
@@ -34474,6 +34809,11 @@ entry:
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI1K8NameableEE) %0, ptr %1, ptr %2) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K8NameableEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI1K8NameableEE) %0, ptr %1, ptr %2) {
 entry:
   ret void
 }
@@ -34869,6 +35209,11 @@ entry:
 }
 
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE) %0, ptr %1, ptr %2) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE) %0, ptr %1, ptr %2) {
 entry:
   ret void
 }
@@ -35988,6 +36333,21 @@ entry:
   call void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1E6OptionIR5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI8Nameable8NameableEEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6VectorI12KeyValuePairI8Nameable8NameableEEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -37255,6 +37615,21 @@ entry:
   call void @_ZN13ArrayIteratorI12KeyValuePairI8Nameable8NameableEEC1E6OptionIR5ArrayI12KeyValuePairI8Nameable8NameableEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI8Nameable8NameableEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI8Nameable8NameableEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI8Nameable8NameableEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI8Nameable8NameableEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI8Nameable8NameableEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI8Nameable8NameableEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI8Nameable8NameableEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI8Nameable8NameableEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -38535,6 +38910,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI6String8NameableEEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableEEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6VectorI12KeyValuePairI6String8NameableEEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6String8NameableEEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6String8NameableEEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6VectorI12KeyValuePairI6String8NameableEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableEEEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
@@ -39799,6 +40189,21 @@ entry:
   call void @_ZN13ArrayIteratorI12KeyValuePairI6String8NameableEEC1E6OptionIR5ArrayI12KeyValuePairI6String8NameableEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String8NameableEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String8NameableEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String8NameableEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8NameableEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String8NameableEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8NameableEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8NameableEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String8NameableEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -41289,6 +41694,21 @@ entry:
   call void @_ZN13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1E6OptionIR5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -43442,6 +43862,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String7ConceptEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String7ConceptEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String7ConceptEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String7ConceptEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String7ConceptEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
@@ -44706,6 +45141,21 @@ entry:
   call void @_ZN13ArrayIteratorI16PlannedStructureEC1E6OptionIR5ArrayI16PlannedStructureEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI16PlannedStructureE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI16PlannedStructureE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI16PlannedStructureE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI16PlannedStructureE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI16PlannedStructureE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 0
+  %tuple = alloca %_Z5SliceI16PlannedStructureE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI16PlannedStructureE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI16PlannedStructureE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI16PlannedStructureE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI16PlannedStructureE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -45976,6 +46426,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12PlannedUnionE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12PlannedUnionE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12PlannedUnionE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12PlannedUnionE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12PlannedUnionE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12PlannedUnionE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12PlannedUnionE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12PlannedUnionE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12PlannedUnionEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
@@ -47240,6 +47705,21 @@ entry:
   call void @_ZN13ArrayIteratorI15PlannedFunctionEC1E6OptionIR5ArrayI15PlannedFunctionEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI15PlannedFunctionE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI15PlannedFunctionE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI15PlannedFunctionE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI15PlannedFunctionE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 0
+  %tuple = alloca %_Z5SliceI15PlannedFunctionE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI15PlannedFunctionE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI15PlannedFunctionE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI15PlannedFunctionE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI15PlannedFunctionE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -48510,6 +48990,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI13PlannedGlobalE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI13PlannedGlobalE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 0
+  %tuple = alloca %_Z5SliceI13PlannedGlobalE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI13PlannedGlobalE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI13PlannedGlobalE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI13PlannedGlobalE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI13PlannedGlobalE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI13PlannedGlobalEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
@@ -49774,6 +50269,21 @@ entry:
   call void @_ZN13ArrayIteratorI12KeyValuePairI6String8FunctionEEC1E6OptionIR5ArrayI12KeyValuePairI6String8FunctionEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String8FunctionEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String8FunctionEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String8FunctionEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8FunctionEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8FunctionEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String8FunctionEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -51044,6 +51554,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String6LambdaEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String6LambdaEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6LambdaEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6LambdaEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String6LambdaEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
@@ -52311,6 +52836,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String8OperatorEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String8OperatorEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8OperatorEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8OperatorEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String8OperatorEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
@@ -53342,6 +53882,21 @@ entry:
   call void @_ZN13ArrayIteratorI11PlannedTypeEC1E6OptionIR5ArrayI11PlannedTypeEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11PlannedTypeE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11PlannedTypeE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11PlannedTypeE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11PlannedTypeE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI11PlannedTypeE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI11PlannedTypeE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI11PlannedTypeE %load.struct, 0
+  %tuple = alloca %_Z5SliceI11PlannedTypeE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI11PlannedTypeE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11PlannedTypeE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI11PlannedTypeE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11PlannedTypeE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -54845,6 +55400,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6String6ModuleEE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12KeyValuePairI6String6ModuleEE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6ModuleEE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6ModuleEE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12KeyValuePairI6String6ModuleEE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
@@ -56112,6 +56682,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI17PlannerDiagnosticE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI17PlannerDiagnosticE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 0
+  %tuple = alloca %_Z5SliceI17PlannerDiagnosticE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI17PlannerDiagnosticE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI17PlannerDiagnosticE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI17PlannerDiagnosticE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI17PlannerDiagnosticE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
@@ -57143,6 +57728,21 @@ entry:
   call void @_ZN13ArrayIteratorI6ModuleEC1E6OptionIR5ArrayI6ModuleEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6ModuleE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6ModuleE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6ModuleE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6ModuleE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI6ModuleE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI6ModuleE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI6ModuleE %load.struct, 0
+  %tuple = alloca %_Z5SliceI6ModuleE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI6ModuleE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6ModuleE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI6ModuleE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6ModuleE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -58646,6 +59246,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI7ProgramE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI7ProgramE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI7ProgramE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI7ProgramE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI7ProgramE %load.struct, 0
+  %tuple = alloca %_Z5SliceI7ProgramE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI7ProgramE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI7ProgramE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI7ProgramE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI7ProgramE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI7ProgramEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
@@ -59910,6 +60525,21 @@ entry:
   call void @_ZN13ArrayIteratorI12EscapeRecordEC1E6OptionIR5ArrayI12EscapeRecordEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12EscapeRecordE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12EscapeRecordE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12EscapeRecordE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12EscapeRecordE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12EscapeRecordE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12EscapeRecordE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12EscapeRecordE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12EscapeRecordE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12EscapeRecordE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12EscapeRecordE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -64295,6 +64925,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI17DeclarationSyntaxE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI17DeclarationSyntaxE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI17DeclarationSyntaxE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI17DeclarationSyntaxE %load.struct, 0
+  %tuple = alloca %_Z5SliceI17DeclarationSyntaxE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI17DeclarationSyntaxE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI17DeclarationSyntaxE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI17DeclarationSyntaxE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI17DeclarationSyntaxE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
@@ -66613,6 +67258,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12MemberSyntaxE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12MemberSyntaxE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI12MemberSyntaxE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI12MemberSyntaxE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI12MemberSyntaxE %load.struct, 0
+  %tuple = alloca %_Z5SliceI12MemberSyntaxE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI12MemberSyntaxE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12MemberSyntaxE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI12MemberSyntaxE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12MemberSyntaxE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12MemberSyntaxEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 0
@@ -68014,6 +68674,21 @@ entry:
   call void @_ZN13ArrayIteratorI13VariantSyntaxEC1E6OptionIR5ArrayI13VariantSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI13VariantSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI13VariantSyntaxE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI13VariantSyntaxE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI13VariantSyntaxE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI13VariantSyntaxE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI13VariantSyntaxE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI13VariantSyntaxE %load.struct, 0
+  %tuple = alloca %_Z5SliceI13VariantSyntaxE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI13VariantSyntaxE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI13VariantSyntaxE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI13VariantSyntaxE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI13VariantSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -77110,6 +77785,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI10ItemSyntaxE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI10ItemSyntaxE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI10ItemSyntaxE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI10ItemSyntaxE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI10ItemSyntaxE %load.struct, 0
+  %tuple = alloca %_Z5SliceI10ItemSyntaxE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI10ItemSyntaxE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI10ItemSyntaxE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI10ItemSyntaxE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI10ItemSyntaxE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI10ItemSyntaxEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 0
@@ -79346,6 +80036,21 @@ entry:
   call void @_ZN13ArrayIteratorI10PartSyntaxEC1E6OptionIR5ArrayI10PartSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI10PartSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI10PartSyntaxE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI10PartSyntaxE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI10PartSyntaxE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI10PartSyntaxE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI10PartSyntaxE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI10PartSyntaxE %load.struct, 0
+  %tuple = alloca %_Z5SliceI10PartSyntaxE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI10PartSyntaxE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI10PartSyntaxE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI10PartSyntaxE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI10PartSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -90643,6 +91348,21 @@ entry:
   call void @_ZN13ArrayIteratorI21GenericArgumentSyntaxEC1E6OptionIR5ArrayI21GenericArgumentSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI21GenericArgumentSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI21GenericArgumentSyntaxE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI21GenericArgumentSyntaxE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI21GenericArgumentSyntaxE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI21GenericArgumentSyntaxE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI21GenericArgumentSyntaxE %load.struct, 0
+  %tuple = alloca %_Z5SliceI21GenericArgumentSyntaxE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI21GenericArgumentSyntaxE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI21GenericArgumentSyntaxE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI21GenericArgumentSyntaxE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI21GenericArgumentSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -110151,6 +110871,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI15ExtensionSyntaxE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI15ExtensionSyntaxE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI15ExtensionSyntaxE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI15ExtensionSyntaxE %load.struct, 0
+  %tuple = alloca %_Z5SliceI15ExtensionSyntaxE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI15ExtensionSyntaxE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI15ExtensionSyntaxE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI15ExtensionSyntaxE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI15ExtensionSyntaxE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
@@ -115708,6 +116443,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI16PlannedStatementE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI16PlannedStatementE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI16PlannedStatementE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI16PlannedStatementE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI16PlannedStatementE %load.struct, 0
+  %tuple = alloca %_Z5SliceI16PlannedStatementE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI16PlannedStatementE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI16PlannedStatementE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI16PlannedStatementE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI16PlannedStatementE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16PlannedStatementEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 0
@@ -117560,6 +118310,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI14PlannedOperandE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI14PlannedOperandE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI14PlannedOperandE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI14PlannedOperandE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI14PlannedOperandE %load.struct, 0
+  %tuple = alloca %_Z5SliceI14PlannedOperandE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI14PlannedOperandE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI14PlannedOperandE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI14PlannedOperandE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI14PlannedOperandE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI14PlannedOperandEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 0
@@ -118875,6 +119640,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI18PlannedInitializerE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI18PlannedInitializerE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI18PlannedInitializerE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI18PlannedInitializerE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI18PlannedInitializerE %load.struct, 0
+  %tuple = alloca %_Z5SliceI18PlannedInitializerE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI18PlannedInitializerE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI18PlannedInitializerE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI18PlannedInitializerE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI18PlannedInitializerE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI18PlannedInitializerEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 0
@@ -120139,6 +120919,21 @@ entry:
   call void @_ZN13ArrayIteratorI15PlannedOperatorEC1E6OptionIR5ArrayI15PlannedOperatorEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI15PlannedOperatorE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI15PlannedOperatorE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedOperatorE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI15PlannedOperatorE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI15PlannedOperatorE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI15PlannedOperatorE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI15PlannedOperatorE %load.struct, 0
+  %tuple = alloca %_Z5SliceI15PlannedOperatorE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI15PlannedOperatorE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI15PlannedOperatorE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI15PlannedOperatorE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI15PlannedOperatorE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -123019,6 +123814,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI16PlannedComponentE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI16PlannedComponentE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI16PlannedComponentE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI16PlannedComponentE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI16PlannedComponentE %load.struct, 0
+  %tuple = alloca %_Z5SliceI16PlannedComponentE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI16PlannedComponentE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI16PlannedComponentE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI16PlannedComponentE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI16PlannedComponentE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16PlannedComponentEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 0
@@ -124283,6 +125093,21 @@ entry:
   call void @_ZN13ArrayIteratorI13PlannedBranchEC1E6OptionIR5ArrayI13PlannedBranchEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI13PlannedBranchE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI13PlannedBranchE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI13PlannedBranchE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI13PlannedBranchE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI13PlannedBranchE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI13PlannedBranchE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI13PlannedBranchE %load.struct, 0
+  %tuple = alloca %_Z5SliceI13PlannedBranchE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI13PlannedBranchE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI13PlannedBranchE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI13PlannedBranchE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI13PlannedBranchE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -125553,6 +126378,21 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI11PlannedWhenE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11PlannedWhenE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI11PlannedWhenE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI11PlannedWhenE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI11PlannedWhenE %load.struct, 0
+  %tuple = alloca %_Z5SliceI11PlannedWhenE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI11PlannedWhenE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11PlannedWhenE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI11PlannedWhenE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11PlannedWhenE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI11PlannedWhenEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 0
@@ -126817,6 +127657,21 @@ entry:
   call void @_ZN13ArrayIteratorI19PlannedMemberAccessEC1E6OptionIR5ArrayI19PlannedMemberAccessEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI19PlannedMemberAccessE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI19PlannedMemberAccessE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI19PlannedMemberAccessE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI19PlannedMemberAccessE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI19PlannedMemberAccessE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI19PlannedMemberAccessE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI19PlannedMemberAccessE %load.struct, 0
+  %tuple = alloca %_Z5SliceI19PlannedMemberAccessE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI19PlannedMemberAccessE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI19PlannedMemberAccessE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI19PlannedMemberAccessE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI19PlannedMemberAccessE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -129437,6 +130292,21 @@ entry:
   call void @_ZN13ArrayIteratorI11PlannedItemEC1E6OptionIR5ArrayI11PlannedItemEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11PlannedItemE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11PlannedItemE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11PlannedItemE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11PlannedItemE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI11PlannedItemE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI11PlannedItemE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI11PlannedItemE %load.struct, 0
+  %tuple = alloca %_Z5SliceI11PlannedItemE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI11PlannedItemE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11PlannedItemE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI11PlannedItemE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11PlannedItemE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -132189,6 +133059,21 @@ entry:
   call void @_ZN13ArrayIteratorI15PlannedPropertyEC1E6OptionIR5ArrayI15PlannedPropertyEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI15PlannedPropertyE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI15PlannedPropertyE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedPropertyE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI15PlannedPropertyE) %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN5ArrayI15PlannedPropertyE10get_bufferEv(ptr %2)
+  %load.struct = load %_Z5ArrayI15PlannedPropertyE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayI15PlannedPropertyE %load.struct, 0
+  %tuple = alloca %_Z5SliceI15PlannedPropertyE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI15PlannedPropertyE, ptr %tuple, i32 0, i32 0
+  store ptr %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI15PlannedPropertyE, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI15PlannedPropertyE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI15PlannedPropertyE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
