@@ -15022,6 +15022,44 @@ define Planner
                         }
                     }
 
+                    ; ★★★ An unwrapped receiver may arrive with the right NAME
+                    ; and the right GENERIC ARGUMENTS but an EMPTY mangled_name,
+                    ; and the emitter then has nothing to key the struct on: it
+                    ; falls back to a bare-name match and silently answers the
+                    ; FIRST `Vector[...]` it ever registered. Measured on
+                    ; `HashMapBuilder[String, Nameable].slots.length`, where the
+                    ; `pointer[Vector[...]]` spelling carries
+                    ; `_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE`
+                    ; and the `ref[Vector[...]]?` spelling carries "" -- one extra
+                    ; generic level (`Option[ref[X]]` vs `pointer[X]`) is the whole
+                    ; difference, so the type was never instantiated at that depth
+                    ; even though the instantiation itself exists. The emitted GEP
+                    ; then walked `Vector[String]`, and `String::equals` read string
+                    ; BYTES as an address (SIGSEGV).
+                    ;
+                    ; Recomputing the name here is safe because the ARGUMENTS are
+                    ; already concrete -- this repairs a missing name, it never
+                    ; overrides one -- and it is the point the defect was MEASURED
+                    ; at, not merely one that could produce it.
+                    if lookup_type.mangled_name.get_length() = 0
+                    {
+                        if lookup_type.generics <> null
+                        {
+                            var mg_args Vector[PlannedType]((*lookup_type.generics))
+                            let mg_name Planner.mangle_structure(lookup_type.name, &mg_args)
+                            set lookup_type: PlannedType(
+                                lookup_type.loc,
+                                lookup_type.name,
+                                mg_name,
+                                lookup_type.generics,
+                                lookup_type.life,
+                                lookup_type.origin,
+                                lookup_type.array_size,
+                                lookup_type.variable
+                            )
+                        }
+                    }
+
                     ; Property lookup.
                     let prop_ref this.lookup_property(lookup_type.name, m)
                     if prop_ref <> null
