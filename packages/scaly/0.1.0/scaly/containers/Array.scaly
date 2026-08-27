@@ -29,11 +29,11 @@ use scaly.memory.runtime
 ; `generic-substitution-defect`.
 define ArrayIterator[T]
 (
-    array: pointer[Array[T]]
+    array: ref[Array[T]]?
     position: size_t
 )
 {
-    init (a: pointer[Array[T]])
+    init (a: ref[Array[T]]?)
     {
         set array: a
         set position: 0
@@ -55,7 +55,7 @@ define ArrayIterator[T]
 define Array[T]
 (
     length: size_t
-    vector: pointer[Vector[T]]
+    vector: ref[Vector[T]]?
 )
 {
     init ()

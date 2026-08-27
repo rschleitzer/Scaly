@@ -791,7 +791,7 @@ define Fiber
     ; buckets, then munmap the fiber stack. Returns the number of root
     ; pages torn down. Call after the fiber finished (or to kill it — a
     ; disposed fiber must never be resumed).
-    procedure dispose(f: pointer[Fiber]) returns int
+    procedure dispose(f: ref[Fiber]) returns int
     {
         var pages_freed 0
         var bucket f.saved_head
@@ -1964,7 +1964,7 @@ define Channel
     ; Free the channel record's page. Only the receiver calls this,
     ; after receive returned null (closed and drained) — every sender
     ; retired its handle, nothing can touch the record anymore.
-    procedure dispose(m: pointer[Channel])
+    procedure dispose(m: ref[Channel])
     {
         let mp Page.get(m as pointer[void])
         mp.deallocate_extensions()

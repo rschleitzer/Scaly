@@ -1551,22 +1551,6 @@ def main(root, apply=False):
                     rec = encrec[f.path].get(sl)
                     if ((rec, f.sig[sl][0]) in pins or (None, f.sig[sl][0]) in pins):
                         verdict, why = 'pointer', 'mangled-name-pinned'
-                    elif (f.sig[sl][0] == 'init' and rec in generic_recs
-                          and '[' in (inner or '')):
-                        # ★An `init` PARAMETER must move with the field it fills,
-                        # and the `generic-substitution-defect` hold below reads
-                        # `record_of`, which maps PROPERTY lines only -- a
-                        # signature line never reaches it.  So the field stayed a
-                        # pointer while its init parameter converted, and root
-                        # CLAUDE.md names exactly what that costs: a parameter
-                        # that disagrees makes `check_initializer_match` reject
-                        # the init, the construction falls through to the
-                        # POSITIONAL-TUPLE path, and it is correct only as long
-                        # as that init happens to assign in field order.  Found
-                        # on `ArrayIterator[T].init(a: pointer[Array[T]])`, whose
-                        # own field carries a fifteen-line comment saying it may
-                        # not move.
-                        verdict, why = 'pointer', 'generic-substitution-defect'
                     elif (f.path, sl, nm) in initptr:
                         verdict, why = 'pointer', 'init-param-mirrors-field'
                     elif (f.sig[sl][0], nm) in bufparams:
@@ -1609,44 +1593,17 @@ def main(root, apply=False):
                     # enough to pay for finding out, and a wrong answer there is
                     # a memory fault rather than a diagnostic.
                     verdict, why = 'pointer', 'module-global'
-                elif (f.record_of.get(li) in generic_recs
-                      and '[' in (inner or '')):                 # GENERIC FIELD
-                    # ★★★A field of a GENERIC concept whose own type nests
-                    # further generics rides a BROKEN substitution path, so it
-                    # stays a pointer until that is fixed -- this is a hold on a
-                    # compiler defect, not a doctrine judgement.
-                    #
-                    # `Planner.apply_name_substitution` rebuilds a type with
-                    # substituted generics but keeps `t.mangled_name`, which
-                    # ENCODES the generic arguments -- so the rebuilt type
-                    # carries the name of the arguments it had BEFORE. Declaring
-                    # `HashMapBuilder[K, V].slots` as
-                    # `ref[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]]?`
-                    # made the compiler emit a load of
-                    # `%_Z6VectorI6VectorI6StringEE` -- another instantiation's
-                    # type -- and a compare through
-                    # `%_Z12KeyValuePairI1K8NameableE`, `K` unsubstituted beside
-                    # a resolved `V`. The extra indirection that mismatch adds
-                    # then handed string BYTES to `String::equals` as an
-                    # address: SIGSEGV at 0x615f796c61637312 ("scaly_a").
-                    #
-                    # ★Three levels of nesting survived and four did not, which
-                    # is why it presents as a property of ONE declaration.
-                    # `HashSet`/`HashSetBuilder`/`HashMap` bootstrapped green
-                    # with the same change and are held anyway: green there is
-                    # evidence about the COMPILER's own instantiations, not
-                    # about the shape.
-                    #
-                    # ★Clearing `mangled_name` is NOT the fix and was measured:
-                    # the propagated value is consumed by subscript-operator
-                    # resolution, and `packages/scaly/tensor.scaly` stops
-                    # compiling ("unexpected operand" on `set gkp[...]: ...`).
-                    # Recomputing it from the substituted generics is the real
-                    # repair, and it moves every generic instantiation in the
-                    # compiler -- its own change, with the two-phase seed
-                    # refresh, because the SEED compiler is what builds stage1
-                    # and a converted stdlib must survive the OLD planner first.
-                    verdict, why = 'pointer', 'generic-substitution-defect'
+                # ★The `generic-substitution-defect` hold that stood here is GONE
+                # (2026-08-27) and nothing replaces it: a field of a generic concept
+                # whose type nests further generics now takes the ordinary FIELD path
+                # below. The hold's own comment predicted the repair -- "recomputing
+                # it from the substituted generics" -- and that is what landed:
+                # `Planner.remangle_generic#` re-mints a member hop's name from its
+                # own ARGUMENTS at the parent, at the RESULT (which is what the
+                # emitter GEPs the next hop with), and in
+                # `Emitter.region_walker_symbol`, whose bare-name fallback had every
+                # `Vector[...]` sharing ONE region walker. Landed two-phase: seed
+                # learns the fix, then the stdlib uses it.
                 else:                                               # FIELD
                     rec = f.record_of.get(li)
                     if rec is None:
