@@ -12353,12 +12353,19 @@ define Planner
                     ; reference-shaped, inside operand_derefs_to_pointee#), so
                     ; `r <> null` stays the NPO presence test that
                     ; report_null_test_on_ref# judges.
+                    ; ★ SCALAR pointees only. A `ref[Struct] <> ref[Struct]`
+                    ; comparison is an IDENTITY test on two addresses, and
+                    ; loading either side turned it into a struct copy plus the
+                    ; same pointer compare -- 2608 lines out of opensp's root
+                    ; for no change in meaning.
                     if Planner.is_integer_comparison_operator(op_name)
                     {
-                        if Planner.operand_derefs_to_pointee(rhs.result_type, result)
-                            set result: this.deref_ref_into_pointee(rhs.result_type, result)
-                        if Planner.operand_derefs_to_pointee(result.result_type, rhs)
-                            set rhs: this.deref_ref_into_pointee(result.result_type, rhs)
+                        if Planner.is_scalar_value_type_name(rhs.result_type.name)
+                            if Planner.operand_derefs_to_pointee(rhs.result_type, result)
+                                set result: this.deref_ref_into_pointee(rhs.result_type, result)
+                        if Planner.is_scalar_value_type_name(result.result_type.name)
+                            if Planner.operand_derefs_to_pointee(result.result_type, rhs)
+                                set rhs: this.deref_ref_into_pointee(result.result_type, rhs)
                     }
 
                     ; Integer literal beside an integer-typed operand in a
@@ -21562,15 +21569,22 @@ define Planner
             ; that question answers true for exactly the case this one has to
             ; separate out, and the rewrite never fired (measured: the store
             ; stayed a silent no-op with the rule in place).
-            ; ★ Nor the source's SHAPE alone: a page-hosted CONSTRUCTION is
-            ; reference-shaped too (`region_value_matches_pointer#` is why
-            ; `set *p: ElementType(...)` type-checks at all), and reading it as
-            ; a rebind dropped every such store -- 13 lines out of opensp's
-            ; root and a whole caller frame out of tscaly's, which is what the
-            ; byte-identity checksum on the sweep caught.
+            ; ★ Nor the source's SHAPE alone: `type_is_reference_shaped` is
+            ; true of a page-hosted CONSTRUCTION as well, which is a different
+            ; question from the one this rule asks.
+            ; ★ And a page-hosted construction REBINDS. `set cn.rcs:
+            ; Array[StringC]^page()` against a `ref[Array[StringC]]` field is
+            ; the ordinary port idiom -- residency inference decides where the
+            ; value lives and the slot holding a reference to it IS the point
+            ; (type_conformance_accepted#'s class 4 says so in as many words).
+            ; Reading it as a store-through turned every such field assignment
+            ; into `load struct` + `extractvalue` + a store THROUGH the
+            ; extracted field -- the wild-store shape, 7632 lines of dazzle's
+            ; root, and the engine segfaulted on its own codegen.
             if Planner.types_compatible(target_type, source_type)
-                if Planner.region_value_matches_pointer(target_type, source_type) = false
-                    return false
+                return false
+            if Planner.region_value_matches_pointer(target_type, source_type)
+                return false
             Planner.type_conformance_accepted(inner, source_type)
         }
 
@@ -22471,7 +22485,16 @@ define Planner
             ; existing Call arm do the store, so the two spellings emit the
             ; same instructions. AFTER report_null_into_ref#, which must still
             ; see the declared `ref[T]` and refuse a null.
+            ; ★ A BARE target only -- no member-access chain. `set cn.rcs:
+            ; Array[StringC]^page()` against a `ref[Array[StringC]]` FIELD is
+            ; the ordinary port idiom (the slot holds a reference to the value
+            ; residency inference placed), and rewriting it into a store
+            ; through the field emitted `load struct` + `extractvalue` + a
+            ; store THROUGH the extracted field: the wild-store shape, 7632
+            ; lines of dazzle's root, and the engine segfaulted on its own
+            ; codegen. A `set` through a reference names the REFERENCE.
             if a.target.length > 0
+                if planned_target_collapsed.member_access = null
                 if Planner.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type)
                     set planned_target_collapsed: this.deref_ref_into_pointee(
                         Planner.strip_one_reference_or_self(planned_target_collapsed.result_type),
