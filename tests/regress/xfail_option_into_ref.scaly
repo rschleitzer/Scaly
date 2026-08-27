@@ -1,0 +1,34 @@
+; Regression: an Option must NOT flow into a non-optional `ref` (2026-08-27).
+;
+; The conformance gate accepted this class on purpose when it landed, with the
+; argument that the language has no flow narrowing. But `ref[T]` MEANS non-null
+; -- report_null_into_ref# refuses a literal `null` there, report_null_test_on_
+; ref# refuses even ASKING whether one is null -- and an Option is that same
+; null one hop further on. Accepting it made one language give two answers to
+; one question, since the ARGUMENT position never accepted it: types_compatible#
+; has no rule for an Option into a plain `ref` parameter, so every call site
+; already had to spell the unwrap.
+;
+; It was not hypothetical. tscaly's `check_js_syntax(n: ref[AstNode]?) returns
+; ref[AstNode]` opened with `if n = null  return n` -- null answered through a
+; non-optional reference, at rc 0, with nothing said anywhere.
+;
+; The exit is the explicit `x as ref[T]` unwrap: the site states the claim it is
+; relying on. type_conformance_ok.scaly case (3) is that side, and case (3b) is
+; the target that still takes an Option unchanged -- a `pointer[T]`, which is
+; nullable by construction.
+;
+; xfail: does not conform to the declared type
+
+define Alpha (a: int)
+
+function unwrap_by_flow(x: ref[Alpha]?, alt: ref[Alpha]) returns ref[Alpha]
+{
+    if x = null
+        return alt
+    x
+}
+
+var a Alpha(7)
+let r unwrap_by_flow(&a as ref[Alpha]?, &a)
+Console.println "unreachable"

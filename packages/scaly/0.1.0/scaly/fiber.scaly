@@ -1688,7 +1688,7 @@ define Io
             set pl.handles: p.allocate((IO_POOL_WORKERS * 8) as size_t, 8) as pointer[size_t]
             set io_pool: pl as pointer[void]
         }
-        pl
+        pl as ref[IoPool]
     }
 
     ; Run fn(arg) — a blocking operation, `procedure fn(arg:
@@ -1719,7 +1719,7 @@ define Io
         set w.fn: fn
         set w.arg: arg
         set w.result: null
-        set w.task: me
+        set w.task: me as ref[SchedTask]
         ; Queue the work; grow the pool when no worker is idle (up to
         ; the cap — beyond it the item waits for the next free worker).
         IoPool.acquire(pl)
@@ -2706,7 +2706,7 @@ define TaskPool
                         let sp &pl.stolen
                         let old scaly_atomic_add_u64(sp, 1 as u64)
                     }
-                    return w
+                    return w as ref[TaskItem]
                 }
                 set k: k + 1
             }

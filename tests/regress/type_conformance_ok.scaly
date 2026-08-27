@@ -30,14 +30,22 @@ function build(rp) returns ref[Alpha]?
     a
 }
 
-; (3) an Option flowing into a NON-OPTIONAL -- permitted on purpose, since the
-;     language has no flow narrowing.
+; (3) an Option flowing into a NON-OPTIONAL is REFUSED since 2026-08-27
+;     (xfail_option_into_ref.scaly) -- `ref` means non-null, and there is no
+;     flow narrowing, so the site says what it has proven with the explicit
+;     unwrap. THAT is what must keep working, guard or no guard.
 function unwrap_by_flow(x: ref[Alpha]?, alt: ref[Alpha]) returns ref[Alpha]
 {
     if x = null
         return alt
-    x
+    x as ref[Alpha]
 }
+
+; (3b) ... and into a `pointer[T]` the Option still flows unchanged: a pointer
+;      is nullable by construction, so unwrapping the NPO wrapper onto one
+;      loses no claim. Both sides say the same thing about null.
+function as_plain_pointer(x: ref[Alpha]?) returns pointer[Alpha]
+    x
 
 ; (4) a union accepting a variant PAYLOAD directly ...
 function wrap_leaf(n: int) returns Inner

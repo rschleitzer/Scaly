@@ -21105,14 +21105,20 @@ define Planner
         ;      question that already exists for exactly this seam (it is what
         ;      init-argument resolution asks), so it is asked here too.
         ;      Biggest single class in the raw run.
-        ;   2. `Option[ref[X]] where ref[X]` -- an Option flowing into a
-        ;      non-optional. The doctrine permits it ON PURPOSE: there is no
-        ;      flow narrowing in this language, so a caller that has proven a
-        ;      value non-null has no way to say so except the explicit
-        ;      `x as ref[X]` unwrap, and demanding it everywhere would be a
-        ;      different feature, not this check. Whether it SHOULD be
-        ;      demanded is the standing non-null question -- separate, and not
-        ;      to be smuggled in behind a conformance gate.
+        ;   2. `Option[ref[X]] where pointer[X]` -- an Option flowing into a
+        ;      NULLABLE target. A `pointer[T]` may hold null by construction
+        ;      (that is the whole difference between the two spellings), so
+        ;      unwrapping the NPO wrapper onto one loses no claim: both sides
+        ;      say the same thing about null. Into a `ref[T]` -- or into any
+        ;      value type -- it is REFUSED, because `ref` means non-null:
+        ;      report_null_into_ref# already says so about a literal null, and
+        ;      an Option is that same null one hop further on. There is no flow
+        ;      narrowing here, so a caller that has PROVEN the value non-null
+        ;      says so with the explicit `x as ref[X]` unwrap, which is exactly
+        ;      what the ARGUMENT position has always demanded --
+        ;      types_compatible# has no rule accepting an Option into a plain
+        ;      `ref` parameter. Permitting it at the four declared-type
+        ;      positions made one language have two answers for one question.
         ;
         ; Both are asked AFTER types_compatible#, so the common answer stays
         ; one call.
@@ -21202,12 +21208,15 @@ define Planner
                     return true
             }
 
-            ; Class 2: an Option source into a non-optional target. Judge the
-            ; PAYLOAD -- what the check is about is whether the value could
-            ; ever be the right SHAPE, and the wrapper does not change that.
+            ; Class 2: an Option source into a NULLABLE non-optional target,
+            ; i.e. a `pointer[T]`. Judge the PAYLOAD -- the wrapper does not
+            ; change the SHAPE, and the target accepts null either way. A
+            ; `ref[T]` target is deliberately NOT here: that is the null claim
+            ; the three ref gates rest on, and it is refused so the site has to
+            ; spell the `x as ref[T]` unwrap it is relying on.
             if source_type.name = "Option"
             {
-                if target_type.name <> "Option"
+                if target_type.name = "pointer"
                 {
                     if source_type.generics <> null
                     {
@@ -22833,6 +22842,26 @@ define Planner
             ; boxed value's own (now stale) Local life. (A named-region box falls
             ; through to the conservative pointee-life check below.)
             choose op.expr
+                ; ★ A CAST RELOCATES NOTHING, so it must not answer for the value
+                ; under it. An `As` operand's result_type is the WRITTEN target
+                ; type, whose life is Unspecified, so without this arm the checks
+                ; below read that stale life and rank a frame-local value as
+                ; caller-lived: the return then skips its promotion and the call
+                ; it wraps allocates on a frame that is released at the return.
+                ; Third face of the same blind spot as
+                ; ops_length_without_trailing_cast# -- and this one also blinded
+                ; the ESCAPE CHECKER, which is why `&<frame local> as
+                ; pointer[void]` stored into a longer-lived container was
+                ; accepted while the identical store without the cast was
+                ; refused.
+                when pa: scalyc.compiler.Plan.PlannedAs
+                {
+                    if pa.value <> null
+                    {
+                        let inner (*pa.value)
+                        return this.region_of_operand(inner)
+                    }
+                }
                 when b: Box
                 {
                     if b.target_page = "this"
@@ -27075,7 +27104,12 @@ define Planner
         ; statement (Action/Return) to its value operands.
         function collect_flow_locals(this: Planner, ops: Vector[Operand])
         {
-            if ops.length = 1
+            ; A trailing `as` is transparent here for the same reason it is in
+            ; ret_page_ops_tail# -- see ops_length_without_trailing_cast#. Without
+            ; it `return sym as ref[ELObj]` is not a bare return of `sym`, so the
+            ; binding that produced it is never promoted to the caller page.
+            let eff Planner.ops_length_without_trailing_cast(ops)
+            if eff = 1
             {
                 let vp ops.get 0
                 if vp <> null
@@ -27220,7 +27254,7 @@ define Planner
                                 0
                 }
             }
-            if ops.length >= 2
+            if eff >= 2
             {
                 let head_ptr ops.get 0
                 ; The arguments operand is normally at index 1, but a GENERIC
@@ -38547,6 +38581,42 @@ define Planner
 
     ; TAIL semantics: does this operand sequence YIELD a page-needing call's
     ; result?
+    ; ops_length_without_trailing_cast: the length of a flat operand sequence
+    ; with any TRAILING `as` operand ignored -- the length the shape tests of the
+    ; page-inference walkers have to be judged on.
+    ;
+    ; ★ A cast relocates nothing, so `x as ref[T]` is the same value in the same
+    ; place as `x`. But it is an extra OPERAND, and both walkers below recognise
+    ; their shapes by position: a bare local needs length 1, a call needs its
+    ; argument Tuple at index 1. So an appended cast made every one of those
+    ; shapes unrecognisable -- SILENTLY, and in the direction that REMOVES a
+    ; page: measured, `id` gave its function the caller page and `id as ref[T]`
+    ; did not, which puts the returned object on a frame released at the return.
+    ; The unwrap the four declared-type positions demand of an Option sits on
+    ; exactly these tail expressions, which is how the blind spot was found;
+    ; four tscaly `Checker` functions were already losing their page to a
+    ; hand-written cast before it.
+    function ops_length_without_trailing_cast(ops: Vector[Operand]) returns size_t
+    {
+        var len ops.length
+        while len > 1
+        {
+            let lp ops.get(len - 1)
+            if lp = null
+                return len
+            var is_cast: bool false
+            choose (*lp).expression
+                when asx: As
+                    set is_cast: true
+                else
+                    0
+            if is_cast = false
+                return len
+            set len: len - 1
+        }
+        len
+    }
+
     function ret_page_ops_tail(pl: Planner, owner: ref[String]?, func: Function, ops: Vector[Operand], scope: Vector[Statement], depth: int) returns bool
     {
         if ops.length = 0
@@ -38556,8 +38626,22 @@ define Planner
             return false
         let head (*head_ptr)
 
+        ; ★ A TRAILING `as` IS TRANSPARENT HERE. `x as ref[T]` is the explicit
+        ; unwrap the four declared-type positions demand of an Option, so it sits
+        ; on exactly the tail expressions this walk exists to recognise -- and it
+        ; adds an operand, which took every shape below out of reach: a bare local
+        ; needs ops.length = 1, a call needs the Tuple at index 1. The rule is
+        ; SILENT and it removes a page: `id` gave the function its caller page and
+        ; `id as ref[T]` did not, so the returned object moved onto a frame that is
+        ; released at the return -- the memory-fault direction of the page rules,
+        ; with no diagnostic anywhere. A cast relocates nothing, so the length the
+        ; shapes below are judged on is the one WITHOUT it. Measured: 25 functions
+        ; in dazzle and tscaly lost their page to the conformance sweep before
+        ; this, and the whole tree emits byte-identically with it.
+        let len Planner.ops_length_without_trailing_cast(ops)
+
         ; a lone Block / If operand in tail position: ITS tail is our tail.
-        if ops.length = 1
+        if len = 1
         {
             var handled: bool false
             var res: bool false
@@ -38585,7 +38669,7 @@ define Planner
         ; a direct call: the head (plus its member-access hop) followed by a Tuple.
         ; The tuple's component count is the argument count that narrows the
         ; callee's overload set.
-        if ops.length >= 2
+        if len >= 2
         {
             let next_ptr ops.get 1
             if next_ptr <> null
@@ -38608,7 +38692,7 @@ define Planner
 
         ; a bare local: follow its binding in this block (depth-capped — a cyclic
         ; or self-referential binding must not spin).
-        if ops.length = 1
+        if len = 1
             if depth < 4
                 if head.member_access = null
                     choose head.expression

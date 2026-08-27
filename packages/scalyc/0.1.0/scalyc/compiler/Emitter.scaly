@@ -126,7 +126,7 @@ define Emitter
                 {
                     let val named_region_values.get i
                     if val <> null
-                        return val
+                        return val as ref[LLVMValueRef]
 
                 }
                 set i: i + 1
@@ -806,7 +806,7 @@ define Emitter
             {
                 let t di_type_cache_types.get(ir as size_t)
                 if t <> null
-                    return t
+                    return t as ref[LLVMMetadataRef]
             }
             LLVMMetadataRef null
         }
@@ -1491,7 +1491,7 @@ define Emitter
             {
                 let t type_cache_types.get(ir as size_t)
                 if t <> null
-                    return t
+                    return t as ref[LLVMTypeRef]
             }
             LLVMTypeRef null
         }
@@ -1516,7 +1516,7 @@ define Emitter
             {
                 let t struct_cache_types.get(ir as size_t)
                 if t <> null
-                    return t
+                    return t as ref[LLVMTypeRef]
             }
             LLVMTypeRef null
         }
@@ -3028,7 +3028,7 @@ define Emitter
             {
                 let f function_cache_funcs.get(ir as size_t)
                 if f <> null
-                    return f
+                    return f as ref[LLVMValueRef]
             }
             LLVMValueRef null
         }
@@ -4376,7 +4376,7 @@ define Emitter
                 {
                     let t throws_result_types.get i
                     if t <> null
-                        return t
+                        return t as ref[LLVMTypeRef]
 
                 }
                 set i: i + 1
