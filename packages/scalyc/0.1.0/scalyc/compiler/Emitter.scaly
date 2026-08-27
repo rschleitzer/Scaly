@@ -3768,6 +3768,152 @@ define Emitter
             LLVMAddAttributeAtIndex(fn, 4294967295, attr)
         }
 
+        ; The two runtime prints the emitted traps use. Both live in
+        ; libscaly.a, which EVERY `-o` link pulls in (SCALY_HOME's lib or the
+        ; cwd fallback), so a generated call resolves in exactly the programs
+        ; the s186 on-the-fly path already emits runtime calls into.
+        function get_eputs_fn(this) returns LLVMValueRef
+        {
+            var fn lookup_function_cache("_Z11scaly_eputsP10const_char")
+            if fn.handle = null
+                set fn: LLVMGetNamedFunction(llvm_module, "_Z11scaly_eputsP10const_char")
+            if fn.handle = null
+            {
+                let void_ty LLVMVoidTypeInContext(context)
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                var ptys Vector[LLVMTypeRef](1)
+                ptys.put(0, ptr_ty)
+                let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+                set fn: LLVMAddFunction(llvm_module, "_Z11scaly_eputsP10const_char", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+                cache_function("_Z11scaly_eputsP10const_char", fn)
+            }
+            fn
+        }
+
+        function get_eputnl_fn(this) returns LLVMValueRef
+        {
+            var fn lookup_function_cache("_Z12scaly_eputnlv")
+            if fn.handle = null
+                set fn: LLVMGetNamedFunction(llvm_module, "_Z12scaly_eputnlv")
+            if fn.handle = null
+            {
+                let void_ty LLVMVoidTypeInContext(context)
+                let fty LLVMFunctionType(void_ty, null as pointer[LLVMTypeRef], 0, 0)
+                set fn: LLVMAddFunction(llvm_module, "_Z12scaly_eputnlv", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+                cache_function("_Z12scaly_eputnlv", fn)
+            }
+            fn
+        }
+
+        ; libc `exit`. Declared with the C prototype (i32, not Scaly's 64-bit
+        ; `int`) and marked noreturn through the same helper every other trap
+        ; callee goes through — without the attribute the block after the call
+        ; stays live and nothing may be hoisted out of a loop containing a trap.
+        function get_exit_fn(this) returns LLVMValueRef
+        {
+            var fn LLVMGetNamedFunction(llvm_module, "exit")
+            if fn.handle = null
+            {
+                let void_ty LLVMVoidTypeInContext(context)
+                let i32_ty LLVMInt32TypeInContext(context)
+                var ptys Vector[LLVMTypeRef](1)
+                ptys.put(0, i32_ty)
+                let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+                set fn: LLVMAddFunction(llvm_module, "exit", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+            }
+            mark_noreturn_callee(fn, "exit")
+            fn
+        }
+
+        ; `x as ref[T]` is this language's `!`: the author asserts that a
+        ; nullable value is present. Until now NOTHING checked the assertion --
+        ; the three `ref` gates make a null unrepresentable in a DECLARATION
+        ; (null into a ref, testing a ref, an Option into a ref are each a hard
+        ; rc 4), so the unwrap is the one door left, and a lie walked through it
+        ; silently: the first member access on the result was a SIGSEGV, rc 139,
+        ; with no message -- and stdout is buffered, so the signal took the
+        ; program's last words with it too. 750 such unwraps stand in the tree.
+        ;
+        ; The check belongs HERE and not in the accessors: this is the single
+        ; site where the claim is made. In an accessor it would test what the
+        ; declaration already guarantees, and it would still leave the ten
+        ; thousand ordinary `.field` hops unguarded.
+        ;
+        ; Cost is a compare and a branch into a cold block that ends in
+        ; `unreachable`; with the noreturn attribute above LLVM hoists across it
+        ; and, where the value is provably non-null, deletes the whole thing.
+        ; Nullable in the sense the unwrap asserts away: the NPO Option
+        ; wrapper (`ref[T]?` / `pointer[T]?`) or a bare pointer.
+        function type_may_be_null(this, t: PlannedType) returns bool
+        {
+            if is_npo_option t
+                return true
+            if t.name = "pointer"
+                return true
+            false
+        }
+
+        ; The enclosing symbol's name, for the trap message. There is no source
+        ; location at run time; a mangled name is what a reader can grep for.
+        function current_function_label(this) returns pointer[char]
+        {
+            if current_function.handle = null
+                return "<unknown>" as pointer[char]
+            var len: size_t 0
+            LLVMGetValueName2(current_function, &len)
+        }
+
+        procedure emit_null_unwrap_trap(this, value: LLVMValueRef, site: pointer[char])
+        {
+            if value.handle = null
+                return
+            if current_function.handle = null
+                return
+
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let null_p LLVMConstPointerNull(ptr_ty)
+            let is_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ() as i32, value, null_p, "unwrap.isnull")
+            let trap_bb create_block("unwrap.trap")
+            let ok_bb create_block("unwrap.ok")
+            LLVMBuildCondBr(builder, is_null, trap_bb, ok_bb)
+
+            LLVMPositionBuilderAtEnd(builder, trap_bb)
+            let void_ty LLVMVoidTypeInContext(context)
+            var ptys Vector[LLVMTypeRef](1)
+            ptys.put(0, ptr_ty)
+            let eputs_ty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+            let eputs_fn get_eputs_fn()
+
+            let head LLVMBuildGlobalStringPtr(builder, "Scaly: null unwrapped as ref in " as pointer[const_char], ".unwrap.msg")
+            var a1 Vector[LLVMValueRef](1)
+            a1.put(0, head)
+            LLVMBuildCall2(builder, eputs_ty, eputs_fn, a1.data, 1, "")
+
+            ; The enclosing symbol, so the message names a place. There is no
+            ; source location at run time; a mangled name is what can be grepped.
+            let where_s LLVMBuildGlobalStringPtr(builder, site as pointer[const_char], ".unwrap.at")
+            var a2 Vector[LLVMValueRef](1)
+            a2.put(0, where_s)
+            LLVMBuildCall2(builder, eputs_ty, eputs_fn, a2.data, 1, "")
+
+            let nl_ty LLVMFunctionType(void_ty, null as pointer[LLVMTypeRef], 0, 0)
+            LLVMBuildCall2(builder, nl_ty, get_eputnl_fn(), null as pointer[LLVMValueRef], 0, "")
+
+            let i32_ty LLVMInt32TypeInContext(context)
+            var eptys Vector[LLVMTypeRef](1)
+            eptys.put(0, i32_ty)
+            let exit_ty LLVMFunctionType(void_ty, eptys.data, 1, 0)
+            var eargs Vector[LLVMValueRef](1)
+            eargs.put(0, LLVMConstInt(i32_ty, 21, 0))
+            LLVMBuildCall2(builder, exit_ty, get_exit_fn(), eargs.data, 1, "")
+            LLVMBuildUnreachable builder
+
+            LLVMPositionBuilderAtEnd(builder, ok_bb)
+        }
+
         ; s89: Predicate — does a Scaly function with this return type need
         ; the sret IR pattern (`define void @fn(ptr sret(%T) %retval, ...)`)?
         ;
@@ -16440,7 +16586,19 @@ define Emitter
             if src_kind = ptr_kind
             {
                 if dst_kind = ptr_kind
+                {
+                    ; The unwrap `x as ref[T]`: a NULLABLE source asserted into a
+                    ; NON-OPTIONAL reference. Ask the SHAPE and not the name --
+                    ; `ref[T]?` is `Option[ref[T]]`, and a name test that does not
+                    ; know about the NPO wrapper is the standing bug pattern of
+                    ; this compiler. A `pointer[T]` source counts too: it is
+                    ; nullable by construction, which is the whole of what makes
+                    ; the assertion an assertion.
+                    if as_expr.target_type.name = "ref"
+                        if this.type_may_be_null(as_inner.result_type)
+                            emit_null_unwrap_trap(src_value, current_function_label())
                     return LLVMBuildBitCast(builder, src_value, dst_type, "as.ptr")
+                }
 
                 ; Pointer to integer: ptrtoint
                 if dst_kind = int_kind
