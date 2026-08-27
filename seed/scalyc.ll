@@ -114647,9 +114647,9 @@ entry:
 define linkonce_odr void @_ZN7Modeler14format_versionEPN4scaly6memory4PageER13VersionSyntax(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
   %sret.result = alloca { ptr }, align 8
-  %arg.tmp23 = alloca { ptr }, align 8
-  %arg.tmp21 = alloca { ptr }, align 8
-  %choose.union11 = alloca %_Z7Literal, align 8
+  %arg.tmp24 = alloca { ptr }, align 8
+  %arg.tmp22 = alloca { ptr }, align 8
+  %choose.union12 = alloca %_Z7Literal, align 8
   %arg.tmp9 = alloca { ptr }, align 8
   %arg.tmp7 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
@@ -114659,13 +114659,13 @@ entry:
   store ptr %1, ptr %frame.parent, align 8
   %deref.tmp = alloca %_Z13VersionSyntax, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z13VersionSyntax, ptr null, i32 1) to i64), i1 false)
-  %grp.deref.val = load %_Z13VersionSyntax, ptr %deref.tmp, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
-  %majorMinor = extractvalue %_Z13VersionSyntax %grp.deref.val, 2
+  %load.struct = load %_Z13VersionSyntax, ptr %deref.tmp, align 8
+  %majorMinor = extractvalue %_Z13VersionSyntax %load.struct, 2
   %choose.union = alloca %_Z7Literal, align 8
   store %_Z7Literal %majorMinor, ptr %choose.union, align 1
   %tag.ptr = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 0
@@ -114678,12 +114678,13 @@ entry:
 choose.end:                                       ; preds = %choose.else, %choose.when2, %choose.when
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb10, i8 46)
-  %patch = extractvalue %_Z13VersionSyntax %grp.deref.val, 3
-  store %_Z7Literal %patch, ptr %choose.union11, align 1
-  %tag.ptr12 = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union11, i32 0, i32 0
-  %tag13 = load i8, ptr %tag.ptr12, align 1
-  switch i8 %tag13, label %choose.else15 [
-    i8 3, label %choose.when16
+  %load.struct11 = load %_Z13VersionSyntax, ptr %deref.tmp, align 8
+  %patch = extractvalue %_Z13VersionSyntax %load.struct11, 3
+  store %_Z7Literal %patch, ptr %choose.union12, align 1
+  %tag.ptr13 = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union12, i32 0, i32 0
+  %tag14 = load i8, ptr %tag.ptr13, align 1
+  switch i8 %tag14, label %choose.else16 [
+    i8 3, label %choose.when17
   ]
 
 choose.else:                                      ; preds = %entry
@@ -114710,28 +114711,28 @@ choose.when2:                                     ; preds = %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb5, ptr %arg.tmp7)
   br label %choose.end
 
-choose.end14:                                     ; preds = %choose.else15, %choose.when16
-  %sb24 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb24)
+choose.end15:                                     ; preds = %choose.else16, %choose.when17
+  %sb25 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb25)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-choose.else15:                                    ; preds = %choose.end
-  %sb22 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.329 }, ptr %arg.tmp23, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb22, ptr %arg.tmp23)
-  br label %choose.end14
+choose.else16:                                    ; preds = %choose.end
+  %sb23 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.329 }, ptr %arg.tmp24, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb23, ptr %arg.tmp24)
+  br label %choose.end15
 
-choose.when16:                                    ; preds = %choose.end
-  %"variant.c_data().ptr17" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union11, i32 0, i32 1
-  %variant.val18 = load %_Z14IntegerLiteral, ptr %"variant.c_data().ptr17", align 8
-  %sb19 = load ptr, ptr %sb, align 8
-  %value20 = extractvalue %_Z14IntegerLiteral %variant.val18, 0
-  store { ptr } %value20, ptr %arg.tmp21, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb19, ptr %arg.tmp21)
-  br label %choose.end14
+choose.when17:                                    ; preds = %choose.end
+  %"variant.c_data().ptr18" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union12, i32 0, i32 1
+  %variant.val19 = load %_Z14IntegerLiteral, ptr %"variant.c_data().ptr18", align 8
+  %sb20 = load ptr, ptr %sb, align 8
+  %value21 = extractvalue %_Z14IntegerLiteral %variant.val19, 0
+  store { ptr } %value21, ptr %arg.tmp22, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb20, ptr %arg.tmp22)
+  br label %choose.end15
 }
 
 define linkonce_odr void @_ZN7Modeler15scaly_home_baseEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
@@ -217971,28 +217972,34 @@ if.then2:                                         ; preds = %if.end
   ret i1 false
 
 if.end3:                                          ; preds = %if.end
-  %call4 = call i1 @_ZN7Planner16types_compatibleE11PlannedType11PlannedType(ptr %0, ptr %1)
-  br i1 %call4, label %if.then5, label %if.end6
+  br i1 %2, label %if.then4, label %if.end5
 
-if.then5:                                         ; preds = %if.end3
+if.then4:                                         ; preds = %if.end3
+  %call6 = call i1 @_ZN7Planner16types_compatibleE11PlannedType11PlannedType(ptr %0, ptr %1)
+  br i1 %call6, label %if.then7, label %if.end8
+
+if.end5:                                          ; preds = %if.end8, %if.end3
+  %call9 = call i1 @_ZN7Planner28region_value_matches_pointerE11PlannedType11PlannedType(ptr %0, ptr %1)
+  br i1 %call9, label %if.then10, label %if.end11
+
+if.then7:                                         ; preds = %if.then4
   ret i1 false
 
-if.end6:                                          ; preds = %if.end3
-  %call7 = call i1 @_ZN7Planner28region_value_matches_pointerE11PlannedType11PlannedType(ptr %0, ptr %1)
-  br i1 %call7, label %if.then8, label %if.end9
+if.end8:                                          ; preds = %if.then4
+  br label %if.end5
 
-if.then8:                                         ; preds = %if.end6
-  br i1 %2, label %if.then10, label %if.end11
+if.then10:                                        ; preds = %if.end5
+  br i1 %2, label %if.then12, label %if.end13
 
-if.end9:                                          ; preds = %if.end11, %if.end6
-  %call12 = call i1 @_ZN7Planner25type_conformance_acceptedE11PlannedType11PlannedType(ptr %inner, ptr %1)
-  ret i1 %call12
+if.end11:                                         ; preds = %if.end13, %if.end5
+  %call14 = call i1 @_ZN7Planner25type_conformance_acceptedE11PlannedType11PlannedType(ptr %inner, ptr %1)
+  ret i1 %call14
 
-if.then10:                                        ; preds = %if.then8
+if.then12:                                        ; preds = %if.then10
   ret i1 false
 
-if.end11:                                         ; preds = %if.then8
-  br label %if.end9
+if.end13:                                         ; preds = %if.then10
+  br label %if.end11
 }
 
 define linkonce_odr i1 @_ZN7Planner26planned_type_is_npo_borrowE11PlannedType(ptr %0) {
