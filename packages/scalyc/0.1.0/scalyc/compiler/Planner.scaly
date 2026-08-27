@@ -21555,7 +21555,21 @@ define Planner
             t
         }
 
-        function set_target_stores_through(target_type: PlannedType, source_type: PlannedType) returns bool
+        ; Is this operand a bare MUTABLE variable, i.e. a `var` local?  A
+        ; parameter and a `let` are not, and that is what decides an ambiguous
+        ; `set` -- see set_target_stores_through#.
+        function operand_is_mutable_variable(op: PlannedOperand) returns bool
+        {
+            var m: bool false
+            choose op.expr
+                when v: Variable
+                    set m: v.is_mutable
+                else
+                    0
+            m
+        }
+
+        function set_target_stores_through(target_type: PlannedType, source_type: PlannedType, target_is_mutable: bool) returns bool
         {
             if target_type.name <> "ref"
                 return false
@@ -21583,8 +21597,19 @@ define Planner
             ; root, and the engine segfaulted on its own codegen.
             if Planner.types_compatible(target_type, source_type)
                 return false
+            ; ★ A page-hosted CONSTRUCTION is genuinely ambiguous -- `set out:
+            ; StringC^host(...)` can mean "put the new value in the pointee" or
+            ; "point out at it" -- and what settles it is whether the target CAN
+            ; be rebound. A `var` local can (`var target: ref[ISet] a` then
+            ; `set target: b` is opensp's sd_parse_naming, a rebind since it was
+            ; written); a PARAMETER and a `let` cannot, so there the only
+            ; reading left is the store. Both were measured: reading every
+            ; construction as a rebind dropped the seven `set out:` stores the
+            ; sweep produced in dazzle and opensp, and reading every one as a
+            ; store rewrote sd_parse_naming's rebind into a struct copy.
             if Planner.region_value_matches_pointer(target_type, source_type)
-                return false
+                if target_is_mutable
+                    return false
             Planner.type_conformance_accepted(inner, source_type)
         }
 
@@ -22495,7 +22520,7 @@ define Planner
             ; codegen. A `set` through a reference names the REFERENCE.
             if a.target.length > 0
                 if planned_target_collapsed.member_access = null
-                if Planner.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type)
+                if Planner.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type, Planner.operand_is_mutable_variable(planned_target_collapsed))
                     set planned_target_collapsed: this.deref_ref_into_pointee(
                         Planner.strip_one_reference_or_self(planned_target_collapsed.result_type),
                         planned_target_collapsed

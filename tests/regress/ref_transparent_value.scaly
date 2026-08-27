@@ -95,6 +95,22 @@ procedure alias_and_store(r: ref[int])
     set q: 7
 }
 
+
+; ★ A page-hosted CONSTRUCTION assigned to a ref target is ambiguous, and the
+; target's MUTABILITY settles it: a `var` local can be rebound, a parameter and
+; a `let` cannot, so there the only reading left is the store.
+procedure stores_construction(out: ref[Cell])
+{
+    set out: Cell^this(5)
+}
+
+function rebinds_construction(a: ref[Cell]) returns int
+{
+    var t: ref[Cell] a
+    set t: Cell^this(8)
+    t.v
+}
+
 var ok: bool true
 
 var a: int 7
@@ -145,6 +161,16 @@ if r_condition(&yes) <> 1
 var al: int 1
 alias_and_store(&al)
 if al <> 7
+    set ok: false
+
+var sc Cell(0)
+stores_construction(&sc)
+if sc.v <> 5
+    set ok: false
+var rc Cell(1)
+if rebinds_construction(&rc) <> 8
+    set ok: false
+if rc.v <> 1
     set ok: false
 
 if ok
