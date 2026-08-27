@@ -8471,6 +8471,9 @@ define Planner
                                 let elem_ref Planner.get_pointer_element_type(rest_result.result_type)
                                 if elem_ref <> null
                                     set rt: (*elem_ref)
+                                ; A scalar has nothing to dereference --
+                                ; report_deref_of_non_pointer#.
+                                this.report_deref_of_non_pointer(rest_result.result_type, rest_result.loc)
                             }
                             ; s96: address-of — wrap operand in pointer[T].
                             ; Mirrors stage-0 Planner.cpp:3877 (resolvePrefix
@@ -21528,6 +21531,59 @@ define Planner
             sb.append "(x as pointer[T])"
             let rmsg sb.to_string()
             this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        ; report_deref_of_non_pointer#: `*x` on a SCALAR. Until 2026-08-27 it
+        ; emitted `load i64, i64 %0` -- INVALID IR, whose pointer operand is an
+        ; integer -- at rc 0 with no word, and the program then died with
+        ; SIGSEGV wherever that integer happened to point. It stayed invisible
+        ; because nothing ever asked: get_pointer_element_type answers null for
+        ; a non-pointer and the prefix arm simply kept the operand's own type.
+        ; The check earns its place with the container-subscript change of the
+        ; same day: `operator []` answers the ELEMENT BY VALUE now, so every
+        ; stale `*a[i]` is exactly this shape -- without a diagnostic that
+        ; migration would be a silent crash instead of a compile error, which
+        ; is the opposite of what a breaking change owes its callers.
+        ; NARROW ON PURPOSE: only a PRIMITIVE SCALAR is judged. A struct deref
+        ; is just as wrong, but a cross-package placeholder arrives as an
+        ; opaque struct that IS a pointer, and an unresolved type variable must
+        ; not be guessed at. Report what is proven, not what is suspected.
+        function type_is_underefable_scalar(t: PlannedType) returns bool
+        {
+            if t.generics <> null
+                return false
+            if Planner.is_integer_type(t.name)
+                return true
+            if t.name = "bool"
+                return true
+            if t.name = "float"
+                return true
+            if t.name = "double"
+                return true
+            if t.name = "f32"
+                return true
+            if t.name = "f64"
+                return true
+            false
+        }
+
+        function report_deref_of_non_pointer(
+            this: Planner,
+            operand_type: PlannedType,
+            loc: Span
+        )
+        {
+            if Planner.type_is_underefable_scalar(operand_type) = false
+                return
+
+            var sb StringBuilder()
+            ; NO backticks in these literals -- see report_ref_arithmetic#.
+            sb.append "cannot dereference a value of type "
+            sb.append operand_type.name
+            sb.append ": operator * needs a pointer or a ref. A container "
+            sb.append "subscript answers the element BY VALUE, so drop the star"
+            let dmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(dmsg))
         }
 
         ; report_null_test_on_ref#: the third gate on a NON-OPTIONAL `ref[T]`,
