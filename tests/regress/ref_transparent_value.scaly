@@ -56,6 +56,45 @@ function rebinds(a: ref[int], b: ref[int]) returns int
     r
 }
 
+
+function r_compare(r: ref[int]) returns bool
+{
+    r <> 0
+}
+
+function r_compare_u32(r: ref[u32]) returns bool
+{
+    r > 3
+}
+
+; ★ An `as` on a reference keeps its ADDRESS meaning and is deliberately NOT
+; loaded. `&arr[0] as size_t` is how this tree takes an address as a number
+; (tests/regress/address_of_array_element.scaly measures the stride with it),
+; and no rule can tell that apart from a value read: both are a reference cast
+; to an integer. A cell whose VALUE is wanted at another width binds it first.
+function r_cast_keeps_address(r: ref[int], s: ref[int]) returns bool
+{
+    let a r as size_t
+    let b s as size_t
+    a <> b
+}
+
+function r_condition(r: ref[bool]) returns int
+{
+    if r
+        return 1
+    0
+}
+
+; an UNTYPED binding keeps the reference -- it does not load. `let q r` is how
+; a borrow is aliased, and the store-through rule then reaches the pointee
+; through it.
+procedure alias_and_store(r: ref[int])
+{
+    let q r
+    set q: 7
+}
+
 var ok: bool true
 
 var a: int 7
@@ -87,6 +126,25 @@ if c.v <> 9
 var x: int 3
 var y: int 4
 if rebinds(&x, &y) <> 4
+    set ok: false
+
+if r_compare(&a) = false
+    set ok: false
+var u: u32 9
+if r_compare_u32(&u) = false
+    set ok: false
+var other: int 1
+if r_cast_keeps_address(&a, &other) = false
+    set ok: false
+var no: bool false
+if r_condition(&no) <> 0
+    set ok: false
+var yes: bool true
+if r_condition(&yes) <> 1
+    set ok: false
+var al: int 1
+alias_and_store(&al)
+if al <> 7
     set ok: false
 
 if ok

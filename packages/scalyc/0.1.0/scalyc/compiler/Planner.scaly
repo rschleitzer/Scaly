@@ -12339,6 +12339,28 @@ define Planner
                             if this.operand_is_float_constant(rhs) = false
                                 set result: this.retype_float_operand(result, rhs.result_type)
 
+                    ; A `ref[T]` beside a value of type `T` in a COMPARISON is
+                    ; the VALUE -- deref_ref_into_pointee#. `count <> 0` on a
+                    ; borrowed cell is the ordinary reading, and before this the
+                    ; comparison was against the ADDRESS.
+                    ; ★ COMPARISONS ONLY, deliberately. report_ref_arithmetic#
+                    ; owes its existence to `&b + 1` GEPing at BYTE stride, and
+                    ; loading a ref operand in ARITHMETIC position would take
+                    ; that diagnostic away from the struct case it was measured
+                    ; on. A cell that really wants arithmetic says so with the
+                    ; cast the gate already names: `(r as int) + 1`.
+                    ; ★ A reference on the OTHER side blocks it (both operands
+                    ; reference-shaped, inside operand_derefs_to_pointee#), so
+                    ; `r <> null` stays the NPO presence test that
+                    ; report_null_test_on_ref# judges.
+                    if Planner.is_integer_comparison_operator(op_name)
+                    {
+                        if Planner.operand_derefs_to_pointee(rhs.result_type, result)
+                            set result: this.deref_ref_into_pointee(rhs.result_type, result)
+                        if Planner.operand_derefs_to_pointee(result.result_type, rhs)
+                            set rhs: this.deref_ref_into_pointee(result.result_type, rhs)
+                    }
+
                     ; Integer literal beside an integer-typed operand in a
                     ; COMPARISON: retype the literal to the other side's type,
                     ; so `count > 0` on a size_t emits `ugt` and not `sgt`.
@@ -17119,8 +17141,12 @@ define Planner
         function plan_if(this: Planner, f: If) returns PlannedIf
         {
             let planned_cond_flat this.plan_operands(f.condition)
-            let planned_cond_collapsed this.collapse_operand_sequence(planned_cond_flat)
+            ; A `ref[bool]` condition is the VALUE -- deref_ref_into_pointee#.
+            ; `var`, not `let`: a `set` on a let-bound local is silently
+            ; dropped, which is how the store-through rewrite spent a build.
+            var planned_cond_collapsed this.collapse_operand_sequence(planned_cond_flat)
             let bool_ty Planner.make_bool_type()
+            set planned_cond_collapsed: this.deref_ref_into_pointee(bool_ty, planned_cond_collapsed)
             this.add_equality_constraint(bool_ty, planned_cond_collapsed.result_type, f.span)
 
             let planned_consequent this.plan_statement(f.consequent)
