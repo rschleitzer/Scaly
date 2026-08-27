@@ -699,7 +699,7 @@ define Fiber
     ; and allocates into its own region. The first create installs the
     ; guard-page overflow handler (best-effort diagnostic — a failed
     ; install just keeps the plain-crash behavior).
-    procedure create_sized(host: pointer[Page], fn: pointer[void], size: size_t) returns ref[Fiber]
+    procedure create_sized(host: ref[Page], fn: pointer[void], size: size_t) returns ref[Fiber]
     {
         let f host.allocate(sizeof Fiber, alignof Fiber) as pointer[Fiber]
         let guard_size getpagesize() as size_t
@@ -735,7 +735,7 @@ define Fiber
         f
     }
 
-    procedure create(host: pointer[Page], fn: pointer[void]) returns ref[Fiber]
+    procedure create(host: ref[Page], fn: pointer[void]) returns ref[Fiber]
     {
         let size FIBER_STACK_SIZE
         Fiber.create_sized(host, fn, size)
@@ -924,7 +924,7 @@ define Scheduler
     ; Create the scheduler on the given page and make it current. All
     ; spawned task records and fiber stacks are anchored on this page,
     ; so they survive any spawning fiber's region teardown.
-    procedure create(host: pointer[Page]) returns ref[Scheduler]
+    procedure create(host: ref[Page]) returns ref[Scheduler]
     {
         let s host.allocate(sizeof Scheduler, alignof Scheduler) as pointer[Scheduler]
         set s.host: host

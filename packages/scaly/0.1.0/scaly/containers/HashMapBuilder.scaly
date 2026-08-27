@@ -3,7 +3,7 @@ use scaly.memory.Page
 define HashMapBuilder[K, V]
 (
     length: size_t (0)
-    slots: pointer[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]] (null)
+    slots: ref[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]]? (null)
 )
 {
     init (vec: Vector[KeyValuePair[K, V]])

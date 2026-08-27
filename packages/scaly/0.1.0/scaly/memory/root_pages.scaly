@@ -195,10 +195,10 @@ procedure scaly_eputp(p: pointer[void])
 ; Address helpers
 ; --------------------------------------------------------------------------
 
-function stack_bucket_of(p: pointer[Page]) returns pointer[StackBucketHeader]
+function stack_bucket_of(p: ref[Page]) returns pointer[StackBucketHeader]
     (p as size_t & ~BUCKET_MASK) as pointer[StackBucketHeader]
 
-function heap_bucket_of(p: pointer[Page]) returns ref[HeapBucketHeader]
+function heap_bucket_of(p: ref[Page]) returns ref[HeapBucketHeader]
     (p as size_t & ~BUCKET_MASK) as pointer[HeapBucketHeader]
 
 ; Atomic primitives (milestone 2.3). These extern names never exist as
@@ -315,7 +315,7 @@ function last_usable_page(bucket: pointer[void]) returns pointer[Page]
 ; Page header, all chain/list pointers are null.
 ; --------------------------------------------------------------------------
 
-procedure reset_page(p: pointer[Page])
+procedure reset_page(p: ref[Page])
 {
     set p.next_object: (p as size_t + sizeof Page) as pointer[void]
     set p.current_page: null

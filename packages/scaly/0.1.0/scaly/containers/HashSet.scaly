@@ -1,6 +1,6 @@
 define HashSet[T]
 (
-    slots: pointer[Vector[Vector[T]]] (null)
+    slots: ref[Vector[Vector[T]]]? (null)
 )
 {
     init (hash_set_builder: HashSetBuilder[T])

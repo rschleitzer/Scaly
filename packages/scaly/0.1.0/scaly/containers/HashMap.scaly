@@ -32,7 +32,7 @@ define HashMapIterator[K, V]
 
 define HashMap[K, V]
 (
-    slots: pointer[Vector[Vector[KeyValuePair[K, V]]]] (null)
+    slots: ref[Vector[Vector[KeyValuePair[K, V]]]]? (null)
 )
 {
     init (hash_map_builder: HashMapBuilder[K, V])

@@ -109,7 +109,7 @@ define Region
 {
     ; --- enumeration: the deallocate_extensions walk, read-only ---
 
-    function count_exclusives(p: pointer[Page]) returns size_t
+    function count_exclusives(p: ref[Page]) returns size_t
     {
         var n: size_t 0
         var nd p.exclusive_pages.head
@@ -126,7 +126,7 @@ define Region
         n
     }
 
-    function count_pages(region: pointer[Page]) returns size_t
+    function count_pages(region: ref[Page]) returns size_t
     {
         var n 1 + count_exclusives(region)
         var q region.next_page
@@ -140,7 +140,7 @@ define Region
 
     ; Fill the interleaved (base, length) table; index counts SLOTS
     ; (two per page); returns the index after the last slot written.
-    function fill_exclusives(p: pointer[Page], table: pointer[size_t], index: size_t) returns size_t
+    function fill_exclusives(p: ref[Page], table: pointer[size_t], index: size_t) returns size_t
     {
         var w index
         var nd p.exclusive_pages.head
@@ -163,7 +163,7 @@ define Region
         w
     }
 
-    function fill_pages(region: pointer[Page], table: pointer[size_t], index: size_t) returns size_t
+    function fill_pages(region: ref[Page], table: pointer[size_t], index: size_t) returns size_t
     {
         var w index
         set table[w]: region as size_t
@@ -186,7 +186,7 @@ define Region
 
     ; --- sender: build the frame on the host page ---
 
-    function serialize(region: pointer[Page], root: pointer[void], host: pointer[Page]) returns pointer[u8]
+    function serialize(region: ref[Page], root: pointer[void], host: ref[Page]) returns pointer[u8]
     {
         let n count_pages(region)
         let table host.allocate(n * 16, 8) as pointer[size_t]
@@ -243,7 +243,7 @@ define Region
     ; that is not a nonzero PAGE_SIZE multiple) — the v1 trust boundary.
     ; Structural pointer violations inside accepted pages fail loud in
     ; fix() instead: by then the frame claims to be a closed region.
-    function deserialize(frame: pointer[u8], host: pointer[Page]) returns ref[ReceivedRegion]?
+    function deserialize(frame: pointer[u8], host: ref[Page]) returns ref[ReceivedRegion]?
     {
         let h frame as pointer[u64]
         let magic h[0]

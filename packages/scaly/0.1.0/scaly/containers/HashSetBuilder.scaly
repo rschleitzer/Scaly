@@ -1,7 +1,7 @@
 define HashSetBuilder[T]
 (
     length: size_t (0)
-    slots: pointer[Vector[BuilderList[Slot[T]]]] (null)
+    slots: ref[Vector[BuilderList[Slot[T]]]]? (null)
 )
 {
     init (vec: Vector[T])

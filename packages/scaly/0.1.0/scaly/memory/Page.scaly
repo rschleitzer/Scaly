@@ -75,7 +75,7 @@ define Page
         page
     }
 
-    function release_page(p: pointer[Page])
+    function release_page(p: ref[Page])
     {
         ; Oversized pages (allocated directly via aligned_alloc in
         ; allocate_oversized) carry next_object == null. They go back via free.
@@ -143,7 +143,7 @@ define Page
         page
     }
 
-    function release_page_traced(p: pointer[Page], site: pointer[const_char])
+    function release_page_traced(p: ref[Page], site: pointer[const_char])
     {
         Page.release_page(p)
         scaly_heap_trace_release site
@@ -354,7 +354,7 @@ define Page
     ; The aligned_alloc block length recorded by allocate_oversized (gross
     ; size rounded up to a PAGE_SIZE multiple). Meaningful only for
     ; oversized pages (next_object == null).
-    function oversized_size(p: pointer[Page]) returns size_t
+    function oversized_size(p: ref[Page]) returns size_t
     {
         let s p.current_page
         s as size_t
@@ -413,7 +413,7 @@ define Page
         }
     }
 
-    function deallocate_exclusive_page(this: Page, page: pointer[Page])
+    function deallocate_exclusive_page(this: Page, page: ref[Page])
     {
         page.deallocate_extensions()
         release_page(page)
