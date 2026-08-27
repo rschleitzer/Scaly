@@ -523,8 +523,9 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z20ImplementationSyntax = type { i8, [33 x i8] }
 %_Z12MemberSyntax = type { i8, [152 x i8] }
 %_Z10BodySyntax = type { i64, i64, ptr, ptr }
-%_Z13VariantSyntax = type { i64, i64, { ptr }, ptr, ptr }
 %_Z6VectorI12MemberSyntaxE = type { i64, ptr }
+%_Z6VectorI13VariantSyntaxE = type { i64, ptr }
+%_Z13VariantSyntax = type { i64, i64, { ptr }, ptr, ptr }
 %_Z14VectorIteratorI12MemberSyntaxE = type { ptr, i64 }
 %_Z5SliceI12MemberSyntaxE = type { ptr, i64 }
 %_Z13SliceIteratorI12MemberSyntaxE = type { %_Z5SliceI12MemberSyntaxE, i64 }
@@ -537,7 +538,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ActionSyntax = type { i8, [32 x i8] }
 %_Z12DeInitSyntax = type { i64, i64, %_Z12ActionSyntax }
 %_Z15ImplementSyntax = type { i64, i64, %_Z10TypeSyntax, ptr, ptr, ptr }
-%_Z6VectorI13VariantSyntaxE = type { i64, ptr }
 %_Z14VectorIteratorI13VariantSyntaxE = type { ptr, i64 }
 %_Z5SliceI13VariantSyntaxE = type { ptr, i64 }
 %_Z13SliceIteratorI13VariantSyntaxE = type { %_Z5SliceI13VariantSyntaxE, i64 }
@@ -573,7 +573,9 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI10PartSyntaxE = type { ptr }
 %_Z21GenericArgumentSyntax = type { i64, i64, %_Z10TypeSyntax }
 %_Z22GenericArgumentsSyntax = type { i64, i64, ptr }
+%_Z6VectorI21GenericArgumentSyntaxE = type { i64, ptr }
 %_Z15ExtensionSyntax = type { i64, i64, { ptr } }
+%_Z6VectorI15ExtensionSyntaxE = type { i64, ptr }
 %_Z12ThrowsSyntax = type { i64, i64, %_Z10TypeSyntax, ptr }
 %_Z13ReturnsSyntax = type { i64, i64, %_Z10TypeSyntax, ptr }
 %_Z17BindingSpecSyntax = type { i8, [72 x i8] }
@@ -584,7 +586,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z11BlockSyntax = type { i64, i64, ptr, ptr }
 %_Z12ExternSyntax = type { i64, i64 }
 %_Z17InstructionSyntax = type { i64, i64 }
-%_Z6VectorI21GenericArgumentSyntaxE = type { i64, ptr }
 %_Z14VectorIteratorI21GenericArgumentSyntaxE = type { ptr, i64 }
 %_Z5SliceI21GenericArgumentSyntaxE = type { ptr, i64 }
 %_Z13SliceIteratorI21GenericArgumentSyntaxE = type { %_Z5SliceI21GenericArgumentSyntaxE, i64 }
@@ -593,7 +594,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI21GenericArgumentSyntaxE = type { ptr }
 %_Z4NodeI21GenericArgumentSyntaxE = type { %_Z21GenericArgumentSyntax, ptr }
 %_Z12ListIteratorI21GenericArgumentSyntaxE = type { ptr }
-%_Z6VectorI15ExtensionSyntaxE = type { i64, ptr }
 %_Z14VectorIteratorI15ExtensionSyntaxE = type { ptr, i64 }
 %_Z5SliceI15ExtensionSyntaxE = type { ptr, i64 }
 %_Z13SliceIteratorI15ExtensionSyntaxE = type { %_Z5SliceI15ExtensionSyntaxE, i64 }
@@ -623,6 +623,8 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z20PlannedDeInitializer = type { %_Z4Span, { ptr }, %_Z21PlannedImplementation }
 %_Z15PlannedOperator = type { %_Z4Span, i1, { ptr }, { ptr }, ptr, ptr, ptr, %_Z21PlannedImplementation, ptr, ptr }
 %_Z18PlannedInitializer = type { %_Z4Span, i1, ptr, { ptr }, ptr, %_Z21PlannedImplementation }
+%_Z6VectorI18PlannedInitializerE = type { i64, ptr }
+%_Z6VectorI15PlannedOperatorE = type { i64, ptr }
 %_Z6VectorI14PlannedOperandE = type { i64, ptr }
 %_Z14PlannedOperand = type { %_Z4Span, %_Z17PlannedExpression, ptr, %_Z11PlannedType }
 %_Z17PlannedExpression = type { i8, [488 x i8] }
@@ -634,7 +636,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI14PlannedOperandE = type { ptr }
 %_Z4NodeI14PlannedOperandE = type { %_Z14PlannedOperand, ptr }
 %_Z12ListIteratorI14PlannedOperandE = type { ptr }
-%_Z6VectorI18PlannedInitializerE = type { i64, ptr }
 %_Z14VectorIteratorI18PlannedInitializerE = type { ptr, i64 }
 %_Z5SliceI18PlannedInitializerE = type { ptr, i64 }
 %_Z13SliceIteratorI18PlannedInitializerE = type { %_Z5SliceI18PlannedInitializerE, i64 }
@@ -643,7 +644,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI18PlannedInitializerE = type { ptr }
 %_Z4NodeI18PlannedInitializerE = type { %_Z18PlannedInitializer, ptr }
 %_Z12ListIteratorI18PlannedInitializerE = type { ptr }
-%_Z6VectorI15PlannedOperatorE = type { i64, ptr }
 %_Z14VectorIteratorI15PlannedOperatorE = type { ptr, i64 }
 %_Z5SliceI15PlannedOperatorE = type { ptr, i64 }
 %_Z13SliceIteratorI15PlannedOperatorE = type { %_Z5SliceI15PlannedOperatorE, i64 }
@@ -659,6 +659,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12PlannedThrow = type { %_Z4Span, ptr }
 %_Z15PlannedContinue = type { %_Z4Span, { ptr } }
 %_Z19PlannedMemberAccess = type { { ptr }, i64, i1, i1, %_Z11PlannedType, %_Z11PlannedType }
+%_Z6VectorI19PlannedMemberAccessE = type { i64, ptr }
 %_Z10PlannedTry = type { %_Z4Span, %_Z14PlannedBinding, ptr, ptr, %_Z11PlannedType, i1 }
 %_Z12PlannedWhile = type { %_Z4Span, %_Z14PlannedBinding, %_Z13PlannedAction, { ptr } }
 %_Z10PlannedFor = type { %_Z4Span, { ptr }, ptr, %_Z13PlannedAction, i1, %_Z11PlannedType, %_Z11PlannedType, %_Z11PlannedType, { ptr }, { ptr }, { ptr }, i1 }
@@ -681,9 +682,11 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z9PlannedAs = type { %_Z4Span, %_Z11PlannedType, ptr }
 %_Z26PlannedVariantConstruction = type { %_Z4Span, %_Z11PlannedType, { ptr }, i64, ptr }
 %_Z16PlannedComponent = type { %_Z4Span, ptr, ptr, ptr }
-%_Z13PlannedBranch = type { %_Z4Span, ptr, ptr }
-%_Z11PlannedWhen = type { %_Z4Span, { ptr }, %_Z11PlannedType, i64, ptr }
 %_Z6VectorI16PlannedComponentE = type { i64, ptr }
+%_Z13PlannedBranch = type { %_Z4Span, ptr, ptr }
+%_Z6VectorI13PlannedBranchE = type { i64, ptr }
+%_Z11PlannedWhen = type { %_Z4Span, { ptr }, %_Z11PlannedType, i64, ptr }
+%_Z6VectorI11PlannedWhenE = type { i64, ptr }
 %_Z14VectorIteratorI16PlannedComponentE = type { ptr, i64 }
 %_Z5SliceI16PlannedComponentE = type { ptr, i64 }
 %_Z13SliceIteratorI16PlannedComponentE = type { %_Z5SliceI16PlannedComponentE, i64 }
@@ -692,7 +695,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI16PlannedComponentE = type { ptr }
 %_Z4NodeI16PlannedComponentE = type { %_Z16PlannedComponent, ptr }
 %_Z12ListIteratorI16PlannedComponentE = type { ptr }
-%_Z6VectorI13PlannedBranchE = type { i64, ptr }
 %_Z14VectorIteratorI13PlannedBranchE = type { ptr, i64 }
 %_Z5SliceI13PlannedBranchE = type { ptr, i64 }
 %_Z13SliceIteratorI13PlannedBranchE = type { %_Z5SliceI13PlannedBranchE, i64 }
@@ -701,7 +703,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI13PlannedBranchE = type { ptr }
 %_Z4NodeI13PlannedBranchE = type { %_Z13PlannedBranch, ptr }
 %_Z12ListIteratorI13PlannedBranchE = type { ptr }
-%_Z6VectorI11PlannedWhenE = type { i64, ptr }
 %_Z14VectorIteratorI11PlannedWhenE = type { ptr, i64 }
 %_Z5SliceI11PlannedWhenE = type { ptr, i64 }
 %_Z13SliceIteratorI11PlannedWhenE = type { %_Z5SliceI11PlannedWhenE, i64 }
@@ -710,7 +711,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI11PlannedWhenE = type { ptr }
 %_Z4NodeI11PlannedWhenE = type { %_Z11PlannedWhen, ptr }
 %_Z12ListIteratorI11PlannedWhenE = type { ptr }
-%_Z6VectorI19PlannedMemberAccessE = type { i64, ptr }
 %_Z14VectorIteratorI19PlannedMemberAccessE = type { ptr, i64 }
 %_Z5SliceI19PlannedMemberAccessE = type { ptr, i64 }
 %_Z13SliceIteratorI19PlannedMemberAccessE = type { %_Z5SliceI19PlannedMemberAccessE, i64 }
@@ -64815,8 +64815,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end11, %if.then
   %i7 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -65258,8 +65258,8 @@ if.end5:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end14, %if.then4
   %i9 = load i64, ptr %i, align 8
-  %load.struct10 = load %_Z6VectorIcE, ptr %deref.tmp8, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct10, 0
+  %load.struct10 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp8, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct10, 0
   %lt = icmp ult i64 %i9, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -65369,8 +65369,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end10, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct6 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct6, 0
+  %load.struct6 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct6, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -65478,8 +65478,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end10, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct6 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct6, 0
+  %load.struct6 = load %_Z6VectorI13VariantSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct6, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -65570,8 +65570,8 @@ if.end40:                                         ; preds = %while.exit45, %if.t
 
 while.cond43:                                     ; preds = %if.end53, %if.then39
   %j = load i64, ptr %i, align 8
-  %load.struct46 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length47 = extractvalue %_Z6VectorIcE %load.struct46, 0
+  %load.struct46 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp, align 8
+  %length47 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct46, 0
   %lt48 = icmp ult i64 %j, %length47
   br i1 %lt48, label %while.body44, label %while.exit45
 
@@ -72418,8 +72418,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end11, %if.then
   %i7 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -72755,8 +72755,8 @@ if.end4:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end13, %if.then3
   %i8 = load i64, ptr %i, align 8
-  %load.struct9 = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct9, 0
+  %load.struct9 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp7, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct9, 0
   %lt = icmp ult i64 %i8, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -72862,8 +72862,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -72982,8 +72982,8 @@ if.end7:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end16, %if.then6
   %j11 = load i64, ptr %j, align 8
-  %load.struct12 = load %_Z6VectorIcE, ptr %deref.tmp10, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct12, 0
+  %load.struct12 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp10, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct12, 0
   %lt = icmp ult i64 %j11, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -73452,8 +73452,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end11, %if.then
   %i7 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -74150,8 +74150,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end10, %if.then
   %i6 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i6, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -77457,8 +77457,8 @@ if.then3:                                         ; preds = %choose.when
   %items5 = extractvalue %_Z16ParametersSyntax %variant.val, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp6, ptr align 1 %items5, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp6, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp6, align 8
+  %length = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct, 0
   %gt = icmp ugt i64 %length, 0
   br i1 %gt, label %if.then7, label %if.end8
 
@@ -77492,8 +77492,8 @@ if.end15:                                         ; preds = %if.then14, %if.then
 
 while.cond:                                       ; preds = %if.end23, %if.end8
   %i16 = load i64, ptr %i, align 8
-  %load.struct17 = load %_Z6VectorIcE, ptr %deref.tmp6, align 8
-  %length18 = extractvalue %_Z6VectorIcE %load.struct17, 0
+  %load.struct17 = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp6, align 8
+  %length18 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct17, 0
   %lt = icmp ult i64 %i16, %length18
   br i1 %lt, label %while.body, label %while.exit
 
@@ -78191,8 +78191,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI10PartSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI10PartSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -78300,8 +78300,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -79687,8 +79687,8 @@ if.end4:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end13, %if.then3
   %i8 = load i64, ptr %i, align 8
-  %load.struct9 = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct9, 0
+  %load.struct9 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp7, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct9, 0
   %lt = icmp ult i64 %i8, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -80353,8 +80353,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end10, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct6 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct6, 0
+  %load.struct6 = load %_Z6VectorI21GenericArgumentSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %load.struct6, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -80462,8 +80462,8 @@ if.then4:                                         ; preds = %choose.when
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp7, ptr align 1 %items6, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i1 true, ptr %first, align 1
   store i64 0, ptr %i, align 1
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp7, align 8
+  %length = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct, 0
   %gt = icmp ugt i64 %length, 0
   br i1 %gt, label %if.then8, label %if.end9
 
@@ -80497,8 +80497,8 @@ if.end16:                                         ; preds = %if.then15, %if.then
 
 while.cond:                                       ; preds = %if.end24, %if.end9
   %i17 = load i64, ptr %i, align 8
-  %load.struct18 = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length19 = extractvalue %_Z6VectorIcE %load.struct18, 0
+  %load.struct18 = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp7, align 8
+  %length19 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct18, 0
   %lt = icmp ult i64 %i17, %length19
   br i1 %lt, label %while.body, label %while.exit
 
@@ -80613,8 +80613,8 @@ if.end:                                           ; preds = %while.exit11, %whil
 
 while.cond9:                                      ; preds = %if.end19, %if.then
   %ei12 = load i64, ptr %ei, align 8
-  %load.struct13 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct13, 0
+  %load.struct13 = load %_Z6VectorI15ExtensionSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15ExtensionSyntaxE %load.struct13, 0
   %lt14 = icmp ult i64 %ei12, %length
   br i1 %lt14, label %while.body10, label %while.exit11
 
@@ -80693,8 +80693,8 @@ if.end49:                                         ; preds = %while.exit55, %if.t
 
 while.cond53:                                     ; preds = %if.end63, %if.then48
   %gi = load i64, ptr %ei, align 8
-  %load.struct56 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length57 = extractvalue %_Z6VectorIcE %load.struct56, 0
+  %load.struct56 = load %_Z6VectorI21GenericArgumentSyntaxE, ptr %deref.tmp, align 8
+  %length57 = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %load.struct56, 0
   %lt58 = icmp ult i64 %gi, %length57
   br i1 %lt58, label %while.body54, label %while.exit55
 
@@ -81348,8 +81348,8 @@ if.end4:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end13, %if.then3
   %i8 = load i64, ptr %i, align 8
-  %load.struct9 = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct9, 0
+  %load.struct9 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp7, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct9, 0
   %lt = icmp ult i64 %i8, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -81455,8 +81455,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -81561,8 +81561,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI13VariantSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -81646,8 +81646,8 @@ if.end36:                                         ; preds = %while.exit41, %if.t
 
 while.cond39:                                     ; preds = %if.end49, %if.then35
   %j = load i64, ptr %i, align 8
-  %load.struct42 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length43 = extractvalue %_Z6VectorIcE %load.struct42, 0
+  %load.struct42 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp, align 8
+  %length43 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct42, 0
   %lt44 = icmp ult i64 %j, %length43
   br i1 %lt44, label %while.body40, label %while.exit41
 
@@ -81891,8 +81891,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI10PartSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI10PartSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -82183,8 +82183,8 @@ if.end5:                                          ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end12, %if.then4
   %i8 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp7, align 8
+  %length = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i8, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -82398,19 +82398,14 @@ entry:
   %sret.result7 = alloca %_Z9JsonValue, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %sret.result5 = alloca %_Z9JsonValue, align 8
-  %frame = alloca { ptr, ptr }, align 8
-  store ptr null, ptr %frame, align 8
-  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr %1, ptr %frame.parent, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN7symbols15find_definitionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, ptr %3, ptr %4)
+  call void @_ZN7symbols15find_definitionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %4)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
@@ -82420,23 +82415,21 @@ if.end:                                           ; preds = %entry
   br i1 %eq2, label %if.then3, label %if.end4
 
 if.then3:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
 if.end4:                                          ; preds = %if.end
-  call void @_ZN4json5parseEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %frame, ptr %sret.result)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result5, ptr @.str.327)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result7, ptr %frame, ptr %sret.result6, ptr @.str.328)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result8, ptr %frame, ptr %sret.result7, ptr @.str.329)
+  call void @_ZN4json5parseEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %1, ptr %sret.result)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %1, ptr %sret.result5, ptr @.str.327)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result7, ptr %1, ptr %sret.result6, ptr @.str.328)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result8, ptr %1, ptr %sret.result7, ptr @.str.329)
   %call9 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result8)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result8, ptr %frame, ptr %sret.result7, ptr @.str.330)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result8, ptr %1, ptr %sret.result7, ptr @.str.330)
   %call10 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result8)
   %lt = icmp slt i64 %call9, 0
   br i1 %lt, label %if.then11, label %if.end12
 
 if.then11:                                        ; preds = %if.end4
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
@@ -82445,14 +82438,12 @@ if.end12:                                         ; preds = %if.end4
   br i1 %lt13, label %if.then14, label %if.end15
 
 if.then14:                                        ; preds = %if.end12
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
 if.end15:                                         ; preds = %if.end12
   %call17 = call i64 @_ZN7symbols18position_to_offsetEPN4scaly6memory4PageE6Stringmm(ptr %1, ptr %2, i64 %call9, i64 %call10)
   call void @_ZN7symbols11doc_commentEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %2, i64 %call17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -82624,8 +82615,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -83284,8 +83275,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -83382,8 +83373,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -83640,8 +83631,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -84663,8 +84654,8 @@ if.end3:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end10, %if.then2
   %i7 = load i64, ptr %i, align 8
-  %load.struct8 = load %_Z6VectorIcE, ptr %deref.tmp6, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct8, 0
+  %load.struct8 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp6, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct8, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -84728,8 +84719,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -85900,8 +85891,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI10PartSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI10PartSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -85973,8 +85964,8 @@ if.end29:                                         ; preds = %while.exit34, %if.t
 
 while.cond32:                                     ; preds = %if.end41, %if.then28
   %j = load i64, ptr %i, align 8
-  %load.struct35 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length36 = extractvalue %_Z6VectorIcE %load.struct35, 0
+  %load.struct35 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp, align 8
+  %length36 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct35, 0
   %lt37 = icmp ult i64 %j, %length36
   br i1 %lt37, label %while.body33, label %while.exit34
 
@@ -86038,8 +86029,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -86695,8 +86686,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -86778,8 +86769,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end5, %if.then
   %i2 = load i64, ptr %i, align 8
-  %load.struct3 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct3, 0
+  %load.struct3 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct3, 0
   %lt = icmp ult i64 %i2, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -87305,8 +87296,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -87404,8 +87395,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -88175,8 +88166,8 @@ if.end2:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end11, %if.then1
   %i5 = load i64, ptr %i, align 8
-  %load.struct6 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct6, 0
+  %load.struct6 = load %_Z6VectorI10PartSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI10PartSyntaxE %load.struct6, 0
   %lt7 = icmp ult i64 %i5, %length
   br i1 %lt7, label %while.body, label %while.exit
 
@@ -88250,8 +88241,8 @@ if.end3:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end10, %if.then2
   %i7 = load i64, ptr %i, align 8
-  %load.struct8 = load %_Z6VectorIcE, ptr %deref.tmp6, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct8, 0
+  %load.struct8 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp6, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct8, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -88315,8 +88306,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -88381,8 +88372,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI13VariantSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -89392,8 +89383,8 @@ if.end3:                                          ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end10, %if.then2
   %i6 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp5, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp5, align 8
+  %length = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i6, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -89546,8 +89537,8 @@ if.end5:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end15, %if.then4
   %i9 = load i64, ptr %i, align 8
-  %load.struct10 = load %_Z6VectorIcE, ptr %deref.tmp8, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct10, 0
+  %load.struct10 = load %_Z6VectorI21GenericArgumentSyntaxE, ptr %deref.tmp8, align 8
+  %length = extractvalue %_Z6VectorI21GenericArgumentSyntaxE %load.struct10, 0
   %lt11 = icmp ult i64 %i9, %length
   br i1 %lt11, label %while.body, label %while.exit
 
@@ -91620,8 +91611,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI10PartSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI10PartSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -91698,8 +91689,8 @@ if.end3:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end10, %if.then2
   %i7 = load i64, ptr %i, align 8
-  %load.struct8 = load %_Z6VectorIcE, ptr %deref.tmp6, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct8, 0
+  %load.struct8 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp6, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct8, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -91763,8 +91754,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -91829,8 +91820,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI13VariantSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -92292,8 +92283,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -92699,8 +92690,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -93428,8 +93419,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end10, %if.then
   %i6 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i6, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -97203,8 +97194,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI10PartSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI10PartSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -97298,8 +97289,8 @@ if.end4:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end13, %if.then3
   %i8 = load i64, ptr %i, align 8
-  %load.struct9 = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct9, 0
+  %load.struct9 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp7, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct9, 0
   %lt = icmp ult i64 %i8, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -97469,8 +97460,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -97558,8 +97549,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI13VariantSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI13VariantSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -97644,8 +97635,8 @@ if.end40:                                         ; preds = %while.exit45, %if.t
 
 while.cond43:                                     ; preds = %if.end53, %if.then39
   %j = load i64, ptr %i, align 8
-  %load.struct46 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length47 = extractvalue %_Z6VectorIcE %load.struct46, 0
+  %load.struct46 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp, align 8
+  %length47 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct46, 0
   %lt48 = icmp ult i64 %j, %length47
   br i1 %lt48, label %while.body44, label %while.exit45
 
@@ -97853,8 +97844,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI10PartSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI10PartSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -97922,8 +97913,8 @@ if.end31:                                         ; preds = %while.exit36, %if.t
 
 while.cond34:                                     ; preds = %if.end44, %if.then30
   %j = load i64, ptr %i, align 8
-  %load.struct37 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length38 = extractvalue %_Z6VectorIcE %load.struct37, 0
+  %load.struct37 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp, align 8
+  %length38 = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct37, 0
   %lt39 = icmp ult i64 %j, %length38
   br i1 %lt39, label %while.body35, label %while.exit36
 
@@ -98207,8 +98198,8 @@ if.then5:                                         ; preds = %choose.when
   %items7 = extractvalue %_Z16ParametersSyntax %variant.val, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp8, ptr align 1 %items7, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  %load.struct9 = load %_Z6VectorIcE, ptr %deref.tmp8, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct9, 0
+  %load.struct9 = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp8, align 8
+  %length = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct9, 0
   %gt = icmp ugt i64 %length, 0
   br i1 %gt, label %if.then10, label %if.end11
 
@@ -98242,8 +98233,8 @@ if.end18:                                         ; preds = %if.then17, %if.then
 
 while.cond:                                       ; preds = %if.end26, %if.end11
   %i19 = load i64, ptr %i, align 8
-  %load.struct20 = load %_Z6VectorIcE, ptr %deref.tmp8, align 8
-  %length21 = extractvalue %_Z6VectorIcE %load.struct20, 0
+  %load.struct20 = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp8, align 8
+  %length21 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct20, 0
   %lt = icmp ult i64 %i19, %length21
   br i1 %lt, label %while.body, label %while.exit
 
@@ -105086,8 +105077,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end7, %if.then
   %i5 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -105807,8 +105798,8 @@ if.end4:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end13, %if.then3
   %i8 = load i64, ptr %i, align 8
-  %load.struct9 = load %_Z6VectorIcE, ptr %deref.tmp7, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct9, 0
+  %load.struct9 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp7, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct9, 0
   %lt = icmp ult i64 %i8, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -105893,8 +105884,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end9, %if.then
   %i4 = load i64, ptr %i, align 8
-  %load.struct5 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct5, 0
+  %load.struct5 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct5, 0
   %lt = icmp ult i64 %i4, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -106066,8 +106057,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end10, %if.then
   %i6 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i6, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -108516,8 +108507,8 @@ if.end3:                                          ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end10, %if.then2
   %i7 = load i64, ptr %i, align 8
-  %load.struct8 = load %_Z6VectorIcE, ptr %deref.tmp6, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct8, 0
+  %load.struct8 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp6, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct8, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -108581,8 +108572,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -108857,8 +108848,8 @@ if.then12:                                        ; preds = %choose.when
   %items14 = extractvalue %_Z16ParametersSyntax %variant.val, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp15, ptr align 1 %items14, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  %load.struct16 = load %_Z6VectorIcE, ptr %deref.tmp15, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct16, 0
+  %load.struct16 = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp15, align 8
+  %length = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct16, 0
   %gt = icmp ugt i64 %length, 0
   br i1 %gt, label %if.then17, label %if.end18
 
@@ -108892,8 +108883,8 @@ if.end26:                                         ; preds = %if.then25, %if.then
 
 while.cond27:                                     ; preds = %if.end38, %if.end18
   %i30 = load i64, ptr %i, align 8
-  %load.struct31 = load %_Z6VectorIcE, ptr %deref.tmp15, align 8
-  %length32 = extractvalue %_Z6VectorIcE %load.struct31, 0
+  %load.struct31 = load %_Z6VectorI10ItemSyntaxE, ptr %deref.tmp15, align 8
+  %length32 = extractvalue %_Z6VectorI10ItemSyntaxE %load.struct31, 0
   %lt33 = icmp ult i64 %i30, %length32
   br i1 %lt33, label %while.body28, label %while.exit29
 
@@ -113694,8 +113685,8 @@ if.end11:                                         ; preds = %while.exit, %if.the
 
 while.cond:                                       ; preds = %if.end21, %if.then10
   %i14 = load i64, ptr %i, align 8
-  %load.struct15 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct15, 0
+  %load.struct15 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct15, 0
   %lt = icmp ult i64 %i14, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -113775,8 +113766,8 @@ if.end49:                                         ; preds = %while.exit54, %if.t
 
 while.cond52:                                     ; preds = %if.end64, %if.then48
   %i55 = load i64, ptr %i, align 8
-  %load.struct56 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length57 = extractvalue %_Z6VectorIcE %load.struct56, 0
+  %load.struct56 = load %_Z6VectorI16PlannedStructureE, ptr %deref.tmp, align 8
+  %length57 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct56, 0
   %lt58 = icmp ult i64 %i55, %length57
   br i1 %lt58, label %while.body53, label %while.exit54
 
@@ -113837,8 +113828,8 @@ if.end84:                                         ; preds = %while.exit89, %if.t
 
 while.cond87:                                     ; preds = %if.end99, %if.then83
   %i90 = load i64, ptr %i, align 8
-  %load.struct91 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length92 = extractvalue %_Z6VectorIcE %load.struct91, 0
+  %load.struct91 = load %_Z6VectorI12PlannedUnionE, ptr %deref.tmp, align 8
+  %length92 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct91, 0
   %lt93 = icmp ult i64 %i90, %length92
   br i1 %lt93, label %while.body88, label %while.exit89
 
@@ -113899,8 +113890,8 @@ if.end119:                                        ; preds = %while.exit124, %if.
 
 while.cond122:                                    ; preds = %if.end134, %if.then118
   %i125 = load i64, ptr %i, align 8
-  %load.struct126 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length127 = extractvalue %_Z6VectorIcE %load.struct126, 0
+  %load.struct126 = load %_Z6VectorI13PlannedGlobalE, ptr %deref.tmp, align 8
+  %length127 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct126, 0
   %lt128 = icmp ult i64 %i125, %length127
   br i1 %lt128, label %while.body123, label %while.exit124
 
@@ -114187,8 +114178,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end7, %if.end
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -114486,8 +114477,8 @@ if.end3:                                          ; preds = %if.end
 
 while.cond:                                       ; preds = %if.end11, %if.end3
   %i7 = load i64, ptr %i, align 8
-  %load.struct8 = load %_Z6VectorIcE, ptr %deref.tmp6, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct8, 0
+  %load.struct8 = load %_Z6VectorI12MemberSyntaxE, ptr %deref.tmp6, align 8
+  %length = extractvalue %_Z6VectorI12MemberSyntaxE %load.struct8, 0
   %lt = icmp ult i64 %i7, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -114546,8 +114537,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end7, %if.end
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -116161,8 +116152,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -116242,8 +116233,8 @@ if.end34:                                         ; preds = %while.exit39, %if.t
 
 while.cond37:                                     ; preds = %if.end49, %if.then33
   %i40 = load i64, ptr %i, align 8
-  %load.struct41 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length42 = extractvalue %_Z6VectorIcE %load.struct41, 0
+  %load.struct41 = load %_Z6VectorI18PlannedInitializerE, ptr %deref.tmp, align 8
+  %length42 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct41, 0
   %lt43 = icmp ult i64 %i40, %length42
   br i1 %lt43, label %while.body38, label %while.exit39
 
@@ -116319,8 +116310,8 @@ if.end80:                                         ; preds = %while.exit85, %if.t
 
 while.cond83:                                     ; preds = %if.end95, %if.then79
   %i86 = load i64, ptr %i, align 8
-  %load.struct87 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length88 = extractvalue %_Z6VectorIcE %load.struct87, 0
+  %load.struct87 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
+  %length88 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct87, 0
   %lt89 = icmp ult i64 %i86, %length88
   br i1 %lt89, label %while.body84, label %while.exit85
 
@@ -116458,8 +116449,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -116539,8 +116530,8 @@ if.end34:                                         ; preds = %while.exit39, %if.t
 
 while.cond37:                                     ; preds = %if.end49, %if.then33
   %i40 = load i64, ptr %i, align 8
-  %load.struct41 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length42 = extractvalue %_Z6VectorIcE %load.struct41, 0
+  %load.struct41 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
+  %length42 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct41, 0
   %lt43 = icmp ult i64 %i40, %length42
   br i1 %lt43, label %while.body38, label %while.exit39
 
@@ -120800,8 +120791,8 @@ if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z14PlannedBinding, ptr %2, align 8
   %operation2 = extractvalue %_Z14PlannedBinding %load.struct1, 3
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %operation2, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
-  %load.struct3 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct3, 0
+  %load.struct3 = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandE %load.struct3, 0
   %eq4 = icmp eq i64 %length, 0
   br i1 %eq4, label %if.then5, label %if.end6
 
@@ -120810,8 +120801,8 @@ if.then5:                                         ; preds = %if.end
   ret void
 
 if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length8 = extractvalue %_Z6VectorIcE %load.struct7, 0
+  %load.struct7 = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length8 = extractvalue %_Z6VectorI14PlannedOperandE %load.struct7, 0
   %sub = sub i64 %length8, 1
   %call = call ptr @_ZN6VectorI14PlannedOperandE3getEm(ptr %deref.tmp, i64 %sub)
   %eq9 = icmp eq ptr %call, null
@@ -120844,8 +120835,8 @@ if.then:                                          ; preds = %entry
   %load.struct1 = load %_Z14PlannedOperand, ptr %2, align 8
   %member_access2 = extractvalue %_Z14PlannedOperand %load.struct1, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %member_access2, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
-  %load.struct3 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct3, 0
+  %load.struct3 = load %_Z6VectorI19PlannedMemberAccessE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct3, 0
   %gt = icmp ugt i64 %length, 0
   br i1 %gt, label %if.then4, label %if.end5
 
@@ -120858,8 +120849,8 @@ if.end:                                           ; preds = %if.end5, %entry
   ret void
 
 if.then4:                                         ; preds = %if.then
-  %load.struct6 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length7 = extractvalue %_Z6VectorIcE %load.struct6, 0
+  %load.struct6 = load %_Z6VectorI19PlannedMemberAccessE, ptr %deref.tmp, align 8
+  %length7 = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct6, 0
   %sub = sub i64 %length7, 1
   %call = call ptr @_ZN6VectorI19PlannedMemberAccessE3getEm(ptr %deref.tmp, i64 %sub)
   %ne8 = icmp ne ptr %call, null
@@ -121430,8 +121421,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI19PlannedMemberAccessE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct, 0
   %eq1 = icmp eq i64 %length, 0
   br i1 %eq1, label %if.then2, label %if.end3
 
@@ -121439,8 +121430,8 @@ if.then2:                                         ; preds = %if.end
   ret i1 false
 
 if.end3:                                          ; preds = %if.end
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length5 = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI19PlannedMemberAccessE, ptr %deref.tmp, align 8
+  %length5 = extractvalue %_Z6VectorI19PlannedMemberAccessE %load.struct4, 0
   %sub = sub i64 %length5, 1
   %call = call ptr @_ZN6VectorI19PlannedMemberAccessE3getEm(ptr %deref.tmp, i64 %sub)
   %eq6 = icmp eq ptr %call, null
@@ -121560,8 +121551,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI16PlannedComponentE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI16PlannedComponentE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -121741,8 +121732,8 @@ if.end7:                                          ; preds = %while.exit, %if.end
 
 while.cond:                                       ; preds = %if.end15, %if.then6
   %i10 = load i64, ptr %i, align 8
-  %load.struct11 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct11, 0
+  %load.struct11 = load %_Z6VectorI13PlannedBranchE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI13PlannedBranchE %load.struct11, 0
   %lt = icmp ult i64 %i10, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -121849,8 +121840,8 @@ if.end7:                                          ; preds = %while.exit, %if.end
 
 while.cond:                                       ; preds = %if.end15, %if.then6
   %i10 = load i64, ptr %i, align 8
-  %load.struct11 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct11, 0
+  %load.struct11 = load %_Z6VectorI11PlannedWhenE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI11PlannedWhenE %load.struct11, 0
   %lt = icmp ult i64 %i10, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -121992,8 +121983,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI11PlannedWhenE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI11PlannedWhenE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -127847,8 +127838,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end7, %if.end
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -127955,8 +127946,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end13, %if.end
   %i9 = load i64, ptr %i, align 8
-  %load.struct10 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct10, 0
+  %load.struct10 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct10, 0
   %lt = icmp ult i64 %i9, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -128433,8 +128424,8 @@ if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z15PlannedFunction, ptr %2, align 8
   %input2 = extractvalue %_Z15PlannedFunction %load.struct1, 6
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %input2, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
-  %load.struct3 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct3, 0
+  %load.struct3 = load %_Z6VectorI11PlannedItemE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI11PlannedItemE %load.struct3, 0
   %eq4 = icmp eq i64 %length, 0
   br i1 %eq4, label %if.then5, label %if.end6
 
@@ -129884,8 +129875,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end9, %if.end
   %i5 = load i64, ptr %i, align 8
-  %load.struct6 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct6, 0
+  %load.struct6 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct6, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -130291,8 +130282,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end9, %if.end
   %i5 = load i64, ptr %i, align 8
-  %load.struct6 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct6, 0
+  %load.struct6 = load %_Z6VectorI11PlannedItemE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI11PlannedItemE %load.struct6, 0
   %lt = icmp ult i64 %i5, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -130505,8 +130496,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end4, %if.end
   %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandE %load.struct, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -130553,8 +130544,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandE %load.struct, 0
   %ne = icmp ne i64 %length, 1
   br i1 %ne, label %if.then1, label %if.end2
 
@@ -130652,8 +130643,8 @@ if.end19:                                         ; preds = %if.end17
 
 while.cond:                                       ; preds = %if.end27, %if.end19
   %i22 = load i64, ptr %i, align 8
-  %load.struct23 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct23, 0
+  %load.struct23 = load %_Z6VectorI16PlannedStructureE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI16PlannedStructureE %load.struct23, 0
   %lt = icmp ult i64 %i22, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -130735,8 +130726,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end4, %if.end
   %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandE %load.struct, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -130850,8 +130841,8 @@ if.end17:                                         ; preds = %if.end14
 
 while.cond:                                       ; preds = %if.end30, %if.end17
   %i19 = load i64, ptr %i, align 8
-  %load.struct20 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct20, 0
+  %load.struct20 = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandE %load.struct20, 0
   %lt = icmp ult i64 %i19, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -130919,8 +130910,8 @@ if.end48:                                         ; preds = %choose.end40
 
 while.cond50:                                     ; preds = %if.end82, %if.end48
   %i53 = load i64, ptr %i, align 8
-  %load.struct54 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length55 = extractvalue %_Z6VectorIcE %load.struct54, 0
+  %load.struct54 = load %_Z6VectorI16PlannedComponentE, ptr %deref.tmp, align 8
+  %length55 = extractvalue %_Z6VectorI16PlannedComponentE %load.struct54, 0
   %lt56 = icmp ult i64 %i53, %length55
   br i1 %lt56, label %while.body51, label %while.exit52
 
@@ -130950,8 +130941,8 @@ if.end66:                                         ; preds = %if.end61
   %load.struct67 = load %_Z16PlannedComponent, ptr %deref.tmp62, align 8
   %value68 = extractvalue %_Z16PlannedComponent %load.struct67, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp69, ptr align 1 %value68, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
-  %load.struct70 = load %_Z6VectorIcE, ptr %deref.tmp69, align 8
-  %length71 = extractvalue %_Z6VectorIcE %load.struct70, 0
+  %load.struct70 = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp69, align 8
+  %length71 = extractvalue %_Z6VectorI14PlannedOperandE %load.struct70, 0
   %ne = icmp ne i64 %length71, 1
   br i1 %ne, label %if.then72, label %if.end73
 
@@ -131082,8 +131073,8 @@ if.end14:                                         ; preds = %choose.when10
 
 while.cond:                                       ; preds = %if.end20, %if.end14
   %i16 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandE %load.struct, 0
   %lt = icmp ult i64 %i16, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -131185,8 +131176,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end7, %if.end
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI15PlannedPropertyE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedPropertyE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -132654,8 +132645,8 @@ if.end:                                           ; preds = %while.exit, %choose
 
 while.cond:                                       ; preds = %if.end21, %if.then
   %i17 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI16PlannedComponentE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI16PlannedComponentE %load.struct, 0
   %lt = icmp ult i64 %i17, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -132704,8 +132695,8 @@ if.end32:                                         ; preds = %while.exit36, %choo
 
 while.cond34:                                     ; preds = %if.end45, %if.then31
   %i37 = load i64, ptr %i, align 8
-  %load.struct38 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length39 = extractvalue %_Z6VectorIcE %load.struct38, 0
+  %load.struct38 = load %_Z6VectorI16PlannedStatementE, ptr %deref.tmp, align 8
+  %length39 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct38, 0
   %lt40 = icmp ult i64 %i37, %length39
   br i1 %lt40, label %while.body35, label %while.exit36
 
@@ -132761,8 +132752,8 @@ if.end57:                                         ; preds = %while.exit61, %choo
 
 while.cond59:                                     ; preds = %if.end70, %if.then56
   %i62 = load i64, ptr %i, align 8
-  %load.struct63 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length64 = extractvalue %_Z6VectorIcE %load.struct63, 0
+  %load.struct63 = load %_Z6VectorI13PlannedBranchE, ptr %deref.tmp, align 8
+  %length64 = extractvalue %_Z6VectorI13PlannedBranchE %load.struct63, 0
   %lt65 = icmp ult i64 %i62, %length64
   br i1 %lt65, label %while.body60, label %while.exit61
 
@@ -132810,8 +132801,8 @@ if.end83:                                         ; preds = %while.exit87, %choo
 
 while.cond85:                                     ; preds = %if.end96, %if.then82
   %i88 = load i64, ptr %i, align 8
-  %load.struct89 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length90 = extractvalue %_Z6VectorIcE %load.struct89, 0
+  %load.struct89 = load %_Z6VectorI11PlannedWhenE, ptr %deref.tmp, align 8
+  %length90 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct89, 0
   %lt91 = icmp ult i64 %i88, %length90
   br i1 %lt91, label %while.body86, label %while.exit87
 
@@ -132894,8 +132885,8 @@ if.end126:                                        ; preds = %while.exit130, %cho
 
 while.cond128:                                    ; preds = %if.end139, %if.then125
   %i131 = load i64, ptr %i, align 8
-  %load.struct132 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length133 = extractvalue %_Z6VectorIcE %load.struct132, 0
+  %load.struct132 = load %_Z6VectorI11PlannedWhenE, ptr %deref.tmp, align 8
+  %length133 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct132, 0
   %lt134 = icmp ult i64 %i131, %length133
   br i1 %lt134, label %while.body129, label %while.exit130
 
@@ -134291,8 +134282,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -134345,8 +134336,8 @@ if.end21:                                         ; preds = %while.exit26, %if.e
 
 while.cond24:                                     ; preds = %if.end35, %if.then20
   %i27 = load i64, ptr %i, align 8
-  %load.struct28 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length29 = extractvalue %_Z6VectorIcE %load.struct28, 0
+  %load.struct28 = load %_Z6VectorI16PlannedStructureE, ptr %deref.tmp, align 8
+  %length29 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct28, 0
   %lt30 = icmp ult i64 %i27, %length29
   br i1 %lt30, label %while.body25, label %while.exit26
 
@@ -134384,8 +134375,8 @@ if.end41:                                         ; preds = %while.exit46, %if.e
 
 while.cond44:                                     ; preds = %if.end55, %if.then40
   %i47 = load i64, ptr %i, align 8
-  %load.struct48 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length49 = extractvalue %_Z6VectorIcE %load.struct48, 0
+  %load.struct48 = load %_Z6VectorI12PlannedUnionE, ptr %deref.tmp, align 8
+  %length49 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct48, 0
   %lt50 = icmp ult i64 %i47, %length49
   br i1 %lt50, label %while.body45, label %while.exit46
 
@@ -134420,8 +134411,8 @@ if.end61:                                         ; preds = %while.exit66, %if.e
 
 while.cond64:                                     ; preds = %if.end75, %if.then60
   %i67 = load i64, ptr %i, align 8
-  %load.struct68 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length69 = extractvalue %_Z6VectorIcE %load.struct68, 0
+  %load.struct68 = load %_Z6VectorI13PlannedGlobalE, ptr %deref.tmp, align 8
+  %length69 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct68, 0
   %lt70 = icmp ult i64 %i67, %length69
   br i1 %lt70, label %while.body65, label %while.exit66
 
@@ -134488,8 +134479,8 @@ if.end95:                                         ; preds = %while.exit100, %if.
 
 while.cond98:                                     ; preds = %if.end109, %if.then94
   %i101 = load i64, ptr %i, align 8
-  %load.struct102 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length103 = extractvalue %_Z6VectorIcE %load.struct102, 0
+  %load.struct102 = load %_Z6VectorI16PlannedStatementE, ptr %deref.tmp, align 8
+  %length103 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct102, 0
   %lt104 = icmp ult i64 %i101, %length103
   br i1 %lt104, label %while.body99, label %while.exit100
 
@@ -134718,8 +134709,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -134772,8 +134763,8 @@ if.end21:                                         ; preds = %while.exit26, %if.e
 
 while.cond24:                                     ; preds = %if.end35, %if.then20
   %i27 = load i64, ptr %i, align 8
-  %load.struct28 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length29 = extractvalue %_Z6VectorIcE %load.struct28, 0
+  %load.struct28 = load %_Z6VectorI18PlannedInitializerE, ptr %deref.tmp, align 8
+  %length29 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct28, 0
   %lt30 = icmp ult i64 %i27, %length29
   br i1 %lt30, label %while.body25, label %while.exit26
 
@@ -134826,8 +134817,8 @@ if.end52:                                         ; preds = %while.exit57, %if.e
 
 while.cond55:                                     ; preds = %if.end66, %if.then51
   %i58 = load i64, ptr %i, align 8
-  %load.struct59 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length60 = extractvalue %_Z6VectorIcE %load.struct59, 0
+  %load.struct59 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
+  %length60 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct59, 0
   %lt61 = icmp ult i64 %i58, %length60
   br i1 %lt61, label %while.body56, label %while.exit57
 
@@ -134915,8 +134906,8 @@ if.end:                                           ; preds = %while.exit, %entry
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
-  %load.struct4 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %load.struct4 = load %_Z6VectorI15PlannedFunctionE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %load.struct4, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -134967,8 +134958,8 @@ if.end21:                                         ; preds = %while.exit26, %if.e
 
 while.cond24:                                     ; preds = %if.end35, %if.then20
   %i27 = load i64, ptr %i, align 8
-  %load.struct28 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length29 = extractvalue %_Z6VectorIcE %load.struct28, 0
+  %load.struct28 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
+  %length29 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct28, 0
   %lt30 = icmp ult i64 %i27, %length29
   br i1 %lt30, label %while.body25, label %while.exit26
 
@@ -135021,8 +135012,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end4, %if.end
   %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI14PlannedOperandE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandE %load.struct, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -135275,8 +135266,8 @@ if.end24:                                         ; preds = %while.exit, %if.end
 
 while.cond:                                       ; preds = %if.end31, %if.then23
   %i26 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI16PlannedComponentE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI16PlannedComponentE %load.struct, 0
   %lt = icmp ult i64 %i26, %length
   br i1 %lt, label %while.body, label %while.exit
 
@@ -135325,8 +135316,8 @@ if.end42:                                         ; preds = %while.exit46, %choo
 
 while.cond44:                                     ; preds = %if.end55, %if.then41
   %i47 = load i64, ptr %i, align 8
-  %load.struct48 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length49 = extractvalue %_Z6VectorIcE %load.struct48, 0
+  %load.struct48 = load %_Z6VectorI16PlannedStatementE, ptr %deref.tmp, align 8
+  %length49 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct48, 0
   %lt50 = icmp ult i64 %i47, %length49
   br i1 %lt50, label %while.body45, label %while.exit46
 
@@ -135382,8 +135373,8 @@ if.end67:                                         ; preds = %while.exit71, %choo
 
 while.cond69:                                     ; preds = %if.end80, %if.then66
   %i72 = load i64, ptr %i, align 8
-  %load.struct73 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length74 = extractvalue %_Z6VectorIcE %load.struct73, 0
+  %load.struct73 = load %_Z6VectorI13PlannedBranchE, ptr %deref.tmp, align 8
+  %length74 = extractvalue %_Z6VectorI13PlannedBranchE %load.struct73, 0
   %lt75 = icmp ult i64 %i72, %length74
   br i1 %lt75, label %while.body70, label %while.exit71
 
@@ -135431,8 +135422,8 @@ if.end93:                                         ; preds = %while.exit97, %choo
 
 while.cond95:                                     ; preds = %if.end106, %if.then92
   %i98 = load i64, ptr %i, align 8
-  %load.struct99 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length100 = extractvalue %_Z6VectorIcE %load.struct99, 0
+  %load.struct99 = load %_Z6VectorI11PlannedWhenE, ptr %deref.tmp, align 8
+  %length100 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct99, 0
   %lt101 = icmp ult i64 %i98, %length100
   br i1 %lt101, label %while.body96, label %while.exit97
 
@@ -135515,8 +135506,8 @@ if.end137:                                        ; preds = %while.exit141, %cho
 
 while.cond139:                                    ; preds = %if.end150, %if.then136
   %i142 = load i64, ptr %i, align 8
-  %load.struct143 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length144 = extractvalue %_Z6VectorIcE %load.struct143, 0
+  %load.struct143 = load %_Z6VectorI11PlannedWhenE, ptr %deref.tmp, align 8
+  %length144 = extractvalue %_Z6VectorI11PlannedWhenE %load.struct143, 0
   %lt145 = icmp ult i64 %i142, %length144
   br i1 %lt145, label %while.body140, label %while.exit141
 
@@ -136775,8 +136766,8 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end6, %if.end
   %i3 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxE, ptr %deref.tmp, align 8
+  %length = extractvalue %_Z6VectorI17DeclarationSyntaxE %load.struct, 0
   %lt = icmp ult i64 %i3, %length
   br i1 %lt, label %while.body, label %while.exit
 
