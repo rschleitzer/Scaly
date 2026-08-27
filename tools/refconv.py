@@ -1081,34 +1081,42 @@ def cast_residue(line, j, f, li, void_rets, void_props):
     The opaque-slot round trip is recognised by `cast_from_opaque`; everything
     it declines used to be tallied under one label covering 738 sites, which
     said nothing about whether the residue was justified or merely unexamined.
-    Measured 2026-08-26 over all six packages, after the `set`-statement fix
-    below restored unanimity to twelve genuinely opaque names:
+    Re-measured 2026-08-27 over all six packages, after the dazzle cast
+    residue was settled BY HAND (below):
 
-        501  allocate-site        raw memory becoming a typed object -- the
+        504  allocate-site        raw memory becoming a typed object -- the
                                   escape hatch's home position, deliberately
                                   never converted.
-         71  null                 `null as pointer[X]`; the LOCAL form is
+         70  null                 `null as pointer[X]`; the LOCAL form is
                                   rewritten by NULLCAST, the rest are arguments
                                   and fields where no slot is being declared.
-         41  source-not-a-name    `(h as size_t) as pointer[SchedTask]` and the
-                                  pointer/integer arithmetic of the lock-free
-                                  deque -- not a slot round trip at all.
-         35  source-unresolved    the cast's source is a name this lexical
+         28  source-unresolved    the cast's source is a name this lexical
                                   scan cannot type (a parameter further than
                                   400 lines up, a two-hop initializer).
-         55  name-not-unanimous   the blocker with a fix, and the fix is not
-                                  cheap: `nic` (26) and `node` (12) are real
-                                  `pointer[void]` fields (38 of the 55; the
-                                  rest are one- to three-site names), but the
-                                  index is keyed by NAME and those names are
-                                  reused across records with other types, so
-                                  unanimity correctly refuses to answer.  A RECORD-scoped
-                                  index would settle them; it needs the
-                                  receiver's declared type at the cast site,
-                                  i.e. the lexical resolution scalyls does in
-                                  `scoping_type_at#`, and the whole payoff is
-                                  the arithmetic guard on fifty casts.  Left
-                                  measured rather than guessed at.
+                                  dazzle 13, opensp 9, scaly 6.
+         19  source-not-a-name    `(h as size_t) as pointer[SchedTask]` and the
+                                  pointer/integer arithmetic of the lock-free
+                                  deque -- not a slot round trip at all.
+                                  scaly 9, dazzle 4, scalyls 4, scalyc 2.
+          6  name-not-unanimous   opensp 4 (`AttributeList`/`Entity` in
+                                  Esis/Parser/Rast), scaly 2 (`Scheduler`).
+          1  walked
+
+    ★The 2026-08-26 entry here proposed a fix for this residue and the fix was
+    never needed.  It read: `nic` (26) and `node` (12) are real `pointer[void]`
+    fields, the index is keyed by NAME and those names are reused across records,
+    so a RECORD-scoped index resolving the receiver's declared type the way
+    scalyls' `scoping_type_at#` does would settle them -- "the whole payoff is the
+    arithmetic guard on fifty casts".  What settled them was READING the fifty
+    lines: 49 sites in dazzle, 32 converted, 17 kept with a reason written at the
+    site (10 stack-array handle buffers in Jit walked with `*(p + i)`, 4
+    address-as-integer worklist reads in Escape whose consumer takes a
+    `pointer[pointer[Insn]]` out-param, 3 ELObj writes INTO a differently-typed
+    slot -- the SOURCE side, not a round trip).  The tool went 14 -> 0 on that
+    class in dazzle without learning anything new.  ★The lesson is about the
+    label: `name-not-unanimous` reports what the INDEX could not decide, and
+    reads as a claim about the SITES.  A residue a tool declines is not thereby
+    a residue that needs a better tool -- count it before building one.
 
     ★These are NUMBERS, not a blanket rule: re-run and re-write them rather
     than inheriting them (root CLAUDE.md -- a rule claiming to be conservative
