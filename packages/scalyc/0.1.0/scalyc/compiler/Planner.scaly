@@ -6676,6 +6676,17 @@ define Planner
                                     out.add(this.retype_integer_operand(a, pt))
                                     set folded: true
                                 }
+                            ; A `ref[T]` argument into a `T` parameter is the
+                            ; VALUE -- deref_ref_into_pointee#. Without it the
+                            ; ADDRESS went into the scalar slot and the callee
+                            ; read it as the number: measured 6090403468 for a
+                            ; `ref[int]` handed to an `int` parameter, rc 0.
+                            if folded = false
+                                if Planner.operand_derefs_to_pointee(pt, a)
+                                {
+                                    out.add(this.deref_ref_into_pointee(pt, a))
+                                    set folded: true
+                                }
                         }
                     }
                     if folded = false
@@ -20463,6 +20474,12 @@ define Planner
                 if this.operand_is_float_constant(collapsed)
                     set collapsed: this.retype_float_operand(collapsed, binding_type)
 
+            ; A `ref[T]` initializing a `T`-annotated binding is the VALUE --
+            ; deref_ref_into_pointee#. Ahead of the constraint, which would
+            ; otherwise unify the annotation with the reference.
+            if is_stack_array_decl = false
+                set collapsed: this.deref_ref_into_pointee(binding_type, collapsed)
+
             ; Emit an equality constraint between the declared binding
             ; type and the collapsed initializer's result type. Solvable
             ; cases either confirm the annotation or fix the fresh var.
@@ -21416,6 +21433,128 @@ define Planner
 
             false
         }
+        ; make_deref_operand#: build the operand the prefix `*` collapse
+        ; builds, for a value that is already planned.  Same intrinsic
+        ; operator call, same mangled name, same result type -- so a
+        ; transparent read emits byte-identically to the `*r` it replaces.
+        function make_deref_operand(
+            this: Planner,
+            op: PlannedOperand,
+            elem: PlannedType
+        ) returns PlannedOperand
+        {
+            let mangled this.mangle_unary_operator(String("*"), op.result_type)
+            var args_v Vector[PlannedOperand](1)
+            args_v.put(0, op)
+            let call PlannedCall(
+                op.loc,
+                String("*"),
+                mangled,
+                true,
+                true,
+                false,
+                false,
+                &args_v,
+                elem,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                false
+            )
+            PlannedOperand(op.loc, PlannedExpression.Call call, null, elem)
+        }
+
+        ; deref_ref_into_pointee#: a `ref[T]` reaching a context that wants a
+        ; `T` IS that value.  Transparent reading is what a borrowed reference
+        ; MEANS, and `*r` is the pointer idiom it replaces.
+        ;
+        ; Nothing loaded here until 2026-08-27 and EVERY read position was
+        ; silently wrong, at rc 0: `return r` and `let v: int r` emitted
+        ; `ret i64 0`, a call argument passed the ADDRESS as an int (measured
+        ; 6090403468), a cast truncated it, and only `*r` answered correctly.
+        ; type_conformance_accepted#'s class 8 already ACCEPTS the shape --
+        ; indirection is deliberately not its subject -- so the acceptance was
+        ; there and only the load was missing.
+        ;
+        ; The NULLABLE spelling `ref[T]?` is deliberately NOT loaded: that is
+        ; the null claim the three ref gates rest on, and such a site has to
+        ; spell the `x as ref[T]` unwrap it is relying on.
+        ; Does `op` need that load against `target_type`?  The predicate is
+        ; separate so a call site that must know WHETHER it converted can ask
+        ; -- the same split `operand_retypes_to_integer` /
+        ; `retype_integer_operand` uses.
+        function operand_derefs_to_pointee(target_type: PlannedType, op: PlannedOperand) returns bool
+        {
+            if op.result_type.name <> "ref"
+                return false
+            ; A ref TARGET keeps the reference; so does a pointer one, where
+            ; the borrow is the value being asked for.
+            if Planner.type_is_reference_shaped(target_type)
+                return false
+            var inner: PlannedType op.result_type
+            if Planner.type_strip_one_reference(op.result_type, &inner) = false
+                return false
+            if Planner.types_compatible(target_type, inner)
+                return true
+            Planner.types_equal_unqualified(target_type, inner)
+        }
+
+        ; set_target_stores_through#: `set r: v` on a `ref[T]` target.
+        ;
+        ; A borrowed reference cannot be rebound through a name it does not
+        ; own, so the useful reading is the C++ one -- the assignment writes
+        ; the POINTEE.  Until 2026-08-27 it wrote nothing at all: the target is
+        ; not `is_mutable` (a parameter never is), the Variable arm returned
+        ; early, and the statement vanished at rc 0 with no diagnostic.
+        ;
+        ; The RHS decides, which is the only rule that can serve both: a value
+        ; of the pointee type stores THROUGH, a reference of the target's own
+        ; type REBINDS (a nullable local's ordinary move).  Judged with the
+        ; conformance relation, so every shape it already accepts -- a
+        ; construction standing for a reference, an erased instantiation --
+        ; behaves the same here.
+        ; The pointee of a `ref[T]`/`pointer[T]`, or the type itself when
+        ; there is nothing to peel.
+        function strip_one_reference_or_self(t: PlannedType) returns PlannedType
+        {
+            var inner: PlannedType t
+            if Planner.type_strip_one_reference(t, &inner)
+                return inner
+            t
+        }
+
+        function set_target_stores_through(target_type: PlannedType, source_type: PlannedType) returns bool
+        {
+            if target_type.name <> "ref"
+                return false
+            var inner: PlannedType target_type
+            if Planner.type_strip_one_reference(target_type, &inner) = false
+                return false
+            ; A source that is itself a reference REBINDS.
+            ; ★ NOT `type_conformance_accepted(target_type, source_type)`: its
+            ; class 4 accepts the POINTEE as standing for the reference, so
+            ; that question answers true for exactly the case this one has to
+            ; separate out, and the rewrite never fired (measured: the store
+            ; stayed a silent no-op with the rule in place). Ask the SOURCE's
+            ; shape instead.
+            if Planner.type_is_reference_shaped(source_type)
+                return false
+            Planner.type_conformance_accepted(inner, source_type)
+        }
+
+        function deref_ref_into_pointee(
+            this: Planner,
+            target_type: PlannedType,
+            op: PlannedOperand
+        ) returns PlannedOperand
+        {
+            if Planner.operand_derefs_to_pointee(target_type, op) = false
+                return op
+            var inner: PlannedType op.result_type
+            if Planner.type_strip_one_reference(op.result_type, &inner) = false
+                return op
+            this.make_deref_operand(op, inner)
+        }
+
         function report_type_mismatch(
             this: Planner,
             target_type: PlannedType,
@@ -22262,7 +22401,12 @@ define Planner
             let planned_target_flat this.plan_operands(a.target)
             let planned_target_grouped this.collapse_operand_sequence(planned_target_flat)
             ; A parenthesized target is a GROUPING -- collapse_grouping_target#.
-            let planned_target_collapsed this.collapse_grouping_target(planned_target_grouped)
+            ; `var`, not `let`: the store-through rewrite below reassigns it,
+            ; and `set` on a let-bound local is SILENTLY DROPPED (the emitter's
+            ; is_mutable gate returns without storing). The whole rewrite was a
+            ; no-op for one keyword, with the planner probe reporting the
+            ; correct rewritten operand from its own separate call.
+            var planned_target_collapsed this.collapse_grouping_target(planned_target_grouped)
 
             ; Unknown assignment target: a `set` target that collapsed to a
             ; bare Type expression names nothing assignable — locals plan
@@ -22287,6 +22431,26 @@ define Planner
             ; the bare null literal -- report_null_into_ref#.
             if a.target.length > 0
                 this.report_null_into_ref(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc)
+
+            ; A `ref[T]` TARGET whose source is the pointee stores THROUGH the
+            ; reference -- set_target_stores_through#. Rewriting the target
+            ; into the deref the `set *r:` spelling plans makes the emitter's
+            ; existing Call arm do the store, so the two spellings emit the
+            ; same instructions. AFTER report_null_into_ref#, which must still
+            ; see the declared `ref[T]` and refuse a null.
+            if a.target.length > 0
+                if Planner.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type)
+                    set planned_target_collapsed: this.deref_ref_into_pointee(
+                        Planner.strip_one_reference_or_self(planned_target_collapsed.result_type),
+                        planned_target_collapsed
+                    )
+
+            ; A `ref[T]` source into a `T` target is the VALUE, not the
+            ; reference -- deref_ref_into_pointee#. Ahead of the conformance
+            ; report, which would otherwise judge the operand the emitter no
+            ; longer sees.
+            if a.target.length > 0
+                set planned_source_collapsed: this.deref_ref_into_pointee(planned_target_collapsed.result_type, planned_source_collapsed)
 
             ; ... and does the source conform to the target -- report_type_mismatch#.
             if a.target.length > 0
@@ -22391,6 +22555,14 @@ define Planner
             ; CharacterConstant. The flag is the honest statement that the
             ; outer type is stale -- inferring it from the type pair would
             ; silence a genuine String-into-char return as well.
+            ; A `ref[T]` as the implicit return of a `returns T` function is
+            ; the VALUE -- deref_ref_into_pointee#, ahead of the report for the
+            ; same reason as the assignment above.
+            if do_tail_check
+                if a.target.length = 0
+                    if this.current_return_type <> null
+                        set planned_source_collapsed: this.deref_ref_into_pointee((*this.current_return_type), planned_source_collapsed)
+
             if do_tail_check
                 if a.target.length = 0
                     if this.current_return_type <> null
@@ -26679,6 +26851,12 @@ define Planner
             ; CharacterConstant. The flag is the honest statement that the
             ; outer type is stale -- inferring it from the type pair would
             ; silence a genuine String-into-char return as well.
+            ; A `ref[T]` returned from a `returns T` function is the VALUE --
+            ; deref_ref_into_pointee#, ahead of the report for the same reason
+            ; as the folds above.
+            if this.current_return_type <> null
+                set planned_collapsed: this.deref_ref_into_pointee((*this.current_return_type), planned_collapsed)
+
             if this.current_return_type <> null
                 if ret_leaves_converted = false
                     this.report_type_mismatch((*this.current_return_type), planned_collapsed, planned_collapsed.loc, "the returned value")

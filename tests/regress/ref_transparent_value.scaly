@@ -1,0 +1,95 @@
+; A `ref[T]` reaching a context that wants a `T` IS that value, and a `set`
+; whose target is a `ref[T]` and whose source is a `T` writes THROUGH the
+; reference. Before 2026-08-27 every one of these was silently wrong at rc 0:
+; the read positions answered 0 or the raw ADDRESS, and the write vanished.
+;
+; The RHS decides which meaning a `set` has: a pointee value stores through,
+; a reference of the target's own type rebinds.
+
+define Cell (v: int)
+
+function takes_int(x: int) returns int
+    x + 100
+
+function r_return(r: ref[int]) returns int
+{
+    return r
+}
+
+function r_tail(r: ref[int]) returns int
+{
+    r
+}
+
+function r_binding(r: ref[int]) returns int
+{
+    let v: int r
+    v
+}
+
+function r_argument(r: ref[int]) returns int
+{
+    takes_int(r)
+}
+
+procedure w_scalar(r: ref[int], x: int)
+{
+    set r: x
+}
+
+procedure w_struct(r: ref[Cell], c: Cell)
+{
+    set r: c
+}
+
+; the star spelling keeps working and emits the same instructions
+procedure w_star(r: ref[int], x: int)
+{
+    set *r: x
+}
+
+; a reference source REBINDS the local rather than writing the pointee
+function rebinds(a: ref[int], b: ref[int]) returns int
+{
+    var r: ref[int] a
+    set r: b
+    r
+}
+
+var ok: bool true
+
+var a: int 7
+if r_return(&a) <> 7
+    set ok: false
+if r_tail(&a) <> 7
+    set ok: false
+if r_binding(&a) <> 7
+    set ok: false
+if r_argument(&a) <> 107
+    set ok: false
+
+var s: int 0
+w_scalar(&s, 42)
+if s <> 42
+    set ok: false
+
+var t: int 0
+w_star(&t, 5)
+if t <> 5
+    set ok: false
+
+var c Cell(1)
+var c2 Cell(9)
+w_struct(&c, c2)
+if c.v <> 9
+    set ok: false
+
+var x: int 3
+var y: int 4
+if rebinds(&x, &y) <> 4
+    set ok: false
+
+if ok
+    println "PASS"
+else
+    println "FAIL"
