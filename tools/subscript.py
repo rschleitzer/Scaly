@@ -53,7 +53,27 @@ def balanced_index(s, start):
 
 RECV = re.compile(r"[A-Za-z_][A-Za-z0-9_.']*$")
 
-def convert_line(line):
+# ★A POINTER receiver must be left alone, and this is not a nicety: on a
+# `pointer[Array[T]]` the subscript IS pointer arithmetic with an Array-sized
+# stride, so `a[i]` answers a whole Array[T] where `*(a.get_buffer() + i)`
+# answered an element. The member access auto-derefs the pointer; the
+# subscript does not. Found the hard way in tscaly's SymbolDump.sorted_order,
+# where `a` is `host.allocate(...) as pointer[Array[int]]` -- shape 3 of the
+# pointer doctrine, still in use. Conservative BY FILE: a name declared a
+# pointer anywhere in the file is skipped everywhere in it, over-skipping
+# rather than guessing at scope.
+PTR_DECL = re.compile(r"(?:\b(?:let|var)\s+([A-Za-z_][A-Za-z0-9_']*)\b[^;\n]*\bas\s+pointer\[)"
+                      r"|(?:\b([A-Za-z_][A-Za-z0-9_']*)\s*:\s*pointer\[)")
+
+def pointer_names(text):
+    out = set()
+    for line in text.split("\n"):
+        code = line.split(";")[0]
+        for m in PTR_DECL.finditer(code):
+            out.add(m.group(1) or m.group(2))
+    return out
+
+def convert_line(line, skip=frozenset()):
     out = line
     changed = 0
     while True:
@@ -78,6 +98,14 @@ def convert_line(line):
             if not RECV.fullmatch(recv.strip()):
                 pos = m + 2
                 continue
+            # ★Check EVERY segment, not just the head: the receiver is usually
+            # `this.vec`, and a pointer FIELD is declared under its own name --
+            # testing only `this` let `pointer[Array[ref[Attribute]?]]` through
+            # and the emitter trapped with `member not found: Array.specified`
+            # one stage later, where no line number points back here.
+            if any(seg in skip for seg in recv.strip().split(".")):
+                pos = m + 2
+                continue
             rest = expr[cut + len(CALL):].lstrip()
             if not rest.startswith("+"):
                 pos = m + 2
@@ -98,14 +126,16 @@ def main():
     files = [a for a in sys.argv[1:] if not a.startswith("--")]
     total = 0
     for p in files:
-        lines = open(p, encoding="utf8").read().split("\n")
+        text = open(p, encoding="utf8").read()
+        skip = pointer_names(text)
+        lines = text.split("\n")
         n = 0
         for k, l in enumerate(lines):
             code_end = len(l)
             semi = l.find(";")
             if semi >= 0 and CALL not in l[:semi]:
                 continue                      # comment-only occurrence
-            new, c = convert_line(l)
+            new, c = convert_line(l, skip)
             if c:
                 lines[k] = new
                 n += c
