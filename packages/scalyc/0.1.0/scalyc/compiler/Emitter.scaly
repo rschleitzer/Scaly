@@ -3726,6 +3726,48 @@ define Emitter
             LLVMGetEnumAttributeKindForName("noalias" as pointer[const_char], 7)
         }
 
+        ; A callee that never returns must SAY so, or the block after the call
+        ; stays live: LLVM then assumes the call may fall through and may
+        ; clobber memory, so nothing may be hoisted out of a loop whose body
+        ; contains a trap. That is what a bounds check costs without this.
+        ; Measured 2026-08-27 over 200M container reads, built the way the
+        ; ports are built (whole-program `opt -O2` + `llc -O2`): the guarded
+        ; read cost three extra loads per element and 0.11 s against 0.07 s
+        ; for the same loop over a raw pointer; with the attribute LLVM proves
+        ; the guard redundant against the loop condition, deletes the cold
+        ; block INCLUDING its message, and the loop comes out instruction-
+        ; identical to the pointer walk (`ldr x13, [x11], #8` + subs + add +
+        ; b.ne). The attribute carries on a VARARGS declaration too, which is
+        ; the shape the s186 on-the-fly path emits — measured, not assumed.
+        ;
+        ; The name list is closed and holds only entry points that cannot
+        ; return by their own C contract. `exit` is the one this tree traps
+        ; with (exit 14/15/17/19/20); `abort` and `_exit` are here because a
+        ; port may reach for them and a missing attribute is silent.
+        procedure mark_noreturn_callee(this, fn: LLVMValueRef, name: String)
+        {
+            if fn.handle = null
+                return
+
+            var known: bool false
+            if name = "exit"
+                set known: true
+            if name = "abort"
+                set known: true
+            if name = "_exit"
+                set known: true
+            if known = false
+                return
+
+            let kind LLVMGetEnumAttributeKindForName("noreturn" as pointer[const_char], 8)
+            if kind = 0
+                return
+
+            ; LLVMAttributeFunctionIndex is -1 in an `unsigned` enum.
+            let attr LLVMCreateEnumAttribute(context, kind, 0)
+            LLVMAddAttributeAtIndex(fn, 4294967295, attr)
+        }
+
         ; s89: Predicate — does a Scaly function with this return type need
         ; the sret IR pattern (`define void @fn(ptr sret(%T) %retval, ...)`)?
         ;
@@ -4647,6 +4689,8 @@ define Emitter
                 set llvm_func: LLVMAddFunction(llvm_module, func_cstr, func_type)
             if llvm_func.handle = null
                 set llvm_func: LLVMAddFunction(llvm_module, func_cstr, func_type)
+            if is_extern
+                mark_noreturn_callee(llvm_func, func.name)
 
             ; s89: Apply sret + noalias attributes to first param so AArch64
             ; lowering uses x8 for the indirect-result-location register.
@@ -9662,6 +9706,7 @@ define Emitter
                     let decl_ty LLVMFunctionType(decl_ret, null as pointer[LLVMTypeRef], 0, 1)
                     set func: LLVMAddFunction(llvm_module, call.mangled_name.c_data(), decl_ty)
                     LLVMSetLinkage(func, LLVMLinkage.External())
+                    mark_noreturn_callee(func, call.mangled_name)
                     cache_function(call.mangled_name, func)
                 }
             }
