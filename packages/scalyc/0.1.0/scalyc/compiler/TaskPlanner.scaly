@@ -1813,7 +1813,7 @@ define TaskPlanner
                             if func.input <> null
                             {
                                 let input_ref func.input.unwrap()
-                                let input (*input_ref)
+                                let input input_ref
                                 set pcount: input.length
                             }
                             if pcount > 62
@@ -1832,7 +1832,7 @@ define TaskPlanner
                             if func.input <> null
                             {
                                 let input_ref func.input.unwrap()
-                                let input (*input_ref)
+                                let input input_ref
                                 var pi: size_t 0
                                 while pi < pcount
                                 {

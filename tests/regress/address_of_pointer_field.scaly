@@ -46,14 +46,20 @@ let ok_offsets (a_p - a_x = 8) and (a_y - a_x = 16)
 
 ; ... and writing through it reaches the field.
 let slot &pr.p
-set *slot: &pr.x
-let ok_store (*(*slot)) = 0
+; The star on `slot` is gone: a ref reads and writes as its pointee since
+; 2026-08-27 and `*` on one is a hard rc-4. The INNER star stays -- the
+; pointee here IS a `pointer[i64]`, and a pointer keeps its deref.
+; The cast is the honest half: the SLOT holds a `pointer[i64]` while `&`
+; yields a `ref[i64]`, and the conformance gate wants them named alike.
+set slot: &pr.x as pointer[i64]
+let sp: pointer[i64] slot
+let ok_store (*sp) = 0
 
 ; --- a chain hop follows the pointer ----------------------------------------
 let inn Inner^host(7, 9)
 var o Outer^host(inn, 5)
 let bp &o.ip.b
-let ok_chain (*bp) = 9
+let ok_chain bp = 9
 
 let b1 Box^host(11)
 let b2 Box^host(22)

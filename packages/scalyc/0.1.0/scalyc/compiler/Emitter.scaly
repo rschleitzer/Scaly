@@ -728,13 +728,13 @@ define Emitter
             if func.return_type <> null
             {
                 let rt_ref func.return_type.unwrap()
-                set ret_dty: di_type_for((*rt_ref))
+                set ret_dty: di_type_for(rt_ref)
             }
             var sig_input_count: size_t 0
             if func.input <> null
             {
                 let sig_in_ref func.input.unwrap()
-                set sig_input_count: (*sig_in_ref).length
+                set sig_input_count: sig_in_ref.length
             }
             var sig_vec Vector[LLVMMetadataRef](sig_input_count + 1)
             var sig_ptr (null as pointer[LLVMMetadataRef])
@@ -747,7 +747,7 @@ define Emitter
                 if func.input <> null
                 {
                     let sig_items_ref func.input.unwrap()
-                    let sig_items (*sig_items_ref)
+                    let sig_items sig_items_ref
                     var si: size_t 0
                     while si < sig_items.length
                     {
@@ -759,7 +759,7 @@ define Emitter
                             if sig_item.item_type <> null
                             {
                                 let sig_itt sig_item.item_type.unwrap()
-                                set sig_pdty: di_type_for((*sig_itt))
+                                set sig_pdty: di_type_for(sig_itt)
                             }
                         }
                         if sig_pdty.handle = null
@@ -4686,7 +4686,7 @@ define Emitter
                         ; inline by emit_throw), so size it for max(T, throws_ty).
                         var throws_llvm LLVMTypeRef(null)
                         if func.throws_type <> null
-                            set throws_llvm: map_type((*func.throws_type.unwrap()))
+                            set throws_llvm: map_type(func.throws_type.unwrap())
                         set sret_type: build_throws_result_type(wrap_base, throws_llvm, func.mangled_name)
                     }
                     ; Non-throwing sret: resolve the element type to a sized
@@ -4725,7 +4725,7 @@ define Emitter
             if func.input <> null
             {
                 let input_ref func.input.unwrap()
-                let input (*input_ref)
+                let input input_ref
                 set input_count: input.length
             }
 
@@ -4751,7 +4751,7 @@ define Emitter
                 if func.input <> null
                 {
                     let input_ref func.input.unwrap()
-                    let input (*input_ref)
+                    let input input_ref
                     var i: size_t 0
                     while i < input_count
                     {
@@ -5057,12 +5057,12 @@ define Emitter
                                 return true
                             if f.consequent <> null
                             {
-                                if statement_has_self_tail_call(*f.consequent.unwrap(), mangled, arity)
+                                if statement_has_self_tail_call(f.consequent.unwrap(), mangled, arity)
                                     return true
                             }
                             if f.alternative <> null
                             {
-                                if statement_has_self_tail_call(*f.alternative.unwrap(), mangled, arity)
+                                if statement_has_self_tail_call(f.alternative.unwrap(), mangled, arity)
                                     return true
                             }
                         }
@@ -5082,7 +5082,7 @@ define Emitter
                                         let branch (*br_ptr)
                                         if branch.consequent <> null
                                         {
-                                            if statement_has_self_tail_call(*branch.consequent.unwrap(), mangled, arity)
+                                            if statement_has_self_tail_call(branch.consequent.unwrap(), mangled, arity)
                                                 return true
                                         }
                                     }
@@ -5091,7 +5091,7 @@ define Emitter
                             }
                             if m.alternative <> null
                             {
-                                if statement_has_self_tail_call(*m.alternative.unwrap(), mangled, arity)
+                                if statement_has_self_tail_call(m.alternative.unwrap(), mangled, arity)
                                     return true
                             }
                         }
@@ -5111,7 +5111,7 @@ define Emitter
                                         let when_case (*case_ptr)
                                         if when_case.consequent <> null
                                         {
-                                            if statement_has_self_tail_call(*when_case.consequent.unwrap(), mangled, arity)
+                                            if statement_has_self_tail_call(when_case.consequent.unwrap(), mangled, arity)
                                                 return true
                                         }
                                     }
@@ -5120,7 +5120,7 @@ define Emitter
                             }
                             if c.alternative <> null
                             {
-                                if statement_has_self_tail_call(*c.alternative.unwrap(), mangled, arity)
+                                if statement_has_self_tail_call(c.alternative.unwrap(), mangled, arity)
                                     return true
                             }
                         }
@@ -5159,7 +5159,7 @@ define Emitter
                                         let catch_case (*k_ptr)
                                         if catch_case.consequent <> null
                                         {
-                                            if statement_has_self_tail_call(*catch_case.consequent.unwrap(), mangled, arity)
+                                            if statement_has_self_tail_call(catch_case.consequent.unwrap(), mangled, arity)
                                                 return true
                                         }
                                     }
@@ -5168,7 +5168,7 @@ define Emitter
                             }
                             if t.alternative <> null
                             {
-                                if statement_has_self_tail_call(*t.alternative.unwrap(), mangled, arity)
+                                if statement_has_self_tail_call(t.alternative.unwrap(), mangled, arity)
                                     return true
                             }
                         }
@@ -5253,7 +5253,7 @@ define Emitter
             if func.input <> null
             {
                 let in_ref func.input.unwrap()
-                let items (*in_ref)
+                let items in_ref
                 var pi: size_t 0
                 while pi < items.length
                 {
@@ -5264,7 +5264,7 @@ define Emitter
                     if item.item_type = null
                         return false
                     let it_ref item.item_type.unwrap()
-                    let it (*it_ref)
+                    let it it_ref
                     if type_is_pointer_shaped(it) = false
                     {
                         let sty map_type it
@@ -5336,7 +5336,7 @@ define Emitter
                 if func.input <> null
                 {
                     let in_ref func.input.unwrap()
-                    let items (*in_ref)
+                    let items in_ref
                     if si < items.length
                     {
                         let item_ptr items.get si
@@ -5346,7 +5346,7 @@ define Emitter
                             if item.item_type <> null
                             {
                                 let it_ref item.item_type.unwrap()
-                                let it (*it_ref)
+                                let it it_ref
                                 if type_is_pointer_shaped(it) = false
                                     set slot_ty: map_type(it)
                             }
@@ -5847,7 +5847,7 @@ define Emitter
                     if func.page_parameter <> null
                     {
                         set page_offset: 1
-                        let page_name (*func.page_parameter.unwrap())
+                        let page_name: String func.page_parameter.unwrap()
                         let page_value LLVMGetParam(llvm_func, sret_offset as int)
 
                         ; ★A peel parameter the SOURCE named (`page`, `rp`, the
@@ -5884,7 +5884,7 @@ define Emitter
                     ; binds the header's PHIs instead of the raw arguments).
                     var user_param_count: size_t 0
                     if func.input <> null
-                        set user_param_count: (*func.input.unwrap()).length
+                        set user_param_count: func.input.unwrap().length
                     if tail_loop_eligible(func, llvm_func, user_param_count, page_offset + sret_offset)
                         open_tail_loop(func, llvm_func, entry_block, func.mangled_name, user_param_count, page_offset + sret_offset)
 
@@ -5893,7 +5893,7 @@ define Emitter
                     if func.input <> null
                     {
                         let input_ref func.input.unwrap()
-                        let input (*input_ref)
+                        let input input_ref
                         var i: size_t 0
                         while i < input.length
                         {
@@ -5903,7 +5903,7 @@ define Emitter
                                 let item (*item_ptr)
                                 if item.name <> null
                                 {
-                                    let param_name (*item.name.unwrap())
+                                    let param_name: String item.name.unwrap()
                                     var param_value LLVMGetParam(llvm_func, (i + page_offset + sret_offset) as int)
                                     ; With a tail loop the name must resolve to the
                                     ; header's PHI, or the second iteration would
@@ -5931,14 +5931,14 @@ define Emitter
                                         {
                                             let pit_ref item.item_type.unwrap()
                                             let pdpos compute_debug_pos func.loc.start
-                                            debug_declare_value(param_name, param_value, (*pit_ref), pdpos, i + 1)
+                                            debug_declare_value(param_name, param_value, pit_ref, pdpos, i + 1)
                                         }
 
                                     ; Record the receiver concept so resolve_reference_page
                                     ; can lower `^field` page sigils (opensp Parser's `^host`).
                                     if param_name = "this"
                                         if item.item_type <> null
-                                            set current_receiver_concept: this.peel_concept_name(*item.item_type.unwrap())
+                                            set current_receiver_concept: this.peel_concept_name(item.item_type.unwrap())
                                 }
                             }
                             set i: i + 1
@@ -7480,7 +7480,7 @@ define Emitter
             if op.member_access <> null
             {
                 let chain_ref op.member_access.unwrap()
-                let chain (*chain_ref)
+                let chain chain_ref
                 if chain.length > 0
                     set value: emit_member_access_chain(value, chain, op.result_type)
 
@@ -9899,7 +9899,7 @@ define Emitter
                     ; Match the decl-side wrapper size: max(T, throws_ty).
                     var throws_llvm LLVMTypeRef(null)
                     if call.throws_type <> null
-                        set throws_llvm: map_type((*call.throws_type.unwrap()))
+                        set throws_llvm: map_type(call.throws_type.unwrap())
                     set sret_element_ty: build_throws_result_type(wrap_base, throws_llvm, call.mangled_name)
                 }
                 if call_can_throw_sret = false
@@ -10833,7 +10833,7 @@ define Emitter
                     if arg_op.member_access <> null
                     {
                         let ma_ref arg_op.member_access.unwrap()
-                        let ma_chain (*ma_ref)
+                        let ma_chain ma_ref
                         ; 2026-08-09: a POINTER-typed field is GEPed like every
                         ; other one. It used to fall through to the fallback below,
                         ; which returns the emitted operand — the field's VALUE —
@@ -12315,7 +12315,7 @@ define Emitter
                 return LLVMValueRef null
 
             let ops_ref matrix.operations.unwrap()
-            let ops (*ops_ref)
+            let ops ops_ref
 
             ; For a 1D array, operations is a vector of single-element vectors
             ; Count total elements

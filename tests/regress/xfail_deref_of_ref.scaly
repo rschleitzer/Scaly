@@ -1,0 +1,21 @@
+; Regression: `*r` on a NON-OPTIONAL `ref[T]` is a hard error (2026-08-27).
+;
+; The fifth gate on a borrowed reference, and the one the other four were
+; building towards. A `ref[T]` reads and writes as its pointee, so `*` on one
+; is the POINTER idiom applied to a value that is not a pointer -- the same
+; line report_ref_arithmetic# draws for `+`.
+;
+; It could only land after the transparent readings existed AND the tree was
+; swept: until then `*r` was the only spelling that worked.
+;
+; The nullable `ref[T]?` is deliberately NOT judged -- it is Option[ref[T]],
+; no transparent reading exists for an Option, and `*opt` stays the spelling.
+; See deref_of_optional_ref_ok.scaly for that half.
+;
+; xfail: dereferencing a reference
+
+function reads(r: ref[int]) returns int
+    *r
+
+var a: int 7
+Console.println "unreachable"

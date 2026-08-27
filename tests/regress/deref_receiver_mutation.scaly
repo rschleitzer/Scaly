@@ -30,7 +30,7 @@ procedure bump_through(p: pointer[Counter])
 
 var c Counter(40)
 bump_through(&c)
-(*(&c)).bump()
+(&c).bump()
 
 if c.get() = 43
     print("PASS")

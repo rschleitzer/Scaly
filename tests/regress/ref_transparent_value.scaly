@@ -42,11 +42,9 @@ procedure w_struct(r: ref[Cell], c: Cell)
     set r: c
 }
 
-; the star spelling keeps working and emits the same instructions
-procedure w_star(r: ref[int], x: int)
-{
-    set *r: x
-}
+; ★ The star spelling is GONE: `*r` on a non-optional reference is a hard rc-4
+; since the sweep finished (xfail_deref_of_ref.scaly). While both existed they
+; emitted instruction-identically, which is what made the sweep provable.
 
 ; a reference source REBINDS the local rather than writing the pointee
 function rebinds(a: ref[int], b: ref[int]) returns int
@@ -151,10 +149,6 @@ w_scalar(&s, 42)
 if s <> 42
     set ok: false
 
-var t: int 0
-w_star(&t, 5)
-if t <> 5
-    set ok: false
 
 var c Cell(1)
 var c2 Cell(9)

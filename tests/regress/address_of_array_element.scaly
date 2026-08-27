@@ -55,11 +55,11 @@ if a1 = (222 as size_t)
 
 ; The pointer must actually address the element: read back through it, then
 ; WRITE through it and observe the array change.
-let r1 *p1
+let r1: u64 p1
 if r1 <> (222 as u64)
     exit 7
 
-set *p1: 999 as u64
+set p1: 999 as u64
 let after arr[1] as size_t
 if after <> (999 as size_t)
     exit 8

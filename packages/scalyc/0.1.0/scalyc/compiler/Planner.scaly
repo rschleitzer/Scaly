@@ -8485,6 +8485,9 @@ define Planner
                                 ; A scalar has nothing to dereference --
                                 ; report_deref_of_non_pointer#.
                                 this.report_deref_of_non_pointer(rest_result.result_type, rest_result.loc)
+                                ; ... and a REFERENCE has nothing to
+                                ; dereference either -- report_deref_of_ref#.
+                                this.report_deref_of_ref(rest_result.result_type, rest_result.loc)
                             }
                             ; s96: address-of — wrap operand in pointer[T].
                             ; Mirrors stage-0 Planner.cpp:3877 (resolvePrefix
@@ -21897,6 +21900,44 @@ define Planner
             sb.append operand_type.name
             sb.append ": operator * needs a pointer or a ref. A container "
             sb.append "subscript answers the element BY VALUE, so drop the star"
+            let dmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(dmsg))
+        }
+
+        ; report_deref_of_ref#: THE FIFTH GATE on a non-optional `ref[T]`, and
+        ; the one the other four were building towards. A `ref[T]` reads and
+        ; writes as its pointee (deref_ref_into_pointee#), so `*r` is the
+        ; POINTER idiom on a value that is not a pointer -- the same line
+        ; report_ref_arithmetic# draws for `+`.
+        ;
+        ; ★It could only land AFTER the transparent readings existed and after
+        ; the tree was swept, because until then `*r` was the ONLY spelling
+        ; that worked: 666 stores, 26 reads and 101 deref receivers had to move
+        ; first, each verified by BYTE-IDENTICAL emission of every root (the
+        ; deref sweep) or by the gates (the receivers, where a whole-union
+        ; memcpy goes away).
+        ;
+        ; ★★★The NULLABLE spelling `ref[T]?` is NOT judged, and that is a
+        ; statement about the language rather than a gap: `ref[T]?` is
+        ; `Option[ref[T]]`, no transparent reading exists for an Option -- the
+        ; three null gates rest on an Option having to spell its unwrap -- and
+        ; `*opt` remains the spelling at several hundred sites. The gate asks
+        ; the NAME here on purpose, which is the one place in this family where
+        ; that is right: `Option` is exactly what must NOT be caught.
+        function report_deref_of_ref(
+            this: Planner,
+            operand_type: PlannedType,
+            loc: Span
+        )
+        {
+            if operand_type.name <> "ref"
+                return
+
+            var sb StringBuilder()
+            ; NO backticks in these literals -- see report_ref_arithmetic#.
+            sb.append "dereferencing a reference: a ref already reads and "
+            sb.append "writes as its pointee, so drop the star. A nullable "
+            sb.append "ref[T]? is an Option and still needs one"
             let dmsg sb.to_string()
             this.add_diagnostic(loc, String^this(dmsg))
         }

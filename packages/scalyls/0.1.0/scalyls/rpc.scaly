@@ -34,7 +34,14 @@ define rpc
         ; and stage-0 does not reload an escaped local (`c as int` returns
         ; the stale pre-read value), so deref cp to force a memory load.
         if n = 1
-            return (*cp) as int
+        {
+            ; The typed binding is what performs the LOAD: an `as` cast on a
+            ; reference keeps its ADDRESS meaning, so `cp as int` would answer
+            ; the pointer. Before the transparent readings this line was
+            ; `(*cp) as int`.
+            let v: u8 cp
+            return v as int
+        }
 
         -1
     }
@@ -213,7 +220,14 @@ define rpc
         let cp &c
         let n read(fd, cp as pointer[void], 1 as size_t)
         if n = 1
-            return (*cp) as int
+        {
+            ; The typed binding is what performs the LOAD: an `as` cast on a
+            ; reference keeps its ADDRESS meaning, so `cp as int` would answer
+            ; the pointer. Before the transparent readings this line was
+            ; `(*cp) as int`.
+            let v: u8 cp
+            return v as int
+        }
 
         -1
     }

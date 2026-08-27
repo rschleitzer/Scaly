@@ -1,0 +1,31 @@
+; The other half of xfail_deref_of_ref.scaly: a NULLABLE `ref[T]?` keeps its
+; star. It is `Option[ref[T]]`, the language has no transparent reading for an
+; Option -- the three null gates rest on an Option having to spell its unwrap
+; -- and several hundred sites in the ports deref one.
+;
+; Expected: PASS
+
+define Leaf (v: int)
+
+function reads(page, o: ref[Leaf]?) returns int
+{
+    if o = null
+        return 0 - 1
+    let l (*o)
+    l.v
+}
+
+var leaf Leaf(41)
+var opt: ref[Leaf]? &leaf
+if reads(opt) <> 41
+{
+    print "FAIL"
+    exit 1
+}
+var none: ref[Leaf]? null
+if reads(none) <> (0 - 1)
+{
+    print "FAIL"
+    exit 1
+}
+print "PASS"

@@ -16,7 +16,7 @@ define Box (v: int)
 
 function pick(page, items: ref[Vector[Box]], i: size_t) returns ref[Box]
 {
-    let hit (*items)[i]
+    let hit items[i]
     ; the unwrap is the site's own claim: since 2026-08-27 an Option does not
     ; flow into a non-optional `ref` on its own (xfail_option_into_ref.scaly).
     ; It is beside this fixture's point, which is WHOSE return type the

@@ -55,7 +55,7 @@ function probe(page: pointer[Page]) returns int
     while k < 3
     {
         let g page.allocate(sizeof Leaf, alignof Leaf) as ref[Leaf]
-        set *g: Leaf(((k + 1) * 10))
+        set g: Leaf(((k + 1) * 10))
         a.add(g)
         set k: k + 1
     }
