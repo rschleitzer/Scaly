@@ -2408,7 +2408,7 @@ define Modeler
             when def: DefinitionSyntax
             {
                 let concept handle_definition(path, def, false)
-                (*symbols_builder).add(concept.name, Nameable.Concept concept)
+                symbols_builder.add(concept.name, Nameable.Concept concept)
                 Member.Concept concept
             }
             when func: FunctionSyntax
@@ -2416,7 +2416,7 @@ define Modeler
                 let fn build_function(func.start, func.end, func.target, false, true)
                 var fns Vector[Function](1)
                 fns.put(0, fn)
-                (*symbols_builder).add(fn.name, Nameable.Functions fns)
+                symbols_builder.add(fn.name, Nameable.Functions fns)
                 Member.Function fn
             }
             when proc: ProcedureSyntax
@@ -2424,7 +2424,7 @@ define Modeler
                 let proc_fn build_function(proc.start, proc.end, proc.target, false, false)
                 var fns Vector[Function](1)
                 fns.put(0, proc_fn)
-                (*symbols_builder).add(proc_fn.name, Nameable.Functions fns)
+                symbols_builder.add(proc_fn.name, Nameable.Functions fns)
                 Member.Function proc_fn
             }
             when op: OperatorSyntax
@@ -2435,7 +2435,7 @@ define Modeler
                 ; been fixed. Model them like the sibling member arms so
                 ; subscript dispatch (find_subscript_operator) can see them.
                 let operator_ handle_operator(op, false)
-                (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
+                symbols_builder.add(operator_.name, Nameable.Operator operator_)
                 Member.Operator operator_
             }
             when mod: ModuleSyntax
@@ -2517,7 +2517,7 @@ define Modeler
             when def: DefinitionSyntax
             {
                 let concept handle_definition(path, def, false)
-                (*symbols_builder).add(concept.name, Nameable.Concept concept)
+                symbols_builder.add(concept.name, Nameable.Concept concept)
                 Member.Concept concept
             }
             when func: FunctionSyntax
@@ -2525,7 +2525,7 @@ define Modeler
                 let fn build_function(func.start, func.end, func.target, false, true)
                 var fns Vector[Function](1)
                 fns.put(0, fn)
-                (*symbols_builder).add(fn.name, Nameable.Functions fns)
+                symbols_builder.add(fn.name, Nameable.Functions fns)
                 Member.Function fn
             }
             when proc: ProcedureSyntax
@@ -2533,13 +2533,13 @@ define Modeler
                 let proc_fn build_function(proc.start, proc.end, proc.target, false, false)
                 var fns Vector[Function](1)
                 fns.put(0, proc_fn)
-                (*symbols_builder).add(proc_fn.name, Nameable.Functions fns)
+                symbols_builder.add(proc_fn.name, Nameable.Functions fns)
                 Member.Function proc_fn
             }
             when op: OperatorSyntax
             {
                 let operator_ handle_operator(op, false)
-                (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
+                symbols_builder.add(operator_.name, Nameable.Operator operator_)
                 Member.Operator operator_
             }
             when mut: MutableSyntax
@@ -2563,7 +2563,7 @@ define Modeler
                         Vector[Attribute](0),
                         Definition.Global mg_global
                     )
-                    (*symbols_builder).add(mg_concept.name, Nameable.Concept mg_concept)
+                    symbols_builder.add(mg_concept.name, Nameable.Concept mg_concept)
                     return Member.Concept mg_concept
                 }
                 Member.Package(Vector[Module](0))
@@ -2589,7 +2589,7 @@ define Modeler
                         Vector[Attribute](0),
                         Definition.Global sg_global
                     )
-                    (*symbols_builder).add(sg_concept.name, Nameable.Concept sg_concept)
+                    symbols_builder.add(sg_concept.name, Nameable.Concept sg_concept)
                     return Member.Concept sg_concept
                 }
                 Member.Package(Vector[Module](0))
@@ -2606,7 +2606,7 @@ define Modeler
             when def: DefinitionSyntax
             {
                 let concept handle_definition(path, def, is_private)
-                (*symbols_builder).add(concept.name, Nameable.Concept concept)
+                symbols_builder.add(concept.name, Nameable.Concept concept)
                 Member.Concept concept
             }
             when func: FunctionSyntax
@@ -2614,7 +2614,7 @@ define Modeler
                 let fn build_function(func.start, func.end, func.target, is_private, true)
                 var fns Vector[Function](1)
                 fns.put(0, fn)
-                (*symbols_builder).add(fn.name, Nameable.Functions fns)
+                symbols_builder.add(fn.name, Nameable.Functions fns)
                 Member.Function fn
             }
             when proc: ProcedureSyntax
@@ -2622,13 +2622,13 @@ define Modeler
                 let proc_fn build_function(proc.start, proc.end, proc.target, is_private, false)
                 var fns Vector[Function](1)
                 fns.put(0, proc_fn)
-                (*symbols_builder).add(proc_fn.name, Nameable.Functions fns)
+                symbols_builder.add(proc_fn.name, Nameable.Functions fns)
                 Member.Function proc_fn
             }
             when op: OperatorSyntax
             {
                 let operator_ handle_operator(op, is_private)
-                (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
+                symbols_builder.add(operator_.name, Nameable.Operator operator_)
                 Member.Operator operator_
             }
             when mod: ModuleSyntax

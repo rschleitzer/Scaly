@@ -915,7 +915,7 @@ define cli
                     ; arena layout and made it fire every run.
                     let obj_page Page.get(dep_objs as pointer[void])
                     let durable_obj String^obj_page(obj_path)
-                    (*dep_objs).add durable_obj
+                    dep_objs.add durable_obj
                 }
             }
             set i: i + 1
@@ -984,7 +984,7 @@ define cli
             for f in dep_plan.functions
             {
                 let durable_name String^sym_page(f.mangled_name)
-                (*syms).add durable_name
+                syms.add durable_name
             }
         }
         true
