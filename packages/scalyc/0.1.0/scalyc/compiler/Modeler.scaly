@@ -2821,7 +2821,7 @@ define Modeler
     ; already formatted majorMinor as "0.1" (FloatingPoint) or "0" (Integer).
     function format_version(version_ref: ref[VersionSyntax]) returns String
     {
-        let v (*version_ref)
+        let v: VersionSyntax version_ref
         var sb StringBuilder()
         choose v.majorMinor
             when fp: FloatingPoint

@@ -125,6 +125,15 @@ function r_sub(i: size_t, r: ref[size_t]) returns size_t
 function r_shift(r: ref[int], n: int) returns int
     r << n
 
+
+; ★ MUTABILITY gates every rebind. Two ref PARAMETERS of the same type cannot
+; rebind -- a parameter is not a slot the callee owns -- so the assignment
+; copies the pointee, which is what `set *a: *b` meant.
+procedure copies_between_refs(a: ref[int], b: ref[int])
+{
+    set a: b
+}
+
 var ok: bool true
 
 var a: int 7
@@ -193,6 +202,14 @@ var sz: size_t 3
 if r_sub(10 as size_t, &sz) <> (7 as size_t)
     set ok: false
 if r_shift(&a, 1) <> 14
+    set ok: false
+
+var ca: int 1
+var cb: int 99
+copies_between_refs(&ca, &cb)
+if ca <> 99
+    set ok: false
+if cb <> 99
     set ok: false
 
 if ok

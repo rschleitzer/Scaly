@@ -21625,8 +21625,15 @@ define Planner
             ; into `load struct` + `extractvalue` + a store THROUGH the
             ; extracted field -- the wild-store shape, 7632 lines of dazzle's
             ; root, and the engine segfaulted on its own codegen.
-            if Planner.types_compatible(target_type, source_type)
-                return false
+            ; ★ MUTABILITY gates every rebind, not just the ambiguous one. A
+            ; PARAMETER and a `let` cannot be rebound at all, so `set
+            ; field_start: next` between two `ref[size_t]` parameters can only
+            ; mean the copy its author wrote as `set *field_start: *next` --
+            ; and reading it as a rebind DROPPED the store: two instructions
+            ; out of opensp's ExternalId.next_field, rc 0, no word.
+            if target_is_mutable
+                if Planner.types_compatible(target_type, source_type)
+                    return false
             ; ★ A page-hosted CONSTRUCTION is genuinely ambiguous -- `set out:
             ; StringC^host(...)` can mean "put the new value in the pointee" or
             ; "point out at it" -- and what settles it is whether the target CAN
