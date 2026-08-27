@@ -15022,43 +15022,12 @@ define Planner
                         }
                     }
 
-                    ; ★★★ An unwrapped receiver may arrive with the right NAME
-                    ; and the right GENERIC ARGUMENTS but an EMPTY mangled_name,
-                    ; and the emitter then has nothing to key the struct on: it
-                    ; falls back to a bare-name match and silently answers the
-                    ; FIRST `Vector[...]` it ever registered. Measured on
-                    ; `HashMapBuilder[String, Nameable].slots.length`, where the
-                    ; `pointer[Vector[...]]` spelling carries
-                    ; `_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE`
-                    ; and the `ref[Vector[...]]?` spelling carries "" -- one extra
-                    ; generic level (`Option[ref[X]]` vs `pointer[X]`) is the whole
-                    ; difference, so the type was never instantiated at that depth
-                    ; even though the instantiation itself exists. The emitted GEP
-                    ; then walked `Vector[String]`, and `String::equals` read string
-                    ; BYTES as an address (SIGSEGV).
-                    ;
-                    ; Recomputing the name here is safe because the ARGUMENTS are
-                    ; already concrete -- this repairs a missing name, it never
-                    ; overrides one -- and it is the point the defect was MEASURED
-                    ; at, not merely one that could produce it.
-                    if lookup_type.mangled_name.get_length() = 0
-                    {
-                        if lookup_type.generics <> null
-                        {
-                            var mg_args Vector[PlannedType]((*lookup_type.generics))
-                            let mg_name Planner.mangle_structure(lookup_type.name, &mg_args)
-                            set lookup_type: PlannedType(
-                                lookup_type.loc,
-                                lookup_type.name,
-                                mg_name,
-                                lookup_type.generics,
-                                lookup_type.life,
-                                lookup_type.origin,
-                                lookup_type.array_size,
-                                lookup_type.variable
-                            )
-                        }
-                    }
+                    ; ★★★ A member hop's type may carry a mangled name that is
+                    ; MISSING or STALE while its name and generic ARGUMENTS are
+                    ; right; `remangle_generic#` repairs it. See that function for
+                    ; the measurement -- both faces are memory faults and both are
+                    ; SILENT, because every hop reads correct when printed by name.
+                    set lookup_type: Planner.remangle_generic(lookup_type)
 
                     ; Property lookup.
                     let prop_ref this.lookup_property(lookup_type.name, m)
@@ -15197,8 +15166,14 @@ define Planner
                         ; the wrong struct type and bail — `ret.result
                         ; .length > 0` in emit_return silently dropped,
                         ; every stage-2 body returned const 0/null.
+                        ; ★★★ The emitter GEPs the NEXT hop with
+                        ; `map_type(acc.result_type)` (Emitter.scaly, "field.inplace"),
+                        ; NOT with that hop's own parent_type -- so a stale name here
+                        ; is what actually reaches the GEP. Repairing only the parent
+                        ; leaves the defect in place; this was measured, once each.
                         result.add(PlannedMemberAccess(
-                            m, idx as size_t, false, false, lookup_type, prop_type
+                            m, idx as size_t, false, false, lookup_type,
+                            Planner.remangle_generic(prop_type)
                         ))
                         set current: prop_type
                     }
@@ -34194,6 +34169,36 @@ define Planner
             }
         }
         Type(pt.loc, name_path, maybe_gens, pt.life)
+    }
+
+    ; remangle_generic: recompute a generic type's Itanium name from its own
+    ; ARGUMENTS, which is the identity for any type whose name already agrees.
+    ;
+    ; ★★★ Two ways a type reaches the emitter with a name that lies, both silent
+    ; and both memory faults:
+    ;   MISSING -- a receiver unwrapped out of one generic level too many
+    ;     (`Option[ref[Vector[X]]]` where `pointer[Vector[X]]` works) carries "".
+    ;     `map_type` then has nothing to key on, falls back to a bare-name match
+    ;     and answers the FIRST `Vector[...]` ever registered; the GEP walked
+    ;     `Vector[String]`.
+    ;   STALE -- `apply_name_substitution` replaces a type's generic arguments and
+    ;     carries `mangled_name` through UNCHANGED, so a substituted
+    ;     `KeyValuePair[K, V]` comes back named `_Z12KeyValuePairI1K8NameableE`
+    ;     beside arguments reading `String, Nameable`. The emitter reads the
+    ;     unresolved parameter as a POINTER and LOADS the field instead of taking
+    ;     its address, so `String::equals` gets string BYTES as an address.
+    ;
+    ; ★★★Why this hid behind six earlier attempts: every hop is CORRECT when
+    ; printed by name and argument -- a probe over `resolve_member_access` shows
+    ; `.key on=KeyValuePair[String Nameable]` throughout. Only the name the emitter
+    ; keys on is wrong, and nothing else in the planner reads it.
+    function remangle_generic(t: PlannedType) returns PlannedType
+    {
+        if t.generics = null
+            return t
+        var rg_args Vector[PlannedType]((*t.generics))
+        let rg_name Planner.mangle_structure(t.name, &rg_args)
+        PlannedType(t.loc, t.name, rg_name, t.generics, t.life, t.origin, t.array_size, t.variable)
     }
 
     ; apply_name_substitution: substitute type-parameter names (e.g. "T",
