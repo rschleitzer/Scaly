@@ -8794,14 +8794,27 @@ define Emitter
         ; emit byte-identical IR (the registry stays empty).
         ; ========================================================================
 
+        ; ★★★The name must DISTINGUISH the instantiation, and the bare-name
+        ; fallback below does not: a generic reached one level deeper than usual
+        ; (`Option[ref[Vector[X]]]` where `pointer[Vector[X]]` works) arrives with an
+        ; empty `mangled_name`, the symbol collapses to `_scaly_walk_Vector`, and
+        ; EVERY Vector instantiation then shares one walker -- the first one emitted
+        ; wins and every other value is walked with the wrong field map, so its
+        ; pointers are never fixed. Symptom: `ReceivedRegion.fix_value: pointer
+        ; outside the received region` from `tests/cluster`, with nothing wrong at
+        ; the site that reported it.
+        ; `remangle_generic#` re-mints the name from the type's own ARGUMENTS and is
+        ; the identity for a non-generic type, so the fallback still serves the case
+        ; it was written for.
         function region_walker_symbol(this, t: PlannedType) returns String
         {
+            let rt Planner.remangle_generic(t)
             var sb StringBuilder()
             sb.append "_scaly_walk_"
-            if t.mangled_name.get_length() > 0
-                sb.append t.mangled_name
+            if rt.mangled_name.get_length() > 0
+                sb.append rt.mangled_name
             else
-                sb.append t.name
+                sb.append rt.name
             sb.to_string()
         }
 
