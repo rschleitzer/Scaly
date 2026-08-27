@@ -1,0 +1,19 @@
+; Regression: a reference returned where a SCALAR is declared
+; (2026-08-27).
+;
+; The louder half of the conformance gate, and the one that shows the hole was
+; never about the `ref`/`pointer` spelling: `returns int` with `return x` for
+; an `x: ref[Alpha]` emitted `ret i64 0` -- not the address, a ZERO -- at rc 0
+; with no diagnostic anywhere.
+;
+; xfail: does not conform to the declared type
+
+define Alpha (a: int)
+
+function pick(x: ref[Alpha]) returns int
+{
+    return x
+}
+
+var a Alpha(7)
+Console.println "unreachable"

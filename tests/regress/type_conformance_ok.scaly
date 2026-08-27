@@ -1,0 +1,132 @@
+; Regression: everything the conformance gate must keep ACCEPTING
+; (2026-08-27).
+;
+; The negative sides are xfail_type_conformance_{return,scalar,binding}.scaly.
+; THIS side is the one that took the work: with types_compatible# as the sole
+; acceptor the check reported 4683 findings over the twenty-one package roots,
+; and every reduction came from reading the findings rather than counting them.
+; Each case below is one of those classes, and the language -- not a defect.
+;
+; Expected: PASS
+
+define Alpha (a: int)
+define Leaf (n: int)
+define Twig (n: int)
+define Inner union (Leaf: Leaf  Twig: Twig)
+define Outer union (Inner: Inner  Alpha: Alpha)
+
+; (1) THE CASE THAT PROMPTED THE CHECK: a concrete pointer[T] answers a
+;     declared ref[T]? -- s96 makes the two spellings symmetric and s170 lets a
+;     non-null pointer stand for the Option's Some. It was never wrong that
+;     this is accepted; it was wrong that nobody asked.
+function as_optional_ref(p: pointer[Alpha]) returns ref[Alpha]?
+    p
+
+; (2) a REGION CONSTRUCTION: `T^page(...)` yields a pointer while its type
+;     names the object. The single largest class in the raw run.
+function build(rp) returns ref[Alpha]?
+{
+    let a Alpha^rp(5)
+    a
+}
+
+; (3) an Option flowing into a NON-OPTIONAL -- permitted on purpose, since the
+;     language has no flow narrowing.
+function unwrap_by_flow(x: ref[Alpha]?, alt: ref[Alpha]) returns ref[Alpha]
+{
+    if x = null
+        return alt
+    x
+}
+
+; (4) a union accepting a variant PAYLOAD directly ...
+function wrap_leaf(n: int) returns Inner
+    Inner.Leaf(Leaf(n))
+
+; (5) ... and NESTED, two levels down: a nested variant construction reports
+;     its innermost payload's type.
+function wrap_deep(n: int) returns Outer
+    Outer.Inner(Inner.Twig(Twig(n)))
+
+; (6) pointer[void] as the TARGET, answered by a reference-shaped source: the
+;     documented opaque-slot escape hatch.
+function opaque(x: ref[Alpha]?) returns pointer[void]
+    x
+
+; (7) the source IS the target's pointee -- residency inference decides where
+;     the construction lives and the slot holds a reference to it.
+function pointee_slot(n: int) returns int
+{
+    var slot: ref[Alpha]? null
+    set slot: Alpha(n)
+    if slot = null
+        return 0 - 1
+    slot.a
+}
+
+; (8) the integer family, and the one-byte char family incl. const_char.
+function widths(c: char) returns size_t
+{
+    var out: char c
+    let lit: pointer[const_char] "x"
+    set out: *lit
+    let n: size_t 7
+    n
+}
+
+var host Alpha(1)
+if as_optional_ref(&host) = null
+{
+    Console.println "FAIL pointer into ref[T]?"
+    exit 1
+}
+if build() = null
+{
+    Console.println "FAIL region construction"
+    exit 1
+}
+var spare Alpha(99)
+if unwrap_by_flow(&host, &spare).a <> 1
+{
+    Console.println "FAIL Option into non-optional"
+    exit 1
+}
+choose wrap_leaf(3)
+    when l: Leaf
+    {
+        if l.n <> 3
+        {
+            Console.println "FAIL variant payload"
+            exit 1
+        }
+    }
+    else
+    {
+        Console.println "FAIL variant payload arm"
+        exit 1
+    }
+choose wrap_deep(4)
+    when i: Inner
+        0
+    else
+    {
+        Console.println "FAIL nested variant payload"
+        exit 1
+    }
+if opaque(&host) = null
+{
+    Console.println "FAIL pointer[void] target"
+    exit 1
+}
+if pointee_slot(8) <> 8
+{
+    Console.println "FAIL pointee slot"
+    exit 1
+}
+if widths("q") <> 7
+{
+    Console.println "FAIL width families"
+    exit 1
+}
+
+Console.println "PASS"

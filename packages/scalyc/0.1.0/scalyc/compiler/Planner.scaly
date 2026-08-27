@@ -20455,6 +20455,10 @@ define Planner
             if is_stack_array_decl = false
                 this.report_null_into_ref(binding_type, collapsed, b.span)
 
+            ; ... and does the initializer's type conform at all -- report_type_mismatch#.
+            if is_stack_array_decl = false
+                this.report_type_mismatch(binding_type, collapsed, b.span, "the initializer")
+
             ; Register the local in the current scope.
             if planned_item.name <> null
             {
@@ -20694,6 +20698,566 @@ define Planner
             sb.append tname
             sb.append "?) for a slot that may hold nothing, or a pointer when "
             sb.append "it is a raw address"
+            let rmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        ; report_type_mismatch#: does the value actually CONFORM to the type
+        ; the declaration claims? Nothing asked. `current_return_type` and the
+        ; binding/`set` target types were only ever READ -- for the literal
+        ; retype, the char/float fold, the cstr wrap, the tail promotion and
+        ; the three `ref` gates -- and never used as an ACCEPTOR, while
+        ; types_compatible# ran at ten sites, every one of them a PARAMETER.
+        ; So a `return` was unchecked in both directions. Measured on the
+        ; untouched tree, all rc 0 and silent:
+        ;   returns ref[Alpha]?  /  return x   (x: ref[Beta])
+        ;       -> `ret ptr %0` -- two unrelated concepts confused outright
+        ;   returns int          /  return x   (x: ref[Alpha])
+        ;       -> `ret i64 0`  -- not even the address, a zero
+        ; and the same hole at a typed binding (`let q: ref[Alpha]? x`).
+        ;
+        ; The acceptor is types_compatible# deliberately, NOT types_equal#:
+        ; the looseness it carries is the language's own (integer family,
+        ; String -> pointer[const_char], null -> Option, and s96/s170 letting
+        ; a concrete pointer[T] stand for ref[T]?). That last one is exactly
+        ; the shape that prompted this check and it must keep passing -- what
+        ; was wrong was never that `pointer[T]` answered a `ref[T]?`, it was
+        ; that nobody asked.
+        ;
+        ; ONE statement at each call site: an inline branch in the hot
+        ; planners perturbs the s178 alloca pool (six -g checks, measured) --
+        ; the discipline report_null_into_ref# and report_unknown_identifier#
+        ; already follow.
+        ;
+        ; ★★★ THE CALIBRATION IS THE WHOLE STORY, and the numbers are the
+        ; argument: with types_compatible# alone this reported 4683 findings
+        ; over the twenty-one package roots, and every reduction came from
+        ; READING them rather than counting them. 4683 -> 205 once a region
+        ; construction and an Option-into-non-optional were accepted, 205 -> 12
+        ; with union variants, pointer[void] and pointee equality, 12 -> 4 with
+        ; the four gaps the findings themselves named -- of which three were
+        ; statements about THIS FILE, not about the ports: qualified names not
+        ; normalised, pointer[void] refusing a reference-shaped source, and a
+        ; nested variant construction reporting its innermost payload.
+        ; ★ The residue was 3 sites, all genuine, and the precision worth
+        ; recording: `return vm.fail()` appears FOURTEEN times in
+        ; dazzle/Insn.scaly and exactly the TWO inside a routine returning
+        ; something other than ref[Insn]? were reported.
+        ; Does this type's HEAD name a concept this root laid out, a
+        ; primitive, or one of the language's own wrappers? Anything else is
+        ; an unresolved name wearing a type's clothes.
+        function type_head_is_resolvable(this: Planner, t: PlannedType) returns bool
+        {
+            let n Planner.normalize_type_name(t.name)
+            if Planner.is_integer_type(n)
+                return true
+            if Planner.type_is_float_like(t)
+                return true
+            if t.name = "pointer"
+                return true
+            if t.name = "ref"
+                return true
+            if t.name = "Option"
+                return true
+            if t.name = "void"
+                return true
+            if t.name = "bool"
+                return true
+            if t.name = "const_char"
+                return true
+            if t.name = "delegate"
+                return true
+            if this.lookup_concept(t.name) <> null
+                return true
+            false
+        }
+        function type_conformance_unjudgeable(
+            this: Planner,
+            target_type: PlannedType,
+            source: PlannedOperand
+        ) returns bool
+        {
+            ; No declared type in hand, or an expression whose type this pass
+            ; never resolved: silence beats a false diagnostic (the rule the
+            ; method-arg-type gate had to learn three times).
+            if target_type.name.get_length() = 0
+                return true
+            let source_type source.result_type
+            if source_type.name.get_length() = 0
+                return true
+            if target_type.variable <> null
+                return true
+            if source_type.variable <> null
+                return true
+
+            ; A generic TEMPLATE body is planned with its parameters still
+            ; abstract, so `T` conforms to nothing and everything. Only the
+            ; instantiations carry judgeable types -- and they are planned too,
+            ; so nothing is lost by staying quiet here.
+            if Planner.type_mentions_generic_param(target_type)
+                return true
+            if Planner.type_mentions_generic_param(source_type)
+                return true
+            if this.is_concept_parameter_name(target_type.name)
+                return true
+            if this.is_concept_parameter_name(source_type.name)
+                return true
+
+            ; `null` plans as pointer[void], which is compatible with every
+            ; pointer and ref BY INTENT. Judging it here would either fire on
+            ; correct code or duplicate report_null_into_ref#, whose whole
+            ; subject this is.
+            if this.operand_is_null_constant(source)
+                return true
+
+            ; ★★★ Both heads must name something REAL. An unresolvable
+            ; identifier does not plan as a type VARIABLE -- it plans as a type
+            ; NAMED AFTER ITSELF, so `let x no_such_name_here + 1` gives `x` a
+            ; head that is neither empty nor a variable, and judging it against
+            ; the declared `int` produced two diagnostics on top of the
+            ; `unknown identifier` that is the real report (tests/lsp/run.sh,
+            ; "program root: at the MODULE's own line", got [4, 4, 3] for an
+            ; expected [4]). A conformance claim about a type this pass could
+            ; not resolve is not a claim about anything. Conservative in the
+            ; safe direction: an unresolvable head goes silent rather than
+            ; loud, and a diagnostic already stands at that site.
+            if this.type_head_is_resolvable(target_type) = false
+                return true
+            if this.type_head_is_resolvable(source_type) = false
+                return true
+
+            ; A void return type carries no value to judge.
+            if target_type.name = "void"
+                return true
+
+            ; ★ A void SOURCE at a tail position is not a value either: a body
+            ; whose last action IS an explicit `return` (or any other
+            ; statement) plans as void, and the implicit-tail site then sees
+            ; the statement rather than the expression that actually reaches
+            ; `ret`. Measured before this line: every one of the four probes
+            ; reported a second, bogus finding at its own `function` line.
+            ; ★ The cost is stated rather than hidden: a function that
+            ; declares a return type and falls off its body without producing
+            ; a value is NOT reported here, because the planner gives that
+            ; body the same void type as the well-formed shape. Telling the
+            ; two apart is a separate question about ACTIONS, not types.
+            if source_type.name = "void"
+                return true
+
+            false
+        }
+        ; Is `t` the untyped pointer `pointer[void]`?
+        function type_is_void_pointer(t: PlannedType) returns bool
+        {
+            if t.name <> "pointer"
+                return false
+            if t.generics = null
+                return false
+            let gs (*t.generics)
+            if gs.length <> 1
+                return false
+            let inner_ptr gs.get 0
+            if inner_ptr = null
+                return false
+            let inner (*inner_ptr)
+            inner.name = "void"
+        }
+
+        ; Strip one `Option` wrapper and then one `pointer`/`ref` wrapper off
+        ; `target_type`, and ask whether what remains IS `source_type`.
+        function type_is_pointee_of(target_type: PlannedType, source_type: PlannedType) returns bool
+        {
+            var t: PlannedType target_type
+            if t.name = "Option"
+            {
+                if t.generics <> null
+                {
+                    let og (*t.generics)
+                    if og.length = 1
+                    {
+                        let oinner og.get 0
+                        if oinner <> null
+                            set t: (*oinner)
+                    }
+                }
+            }
+            if t.name <> "pointer"
+                if t.name <> "ref"
+                    return false
+            if t.generics = null
+                return false
+            let gs (*t.generics)
+            if gs.length <> 1
+                return false
+            let inner_ptr gs.get 0
+            if inner_ptr = null
+                return false
+            let inner (*inner_ptr)
+            Planner.types_equal(inner, source_type)
+        }
+
+        ; type_conforms_as_variant#: a UNION accepts any of its variants'
+        ; payloads directly -- `return JsonNull()` from a `returns JsonValue`
+        ; function is the documented construction, not a mismatch. This is the
+        ; question lookup_variant_tag# already answers (it keys on the PAYLOAD
+        ; TYPE's name, which is what `choose ... when TypeName:` needs), so the
+        ; check borrows it rather than re-deriving the union's arm list.
+        function type_conforms_as_variant(this: Planner, target_type: PlannedType, source_type: PlannedType) returns bool
+        {
+            this.variant_payload_accepts(target_type.name, source_type.name, 3)
+        }
+
+        ; ... and NESTED, because a nested variant construction reports the
+        ; INNERMOST payload's type. `Expression.Constant(Constant.Integer(
+        ; IntegerConstant(...)))` arrives as `IntegerConstant` against a
+        ; declared `Expression`, and `IntegerConstant` is a payload of
+        ; `Constant`, which is a payload of `Expression` -- two levels down.
+        ; The depth is bounded rather than trusted: a union reachable from
+        ; itself would otherwise not terminate, and three levels covers every
+        ; shape in the tree with one to spare.
+        function variant_payload_accepts(this: Planner, union_name: String, source_name: String, depth: int) returns bool
+        {
+            let tag this.lookup_variant_tag(union_name, source_name)
+            if tag >= 0
+                return true
+            if depth <= 0
+                return false
+
+            let concept_ref this.lookup_concept(union_name)
+            if concept_ref = null
+                return false
+            let c (*concept_ref)
+            choose c.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    var i: size_t 0
+                    while i < u.variants.length
+                    {
+                        let v_ptr u.variants.get i
+                        if v_ptr <> null
+                            if v_ptr.type <> null
+                            {
+                                let type_ptr v_ptr.type
+                                let type_val (*type_ptr)
+                                if type_val.name.length > 0
+                                {
+                                    let last_ptr type_val.name.get(type_val.name.length - 1)
+                                    if last_ptr <> null
+                                    {
+                                        let inner_name (*last_ptr)
+                                        if this.variant_payload_accepts(inner_name, source_name, depth - 1)
+                                            return true
+                                    }
+                                }
+                            }
+                        set i: i + 1
+                    }
+                    false
+                }
+                else
+                    false
+        }
+
+        ; Do two type names agree once each is reduced to its LAST dotted
+        ; segment? `Option[ref[PlannedUnion]]` and
+        ; `Option[ref[scalyc.compiler.Plan.PlannedUnion]]` are ONE type spelled
+        ; two ways, and types_equal# compares the names whole -- so the
+        ; qualified spelling disagrees with itself. Compared byte-wise from
+        ; each name's own tail rather than through substring#, which would
+        ; allocate a String per comparison.
+        function name_tails_equal(a: String, b: String) returns bool
+        {
+            let dot 46 as u8
+            let ai a.last_index_of(dot)
+            let bi b.last_index_of(dot)
+            var astart: size_t 0
+            if ai >= 0
+                set astart: (ai + 1) as size_t
+            var bstart: size_t 0
+            if bi >= 0
+                set bstart: (bi + 1) as size_t
+            let alen a.get_length() - astart
+            let blen b.get_length() - bstart
+            if alen <> blen
+                return false
+            var i: size_t 0
+            while i < alen
+            {
+                let ca a.get(astart + i)
+                let cb b.get(bstart + i)
+                if ca <> cb
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        ; types_equal# modulo package qualification, at every generic level.
+        ; Deliberately NOT folded into types_equal# itself: that function is
+        ; what overload SELECTION ranks on, so loosening it could change which
+        ; function a call picks anywhere in the tree. Here it can only ever
+        ; suppress a diagnostic.
+        function types_equal_unqualified(a: PlannedType, b: PlannedType) returns bool
+        {
+            if Planner.name_tails_equal(a.name, b.name) = false
+                return false
+            if a.generics = null
+            {
+                if b.generics = null
+                    return true
+                return false
+            }
+            if b.generics = null
+                return false
+            let ag (*a.generics)
+            let bg (*b.generics)
+            if ag.length <> bg.length
+                return false
+            var i: size_t 0
+            while i < ag.length
+            {
+                let ap ag.get i
+                let bp bg.get i
+                if ap = null
+                    return false
+                if bp = null
+                    return false
+                if Planner.types_equal_unqualified((*ap), (*bp)) = false
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        ; Peel ONE `pointer`/`ref` wrapper off `t` into `out`, answering
+        ; whether there was one to peel.
+        function type_strip_one_reference(t: PlannedType, out: pointer[PlannedType]) returns bool
+        {
+            if t.name <> "pointer"
+                if t.name <> "ref"
+                    return false
+            if t.generics = null
+                return false
+            let gs (*t.generics)
+            if gs.length <> 1
+                return false
+            let inner_ptr gs.get 0
+            if inner_ptr = null
+                return false
+            set *out: (*inner_ptr)
+            true
+        }
+
+        ; Is this type a borrowed/raw reference, in any of its three spellings?
+        function type_is_reference_shaped(t: PlannedType) returns bool
+        {
+            if t.name = "pointer"
+                return true
+            if t.name = "ref"
+                return true
+            if Planner.planned_type_is_npo_ref(t)
+                return true
+            if t.name = "Option"
+            {
+                if t.generics <> null
+                {
+                    let gs (*t.generics)
+                    if gs.length = 1
+                    {
+                        let inner_ptr gs.get 0
+                        if inner_ptr <> null
+                        {
+                            let inner (*inner_ptr)
+                            if inner.name = "pointer"
+                                return true
+                        }
+                    }
+                }
+            }
+            false
+        }
+
+        ; The one-byte char family, including `const_char`, which
+        ; is_integer_type# does not list. is_char_like_cross_compatible# is the
+        ; established question but its `char` arm omits `const_char` while its
+        ; `const_char` and `i8` arms both name `char` -- an asymmetry left
+        ; alone here on purpose, since that helper feeds types_compatible#'s
+        ; pointer-inner rule and widening it would reach overload resolution.
+        function type_conformance_char_family(target_type: PlannedType, source_type: PlannedType) returns bool
+        {
+            if Planner.is_char_like_cross_compatible(target_type.name, source_type.name)
+                return true
+            if target_type.name = "char"
+                if source_type.name = "const_char"
+                    return true
+            false
+        }
+
+        ; type_conformance_accepted#: the acceptor, and it is deliberately
+        ; the LOOSE one. types_compatible# alone reported 4683 findings over
+        ; the package roots, and reading them rather than counting them showed
+        ; two structural classes that are the LANGUAGE, not defects:
+        ;
+        ;   1. `T where pointer[T]` -- a REGION CONSTRUCTION. `Vector[T]^page(n)`
+        ;      yields a pointer while its result_type names the object, so
+        ;      `set vector: Vector[T]^own_page(capacity)` looked like a value
+        ;      assigned to a pointer slot. region_value_matches_pointer# is the
+        ;      question that already exists for exactly this seam (it is what
+        ;      init-argument resolution asks), so it is asked here too.
+        ;      Biggest single class in the raw run.
+        ;   2. `Option[ref[X]] where ref[X]` -- an Option flowing into a
+        ;      non-optional. The doctrine permits it ON PURPOSE: there is no
+        ;      flow narrowing in this language, so a caller that has proven a
+        ;      value non-null has no way to say so except the explicit
+        ;      `x as ref[X]` unwrap, and demanding it everywhere would be a
+        ;      different feature, not this check. Whether it SHOULD be
+        ;      demanded is the standing non-null question -- separate, and not
+        ;      to be smuggled in behind a conformance gate.
+        ;
+        ; Both are asked AFTER types_compatible#, so the common answer stays
+        ; one call.
+        function type_conformance_accepted(target_type: PlannedType, source_type: PlannedType) returns bool
+        {
+            var stripped_src: PlannedType source_type
+            if Planner.types_compatible(target_type, source_type)
+                return true
+
+            ; Class 1: a page-hosted construction standing for a pointer/ref.
+            if Planner.region_value_matches_pointer(target_type, source_type)
+                return true
+
+            ; Class 3: `pointer[void]` as the source. types_compatible# already
+            ; accepts the reverse (any pointer into a pointer[void] param), and
+            ; this is the same intent from the other side: the untyped pointer
+            ; is what a `null` that has travelled through a choose/if arm
+            ; collapses to, so the bare-literal exemption in
+            ; type_conformance_unjudgeable# does not see it. Both remaining
+            ; samples were exactly that -- `Storage.open_error`'s choose and
+            ; `identifier_text_of`'s `if n = null` guard.
+            if Planner.type_is_void_pointer(source_type)
+                return true
+
+            ; Class 4: the source IS the target's pointee. `set lifetime:
+            ; LifetimeSyntax(success)` against a `ref[LifetimeSyntax]?` slot is
+            ; the ordinary parser idiom -- residency inference decides where the
+            ; construction lives, and the slot holding a reference to it is the
+            ; POINT. region_value_matches_pointer# asks the same relation but
+            ; additionally demands a Call/Reference lifetime, which a plain
+            ; construction does not carry. The pointee names must still MATCH,
+            ; so this accepts nothing that the two probe classes rest on.
+            if Planner.type_is_pointee_of(target_type, source_type)
+                return true
+
+            ; Class 5: the one-byte char family. `set *(buf + i): *(word + i)`
+            ; walking a `pointer[const_char]` into a `pointer[char]` buffer is
+            ; three sites in tscaly and ABI-identical at every one.
+            if Planner.type_conformance_char_family(target_type, source_type)
+                return true
+
+            ; Class 6: `pointer[void]` as the TARGET. types_compatible# accepts
+            ; any pointer INTO a pointer[void] parameter, but asks the source's
+            ; name for "pointer" -- so a `ref[T]?` (the s113 Option wrapper)
+            ; fails a rule that is meant to accept everything pointer-shaped.
+            ; `ELObj.address_node` is exactly that: a `returns pointer[void]`
+            ; whose tail is a `ref[GroveNode]?` field, i.e. the documented
+            ; opaque-slot escape hatch.
+            if Planner.type_is_void_pointer(target_type)
+            {
+                if Planner.type_is_reference_shaped(source_type)
+                    return true
+            }
+
+            ; Class 7: the same type spelled with and without its package
+            ; qualification.
+            if Planner.types_equal_unqualified(target_type, source_type)
+                return true
+
+            ; Class 8: ONE LEVEL OF INDIRECTION. `set *out: &b` with
+            ; `out: pointer[pointer[Box]]` and `b: ref[Box]` gives the source
+            ; type `ref[ref[Box]]` against a target `pointer[Box]` -- the
+            ; planner's type is one wrapper deeper than the value the emitter
+            ; produces (address_of_optional_cell.scaly is that shape's own
+            ; regression). Indirection is deliberately NOT this check's
+            ; subject, the same line the method-arg-type gate draws when it
+            ; says pointer[A] and A agree there.
+            if Planner.type_strip_one_reference(source_type, &stripped_src)
+            {
+                if Planner.types_compatible(target_type, stripped_src)
+                    return true
+                if Planner.types_equal_unqualified(target_type, stripped_src)
+                    return true
+            }
+
+            ; Class 9: an ERASED instantiation. A user-facing `Option` or
+            ; `Result` can arrive with its generics still unattached
+            ; (`let some_val Some(42)` against `var o: Option[int]`), and a
+            ; head with no arguments is an unresolved shape, not a wrong one.
+            ; Judged only when the HEADS already agree, so it can never accept
+            ; two different concepts.
+            if Planner.name_tails_equal(target_type.name, source_type.name)
+            {
+                if target_type.generics = null
+                    return true
+                if source_type.generics = null
+                    return true
+            }
+
+            ; Class 2: an Option source into a non-optional target. Judge the
+            ; PAYLOAD -- what the check is about is whether the value could
+            ; ever be the right SHAPE, and the wrapper does not change that.
+            if source_type.name = "Option"
+            {
+                if target_type.name <> "Option"
+                {
+                    if source_type.generics <> null
+                    {
+                        let sg (*source_type.generics)
+                        if sg.length = 1
+                        {
+                            let inner_ptr sg.get 0
+                            if inner_ptr <> null
+                            {
+                                let inner (*inner_ptr)
+                                if Planner.types_compatible(target_type, inner)
+                                    return true
+                                if Planner.region_value_matches_pointer(target_type, inner)
+                                    return true
+                            }
+                        }
+                    }
+                }
+            }
+
+            false
+        }
+        function report_type_mismatch(
+            this: Planner,
+            target_type: PlannedType,
+            source: PlannedOperand,
+            loc: Span,
+            position: String
+        )
+        {
+            if this.type_conformance_unjudgeable(target_type, source)
+                return
+            if Planner.type_conformance_accepted(target_type, source.result_type)
+                return
+            if this.type_conforms_as_variant(target_type, source.result_type)
+                return
+
+            var sb StringBuilder()
+            ; NO backticks in these literals -- an unescaped backtick opens a
+            ; string interpolation, and a lone one fails the MODELER.
+            ; The call results are bound first: a parenless CHAINED call in
+            ; argument position swallows the chain (`got 0, expected 1`).
+            let sname Planner.get_readable_name(source.result_type)
+            let tname Planner.get_readable_name(target_type)
+            sb.append position
+            sb.append " does not conform to the declared type: "
+            sb.append sname
+            sb.append " where "
+            sb.append tname
+            sb.append " is declared"
             let rmsg sb.to_string()
             this.add_diagnostic(loc, String^this(rmsg))
         }
@@ -21418,6 +21982,10 @@ define Planner
             if a.target.length > 0
                 this.report_null_into_ref(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc)
 
+            ; ... and does the source conform to the target -- report_type_mismatch#.
+            if a.target.length > 0
+                this.report_type_mismatch(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc, "the assigned value")
+
             ; Unknown identifier as the WHOLE source of a `set`: a bare
             ; single-operand RHS has no binary operator whose collapse
             ; check would catch it — `set p: TBL` with TBL naming a
@@ -21452,6 +22020,7 @@ define Planner
                     if this.current_return_type <> null
                         this.report_null_into_ref((*this.current_return_type), planned_source_collapsed, planned_source_collapsed.loc)
 
+            var tail_leaves_converted: bool false
             if do_tail_check
                 if a.target.length = 0
                     if this.current_return_type <> null
@@ -21495,8 +22064,32 @@ define Planner
                         ; longer a literal). See convert_tail_literal#.
                         let tail_conv this.convert_tail_literal(planned_source_collapsed, trt)
                         if tail_conv <> null
+                        {
                             set planned_source_collapsed: (*tail_conv)
+                            set tail_leaves_converted: true
+                        }
                     }
+
+            ; ★ AFTER the folds, deliberately: a double-quoted char literal
+            ; returned from a `returns char` function IS a String until
+            ; fold_string_operand_to_char# rewrites it, and the cstr wrap and
+            ; the float retype are the same story. Judging ahead of them
+            ; reported `String where char is declared` on four correct
+            ; regression tests -- the check must see the operand that actually
+            ; reaches `ret`, not the one the parser produced.
+            ; ★ ... and NOT when convert_tail_literal# fired. It rewrites the
+            ; LEAVES inside a block or an if/choose/match arm and leaves the
+            ; enclosing operand's result_type alone, so a `returns char`
+            ; function whose body is a block of char literals still reads
+            ; `String` at the top after every leaf has become a
+            ; CharacterConstant. The flag is the honest statement that the
+            ; outer type is stale -- inferring it from the type pair would
+            ; silence a genuine String-into-char return as well.
+            if do_tail_check
+                if a.target.length = 0
+                    if this.current_return_type <> null
+                        if tail_leaves_converted = false
+                            this.report_type_mismatch((*this.current_return_type), planned_source_collapsed, planned_source_collapsed.loc, "the returned value")
 
             ; Float literal assigned into a float-typed target (`set x: 2.5`
             ; with x float): retype the default-f64 literal to the target's
@@ -25699,6 +26292,7 @@ define Planner
             if this.current_return_type <> null
                 this.report_null_into_ref((*this.current_return_type), planned_collapsed, planned_collapsed.loc)
 
+            var ret_leaves_converted: bool false
             if this.current_return_type <> null
             {
                 let rrt (*this.current_return_type)
@@ -25738,8 +26332,30 @@ define Planner
                 ; (`return if c  "a"  else  "b"`). See convert_tail_literal#.
                 let ret_conv this.convert_tail_literal(planned_collapsed, rrt)
                 if ret_conv <> null
+                {
                     set planned_collapsed: (*ret_conv)
+                    set ret_leaves_converted: true
+                }
             }
+
+            ; ★ AFTER the folds, deliberately: a double-quoted char literal
+            ; returned from a `returns char` function IS a String until
+            ; fold_string_operand_to_char# rewrites it, and the cstr wrap and
+            ; the float retype are the same story. Judging ahead of them
+            ; reported `String where char is declared` on four correct
+            ; regression tests -- the check must see the operand that actually
+            ; reaches `ret`, not the one the parser produced.
+            ; ★ ... and NOT when convert_tail_literal# fired. It rewrites the
+            ; LEAVES inside a block or an if/choose/match arm and leaves the
+            ; enclosing operand's result_type alone, so a `returns char`
+            ; function whose body is a block of char literals still reads
+            ; `String` at the top after every leaf has become a
+            ; CharacterConstant. The flag is the honest statement that the
+            ; outer type is stale -- inferring it from the type pair would
+            ; silence a genuine String-into-char return as well.
+            if this.current_return_type <> null
+                if ret_leaves_converted = false
+                    this.report_type_mismatch((*this.current_return_type), planned_collapsed, planned_collapsed.loc, "the returned value")
 
             ; A returned value/ref whose lifetime is the Local ($) page would
             ; dangle once the frame is freed. Page inference (rule 2): if the

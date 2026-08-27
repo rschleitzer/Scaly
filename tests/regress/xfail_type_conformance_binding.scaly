@@ -1,0 +1,23 @@
+; Regression: the conformance gate covers a TYPED BINDING, not only `return`
+; (2026-08-27).
+;
+; The gate sits at the five positions where a declared type is in hand: a
+; typed binding, a `set`, an explicit `return`, the implicit tail return and
+; the implicit tail through a block or arm. This is the binding one --
+; measured unchecked on the untouched tree at rc 0.
+;
+; xfail: does not conform to the declared type
+
+define Alpha (a: int)
+define Beta (b: int)
+
+function probe(x: ref[Beta]) returns int
+{
+    let q: ref[Alpha]? x
+    if q <> null
+        return 1
+    0
+}
+
+var b Beta(7)
+Console.println "unreachable"

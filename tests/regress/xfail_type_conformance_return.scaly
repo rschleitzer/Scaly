@@ -1,0 +1,28 @@
+; Regression: a returned value must conform to the DECLARED return type
+; (2026-08-27).
+;
+; Nothing asked. `current_return_type` and the binding/`set` target types were
+; only ever READ -- for the literal retype, the char/float fold, the cstr wrap,
+; the tail promotion and the three `ref` gates -- and never used as an
+; ACCEPTOR, while types_compatible# ran at ten sites, every one of them a
+; PARAMETER. So `return` was unchecked in both directions, silently: measured
+; on the untouched tree, `returns ref[Alpha]?` with `return x` for an
+; `x: ref[Beta]` emitted `ret ptr %0`, two unrelated concepts confused outright
+; at rc 0.
+;
+; The exit is that there ISN'T one for this shape -- the declaration is simply
+; wrong. What the check must keep accepting is in type_conformance_ok.scaly.
+;
+; xfail: does not conform to the declared type
+
+define Alpha (a: int)
+define Beta (b: int)
+
+function pick(x: ref[Beta]) returns ref[Alpha]?
+{
+    return x
+}
+
+var b Beta(7)
+let r pick(&b)
+Console.println "unreachable"
