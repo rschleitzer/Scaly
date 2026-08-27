@@ -217823,15 +217823,23 @@ if.then2:                                         ; preds = %if.end
   ret i1 false
 
 if.end3:                                          ; preds = %if.end
-  %call4 = call i1 @_ZN7Planner24type_is_reference_shapedE11PlannedType(ptr %1)
+  %call4 = call i1 @_ZN7Planner16types_compatibleE11PlannedType11PlannedType(ptr %0, ptr %1)
   br i1 %call4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end3
+  %call7 = call i1 @_ZN7Planner28region_value_matches_pointerE11PlannedType11PlannedType(ptr %0, ptr %1)
+  %eq8 = icmp eq i1 %call7, false
+  br i1 %eq8, label %if.then9, label %if.end10
+
+if.end6:                                          ; preds = %if.end10, %if.end3
+  %call11 = call i1 @_ZN7Planner25type_conformance_acceptedE11PlannedType11PlannedType(ptr %inner, ptr %1)
+  ret i1 %call11
+
+if.then9:                                         ; preds = %if.then5
   ret i1 false
 
-if.end6:                                          ; preds = %if.end3
-  %call7 = call i1 @_ZN7Planner25type_conformance_acceptedE11PlannedType11PlannedType(ptr %inner, ptr %1)
-  ret i1 %call7
+if.end10:                                         ; preds = %if.then5
+  br label %if.end6
 }
 
 define linkonce_odr i1 @_ZN7Planner26planned_type_is_npo_borrowE11PlannedType(ptr %0) {
