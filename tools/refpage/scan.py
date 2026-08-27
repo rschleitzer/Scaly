@@ -7,7 +7,28 @@ typeless or typed exactly `pointer[Page]`.  Every other `pointer[Page]` paramete
 is an ordinary user parameter and converts to `ref[Page]` freely -- a pointer
 argument passes to a ref parameter without a cast (measured), so no call site moves.
 """
-import re, os, sys, collections
+import re, os, sys, collections, subprocess
+
+# A routine whose Itanium mangled name is written out as a string literal cannot
+# change its parameter types: the compiler LOOKS THE SYMBOL UP rather than
+# calling it, so a rename surfaces as an undefined symbol at link time in every
+# program that takes a caller page.  Two of them encode a `P4Page` parameter --
+# `scaly_release_root_page` and `..._full` -- and must stay `pointer[Page]`.
+def frozen_names(root='.'):
+    out = set()
+    try:
+        txt = subprocess.run(['grep', '-rho', '"_Z[A-Za-z0-9_]*"', '--include=*.scaly', root],
+                             capture_output=True, text=True).stdout
+    except Exception:
+        return out
+    for lit in set(txt.split()):
+        lit = lit.strip('"')
+        if 'P4Page' not in lit:
+            continue
+        m = re.match(r'^_Z(?:N\d+[A-Za-z_]\w*)?(\d+)([A-Za-z_]\w*)', lit)
+        if m:
+            out.add(m.group(2)[:int(m.group(1))])
+    return out
 
 DECL = re.compile(r'^(\s*)(function|procedure|init)\b')
 PTRPAGE = re.compile(r'pointer\[\s*(?:scaly\.memory\.)?Page\s*\]')
@@ -46,6 +67,8 @@ def split_params(sig):
         buf += ch
     return [q.strip() for q in out if q.strip()]
 
+FROZEN = frozen_names()
+
 def scan(root='packages'):
     hits = []
     for dp, dn, fn in os.walk(root):
@@ -65,7 +88,9 @@ def scan(root='packages'):
                         if not PTRPAGE.search(prm): continue
                         nm = prm.split(':')[0].strip()
                         peeled = (idx == 0 and nm in ('page', 'rp'))
-                        hits.append((p, i + 1, last + 1, idx, nm, peeled))
+                        fname = re.match(r'\s*(?:function|procedure|init)\s+(\w+)', sig)
+                        frozen = bool(fname) and fname.group(1) in FROZEN
+                        hits.append((p, i + 1, last + 1, idx, nm, peeled or frozen))
                 i = last + 1
     return hits
 
@@ -76,7 +101,8 @@ if __name__ == '__main__':
         pkg = p.split('/')[1]
         (peel if pl else conv)[pkg] += 1
         if not pl: names[nm] += 1
-    print(f"{'package':12} {'konvertierbar':>14} {'gepeelt':>9}")
+    print("eingefroren (Itanium-Literal mit P4Page):", ", ".join(sorted(FROZEN)) or "keine")
+    print(f"{'package':12} {'konvertierbar':>14} {'gesperrt':>9}")
     for pkg in sorted(set(list(conv) + list(peel))):
         print(f"{pkg:12} {conv[pkg]:14d} {peel[pkg]:9d}")
     print(f"{'SUMME':12} {sum(conv.values()):14d} {sum(peel.values()):9d}")
