@@ -12368,6 +12368,36 @@ define Planner
                                 set rhs: this.deref_ref_into_pointee(result.result_type, rhs)
                     }
 
+                    ; ... and the same in ARITHMETIC, once `*r` is no longer a
+                    ; spelling. `i - field_start` on a `ref[size_t]` cell has
+                    ; no other reading left: the `as` cast keeps the ADDRESS
+                    ; meaning by design, so without this the value is
+                    ; unreachable.
+                    ; ★ SCALAR pointees only, which is what leaves
+                    ; report_ref_arithmetic# exactly the case it was measured
+                    ; on: `&b + 1` on a two-field STRUCT, where value
+                    ; arithmetic means nothing and the byte-stride GEP is the
+                    ; hazard. Both its regressions use a struct pointee.
+                    ; ★ SHIFTS included, unlike the literal retype above: a
+                    ; load is not a width change, so the asymmetry that bans
+                    ; retyping a shift's operands does not apply.
+                    var arith_reads_value: bool false
+                    if Planner.is_integer_arithmetic_operator(op_name)
+                        set arith_reads_value: true
+                    if op_name = "<<"
+                        set arith_reads_value: true
+                    if op_name = ">>"
+                        set arith_reads_value: true
+                    if arith_reads_value
+                    {
+                        if Planner.is_scalar_value_type_name(rhs.result_type.name)
+                            if Planner.operand_derefs_to_pointee(rhs.result_type, result)
+                                set result: this.deref_ref_into_pointee(rhs.result_type, result)
+                        if Planner.is_scalar_value_type_name(result.result_type.name)
+                            if Planner.operand_derefs_to_pointee(result.result_type, rhs)
+                                set rhs: this.deref_ref_into_pointee(result.result_type, rhs)
+                    }
+
                     ; Integer literal beside an integer-typed operand in a
                     ; COMPARISON: retype the literal to the other side's type,
                     ; so `count > 0` on a size_t emits `ugt` and not `sgt`.

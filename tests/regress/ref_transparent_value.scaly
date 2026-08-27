@@ -111,6 +111,20 @@ function rebinds_construction(a: ref[Cell]) returns int
     t.v
 }
 
+
+; ARITHMETIC on a SCALAR pointee reads the value. The struct case stays with
+; report_ref_arithmetic# -- xfail_ref_arithmetic.scaly measures it on a
+; two-field Box, where a byte-stride GEP is the hazard and value arithmetic
+; means nothing.
+function r_add(r: ref[int], n: int) returns int
+    r + n
+
+function r_sub(i: size_t, r: ref[size_t]) returns size_t
+    i - r
+
+function r_shift(r: ref[int], n: int) returns int
+    r << n
+
 var ok: bool true
 
 var a: int 7
@@ -171,6 +185,14 @@ var rc Cell(1)
 if rebinds_construction(&rc) <> 8
     set ok: false
 if rc.v <> 1
+    set ok: false
+
+if r_add(&a, 2) <> 9
+    set ok: false
+var sz: size_t 3
+if r_sub(10 as size_t, &sz) <> (7 as size_t)
+    set ok: false
+if r_shift(&a, 1) <> 14
     set ok: false
 
 if ok
