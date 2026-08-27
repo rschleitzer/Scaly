@@ -35,8 +35,7 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var sum: int 0
     while i < a.get_length()
     {
-        let e a[i]
-        set sum: sum + *e
+        set sum: sum + a[i]
         set i: i + 1
     }
     ; 2 * (1 + ... + 20) = 420
@@ -47,14 +46,12 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
     }
 
     ; the second batch must start exactly at index 20
-    let e20 a[20]
-    if *e20 <> 1
+    if a[20] <> 1
     {
         print "FAIL second batch offset"
         return 1
     }
-    let e39 a[39]
-    if *e39 <> 20
+    if a[39] <> 20
     {
         print "FAIL last element"
         return 1

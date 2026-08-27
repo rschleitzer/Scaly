@@ -31,7 +31,7 @@ define containers
         if *(vector.get 0) <> 1
             return -1
 
-        if *(vector[1]) <> 2
+        if vector[1] <> 2
             return -2
 
         0
@@ -370,10 +370,10 @@ define containers
         if slice.length <> 5
             return -50
 
-        if *(slice[0]) <> 10
+        if slice[0] <> 10
             return -51
 
-        if *(slice[4]) <> 50
+        if slice[4] <> 50
             return -52
 
         ; Test sub-slice
@@ -381,10 +381,10 @@ define containers
         if sub.length <> 3
             return -53
 
-        if *(sub[0]) <> 20
+        if sub[0] <> 20
             return -54
 
-        if *(sub[2]) <> 40
+        if sub[2] <> 40
             return -55
 
         ; Test String slice
@@ -393,10 +393,10 @@ define containers
         if str_slice.length <> 5
             return -56
 
-        if *(str_slice[0]) <> "H"
+        if str_slice[0] <> "H"
             return -57
 
-        if *(str_slice[4]) <> "o"
+        if str_slice[4] <> "o"
             return -58
 
         ; Test slice equality
@@ -410,10 +410,10 @@ define containers
         if triple_chain.length <> 2
             return -60
 
-        if *(triple_chain[0]) <> 20
+        if triple_chain[0] <> 20
             return -61
 
-        if *(triple_chain[1]) <> 30
+        if triple_chain[1] <> 30
             return -62
 
         0

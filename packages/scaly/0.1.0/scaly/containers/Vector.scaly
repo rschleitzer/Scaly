@@ -155,12 +155,19 @@ define Vector[T]
         set *(data + i): item
     }
 
-    operator [](i: size_t) returns ref[T]?
+
+    ; See Array's operator[]: the ordinary access traps on a caller bug,
+    ; `get(i)` is the lookup that may miss.
+    operator [](i: size_t) returns T
     {
         if i >= length
-            return null
+        {
+            scaly_eputs "Vector[]: index out of bounds"
+            scaly_eputnl()
+            exit 15
+        }
 
-        data + i
+        *(data + i)
     }
 
     function get_iterator(this: Vector[T]) returns VectorIterator[T]

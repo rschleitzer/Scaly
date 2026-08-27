@@ -211,14 +211,46 @@ define Array[T]
     function get_iterator(this: Array[T]) returns ArrayIterator[T]
         ArrayIterator[T](this)
 
-    operator [](this: Array[T], i: size_t) returns ref[T]?
+    ; ★The bounds trap sits INLINE rather than in an out_of_bounds# helper, and
+    ; that is a SIZE decision measured on 2026-08-27: an operator is emitted per
+    ; instantiation only where it is USED, while an ordinary method is emitted
+    ; for every instantiation of the concept — the helper spelling added ~200
+    ; dead `linkonce_odr` functions the whole-program `opt -O2` cannot drop (a
+    ; linkonce_odr symbol may be referenced from another module), and the
+    ; compiler binary grew 80 KB for containers nobody subscripts.
+    ; ★The arm is COLD and ends in `exit`, which carries the noreturn attribute
+    ; since 2026-08-27 — that is what lets LLVM prove the guard redundant
+    ; against a loop condition and delete this block entirely, message and all,
+    ; so the checked access is instruction-identical to a raw pointer walk.
+
+    ; The ORDINARY element access, and it reads like the reference ports it
+    ; serves: Clark's `v[i]` and tsgo's `x[i]`. An index past the end is a
+    ; CALLER BUG, so it traps rather than answering an Option nobody can act
+    ; on — `get(i)` above is the lookup that may legitimately miss. The empty
+    ; container needs no separate guard: `length` is 0, so `i >= length` fires
+    ; before `vector` (null then) is ever reached.
+    operator [](this: Array[T], i: size_t) returns T
     {
         ; `i >= length` avoids the `i + 1` overflow at SIZE_MAX.
         if i >= length
-            return null
+        {
+            scaly_eputs "Array[]: index out of bounds"
+            scaly_eputnl()
+            exit 15
+        }
 
-        vector.data + i
+        *(vector.data + i)
     }
+
+    ; A borrowed view of the whole array — the vehicle that replaces a
+    ; `(pointer[T], size_t)` parameter pair in the ports. ★An ordinary method
+    ; is emitted for EVERY instantiation of the concept whether or not anyone
+    ; calls it, so one method on a container this widely instantiated costs
+    ; ~31 KB in the compiler binary alone (measured 2026-08-27). That is the
+    ; price of the API, not a defect — but it is why a convenience does not
+    ; belong on Array unless the ports actually need it.
+    function as_slice(this: Array[T]) returns Slice[T]
+        Slice[T](this.get_buffer(), length)
 
     function reallocate(this: Array[T])
     {

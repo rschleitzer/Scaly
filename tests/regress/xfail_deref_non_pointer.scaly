@@ -1,0 +1,14 @@
+; Regression: `*x` on a SCALAR emitted `load i64, i64 %0` -- invalid IR whose
+; pointer operand is an integer -- at rc 0 with no diagnostic, and the program
+; then died with SIGSEGV wherever that integer happened to point. Nothing ever
+; asked: get_pointer_element_type answers null for a non-pointer and the
+; prefix arm kept the operand's own type (Planner.report_deref_of_non_pointer#).
+; It became urgent with the 2026-08-27 subscript change: `operator []` answers
+; the element BY VALUE, so every stale `*a[i]` is exactly this shape.
+; Self-hosted-only.
+; xfail: cannot dereference a value of type int
+
+function f(n: int) returns int
+    *n
+
+print "`f(5)`"

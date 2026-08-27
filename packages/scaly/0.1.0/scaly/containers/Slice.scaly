@@ -21,13 +21,19 @@ define Slice[T](data: pointer[T], length: size_t)
         data + index
     }
 
-    ; Indexed access
-    operator [](index: size_t) returns ref[T]?
+
+    ; Indexed access. See Array's operator[]: traps on a caller bug, while
+    ; get(index) above is the lookup that may legitimately miss.
+    operator [](index: size_t) returns T
     {
         if index >= length
-            return null
+        {
+            scaly_eputs "Slice[]: index out of bounds"
+            scaly_eputnl()
+            exit 15
+        }
 
-        data + index
+        *(data + index)
     }
 
     ; Check if empty

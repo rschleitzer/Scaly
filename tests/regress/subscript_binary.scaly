@@ -11,8 +11,11 @@
 ; (4) plan_operator prepends the implicit `this` receiver and binds it as
 ; pointer[T] so bare field reads in operator bodies resolve.
 ; Also covers: parenthesized subscript groups (plan_component collapse
-; gate), out-of-bounds -> null, and a user-defined struct's `operator []`
-; reading a field. Self-hosted-only. Expected: PASS
+; gate) and a user-defined struct's `operator []` reading a field.
+; 2026-08-27: `operator []` is the ORDINARY access and answers T by value;
+; an index past the end TRAPS (rc 15) instead of answering null, so the
+; out-of-bounds leg asks `get(i)` — the lookup that may legitimately miss.
+; Self-hosted-only. Expected: PASS
 
 package scaly 0.1.0
 
@@ -29,18 +32,10 @@ function check() returns int
     var v Vector[int](2)
     v.put(0, 30)
     v.put(1, 2)
-    if v[0] = null
-        return 1
-    if v[5] <> null
+    if v.get(5) <> null
         return 2
-    let r v[0]
-    if r = null
-        return 3
-    let a (*r)
-    let s (v[1])
-    if s = null
-        return 4
-    let b (*s)
+    let a v[0]
+    let b (v[1])
     if a + b <> 32
         return 5
     let d Doubler(5)
