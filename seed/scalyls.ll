@@ -46,10 +46,10 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z19BuilderListIteratorI6StringE = type { ptr }
 %_Z6VectorI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
 %_Z11BuilderListI4SlotI6StringEE = type { ptr }
-%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
 %_Z11BuilderListI11BuilderListI4SlotI6StringEEE = type { ptr }
 %_Z4NodeI11BuilderListI4SlotI6StringEEE = type { %_Z11BuilderListI4SlotI6StringEE, ptr }
 %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE = type { ptr }
+%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
 %_Z5SliceI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
 %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE = type { %_Z5SliceI11BuilderListI4SlotI6StringEEE, i64 }
 %_Z5ArrayI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
@@ -332,10 +332,10 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z8Nameable = type { i8, [184 x i8] }
 %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { i64, ptr }
 %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE = type { ptr }
-%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr, i64 }
 %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr }
 %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr }
 %_Z19BuilderListIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr }
+%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr, i64 }
 %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { ptr, i64 }
 %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, i64 }
 %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE = type { i64, ptr }
@@ -1987,7 +1987,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorIcEC1EP6VectorIcE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorIcEC1E6OptionIR6VectorIcEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -1999,7 +1999,7 @@ entry:
 define linkonce_odr void @_ZN6VectorIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorIcE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorIcE, align 8
-  call void @_ZN14VectorIteratorIcEC1EP6VectorIcE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorIcEC1E6OptionIR6VectorIcEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorIcE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorIcE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -2859,7 +2859,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorIcEC1EP5ArrayIcE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorIcEC1E6OptionIR5ArrayIcEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -2871,7 +2871,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorIcE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorIcE, align 8
-  call void @_ZN13ArrayIteratorIcEC1EP5ArrayIcE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorIcEC1E6OptionIR5ArrayIcEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorIcE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorIcE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -5975,7 +5975,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6StringEC1E6OptionIR6VectorI6StringEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -5987,7 +5987,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6StringE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6StringE, align 8
-  call void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6StringEC1E6OptionIR6VectorI6StringEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6StringE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -6841,7 +6841,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6StringEC1EP5ArrayI6StringE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6StringEC1E6OptionIR5ArrayI6StringEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6StringE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -6853,7 +6853,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6StringE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6StringE, align 8
-  call void @_ZN13ArrayIteratorI6StringEC1EP5ArrayI6StringE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6StringEC1E6OptionIR5ArrayI6StringEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6StringE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6StringE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -7279,7 +7279,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6VectorI6StringEEC1EP6VectorI6VectorI6StringEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6VectorI6StringEEC1E6OptionIR6VectorI6VectorI6StringEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -7291,7 +7291,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6VectorI6StringEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6VectorI6StringEE, align 8
-  call void @_ZN14VectorIteratorI6VectorI6StringEEC1EP6VectorI6VectorI6StringEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6VectorI6StringEEC1E6OptionIR6VectorI6VectorI6StringEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6VectorI6StringEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -8145,7 +8145,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6VectorI6StringEEC1EP5ArrayI6VectorI6StringEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6VectorI6StringEEC1E6OptionIR5ArrayI6VectorI6StringEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -8157,7 +8157,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6VectorI6StringEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6VectorI6StringEE, align 8
-  call void @_ZN13ArrayIteratorI6VectorI6StringEEC1EP5ArrayI6VectorI6StringEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6VectorI6StringEEC1E6OptionIR5ArrayI6VectorI6StringEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6VectorI6StringEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -8746,53 +8746,6 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
-  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
-  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector3, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1EP6VectorI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
-entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
-  %position = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE3addER4Page11BuilderListI4SlotI6StringEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
@@ -8931,7 +8884,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, align 8
-  call void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1EP6VectorI11BuilderListI4SlotI6StringEEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1E6OptionIR6VectorI11BuilderListI4SlotI6StringEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9785,7 +9738,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1EP5ArrayI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1E6OptionIR5ArrayI11BuilderListI4SlotI6StringEEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -9797,7 +9750,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, align 8
-  call void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1EP5ArrayI11BuilderListI4SlotI6StringEEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI11BuilderListI4SlotI6StringEEEC1E6OptionIR5ArrayI11BuilderListI4SlotI6StringEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -10092,6 +10045,53 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
+define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
+  %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1E6OptionIR6VectorI11BuilderListI4SlotI6StringEEEE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
 define linkonce_odr ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %0) {
 entry:
   %load.struct = load %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %0, align 8
@@ -10230,9 +10230,12 @@ entry:
 define linkonce_odr void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %1) {
 entry:
   %list_iterator = alloca ptr, align 8
-  %tuple9 = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
+  %tuple = alloca %_Z19BuilderListIteratorI4SlotI6StringEE, align 8
   %vector_iterator = alloca ptr, align 8
-  %tuple = alloca %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
   %call = call i64 @_ZN7hashing9get_primeEm(i64 %1)
   %call1 = call ptr @_ZN4Page3getEPv(ptr %0)
   %call2 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call1)
@@ -10249,58 +10252,58 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %load.struct3 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %slots4 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct3, 1
-  %tuple.field = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
-  store ptr %slots4, ptr %tuple.field, align 1
-  %tuple.field5 = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
-  store i64 0, ptr %tuple.field5, align 1
-  store ptr %tuple, ptr %vector_iterator, align 1
+  %forced_page3 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region4 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
+  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots6 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct5, 1
+  call void @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEEC1E6OptionIR6VectorI11BuilderListI4SlotI6StringEEEE(ptr %struct.region4, ptr %slots6)
+  store ptr %struct.region4, ptr %vector_iterator, align 1
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots23 = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots23, align 8
+  %slots22 = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots22, align 8
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-while.cond:                                       ; preds = %while.exit13, %if.then
-  %vector_iterator6 = load ptr, ptr %vector_iterator, align 8
-  %call7 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %vector_iterator6)
-  %while.tobool = icmp ne ptr %call7, null
+while.cond:                                       ; preds = %while.exit12, %if.then
+  %vector_iterator7 = load ptr, ptr %vector_iterator, align 8
+  %call8 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI6StringEEE4nextEv(ptr %vector_iterator7)
+  %while.tobool = icmp ne ptr %call8, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct8 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call7, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct8, 0
-  %tuple.field10 = getelementptr inbounds nuw %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple9, i32 0, i32 0
-  store ptr %head, ptr %tuple.field10, align 1
-  store ptr %tuple9, ptr %list_iterator, align 1
-  br label %while.cond11
+  %load.struct9 = load %_Z11BuilderListI4SlotI6StringEE, ptr %call8, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct9, 0
+  %tuple.field = getelementptr inbounds nuw %_Z19BuilderListIteratorI4SlotI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  store ptr %tuple, ptr %list_iterator, align 1
+  br label %while.cond10
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct20 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %slots21 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct20, 1
-  %call22 = call ptr @_ZN4Page3getEPv(ptr %slots21)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call22)
+  %load.struct19 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %slots20 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct19, 1
+  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call21)
   br label %if.end
 
-while.cond11:                                     ; preds = %while.body12, %while.body
-  %list_iterator14 = load ptr, ptr %list_iterator, align 8
-  %call15 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator14)
-  %while.tobool16 = icmp ne ptr %call15, null
-  br i1 %while.tobool16, label %while.body12, label %while.exit13
+while.cond10:                                     ; preds = %while.body11, %while.body
+  %list_iterator13 = load ptr, ptr %list_iterator, align 8
+  %call14 = call ptr @_ZN19BuilderListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator13)
+  %while.tobool15 = icmp ne ptr %call14, null
+  br i1 %while.tobool15, label %while.body11, label %while.exit12
 
-while.body12:                                     ; preds = %while.cond11
-  %load.struct17 = load %_Z4SlotI6StringE, ptr %call15, align 8
-  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct17, 1
-  %load.struct18 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct18, 0
+while.body11:                                     ; preds = %while.cond10
+  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
+  %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %struct.region, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct17, 0
   %urem = urem i64 %hash_code, %length
-  %call19 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %struct.region, i64 %urem)
-  call void @_ZN11BuilderListI4SlotI6StringEE3addER4Page4SlotI6StringE(ptr %call19, ptr %call2, ptr %call15)
-  br label %while.cond11
+  %call18 = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %struct.region, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI6StringEE3addER4Page4SlotI6StringE(ptr %call18, ptr %call2, ptr %call14)
+  br label %while.cond10
 
-while.exit13:                                     ; preds = %while.cond11
+while.exit12:                                     ; preds = %while.cond10
   br label %while.cond
 }
 
@@ -10459,7 +10462,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI6StringE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %field.val)
-  call void @_ZN14VectorIteratorI6StringEC1EP6VectorI6StringE(ptr %struct.init, ptr %1)
+  call void @_ZN14VectorIteratorI6StringEC1E6OptionIR6VectorI6StringEE(ptr %struct.init, ptr %1)
   store ptr %struct.init, ptr %vector_iterator, align 1
   br label %while.cond
 
@@ -11239,6 +11242,243 @@ if.end52:                                         ; preds = %if.then51, %choose.
 
 declare void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program), ptr, ptr, ptr, ptr, i1)
 
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE3addE12KeyValuePairI6String12LocalBindingE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String12LocalBindingE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairI6String12LocalBindingE, ptr %1, align 8
+  store %_Z12KeyValuePairI6String12LocalBindingE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
+}
+
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String12LocalBindingEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
@@ -11333,7 +11573,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String12LocalBindingEEC1EP6VectorI12KeyValuePairI6String12LocalBindingEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String12LocalBindingEEC1E6OptionIR6VectorI12KeyValuePairI6String12LocalBindingEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -11345,7 +11585,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String12LocalBindingEEC1EP6VectorI12KeyValuePairI6String12LocalBindingEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String12LocalBindingEEC1E6OptionIR6VectorI12KeyValuePairI6String12LocalBindingEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -11928,243 +12168,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String12LocalBindingE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE3addE12KeyValuePairI6String12LocalBindingE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String12LocalBindingEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String12LocalBindingE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairI6String12LocalBindingE, ptr %1, align 8
-  store %_Z12KeyValuePairI6String12LocalBindingE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE3addE6VectorI12KeyValuePairI6String12LocalBindingEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -12432,7 +12435,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String12LocalBindingEEC1EP5ArrayI12KeyValuePairI6String12LocalBindingEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String12LocalBindingEEC1E6OptionIR5ArrayI12KeyValuePairI6String12LocalBindingEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -12444,7 +12447,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String12LocalBindingEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String12LocalBindingEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String12LocalBindingEEC1EP5ArrayI12KeyValuePairI6String12LocalBindingEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String12LocalBindingEEC1E6OptionIR5ArrayI12KeyValuePairI6String12LocalBindingEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String12LocalBindingEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12504,6 +12507,242 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayImE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayImE %load.struct1, 1
+  %deref = load %_Z6VectorImE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorImE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayImE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayImE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayImE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayImE %load.struct1, 1
+  %deref = load %_Z6VectorImE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorImE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayImE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayImE %load.struct17, 1
+  %deref = load %_Z6VectorImE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorImE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayImE %load.struct21, 1
+  %deref23 = load %_Z6VectorImE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorImE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorImEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  call void @_ZN6VectorImEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorImEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorImE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayImE %load.struct36, 1
+  %deref38 = load %_Z6VectorImE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorImE %deref38, 1
+  %load.struct39 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayImE %load.struct39, 1
+  %deref41 = load %_Z6VectorImE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorImE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorImEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorImE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayImE %load.struct63, 1
+  %deref65 = load %_Z6VectorImE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorImE %deref65, 1
+  %load.struct67 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayImE %load.struct67, 1
+  %deref69 = load %_Z6VectorImE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorImE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayImE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayImE3addEm(ptr %0, i64 %1) {
+entry:
+  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayImE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayImE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayImE %load.struct2, 1
+  %deref = load %_Z6VectorImE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorImE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayImE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayImE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayImE %load.struct6, 1
+  %deref8 = load %_Z6VectorImE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorImE %deref8, 1
+  %load.struct9 = load %_Z5ArrayImE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayImE %load.struct9, 0
+  %ptr.add = getelementptr inbounds i64, ptr %data, i64 %length10
+  store i64 %1, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayImE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayImE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorImE3getEm(ptr %0, i64 %1) {
@@ -12599,7 +12838,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorImEC1EP6VectorImE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorImEC1E6OptionIR6VectorImEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -12611,7 +12850,7 @@ entry:
 define linkonce_odr void @_ZN6VectorImE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorImE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorImE, align 8
-  call void @_ZN14VectorIteratorImEC1EP6VectorImE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorImEC1E6OptionIR6VectorImEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorImE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorImE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -13227,242 +13466,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayImE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayImE %load.struct1, 1
-  %deref = load %_Z6VectorImE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorImE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayImE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayImE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayImE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayImE %load.struct1, 1
-  %deref = load %_Z6VectorImE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorImE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayImE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayImE %load.struct17, 1
-  %deref = load %_Z6VectorImE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorImE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayImE %load.struct21, 1
-  %deref23 = load %_Z6VectorImE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorImE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorImEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  call void @_ZN6VectorImEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorImEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorImE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayImE %load.struct36, 1
-  %deref38 = load %_Z6VectorImE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorImE %deref38, 1
-  %load.struct39 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayImE %load.struct39, 1
-  %deref41 = load %_Z6VectorImE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorImE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorImEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorImE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayImE %load.struct63, 1
-  %deref65 = load %_Z6VectorImE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorImE %deref65, 1
-  %load.struct67 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayImE %load.struct67, 1
-  %deref69 = load %_Z6VectorImE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorImE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayImE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayImE3addEm(ptr %0, i64 %1) {
-entry:
-  %load.struct = load %_Z5ArrayImE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayImE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayImE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayImE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayImE %load.struct2, 1
-  %deref = load %_Z6VectorImE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorImE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayImE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayImE %load.struct6, 1
-  %deref8 = load %_Z6VectorImE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorImE %deref8, 1
-  %load.struct9 = load %_Z5ArrayImE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayImE %load.struct9, 0
-  %ptr.add = getelementptr inbounds i64, ptr %data, i64 %length10
-  store i64 %1, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayImE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayImE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayImE3addE6VectorImE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -13729,7 +13732,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorImEC1EP5ArrayImE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorImEC1E6OptionIR5ArrayImEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorImE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -13741,7 +13744,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayImE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorImE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorImE, align 8
-  call void @_ZN13ArrayIteratorImEC1EP5ArrayImE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorImEC1E6OptionIR5ArrayImEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorImE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorImE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -13801,6 +13804,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE3addE12KeyValuePairI6String11PlannedTypeE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String11PlannedTypeE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairI6String11PlannedTypeE, ptr %1, align 8
+  store %_Z12KeyValuePairI6String11PlannedTypeE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEE3getEm(ptr %0, i64 %1) {
@@ -13897,7 +14137,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String11PlannedTypeEEC1EP6VectorI12KeyValuePairI6String11PlannedTypeEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String11PlannedTypeEEC1E6OptionIR6VectorI12KeyValuePairI6String11PlannedTypeEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -13909,7 +14149,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String11PlannedTypeEEC1EP6VectorI12KeyValuePairI6String11PlannedTypeEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String11PlannedTypeEEC1E6OptionIR6VectorI12KeyValuePairI6String11PlannedTypeEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -14492,243 +14732,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String11PlannedTypeE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE3addE12KeyValuePairI6String11PlannedTypeE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String11PlannedTypeE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairI6String11PlannedTypeE, ptr %1, align 8
-  store %_Z12KeyValuePairI6String11PlannedTypeE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE3addE6VectorI12KeyValuePairI6String11PlannedTypeEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -14996,7 +14999,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEEC1EP5ArrayI12KeyValuePairI6String11PlannedTypeEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEEC1E6OptionIR5ArrayI12KeyValuePairI6String11PlannedTypeEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -15008,7 +15011,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEEC1EP5ArrayI12KeyValuePairI6String11PlannedTypeEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEEC1E6OptionIR5ArrayI12KeyValuePairI6String11PlannedTypeEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -15068,6 +15071,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI14TypeConstraintE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct1, 1
+  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI14TypeConstraintE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI14TypeConstraintE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI14TypeConstraintE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct1, 1
+  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI14TypeConstraintE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI14TypeConstraintE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct17, 1
+  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI14TypeConstraintE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct21, 1
+  %deref23 = load %_Z6VectorI14TypeConstraintE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI14TypeConstraintE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI14TypeConstraintE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct36, 1
+  %deref38 = load %_Z6VectorI14TypeConstraintE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI14TypeConstraintE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct39, 1
+  %deref41 = load %_Z6VectorI14TypeConstraintE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI14TypeConstraintE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI14TypeConstraintE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct63, 1
+  %deref65 = load %_Z6VectorI14TypeConstraintE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI14TypeConstraintE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct67, 1
+  %deref69 = load %_Z6VectorI14TypeConstraintE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI14TypeConstraintE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI14TypeConstraintE3addE14TypeConstraint(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct2, 1
+  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI14TypeConstraintE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI14TypeConstraintE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct6, 1
+  %deref8 = load %_Z6VectorI14TypeConstraintE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI14TypeConstraintE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z14TypeConstraint, ptr %data, i64 %length10
+  %store.load = load %_Z14TypeConstraint, ptr %1, align 1
+  store %_Z14TypeConstraint %store.load, ptr %ptr.add, align 1
+  %load.struct11 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI14TypeConstraintE3getEm(ptr %0, i64 %1) {
@@ -15164,7 +15404,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI14TypeConstraintEC1EP6VectorI14TypeConstraintE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI14TypeConstraintEC1E6OptionIR6VectorI14TypeConstraintEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14TypeConstraintE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -15176,7 +15416,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI14TypeConstraintE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI14TypeConstraintE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI14TypeConstraintE, align 8
-  call void @_ZN14VectorIteratorI14TypeConstraintEC1EP6VectorI14TypeConstraintE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI14TypeConstraintEC1E6OptionIR6VectorI14TypeConstraintEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI14TypeConstraintE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI14TypeConstraintE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -15759,243 +15999,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI14TypeConstraintE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct1, 1
-  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI14TypeConstraintE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI14TypeConstraintE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI14TypeConstraintE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct1, 1
-  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI14TypeConstraintE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI14TypeConstraintE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct17, 1
-  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI14TypeConstraintE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct21, 1
-  %deref23 = load %_Z6VectorI14TypeConstraintE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI14TypeConstraintE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI14TypeConstraintE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct36, 1
-  %deref38 = load %_Z6VectorI14TypeConstraintE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI14TypeConstraintE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct39, 1
-  %deref41 = load %_Z6VectorI14TypeConstraintE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI14TypeConstraintE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI14TypeConstraintEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI14TypeConstraintE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct63, 1
-  %deref65 = load %_Z6VectorI14TypeConstraintE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI14TypeConstraintE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct67, 1
-  %deref69 = load %_Z6VectorI14TypeConstraintE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI14TypeConstraintE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z14TypeConstraint, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14TypeConstraintE3addE14TypeConstraint(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct2, 1
-  %deref = load %_Z6VectorI14TypeConstraintE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI14TypeConstraintE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI14TypeConstraintE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct6, 1
-  %deref8 = load %_Z6VectorI14TypeConstraintE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI14TypeConstraintE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z14TypeConstraint, ptr %data, i64 %length10
-  %store.load = load %_Z14TypeConstraint, ptr %1, align 1
-  store %_Z14TypeConstraint %store.load, ptr %ptr.add, align 1
-  %load.struct11 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI14TypeConstraintE3addE6VectorI14TypeConstraintE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -16263,7 +16266,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI14TypeConstraintEC1EP5ArrayI14TypeConstraintE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI14TypeConstraintEC1E6OptionIR5ArrayI14TypeConstraintEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI14TypeConstraintE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -16275,7 +16278,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI14TypeConstraintE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI14TypeConstraintE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI14TypeConstraintE, align 8
-  call void @_ZN13ArrayIteratorI14TypeConstraintEC1EP5ArrayI14TypeConstraintE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI14TypeConstraintEC1E6OptionIR5ArrayI14TypeConstraintEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI14TypeConstraintE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI14TypeConstraintE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -16335,6 +16338,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE3addE12KeyValuePairIm11PlannedTypeE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairIm11PlannedTypeE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairIm11PlannedTypeE, ptr %1, align 8
+  store %_Z12KeyValuePairIm11PlannedTypeE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeEE3getEm(ptr %0, i64 %1) {
@@ -16431,7 +16671,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairIm11PlannedTypeEEC1EP6VectorI12KeyValuePairIm11PlannedTypeEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairIm11PlannedTypeEEC1E6OptionIR6VectorI12KeyValuePairIm11PlannedTypeEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -16443,7 +16683,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairIm11PlannedTypeEEC1EP6VectorI12KeyValuePairIm11PlannedTypeEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairIm11PlannedTypeEEC1E6OptionIR6VectorI12KeyValuePairIm11PlannedTypeEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -17026,243 +17266,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairIm11PlannedTypeE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE3addE12KeyValuePairIm11PlannedTypeE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairIm11PlannedTypeE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairIm11PlannedTypeE, ptr %1, align 8
-  store %_Z12KeyValuePairIm11PlannedTypeE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE3addE6VectorI12KeyValuePairIm11PlannedTypeEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -17530,7 +17533,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairIm11PlannedTypeEEC1EP5ArrayI12KeyValuePairIm11PlannedTypeEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairIm11PlannedTypeEEC1E6OptionIR5ArrayI12KeyValuePairIm11PlannedTypeEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -17542,7 +17545,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairIm11PlannedTypeEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairIm11PlannedTypeEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairIm11PlannedTypeEEC1EP5ArrayI12KeyValuePairIm11PlannedTypeEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairIm11PlannedTypeEEC1E6OptionIR5ArrayI12KeyValuePairIm11PlannedTypeEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairIm11PlannedTypeEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -17698,7 +17701,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6VectorI7OperandEEC1EP6VectorI6VectorI7OperandEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6VectorI7OperandEEC1E6OptionIR6VectorI6VectorI7OperandEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI7OperandEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -17710,7 +17713,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6VectorI7OperandEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6VectorI7OperandEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6VectorI7OperandEE, align 8
-  call void @_ZN14VectorIteratorI6VectorI7OperandEEC1EP6VectorI6VectorI7OperandEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6VectorI7OperandEEC1E6OptionIR6VectorI6VectorI7OperandEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6VectorI7OperandEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6VectorI7OperandEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -18564,7 +18567,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6VectorI7OperandEEC1EP5ArrayI6VectorI7OperandEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6VectorI7OperandEEC1E6OptionIR5ArrayI6VectorI7OperandEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6VectorI7OperandEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -18576,7 +18579,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6VectorI7OperandEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6VectorI7OperandEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6VectorI7OperandEE, align 8
-  call void @_ZN13ArrayIteratorI6VectorI7OperandEEC1EP5ArrayI6VectorI7OperandEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6VectorI7OperandEEC1E6OptionIR5ArrayI6VectorI7OperandEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6VectorI7OperandEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI7OperandEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -18965,7 +18968,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI9StatementEC1EP6VectorI9StatementE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI9StatementEC1E6OptionIR6VectorI9StatementEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9StatementE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -18977,7 +18980,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI9StatementE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI9StatementE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI9StatementE, align 8
-  call void @_ZN14VectorIteratorI9StatementEC1EP6VectorI9StatementE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI9StatementEC1E6OptionIR6VectorI9StatementEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI9StatementE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI9StatementE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -19831,7 +19834,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI9StatementEC1EP5ArrayI9StatementE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI9StatementEC1E6OptionIR5ArrayI9StatementEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI9StatementE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -19843,7 +19846,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI9StatementE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI9StatementE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI9StatementE, align 8
-  call void @_ZN13ArrayIteratorI9StatementEC1EP5ArrayI9StatementE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI9StatementEC1E6OptionIR5ArrayI9StatementEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI9StatementE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI9StatementE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -20232,7 +20235,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI4CaseEC1EP6VectorI4CaseE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI4CaseEC1E6OptionIR6VectorI4CaseEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4CaseE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -20244,7 +20247,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI4CaseE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI4CaseE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI4CaseE, align 8
-  call void @_ZN14VectorIteratorI4CaseEC1EP6VectorI4CaseE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI4CaseEC1E6OptionIR6VectorI4CaseEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI4CaseE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI4CaseE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -21098,7 +21101,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI4CaseEC1EP5ArrayI4CaseE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI4CaseEC1E6OptionIR5ArrayI4CaseEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI4CaseE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -21110,7 +21113,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI4CaseE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI4CaseE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI4CaseE, align 8
-  call void @_ZN13ArrayIteratorI4CaseEC1EP5ArrayI4CaseE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI4CaseEC1E6OptionIR5ArrayI4CaseEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI4CaseE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI4CaseE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -21499,7 +21502,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6BranchEC1EP6VectorI6BranchE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6BranchEC1E6OptionIR6VectorI6BranchEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6BranchE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -21511,7 +21514,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6BranchE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6BranchE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6BranchE, align 8
-  call void @_ZN14VectorIteratorI6BranchEC1EP6VectorI6BranchE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6BranchEC1E6OptionIR6VectorI6BranchEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6BranchE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6BranchE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -22365,7 +22368,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6BranchEC1EP5ArrayI6BranchE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6BranchEC1E6OptionIR5ArrayI6BranchEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6BranchE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -22377,7 +22380,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6BranchE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6BranchE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6BranchE, align 8
-  call void @_ZN13ArrayIteratorI6BranchEC1EP5ArrayI6BranchE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6BranchEC1E6OptionIR5ArrayI6BranchEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6BranchE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6BranchE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -22766,7 +22769,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI4WhenEC1EP6VectorI4WhenE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI4WhenEC1E6OptionIR6VectorI4WhenEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4WhenE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -22778,7 +22781,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI4WhenE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI4WhenE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI4WhenE, align 8
-  call void @_ZN14VectorIteratorI4WhenEC1EP6VectorI4WhenE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI4WhenEC1E6OptionIR6VectorI4WhenEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI4WhenE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI4WhenE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -23632,7 +23635,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI4WhenEC1EP5ArrayI4WhenE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI4WhenEC1E6OptionIR5ArrayI4WhenEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI4WhenE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -23644,7 +23647,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI4WhenE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI4WhenE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI4WhenE, align 8
-  call void @_ZN13ArrayIteratorI4WhenEC1EP5ArrayI4WhenE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI4WhenEC1E6OptionIR5ArrayI4WhenEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI4WhenE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI4WhenE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -24033,7 +24036,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI4ItemEC1EP6VectorI4ItemE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI4ItemEC1E6OptionIR6VectorI4ItemEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4ItemE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -24045,7 +24048,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI4ItemE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI4ItemE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI4ItemE, align 8
-  call void @_ZN14VectorIteratorI4ItemEC1EP6VectorI4ItemE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI4ItemEC1E6OptionIR6VectorI4ItemEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI4ItemE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI4ItemE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -24899,7 +24902,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI4ItemEC1EP5ArrayI4ItemE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI4ItemEC1E6OptionIR5ArrayI4ItemEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI4ItemE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -24911,7 +24914,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI4ItemE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI4ItemE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI4ItemE, align 8
-  call void @_ZN13ArrayIteratorI4ItemEC1EP5ArrayI4ItemE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI4ItemEC1E6OptionIR5ArrayI4ItemEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI4ItemE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI4ItemE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -25300,7 +25303,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI7OperandEC1EP6VectorI7OperandE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI7OperandEC1E6OptionIR6VectorI7OperandEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7OperandE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -25312,7 +25315,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI7OperandE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI7OperandE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI7OperandE, align 8
-  call void @_ZN14VectorIteratorI7OperandEC1EP6VectorI7OperandE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI7OperandEC1E6OptionIR6VectorI7OperandEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI7OperandE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI7OperandE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -26166,7 +26169,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI7OperandEC1EP5ArrayI7OperandE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI7OperandEC1E6OptionIR5ArrayI7OperandEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI7OperandE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -26178,7 +26181,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI7OperandE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI7OperandE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI7OperandE, align 8
-  call void @_ZN13ArrayIteratorI7OperandEC1EP5ArrayI7OperandE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI7OperandEC1E6OptionIR5ArrayI7OperandEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI7OperandE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI7OperandE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -26567,7 +26570,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI9ComponentEC1EP6VectorI9ComponentE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI9ComponentEC1E6OptionIR6VectorI9ComponentEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9ComponentE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -26579,7 +26582,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI9ComponentE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI9ComponentE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI9ComponentE, align 8
-  call void @_ZN14VectorIteratorI9ComponentEC1EP6VectorI9ComponentE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI9ComponentEC1E6OptionIR6VectorI9ComponentEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI9ComponentE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI9ComponentE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -27433,7 +27436,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI9ComponentEC1EP5ArrayI9ComponentE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI9ComponentEC1E6OptionIR5ArrayI9ComponentEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI9ComponentE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -27445,7 +27448,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI9ComponentE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI9ComponentE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI9ComponentE, align 8
-  call void @_ZN13ArrayIteratorI9ComponentEC1EP5ArrayI9ComponentE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI9ComponentEC1E6OptionIR5ArrayI9ComponentEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI9ComponentE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI9ComponentE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -27834,7 +27837,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI9AttributeEC1EP6VectorI9AttributeE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI9AttributeEC1E6OptionIR6VectorI9AttributeEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9AttributeE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -27846,7 +27849,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI9AttributeE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI9AttributeE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI9AttributeE, align 8
-  call void @_ZN14VectorIteratorI9AttributeEC1EP6VectorI9AttributeE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI9AttributeEC1E6OptionIR6VectorI9AttributeEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI9AttributeE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI9AttributeE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -28700,7 +28703,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI9AttributeEC1EP5ArrayI9AttributeE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI9AttributeEC1E6OptionIR5ArrayI9AttributeEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI9AttributeE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -28712,7 +28715,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI9AttributeE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI9AttributeE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI9AttributeE, align 8
-  call void @_ZN13ArrayIteratorI9AttributeEC1EP5ArrayI9AttributeE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI9AttributeEC1E6OptionIR5ArrayI9AttributeEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI9AttributeE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI9AttributeE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -29101,7 +29104,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI16GenericParameterEC1EP6VectorI16GenericParameterE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI16GenericParameterEC1E6OptionIR6VectorI16GenericParameterEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16GenericParameterE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -29113,7 +29116,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI16GenericParameterE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI16GenericParameterE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI16GenericParameterE, align 8
-  call void @_ZN14VectorIteratorI16GenericParameterEC1EP6VectorI16GenericParameterE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI16GenericParameterEC1E6OptionIR6VectorI16GenericParameterEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI16GenericParameterE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI16GenericParameterE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -29967,7 +29970,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI16GenericParameterEC1EP5ArrayI16GenericParameterE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI16GenericParameterEC1E6OptionIR5ArrayI16GenericParameterEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI16GenericParameterE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -29979,7 +29982,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI16GenericParameterE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI16GenericParameterE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI16GenericParameterE, align 8
-  call void @_ZN13ArrayIteratorI16GenericParameterEC1EP5ArrayI16GenericParameterE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI16GenericParameterEC1E6OptionIR5ArrayI16GenericParameterEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI16GenericParameterE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI16GenericParameterE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -30368,7 +30371,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI3UseEC1EP6VectorI3UseE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI3UseEC1E6OptionIR6VectorI3UseEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI3UseE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -30380,7 +30383,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI3UseE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI3UseE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI3UseE, align 8
-  call void @_ZN14VectorIteratorI3UseEC1EP6VectorI3UseE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI3UseEC1E6OptionIR6VectorI3UseEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI3UseE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI3UseE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -31234,7 +31237,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI3UseEC1EP5ArrayI3UseE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI3UseEC1E6OptionIR5ArrayI3UseEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI3UseE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -31246,7 +31249,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI3UseE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI3UseE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI3UseE, align 8
-  call void @_ZN13ArrayIteratorI3UseEC1EP5ArrayI3UseE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI3UseEC1E6OptionIR5ArrayI3UseEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI3UseE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI3UseE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -31635,7 +31638,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6MemberEC1EP6VectorI6MemberE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6MemberEC1E6OptionIR6VectorI6MemberEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6MemberE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -31647,7 +31650,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6MemberE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6MemberE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6MemberE, align 8
-  call void @_ZN14VectorIteratorI6MemberEC1EP6VectorI6MemberE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6MemberEC1E6OptionIR6VectorI6MemberEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6MemberE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6MemberE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -32501,7 +32504,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6MemberEC1EP5ArrayI6MemberE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6MemberEC1E6OptionIR5ArrayI6MemberEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6MemberE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -32513,7 +32516,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6MemberE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6MemberE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6MemberE, align 8
-  call void @_ZN13ArrayIteratorI6MemberEC1EP5ArrayI6MemberE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6MemberEC1E6OptionIR5ArrayI6MemberEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6MemberE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6MemberE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -32902,7 +32905,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI8FunctionEC1EP6VectorI8FunctionE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI8FunctionEC1E6OptionIR6VectorI8FunctionEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI8FunctionE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -32914,7 +32917,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI8FunctionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI8FunctionE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI8FunctionE, align 8
-  call void @_ZN14VectorIteratorI8FunctionEC1EP6VectorI8FunctionE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI8FunctionEC1E6OptionIR6VectorI8FunctionEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI8FunctionE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI8FunctionE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -33768,7 +33771,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI8FunctionEC1EP5ArrayI8FunctionE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI8FunctionEC1E6OptionIR5ArrayI8FunctionEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI8FunctionE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -33780,7 +33783,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI8FunctionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI8FunctionE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI8FunctionE, align 8
-  call void @_ZN13ArrayIteratorI8FunctionEC1EP5ArrayI8FunctionE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI8FunctionEC1E6OptionIR5ArrayI8FunctionEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI8FunctionE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI8FunctionE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -34095,7 +34098,7 @@ entry:
   ret ptr null
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI1K8NameableEEEC1EP6VectorI6VectorI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI1K8NameableEEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
 entry:
   ret void
 }
@@ -34240,7 +34243,7 @@ entry:
   ret ptr null
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI1K8NameableEEEC1EP5ArrayI6VectorI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI1K8NameableEEEC1E6OptionIR5ArrayI6VectorI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
 entry:
   ret void
 }
@@ -34320,7 +34323,7 @@ entry:
   ret ptr null
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI1K8NameableEEC1EP6VectorI12KeyValuePairI1K8NameableEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI1K8NameableEEC1E6OptionIR6VectorI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1) {
 entry:
   ret void
 }
@@ -34465,7 +34468,7 @@ entry:
   ret ptr null
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI1K8NameableEEC1EP5ArrayI12KeyValuePairI1K8NameableEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI1K8NameableEEC1E6OptionIR5ArrayI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1) {
 entry:
   ret void
 }
@@ -34685,16 +34688,6 @@ entry:
   ret void
 }
 
-define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE4nextEv(ptr %0) {
-entry:
-  ret ptr null
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
-entry:
-  ret void
-}
-
 define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE3addER4Page11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1, ptr %2) {
 entry:
   ret void
@@ -34870,7 +34863,7 @@ entry:
   ret ptr null
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1EP5ArrayI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1E6OptionIR5ArrayI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEE(ptr %0, ptr %1) {
 entry:
   ret void
 }
@@ -34926,6 +34919,16 @@ entry:
 }
 
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1E4ListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE(ptr %0, ptr %1) {
+entry:
+  ret void
+}
+
+define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE4nextEv(ptr %0) {
+entry:
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEC1E6OptionIR6VectorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEEE(ptr %0, ptr %1) {
 entry:
   ret void
 }
@@ -35104,7 +35107,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1EP6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -35116,7 +35119,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, align 8
-  call void @_ZN14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1EP6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI8Nameable8NameableEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -35970,7 +35973,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1EP5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1E6OptionIR5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -35982,7 +35985,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, align 8
-  call void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1EP5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEEC1E6OptionIR5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -36371,7 +36374,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI8Nameable8NameableEEC1EP6VectorI12KeyValuePairI8Nameable8NameableEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI8Nameable8NameableEEC1E6OptionIR6VectorI12KeyValuePairI8Nameable8NameableEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI8Nameable8NameableEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -36383,7 +36386,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI8Nameable8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI8Nameable8NameableEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI8Nameable8NameableEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI8Nameable8NameableEEC1EP6VectorI12KeyValuePairI8Nameable8NameableEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI8Nameable8NameableEEC1E6OptionIR6VectorI12KeyValuePairI8Nameable8NameableEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI8Nameable8NameableEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -37237,7 +37240,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI8Nameable8NameableEEC1EP5ArrayI12KeyValuePairI8Nameable8NameableEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI8Nameable8NameableEEC1E6OptionIR5ArrayI12KeyValuePairI8Nameable8NameableEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI8Nameable8NameableEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -37249,7 +37252,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI8Nameable8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI8Nameable8NameableEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI8Nameable8NameableEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI8Nameable8NameableEEC1EP5ArrayI12KeyValuePairI8Nameable8NameableEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI8Nameable8NameableEEC1E6OptionIR5ArrayI12KeyValuePairI8Nameable8NameableEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI8Nameable8NameableEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI8Nameable8NameableEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -37648,7 +37651,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1EP6VectorI6VectorI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI6String8NameableEEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -37660,7 +37663,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI6String8NameableEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEE, align 8
-  call void @_ZN14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1EP6VectorI6VectorI12KeyValuePairI6String8NameableEEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI6String8NameableEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -38514,7 +38517,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1EP5ArrayI6VectorI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1E6OptionIR5ArrayI6VectorI12KeyValuePairI6String8NameableEEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -38526,7 +38529,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEE, align 8
-  call void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1EP5ArrayI6VectorI12KeyValuePairI6String8NameableEEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEEC1E6OptionIR5ArrayI6VectorI12KeyValuePairI6String8NameableEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6VectorI12KeyValuePairI6String8NameableEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -38915,7 +38918,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEEC1EP6VectorI12KeyValuePairI6String8NameableEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEEC1E6OptionIR6VectorI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -38927,7 +38930,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String8NameableEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEEC1EP6VectorI12KeyValuePairI6String8NameableEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEEC1E6OptionIR6VectorI12KeyValuePairI6String8NameableEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -39781,7 +39784,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String8NameableEEC1EP5ArrayI12KeyValuePairI6String8NameableEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String8NameableEEC1E6OptionIR5ArrayI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -39793,7 +39796,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String8NameableEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String8NameableEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String8NameableEEC1EP5ArrayI12KeyValuePairI6String8NameableEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String8NameableEEC1E6OptionIR5ArrayI12KeyValuePairI6String8NameableEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String8NameableEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -40279,53 +40282,6 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct, 0
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct1, 1
-  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct2, 0
-  %deref = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %vector3, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE(ptr %0, ptr %1) {
-entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
-  %position = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE3addER4Page11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
@@ -40464,7 +40420,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, align 8
-  call void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1EP6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1E6OptionIR6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -41318,7 +41274,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1EP5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1E6OptionIR5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -41330,7 +41286,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, align 8
-  call void @_ZN13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1EP5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1E6OptionIR5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -41625,6 +41581,53 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
+define linkonce_odr ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct2, 0
+  %deref = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1E6OptionIR6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
 define linkonce_odr ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %0) {
 entry:
   %load.struct = load %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
@@ -41763,9 +41766,12 @@ entry:
 define linkonce_odr void @_ZN14HashMapBuilderI6String8NameableE10reallocateEm(ptr %0, i64 %1) {
 entry:
   %list_iterator = alloca ptr, align 8
-  %tuple9 = alloca %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, align 8
+  %tuple = alloca %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, align 8
   %vector_iterator = alloca ptr, align 8
-  %tuple = alloca %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
   %call = call i64 @_ZN7hashing9get_primeEm(i64 %1)
   %call1 = call ptr @_ZN4Page3getEPv(ptr %0)
   %call2 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call1)
@@ -41782,58 +41788,58 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %load.struct3 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
-  %slots4 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct3, 1
-  %tuple.field = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %slots4, ptr %tuple.field, align 1
-  %tuple.field5 = getelementptr inbounds nuw %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %tuple, i32 0, i32 1
-  store i64 0, ptr %tuple.field5, align 1
-  store ptr %tuple, ptr %vector_iterator, align 1
+  %forced_page3 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region4 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE }, ptr null, i64 0, i32 1) to i64))
+  %load.struct5 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
+  %slots6 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct5, 1
+  call void @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEC1E6OptionIR6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEEE(ptr %struct.region4, ptr %slots6)
+  store ptr %struct.region4, ptr %vector_iterator, align 1
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots23 = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots23, align 8
+  %slots22 = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots22, align 8
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-while.cond:                                       ; preds = %while.exit13, %if.then
-  %vector_iterator6 = load ptr, ptr %vector_iterator, align 8
-  %call7 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %vector_iterator6)
-  %while.tobool = icmp ne ptr %call7, null
+while.cond:                                       ; preds = %while.exit12, %if.then
+  %vector_iterator7 = load ptr, ptr %vector_iterator, align 8
+  %call8 = call ptr @_ZN14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE4nextEv(ptr %vector_iterator7)
+  %while.tobool = icmp ne ptr %call8, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct8 = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %call7, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct8, 0
-  %tuple.field10 = getelementptr inbounds nuw %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple9, i32 0, i32 0
-  store ptr %head, ptr %tuple.field10, align 1
-  store ptr %tuple9, ptr %list_iterator, align 1
-  br label %while.cond11
+  %load.struct9 = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %call8, align 8
+  %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct9, 0
+  %tuple.field = getelementptr inbounds nuw %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  store ptr %tuple, ptr %list_iterator, align 1
+  br label %while.cond10
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct20 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
-  %slots21 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct20, 1
-  %call22 = call ptr @_ZN4Page3getEPv(ptr %slots21)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call22)
+  %load.struct19 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
+  %slots20 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct19, 1
+  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call21)
   br label %if.end
 
-while.cond11:                                     ; preds = %while.body12, %while.body
-  %list_iterator14 = load ptr, ptr %list_iterator, align 8
-  %call15 = call ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %list_iterator14)
-  %while.tobool16 = icmp ne ptr %call15, null
-  br i1 %while.tobool16, label %while.body12, label %while.exit13
+while.cond10:                                     ; preds = %while.body11, %while.body
+  %list_iterator13 = load ptr, ptr %list_iterator, align 8
+  %call14 = call ptr @_ZN19BuilderListIteratorI4SlotI12KeyValuePairI6String8NameableEEE4nextEv(ptr %list_iterator13)
+  %while.tobool15 = icmp ne ptr %call14, null
+  br i1 %while.tobool15, label %while.body11, label %while.exit12
 
-while.body12:                                     ; preds = %while.cond11
-  %load.struct17 = load %_Z4SlotI6StringE, ptr %call15, align 8
-  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct17, 1
-  %load.struct18 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.region, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct18, 0
+while.body11:                                     ; preds = %while.cond10
+  %load.struct16 = load %_Z4SlotI6StringE, ptr %call14, align 8
+  %hash_code = extractvalue %_Z4SlotI6StringE %load.struct16, 1
+  %load.struct17 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %struct.region, align 8
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct17, 0
   %urem = urem i64 %hash_code, %length
-  %call19 = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %struct.region, i64 %urem)
-  call void @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE3addER4Page4SlotI12KeyValuePairI6String8NameableEE(ptr %call19, ptr %call2, ptr %call15)
-  br label %while.cond11
+  %call18 = call ptr @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE7get_ptrEm(ptr %struct.region, i64 %urem)
+  call void @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE3addER4Page4SlotI12KeyValuePairI6String8NameableEE(ptr %call18, ptr %call2, ptr %call14)
+  br label %while.cond10
 
-while.exit13:                                     ; preds = %while.cond11
+while.exit12:                                     ; preds = %while.cond10
   br label %while.cond
 }
 
@@ -42051,7 +42057,7 @@ if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8NameableEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN14HashMapBuilderI6String8NameableE10reallocateEm(ptr %0, i64 %field.val)
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEEC1EP6VectorI12KeyValuePairI6String8NameableEE(ptr %struct.init, ptr %1)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableEEC1E6OptionIR6VectorI12KeyValuePairI6String8NameableEEE(ptr %struct.init, ptr %1)
   store ptr %struct.init, ptr %vector_iterator, align 1
   br label %while.cond
 
@@ -42225,6 +42231,243 @@ if.end28:                                         ; preds = %if.then27, %while.e
   br label %if.end12
 }
 
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String7ConceptEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE3addE12KeyValuePairI6String7ConceptE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String7ConceptE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairI6String7ConceptE, ptr %1, align 8
+  store %_Z12KeyValuePairI6String7ConceptE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
+}
+
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String7ConceptEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
@@ -42319,7 +42562,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String7ConceptEEC1EP6VectorI12KeyValuePairI6String7ConceptEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String7ConceptEEC1E6OptionIR6VectorI12KeyValuePairI6String7ConceptEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -42331,7 +42574,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String7ConceptEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String7ConceptEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String7ConceptEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String7ConceptEEC1EP6VectorI12KeyValuePairI6String7ConceptEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String7ConceptEEC1E6OptionIR6VectorI12KeyValuePairI6String7ConceptEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String7ConceptEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -42914,243 +43157,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String7ConceptEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String7ConceptE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE3addE12KeyValuePairI6String7ConceptE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String7ConceptEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String7ConceptE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairI6String7ConceptE, ptr %1, align 8
-  store %_Z12KeyValuePairI6String7ConceptE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE3addE6VectorI12KeyValuePairI6String7ConceptEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -43418,7 +43424,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String7ConceptEEC1EP5ArrayI12KeyValuePairI6String7ConceptEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String7ConceptEEC1E6OptionIR5ArrayI12KeyValuePairI6String7ConceptEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -43430,7 +43436,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String7ConceptEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String7ConceptEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String7ConceptEEC1EP5ArrayI12KeyValuePairI6String7ConceptEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String7ConceptEEC1E6OptionIR5ArrayI12KeyValuePairI6String7ConceptEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String7ConceptEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -43490,6 +43496,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI16PlannedStructureE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct1, 1
+  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI16PlannedStructureE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI16PlannedStructureE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI16PlannedStructureE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct1, 1
+  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI16PlannedStructureE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI16PlannedStructureE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct17, 1
+  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI16PlannedStructureE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct21, 1
+  %deref23 = load %_Z6VectorI16PlannedStructureE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI16PlannedStructureE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI16PlannedStructureE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct36, 1
+  %deref38 = load %_Z6VectorI16PlannedStructureE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI16PlannedStructureE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct39, 1
+  %deref41 = load %_Z6VectorI16PlannedStructureE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI16PlannedStructureE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI16PlannedStructureE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct63, 1
+  %deref65 = load %_Z6VectorI16PlannedStructureE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI16PlannedStructureE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct67, 1
+  %deref69 = load %_Z6VectorI16PlannedStructureE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI16PlannedStructureE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI16PlannedStructureE3addE16PlannedStructure(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct2, 1
+  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI16PlannedStructureE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI16PlannedStructureE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct6, 1
+  %deref8 = load %_Z6VectorI16PlannedStructureE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI16PlannedStructureE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z16PlannedStructure, ptr %data, i64 %length10
+  %store.load = load %_Z16PlannedStructure, ptr %1, align 8
+  store %_Z16PlannedStructure %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI16PlannedStructureE3getEm(ptr %0, i64 %1) {
@@ -43586,7 +43829,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI16PlannedStructureEC1EP6VectorI16PlannedStructureE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI16PlannedStructureEC1E6OptionIR6VectorI16PlannedStructureEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStructureE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -43598,7 +43841,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI16PlannedStructureE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI16PlannedStructureE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI16PlannedStructureE, align 8
-  call void @_ZN14VectorIteratorI16PlannedStructureEC1EP6VectorI16PlannedStructureE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI16PlannedStructureEC1E6OptionIR6VectorI16PlannedStructureEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI16PlannedStructureE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI16PlannedStructureE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -44181,243 +44424,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI16PlannedStructureE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct1, 1
-  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI16PlannedStructureE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI16PlannedStructureE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI16PlannedStructureE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct1, 1
-  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI16PlannedStructureE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI16PlannedStructureE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct17, 1
-  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI16PlannedStructureE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct21, 1
-  %deref23 = load %_Z6VectorI16PlannedStructureE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI16PlannedStructureE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI16PlannedStructureE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct36, 1
-  %deref38 = load %_Z6VectorI16PlannedStructureE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI16PlannedStructureE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct39, 1
-  %deref41 = load %_Z6VectorI16PlannedStructureE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI16PlannedStructureE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI16PlannedStructureEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI16PlannedStructureE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct63, 1
-  %deref65 = load %_Z6VectorI16PlannedStructureE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI16PlannedStructureE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct67, 1
-  %deref69 = load %_Z6VectorI16PlannedStructureE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI16PlannedStructureE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16PlannedStructureE3addE16PlannedStructure(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct2, 1
-  %deref = load %_Z6VectorI16PlannedStructureE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI16PlannedStructureE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI16PlannedStructureE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct6, 1
-  %deref8 = load %_Z6VectorI16PlannedStructureE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI16PlannedStructureE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z16PlannedStructure, ptr %data, i64 %length10
-  %store.load = load %_Z16PlannedStructure, ptr %1, align 8
-  store %_Z16PlannedStructure %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI16PlannedStructureE3addE6VectorI16PlannedStructureE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -44685,7 +44691,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI16PlannedStructureEC1EP5ArrayI16PlannedStructureE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI16PlannedStructureEC1E6OptionIR5ArrayI16PlannedStructureEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI16PlannedStructureE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -44697,7 +44703,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI16PlannedStructureE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI16PlannedStructureE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI16PlannedStructureE, align 8
-  call void @_ZN13ArrayIteratorI16PlannedStructureEC1EP5ArrayI16PlannedStructureE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI16PlannedStructureEC1E6OptionIR5ArrayI16PlannedStructureEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI16PlannedStructureE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI16PlannedStructureE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -44757,6 +44763,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI12PlannedUnionE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct1, 1
+  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12PlannedUnionE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12PlannedUnionE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12PlannedUnionE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct1, 1
+  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12PlannedUnionE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12PlannedUnionE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct17, 1
+  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12PlannedUnionE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12PlannedUnionE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12PlannedUnionE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12PlannedUnionE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12PlannedUnionE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12PlannedUnionE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12PlannedUnionE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12PlannedUnionE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12PlannedUnionE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12PlannedUnionE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12PlannedUnionE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12PlannedUnionE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12PlannedUnionE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12PlannedUnionE3addE12PlannedUnion(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct2, 1
+  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12PlannedUnionE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12PlannedUnionE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12PlannedUnionE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12PlannedUnionE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12PlannedUnion, ptr %data, i64 %length10
+  %store.load = load %_Z12PlannedUnion, ptr %1, align 8
+  store %_Z12PlannedUnion %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI12PlannedUnionE3getEm(ptr %0, i64 %1) {
@@ -44853,7 +45096,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12PlannedUnionEC1EP6VectorI12PlannedUnionE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12PlannedUnionEC1E6OptionIR6VectorI12PlannedUnionEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12PlannedUnionE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -44865,7 +45108,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12PlannedUnionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12PlannedUnionE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12PlannedUnionE, align 8
-  call void @_ZN14VectorIteratorI12PlannedUnionEC1EP6VectorI12PlannedUnionE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12PlannedUnionEC1E6OptionIR6VectorI12PlannedUnionEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12PlannedUnionE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12PlannedUnionE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -45448,243 +45691,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12PlannedUnionE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct1, 1
-  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12PlannedUnionE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12PlannedUnionE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12PlannedUnionE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct1, 1
-  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12PlannedUnionE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12PlannedUnionE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct17, 1
-  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12PlannedUnionE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12PlannedUnionE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12PlannedUnionE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12PlannedUnionE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12PlannedUnionE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12PlannedUnionE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12PlannedUnionE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12PlannedUnionE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12PlannedUnionEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12PlannedUnionE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12PlannedUnionE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12PlannedUnionE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12PlannedUnionE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12PlannedUnionE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12PlannedUnionE3addE12PlannedUnion(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct2, 1
-  %deref = load %_Z6VectorI12PlannedUnionE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12PlannedUnionE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12PlannedUnionE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12PlannedUnionE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12PlannedUnionE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12PlannedUnion, ptr %data, i64 %length10
-  %store.load = load %_Z12PlannedUnion, ptr %1, align 8
-  store %_Z12PlannedUnion %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12PlannedUnionE3addE6VectorI12PlannedUnionE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -45952,7 +45958,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12PlannedUnionEC1EP5ArrayI12PlannedUnionE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12PlannedUnionEC1E6OptionIR5ArrayI12PlannedUnionEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12PlannedUnionE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -45964,7 +45970,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12PlannedUnionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12PlannedUnionE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12PlannedUnionE, align 8
-  call void @_ZN13ArrayIteratorI12PlannedUnionEC1EP5ArrayI12PlannedUnionE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12PlannedUnionEC1E6OptionIR5ArrayI12PlannedUnionEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12PlannedUnionE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12PlannedUnionE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -46024,6 +46030,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI15PlannedFunctionE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct1, 1
+  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI15PlannedFunctionE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI15PlannedFunctionE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct1, 1
+  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct17, 1
+  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct21, 1
+  %deref23 = load %_Z6VectorI15PlannedFunctionE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI15PlannedFunctionE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI15PlannedFunctionE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct36, 1
+  %deref38 = load %_Z6VectorI15PlannedFunctionE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI15PlannedFunctionE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct39, 1
+  %deref41 = load %_Z6VectorI15PlannedFunctionE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI15PlannedFunctionE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI15PlannedFunctionE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct63, 1
+  %deref65 = load %_Z6VectorI15PlannedFunctionE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI15PlannedFunctionE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct67, 1
+  %deref69 = load %_Z6VectorI15PlannedFunctionE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI15PlannedFunctionE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE3addE15PlannedFunction(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct2, 1
+  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI15PlannedFunctionE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct6, 1
+  %deref8 = load %_Z6VectorI15PlannedFunctionE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI15PlannedFunctionE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z15PlannedFunction, ptr %data, i64 %length10
+  %store.load = load %_Z15PlannedFunction, ptr %1, align 8
+  store %_Z15PlannedFunction %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI15PlannedFunctionE3getEm(ptr %0, i64 %1) {
@@ -46120,7 +46363,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI15PlannedFunctionEC1EP6VectorI15PlannedFunctionE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI15PlannedFunctionEC1E6OptionIR6VectorI15PlannedFunctionEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedFunctionE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -46132,7 +46375,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI15PlannedFunctionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI15PlannedFunctionE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI15PlannedFunctionE, align 8
-  call void @_ZN14VectorIteratorI15PlannedFunctionEC1EP6VectorI15PlannedFunctionE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI15PlannedFunctionEC1E6OptionIR6VectorI15PlannedFunctionEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI15PlannedFunctionE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI15PlannedFunctionE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -46715,243 +46958,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI15PlannedFunctionE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct1, 1
-  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI15PlannedFunctionE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI15PlannedFunctionE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct1, 1
-  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct17, 1
-  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct21, 1
-  %deref23 = load %_Z6VectorI15PlannedFunctionE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI15PlannedFunctionE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI15PlannedFunctionE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct36, 1
-  %deref38 = load %_Z6VectorI15PlannedFunctionE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI15PlannedFunctionE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct39, 1
-  %deref41 = load %_Z6VectorI15PlannedFunctionE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI15PlannedFunctionE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI15PlannedFunctionEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI15PlannedFunctionE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct63, 1
-  %deref65 = load %_Z6VectorI15PlannedFunctionE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI15PlannedFunctionE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct67, 1
-  %deref69 = load %_Z6VectorI15PlannedFunctionE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI15PlannedFunctionE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE3addE15PlannedFunction(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct2, 1
-  %deref = load %_Z6VectorI15PlannedFunctionE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI15PlannedFunctionE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI15PlannedFunctionE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct6, 1
-  %deref8 = load %_Z6VectorI15PlannedFunctionE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI15PlannedFunctionE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z15PlannedFunction, ptr %data, i64 %length10
-  %store.load = load %_Z15PlannedFunction, ptr %1, align 8
-  store %_Z15PlannedFunction %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE3addE6VectorI15PlannedFunctionE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -47219,7 +47225,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI15PlannedFunctionEC1EP5ArrayI15PlannedFunctionE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI15PlannedFunctionEC1E6OptionIR5ArrayI15PlannedFunctionEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI15PlannedFunctionE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -47231,7 +47237,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI15PlannedFunctionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI15PlannedFunctionE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI15PlannedFunctionE, align 8
-  call void @_ZN13ArrayIteratorI15PlannedFunctionEC1EP5ArrayI15PlannedFunctionE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI15PlannedFunctionEC1E6OptionIR5ArrayI15PlannedFunctionEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI15PlannedFunctionE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI15PlannedFunctionE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -47291,6 +47297,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI13PlannedGlobalE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct1, 1
+  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI13PlannedGlobalE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI13PlannedGlobalE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct1, 1
+  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct17, 1
+  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct21, 1
+  %deref23 = load %_Z6VectorI13PlannedGlobalE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI13PlannedGlobalE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI13PlannedGlobalE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct36, 1
+  %deref38 = load %_Z6VectorI13PlannedGlobalE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI13PlannedGlobalE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct39, 1
+  %deref41 = load %_Z6VectorI13PlannedGlobalE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI13PlannedGlobalE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI13PlannedGlobalE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct63, 1
+  %deref65 = load %_Z6VectorI13PlannedGlobalE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI13PlannedGlobalE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct67, 1
+  %deref69 = load %_Z6VectorI13PlannedGlobalE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI13PlannedGlobalE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE3addE13PlannedGlobal(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct2, 1
+  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI13PlannedGlobalE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct6, 1
+  %deref8 = load %_Z6VectorI13PlannedGlobalE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI13PlannedGlobalE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z13PlannedGlobal, ptr %data, i64 %length10
+  %store.load = load %_Z13PlannedGlobal, ptr %1, align 8
+  store %_Z13PlannedGlobal %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI13PlannedGlobalE3getEm(ptr %0, i64 %1) {
@@ -47387,7 +47630,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI13PlannedGlobalEC1EP6VectorI13PlannedGlobalE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI13PlannedGlobalEC1E6OptionIR6VectorI13PlannedGlobalEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedGlobalE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -47399,7 +47642,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI13PlannedGlobalE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI13PlannedGlobalE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI13PlannedGlobalE, align 8
-  call void @_ZN14VectorIteratorI13PlannedGlobalEC1EP6VectorI13PlannedGlobalE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI13PlannedGlobalEC1E6OptionIR6VectorI13PlannedGlobalEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI13PlannedGlobalE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI13PlannedGlobalE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -47982,243 +48225,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI13PlannedGlobalE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct1, 1
-  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI13PlannedGlobalE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI13PlannedGlobalE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct1, 1
-  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct17, 1
-  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct21, 1
-  %deref23 = load %_Z6VectorI13PlannedGlobalE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI13PlannedGlobalE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI13PlannedGlobalE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct36, 1
-  %deref38 = load %_Z6VectorI13PlannedGlobalE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI13PlannedGlobalE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct39, 1
-  %deref41 = load %_Z6VectorI13PlannedGlobalE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI13PlannedGlobalE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI13PlannedGlobalEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI13PlannedGlobalE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct63, 1
-  %deref65 = load %_Z6VectorI13PlannedGlobalE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI13PlannedGlobalE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct67, 1
-  %deref69 = load %_Z6VectorI13PlannedGlobalE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI13PlannedGlobalE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE3addE13PlannedGlobal(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct2, 1
-  %deref = load %_Z6VectorI13PlannedGlobalE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI13PlannedGlobalE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI13PlannedGlobalE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct6, 1
-  %deref8 = load %_Z6VectorI13PlannedGlobalE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI13PlannedGlobalE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z13PlannedGlobal, ptr %data, i64 %length10
-  %store.load = load %_Z13PlannedGlobal, ptr %1, align 8
-  store %_Z13PlannedGlobal %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE3addE6VectorI13PlannedGlobalE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -48486,7 +48492,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI13PlannedGlobalEC1EP5ArrayI13PlannedGlobalE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI13PlannedGlobalEC1E6OptionIR5ArrayI13PlannedGlobalEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI13PlannedGlobalE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -48498,7 +48504,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI13PlannedGlobalE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI13PlannedGlobalE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI13PlannedGlobalE, align 8
-  call void @_ZN13ArrayIteratorI13PlannedGlobalEC1EP5ArrayI13PlannedGlobalE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI13PlannedGlobalEC1E6OptionIR5ArrayI13PlannedGlobalEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI13PlannedGlobalE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI13PlannedGlobalE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -48558,6 +48564,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8FunctionEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE3addE12KeyValuePairI6String8FunctionE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8FunctionE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairI6String8FunctionE, ptr %1, align 8
+  store %_Z12KeyValuePairI6String8FunctionE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String8FunctionEE3getEm(ptr %0, i64 %1) {
@@ -48654,7 +48897,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8FunctionEEC1EP6VectorI12KeyValuePairI6String8FunctionEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8FunctionEEC1E6OptionIR6VectorI12KeyValuePairI6String8FunctionEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -48666,7 +48909,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String8FunctionEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String8FunctionEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String8FunctionEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String8FunctionEEC1EP6VectorI12KeyValuePairI6String8FunctionEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String8FunctionEEC1E6OptionIR6VectorI12KeyValuePairI6String8FunctionEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String8FunctionEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -49249,243 +49492,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8FunctionEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8FunctionE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE3addE12KeyValuePairI6String8FunctionE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8FunctionEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8FunctionE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairI6String8FunctionE, ptr %1, align 8
-  store %_Z12KeyValuePairI6String8FunctionE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE3addE6VectorI12KeyValuePairI6String8FunctionEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -49753,7 +49759,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String8FunctionEEC1EP5ArrayI12KeyValuePairI6String8FunctionEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String8FunctionEEC1E6OptionIR5ArrayI12KeyValuePairI6String8FunctionEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -49765,7 +49771,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String8FunctionEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String8FunctionEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String8FunctionEEC1EP5ArrayI12KeyValuePairI6String8FunctionEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String8FunctionEEC1E6OptionIR5ArrayI12KeyValuePairI6String8FunctionEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String8FunctionEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -49825,6 +49831,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6LambdaEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE3addE12KeyValuePairI6String6LambdaE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6LambdaE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairI6String6LambdaE, ptr %1, align 8
+  store %_Z12KeyValuePairI6String6LambdaE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String6LambdaEE3getEm(ptr %0, i64 %1) {
@@ -49921,7 +50164,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String6LambdaEEC1EP6VectorI12KeyValuePairI6String6LambdaEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String6LambdaEEC1E6OptionIR6VectorI12KeyValuePairI6String6LambdaEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -49933,7 +50176,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String6LambdaEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String6LambdaEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String6LambdaEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String6LambdaEEC1EP6VectorI12KeyValuePairI6String6LambdaEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String6LambdaEEC1E6OptionIR6VectorI12KeyValuePairI6String6LambdaEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String6LambdaEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -50516,243 +50759,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6LambdaEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6LambdaE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE3addE12KeyValuePairI6String6LambdaE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6LambdaEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6LambdaE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairI6String6LambdaE, ptr %1, align 8
-  store %_Z12KeyValuePairI6String6LambdaE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE3addE6VectorI12KeyValuePairI6String6LambdaEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -51020,7 +51026,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String6LambdaEEC1EP5ArrayI12KeyValuePairI6String6LambdaEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String6LambdaEEC1E6OptionIR5ArrayI12KeyValuePairI6String6LambdaEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -51032,7 +51038,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String6LambdaEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String6LambdaEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String6LambdaEEC1EP5ArrayI12KeyValuePairI6String6LambdaEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String6LambdaEEC1E6OptionIR5ArrayI12KeyValuePairI6String6LambdaEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String6LambdaEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -51092,6 +51098,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8OperatorEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE3addE12KeyValuePairI6String8OperatorE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8OperatorE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairI6String8OperatorE, ptr %1, align 8
+  store %_Z12KeyValuePairI6String8OperatorE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String8OperatorEE3getEm(ptr %0, i64 %1) {
@@ -51188,7 +51431,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8OperatorEEC1EP6VectorI12KeyValuePairI6String8OperatorEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8OperatorEEC1E6OptionIR6VectorI12KeyValuePairI6String8OperatorEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -51200,7 +51443,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String8OperatorEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String8OperatorEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String8OperatorEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String8OperatorEEC1EP6VectorI12KeyValuePairI6String8OperatorEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String8OperatorEEC1E6OptionIR6VectorI12KeyValuePairI6String8OperatorEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String8OperatorEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -51783,243 +52026,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String8OperatorEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String8OperatorE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE3addE12KeyValuePairI6String8OperatorE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String8OperatorEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String8OperatorE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairI6String8OperatorE, ptr %1, align 8
-  store %_Z12KeyValuePairI6String8OperatorE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE3addE6VectorI12KeyValuePairI6String8OperatorEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -52287,7 +52293,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String8OperatorEEC1EP5ArrayI12KeyValuePairI6String8OperatorEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String8OperatorEEC1E6OptionIR5ArrayI12KeyValuePairI6String8OperatorEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -52299,7 +52305,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String8OperatorEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String8OperatorEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String8OperatorEEC1EP5ArrayI12KeyValuePairI6String8OperatorEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String8OperatorEEC1E6OptionIR5ArrayI12KeyValuePairI6String8OperatorEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String8OperatorEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -52455,7 +52461,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI11PlannedTypeEC1EP6VectorI11PlannedTypeE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI11PlannedTypeEC1E6OptionIR6VectorI11PlannedTypeEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedTypeE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -52467,7 +52473,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI11PlannedTypeE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI11PlannedTypeE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI11PlannedTypeE, align 8
-  call void @_ZN14VectorIteratorI11PlannedTypeEC1EP6VectorI11PlannedTypeE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI11PlannedTypeEC1E6OptionIR6VectorI11PlannedTypeEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI11PlannedTypeE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11PlannedTypeE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -53321,7 +53327,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI11PlannedTypeEC1EP5ArrayI11PlannedTypeE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI11PlannedTypeEC1E6OptionIR5ArrayI11PlannedTypeEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI11PlannedTypeE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -53333,7 +53339,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI11PlannedTypeE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI11PlannedTypeE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI11PlannedTypeE, align 8
-  call void @_ZN13ArrayIteratorI11PlannedTypeEC1EP5ArrayI11PlannedTypeE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI11PlannedTypeEC1E6OptionIR5ArrayI11PlannedTypeEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11PlannedTypeE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11PlannedTypeE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -53628,6 +53634,243 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
+define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6ModuleEE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct1, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct17, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE3addE12KeyValuePairI6String6ModuleE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct2, 1
+  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6ModuleE, ptr %data, i64 %length10
+  %store.load = load %_Z12KeyValuePairI6String6ModuleE, ptr %1, align 8
+  store %_Z12KeyValuePairI6String6ModuleE %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
+}
+
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String6ModuleEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
@@ -53722,7 +53965,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String6ModuleEEC1EP6VectorI12KeyValuePairI6String6ModuleEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String6ModuleEEC1E6OptionIR6VectorI12KeyValuePairI6String6ModuleEEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -53734,7 +53977,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String6ModuleEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI6String6ModuleEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI6String6ModuleEE, align 8
-  call void @_ZN14VectorIteratorI12KeyValuePairI6String6ModuleEEC1EP6VectorI12KeyValuePairI6String6ModuleEE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12KeyValuePairI6String6ModuleEEC1E6OptionIR6VectorI12KeyValuePairI6String6ModuleEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12KeyValuePairI6String6ModuleEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -54317,243 +54560,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI6String6ModuleEE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct1, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct17, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6String6ModuleE, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE3addE12KeyValuePairI6String6ModuleE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct2, 1
-  %deref = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6String6ModuleEE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6String6ModuleE, ptr %data, i64 %length10
-  %store.load = load %_Z12KeyValuePairI6String6ModuleE, ptr %1, align 8
-  store %_Z12KeyValuePairI6String6ModuleE %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE3addE6VectorI12KeyValuePairI6String6ModuleEE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -54821,7 +54827,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String6ModuleEEC1EP5ArrayI12KeyValuePairI6String6ModuleEE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI6String6ModuleEEC1E6OptionIR5ArrayI12KeyValuePairI6String6ModuleEEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -54833,7 +54839,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI6String6ModuleEE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12KeyValuePairI6String6ModuleEE, align 8
-  call void @_ZN13ArrayIteratorI12KeyValuePairI6String6ModuleEEC1EP5ArrayI12KeyValuePairI6String6ModuleEE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12KeyValuePairI6String6ModuleEEC1E6OptionIR5ArrayI12KeyValuePairI6String6ModuleEEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12KeyValuePairI6String6ModuleEE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -54893,6 +54899,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI17PlannerDiagnosticE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct1, 1
+  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI17PlannerDiagnosticE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI17PlannerDiagnosticE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct1, 1
+  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct17, 1
+  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct21, 1
+  %deref23 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI17PlannerDiagnosticE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct36, 1
+  %deref38 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct39, 1
+  %deref41 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI17PlannerDiagnosticE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct63, 1
+  %deref65 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct67, 1
+  %deref69 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE3addE17PlannerDiagnostic(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct2, 1
+  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI17PlannerDiagnosticE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct6, 1
+  %deref8 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z17PlannerDiagnostic, ptr %data, i64 %length10
+  %store.load = load %_Z17PlannerDiagnostic, ptr %1, align 8
+  store %_Z17PlannerDiagnostic %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI17PlannerDiagnosticE3getEm(ptr %0, i64 %1) {
@@ -54989,7 +55232,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI17PlannerDiagnosticEC1EP6VectorI17PlannerDiagnosticE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI17PlannerDiagnosticEC1E6OptionIR6VectorI17PlannerDiagnosticEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -55001,7 +55244,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI17PlannerDiagnosticE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI17PlannerDiagnosticE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI17PlannerDiagnosticE, align 8
-  call void @_ZN14VectorIteratorI17PlannerDiagnosticEC1EP6VectorI17PlannerDiagnosticE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI17PlannerDiagnosticEC1E6OptionIR6VectorI17PlannerDiagnosticEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI17PlannerDiagnosticE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -55584,243 +55827,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI17PlannerDiagnosticE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct1, 1
-  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI17PlannerDiagnosticE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI17PlannerDiagnosticE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct1, 1
-  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct17, 1
-  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct21, 1
-  %deref23 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI17PlannerDiagnosticE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct36, 1
-  %deref38 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct39, 1
-  %deref41 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI17PlannerDiagnosticEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI17PlannerDiagnosticE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct63, 1
-  %deref65 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct67, 1
-  %deref69 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z17PlannerDiagnostic, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE3addE17PlannerDiagnostic(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct2, 1
-  %deref = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI17PlannerDiagnosticE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct6, 1
-  %deref8 = load %_Z6VectorI17PlannerDiagnosticE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI17PlannerDiagnosticE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z17PlannerDiagnostic, ptr %data, i64 %length10
-  %store.load = load %_Z17PlannerDiagnostic, ptr %1, align 8
-  store %_Z17PlannerDiagnostic %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE3addE6VectorI17PlannerDiagnosticE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -56088,7 +56094,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI17PlannerDiagnosticEC1EP5ArrayI17PlannerDiagnosticE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI17PlannerDiagnosticEC1E6OptionIR5ArrayI17PlannerDiagnosticEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -56100,7 +56106,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI17PlannerDiagnosticE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI17PlannerDiagnosticE, align 8
-  call void @_ZN13ArrayIteratorI17PlannerDiagnosticEC1EP5ArrayI17PlannerDiagnosticE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI17PlannerDiagnosticEC1E6OptionIR5ArrayI17PlannerDiagnosticEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI17PlannerDiagnosticE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -56256,7 +56262,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI6ModuleEC1EP6VectorI6ModuleE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI6ModuleEC1E6OptionIR6VectorI6ModuleEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6ModuleE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -56268,7 +56274,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI6ModuleE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6ModuleE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI6ModuleE, align 8
-  call void @_ZN14VectorIteratorI6ModuleEC1EP6VectorI6ModuleE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI6ModuleEC1E6OptionIR6VectorI6ModuleEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI6ModuleE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI6ModuleE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -57122,7 +57128,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI6ModuleEC1EP5ArrayI6ModuleE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI6ModuleEC1E6OptionIR5ArrayI6ModuleEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI6ModuleE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -57134,7 +57140,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI6ModuleE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6ModuleE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI6ModuleE, align 8
-  call void @_ZN13ArrayIteratorI6ModuleEC1EP5ArrayI6ModuleE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI6ModuleEC1E6OptionIR5ArrayI6ModuleEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI6ModuleE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI6ModuleE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -57429,6 +57435,243 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
+define linkonce_odr ptr @_ZN5ArrayI7ProgramE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI7ProgramE %load.struct1, 1
+  %deref = load %_Z6VectorI7ProgramE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI7ProgramE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI7ProgramE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI7ProgramE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI7ProgramE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI7ProgramE %load.struct1, 1
+  %deref = load %_Z6VectorI7ProgramE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI7ProgramE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI7ProgramE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI7ProgramE %load.struct17, 1
+  %deref = load %_Z6VectorI7ProgramE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI7ProgramE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI7ProgramE %load.struct21, 1
+  %deref23 = load %_Z6VectorI7ProgramE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI7ProgramE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI7ProgramE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI7ProgramE %load.struct36, 1
+  %deref38 = load %_Z6VectorI7ProgramE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI7ProgramE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI7ProgramE %load.struct39, 1
+  %deref41 = load %_Z6VectorI7ProgramE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI7ProgramE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI7ProgramE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI7ProgramE %load.struct63, 1
+  %deref65 = load %_Z6VectorI7ProgramE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI7ProgramE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI7ProgramE %load.struct67, 1
+  %deref69 = load %_Z6VectorI7ProgramE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI7ProgramE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI7ProgramE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI7ProgramE3addE7Program(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI7ProgramE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI7ProgramE %load.struct2, 1
+  %deref = load %_Z6VectorI7ProgramE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI7ProgramE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI7ProgramE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI7ProgramE %load.struct6, 1
+  %deref8 = load %_Z6VectorI7ProgramE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI7ProgramE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI7ProgramE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z7Program, ptr %data, i64 %length10
+  %store.load = load %_Z7Program, ptr %1, align 8
+  store %_Z7Program %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI7ProgramE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
+}
+
 define linkonce_odr ptr @_ZN6VectorI7ProgramE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI7ProgramE, ptr %0, align 8
@@ -57523,7 +57766,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI7ProgramEC1EP6VectorI7ProgramE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI7ProgramEC1E6OptionIR6VectorI7ProgramEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7ProgramE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -57535,7 +57778,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI7ProgramE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI7ProgramE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI7ProgramE, align 8
-  call void @_ZN14VectorIteratorI7ProgramEC1EP6VectorI7ProgramE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI7ProgramEC1E6OptionIR6VectorI7ProgramEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI7ProgramE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI7ProgramE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -58118,243 +58361,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI7ProgramE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI7ProgramE %load.struct1, 1
-  %deref = load %_Z6VectorI7ProgramE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI7ProgramE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI7ProgramE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI7ProgramE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI7ProgramE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI7ProgramE %load.struct1, 1
-  %deref = load %_Z6VectorI7ProgramE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI7ProgramE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI7ProgramE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI7ProgramE %load.struct17, 1
-  %deref = load %_Z6VectorI7ProgramE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI7ProgramE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI7ProgramE %load.struct21, 1
-  %deref23 = load %_Z6VectorI7ProgramE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI7ProgramE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI7ProgramE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI7ProgramE %load.struct36, 1
-  %deref38 = load %_Z6VectorI7ProgramE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI7ProgramE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI7ProgramE %load.struct39, 1
-  %deref41 = load %_Z6VectorI7ProgramE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI7ProgramE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI7ProgramEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI7ProgramE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI7ProgramE %load.struct63, 1
-  %deref65 = load %_Z6VectorI7ProgramE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI7ProgramE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI7ProgramE %load.struct67, 1
-  %deref69 = load %_Z6VectorI7ProgramE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI7ProgramE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z7Program, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI7ProgramE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI7ProgramE3addE7Program(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI7ProgramE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI7ProgramE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI7ProgramE %load.struct2, 1
-  %deref = load %_Z6VectorI7ProgramE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI7ProgramE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI7ProgramE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI7ProgramE %load.struct6, 1
-  %deref8 = load %_Z6VectorI7ProgramE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI7ProgramE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI7ProgramE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z7Program, ptr %data, i64 %length10
-  %store.load = load %_Z7Program, ptr %1, align 8
-  store %_Z7Program %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI7ProgramE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI7ProgramE3addE6VectorI7ProgramE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -58622,7 +58628,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI7ProgramEC1EP5ArrayI7ProgramE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI7ProgramEC1E6OptionIR5ArrayI7ProgramEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI7ProgramE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -58634,7 +58640,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI7ProgramE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI7ProgramE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI7ProgramE, align 8
-  call void @_ZN13ArrayIteratorI7ProgramEC1EP5ArrayI7ProgramE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI7ProgramEC1E6OptionIR5ArrayI7ProgramEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI7ProgramE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI7ProgramE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -58694,6 +58700,243 @@ if.else:                                          ; preds = %if.then
 
 if.end2:                                          ; preds = %if.else, %if.then1
   br label %if.end
+}
+
+define linkonce_odr ptr @_ZN5ArrayI12EscapeRecordE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct1, 1
+  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorI12EscapeRecordE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12EscapeRecordE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI12EscapeRecordE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct1, 1
+  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorI12EscapeRecordE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayI12EscapeRecordE10reallocateEv(ptr %0) {
+entry:
+  %wrapped_frame55 = alloca { ptr, ptr }, align 8
+  %wrapped_frame30 = alloca { ptr, ptr }, align 8
+  %wrapped_frame11 = alloca { ptr, ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
+  %capacity = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %capacity, align 1
+  %capacity1 = load i64, ptr %capacity, align 8
+  %lt = icmp ult i64 %capacity1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct17 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct17, 1
+  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector18, align 8
+  %length = extractvalue %_Z6VectorI12EscapeRecordE %deref, 0
+  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  %le20 = icmp ule i64 %mul19, 1024
+  %load.struct21 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct21, 1
+  %deref23 = load %_Z6VectorI12EscapeRecordE, ptr %vector22, align 8
+  %length24 = extractvalue %_Z6VectorI12EscapeRecordE %deref23, 0
+  %mul25 = mul i64 %length24, 2
+  store i64 %mul25, ptr %capacity, align 1
+  %new_capacity = load i64, ptr %capacity, align 8
+  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  %le27 = icmp ule i64 %mul26, 1024
+  br i1 %le27, label %if.then28, label %if.end29
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %capacity, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %capacity4 = load i64, ptr %capacity, align 8
+  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  store ptr %call, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
+  %capacity7 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region, i64 %capacity7)
+  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector8, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
+  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64)
+  store ptr %call9, ptr %wrapped_frame11, align 8
+  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent12, align 8
+  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
+  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
+  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region14, i64 %udiv15)
+  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
+  store ptr %struct.region14, ptr %vector16, align 8
+  ret void
+
+if.then28:                                        ; preds = %if.end
+  store ptr %call, ptr %wrapped_frame30, align 8
+  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent31, align 8
+  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
+  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity34 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region33, i64 %new_capacity34)
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12EscapeRecordE, ptr %struct.region33, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
+  %load.struct36 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct36, 1
+  %deref38 = load %_Z6VectorI12EscapeRecordE, ptr %vector37, align 8
+  %data = extractvalue %_Z6VectorI12EscapeRecordE %deref38, 1
+  %load.struct39 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector40 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct39, 1
+  %deref41 = load %_Z6VectorI12EscapeRecordE, ptr %vector40, align 8
+  %length42 = extractvalue %_Z6VectorI12EscapeRecordE %deref41, 0
+  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
+  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
+  store ptr %struct.region33, ptr %vector45, align 8
+  ret void
+
+if.end29:                                         ; preds = %if.end
+  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
+  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64)
+  %new_capacity49 = load i64, ptr %capacity, align 8
+  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  %lt51 = icmp ult i64 %new_capacity49, %udiv50
+  br i1 %lt51, label %if.then52, label %if.end53
+
+if.then52:                                        ; preds = %if.end29
+  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  store i64 %udiv54, ptr %capacity, align 1
+  br label %if.end53
+
+if.end53:                                         ; preds = %if.then52, %if.end29
+  store ptr %call46, ptr %wrapped_frame55, align 8
+  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent56, align 8
+  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
+  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
+  %new_capacity59 = load i64, ptr %capacity, align 8
+  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region58, i64 %new_capacity59)
+  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12EscapeRecordE, ptr %struct.region58, i32 0, i32 1
+  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
+  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
+  %load.struct63 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector64 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct63, 1
+  %deref65 = load %_Z6VectorI12EscapeRecordE, ptr %vector64, align 8
+  %data66 = extractvalue %_Z6VectorI12EscapeRecordE %deref65, 1
+  %load.struct67 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector68 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct67, 1
+  %deref69 = load %_Z6VectorI12EscapeRecordE, ptr %vector68, align 8
+  %length70 = extractvalue %_Z6VectorI12EscapeRecordE %deref69, 0
+  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
+  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
+  %eq73 = icmp eq i1 %le20, false
+  br i1 %eq73, label %if.then74, label %if.end75
+
+if.then74:                                        ; preds = %if.end53
+  %load.struct76 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector77 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct76, 1
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %if.end53
+  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
+  store ptr %struct.region58, ptr %vector79, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12EscapeRecordE3addE12EscapeRecord(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct2, 1
+  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorI12EscapeRecordE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayI12EscapeRecordE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct6, 1
+  %deref8 = load %_Z6VectorI12EscapeRecordE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorI12EscapeRecordE %deref8, 1
+  %load.struct9 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct9, 0
+  %ptr.add = getelementptr inbounds %_Z12EscapeRecord, ptr %data, i64 %length10
+  %store.load = load %_Z12EscapeRecord, ptr %1, align 8
+  store %_Z12EscapeRecord %store.load, ptr %ptr.add, align 8
+  %load.struct11 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 8
+  ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI12EscapeRecordE3getEm(ptr %0, i64 %1) {
@@ -58790,7 +59033,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12EscapeRecordEC1EP6VectorI12EscapeRecordE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12EscapeRecordEC1E6OptionIR6VectorI12EscapeRecordEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12EscapeRecordE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -58802,7 +59045,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12EscapeRecordE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12EscapeRecordE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12EscapeRecordE, align 8
-  call void @_ZN14VectorIteratorI12EscapeRecordEC1EP6VectorI12EscapeRecordE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12EscapeRecordEC1E6OptionIR6VectorI12EscapeRecordEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12EscapeRecordE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12EscapeRecordE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -59385,243 +59628,6 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN5ArrayI12EscapeRecordE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct1, 1
-  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorI12EscapeRecordE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12EscapeRecordE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayI12EscapeRecordE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct1, 1
-  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorI12EscapeRecordE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayI12EscapeRecordE10reallocateEv(ptr %0) {
-entry:
-  %wrapped_frame55 = alloca { ptr, ptr }, align 8
-  %wrapped_frame30 = alloca { ptr, ptr }, align 8
-  %wrapped_frame11 = alloca { ptr, ptr }, align 8
-  %wrapped_frame = alloca { ptr, ptr }, align 8
-  %capacity = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %capacity, align 1
-  %capacity1 = load i64, ptr %capacity, align 8
-  %lt = icmp ult i64 %capacity1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct17 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct17, 1
-  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector18, align 8
-  %length = extractvalue %_Z6VectorI12EscapeRecordE %deref, 0
-  %mul19 = mul i64 %length, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %le20 = icmp ule i64 %mul19, 1024
-  %load.struct21 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct21, 1
-  %deref23 = load %_Z6VectorI12EscapeRecordE, ptr %vector22, align 8
-  %length24 = extractvalue %_Z6VectorI12EscapeRecordE %deref23, 0
-  %mul25 = mul i64 %length24, 2
-  store i64 %mul25, ptr %capacity, align 1
-  %new_capacity = load i64, ptr %capacity, align 8
-  %mul26 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %le27 = icmp ule i64 %mul26, 1024
-  br i1 %le27, label %if.then28, label %if.end29
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %capacity, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %capacity4 = load i64, ptr %capacity, align 8
-  %mul = mul i64 %capacity4, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  store ptr %call, ptr %wrapped_frame, align 8
-  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
-  %capacity7 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region, i64 %capacity7)
-  %vector8 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector8, align 8
-  ret void
-
-if.end6:                                          ; preds = %if.end3
-  %call9 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call10 = call i64 @_ZN4Page12get_capacityEm(ptr %call9, i64 8)
-  %sub = sub i64 %call10, ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64)
-  store ptr %call9, ptr %wrapped_frame11, align 8
-  %wrapped.parent12 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame11, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent12, align 8
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame11)
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
-  %udiv15 = udiv i64 %sub, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region14, i64 %udiv15)
-  %vector16 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  store ptr %struct.region14, ptr %vector16, align 8
-  ret void
-
-if.then28:                                        ; preds = %if.end
-  store ptr %call, ptr %wrapped_frame30, align 8
-  %wrapped.parent31 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame30, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent31, align 8
-  %forced_page32 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame30)
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity34 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region33, i64 %new_capacity34)
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI12EscapeRecordE, ptr %struct.region33, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace35 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  %load.struct36 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct36, 1
-  %deref38 = load %_Z6VectorI12EscapeRecordE, ptr %vector37, align 8
-  %data = extractvalue %_Z6VectorI12EscapeRecordE %deref38, 1
-  %load.struct39 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector40 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct39, 1
-  %deref41 = load %_Z6VectorI12EscapeRecordE, ptr %vector40, align 8
-  %length42 = extractvalue %_Z6VectorI12EscapeRecordE %deref41, 0
-  %mul43 = mul i64 %length42, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %call44 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul43)
-  %vector45 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  store ptr %struct.region33, ptr %vector45, align 8
-  ret void
-
-if.end29:                                         ; preds = %if.end
-  %call46 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call47 = call i64 @_ZN4Page12get_capacityEm(ptr %call46, i64 8)
-  %sub48 = sub i64 %call47, ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64)
-  %new_capacity49 = load i64, ptr %capacity, align 8
-  %udiv50 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %lt51 = icmp ult i64 %new_capacity49, %udiv50
-  br i1 %lt51, label %if.then52, label %if.end53
-
-if.then52:                                        ; preds = %if.end29
-  %udiv54 = udiv i64 %sub48, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  store i64 %udiv54, ptr %capacity, align 1
-  br label %if.end53
-
-if.end53:                                         ; preds = %if.then52, %if.end29
-  store ptr %call46, ptr %wrapped_frame55, align 8
-  %wrapped.parent56 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame55, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent56, align 8
-  %forced_page57 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame55)
-  %struct.region58 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page57, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
-  %new_capacity59 = load i64, ptr %capacity, align 8
-  call void @_ZN6VectorI12EscapeRecordEC1Em(ptr %struct.region58, i64 %new_capacity59)
-  %field.inplace60 = getelementptr inbounds nuw %_Z6VectorI12EscapeRecordE, ptr %struct.region58, i32 0, i32 1
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %field.inplace62 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  %load.struct63 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector64 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct63, 1
-  %deref65 = load %_Z6VectorI12EscapeRecordE, ptr %vector64, align 8
-  %data66 = extractvalue %_Z6VectorI12EscapeRecordE %deref65, 1
-  %load.struct67 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector68 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct67, 1
-  %deref69 = load %_Z6VectorI12EscapeRecordE, ptr %vector68, align 8
-  %length70 = extractvalue %_Z6VectorI12EscapeRecordE %deref69, 0
-  %mul71 = mul i64 %length70, ptrtoint (ptr getelementptr (%_Z12EscapeRecord, ptr null, i32 1) to i64)
-  %call72 = call ptr @memcpy(ptr %deref.recv61, ptr %data66, i64 %mul71)
-  %eq73 = icmp eq i1 %le20, false
-  br i1 %eq73, label %if.then74, label %if.end75
-
-if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
-  br label %if.end75
-
-if.end75:                                         ; preds = %if.then74, %if.end53
-  %vector79 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  store ptr %struct.region58, ptr %vector79, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12EscapeRecordE3addE12EscapeRecord(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct2, 1
-  %deref = load %_Z6VectorI12EscapeRecordE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorI12EscapeRecordE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayI12EscapeRecordE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct6, 1
-  %deref8 = load %_Z6VectorI12EscapeRecordE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorI12EscapeRecordE %deref8, 1
-  %load.struct9 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct9, 0
-  %ptr.add = getelementptr inbounds %_Z12EscapeRecord, ptr %data, i64 %length10
-  %store.load = load %_Z12EscapeRecord, ptr %1, align 8
-  store %_Z12EscapeRecord %store.load, ptr %ptr.add, align 8
-  %load.struct11 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN5ArrayI12EscapeRecordE3addE6VectorI12EscapeRecordE(ptr %0, ptr %1) {
 entry:
   %wrapped_frame48 = alloca { ptr, ptr }, align 8
@@ -59889,7 +59895,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12EscapeRecordEC1EP5ArrayI12EscapeRecordE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12EscapeRecordEC1E6OptionIR5ArrayI12EscapeRecordEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12EscapeRecordE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -59901,7 +59907,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12EscapeRecordE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12EscapeRecordE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12EscapeRecordE, align 8
-  call void @_ZN13ArrayIteratorI12EscapeRecordEC1EP5ArrayI12EscapeRecordE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12EscapeRecordEC1E6OptionIR5ArrayI12EscapeRecordEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12EscapeRecordE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12EscapeRecordE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -63405,7 +63411,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI17DeclarationSyntaxEC1EP6VectorI17DeclarationSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI17DeclarationSyntaxEC1E6OptionIR6VectorI17DeclarationSyntaxEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -63417,7 +63423,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI17DeclarationSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI17DeclarationSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI17DeclarationSyntaxE, align 8
-  call void @_ZN14VectorIteratorI17DeclarationSyntaxEC1EP6VectorI17DeclarationSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI17DeclarationSyntaxEC1E6OptionIR6VectorI17DeclarationSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI17DeclarationSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI17DeclarationSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -64271,7 +64277,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI17DeclarationSyntaxEC1EP5ArrayI17DeclarationSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI17DeclarationSyntaxEC1E6OptionIR5ArrayI17DeclarationSyntaxEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -64283,7 +64289,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI17DeclarationSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI17DeclarationSyntaxE, align 8
-  call void @_ZN13ArrayIteratorI17DeclarationSyntaxEC1EP5ArrayI17DeclarationSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI17DeclarationSyntaxEC1E6OptionIR5ArrayI17DeclarationSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI17DeclarationSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI17DeclarationSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -65723,7 +65729,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI12MemberSyntaxEC1EP6VectorI12MemberSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI12MemberSyntaxEC1E6OptionIR6VectorI12MemberSyntaxEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12MemberSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -65735,7 +65741,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI12MemberSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12MemberSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12MemberSyntaxE, align 8
-  call void @_ZN14VectorIteratorI12MemberSyntaxEC1EP6VectorI12MemberSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI12MemberSyntaxEC1E6OptionIR6VectorI12MemberSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI12MemberSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12MemberSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -66589,7 +66595,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI12MemberSyntaxEC1EP5ArrayI12MemberSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI12MemberSyntaxEC1E6OptionIR5ArrayI12MemberSyntaxEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI12MemberSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -66601,7 +66607,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI12MemberSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12MemberSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI12MemberSyntaxE, align 8
-  call void @_ZN13ArrayIteratorI12MemberSyntaxEC1EP5ArrayI12MemberSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI12MemberSyntaxEC1E6OptionIR5ArrayI12MemberSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI12MemberSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI12MemberSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -67127,7 +67133,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI13VariantSyntaxEC1EP6VectorI13VariantSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI13VariantSyntaxEC1E6OptionIR6VectorI13VariantSyntaxEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13VariantSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -67139,7 +67145,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI13VariantSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI13VariantSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI13VariantSyntaxE, align 8
-  call void @_ZN14VectorIteratorI13VariantSyntaxEC1EP6VectorI13VariantSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI13VariantSyntaxEC1E6OptionIR6VectorI13VariantSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI13VariantSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI13VariantSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -67993,7 +67999,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI13VariantSyntaxEC1EP5ArrayI13VariantSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI13VariantSyntaxEC1E6OptionIR5ArrayI13VariantSyntaxEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI13VariantSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -68005,7 +68011,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI13VariantSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI13VariantSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI13VariantSyntaxE, align 8
-  call void @_ZN13ArrayIteratorI13VariantSyntaxEC1EP5ArrayI13VariantSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI13VariantSyntaxEC1E6OptionIR5ArrayI13VariantSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI13VariantSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI13VariantSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -76220,7 +76226,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI10ItemSyntaxEC1EP6VectorI10ItemSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI10ItemSyntaxEC1E6OptionIR6VectorI10ItemSyntaxEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10ItemSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -76232,7 +76238,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI10ItemSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI10ItemSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI10ItemSyntaxE, align 8
-  call void @_ZN14VectorIteratorI10ItemSyntaxEC1EP6VectorI10ItemSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI10ItemSyntaxEC1E6OptionIR6VectorI10ItemSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI10ItemSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI10ItemSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -77086,7 +77092,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI10ItemSyntaxEC1EP5ArrayI10ItemSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI10ItemSyntaxEC1E6OptionIR5ArrayI10ItemSyntaxEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI10ItemSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -77098,7 +77104,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI10ItemSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI10ItemSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI10ItemSyntaxE, align 8
-  call void @_ZN13ArrayIteratorI10ItemSyntaxEC1EP5ArrayI10ItemSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI10ItemSyntaxEC1E6OptionIR5ArrayI10ItemSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI10ItemSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI10ItemSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -78459,7 +78465,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI10PartSyntaxEC1EP6VectorI10PartSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI10PartSyntaxEC1E6OptionIR6VectorI10PartSyntaxEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10PartSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -78471,7 +78477,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI10PartSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI10PartSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI10PartSyntaxE, align 8
-  call void @_ZN14VectorIteratorI10PartSyntaxEC1EP6VectorI10PartSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI10PartSyntaxEC1E6OptionIR6VectorI10PartSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI10PartSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI10PartSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -79325,7 +79331,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI10PartSyntaxEC1EP5ArrayI10PartSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI10PartSyntaxEC1E6OptionIR5ArrayI10PartSyntaxEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI10PartSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -79337,7 +79343,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI10PartSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI10PartSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI10PartSyntaxE, align 8
-  call void @_ZN13ArrayIteratorI10PartSyntaxEC1EP5ArrayI10PartSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI10PartSyntaxEC1E6OptionIR5ArrayI10PartSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI10PartSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI10PartSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -89756,7 +89762,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI21GenericArgumentSyntaxEC1EP6VectorI21GenericArgumentSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI21GenericArgumentSyntaxEC1E6OptionIR6VectorI21GenericArgumentSyntaxEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -89768,7 +89774,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI21GenericArgumentSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI21GenericArgumentSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI21GenericArgumentSyntaxE, align 8
-  call void @_ZN14VectorIteratorI21GenericArgumentSyntaxEC1EP6VectorI21GenericArgumentSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI21GenericArgumentSyntaxEC1E6OptionIR6VectorI21GenericArgumentSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI21GenericArgumentSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI21GenericArgumentSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -90622,7 +90628,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI21GenericArgumentSyntaxEC1EP5ArrayI21GenericArgumentSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI21GenericArgumentSyntaxEC1E6OptionIR5ArrayI21GenericArgumentSyntaxEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -90634,7 +90640,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI21GenericArgumentSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI21GenericArgumentSyntaxE, align 8
-  call void @_ZN13ArrayIteratorI21GenericArgumentSyntaxEC1EP5ArrayI21GenericArgumentSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI21GenericArgumentSyntaxEC1E6OptionIR5ArrayI21GenericArgumentSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI21GenericArgumentSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI21GenericArgumentSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -109261,7 +109267,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI15ExtensionSyntaxEC1EP6VectorI15ExtensionSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI15ExtensionSyntaxEC1E6OptionIR6VectorI15ExtensionSyntaxEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -109273,7 +109279,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI15ExtensionSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI15ExtensionSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI15ExtensionSyntaxE, align 8
-  call void @_ZN14VectorIteratorI15ExtensionSyntaxEC1EP6VectorI15ExtensionSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI15ExtensionSyntaxEC1E6OptionIR6VectorI15ExtensionSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI15ExtensionSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI15ExtensionSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -110127,7 +110133,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI15ExtensionSyntaxEC1EP5ArrayI15ExtensionSyntaxE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI15ExtensionSyntaxEC1E6OptionIR5ArrayI15ExtensionSyntaxEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -110139,7 +110145,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI15ExtensionSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI15ExtensionSyntaxE, align 8
-  call void @_ZN13ArrayIteratorI15ExtensionSyntaxEC1EP5ArrayI15ExtensionSyntaxE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI15ExtensionSyntaxEC1E6OptionIR5ArrayI15ExtensionSyntaxEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI15ExtensionSyntaxE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI15ExtensionSyntaxE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -114818,7 +114824,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI16PlannedStatementEC1EP6VectorI16PlannedStatementE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI16PlannedStatementEC1E6OptionIR6VectorI16PlannedStatementEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStatementE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -114830,7 +114836,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI16PlannedStatementE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI16PlannedStatementE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI16PlannedStatementE, align 8
-  call void @_ZN14VectorIteratorI16PlannedStatementEC1EP6VectorI16PlannedStatementE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI16PlannedStatementEC1E6OptionIR6VectorI16PlannedStatementEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI16PlannedStatementE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI16PlannedStatementE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -115684,7 +115690,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI16PlannedStatementEC1EP5ArrayI16PlannedStatementE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI16PlannedStatementEC1E6OptionIR5ArrayI16PlannedStatementEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI16PlannedStatementE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -115696,7 +115702,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI16PlannedStatementE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI16PlannedStatementE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI16PlannedStatementE, align 8
-  call void @_ZN13ArrayIteratorI16PlannedStatementEC1EP5ArrayI16PlannedStatementE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI16PlannedStatementEC1E6OptionIR5ArrayI16PlannedStatementEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI16PlannedStatementE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI16PlannedStatementE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -116670,7 +116676,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI14PlannedOperandEC1EP6VectorI14PlannedOperandE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI14PlannedOperandEC1E6OptionIR6VectorI14PlannedOperandEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedOperandE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -116682,7 +116688,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI14PlannedOperandE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI14PlannedOperandE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI14PlannedOperandE, align 8
-  call void @_ZN14VectorIteratorI14PlannedOperandEC1EP6VectorI14PlannedOperandE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI14PlannedOperandEC1E6OptionIR6VectorI14PlannedOperandEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI14PlannedOperandE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI14PlannedOperandE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -117536,7 +117542,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI14PlannedOperandEC1EP5ArrayI14PlannedOperandE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI14PlannedOperandEC1E6OptionIR5ArrayI14PlannedOperandEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI14PlannedOperandE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -117548,7 +117554,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI14PlannedOperandE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI14PlannedOperandE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI14PlannedOperandE, align 8
-  call void @_ZN13ArrayIteratorI14PlannedOperandEC1EP5ArrayI14PlannedOperandE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI14PlannedOperandEC1E6OptionIR5ArrayI14PlannedOperandEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI14PlannedOperandE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI14PlannedOperandE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -117985,7 +117991,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI18PlannedInitializerEC1EP6VectorI18PlannedInitializerE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI18PlannedInitializerEC1E6OptionIR6VectorI18PlannedInitializerEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI18PlannedInitializerE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -117997,7 +118003,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI18PlannedInitializerE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI18PlannedInitializerE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI18PlannedInitializerE, align 8
-  call void @_ZN14VectorIteratorI18PlannedInitializerEC1EP6VectorI18PlannedInitializerE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI18PlannedInitializerEC1E6OptionIR6VectorI18PlannedInitializerEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI18PlannedInitializerE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI18PlannedInitializerE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -118851,7 +118857,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI18PlannedInitializerEC1EP5ArrayI18PlannedInitializerE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI18PlannedInitializerEC1E6OptionIR5ArrayI18PlannedInitializerEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI18PlannedInitializerE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -118863,7 +118869,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI18PlannedInitializerE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI18PlannedInitializerE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI18PlannedInitializerE, align 8
-  call void @_ZN13ArrayIteratorI18PlannedInitializerEC1EP5ArrayI18PlannedInitializerE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI18PlannedInitializerEC1E6OptionIR5ArrayI18PlannedInitializerEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI18PlannedInitializerE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI18PlannedInitializerE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -119252,7 +119258,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI15PlannedOperatorEC1EP6VectorI15PlannedOperatorE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI15PlannedOperatorEC1E6OptionIR6VectorI15PlannedOperatorEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedOperatorE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -119264,7 +119270,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI15PlannedOperatorE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI15PlannedOperatorE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI15PlannedOperatorE, align 8
-  call void @_ZN14VectorIteratorI15PlannedOperatorEC1EP6VectorI15PlannedOperatorE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI15PlannedOperatorEC1E6OptionIR6VectorI15PlannedOperatorEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI15PlannedOperatorE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI15PlannedOperatorE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -120118,7 +120124,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI15PlannedOperatorEC1EP5ArrayI15PlannedOperatorE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI15PlannedOperatorEC1E6OptionIR5ArrayI15PlannedOperatorEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI15PlannedOperatorE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -120130,7 +120136,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI15PlannedOperatorE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI15PlannedOperatorE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI15PlannedOperatorE, align 8
-  call void @_ZN13ArrayIteratorI15PlannedOperatorEC1EP5ArrayI15PlannedOperatorE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI15PlannedOperatorEC1E6OptionIR5ArrayI15PlannedOperatorEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI15PlannedOperatorE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI15PlannedOperatorE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -122129,7 +122135,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI16PlannedComponentEC1EP6VectorI16PlannedComponentE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI16PlannedComponentEC1E6OptionIR6VectorI16PlannedComponentEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedComponentE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -122141,7 +122147,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI16PlannedComponentE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI16PlannedComponentE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI16PlannedComponentE, align 8
-  call void @_ZN14VectorIteratorI16PlannedComponentEC1EP6VectorI16PlannedComponentE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI16PlannedComponentEC1E6OptionIR6VectorI16PlannedComponentEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI16PlannedComponentE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI16PlannedComponentE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -122995,7 +123001,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI16PlannedComponentEC1EP5ArrayI16PlannedComponentE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI16PlannedComponentEC1E6OptionIR5ArrayI16PlannedComponentEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI16PlannedComponentE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -123007,7 +123013,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI16PlannedComponentE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI16PlannedComponentE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI16PlannedComponentE, align 8
-  call void @_ZN13ArrayIteratorI16PlannedComponentEC1EP5ArrayI16PlannedComponentE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI16PlannedComponentEC1E6OptionIR5ArrayI16PlannedComponentEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI16PlannedComponentE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI16PlannedComponentE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -123396,7 +123402,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI13PlannedBranchEC1EP6VectorI13PlannedBranchE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI13PlannedBranchEC1E6OptionIR6VectorI13PlannedBranchEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedBranchE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -123408,7 +123414,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI13PlannedBranchE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI13PlannedBranchE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI13PlannedBranchE, align 8
-  call void @_ZN14VectorIteratorI13PlannedBranchEC1EP6VectorI13PlannedBranchE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI13PlannedBranchEC1E6OptionIR6VectorI13PlannedBranchEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI13PlannedBranchE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI13PlannedBranchE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -124262,7 +124268,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI13PlannedBranchEC1EP5ArrayI13PlannedBranchE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI13PlannedBranchEC1E6OptionIR5ArrayI13PlannedBranchEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI13PlannedBranchE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -124274,7 +124280,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI13PlannedBranchE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI13PlannedBranchE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI13PlannedBranchE, align 8
-  call void @_ZN13ArrayIteratorI13PlannedBranchEC1EP5ArrayI13PlannedBranchE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI13PlannedBranchEC1E6OptionIR5ArrayI13PlannedBranchEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI13PlannedBranchE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI13PlannedBranchE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -124663,7 +124669,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI11PlannedWhenEC1EP6VectorI11PlannedWhenE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI11PlannedWhenEC1E6OptionIR6VectorI11PlannedWhenEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedWhenE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -124675,7 +124681,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI11PlannedWhenE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI11PlannedWhenE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI11PlannedWhenE, align 8
-  call void @_ZN14VectorIteratorI11PlannedWhenEC1EP6VectorI11PlannedWhenE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI11PlannedWhenEC1E6OptionIR6VectorI11PlannedWhenEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI11PlannedWhenE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11PlannedWhenE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -125529,7 +125535,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI11PlannedWhenEC1EP5ArrayI11PlannedWhenE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI11PlannedWhenEC1E6OptionIR5ArrayI11PlannedWhenEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI11PlannedWhenE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -125541,7 +125547,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI11PlannedWhenE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI11PlannedWhenE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI11PlannedWhenE, align 8
-  call void @_ZN13ArrayIteratorI11PlannedWhenEC1EP5ArrayI11PlannedWhenE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI11PlannedWhenEC1E6OptionIR5ArrayI11PlannedWhenEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11PlannedWhenE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11PlannedWhenE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -125930,7 +125936,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI19PlannedMemberAccessEC1EP6VectorI19PlannedMemberAccessE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI19PlannedMemberAccessEC1E6OptionIR6VectorI19PlannedMemberAccessEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI19PlannedMemberAccessE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -125942,7 +125948,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI19PlannedMemberAccessE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI19PlannedMemberAccessE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI19PlannedMemberAccessE, align 8
-  call void @_ZN14VectorIteratorI19PlannedMemberAccessEC1EP6VectorI19PlannedMemberAccessE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI19PlannedMemberAccessEC1E6OptionIR6VectorI19PlannedMemberAccessEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI19PlannedMemberAccessE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI19PlannedMemberAccessE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -126796,7 +126802,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI19PlannedMemberAccessEC1EP5ArrayI19PlannedMemberAccessE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI19PlannedMemberAccessEC1E6OptionIR5ArrayI19PlannedMemberAccessEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI19PlannedMemberAccessE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -126808,7 +126814,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI19PlannedMemberAccessE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI19PlannedMemberAccessE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI19PlannedMemberAccessE, align 8
-  call void @_ZN13ArrayIteratorI19PlannedMemberAccessEC1EP5ArrayI19PlannedMemberAccessE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI19PlannedMemberAccessEC1E6OptionIR5ArrayI19PlannedMemberAccessEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI19PlannedMemberAccessE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI19PlannedMemberAccessE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -128550,7 +128556,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI11PlannedItemEC1EP6VectorI11PlannedItemE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI11PlannedItemEC1E6OptionIR6VectorI11PlannedItemEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedItemE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -128562,7 +128568,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI11PlannedItemE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI11PlannedItemE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI11PlannedItemE, align 8
-  call void @_ZN14VectorIteratorI11PlannedItemEC1EP6VectorI11PlannedItemE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI11PlannedItemEC1E6OptionIR6VectorI11PlannedItemEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI11PlannedItemE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI11PlannedItemE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -129416,7 +129422,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI11PlannedItemEC1EP5ArrayI11PlannedItemE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI11PlannedItemEC1E6OptionIR5ArrayI11PlannedItemEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI11PlannedItemE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -129428,7 +129434,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI11PlannedItemE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI11PlannedItemE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI11PlannedItemE, align 8
-  call void @_ZN13ArrayIteratorI11PlannedItemEC1EP5ArrayI11PlannedItemE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI11PlannedItemEC1E6OptionIR5ArrayI11PlannedItemEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI11PlannedItemE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI11PlannedItemE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -131302,7 +131308,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %call
 }
 
-define linkonce_odr void @_ZN14VectorIteratorI15PlannedPropertyEC1EP6VectorI15PlannedPropertyE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN14VectorIteratorI15PlannedPropertyEC1E6OptionIR6VectorI15PlannedPropertyEE(ptr %0, ptr %1) {
 entry:
   %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedPropertyE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %vector, align 8
@@ -131314,7 +131320,7 @@ entry:
 define linkonce_odr void @_ZN6VectorI15PlannedPropertyE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI15PlannedPropertyE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI15PlannedPropertyE, align 8
-  call void @_ZN14VectorIteratorI15PlannedPropertyEC1EP6VectorI15PlannedPropertyE(ptr %struct.init, ptr %2)
+  call void @_ZN14VectorIteratorI15PlannedPropertyEC1E6OptionIR6VectorI15PlannedPropertyEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z14VectorIteratorI15PlannedPropertyE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI15PlannedPropertyE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -132168,7 +132174,7 @@ if.end6:                                          ; preds = %if.end
   ret ptr %ptr.add
 }
 
-define linkonce_odr void @_ZN13ArrayIteratorI15PlannedPropertyEC1EP5ArrayI15PlannedPropertyE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13ArrayIteratorI15PlannedPropertyEC1E6OptionIR5ArrayI15PlannedPropertyEE(ptr %0, ptr %1) {
 entry:
   %array = getelementptr inbounds nuw %_Z13ArrayIteratorI15PlannedPropertyE, ptr %0, i32 0, i32 0
   store ptr %1, ptr %array, align 8
@@ -132180,7 +132186,7 @@ entry:
 define linkonce_odr void @_ZN5ArrayI15PlannedPropertyE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI15PlannedPropertyE) %0, ptr %1, ptr %2) {
 entry:
   %struct.init = alloca %_Z13ArrayIteratorI15PlannedPropertyE, align 8
-  call void @_ZN13ArrayIteratorI15PlannedPropertyEC1EP5ArrayI15PlannedPropertyE(ptr %struct.init, ptr %2)
+  call void @_ZN13ArrayIteratorI15PlannedPropertyEC1E6OptionIR5ArrayI15PlannedPropertyEE(ptr %struct.init, ptr %2)
   %sret.body = load %_Z13ArrayIteratorI15PlannedPropertyE, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI15PlannedPropertyE, ptr null, i32 1) to i64), i1 false)
   ret void
