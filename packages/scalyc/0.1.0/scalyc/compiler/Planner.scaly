@@ -21555,15 +21555,22 @@ define Planner
             var inner: PlannedType target_type
             if Planner.type_strip_one_reference(target_type, &inner) = false
                 return false
-            ; A source that is itself a reference REBINDS.
+            ; A source that is itself a reference of the TARGET's own type
+            ; REBINDS.
             ; ★ NOT `type_conformance_accepted(target_type, source_type)`: its
             ; class 4 accepts the POINTEE as standing for the reference, so
             ; that question answers true for exactly the case this one has to
             ; separate out, and the rewrite never fired (measured: the store
-            ; stayed a silent no-op with the rule in place). Ask the SOURCE's
-            ; shape instead.
-            if Planner.type_is_reference_shaped(source_type)
-                return false
+            ; stayed a silent no-op with the rule in place).
+            ; ★ Nor the source's SHAPE alone: a page-hosted CONSTRUCTION is
+            ; reference-shaped too (`region_value_matches_pointer#` is why
+            ; `set *p: ElementType(...)` type-checks at all), and reading it as
+            ; a rebind dropped every such store -- 13 lines out of opensp's
+            ; root and a whole caller frame out of tscaly's, which is what the
+            ; byte-identity checksum on the sweep caught.
+            if Planner.types_compatible(target_type, source_type)
+                if Planner.region_value_matches_pointer(target_type, source_type) = false
+                    return false
             Planner.type_conformance_accepted(inner, source_type)
         }
 
