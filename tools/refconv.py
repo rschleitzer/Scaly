@@ -666,6 +666,65 @@ def walked_returns(files):
             out.add(m.group(1))
     return out
 
+def buffer_chain(files, retwalk):
+    """Push a walked RESULT backwards through the forwarders that hand it out.
+
+    ★`walked_returns` learns that a result is stepped through, and stops at the
+    routine the CALL SITE names.  That is one hop, and the buffer is usually
+    further down: the walk `*(dl + off)` in `ParserState` names
+    `Entity.internal_def_locs`, which forwards to `InternalEntity.get_def_locs`,
+    which is a bare read of the field `def_locs`, which `set_def_locs` fills.
+    Neither the field scan (the name `def_locs` is never walked) nor
+    `returns_field_verdicts` (it inherits the FIELD's verdict, and the field had
+    none) can see past that hop, so the tool proposed converting all three --
+    the `Text.locs` / `get_locs()` split root CLAUDE.md names, in the direction
+    that BREAKS a caller, and the accessor even carried a comment saying so.
+    ★A comment is not evidence and was not read; the evidence is `*(dl + off)`
+    three call hops away, and this closes the hops.
+
+    Two relations, to a fixpoint, both in the tool's safe direction (more
+    pointers, never fewer):
+
+      1. a walked routine whose tail hands back another routine's result marks
+         THAT routine;  whose tail is a bare field read marks THAT field.
+      2. a field so marked marks every parameter stored into it, so the setter
+         keeps the pointer its callers already pass a raw buffer to.
+
+    Answers (routine names, {(record, field)}, {(routine, param-name)})."""
+    routines = []
+    for f in files:
+        rec_of = enclosing_records(f)
+        for i, (name, _, _) in f.sig.items():
+            routines.append((name, rec_of.get(i), f.body(i, False), f.sigtext(i)))
+    retw, fields, params = set(retwalk), set(), set()
+    # a tail line: optionally `return`, then the whole expression, alone
+    FIELD_TAIL = re.compile(r'^\s*(?:return\s+)?(?:this\.)?([a-z_][A-Za-z0-9_]*)\s*$', re.M)
+    CALL_TAIL  = re.compile(r'^\s*(?:return\s+)?[^\n=]*?\.([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*$', re.M)
+    moved = True
+    while moved:
+        moved = False
+        for name, rec, body, sig in routines:
+            if name in retw:
+                for m in CALL_TAIL.finditer(body):
+                    if m.group(1) not in retw:
+                        retw.add(m.group(1)); moved = True
+                if rec:
+                    for m in FIELD_TAIL.finditer(body):
+                        if (rec, m.group(1)) not in fields:
+                            fields.add((rec, m.group(1))); moved = True
+            if not rec:
+                continue
+            # relation 2: `set this.F: p` / `set x.F: p` with (rec, F) a buffer
+            for m in re.finditer(r'^\s*set\s+[A-Za-z_][A-Za-z0-9_]*\.'
+                                 r'([A-Za-z_][A-Za-z0-9_]*)\s*:\s*'
+                                 r'([A-Za-z_][A-Za-z0-9_]*)\s*$', body, re.M):
+                fld, src = m.group(1), m.group(2)
+                if (rec, fld) in fields and re.search(
+                        re.escape(src) + r'\s*:\s*pointer\[', sig):
+                    if (name, src) not in params:
+                        params.add((name, src)); moved = True
+    return retw, fields, params
+
 def returns_field_verdicts(files, fverdict):
     """A `returns` carries no NAME, so no name rule can reach it -- and that is
     exactly the position where a hand-walked buffer escapes the classification:
@@ -1331,6 +1390,9 @@ def main(root, apply=False):
     initnull, initptr = init_param_nullability(files, fverdict)
     retfield = returns_field_verdicts(files, fverdict)
     retwalk  = walked_returns(files)
+    retwalk, bufields, bufparams = buffer_chain(files, retwalk)
+    for key in bufields:
+        fverdict[key] = ('pointer', 'field-buffer-chain')
     sinks, allocers = pointer_sinks(files)
     pins = pinned_signatures(root)
     generic_recs = {m.group(1) for f in files for line in f.lines
@@ -1460,6 +1522,8 @@ def main(root, apply=False):
                         verdict, why = 'pointer', 'mangled-name-pinned'
                     elif (f.path, sl, nm) in initptr:
                         verdict, why = 'pointer', 'init-param-mirrors-field'
+                    elif (f.sig[sl][0], nm) in bufparams:
+                        verdict, why = 'pointer', 'param-buffer-chain'
                     elif addr_taken(nm, b):  verdict, why = 'pointer', 'param-addr-taken'
                     elif walked(nm, b):    verdict, why = 'pointer', 'param-walked'
                     elif heap_buffer(nm, b): verdict, why = 'pointer', 'param-heap-buffer'
