@@ -1,0 +1,62 @@
+; Regression: `a[i]` where the receiver is an OPTION -- the ordinary field
+; shape of the ports since the 2026-08-25 element conversion, `ref[Array[T]]?`.
+; find_member_operator# auto-derefs `pointer` and `ref` BY NAME, and the s113
+; NPO wrapper is named `Option`, so the lookup asked the Option concept, found
+; no `[]`, and the subscript pre-pass left the pair unfused: the operand stood
+; alone and `[i]` became an orphan ("unexpected operand - missing operator").
+; The same receiver answered `*(a.get_buffer() + i)` correctly, which is what
+; made it read as a subscript problem rather than a name test.
+; Fixed by Planner.subscript_receiver_type# at the `[]` site only -- NOT inside
+; find_member_operator#, which also serves the binary member operators, where
+; unwrapping an Option would let `x <> null` dispatch to X's own `==` instead
+; of the NPO presence test. Self-hosted-only. Expected: PASS
+
+define Box(items: ref[Array[int]]?)
+{
+    function pick(this: ref[Box], i: size_t) returns int
+    {
+        if items = null
+            return 0
+        items[i]
+    }
+
+    ; the same question through a PARAMETER rather than a field. A free
+    ; function cannot carry a concept-ref parameter in a program root (the
+    ; documented cross-package resolution limit), so it is a static here.
+    function ends(a: ref[Array[int]]?) returns int
+    {
+        if a = null
+            return 0
+        a[0 as size_t] + a[2 as size_t]
+    }
+}
+
+
+var arr Array[int]()
+arr.add 11
+arr.add 22
+arr.add 33
+let b Box(arr)
+
+var ok true
+if b.pick(1 as size_t) <> 22
+    set ok: false
+if b.pick(2 as size_t) <> 33
+    set ok: false
+if Box.ends(arr) <> 44
+    set ok: false
+
+; the non-optional spellings must keep working
+let plain arr
+if plain[1 as size_t] <> 22
+    set ok: false
+
+; and the NPO presence test must NOT have become a concept operator
+var empty: ref[Array[int]]? null
+if empty <> null
+    set ok: false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"

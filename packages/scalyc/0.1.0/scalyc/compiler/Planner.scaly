@@ -8158,7 +8158,7 @@ define Planner
                                                                 {
                                                                     let sub_no_types Vector[PlannedType]()
                                                                     let sub_no_ops Vector[PlannedOperand]()
-                                                                    set sm_ref: this.find_member_operator(recv_op.result_type, String("[]"), sub_no_types, sub_no_ops, sx_op.loc)
+                                                                    set sm_ref: this.find_member_operator(Planner.subscript_receiver_type(recv_op.result_type), String("[]"), sub_no_types, sub_no_ops, sx_op.loc)
                                                                 }
                                                                 if sm_ref <> null
                                                                 {
@@ -21467,6 +21467,73 @@ define Planner
         ; question as `is_npo_option`; this is the Planner-side twin over a
         ; PlannedType. A `pointer[T]?` is deliberately NOT included: a pointer
         ; carries its element stride and arithmetic on it is legal.
+        ; subscript_receiver_type#: peel the borrow layers off a subscript
+        ; receiver so `a[i]` finds the CONTAINER's `operator []`.
+        ; find_member_operator# auto-derefs `pointer` and `ref` -- BY NAME, and
+        ; the s113 NPO wrapper is named `Option`, so on the ordinary port field
+        ; shape `ref[Array[T]]?` the lookup asked the Option concept, found no
+        ; `[]`, and the pre-pass left the pair unfused: the operand stood alone
+        ; and `[i]` became an orphan ("unexpected operand - missing operator").
+        ; The same receiver answers `*(a.get_buffer() + i)` fine, which is what
+        ; made it look like a subscript problem rather than a NAME test.
+        ; ★Deliberately NOT fixed inside find_member_operator#: that helper also
+        ; serves the binary member operators, where unwrapping an Option would
+        ; let `x <> null` on a `ref[X]?` dispatch to X's own `==` instead of the
+        ; language's NPO presence test. Narrow to the `[]` site, which is the
+        ; one that asked.
+        ; ★Peels at most four layers, and only NPO Options -- a REAL Option (a
+        ; tagged union over a non-pointer payload) is a value, not a borrow.
+        function subscript_receiver_type(t: PlannedType) returns PlannedType
+        {
+            var cur t
+            var steps: int 0
+            while steps < 4
+            {
+                var peel: bool false
+                if cur.name = "pointer"
+                    set peel: true
+                if cur.name = "ref"
+                    set peel: true
+                if Planner.planned_type_is_npo_borrow(cur)
+                    set peel: true
+                if peel = false
+                    return cur
+                if cur.generics = null
+                    return cur
+                let gens (*cur.generics)
+                if gens.length = 0
+                    return cur
+                let inner_ptr gens.get 0
+                if inner_ptr = null
+                    return cur
+                set cur: (*inner_ptr)
+                set steps: steps + 1
+            }
+            cur
+        }
+
+        ; Is this the NPO spelling of a BORROW -- `ref[T]?` or `pointer[T]?`,
+        ; i.e. an Option whose sole generic argument is itself pointer-shaped?
+        ; planned_type_is_npo_ref# above answers only for `ref`, because the
+        ; arithmetic gate it serves must let a pointer through.
+        function planned_type_is_npo_borrow(t: PlannedType) returns bool
+        {
+            if t.name <> "Option"
+                return false
+            if t.generics = null
+                return false
+            let gens (*t.generics)
+            if gens.length <> 1
+                return false
+            let inner_ptr gens.get 0
+            if inner_ptr = null
+                return false
+            let inner (*inner_ptr)
+            if inner.name = "ref"
+                return true
+            inner.name = "pointer"
+        }
+
         function planned_type_is_npo_ref(t: PlannedType) returns bool
         {
             if t.name <> "Option"
