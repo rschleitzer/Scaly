@@ -574,7 +574,8 @@ def field_verdicts(files, all_text, fnull, rectexts, dotted_foreign):
                 nm = name_before(line, j) if pos == 'decl' else None
                 if nm and head not in STAY_HEADS and pos == 'decl':
                     addr, walk, dnull = dot_hazard(
-                        nm, all_text, scan_scope(nm, rec, rectexts, dotted_foreign))
+                        nm, all_text, scan_scope(nm, rec, rectexts, dotted_foreign),
+                        rectexts.get(rec))
                     if addr:                            v = ('pointer', 'field-addr-taken')
                     elif walk:                          v = ('pointer', 'field-walked')
                     elif dnull or (rec, nm) in fnull:   v = ('ref?', 'field-nullable')
@@ -955,6 +956,18 @@ def pointer_sinks(files):
     Overloads merge conservatively (any overload's sink is the name's sink),
     which is the direction this whole tool errs in: more pointers, never fewer."""
     routines, sinks = [], collections.defaultdict(set)
+    # ★Keyed by routine IDENTITY (path, sig line), not by NAME.  `sinks` merges
+    # overloads conservatively so a CALL -- which names a routine and not a
+    # record -- can be resolved at all; but the SELF verdict below knows exactly
+    # which routine it is in, and reading the merged set there turns a
+    # conservative default into a wrong answer.  Measured: `SymbolDump
+    # .append_escaped(this, d: pointer[char], n: int)` walks `d`, so index 0
+    # entered `sinks['append_escaped']`, and `TypeDump.append_escaped(out:
+    # pointer[StringBuilder], s: String)` -- a routine that only calls
+    # `out.append(...)` -- inherited `param-forwarded-to-buffer` from a namesake
+    # in another record.  Same root cause as the bare-name field scan and as
+    # `cast-name-not-unanimous`: a NAME-keyed index over a name that is reused.
+    own = collections.defaultdict(set)
     allocers = alloc_returns(files)
     for f in files:
         for i, (name, _, _) in f.sig.items():
@@ -973,6 +986,7 @@ def pointer_sinks(files):
                 if (EXTERN.search(line.rstrip()) or walked(nm, body) or addr_taken(nm, body)
                         or heap_buffer(nm, body)):
                     sinks[name].add(k - off)
+                    own[(f.path, i)].add(k - off)
                 ptr.add(k - off)
             routines.append((f, i, name, names, off, body, ptr))
 
@@ -1003,7 +1017,9 @@ def pointer_sinks(files):
                         p_i = names.index(arg) - off
                         if p_i >= 0 and p_i in ptr and p_i not in sinks[name]:
                             sinks[name].add(p_i); moved = True
-    return sinks, allocers
+                        if p_i >= 0 and p_i in ptr and p_i not in own[(f.path, i)]:
+                            own[(f.path, i)].add(p_i); moved = True
+    return sinks, own, allocers
 
 # ---------- hazards ---------------------------------------------------------
 
@@ -1334,7 +1350,7 @@ def scan_scope(field, rec, rectexts, dotted_foreign):
         return None
     return rectexts.get(rec)
 
-def dot_hazard(field, all_text, own_text=None):
+def dot_hazard(field, all_text, own_text=None, own_block=None):
     """`own_text` is the DECLARING record's own block.  When the field is never
     reached dotted from a foreign receiver, that block is the complete evidence
     and the scan narrows to it -- see record_texts for what the package-wide
@@ -1342,6 +1358,21 @@ def dot_hazard(field, all_text, own_text=None):
     which is what a field reached as `x.f` from elsewhere still gets."""
     all_text = code_text(all_text)
     scan = all_text if own_text is None else code_text(own_text)
+    # ★The BARE-NAME arms below get the declaring record's own block and NEVER
+    # the package, whatever `own_text` says.  Both carry a comment claiming
+    # exactly that -- and both read `scan`, which falls back to the WHOLE
+    # PACKAGE the moment the field is reached through a foreign receiver
+    # (`d.out.append(...)`).  A bare name outside the declaring record cannot be
+    # this field: the implicit `this` that justifies these arms holds only
+    # inside it.  Measured cost of the gap: tscaly's `TypeDump.out` and
+    # `SymbolDump.out` -- `StringBuilder` fields nobody walks -- were held at
+    # `pointer` because `jsnum`/`parser`/`checker` use `out` as the name of a
+    # `pointer[char]` buffer and step through it.  ★This is the SAME name-keyed
+    # collision as `cast-name-not-unanimous`, in its dangerous direction: that
+    # label reports a question the index could not answer, this one reported an
+    # ANSWER.  A conservative default is only conservative where it is a
+    # default; where it is a verdict it is just wrong.
+    bare = scan if own_block is None else code_text(own_block)
     f = re.escape(field)
     addr = re.search(r'&\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\b', all_text)
     # A hand-walked buffer FIELD is not always written with a dot: inside its
@@ -1356,7 +1387,7 @@ def dot_hazard(field, all_text, own_text=None):
     walk = (re.search(r'\.' + f + r'\s*\[', scan) or
             re.search(r'\*\s*\(\s*[A-Za-z_][A-Za-z0-9_.]*\.' + f + r'\s*[+\-]', scan) or
             re.search(r'\.' + f + r'\s*[+\-]\s+\w', scan) or
-            walked(field, scan))
+            walked(field, bare))
     # ★The BARE-NAME forms, for exactly the reason the walk arm above carries
     # them: inside its own record's methods a field is reached through an
     # implicit `this`, so `set slots: null` and `if slots = null` never show a
@@ -1367,7 +1398,7 @@ def dot_hazard(field, all_text, own_text=None):
     # so a same-named local elsewhere in the package cannot vote.
     null = (re.search(r'\.' + f + r'\b\s*(?:<>|=)\s*null\b', all_text) or
             re.search(r'\bset\s+[^\n]*\.' + f + r'\s*:\s*null\b', all_text) or
-            nulled(field, scan))
+            nulled(field, bare))
     return bool(addr), bool(walk), bool(null)
 
 def name_before(line, i):
@@ -1393,7 +1424,7 @@ def main(root, apply=False):
     retwalk, bufields, bufparams = buffer_chain(files, retwalk)
     for key in bufields:
         fverdict[key] = ('pointer', 'field-buffer-chain')
-    sinks, allocers = pointer_sinks(files)
+    sinks, ownsinks, allocers = pointer_sinks(files)
     pins = pinned_signatures(root)
     generic_recs = {m.group(1) for f in files for line in f.lines
                     if not is_comment(line)
@@ -1520,6 +1551,22 @@ def main(root, apply=False):
                     rec = encrec[f.path].get(sl)
                     if ((rec, f.sig[sl][0]) in pins or (None, f.sig[sl][0]) in pins):
                         verdict, why = 'pointer', 'mangled-name-pinned'
+                    elif (f.sig[sl][0] == 'init' and rec in generic_recs
+                          and '[' in (inner or '')):
+                        # ★An `init` PARAMETER must move with the field it fills,
+                        # and the `generic-substitution-defect` hold below reads
+                        # `record_of`, which maps PROPERTY lines only -- a
+                        # signature line never reaches it.  So the field stayed a
+                        # pointer while its init parameter converted, and root
+                        # CLAUDE.md names exactly what that costs: a parameter
+                        # that disagrees makes `check_initializer_match` reject
+                        # the init, the construction falls through to the
+                        # POSITIONAL-TUPLE path, and it is correct only as long
+                        # as that init happens to assign in field order.  Found
+                        # on `ArrayIterator[T].init(a: pointer[Array[T]])`, whose
+                        # own field carries a fifteen-line comment saying it may
+                        # not move.
+                        verdict, why = 'pointer', 'generic-substitution-defect'
                     elif (f.path, sl, nm) in initptr:
                         verdict, why = 'pointer', 'init-param-mirrors-field'
                     elif (f.sig[sl][0], nm) in bufparams:
@@ -1528,7 +1575,7 @@ def main(root, apply=False):
                     elif walked(nm, b):    verdict, why = 'pointer', 'param-walked'
                     elif heap_buffer(nm, b): verdict, why = 'pointer', 'param-heap-buffer'
                     elif (pnames and nm in pnames
-                          and (pnames.index(nm) - poff) in sinks.get(f.sig[sl][0], ())):
+                          and (pnames.index(nm) - poff) in ownsinks.get((f.path, sl), ())):
                         verdict, why = 'pointer', 'param-forwarded-to-buffer'
                     elif (f.path, sl, nm) in initnull:
                         verdict, why = 'ref?', 'init-param-mirrors-field'
@@ -1609,7 +1656,8 @@ def main(root, apply=False):
                         verdict, why = fverdict[(rec, nm)]
                     else:
                         addr, walk, dnull = dot_hazard(
-                            nm, all_text, scan_scope(nm, rec, rectexts, dotted_foreign))
+                            nm, all_text, scan_scope(nm, rec, rectexts, dotted_foreign),
+                        rectexts.get(rec))
                         if addr:                 verdict, why = 'pointer', 'field-addr-taken'
                         elif walk:               verdict, why = 'pointer', 'field-walked'
                         elif dnull:              verdict, why = 'ref?', 'field-nullable'
