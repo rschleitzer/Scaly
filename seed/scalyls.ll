@@ -142616,7 +142616,8 @@ declare void @_Z11scaly_eputsP10const_char(...)
 
 declare void @_Z12scaly_eputnlv(...)
 
-declare void @exit(...)
+; Function Attrs: noreturn
+declare void @exit(...) #1
 
 declare void @_Z19scaly_release_frameP5Frame(ptr)
 
@@ -142659,3 +142660,4 @@ declare void @_ZN6StringC1EP10const_char(ptr, ptr)
 declare void @_ZN11TaskPlannerC1Ev(ptr)
 
 attributes #0 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #1 = { noreturn }

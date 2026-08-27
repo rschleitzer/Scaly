@@ -817,9 +817,11 @@ declare ptr @scaly_aligned_alloc(i64, i64)
 
 declare void @scaly_aligned_free(ptr)
 
-declare void @exit(i32)
+; Function Attrs: noreturn
+declare void @exit(i32) #0
 
-declare void @abort()
+; Function Attrs: noreturn
+declare void @abort() #0
 
 declare i64 @strlen(ptr)
 
@@ -40948,7 +40950,7 @@ entry:
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #0
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
 define linkonce_odr ptr @_Z3getPv(ptr %0) {
 entry:
@@ -43819,4 +43821,5 @@ while.exit116:                                    ; preds = %while.cond114
   br label %while.cond109
 }
 
-attributes #0 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #0 = { noreturn }
+attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
