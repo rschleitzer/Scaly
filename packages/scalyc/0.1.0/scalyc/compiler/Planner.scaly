@@ -21550,6 +21550,20 @@ define Planner
         ; `retype_integer_operand` uses.
         function operand_derefs_to_pointee(target_type: PlannedType, op: PlannedOperand) returns bool
         {
+            ; ★ An ADDRESS-OF operand is never loaded, and this is what makes
+            ; the indirection test below able to be EXACT. `&b` on a `ref[Box]`
+            ; is typed `ref[ref[Box]]` while the emitter hands back `b` itself
+            ; -- type_conformance_accepted#'s class 8 exists for exactly that
+            ; one-wrapper lie -- so any load computed from that type is computed
+            ; from a lie. It used to be blocked by accident, because the test
+            ; below asked types_compatible#, which is lenient about the very
+            ; level being counted; making that test exact turned the accident
+            ; into `set *out: &b` loading THROUGH b (address_of_optional_cell
+            ; .scaly, which is what caught it). `&` is also the language's own
+            ; escape from transparent reading, so declining here says in one
+            ; place what the type cannot say at all.
+            if Planner.operand_is_address_of(op)
+                return false
             if op.result_type.name <> "ref"
                 return false
             var inner: PlannedType op.result_type
@@ -21581,17 +21595,44 @@ define Planner
                             set touter: (*tg0)
                     }
                 }
+            ; ★ EQUALITY, not compatibility. The rule above says SAME
+            ; indirection level, and types_compatible# cannot answer that
+            ; question: it is lenient about ONE level of indirection, which is
+            ; the very level being counted. For a `ref[ref[X]]` cell the two
+            ; sides are `X` and `ref[X]`, it answered true, and the load was
+            ; skipped -- `let v: ref[Item] c` then read the CELL as the Item
+            ; (`load %Item, ptr %0` where the cell holds an address), a silent
+            ; wrong answer at rc 0. The optional spelling `ref[ref[X]?]` was
+            ; never affected, because `Option[ref[X]]` is not compatible with
+            ; `ref[X]` -- which is why 51 converted cells were green and the
+            ; shape with ZERO occurrences was broken on both sides.
             var tinner: PlannedType touter
             if Planner.type_strip_one_reference(touter, &tinner)
             {
-                if Planner.types_compatible(tinner, inner)
-                    return false
                 if Planner.types_equal_unqualified(tinner, inner)
                     return false
             }
             if Planner.types_compatible(target_type, inner)
                 return true
             Planner.types_equal_unqualified(target_type, inner)
+        }
+
+        ; operand_is_address_of#: is this operand a bare `&x`?  Asked on the
+        ; EXPRESSION, because the TYPE cannot answer it -- `&` reports one
+        ; wrapper more than the value it produces.
+        function operand_is_address_of(op: PlannedOperand) returns bool
+        {
+            var is_addr: bool false
+            choose op.expr
+                when c: Call
+                {
+                    if c.is_intrinsic
+                        if c.name = "&"
+                            set is_addr: true
+                }
+                else
+                    0
+            is_addr
         }
 
         ; set_target_stores_through#: `set r: v` on a `ref[T]` target.
@@ -22782,10 +22823,24 @@ define Planner
             if a.target.length > 0
                 if planned_target_collapsed.member_access = null
                     set set_stores_through: this.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type, Planner.operand_is_mutable_variable(planned_target_collapsed))
+            ; ★ The rewrite is UNCONDITIONAL once the decision is made, and
+            ; routing it through deref_ref_into_pointee# was a silent dropped
+            ; store. That helper re-asks operand_derefs_to_pointee#, a READ-side
+            ; question -- "does this reference stand for its pointee here?" --
+            ; and that predicate declines whenever the target's own pointee
+            ; compares compatible with the operand's pointee. For a
+            ; `ref[ref[X]]` cell those are `X` and `ref[X]`, which
+            ; types_compatible# accepts because it is lenient about ONE level of
+            ; indirection, so the rewrite refused a decision that had already
+            ; been taken: `set c: p` between two references emitted
+            ; `entry: ret void` -- the whole body -- at rc 0, with
+            ; report_unassignable_ref_target# suppressed by the very flag that
+            ; says the store happens. The two must agree, and the only way they
+            ; agree is if ONE of them decides.
             if set_stores_through
-                set planned_target_collapsed: this.deref_ref_into_pointee(
-                    Planner.strip_one_reference_or_self(planned_target_collapsed.result_type),
-                    planned_target_collapsed
+                set planned_target_collapsed: this.make_deref_operand(
+                    planned_target_collapsed,
+                    Planner.strip_one_reference_or_self(planned_target_collapsed.result_type)
                 )
 
             ; ... and if the target is STILL a reference here, the rewrite did

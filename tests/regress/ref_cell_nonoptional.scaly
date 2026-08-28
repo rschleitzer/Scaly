@@ -1,0 +1,99 @@
+; Regression: the NON-OPTIONAL out-cell `ref[ref[X]]` — its store must not
+; vanish (2026-08-28).
+;
+; `set c: p` between two references, on a `ref[ref[Item]]` cell, emitted the
+; WHOLE BODY away:
+;
+;     define ... @_Z1fRR4ItemR4Item(ptr %0, ptr %1) { entry: ret void }
+;
+; at rc 0, with no diagnostic. The silent dropped store is the class the three
+; ref gates exist to make unrepresentable, and it survived because TWO
+; PREDICATES THAT MUST AGREE DISAGREED:
+;
+;   set_target_stores_through#   said YES -- which is what suppresses
+;                                report_unassignable_ref_target#, the gate whose
+;                                whole job is to say "this set writes nothing";
+;   operand_derefs_to_pointee#   then DECLINED the rewrite, so the target stayed
+;                                a non-mutable reference and the emitter's
+;                                Variable arm returned without storing.
+;
+; The second is a READ-side question -- "does this reference stand for its
+; pointee here?" -- and it declines whenever the target's pointee compares
+; COMPATIBLE with the operand's pointee. For this cell those are `X` and
+; `ref[X]`, which types_compatible# accepts because it is lenient about one
+; level of indirection. Asking a read-side question about a decision already
+; taken is the defect; plan_action# now builds the deref unconditionally, so
+; ONE of the two decides and they cannot drift apart.
+;
+; ★ The optional spelling `ref[ref[X]?]` was never affected — its pointee is
+;   `Option[ref[X]]`, which does not compare compatible with `ref[X]` — which is
+;   why 51 converted cells in the tree were green and this shape, with ZERO
+;   occurrences, was not. **A shape nothing uses is a shape nothing tests.**
+;
+; Expected: PASS
+
+define Item (v: int)
+
+; the two references: the store must actually land in the cell
+procedure rebind(c: ref[ref[Item]], p: ref[Item])
+    set c: p
+
+; a VALUE source into the same cell, and the explicit `&` beside it
+procedure fill_both(host: pointer[Page], v_cell: ref[ref[Item]], a_cell: ref[ref[Item]])
+{
+    let it Item^host(41)
+    set v_cell: it
+    set a_cell: &it
+}
+
+function peek(c: ref[ref[Item]]) returns int
+{
+    let v: ref[Item] c
+    v.v
+}
+
+function addr_of(c: ref[ref[Item]]) returns size_t
+{
+    let v: ref[Item] c
+    v as size_t
+}
+
+function drive(host: pointer[Page]) returns int
+{
+    ; page-hosted, so the escape checker can see the referents outlive the
+    ; cells they are stored into
+    let one Item^host(1)
+    let two Item^host(2)
+
+    ; the cell starts on `one` and is rebound to `two`
+    var cell: ref[Item] &one
+    rebind(&cell, &two)
+    if peek(&cell) <> 2
+    {
+        Console.println "FAIL the store between two references was dropped"
+        return 1
+    }
+
+    var by_value: ref[Item] &one
+    var by_address: ref[Item] &one
+    fill_both(host, &by_value, &by_address)
+    if peek(&by_value) <> 41
+    {
+        Console.println "FAIL the value spelling did not reach the cell"
+        return 1
+    }
+    let a addr_of(&by_value)
+    let b addr_of(&by_address)
+    if a <> b
+    {
+        Console.println "FAIL the value spelling stored a copy, not the reference"
+        return 1
+    }
+    0
+}
+
+let anchor String("anchor")
+let host_page Page.get(anchor.data as pointer[void])
+let rc drive(host_page)
+if rc = 0
+    Console.println "PASS"
