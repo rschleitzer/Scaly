@@ -102212,7 +102212,7 @@ if.end52:                                         ; preds = %if.then51, %if.then
   br label %if.end48
 }
 
-define linkonce_odr void @_ZN7symbols19append_incoming_forER13StringBuilderPb6String6String6String(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN7symbols19append_incoming_forER13StringBuilderRb6String6String6String(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %e = alloca i64, align 8
   %sret.result17 = alloca { ptr }, align 8
@@ -102340,7 +102340,7 @@ entry:
   %first = alloca i1, align 1
   store i1 true, ptr %first, align 1
   %addr.heap = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols19append_incoming_forER13StringBuilderPb6String6String6String(ptr %addr.heap, ptr %first, ptr %2, ptr %3, ptr %4)
+  call void @_ZN7symbols19append_incoming_forER13StringBuilderRb6String6String6String(ptr %addr.heap, ptr %first, ptr %2, ptr %3, ptr %4)
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7symbols11uri_to_pathEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %3)
   %binding.load = load { ptr }, ptr %5, align 8
@@ -102428,7 +102428,7 @@ if.then26:                                        ; preds = %if.then23
   call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %sret.result15)
   call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sret.result15)
   %addr.heap30 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols19append_incoming_forER13StringBuilderPb6String6String6String(ptr %addr.heap30, ptr %first, ptr %sret.result28, ptr %sret.result29, ptr %4)
+  call void @_ZN7symbols19append_incoming_forER13StringBuilderRb6String6String6String(ptr %addr.heap30, ptr %first, ptr %sret.result28, ptr %sret.result29, ptr %4)
   br label %if.end27
 
 if.end27:                                         ; preds = %if.then26, %if.then23

@@ -26701,7 +26701,7 @@ if.end7:                                          ; preds = %if.then6, %while.bo
   br label %while.cond
 }
 
-define linkonce_odr ptr @_ZN7Channel15receive_timeoutEP7Channel3i32Pb(ptr %0, i32 %1, ptr %2) {
+define linkonce_odr ptr @_ZN7Channel15receive_timeoutEP7Channel3i32Rb(ptr %0, i32 %1, ptr %2) {
 entry:
   %slice = alloca i64, align 8
   store i1 false, ptr %2, align 1

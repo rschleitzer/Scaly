@@ -2297,17 +2297,17 @@ define Channel
 
     ; Timed receive (stage 7, memo rule 6 — timeouts are explicit and
     ; local). Exactly receive's contract plus a deadline: a message, or
-    ; null with *timed_out=false for CLOSED AND DRAINED, or null with
-    ; *timed_out=true when ms milliseconds passed first. The main
+    ; null with timed_out=false for CLOSED AND DRAINED, or null with
+    ; timed_out=true when ms milliseconds passed first. The main
     ; context drives ready work and blocks in the poller in bounded
     ; slices (a remote send/close pokes the armed wake handle, so a
     ; slice normally ends early); overshoot is at most one slice
     ; (CHAN_DEADLOCK_MS). A TASK caller cooperatively yields between
     ; checks (v1: the runtime has no timer wheel — sibling tasks run in
     ; between, an otherwise-idle scheduler spins until the deadline).
-    procedure receive_timeout(m: pointer[Channel], ms: i32, timed_out: pointer[bool]) returns pointer[void]
+    procedure receive_timeout(m: pointer[Channel], ms: i32, timed_out: ref[bool]) returns pointer[void]
     {
-        set *timed_out: false
+        set timed_out: false
         Io.ensure_wake()
         let me current_task as ref[SchedTask]?
         let deadline scaly_eio_now_ns() + ((ms as i64) * (1000000 as i64))
@@ -2337,7 +2337,7 @@ define Channel
             let remaining deadline - scaly_eio_now_ns()
             if remaining <= 0
             {
-                set *timed_out: true
+                set timed_out: true
                 return null
             }
             if me = null

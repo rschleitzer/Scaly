@@ -11197,7 +11197,7 @@ define symbols
 
     ; One file's contribution: for each routine that calls `name`, a
     ; CallHierarchyIncomingCall {"from":<item>,"fromRanges":[...]}.
-    procedure append_incoming_for(sb: ref[StringBuilder], first: pointer[bool], source: String, uri: String, name: String)
+    procedure append_incoming_for(sb: ref[StringBuilder], first: ref[bool], source: String, uri: String, name: String)
     {
         ; Cheap pre-gate: a file that never writes the name cannot call it.
         if symbols.contains_token(source, name) = false
@@ -11212,7 +11212,7 @@ define symbols
             let ranges symbols.call_site_ranges(source, name, start, end)
             if ranges.get_length() > 0
             {
-                if *first = false
+                if first = false
                     sb.append("," as char)
                 sb.append("{" as char)
                 sb.append(symbols.key("from"))
@@ -11223,7 +11223,7 @@ define symbols
                 symbols.append_fragment(sb, ranges)
                 sb.append("]" as char)
                 sb.append("}" as char)
-                set *first: false
+                set first: false
             }
             var e at
             while e < rn

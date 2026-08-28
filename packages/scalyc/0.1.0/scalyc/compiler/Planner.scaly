@@ -1077,11 +1077,19 @@ define Planner
         ;     replacing the stack without this check ran the self-compile past
         ;     10 minutes and 3.1 GB instead of 35 seconds. A construction that
         ;     feeds its own parameter name back in keeps the old path.
+        ; ★The `ref[…]?` return PAYS A CALLER PAGE here and that is deliberate:
+        ; an NPO return asks `body_may_allocate`, and this body constructs the
+        ; snapshot Array. The construction is pinned on `^this`, so the page is
+        ; not actually needed -- but `body_may_allocate` is conservative BY
+        ; DESIGN and tightening it to spare this case would take pages away
+        ; elsewhere, the one direction that is a memory fault. The honest
+        ; spelling costs one argument; `concept_origin_file` is the sibling
+        ; whose body allocates nothing and converts free.
         function enter_concept_generic_scope(
             this: Planner,
             name: String,
             struct_type: PlannedType
-        ) returns pointer[Array[KeyValuePair[String, PlannedType]]]
+        ) returns ref[Array[KeyValuePair[String, PlannedType]]]?
         {
             if struct_type.generics = null
                 return null
@@ -21297,7 +21305,7 @@ define Planner
 
         ; Peel ONE `pointer`/`ref` wrapper off `t` into `out`, answering
         ; whether there was one to peel.
-        function type_strip_one_reference(t: PlannedType, out: pointer[PlannedType]) returns bool
+        function type_strip_one_reference(t: PlannedType, out: ref[PlannedType]) returns bool
         {
             if t.name <> "pointer"
                 if t.name <> "ref"
@@ -21310,7 +21318,7 @@ define Planner
             let inner_ptr gs.get 0
             if inner_ptr = null
                 return false
-            set *out: (*inner_ptr)
+            set out: (*inner_ptr)
             true
         }
 
@@ -32470,10 +32478,13 @@ define Planner
         ; Namespace+Structure pair) has to answer with the same entry's file.
         ; `concept_origin_files` runs in LOCKSTEP with `concepts`.
         ;
-        ; A nullable RETURN is a `pointer`, never `ref[T]?`: `Option[ref[T]]` is
-        ; not primitive, so returning one would give this function an implicit
-        ; caller page.
-        function concept_origin_file(this: Planner, name: String) returns pointer[String]
+        ; The nullable return is `ref[T]?`, and it is FREE HERE: an NPO return
+        ; asks `body_may_allocate`, and this body allocates nothing, so the
+        ; mangled name does not move. The old blanket rule ("a nullable RETURN
+        ; is a `pointer`, never `ref[T]?`") held only for a body that
+        ; constructs -- `enter_concept_generic_scope` is the sibling that pays
+        ; the page for the same spelling.
+        function concept_origin_file(this: Planner, name: String) returns ref[String]?
         {
             let idx concept_index.lookup name
             if idx < 0
