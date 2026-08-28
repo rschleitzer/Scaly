@@ -1,0 +1,50 @@
+; Regression: an OPTION may not be passed to a non-optional `ref[T]` parameter
+; of a METHOD (2026-08-28, option_arg_into_plain_ref# / report_option_arg#).
+;
+; The free-function path was always loud -- check_function_match# compares
+; every argument -- and the method path was SILENT at rc 0, because
+; lookup_method# takes a single by-name candidate unexamined (its selection
+; loop is gated on candidates > 1) and report_method_arg_types#, which exists
+; for exactly that reason, compares the pair only AFTER gate_strip_indirection#
+; has taken the Option off one side and the ref off the other. Its own comment
+; says the stripped pair "only ever ADDS acceptance"; an accepted null is what
+; it added, and the binary SIGSEGVed at the first member hop -- precisely the
+; failure exit 21 was written to replace, which cannot fire where no
+; conformance was ever demanded.
+;
+; The three probes that isolated it, one line apart: a literal `null` through a
+; method was rc 4, an Option through a FREE function was rc 4, and this shape
+; planned at rc 0 and exited 139 -- which is what this fixture still does
+; with the gate off, and the reason it is not vacuous.
+;
+; The two exits are option_arg_into_ref_method_ok.scaly: the explicit unwrap
+; where the callee genuinely needs an object, and the nullable parameter where
+; it does not. Which one applies is a question about the callee's BODY, not a
+; sweep -- see report_null_into_ref_arg#.
+;
+; xfail: optional reference passed to a non-optional reference parameter
+
+define Holder (k: int)
+{
+    init(k: int)
+        set this.k: k
+}
+
+define Keeper (n: int)
+{
+    init()
+        set n: 0
+
+    function taken(this: ref[Keeper], h: ref[Holder]) returns int
+        h.k
+}
+
+function drive() returns int
+{
+    var slot: ref[Holder]? null
+    var kp Keeper#()
+    kp.taken(slot)
+}
+
+let answer drive()
+Console.println answer

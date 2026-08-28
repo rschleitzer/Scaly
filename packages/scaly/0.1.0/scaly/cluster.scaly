@@ -525,7 +525,7 @@ define Cluster
     }
 
     ; One frame past the header: false stops the reader.
-    function dispatch(p: pointer[NodePeer], h: pointer[u64]) returns bool
+    function dispatch(p: ref[NodePeer], h: pointer[u64]) returns bool
     {
         let kind h[0]
         if kind = NODE_FRAME_HEARTBEAT
