@@ -1,0 +1,26 @@
+; `set a[i]: v` on a CONTAINER is a hard diagnostic — report_subscript_assignment#.
+;
+; `operator []` answers the element BY VALUE (2026-08-27), so there is no slot
+; behind `a[i]` and the emitter's Call target arm has no arm for a `[]` call:
+; the statement was DROPPED, rc 0, with nothing said at the line that caused it.
+;
+; It cost four live miscompiles that stood for a day. tools/subscript.py's
+; "74 buffer walks become subscripts" sweep rewrote four `set` TARGETS from
+; `set *(x.get_buffer() + i): v` into `set x[i]: v`: dazzle's #!optional/#!key
+; DEFAULTS were then never stored (every default read back as #f) and the
+; root-rule specificity sort never swapped a pair. Five backend suites plus
+; tests/dazzle/engine went red, and the engine red was written down as
+; "not ours".
+;
+; The write is `put`; subscript_assignment_ok.scaly is the positive twin and
+; pointer_subscript.scaly pins that a POINTER subscript still stores.
+; xfail: cannot assign through a subscript
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var a Array[int]()
+    a.add(1)
+    a.add(2)
+    set a[1]: 42
+    0
+}

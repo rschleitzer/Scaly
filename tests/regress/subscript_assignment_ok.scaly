@@ -1,0 +1,31 @@
+; The positive twin of xfail_subscript_assignment.scaly: `put` is the write a
+; container accepts, and it must keep compiling and storing. The gate judges
+; the RESULT SHAPE of the `[]` call, so a subscript that answers a slot is not
+; caught -- the pointer form has its own pin in pointer_subscript.scaly.
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var a Array[int]()
+    a.add(1)
+    a.add(2)
+    a.add(3)
+
+    ; the read side is unchanged
+    if a[1] <> 2
+        return 1
+
+    a.put(1, 42)
+    if a[1] <> 42
+        return 2
+
+    ; a Vector's put and subscript answer the same slot
+    var v Vector[int](3)
+    v.put(0, 7)
+    v.put(1, 8)
+    v.put(2, 9)
+    if v[2] <> 9
+        return 3
+
+    println "PASS"
+    0
+}

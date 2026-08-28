@@ -22710,6 +22710,63 @@ define Planner
         ; i.e. an Option whose sole generic argument is itself pointer-shaped?
         ; planned_type_is_npo_ref# above answers only for `ref`, because the
         ; arithmetic gate it serves must let a pointer through.
+        ; report_subscript_assignment#: `set a[i]: v` on a CONTAINER is not a
+        ; store. `operator []` answers the element BY VALUE (2026-08-27), so
+        ; there is no slot behind `a[i]`, and the emitter's Call target arm has
+        ; no arm for a `[]` call: the whole statement was DROPPED, rc 0, with
+        ; nothing said at the line that caused it. The write is `put`.
+        ; ★★★It cost FOUR live miscompiles that stood for a day.
+        ; `tools/subscript.py` rewrote four `set` TARGETS from
+        ; `set *(x.get_buffer() + i): v` into `set x[i]: v` (commit 25614a02,
+        ; "74 buffer walks become subscripts"): dazzle's `#!optional`/`#!key`
+        ; DEFAULTS were then never stored, so every default read back as `#f`,
+        ; and the root-rule specificity sort never swapped a pair. Five backend
+        ; suites plus `tests/dazzle/engine` went red, and the engine red was
+        ; written down in CLAUDE.md as "not ours".
+        ; ★A POINTER subscript is untouched and must stay so: the pre-pass
+        ; FUSES `p[i]` into the `*` deref call, which is a real store and is
+        ; what every hand-rolled buffer in the tree writes through. Only a `[]`
+        ; CALL -- a container's own operator -- ever reaches here.
+        ; ★The judgement is the RESULT SHAPE, not the receiver. A subscript
+        ; that answers `pointer[T]`/`ref[T]` NAMES a slot, and a store through
+        ; one is the accessor-store the emitter's ISet arm already serves; only
+        ; a by-value answer has nowhere to put the value.
+        function report_subscript_assignment(this: Planner, target: PlannedOperand)
+        {
+            choose target.expr
+                when subscript_call: Call
+                {
+                    if subscript_call.name = "[]"
+                        if Planner.planned_type_is_slot(subscript_call.result_type) = false
+                        {
+                            var ssb StringBuilder()
+                            ssb.append "cannot assign through a subscript: "
+                            ssb.append subscript_call.result_type.name
+                            ssb.append " is answered by value, so a subscript store lands nowhere -- use put(index, value)"
+                            let smsg ssb.to_string()
+                            this.add_diagnostic(target.loc, String^this(smsg))
+                        }
+                    0
+                }
+                else
+                    0
+        }
+
+        ; planned_type_is_slot#: does this planned type NAME a location a store
+        ; can land in? The three borrow spellings do -- `pointer[T]`, `ref[T]`
+        ; and the s113 NPO `Option` over either -- and nothing else does.
+        ; ★Ask the SHAPE, not the name: the NPO wrapper is named `Option`, and
+        ; a test that only compares against "pointer"/"ref" is this compiler's
+        ; standing bug pattern.
+        function planned_type_is_slot(t: PlannedType) returns bool
+        {
+            if t.name = "pointer"
+                return true
+            if t.name = "ref"
+                return true
+            Planner.planned_type_is_npo_borrow(t)
+        }
+
         function planned_type_is_npo_borrow(t: PlannedType) returns bool
         {
             if t.name <> "Option"
@@ -23533,6 +23590,11 @@ define Planner
                     }
                     else
                         0
+
+            ; A `set` whose target is a container SUBSCRIPT stores nowhere --
+            ; report_subscript_assignment#.
+            if a.target.length > 0
+                this.report_subscript_assignment(planned_target_collapsed)
 
             ; A `set` whose target is a declared `ref[T]` and whose source is
             ; the bare null literal -- report_null_into_ref#.
