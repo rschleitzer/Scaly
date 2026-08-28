@@ -3427,6 +3427,48 @@ define Emitter
             false
         }
 
+        ; deref_slot_holds_a_reference#: does `*p` name a slot that holds a
+        ; REFERENCE rather than the struct itself? The s136 struct-load in the
+        ; deref-store arm is correct only for a slot holding the struct; when
+        ; the slot holds a reference, loading sizeof(struct) bytes and storing
+        ; them into the 8-byte slot writes the VALUE where the caller expects
+        ; an ADDRESS.
+        ;
+        ; ★ Both halves of the old inline test asked the NAME and both were too
+        ; narrow -- the ninth sighting of the ask-the-SHAPE-not-the-NAME seam:
+        ;   * the OUTER name accepted only `pointer`, so an out-cell in its
+        ;     converted spelling (`ref[ref[X]?]`, 2026-08-28) was never seen;
+        ;   * the INNER name accepted only `pointer`/`ref`, so `ref[X]?` -- which
+        ;     IS `Option[ref[X]]` -- failed a test meant to accept everything
+        ;     reference-shaped, and `pointer[ref[X]?]` was wrong too.
+        ; Measured before the fix: `set c: it` on a `ref[ref[Item]?]` emitted
+        ; `load %Item` + `store %Item` into the 8-byte cell, at rc 0. The one
+        ; opensp site wrote `&prosyn` and carried the workaround in a comment.
+        ;
+        ; ★ NOT type_is_pointer_shaped#: that helper answers a different
+        ; question (is map_type's opaque `ptr` a real pointer) and says true for
+        ; the INTRINSICS, so it would call a `pointer[int]` slot a reference.
+        function deref_slot_holds_a_reference(this, deref_rt: PlannedType) returns bool
+        {
+            if deref_rt.name <> "pointer"
+                if deref_rt.name <> "ref"
+                    return false
+            if deref_rt.generics = null
+                return false
+            let gens (*deref_rt.generics)
+            if gens.length = 0
+                return false
+            let slot_tp gens.get 0
+            if slot_tp = null
+                return false
+            let slot_t (*slot_tp)
+            if slot_t.name = "pointer"
+                return true
+            if slot_t.name = "ref"
+                return true
+            is_npo_option slot_t
+        }
+
         ; The element type a GEP should step by for `pointer[T] + n`. map_type is
         ; the answer except when it hands back its unresolved-name placeholder
         ; (see type_is_pointer_shaped#) — then the stride would be 8 for a struct
@@ -17527,22 +17569,11 @@ define Emitter
                                                 ; Detect via the deref arg's PLANNED type (peel one
                                                 ; pointer level) — robust to opaque map_type, which
                                                 ; collapses both a struct and a pointer slot to `ptr`.
-                                                var slot_is_pointer: bool false
+                                                ; ★ Which slot this is -- and both name tests
+                                                ; it used to do inline were too narrow, see
+                                                ; deref_slot_holds_a_reference#.
                                                 let deref_rt arg_opt.unwrap().result_type
-                                                if deref_rt.name = "pointer"
-                                                    if deref_rt.generics <> null
-                                                        if (*deref_rt.generics).length > 0
-                                                        {
-                                                            let slot_tp (*deref_rt.generics).get 0
-                                                            if slot_tp <> null
-                                                            {
-                                                                let slot_t (*slot_tp)
-                                                                if slot_t.name = "pointer"
-                                                                    set slot_is_pointer: true
-                                                                if slot_t.name = "ref"
-                                                                    set slot_is_pointer: true
-                                                            }
-                                                        }
+                                                let slot_is_pointer deref_slot_holds_a_reference(deref_rt)
                                                 if slot_is_pointer = false
                                                     if action.source <> null
                                                     {

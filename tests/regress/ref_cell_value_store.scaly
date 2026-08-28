@@ -1,0 +1,164 @@
+; Regression: a VALUE stored into a reference SLOT is stored as a REFERENCE,
+; at the out-cell position too (2026-08-28).
+;
+; `type_conformance_accepted#`'s class 4 accepts the pointee where a reference
+; is declared — `set slot: Item(...)` against a `ref[Item]?` — because
+; residency inference decides where the value lives and the slot holding a
+; reference to it IS the point. Three of the four positions that acceptance
+; covers emitted the address all along:
+;
+;   a `ref[X]?` FIELD          store ptr %tuple
+;   a typed BINDING            the pointer itself
+;   a RETURN                   ret ptr %tuple.region
+;
+; The fourth — the out-cell, where set_target_stores_through# rewrites the
+; target into the deref — did NOT. The emitter's deref-store arm decides
+; between "the slot holds the struct" (load it, s136, Vector[T].put) and "the
+; slot holds a pointer" (store the pointer) by NAME, and both halves of that
+; test were too narrow: it asked for an OUTER `pointer` (so the converted
+; spelling `ref[ref[X]?]` was invisible) and an INNER `pointer`/`ref` (so
+; `ref[X]?`, which IS `Option[ref[X]]`, failed a test meant to accept
+; everything reference-shaped). Measured: `set c: it` emitted `load %Item` +
+; `store %Item` into the 8-byte cell, at rc 0 — the caller read the object's
+; first FIELD where it expects its ADDRESS. deref_slot_holds_a_reference# is
+; the question now; the ninth sighting of ask-the-SHAPE-not-the-NAME.
+;
+; ★ No suite could see this. The one site in the tree wrote `&prosyn` and
+;   carried the workaround in its own comment; it surfaced only because
+;   tools/opcheck.py reported ONE unpaired function out of 5362. A gate that
+;   accepts a reading the emitter does not implement is invisible by
+;   construction — which is why the pin is that the two spellings produce the
+;   SAME ADDRESS, not merely that one of them runs.
+;
+; Expected: PASS
+
+define Item (v: int)
+define Holder (slot: ref[Item]?)
+
+; The two spellings, into two cells, for ONE object: `set c: it` must mean
+; exactly what `set c: &it` means.
+procedure fill_both(host: pointer[Page], v_cell: ref[ref[Item]?], a_cell: ref[ref[Item]?])
+{
+    let it Item^host(41)
+    set v_cell: it
+    set a_cell: &it
+}
+
+function addr_of(c: ref[ref[Item]?]) returns size_t
+{
+    let v: ref[Item]? c
+    if v = null
+        return 0
+    let r v as ref[Item]
+    r as size_t
+}
+
+function peek(c: ref[ref[Item]?]) returns int
+{
+    let v: ref[Item]? c
+    if v = null
+        return 0
+    let r v as ref[Item]
+    r.v
+}
+
+; The other three class-4 positions, which were already right and must stay so.
+procedure fill_field(host: pointer[Page], h: ref[Holder])
+{
+    let it Item^host(7)
+    set h.slot: it
+}
+
+function via_binding(host: pointer[Page]) returns int
+{
+    let it Item^host(8)
+    let v: ref[Item]? it
+    if v = null
+        return 0
+    let r v as ref[Item]
+    r.v
+}
+
+function via_return() returns ref[Item]?   Item#(9)
+
+; The s136 direction, untouched: a slot that holds the STRUCT still copies it.
+function struct_slot(host: pointer[Page]) returns int
+{
+    var items Array[Item]^host()
+    items.add(Item(3))
+    items.add(Item(4))
+    let i0 items[0]
+    let i1 items[1]
+    i0.v * 10 + i1.v
+}
+
+function drive(host: pointer[Page]) returns int
+{
+    var by_value: ref[Item]? null
+    var by_address: ref[Item]? null
+    fill_both(host, &by_value, &by_address)
+
+    ; the cell holds an ADDRESS, not the object's first field
+    if peek(&by_value) <> 41
+    {
+        Console.println "FAIL the value spelling did not reach the cell"
+        return 1
+    }
+    ; ... and it is the SAME address the explicit `&` stores
+    let a addr_of(&by_value)
+    let b addr_of(&by_address)
+    if a <> b
+    {
+        Console.println "FAIL the value spelling stored a copy, not the reference"
+        return 1
+    }
+
+    var h Holder^host(null)
+    fill_field(host, &h)
+    let f h.slot
+    if f = null
+    {
+        Console.println "FAIL the field position lost its reference"
+        return 1
+    }
+    let fr f as ref[Item]
+    if fr.v <> 7
+    {
+        Console.println "FAIL the field position"
+        return 1
+    }
+
+    let vb via_binding(host)
+    if vb <> 8
+    {
+        Console.println "FAIL the binding position"
+        return 1
+    }
+
+    let vr via_return()
+    if vr = null
+    {
+        Console.println "FAIL the return position lost its reference"
+        return 1
+    }
+    let vrr vr as ref[Item]
+    if vrr.v <> 9
+    {
+        Console.println "FAIL the return position"
+        return 1
+    }
+
+    let ss struct_slot(host)
+    if ss <> 34
+    {
+        Console.println "FAIL a struct slot no longer copies the struct"
+        return 1
+    }
+    0
+}
+
+let anchor String("anchor")
+let host_page Page.get(anchor.data as pointer[void])
+let rc drive(host_page)
+if rc = 0
+    Console.println "PASS"
