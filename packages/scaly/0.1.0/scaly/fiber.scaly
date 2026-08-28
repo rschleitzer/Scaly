@@ -1034,7 +1034,7 @@ define Scheduler
     ; are adjusted by its own drain_inject. The receiver armed the wake
     ; handle before parking, so the racy read of home.eio/home.wake sees
     ; initialized values (published by the channel lock).
-    procedure inject_task(home: pointer[Scheduler], t: ref[SchedTask])
+    procedure inject_task(home: ref[Scheduler], t: ref[SchedTask])
     {
         let hp &home.inject
         repeat
@@ -2040,6 +2040,10 @@ define Channel
     ; thread send cycles stay caught by exit 106 (the parked sender
     ; counts as blocked); cross-thread cycles remain the acyclic-topology
     ; discipline's responsibility, exactly as for receives.
+    ; ★`m` stays a POINTER where the sibling receive/receive_timeout take
+    ; `ref[Channel]`: the Planner emits a call to this by its Itanium name
+    ; (`_ZN7Channel4sendEP7ChannelPv`), so re-signing it is an undefined
+    ; symbol at link time. The asymmetry is forced, not an oversight.
     procedure send(m: pointer[Channel], msg: pointer[void])
     {
         let host Page.get(msg)
@@ -2200,7 +2204,7 @@ define Channel
     ; blocks on the wake handle when nothing is runnable. The receiving
     ; thread needs a scheduler (Scheduler.create) — the wake handle is
     ; armed here BEFORE any park so remote senders always find it.
-    procedure receive(m: pointer[Channel]) returns pointer[void]
+    procedure receive(m: ref[Channel]) returns pointer[void]
     {
         Io.ensure_wake()
         let me current_task as ref[SchedTask]?
@@ -2305,7 +2309,7 @@ define Channel
     ; (CHAN_DEADLOCK_MS). A TASK caller cooperatively yields between
     ; checks (v1: the runtime has no timer wheel — sibling tasks run in
     ; between, an otherwise-idle scheduler spins until the deadline).
-    procedure receive_timeout(m: pointer[Channel], ms: i32, timed_out: ref[bool]) returns pointer[void]
+    procedure receive_timeout(m: ref[Channel], ms: i32, timed_out: ref[bool]) returns pointer[void]
     {
         set timed_out: false
         Io.ensure_wake()

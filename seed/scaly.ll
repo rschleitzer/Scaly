@@ -401,7 +401,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.unwrap.msg.93 = private unnamed_addr constant [33 x i8] c"Scaly: null unwrapped as ref in \00", align 1
 @.unwrap.at.94 = private unnamed_addr constant [29 x i8] c"_ZN7Channel4sendEP7ChannelPv\00", align 1
 @.unwrap.msg.95 = private unnamed_addr constant [33 x i8] c"Scaly: null unwrapped as ref in \00", align 1
-@.unwrap.at.96 = private unnamed_addr constant [30 x i8] c"_ZN7Channel7receiveEP7Channel\00", align 1
+@.unwrap.at.96 = private unnamed_addr constant [30 x i8] c"_ZN7Channel7receiveER7Channel\00", align 1
 @.unwrap.msg.97 = private unnamed_addr constant [33 x i8] c"Scaly: null unwrapped as ref in \00", align 1
 @.unwrap.at.98 = private unnamed_addr constant [29 x i8] c"_ZN7Channel10timed_pollE3i32\00", align 1
 @.str.99 = private unnamed_addr constant [18 x i8] c"Thread.spawn_cell\00", align 1
@@ -24604,7 +24604,7 @@ if.end4:                                          ; preds = %if.end
   ret void
 }
 
-define linkonce_odr void @_ZN9Scheduler11inject_taskEP9SchedulerR9SchedTask(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN9Scheduler11inject_taskER9SchedulerR9SchedTask(ptr %0, ptr %1) {
 entry:
   %addr.gep = getelementptr inbounds nuw %_Z9Scheduler, ptr %0, i32 0, i32 7
   br label %repeat.body
@@ -25230,7 +25230,7 @@ if.then19:                                        ; preds = %if.end10
   %task = extractvalue %_Z6IoWork %load.struct23, 4
   %load.struct24 = load %_Z9SchedTask, ptr %task, align 8
   %home = extractvalue %_Z9SchedTask %load.struct24, 7
-  call void @_ZN9Scheduler11inject_taskEP9SchedulerR9SchedTask(ptr %home, ptr %task)
+  call void @_ZN9Scheduler11inject_taskER9SchedulerR9SchedTask(ptr %home, ptr %task)
   br label %if.end20
 
 if.end20:                                         ; preds = %if.then19, %if.end10
@@ -26092,7 +26092,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct7 = load %_Z9SchedTask, ptr %0, align 8
   %home8 = extractvalue %_Z9SchedTask %load.struct7, 7
-  call void @_ZN9Scheduler11inject_taskEP9SchedulerR9SchedTask(ptr %home8, ptr %0)
+  call void @_ZN9Scheduler11inject_taskER9SchedulerR9SchedTask(ptr %home8, ptr %0)
   ret void
 
 unwrap.trap:                                      ; preds = %if.then
@@ -26490,7 +26490,7 @@ if.end30:                                         ; preds = %if.then29, %if.then
   br label %if.end27
 }
 
-define linkonce_odr ptr @_ZN7Channel7receiveEP7Channel(ptr %0) {
+define linkonce_odr ptr @_ZN7Channel7receiveER7Channel(ptr %0) {
 entry:
   %call = call i32 @_ZN2Io11ensure_wakeEv()
   %global.load = load ptr, ptr @current_task, align 8
@@ -26701,7 +26701,7 @@ if.end7:                                          ; preds = %if.then6, %while.bo
   br label %while.cond
 }
 
-define linkonce_odr ptr @_ZN7Channel15receive_timeoutEP7Channel3i32Rb(ptr %0, i32 %1, ptr %2) {
+define linkonce_odr ptr @_ZN7Channel15receive_timeoutER7Channel3i32Rb(ptr %0, i32 %1, ptr %2) {
 entry:
   %slice = alloca i64, align 8
   store i1 false, ptr %2, align 1
@@ -28097,7 +28097,7 @@ if.end20:                                         ; preds = %if.else
 if.then27:                                        ; preds = %if.end20
   store i64 0, ptr %got, align 1
   %hdr29 = load ptr, ptr %hdr1, align 8
-  %call30 = call i1 @_ZN7Cluster8dispatchEP8NodePeerP3u64(ptr %0, ptr %hdr29)
+  %call30 = call i1 @_ZN7Cluster8dispatchER8NodePeerP3u64(ptr %0, ptr %hdr29)
   %eq31 = icmp eq i1 %call30, false
   br i1 %eq31, label %if.then32, label %if.end33
 
@@ -28795,7 +28795,7 @@ if.end14:                                         ; preds = %if.else
   br label %if.end7
 }
 
-define linkonce_odr i1 @_ZN7Cluster8dispatchEP8NodePeerP3u64(ptr %0, ptr %1) {
+define linkonce_odr i1 @_ZN7Cluster8dispatchER8NodePeerP3u64(ptr %0, ptr %1) {
 entry:
   %bad = alloca i1, align 1
   %ptr.add = getelementptr inbounds i64, ptr %1, i64 0
