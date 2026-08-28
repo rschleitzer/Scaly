@@ -29,6 +29,20 @@ know about the s113 Option wrapper. Fix the dispatch before running this tool
 over the ports -- a dry run on tscaly/parser.scaly converted 72 sites and three
 of them could not compile for exactly this reason.
 
+★★★AND IT MUST NEVER TOUCH A `set` TARGET. `operator []` answers the element
+BY VALUE, so there is no slot behind `a[i]` to store into: `set a[i]: v` on a
+container compiles, runs, and is SILENTLY DROPPED -- rc 0, no diagnostic. The
+first run of this tool (2026-08-27, commit 25614a02) rewrote FOUR `set`
+targets out of 74 sites, and every one of them was a live miscompile that
+stood for a day: dazzle's `#!optional`/`#!key` DEFAULTS were never stored
+(`SchemeParser.parse_formals`), so every default read back as `#f`, and the
+root-rule specificity sort never swapped (`ProcessingMode`). Five backend
+suites plus `tests/dazzle/engine` went red, and the engine red was written
+down as "not ours". `set NAME[i]: v` on a POINTER is a real store (pointer
+arithmetic) and stays legal -- which is exactly why the wrong ones looked
+right. The rule below refuses the target half of any `set`, whatever the
+receiver; the write on a container is `put`.
+
 Usage: tools/subscript.py [--apply] <file.scaly>...
 """
 import re, sys
@@ -73,7 +87,34 @@ def pointer_names(text):
             out.add(m.group(1) or m.group(2))
     return out
 
+def set_source_start(line):
+    """For a `set <target>: <source>` line, the offset where the SOURCE begins.
+
+    0 for any other line. The split is the first `:` at bracket depth 0 after
+    `set ` -- a target may itself be subscripted (`set a[i].f: v`) or a member
+    chain, and only the source half may be rewritten. See the header: a
+    subscript in the TARGET half is a store the language drops in silence.
+    """
+    stripped = line.lstrip()
+    if not stripped.startswith("set "):
+        return 0
+    depth = 0
+    i = len(line) - len(stripped) + 4
+    while i < len(line):
+        c = line[i]
+        if c in "([":
+            depth += 1
+        elif c in ")]":
+            depth -= 1
+        elif c == ":" and depth == 0:
+            return i + 1
+        i += 1
+    return len(line)                       # no source half: convert nothing
+
+
 def convert_line(line, skip=frozenset()):
+    head_len = set_source_start(line)
+    head, line = line[:head_len], line[head_len:]
     out = line
     changed = 0
     while True:
@@ -119,7 +160,7 @@ def convert_line(line, skip=frozenset()):
             found = True
             break
         if not found:
-            return out, changed
+            return head + out, changed
 
 def main():
     apply = "--apply" in sys.argv
