@@ -8511,9 +8511,15 @@ define Planner
                             ; life. Other `&` operands (pointer/ref bases that
                             ; auto-deref out of the frame, #/^-allocated values)
                             ; keep the plain pointer so value uses stay sound.
+                            ; ★ ... EXCEPT where there is no slot to address and
+                            ; `&` hands back the operand itself. Wrapping there
+                            ; produced a type one level deeper than the value --
+                            ; address_of_is_identity#.
                             if prefix_name = "&"
                             {
-                                if this.operand_addr_is_frame_local(rest_result)
+                                if Planner.address_of_is_identity(rest_result)
+                                    set rt: rest_result.result_type
+                                else if this.operand_addr_is_frame_local(rest_result)
                                     set rt: Planner.make_ref_to_local(rest_result.result_type)
                                 else
                                     set rt: Planner.make_ref_type(rest_result.result_type)
@@ -21438,14 +21444,16 @@ define Planner
             if Planner.types_equal_unqualified(target_type, source_type)
                 return true
 
-            ; Class 8: ONE LEVEL OF INDIRECTION. `set *out: &b` with
-            ; `out: pointer[pointer[Box]]` and `b: ref[Box]` gives the source
-            ; type `ref[ref[Box]]` against a target `pointer[Box]` -- the
-            ; planner's type is one wrapper deeper than the value the emitter
-            ; produces (address_of_optional_cell.scaly is that shape's own
-            ; regression). Indirection is deliberately NOT this check's
-            ; subject, the same line the method-arg-type gate draws when it
-            ; says pointer[A] and A agree there.
+            ; Class 8: ONE LEVEL OF INDIRECTION. Indirection is deliberately
+            ; NOT this check's subject, the same line the method-arg-type gate
+            ; draws when it says pointer[A] and A agree there.
+            ; ★ The shape this class was WRITTEN for no longer arises: `set
+            ; *out: &b` with `out: pointer[pointer[Box]]` and `b: ref[Box]` used
+            ; to report the source as `ref[ref[Box]]`, one wrapper deeper than
+            ; the value the emitter produces, and since address_of_is_identity#
+            ; it reports `ref[Box]` -- which types_compatible# takes on its own.
+            ; The class is kept because its STATEMENT (this acceptor does not
+            ; judge indirection) is broader than the one case that motivated it.
             if Planner.type_strip_one_reference(source_type, &stripped_src)
             {
                 if Planner.types_compatible(target_type, stripped_src)
@@ -21550,20 +21558,6 @@ define Planner
         ; `retype_integer_operand` uses.
         function operand_derefs_to_pointee(target_type: PlannedType, op: PlannedOperand) returns bool
         {
-            ; ★ An ADDRESS-OF operand is never loaded, and this is what makes
-            ; the indirection test below able to be EXACT. `&b` on a `ref[Box]`
-            ; is typed `ref[ref[Box]]` while the emitter hands back `b` itself
-            ; -- type_conformance_accepted#'s class 8 exists for exactly that
-            ; one-wrapper lie -- so any load computed from that type is computed
-            ; from a lie. It used to be blocked by accident, because the test
-            ; below asked types_compatible#, which is lenient about the very
-            ; level being counted; making that test exact turned the accident
-            ; into `set *out: &b` loading THROUGH b (address_of_optional_cell
-            ; .scaly, which is what caught it). `&` is also the language's own
-            ; escape from transparent reading, so declining here says in one
-            ; place what the type cannot say at all.
-            if Planner.operand_is_address_of(op)
-                return false
             if op.result_type.name <> "ref"
                 return false
             var inner: PlannedType op.result_type
@@ -21606,6 +21600,15 @@ define Planner
             ; never affected, because `Option[ref[X]]` is not compatible with
             ; `ref[X]` -- which is why 51 converted cells were green and the
             ; shape with ZERO occurrences was broken on both sides.
+            ; ★★★ The exact test is only SAFE because `&` no longer lies about
+            ; its result type (address_of_is_identity#). While it did, this
+            ; leniency was silently compensating for it: making the test exact
+            ; first turned `set *out: &b` into a load THROUGH b, caught by
+            ; address_of_optional_cell.scaly. An address-of EXEMPTION was tried
+            ; here and is deliberately NOT kept -- with the type honest it earns
+            ; nothing (measured: removing it moves no function in any package
+            ; root but this one), and a rule whose stated reason has been fixed
+            ; is a comment that will mislead the next reader.
             var tinner: PlannedType touter
             if Planner.type_strip_one_reference(touter, &tinner)
             {
@@ -21617,22 +21620,41 @@ define Planner
             Planner.types_equal_unqualified(target_type, inner)
         }
 
-        ; operand_is_address_of#: is this operand a bare `&x`?  Asked on the
-        ; EXPRESSION, because the TYPE cannot answer it -- `&` reports one
-        ; wrapper more than the value it produces.
-        function operand_is_address_of(op: PlannedOperand) returns bool
+        ; address_of_is_identity#: does `&x` hand back the operand ITSELF?
+        ;
+        ; MEASURED against the emitter, shape by shape. `&` yields the address of
+        ; a SLOT where there is one and the operand's own value where there is
+        ; not:
+        ;   a ref/pointer PARAMETER, a `let`-bound reference   `ret %0`   identity
+        ;   `var r: ref[X] b` / `ref[X]? null` / `pointer[X] null`  `ret %r`  the cell
+        ;   a stack-struct var, a heap-bound var               the object    wrap
+        ;   a member access `&r.field`                         a GEP        wrap
+        ; The identity case is therefore exactly a BARE reference-shaped variable
+        ; that is not mutable -- one with no slot of its own to address.
+        ;
+        ; ★★★ Before this the planner wrapped unconditionally, so `&b` on a
+        ; `ref[Box]` was typed `ref[ref[Box]]` while the emitter handed back `b`.
+        ; type_conformance_accepted#'s class 8 exists ONLY to accept that lie,
+        ; and every rule that counts indirection had to stay lenient by exactly
+        ; the level it was counting in order to survive it -- which is how
+        ; operand_derefs_to_pointee# came to skip a load it owed
+        ; (ref_cell_nonoptional.scaly). **A rule that has to be inexact to
+        ; tolerate a wrong type is the wrong type's cost, paid somewhere else.**
+        function address_of_is_identity(op: PlannedOperand) returns bool
         {
-            var is_addr: bool false
+            if op.member_access <> null
+                return false
+            if Planner.type_is_reference_shaped(op.result_type) = false
+                return false
+            if Planner.operand_is_mutable_variable(op)
+                return false
+            var is_var: bool false
             choose op.expr
-                when c: Call
-                {
-                    if c.is_intrinsic
-                        if c.name = "&"
-                            set is_addr: true
-                }
+                when v: Variable
+                    set is_var: true
                 else
                     0
-            is_addr
+            is_var
         }
 
         ; set_target_stores_through#: `set r: v` on a `ref[T]` target.

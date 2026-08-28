@@ -1,0 +1,32 @@
+; Regression: `&b` on a borrowed reference reports `ref[Box]`, not
+; `ref[ref[Box]]` (2026-08-28).
+;
+; The planner used to wrap the operand's type unconditionally, while the
+; emitter hands the operand ITSELF back whenever there is no slot to address
+; (measured shape by shape: a ref/pointer PARAMETER and a `let`-bound reference
+; come out as `ret %0`, a `var` cell as `ret %r`). So `&b` claimed one wrapper
+; more than the value it produced, and `type_conformance_accepted#`'s class 8
+; existed to accept exactly that.
+;
+; ★★★ The cost of the lie was NOT in this diagnostic. Every rule that counts
+;     indirection had to stay lenient by exactly the level it was counting in
+;     order to survive it — and that leniency then skipped a load it owed, so
+;     reading a `ref[ref[X]]` cell answered one indirection too shallow, at
+;     rc 0 (ref_cell_nonoptional.scaly). **A rule that has to be inexact to
+;     tolerate a wrong type is the wrong type's cost, paid somewhere else.**
+;
+; ★ The `var` counterpart — where `&c` IS one wrapper deeper, because a mutable
+;   cell has a slot of its own — is pinned by xfail_address_of_cell_type.scaly,
+;   and its RUNTIME half by address_of_optional_cell.scaly.
+;
+; xfail: ref[Box] where int is declared
+
+define Box (v: i64)
+
+function f(b: ref[Box]) returns int
+{
+    let n: int &b
+    n
+}
+
+Console.println "`f`"

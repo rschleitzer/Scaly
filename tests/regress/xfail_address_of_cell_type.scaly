@@ -1,0 +1,21 @@
+; Regression: `&c` on a MUTABLE reference cell is one wrapper deeper — the
+; other half of xfail_address_of_ref_type.scaly (2026-08-28).
+;
+; `&` is the identity only where there is no slot to address. A `var` of
+; reference type HAS one, the emitter answers that slot (`ret %r`), and the
+; type must say so — this is the shape every out-cell in the tree is built on
+; (`fill(&cell)` against a `ref[ref[X]?]` parameter), so getting the identity
+; rule too wide would silently flatten all 51 of them.
+;
+; xfail: ref[ref[Box]] where int is declared
+
+define Box (v: i64)
+
+function f(b: ref[Box]) returns int
+{
+    var c: ref[Box] b
+    let n: int &c
+    n
+}
+
+Console.println "`f`"
