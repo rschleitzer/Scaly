@@ -21448,8 +21448,8 @@ define Planner
                         ; DECLARATION and the reader has to find it: a
                         ; forwarder tells nothing about itself, and 417 of
                         ; these sites named 417 different ones.
-                        ; if this.option_arg_reaches_plain_ref(pt, a)
-                        ;     this.report_option_arg(pt, a.result_type, a.loc, callee, ai - offset)
+                        if this.option_arg_reaches_plain_ref(pt, a)
+                            this.report_option_arg(pt, a.result_type, a.loc, callee, ai - offset)
                     }
                 }
                 set ai: ai + 1
