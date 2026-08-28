@@ -3021,6 +3021,18 @@ define Planner
         ; still `ref[T]?`, the author's deref is still honest, and narrowing
         ; only ADDS the ability to pass the name on directly.
         ;
+        ; ★★★A `var` narrows too, and the bug that made it look impossible was
+        ; in the SHADOW, not in the idea. The first attempt hardcoded
+        ; `is_mutable: false` on the pushed binding -- harmless while only
+        ; immutable names narrowed, since theirs was false anyway. For a `var`
+        ; it meant every later `set x: ...` found a NON-mutable target, and the
+        ; emitter's Variable arm returns WITHOUT STORING when the target is not
+        ; mutable. Every assignment after a guard became a silent no-op: the
+        ; compiler built, compiled every package, reported nothing, and emitted
+        ; NO OUTPUT for 234 of 243 regressions. The write through
+        ; lookup_local_binding#'s reference was never the culprit --
+        ; `optional_ref_member_store.scaly` had pinned that shape for weeks.
+        ;
         ; SOUNDNESS, and it is what makes a `var` narrowable at all: the
         ; proof holds from the test until the name is ASSIGNED, and
         ; plan_statements# plans in PROGRAM ORDER, so clearing the fact when
@@ -3140,15 +3152,6 @@ define Planner
             if dn_ref = null
                 return false
             let dn (*dn_ref)
-            ; ★A `var` is NOT narrowed. Doing so needs the proof to expire at
-            ; the name's next assignment, and the attempt at that -- clearing
-            ; the flag through the reference lookup_local_binding# answers --
-            ; produced a compiler that built, compiled every package, reported
-            ; nothing, and silently emitted NO OUTPUT for 234 of 243
-            ; regressions. Left out until that write is understood; the cost
-            ; is an unwrap at the `var` sites, which is the safe direction.
-            if dn.is_mutable
-                return false
             ; already narrowed: nothing to prove, and a second shadow would
             ; only grow the scope.
             if dn.is_narrowed
@@ -3174,7 +3177,7 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     name,
-                    LocalBinding(dn.binding_type, false, dn.is_on_page, dn.is_parameter, true)
+                    LocalBinding(dn.binding_type, dn.is_mutable, dn.is_on_page, dn.is_parameter, true)
                 )
             )
             true
@@ -21139,7 +21142,9 @@ define Planner
                         ; ★★★NOT ARMED, and the reason is a MEASUREMENT, not
                         ; caution. Armed, this reports 2459 sites on the
                         ; untouched tree; flow narrowing (define_narrowed#)
-                        ; takes it to 1664. Sweeping the rest with the unwrap
+                        ; takes it to 1566, and `scaly`, `scalyc` and
+                        ; `scalyls` to ZERO -- the whole remainder is the
+                        ; three PORTS. Sweeping the rest with the unwrap
                         ; the message names -- `x as ref[T]`, 1660 sites -- was
                         ; tried and is WRONG: `packages/tscaly` went to 3237
                         ; failures, every one of them `exited 21`. A null that
@@ -28076,6 +28081,49 @@ define Planner
             false
         }
 
+        ; Retire the proof: `set x: ...` may store anything, null included, so
+        ; from that statement on the name is an Option again. This is the half
+        ; that makes narrowing a `var` sound, and it is only correct because
+        ; plan_statements# walks in PROGRAM ORDER.
+        ;
+        ; It clears the FACT rather than popping the shadow: the shadow need
+        ; not be the top of the scope, and its type and mutability are the
+        ; binding's own, so a cleared shadow is indistinguishable from what it
+        ; shadows. A nested `set` clears an outer narrowing too, which is the
+        ; conservative direction -- lookup_local_binding# finds the same shadow
+        ; from any depth.
+        function retire_narrowing(this: Planner, st: ref[PlannedStatement])
+        {
+            choose st
+                when a: PlannedAction
+                {
+                    if a.target = null
+                        return
+                    let rn_t (*a.target)
+                    if rn_t.length <> 1
+                        return
+                    let rn_p rn_t.get 0
+                    if rn_p = null
+                        return
+                    let rn_op (*rn_p)
+                    if rn_op.member_access <> null
+                        return
+                    choose rn_op.expr
+                        when rv: scalyc.compiler.Plan.PlannedVariable
+                        {
+                            let rb this.lookup_local_binding(rv.name)
+                            if rb <> null
+                                set rb.is_narrowed: false
+                        }
+                        else
+                        {
+                        }
+                }
+                else
+                {
+                }
+        }
+
         ; The EARLY-EXIT shape, and the one the ports actually write:
         ;     if e = null
         ;         return String()
@@ -28169,6 +28217,9 @@ define Planner
                         this.report_effect_free_statement(pl)
                     }
                     result.put(i, pl)
+
+                    ; An assignment ends whatever a guard proved.
+                    this.retire_narrowing(&pl)
 
                     ; `if x = null return` proves x for every statement that
                     ; follows. The shadow goes into the CURRENT scope, which
