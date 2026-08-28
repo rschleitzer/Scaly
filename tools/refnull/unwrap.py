@@ -23,6 +23,25 @@ and which half applies is a per-site question the upstream C++ answers: a
 `const T&` cannot be null, a `T*` can.  Use this to ENUMERATE the sites, then
 decide each one; do not let it write them.
 
+★★★UPDATE 2026-08-28, when the gate was armed and the tree taken to zero: the
+question the upstream answers is NOT the whole rule, because a `T*` whose
+callee dereferences it on the first line is still non-null at every call that
+works today -- the reference asserts it (`ASSERT(processingMode != 0)`) or just
+derefs it.  What separates the halves is the CALLEE'S BODY, and it is
+mechanical enough to classify:
+
+    DEREFERENCES the parameter -> unwrap at the call.  A null there is a
+        SIGSEGV today, so no working run passes one; the unwrap asserts what is
+        already true and names the symbol when it is not.  545 sites.
+    only FORWARDS it -> declare the parameter nullable.  The question moves one
+        hop, to the callee that finally reads it, and the cascade terminates
+        there.  ~490 parameters.
+
+Both halves are driven from the compiler's own reports; the filter is a
+whitelist of (callee, argument-index) pairs that have been decided, never the
+whole report.  The message names the callee since the same day, which is what
+makes such a whitelist writable at all.
+
 Driven by the compiler's own reports, never by a pattern: only the planner
 knows which argument its narrowing already proved.
 """
