@@ -1,0 +1,56 @@
+; `x as ref[T]` must mean the same thing whichever way x is spelled. It did
+; not: a BARE NAME and a MEMBER hop cast, and a CALL RESULT exited 14 with
+; "Emitter: cannot cast this value to ref" -- rc 0, no file, no line, and no
+; output file. A returned `ref[T]?` comes back as a one-pointer aggregate
+; where the same value in a local or a field arrives as a bare pointer, and
+; the cast path had a rule only for the pointer.
+;
+; Found while sweeping unwraps into the ports: 1660 rewrites compiled clean
+; except the ones whose argument was a call, and the failure named neither
+; the file nor the line.
+;
+; Expected: PASS
+
+define Holder (k: int)
+{
+    init(k: int)
+        set this.k: k
+}
+
+define Box (h: ref[Holder]?)
+{
+    init(h: ref[Holder]?)
+        set this.h: h
+}
+
+function takes_plain(h: ref[Holder]) returns int
+    h.k
+
+function maybe(rp) returns ref[Holder]?
+    Holder#(9)
+
+function via_bare(rp) returns int
+{
+    let x maybe()
+    takes_plain(x as ref[Holder])
+}
+
+function via_call(rp) returns int
+    takes_plain((maybe()) as ref[Holder])
+
+function via_member(rp) returns int
+{
+    let b Box#(maybe())
+    takes_plain(b.h as ref[Holder])
+}
+
+let a via_bare()
+let b via_call()
+let c via_member()
+if a <> 9
+    exit 1
+if b <> 9
+    exit 2
+if c <> 9
+    exit 3
+print "PASS"

@@ -83,6 +83,10 @@ define LocalBinding
     is_mutable: bool
     is_on_page: bool
     is_parameter: bool
+    ; Set only on the shadow a null test pushes -- see define_narrowed#.
+    ; The binding's DECLARED type is still the Option, so the author's `*x`
+    ; remains an honest deref and report_deref_of_ref# must let it through.
+    is_narrowed: bool
 )
 
 ; One HARD diagnostic: a construct the planner could not resolve and that
@@ -941,7 +945,7 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     name,
-                    LocalBinding(t, is_mutable, is_on_page, false)
+                    LocalBinding(t, is_mutable, is_on_page, false, false)
                 )
             )
         }
@@ -956,7 +960,7 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     name,
-                    LocalBinding(t, false, false, true)
+                    LocalBinding(t, false, false, true, false)
                 )
             )
         }
@@ -2996,6 +3000,184 @@ define Planner
                 else
                     return false
             false
+        }
+
+        ; ================================================================
+        ; Flow narrowing: a null test PROVES the name non-null in the branch
+        ; it guards, so that branch may read it as the plain reference.
+        ;
+        ; Why it exists: arming option_arg_into_plain_ref# on the untouched
+        ; tree reports 2459 sites, and 1222 of them sit behind exactly such a
+        ; test. Those 1222 are not defects -- they are the planner unable to
+        ; read a guard the author already wrote. Without narrowing the gate's
+        ; price is an `as ref[T]` unwrap at every one of them.
+        ;
+        ; ★★★It must not change what EXISTING code means, and the first
+        ; attempt did: narrowing turned `*x` inside a guarded branch into a
+        ; hard rc-4 (report_deref_of_ref#), and sweeping those stars away
+        ; rewrote 676 UNTYPED bindings from a COPY into an ALIAS -- `let v
+        ; (*p)` copies, `let v p` aliases. Only three of the 676 broke loudly.
+        ; So the star STAYS legal on a narrowed binding: the declaration is
+        ; still `ref[T]?`, the author's deref is still honest, and narrowing
+        ; only ADDS the ability to pass the name on directly.
+        ;
+        ; SOUNDNESS, and it is what makes a `var` narrowable at all: the
+        ; proof holds from the test until the name is ASSIGNED, and
+        ; plan_statements# plans in PROGRAM ORDER, so clearing the fact when
+        ; it meets `set x: ...` is exactly the right lifetime --
+        ;     if x <> null { f(x)   set x: null   g(x) }
+        ; narrows f's argument and not g's. A `while` body needs no special
+        ; case for the back edge: the condition is re-tested at the top of
+        ; every iteration, so the proof is live again exactly where the body
+        ; starts, which is where the walk restores it.
+        ; ================================================================
+
+        ; The payload of an NPO Option, when that payload is pointer-shaped.
+        ; Ask the SHAPE, not the name: `ref[T]?` and `pointer[T]?` both arrive
+        ; as an Option wrapper, and a name test that knows only "ref" is the
+        ; standing bug of this seam.
+        function npo_option_payload(t: PlannedType, out: ref[PlannedType]) returns bool
+        {
+            if t.name <> "Option"
+                return false
+            if t.generics = null
+                return false
+            let np_gens (*t.generics)
+            if np_gens.length <> 1
+                return false
+            let np_ptr np_gens.get 0
+            if np_ptr = null
+                return false
+            let np_inner (*np_ptr)
+            if np_inner.name <> "ref"
+                if np_inner.name <> "pointer"
+                    return false
+            set out: np_inner
+            true
+        }
+
+        ; narrow_null_test#: does this condition compare a BARE local against
+        ; null, and which branch does it prove? `x <> null` proves the
+        ; CONSEQUENT, `x = null` the ALTERNATIVE -- and, when the consequent
+        ; leaves the block, everything after the statement.
+        ;
+        ; A member chain is deliberately not read: `a.b <> null` proves
+        ; something about a FIELD, and a scope shadow can only narrow a name.
+        function narrow_null_test(
+            this: Planner,
+            cond: PlannedOperand,
+            out_name: ref[String],
+            out_positive: ref[bool]
+        ) returns bool
+        {
+            if cond.member_access <> null
+                return false
+            choose cond.expr
+                when nc: scalyc.compiler.Plan.PlannedCall
+                {
+                    if nc.is_operator = false
+                        return false
+                    var nt_positive: bool false
+                    var nt_is_test: bool false
+                    if nc.name = "="
+                        set nt_is_test: true
+                    if nc.name = "<>"
+                    {
+                        set nt_is_test: true
+                        set nt_positive: true
+                    }
+                    if nt_is_test = false
+                        return false
+                    if nc.args = null
+                        return false
+                    let nt_args (*nc.args)
+                    if nt_args.length <> 2
+                        return false
+                    let nt_l_ptr nt_args.get 0
+                    let nt_r_ptr nt_args.get 1
+                    if nt_l_ptr = null
+                        return false
+                    if nt_r_ptr = null
+                        return false
+                    let nt_l (*nt_l_ptr)
+                    let nt_r (*nt_r_ptr)
+                    ; exactly one side is the null literal; the other names
+                    ; what the test proves.
+                    var nt_subject: PlannedOperand nt_l
+                    if this.operand_is_null_constant(nt_r)
+                        set nt_subject: nt_l
+                    else
+                    {
+                        if this.operand_is_null_constant(nt_l) = false
+                            return false
+                        set nt_subject: nt_r
+                    }
+                    if nt_subject.member_access <> null
+                        return false
+                    choose nt_subject.expr
+                        when nv: scalyc.compiler.Plan.PlannedVariable
+                        {
+                            set out_name: nv.name
+                            set out_positive: nt_positive
+                            return true
+                        }
+                        else
+                            return false
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; Shadow `name` with its non-optional payload. lookup_local_binding#
+        ; scans innermost-first, so the shadow wins until the scope holding it
+        ; is popped -- which is also what un-narrows it, for free. Answers
+        ; whether it pushed one.
+        function define_narrowed(this: Planner, name: String) returns bool
+        {
+            let dn_ref this.lookup_local_binding(name)
+            if dn_ref = null
+                return false
+            let dn (*dn_ref)
+            ; ★A `var` is NOT narrowed. Doing so needs the proof to expire at
+            ; the name's next assignment, and the attempt at that -- clearing
+            ; the flag through the reference lookup_local_binding# answers --
+            ; produced a compiler that built, compiled every package, reported
+            ; nothing, and silently emitted NO OUTPUT for 234 of 243
+            ; regressions. Left out until that write is understood; the cost
+            ; is an unwrap at the `var` sites, which is the safe direction.
+            if dn.is_mutable
+                return false
+            ; already narrowed: nothing to prove, and a second shadow would
+            ; only grow the scope.
+            if dn.is_narrowed
+                return false
+            ; there must be something to prove: only an Option around a
+            ; reference can be narrowed at all.
+            var dn_inner: PlannedType dn.binding_type
+            if Planner.npo_option_payload(dn.binding_type, &dn_inner) = false
+                return false
+            ; ★★★The shadow carries the SAME TYPE. Narrowing is recorded as a
+            ; FACT about the name, never as a type change -- so every lookup
+            ; still answers `ref[T]?`, every existing spelling still means
+            ; what it meant, and emission cannot move. Only
+            ; option_arg_into_plain_ref# asks the fact.
+            ;
+            ; Narrowing the TYPE was tried first and is why this note exists.
+            ; It propagates: `if members <> null { let chain_ref members ... }`
+            ; gives the INTERMEDIATE binding the narrowed type too, so `*chain_ref`
+            ; becomes a hard rc-4 three lines later. Sweeping those stars away
+            ; rewrote 676 untyped bindings from a COPY into an ALIAS -- `let v
+            ; (*p)` copies, `let v p` aliases -- and only THREE of the 676 broke
+            ; loudly. The rest would have been silent.
+            scope_bindings.add(
+                KeyValuePair[String, LocalBinding](
+                    name,
+                    LocalBinding(dn.binding_type, false, dn.is_on_page, dn.is_parameter, true)
+                )
+            )
+            true
         }
 
         ; ===== glob-ambiguity diagnostic (use-visibility, hard) =====
@@ -17203,7 +17385,28 @@ define Planner
             set planned_cond_collapsed: this.deref_ref_into_pointee(bool_ty, planned_cond_collapsed)
             this.add_equality_constraint(bool_ty, planned_cond_collapsed.result_type, f.span)
 
+            ; Flow narrowing: `if x <> null` proves x in the consequent,
+            ; `if x = null` proves it in the alternative. The scope is pushed
+            ; ONLY where a narrowing applies, so every other `if` plans
+            ; through the identical path it always did -- an unconditional
+            ; wrapper would also swallow the bindings that deliberately LEAK
+            ; out of a `try`.
+            var nb_name String()
+            var nb_positive: bool false
+            let nb_has this.narrow_null_test(planned_cond_collapsed, &nb_name, &nb_positive)
+
+            var nb_pushed: bool false
+            if nb_has
+                if nb_positive
+                {
+                    this.push_scope()
+                    set nb_pushed: this.define_narrowed(nb_name)
+                    if nb_pushed = false
+                        this.pop_scope()
+                }
             let planned_consequent this.plan_statement(f.consequent)
+            if nb_pushed
+                this.pop_scope()
             var consequent_holder Vector[PlannedStatement](1)
             consequent_holder.put(0, planned_consequent)
 
@@ -17211,7 +17414,18 @@ define Planner
             if f.alternative <> null
             {
                 let alt (*f.alternative)
+                var nb_alt_pushed: bool false
+                if nb_has
+                    if nb_positive = false
+                    {
+                        this.push_scope()
+                        set nb_alt_pushed: this.define_narrowed(nb_name)
+                        if nb_alt_pushed = false
+                            this.pop_scope()
+                    }
                 let planned_alt this.plan_statement(alt)
+                if nb_alt_pushed
+                    this.pop_scope()
                 var alt_holder Vector[PlannedStatement](1)
                 alt_holder.put(0, planned_alt)
                 set alternative_ref: alt_holder.get(0)
@@ -18237,6 +18451,26 @@ define Planner
         {
             this.push_scope()
             let planned_cond this.plan_binding(w.condition)
+            ; `while x <> null` proves x at the top of the body -- the linked
+            ; list walk, and the shape a plain `if` cannot reach. The scope
+            ; this function already pushed carries the fact, and the walk in
+            ; plan_statements# retires it at the body's own `set x: nx`.
+            if planned_cond.operation <> null
+            {
+                let pw_ops (*planned_cond.operation)
+                if pw_ops.length = 1
+                {
+                    let pw_c pw_ops.get 0
+                    if pw_c <> null
+                    {
+                        var pw_name String()
+                        var pw_positive: bool false
+                        if this.narrow_null_test((*pw_c), &pw_name, &pw_positive)
+                            if pw_positive
+                                this.define_narrowed(pw_name)
+                    }
+                }
+            }
             let planned_body this.plan_action(w.action)
             this.pop_scope()
 
@@ -20902,6 +21136,23 @@ define Planner
                         if pt.name = "ref"
                             if this.operand_is_null_through_casts(a)
                                 this.report_null_arg(pt, a.loc)
+                        ; ★★★NOT ARMED, and the reason is a MEASUREMENT, not
+                        ; caution. Armed, this reports 2459 sites on the
+                        ; untouched tree; flow narrowing (define_narrowed#)
+                        ; takes it to 1664. Sweeping the rest with the unwrap
+                        ; the message names -- `x as ref[T]`, 1660 sites -- was
+                        ; tried and is WRONG: `packages/tscaly` went to 3237
+                        ; failures, every one of them `exited 21`. A null that
+                        ; is merely STORED works today, and the trap kills it.
+                        ; So the two halves of the message are not
+                        ; interchangeable: where the callee accepts nothing,
+                        ; the honest fix is the NULLABLE PARAMETER, and which
+                        ; half applies is a per-site question the upstream C++
+                        ; answers (a `const T&` cannot be null; a `T*` can).
+                        ; Arming this is one line, and it owes those ~1670
+                        ; decisions first.
+                        ; if this.option_arg_reaches_plain_ref(pt, a)
+                        ;     this.report_option_arg(pt, a.result_type, a.loc)
                     }
                 }
                 set ai: ai + 1
@@ -20974,6 +21225,102 @@ define Planner
             sb.append "pointer when it is a raw address"
             let rmsg sb.to_string()
             this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        ; option_arg_into_plain_ref#: the OTHER half of the argument gate, and
+        ; the half its own comment assumed away. report_null_into_ref_arg#
+        ; judges a null LITERAL because "the general flow of an Option is
+        ; refused by types_compatible# at a parameter" -- true on the FREE
+        ; function path, where check_function_match# compares every argument,
+        ; and FALSE on the method path: lookup_method# takes a single by-name
+        ; candidate unexamined (its selection loop is gated on candidates > 1),
+        ; and the gate that exists for exactly that reason,
+        ; report_method_arg_types#, compares the pair only AFTER
+        ; gate_strip_indirection# has taken the Option off one side and the ref
+        ; off the other -- its own comment says the stripped pair "only ever
+        ; ADDS acceptance", and an accepted null is what it adds.
+        ;
+        ; Measured 2026-08-28 with three probes one line apart: a literal
+        ; `null` through a method is rc 4, an Option through a FREE function is
+        ; rc 4, and an Option through a METHOD planned at rc 0 while the binary
+        ; exited 139 -- a SIGSEGV at the first member hop, precisely the
+        ; failure exit 21 was written to replace. The trap cannot fire there,
+        ; because no unwrap is emitted where no conformance was ever demanded.
+        ;
+        ; The question is NULLABILITY ALONE, so the pointees must still agree:
+        ; a genuine type mismatch is report_method_arg_types#'s to report, and
+        ; telling its author to write an unwrap would be wrong advice.
+        ;
+        ; Ask the SHAPE, not the name -- both `ref[T]?` and `pointer[T]?`
+        ; arrive as an Option around something pointer-shaped, and a name test
+        ; that knows only "ref" is the standing bug of this seam.
+        function option_arg_into_plain_ref(param_type: PlannedType, arg_type: PlannedType) returns bool
+        {
+            if param_type.name <> "ref"
+                return false
+            if arg_type.name <> "Option"
+                return false
+            ; An unbound generic compares as matching anything, so judging one
+            ; would be vacuous rather than wrong -- restriction (c) of
+            ; report_method_arg_types#, carried here for the same reason.
+            if Planner.type_mentions_generic_param(param_type)
+                return false
+            var oa_inner: PlannedType arg_type
+            if Planner.npo_option_payload(arg_type, &oa_inner) = false
+                return false
+            if Planner.type_mentions_generic_param(oa_inner)
+                return false
+            Planner.types_compatible(param_type, oa_inner)
+        }
+
+        ; The operand-level question: the type rule above, minus every name a
+        ; null test has already PROVEN in this branch. Narrowing is a fact
+        ; about the NAME (define_narrowed#), never a type change, so it can
+        ; only be asked here -- and it is what separates a guarded forward
+        ; from a lie. Measured on the untouched tree: 2459 sites report
+        ; without it, 1222 of them behind a guard the author already wrote.
+        function option_arg_reaches_plain_ref(this: Planner, param_type: PlannedType, arg: PlannedOperand) returns bool
+        {
+            if Planner.option_arg_into_plain_ref(param_type, arg.result_type) = false
+                return false
+            if arg.member_access <> null
+                return true
+            choose arg.expr
+                when av: scalyc.compiler.Plan.PlannedVariable
+                {
+                    let ab this.lookup_local_binding(av.name)
+                    if ab <> null
+                        if ab.is_narrowed
+                            return false
+                }
+                else
+                {
+                }
+            true
+        }
+
+        ; The message names the unwrap, because there IS no flow narrowing of
+        ; the TYPE: a caller who has just tested the value still owes the
+        ; cast, and that cast is where the exit-21 trap is emitted.
+        function report_option_arg(this: Planner, param_type: PlannedType, arg_type: PlannedType, loc: Span)
+        {
+            var osb StringBuilder()
+            ; NO backticks in these literals -- an unescaped backtick opens a
+            ; string interpolation, and a lone one fails the MODELER.
+            let opn Planner.get_readable_name(param_type)
+            let oan Planner.get_readable_name(arg_type)
+            osb.append "optional reference passed to a non-optional reference parameter: "
+            osb.append oan
+            osb.append " may be nothing, but "
+            osb.append opn
+            osb.append " is a borrowed reference and must refer to something. "
+            osb.append "Unwrap it at the call (x as "
+            osb.append opn
+            osb.append "), or declare the parameter nullable ("
+            osb.append opn
+            osb.append "?)"
+            let omsg osb.to_string()
+            this.add_diagnostic(loc, String^this(omsg))
         }
 
         ; report_type_mismatch#: does the value actually CONFORM to the type
@@ -27673,6 +28020,128 @@ define Planner
         }
 
         ; plan_statements: batch plan_statement over a Model.Block's statements.
+        ; Does this statement LEAVE the enclosing block unconditionally?
+        ; Only the four that cannot fall through, plus a block whose last
+        ; statement is one of them -- `if x = null { ... return }` is written
+        ; both ways in this tree.
+        ;
+        ; ★Takes a REFERENCE, not the union by value. By value this is a self
+        ; tail call whose argument is a by-value struct, which the TCO
+        ; lowering stages through a shadow slot -- and that memmove crashed
+        ; with a garbage address on every input larger than the stdlib
+        ; (EXC_BAD_ACCESS in _platform_memmove, one frame below
+        ; early_exit_narrows#). A ref also skips the whole-union copy a
+        ; `choose` on a value subject makes before it reads the tag.
+        function statement_exits(st: ref[PlannedStatement]) returns bool
+        {
+            choose st
+                when r: PlannedReturn
+                    return true
+                when b: PlannedBreak
+                    return true
+                when c: PlannedContinue
+                    return true
+                when t: PlannedThrow
+                    return true
+                when a: PlannedAction
+                {
+                    if a.source = null
+                        return false
+                    let se_ops (*a.source)
+                    if se_ops.length <> 1
+                        return false
+                    let se_op_ptr se_ops.get 0
+                    if se_op_ptr = null
+                        return false
+                    let se_op (*se_op_ptr)
+                    choose se_op.expr
+                        when blk: scalyc.compiler.Plan.PlannedBlock
+                        {
+                            if blk.statements = null
+                                return false
+                            let se_st (*blk.statements)
+                            if se_st.length = 0
+                                return false
+                            let se_last se_st.get(se_st.length - 1)
+                            if se_last = null
+                                return false
+                            return Planner.statement_exits(se_last as ref[PlannedStatement])
+                        }
+                        else
+                            return false
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; The EARLY-EXIT shape, and the one the ports actually write:
+        ;     if e = null
+        ;         return String()
+        ;     this.resolve(e)
+        ; The test guards nothing that follows it syntactically -- it guards
+        ; everything that follows in the BLOCK, because the consequent leaves.
+        ; Answers the name to narrow for the remaining statements.
+        ;
+        ; An `else` disqualifies it: the if is then a fork, plan_if# has
+        ; already narrowed each side, and nothing is proven afterwards.
+        function early_exit_narrows(
+            this: Planner,
+            st: ref[PlannedStatement],
+            out_name: ref[String]
+        ) returns bool
+        {
+            choose st
+                when a: PlannedAction
+                {
+                    if a.source = null
+                        return false
+                    let ee_ops (*a.source)
+                    if ee_ops.length <> 1
+                        return false
+                    let ee_op_ptr ee_ops.get 0
+                    if ee_op_ptr = null
+                        return false
+                    let ee_op (*ee_op_ptr)
+                    if ee_op.member_access <> null
+                        return false
+                    choose ee_op.expr
+                        when iff: scalyc.compiler.Plan.PlannedIf
+                        {
+                            if iff.alternative <> null
+                                return false
+                            if iff.consequent = null
+                                return false
+                            if Planner.statement_exits(iff.consequent as ref[PlannedStatement]) = false
+                                return false
+                            if iff.condition = null
+                                return false
+                            let ee_cond (*iff.condition)
+                            if ee_cond.length <> 1
+                                return false
+                            let ee_c_ptr ee_cond.get 0
+                            if ee_c_ptr = null
+                                return false
+                            var ee_positive: bool false
+                            if this.narrow_null_test((*ee_c_ptr), out_name, &ee_positive) = false
+                                return false
+                            ; only `x = null` leaves the REST proven; an
+                            ; `x <> null` with an exiting consequent proves
+                            ; the opposite.
+                            if ee_positive
+                                return false
+                            return true
+                        }
+                        else
+                            return false
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
         function plan_statements(
             this: Planner,
             stmts: Vector[Statement]
@@ -27700,6 +28169,14 @@ define Planner
                         this.report_effect_free_statement(pl)
                     }
                     result.put(i, pl)
+
+                    ; `if x = null return` proves x for every statement that
+                    ; follows. The shadow goes into the CURRENT scope, which
+                    ; plan_block# pops -- this pushes none of its own, because
+                    ; the proof lasts exactly as long as the block does.
+                    var ee_name String()
+                    if this.early_exit_narrows(&pl, &ee_name)
+                        this.define_narrowed(ee_name)
                 }
                 set i: i + 1
             }
@@ -41604,8 +42081,8 @@ define Planner
             return 179
 
         ; lookup_local_in_scope - hit, miss.
-        let lb_x LocalBinding(int_ty, false, false, false)
-        let lb_y LocalBinding(bool_ty, true, true, false)
+        let lb_x LocalBinding(int_ty, false, false, false, false)
+        let lb_y LocalBinding(bool_ty, true, true, false, false)
         var scope1 Vector[KeyValuePair[String, LocalBinding]](2)
         scope1.put(0, KeyValuePair[String, LocalBinding]("x", lb_x))
         scope1.put(1, KeyValuePair[String, LocalBinding]("y", lb_y))
@@ -41618,8 +42095,8 @@ define Planner
             return 182
 
         ; lookup_local_in_stack - innermost shadows outer.
-        let lb_x_outer LocalBinding(int_ty, false, false, false)
-        let lb_x_inner LocalBinding(bool_ty, true, false, false)
+        let lb_x_outer LocalBinding(int_ty, false, false, false, false)
+        let lb_x_inner LocalBinding(bool_ty, true, false, false, false)
         var outer_scope Vector[KeyValuePair[String, LocalBinding]](1)
         outer_scope.put(0, KeyValuePair[String, LocalBinding]("x", lb_x_outer))
         var inner_scope Vector[KeyValuePair[String, LocalBinding]](1)

@@ -16611,6 +16611,39 @@ define Emitter
                     if this.target_is_cstr_pointer(as_expr.target_type)
                         return this.coerce_string_value_to_cstr(src_value)
 
+            ; A ONE-POINTER AGGREGATE cast to a pointer IS that pointer.
+            ; `x as ref[T]` where x is a CALL RESULT arrives struct-kind --
+            ; a returned `ref[T]?` comes back as `{ ptr }`, where the same
+            ; value in a local or a field arrives as a bare `ptr` and takes
+            ; the ptr->ptr rule below. Without this the three spellings
+            ; disagree: the bare name and the member hop cast, and only the
+            ; call result exits 14 with `cannot cast this value to ref` --
+            ; ★rc 0, no file, no line, and no output file either, which is
+            ; how it survived a whole sweep unnoticed.
+            ;
+            ; Guarded on the SHAPE, not on a name: exactly one element, that
+            ; element a pointer, the target a pointer. The unwrap trap is
+            ; emitted on the extracted pointer, so a null asserted out of a
+            ; call is caught exactly as one asserted out of a local.
+            if src_kind = LLVMTypeKind.Struct()
+            {
+                if dst_kind = ptr_kind
+                {
+                    if LLVMCountStructElementTypes(src_type) = (1 as u32)
+                    {
+                        let as_f0 LLVMStructGetTypeAtIndex(src_type, 0 as u32)
+                        if LLVMGetTypeKind(as_f0) = ptr_kind
+                        {
+                            let as_p LLVMBuildExtractValue(builder, src_value, 0 as u32, "as.unwrap")
+                            if as_expr.target_type.name = "ref"
+                                if this.type_may_be_null(as_inner.result_type)
+                                    emit_null_unwrap_trap(as_p, current_function_label())
+                            return LLVMBuildBitCast(builder, as_p, dst_type, "as.ptr")
+                        }
+                    }
+                }
+            }
+
             ; String local/binding → pointer[const_char]: a `var s String(...)`
             ; local holds a POINTER to the region-allocated String record, so it
             ; arrives here ptr-kind, not struct-kind — without this it fell
