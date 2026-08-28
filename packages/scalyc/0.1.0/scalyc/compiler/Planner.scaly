@@ -3082,6 +3082,95 @@ define Planner
             out_positive: ref[bool]
         ) returns bool
         {
+            var nt_subj: PlannedOperand cond
+            if this.narrow_null_subject(cond, &nt_subj, out_positive) = false
+                return false
+            if nt_subj.member_access <> null
+                return false
+            choose nt_subj.expr
+                when nv: scalyc.compiler.Plan.PlannedVariable
+                {
+                    set out_name: nv.name
+                    return true
+                }
+                else
+                    return false
+            false
+        }
+
+        ; narrow_null_test_path#: the same test, read for a member CHAIN.
+        ; `if this.chunk <> null` proves a PLACE, not a name -- so the fact is
+        ; keyed by the dotted PATH and carries the chain's own type, which is
+        ; the one thing a name-keyed shadow cannot supply. See
+        ; define_narrowed_path#.
+        function narrow_null_test_path(
+            this: Planner,
+            cond: PlannedOperand,
+            out_path: ref[String],
+            out_type: ref[PlannedType],
+            out_positive: ref[bool]
+        ) returns bool
+        {
+            var ntp_subj: PlannedOperand cond
+            if this.narrow_null_subject(cond, &ntp_subj, out_positive) = false
+                return false
+            if this.operand_path(ntp_subj, out_path) = false
+                return false
+            set out_type: ntp_subj.result_type
+            true
+        }
+
+        ; operand_path#: the dotted PATH a member chain spells, when every hop
+        ; is a PROPERTY of a bare local -- `this.chunk`, `b.syntax`. A METHOD
+        ; hop ends it, and must: `x.f().y` names a fresh value, where narrowing
+        ; is a statement about a PLACE. A union payload hop likewise names
+        ; something the tag decides, not a field.
+        function operand_path(this: Planner, op: PlannedOperand, out_path: ref[String]) returns bool
+        {
+            if op.member_access = null
+                return false
+            let op_ma (*op.member_access)
+            if op_ma.length = 0
+                return false
+            var psb StringBuilder()
+            choose op.expr
+                when ov: scalyc.compiler.Plan.PlannedVariable
+                    psb.append ov.name
+                else
+                    return false
+            var pi: size_t 0
+            while pi < op_ma.length
+            {
+                let pp op_ma.get pi
+                if pp = null
+                    return false
+                if pp.is_method
+                    return false
+                if pp.is_union_value
+                    return false
+                psb.append "."
+                psb.append pp.name
+                set pi: pi + 1
+            }
+            ; ★on the PLANNER's page: define_narrowed_path# keeps this string
+            ; in scope_bindings, which outlives this frame. A frame-local one
+            ; is the escape checker's own diagnostic, and it fired here.
+            let pstr psb.to_string()
+            set out_path: String^this(pstr)
+            true
+        }
+
+        ; The destructuring both readers share: which side of an `=`/`<>`
+        ; against null is the SUBJECT, and which branch does the test prove?
+        ; Split out when the path reader landed -- one copy of this is enough,
+        ; and the two readers differ only in what they accept as a subject.
+        function narrow_null_subject(
+            this: Planner,
+            cond: PlannedOperand,
+            out_subject: ref[PlannedOperand],
+            out_positive: ref[bool]
+        ) returns bool
+        {
             if cond.member_access <> null
                 return false
             choose cond.expr
@@ -3124,18 +3213,9 @@ define Planner
                             return false
                         set nt_subject: nt_r
                     }
-                    if nt_subject.member_access <> null
-                        return false
-                    choose nt_subject.expr
-                        when nv: scalyc.compiler.Plan.PlannedVariable
-                        {
-                            set out_name: nv.name
-                            set out_positive: nt_positive
-                            return true
-                        }
-                        else
-                            return false
-                    return false
+                    set out_subject: nt_subject
+                    set out_positive: nt_positive
+                    return true
                 }
                 else
                     return false
@@ -3181,6 +3261,182 @@ define Planner
                 )
             )
             true
+        }
+
+        ; ================================================================
+        ; FIELD narrowing: the fact is keyed by the dotted PATH.
+        ;
+        ; `if this.chunk <> null ... f(this.chunk)` is the ordinary shape of
+        ; the ports and worth 277 of the sites. define_narrowed# cannot serve
+        ; it: a scope SHADOW can only narrow a NAME, and `this.chunk` is not
+        ; one. So the path goes into the same scope_bindings table under its
+        ; own dotted key -- which no identifier can collide with, because a
+        ; Scaly name is alphanumeric -- and push_scope#/pop_scope# then give
+        ; the fact exactly the lifetime a shadow would have had, for free.
+        ;
+        ; ★The entry carries the CHAIN's type, not a binding's: there is no
+        ; binding to copy one from, and the type is what npo_option_payload#
+        ; is asked about.
+        ;
+        ; ★★★INVALIDATION is the whole risk, and it is deliberately blunt:
+        ; every statement clears every path fact (clear_path_narrowings#,
+        ; from retire_narrowing#, which plan_statements# runs after EACH
+        ; statement). A field is reachable through any alias of its object,
+        ; and this planner has no alias analysis -- so anything finer would be
+        ; a claim it cannot make. The cost is real and stated rather than
+        ; hidden: only the FIRST statement of a guarded block is judged
+        ; against the proof, and a second use of the same field reports again.
+        ; The direction is the safe one: report rather than stay silent.
+        ; ================================================================
+
+        ; Record the fact for a dotted path. Answers whether it pushed one.
+        function define_narrowed_path(this: Planner, path: String, t: PlannedType) returns bool
+        {
+            var dp_inner: PlannedType t
+            if Planner.npo_option_payload(t, &dp_inner) = false
+                return false
+            if this.path_is_narrowed(path)
+                return false
+            scope_bindings.add(
+                KeyValuePair[String, LocalBinding](
+                    path,
+                    LocalBinding(t, false, false, false, true)
+                )
+            )
+            true
+        }
+
+        function path_is_narrowed(this: Planner, path: String) returns bool
+        {
+            let pn this.lookup_local_binding(path)
+            if pn = null
+                return false
+            pn.is_narrowed
+        }
+
+        ; Clear every path fact. A dotted key is the marker: an identifier
+        ; cannot contain a dot, so a key that does is one of ours.
+        function clear_path_narrowings(this: Planner)
+        {
+            var cp_i: size_t scope_isolation_base
+            while cp_i < scope_bindings.length
+            {
+                let cp_p scope_bindings.get cp_i
+                if cp_p <> null
+                {
+                    let cp_b &cp_p.value
+                    if cp_b.is_narrowed
+                        if Planner.name_is_path(cp_p.key)
+                            set cp_b.is_narrowed: false
+                }
+                set cp_i: cp_i + 1
+            }
+        }
+
+        ; ★46, not `"." as char`: String.get answers a u8, and comparing one
+        ; against a character literal is the shape that crashes llc with "Do
+        ; not know how to promote this operator's operand!" -- a bootstrap link
+        ; failure two steps later. The tree writes such tests numerically.
+        function name_is_path(name: String) returns bool
+        {
+            var np_i: size_t 0
+            while np_i < name.get_length()
+            {
+                if name.get(np_i) = 46
+                    return true
+                set np_i: np_i + 1
+            }
+            false
+        }
+
+        ; ================================================================
+        ; The BRANCH JOIN, and it is the first dataflow this narrowing owes.
+        ;
+        ; plan_if# plans the consequent and the alternative in the SAME scope,
+        ; so without a join an assignment in one branch retires the narrowing
+        ; for the other -- and the two branches are exclusive, so nothing the
+        ; consequent assigns is true on the alternative's path:
+        ;     if cur = node { set cur: null } else NumberCache.advance(order, cur)
+        ; reported on the `else`, where nothing was assigned at all
+        ; (dazzle/NumberCache.scaly:289). Worth 108 sites.
+        ;
+        ; Three steps, and the third is what makes it a JOIN rather than a
+        ; reset: SNAPSHOT the facts before the consequent, RESTORE them before
+        ; the alternative, then RE-APPLY the consequent's retirements at the
+        ; end. A name survives the `if` only if NEITHER branch assigned it,
+        ; which is the conservative direction on both edges.
+        ;
+        ; ★It works on scope_bindings INDICES, not on names. retire_narrowing#
+        ; clears the flag IN PLACE and never pops, so an index names the same
+        ; binding throughout -- where a name answers about whichever shadow is
+        ; innermost NOW, which need not be the one that was cleared.
+        ; ================================================================
+
+        ; The live narrowing facts, as indices into scope_bindings. The floor
+        ; is scope_isolation_base for the reason lookup_local_binding#'s is:
+        ; below it the bindings belong to the enclosing function.
+        function collect_narrowed(this: Planner, acc: Array[size_t])
+        {
+            var cn_i: size_t scope_isolation_base
+            while cn_i < scope_bindings.length
+            {
+                let cn_p scope_bindings.get cn_i
+                if cn_p <> null
+                {
+                    let cn_b &cn_p.value
+                    if cn_b.is_narrowed
+                        acc.add cn_i
+                }
+                set cn_i: cn_i + 1
+            }
+        }
+
+        ; Set the fact on every index in `idx`. Bounds-guarded: a branch pops
+        ; the scopes it pushed, and an index past the end would name a binding
+        ; that no longer exists.
+        function set_narrowed_at(this: Planner, idx: Array[size_t], on: bool)
+        {
+            var sn_i: size_t 0
+            while sn_i < idx.length
+            {
+                let sn_at idx[sn_i]
+                if sn_at < scope_bindings.length
+                {
+                    let sn_kv scope_bindings.get sn_at
+                    if sn_kv <> null
+                    {
+                        let sn_b &sn_kv.value
+                        set sn_b.is_narrowed: on
+                    }
+                }
+                set sn_i: sn_i + 1
+            }
+        }
+
+        ; Which of `snap` did the branch just planned RETIRE? Those are the
+        ; ones the join re-clears once the OTHER branch has been planned
+        ; against the restored facts.
+        function collect_retired(this: Planner, snap: Array[size_t], acc: Array[size_t])
+        {
+            var cr_i: size_t 0
+            while cr_i < snap.length
+            {
+                let cr_at snap[cr_i]
+                var cr_still: bool false
+                if cr_at < scope_bindings.length
+                {
+                    let cr_kv scope_bindings.get cr_at
+                    if cr_kv <> null
+                    {
+                        let cr_b &cr_kv.value
+                        if cr_b.is_narrowed
+                            set cr_still: true
+                    }
+                }
+                if cr_still = false
+                    acc.add cr_at
+                set cr_i: cr_i + 1
+            }
         }
 
         ; ===== glob-ambiguity diagnostic (use-visibility, hard) =====
@@ -9462,7 +9718,7 @@ define Planner
                                         set ctor_cpi: ctor_cpi + 1
                                     }
                                     var ctor_ptypes Vector[PlannedType](ctor_ptypes_arr)
-                                    this.report_null_into_ref_arg(ctor_args_vec, ctor_ptypes)
+                                    this.report_null_into_ref_arg(ctor_args_vec, ctor_ptypes, fn_name)
                                     set ctor_args_vec: this.coerce_string_args_to_cstr(ctor_args_vec, ctor_ptypes)
                                     set ctor_args_vec: this.fold_string_args_to_char(ctor_args_vec, ctor_ptypes)
 
@@ -11185,7 +11441,7 @@ define Planner
                             if ns_coerce_valid
                             {
                                 var ns_cp_holder Vector[PlannedType](ns_coerce_params)
-                                this.report_null_into_ref_arg(call_args, ns_cp_holder)
+                                this.report_null_into_ref_arg(call_args, ns_cp_holder, fn_name)
                                 set call_args: this.coerce_string_args_to_cstr(call_args, ns_cp_holder)
                                 set call_args: this.fold_string_args_to_char(call_args, ns_cp_holder)
                             }
@@ -11195,7 +11451,7 @@ define Planner
                                 let mm_cc (*match_ref)
                                 if mm_cc.parameter_types <> null
                                 {
-                                    this.report_null_into_ref_arg(call_args, (*mm_cc.parameter_types))
+                                    this.report_null_into_ref_arg(call_args, (*mm_cc.parameter_types), fn_name)
                                     set call_args: this.coerce_string_args_to_cstr(call_args, (*mm_cc.parameter_types))
                                     set call_args: this.fold_string_args_to_char(call_args, (*mm_cc.parameter_types))
                                 }
@@ -17398,6 +17654,16 @@ define Planner
             var nb_positive: bool false
             let nb_has this.narrow_null_test(planned_cond_collapsed, &nb_name, &nb_positive)
 
+            ; ... and the same test read as a PATH, for the field shape
+            ; `if this.chunk <> null`. The two are exclusive: a subject is a
+            ; bare name or a member chain, never both.
+            var nb_path String()
+            var nb_ptype: PlannedType planned_cond_collapsed.result_type
+            var nb_ppositive: bool false
+            var nb_phas: bool false
+            if nb_has = false
+                set nb_phas: this.narrow_null_test_path(planned_cond_collapsed, &nb_path, &nb_ptype, &nb_ppositive)
+
             var nb_pushed: bool false
             if nb_has
                 if nb_positive
@@ -17407,9 +17673,34 @@ define Planner
                     if nb_pushed = false
                         this.pop_scope()
                 }
+            if nb_phas
+                if nb_ppositive
+                {
+                    this.push_scope()
+                    set nb_pushed: this.define_narrowed_path(nb_path, nb_ptype)
+                    if nb_pushed = false
+                        this.pop_scope()
+                }
+
+            ; The branch join -- see collect_narrowed# above. Taken ONLY where
+            ; there is a second branch: plan_if# runs for every `if` in the
+            ; program, and with no alternative the consequent's retirements
+            ; are exactly what must survive. An empty Array allocates nothing,
+            ; so the two declarations cost the other ifs nothing either.
+            let has_alt f.alternative <> null
+            var join_snap Array[size_t]()
+            var join_retired Array[size_t]()
+            if has_alt
+                this.collect_narrowed(join_snap)
+
             let planned_consequent this.plan_statement(f.consequent)
             if nb_pushed
                 this.pop_scope()
+            if has_alt
+            {
+                this.collect_retired(join_snap, join_retired)
+                this.set_narrowed_at(join_snap, true)
+            }
             var consequent_holder Vector[PlannedStatement](1)
             consequent_holder.put(0, planned_consequent)
 
@@ -17423,6 +17714,14 @@ define Planner
                     {
                         this.push_scope()
                         set nb_alt_pushed: this.define_narrowed(nb_name)
+                        if nb_alt_pushed = false
+                            this.pop_scope()
+                    }
+                if nb_phas
+                    if nb_ppositive = false
+                    {
+                        this.push_scope()
+                        set nb_alt_pushed: this.define_narrowed_path(nb_path, nb_ptype)
                         if nb_alt_pushed = false
                             this.pop_scope()
                     }
@@ -17441,6 +17740,10 @@ define Planner
                 if cons_ty.name <> "void"
                     if alt_ty.name <> "void"
                         this.add_equality_constraint(cons_ty, alt_ty, f.span)
+
+                ; The join's third step: a name the CONSEQUENT assigned is an
+                ; Option again after the `if`, however the alternative left it.
+                this.set_narrowed_at(join_retired, false)
             }
 
             var cond_holder Vector[PlannedOperand](1)
@@ -21117,7 +21420,8 @@ define Planner
         function report_null_into_ref_arg(
             this: Planner,
             args: Vector[PlannedOperand],
-            param_types: Vector[PlannedType]
+            param_types: Vector[PlannedType],
+            callee: String
         )
         {
             if param_types.length = 0
@@ -21139,25 +21443,13 @@ define Planner
                         if pt.name = "ref"
                             if this.operand_is_null_through_casts(a)
                                 this.report_null_arg(pt, a.loc)
-                        ; ★★★NOT ARMED, and the reason is a MEASUREMENT, not
-                        ; caution. Armed, this reports 2459 sites on the
-                        ; untouched tree; flow narrowing (define_narrowed#)
-                        ; takes it to 1566, and `scaly`, `scalyc` and
-                        ; `scalyls` to ZERO -- the whole remainder is the
-                        ; three PORTS. Sweeping the rest with the unwrap
-                        ; the message names -- `x as ref[T]`, 1660 sites -- was
-                        ; tried and is WRONG: `packages/tscaly` went to 3237
-                        ; failures, every one of them `exited 21`. A null that
-                        ; is merely STORED works today, and the trap kills it.
-                        ; So the two halves of the message are not
-                        ; interchangeable: where the callee accepts nothing,
-                        ; the honest fix is the NULLABLE PARAMETER, and which
-                        ; half applies is a per-site question the upstream C++
-                        ; answers (a `const T&` cannot be null; a `T*` can).
-                        ; Arming this is one line, and it owes those ~1670
-                        ; decisions first.
+                        ; ★The message names the CALLEE and the argument's
+                        ; position, because the fix is a decision about a
+                        ; DECLARATION and the reader has to find it: a
+                        ; forwarder tells nothing about itself, and 417 of
+                        ; these sites named 417 different ones.
                         ; if this.option_arg_reaches_plain_ref(pt, a)
-                        ;     this.report_option_arg(pt, a.result_type, a.loc)
+                        ;     this.report_option_arg(pt, a.result_type, a.loc, callee, ai - offset)
                     }
                 }
                 set ai: ai + 1
@@ -21289,7 +21581,15 @@ define Planner
             if Planner.option_arg_into_plain_ref(param_type, arg.result_type) = false
                 return false
             if arg.member_access <> null
+            {
+                ; a member CHAIN is proven by PATH, not by name --
+                ; define_narrowed_path#.
+                var oa_path String()
+                if this.operand_path(arg, &oa_path)
+                    if this.path_is_narrowed(oa_path)
+                        return false
                 return true
+            }
             choose arg.expr
                 when av: scalyc.compiler.Plan.PlannedVariable
                 {
@@ -21307,7 +21607,7 @@ define Planner
         ; The message names the unwrap, because there IS no flow narrowing of
         ; the TYPE: a caller who has just tested the value still owes the
         ; cast, and that cast is where the exit-21 trap is emitted.
-        function report_option_arg(this: Planner, param_type: PlannedType, arg_type: PlannedType, loc: Span)
+        function report_option_arg(this: Planner, param_type: PlannedType, arg_type: PlannedType, loc: Span, callee: String, index: size_t)
         {
             var osb StringBuilder()
             ; NO backticks in these literals -- an unescaped backtick opens a
@@ -21323,7 +21623,10 @@ define Planner
             osb.append opn
             osb.append "), or declare the parameter nullable ("
             osb.append opn
-            osb.append "?)"
+            osb.append "?) - argument "
+            osb.append (index + 1)
+            osb.append " of "
+            osb.append callee
             let omsg osb.to_string()
             this.add_diagnostic(loc, String^this(omsg))
         }
@@ -28094,6 +28397,10 @@ define Planner
         ; from any depth.
         function retire_narrowing(this: Planner, st: ref[PlannedStatement])
         {
+            ; The blunt half -- see clear_path_narrowings#. A field can be
+            ; rebound through any alias of its object, and there is no alias
+            ; analysis here to say which statement can.
+            this.clear_path_narrowings()
             choose st
                 when a: PlannedAction
                 {
