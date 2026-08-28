@@ -1,0 +1,52 @@
+; The two exits from xfail_option_arg_into_ref_method.scaly, both accepted.
+;
+; (1) the callee needs an object -> UNWRAP at the call, and the exit-21 trap is
+;     what makes the claim checkable. Guarded here, so it cannot fire.
+; (2) the callee tolerates nothing -> the NULLABLE parameter, and flow
+;     narrowing then carries the guarded name through the body with no cast at
+;     all: `this.wants(h)` on the line after `if h = null return 0`.
+;
+; Which exit applies is a question about the CALLEE's body, never a sweep.
+
+define Holder (k: int)
+{
+    init(k: int)
+        set this.k: k
+}
+
+define Keeper (n: int)
+{
+    init()
+        set n: 0
+
+    function wants(this: ref[Keeper], h: ref[Holder]) returns int
+        h.k
+
+    function tolerates(this: ref[Keeper], h: ref[Holder]?) returns int
+    {
+        if h = null
+            return 0
+        this.wants(h)
+    }
+}
+
+function drive() returns int
+{
+    var kp Keeper#()
+    var slot: ref[Holder]? Holder#(7)
+    var empty: ref[Holder]? null
+    var total 0
+    ; (1) the unwrap, under the guard that makes it true
+    if slot <> null
+        set total: total + kp.wants(slot as ref[Holder])
+    ; (2) the nullable parameter, answering for nothing ...
+    set total: total + kp.tolerates(empty)
+    ; ... and for something, through the narrowing the guard proves
+    set total: total + kp.tolerates(slot)
+    total
+}
+
+if drive() = 14
+    Console.println "PASS"
+else
+    Console.println "FAIL"

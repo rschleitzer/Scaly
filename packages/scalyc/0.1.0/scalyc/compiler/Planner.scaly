@@ -18780,6 +18780,30 @@ define Planner
             let planned_body this.plan_action(w.action)
             this.pop_scope()
 
+            ; ... and the NEGATION, for everything that FOLLOWS the loop:
+            ; `while peer = null { retry }` leaves peer proven, because the
+            ; only way out is the condition going false. A break voids that --
+            ; ops_contain_break# is the check, and it is blunt on purpose.
+            ; The fact goes into the ENCLOSING scope, which is where the
+            ; statements it proves live; plan_block# pops it with them.
+            if planned_cond.operation <> null
+            {
+                let pn_ops (*planned_cond.operation)
+                if pn_ops.length = 1
+                {
+                    let pn_c pn_ops.get 0
+                    if pn_c <> null
+                    {
+                        var pn_name String()
+                        var pn_positive: bool false
+                        if this.narrow_null_test((*pn_c), &pn_name, &pn_positive)
+                            if pn_positive = false
+                                if this.action_contains_break(planned_body) = false
+                                    this.define_narrowed(pn_name)
+                    }
+                }
+            }
+
             ; Two shapes reach this point:
             ;   `while cond`          — binding has no name; we constrain
             ;                           its declared type to bool.
@@ -21443,11 +21467,36 @@ define Planner
                         if pt.name = "ref"
                             if this.operand_is_null_through_casts(a)
                                 this.report_null_arg(pt, a.loc)
+                        ; ★★★ARMED 2026-08-28, and what it cost is written in
+                        ; the ports rather than here: 1566 sites, 640 of them
+                        ; distinct (callee, argument) DECLARATIONS, every one
+                        ; decided against the upstream reference. Two halves,
+                        ; and they are not interchangeable -- a blanket unwrap
+                        ; of all of them was measured WRONG once (tscaly, 3237
+                        ; failures, every one `exited 21`), because a null that
+                        ; is merely FORWARDED works today and the trap kills
+                        ; it. What separates them is the CALLEE's body:
+                        ;   * it DEREFERENCES the parameter -> a null there is
+                        ;     a SIGSEGV today, so no run that works can be
+                        ;     passing one; the unwrap asserts what is already
+                        ;     true and turns the crash into exit 21. 545 sites.
+                        ;   * it only FORWARDS -> the declaration is the lie;
+                        ;     declare it nullable and the question moves one
+                        ;     hop, to the callee that finally reads it. ~490
+                        ;     parameters, and the cascade it starts (a RETURN
+                        ;     that answers an Option, a FIELD that stores one,
+                        ;     an init parameter whose field moved, a `choose`
+                        ;     SUBJECT that may not be one) is the honest tail.
+                        ; Flow narrowing is what made the second half cheap:
+                        ; the guard a nullable parameter needs is `if p = null
+                        ; return`, and early_exit_narrows# then carries the
+                        ; name through the rest of the body unchanged.
+                        ;
                         ; ★The message names the CALLEE and the argument's
                         ; position, because the fix is a decision about a
                         ; DECLARATION and the reader has to find it: a
-                        ; forwarder tells nothing about itself, and 417 of
-                        ; these sites named 417 different ones.
+                        ; forwarder tells nothing about itself, and 640 of
+                        ; these sites named 640 different ones.
                         if this.option_arg_reaches_plain_ref(pt, a)
                             this.report_option_arg(pt, a.result_type, a.loc, callee, ai - offset)
                     }
@@ -28340,6 +28389,209 @@ define Planner
         ; (EXC_BAD_ACCESS in _platform_memmove, one frame below
         ; early_exit_narrows#). A ref also skips the whole-union copy a
         ; `choose` on a value subject makes before it reads the tag.
+        ; A call to a NORETURN extern leaves the block as surely as a `return`
+        ; does, and the ports write the guard that way: `if peer = null exit 3`.
+        ; The list is the emitter's own (Emitter.mark_noreturn_callee) -- the
+        ; two must name the same three functions, or one of them is guessing.
+        function operand_is_noreturn_call(op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when nc: scalyc.compiler.Plan.PlannedCall
+                {
+                    if nc.name = "exit"
+                        return true
+                    if nc.name = "abort"
+                        return true
+                    if nc.name = "_exit"
+                        return true
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; ================================================================
+        ; The NEGATION after a `while`: when the loop can only be left by its
+        ; condition going false, the false condition is a FACT afterwards.
+        ; `while peer = null { ... retry ... }` proves peer for everything that
+        ; follows, and it is the idiom the cluster fixtures and the demo write.
+        ;
+        ; ★The whole proof rests on "can only be left by its condition", so a
+        ; BREAK anywhere inside voids it -- and this walk is deliberately blunt
+        ; about that: a break belonging to a NESTED loop still blocks the
+        ; narrowing. Over-conservative in the one direction that only ever
+        ; costs a diagnostic, where the other costs a null deref.
+        ; ================================================================
+        function ops_contain_break(this: Planner, ops_ref: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if ops_ref = null
+                return false
+            let ob_ops (*ops_ref)
+            var ob_i: size_t 0
+            while ob_i < ob_ops.length
+            {
+                let ob_p ob_ops.get ob_i
+                if ob_p <> null
+                    if this.operand_contains_break((*ob_p))
+                        return true
+                set ob_i: ob_i + 1
+            }
+            false
+        }
+
+        function stmts_contain_break(this: Planner, stmts_ref: ref[Vector[PlannedStatement]]?) returns bool
+        {
+            if stmts_ref = null
+                return false
+            let sb_st (*stmts_ref)
+            var sb_i: size_t 0
+            while sb_i < sb_st.length
+            {
+                let sb_p sb_st.get sb_i
+                if sb_p <> null
+                    if this.statement_contains_break(sb_p as ref[PlannedStatement])
+                        return true
+                set sb_i: sb_i + 1
+            }
+            false
+        }
+
+        function stmt_opt_contains_break(this: Planner, st_ref: ref[PlannedStatement]?) returns bool
+        {
+            if st_ref = null
+                return false
+            this.statement_contains_break(st_ref as ref[PlannedStatement])
+        }
+
+        function components_contain_break(this: Planner, c_ref: ref[Vector[PlannedComponent]]?) returns bool
+        {
+            if c_ref = null
+                return false
+            let cb_c (*c_ref)
+            var cb_i: size_t 0
+            while cb_i < cb_c.length
+            {
+                let cb_p cb_c.get cb_i
+                if cb_p <> null
+                    if this.ops_contain_break(cb_p.value)
+                        return true
+                set cb_i: cb_i + 1
+            }
+            false
+        }
+
+        function action_contains_break(this: Planner, a: PlannedAction) returns bool
+        {
+            if this.ops_contain_break(a.source)
+                return true
+            this.ops_contain_break(a.target)
+        }
+
+        function whens_contain_break(this: Planner, w_ref: ref[Vector[PlannedWhen]]?) returns bool
+        {
+            if w_ref = null
+                return false
+            let wb_w (*w_ref)
+            var wb_i: size_t 0
+            while wb_i < wb_w.length
+            {
+                let wb_p wb_w.get wb_i
+                if wb_p <> null
+                    if this.stmt_opt_contains_break(wb_p.consequent)
+                        return true
+                set wb_i: wb_i + 1
+            }
+            false
+        }
+
+        function branches_contain_break(this: Planner, b_ref: ref[Vector[PlannedBranch]]?) returns bool
+        {
+            if b_ref = null
+                return false
+            let bb_b (*b_ref)
+            var bb_i: size_t 0
+            while bb_i < bb_b.length
+            {
+                let bb_p bb_b.get bb_i
+                if bb_p <> null
+                    if this.stmt_opt_contains_break(bb_p.consequent)
+                        return true
+                set bb_i: bb_i + 1
+            }
+            false
+        }
+
+        function statement_contains_break(this: Planner, st: ref[PlannedStatement]) returns bool
+        {
+            choose st
+                when b: PlannedBreak
+                    return true
+                when a: PlannedAction
+                {
+                    if this.ops_contain_break(a.source)
+                        return true
+                    return this.ops_contain_break(a.target)
+                }
+                when bd: PlannedBinding
+                    return this.ops_contain_break(bd.operation)
+                when r: PlannedReturn
+                    return this.ops_contain_break(r.result)
+                when t: PlannedThrow
+                    return this.ops_contain_break(t.result)
+                else
+                    return false
+            false
+        }
+
+        function operand_contains_break(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when c: scalyc.compiler.Plan.PlannedCall
+                    return this.ops_contain_break(c.args)
+                when tp: scalyc.compiler.Plan.PlannedTuple
+                    return this.components_contain_break(tp.components)
+                when bl: scalyc.compiler.Plan.PlannedBlock
+                    return this.stmts_contain_break(bl.statements)
+                when iff: scalyc.compiler.Plan.PlannedIf
+                {
+                    if this.ops_contain_break(iff.condition)
+                        return true
+                    if this.stmt_opt_contains_break(iff.consequent)
+                        return true
+                    return this.stmt_opt_contains_break(iff.alternative)
+                }
+                when ch: scalyc.compiler.Plan.PlannedChoose
+                {
+                    if this.whens_contain_break(ch.cases)
+                        return true
+                    return this.stmt_opt_contains_break(ch.alternative)
+                }
+                when mt: scalyc.compiler.Plan.PlannedMatch
+                {
+                    if this.branches_contain_break(mt.branches)
+                        return true
+                    return this.stmt_opt_contains_break(mt.alternative)
+                }
+                when wh: scalyc.compiler.Plan.PlannedWhile
+                    return this.action_contains_break(wh.body)
+                when fr: scalyc.compiler.Plan.PlannedFor
+                    return this.action_contains_break(fr.body)
+                when rp: scalyc.compiler.Plan.PlannedRepeat
+                    return this.action_contains_break(rp.body)
+                when tr: scalyc.compiler.Plan.PlannedTry
+                {
+                    if this.whens_contain_break(tr.catches)
+                        return true
+                    return this.stmt_opt_contains_break(tr.alternative)
+                }
+                else
+                    return false
+            false
+        }
+
         function statement_exits(st: ref[PlannedStatement]) returns bool
         {
             choose st
@@ -28362,6 +28614,8 @@ define Planner
                     if se_op_ptr = null
                         return false
                     let se_op (*se_op_ptr)
+                    if Planner.operand_is_noreturn_call(se_op)
+                        return true
                     choose se_op.expr
                         when blk: scalyc.compiler.Plan.PlannedBlock
                         {
