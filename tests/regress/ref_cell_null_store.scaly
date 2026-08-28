@@ -1,0 +1,73 @@
+; Regression: the POINTER-POINTEE OUT-CELL, `ref[ref[X]?]` — writing it,
+; clearing it, and reading it back (2026-08-28).
+;
+; This is the shape CLAUDE.md recorded as a proven route and never executed:
+; `pointer[pointer[X]]` naming a single cell the callee writes a reference
+; into. Converting it needed one compiler change, because TWO GATES HAD CLOSED
+; ON EACH OTHER and left the tree with no way to clear such a cell:
+;
+;   set *out: null    refused by report_deref_of_ref#   (the fifth gate)
+;   set out: null     refused by report_null_into_ref#  (the first gate)
+;
+; The first of those is right — a ref is not a pointer. The second was not: a
+; borrowed reference cannot be rebound to nothing, so `set r: null` has exactly
+; one reading, the store through into the pointee, and when that pointee is
+; itself an Option the statement is correct. null_set_target# makes the gate
+; judge the POINTEE; ref_pointee_may_be_null# is the question it asks.
+;
+; ★ The READ side is deliberately NOT symmetric — see xfail_null_test_on_cell
+;   .scaly, which is what this file's `let v: ref[Item]? c` spelling exists for.
+;
+; Expected: PASS
+
+define Item (v: int)
+
+procedure fill(c: ref[ref[Item]?], p: ref[Item])
+    set c: p
+
+procedure clear(c: ref[ref[Item]?])
+    set c: null
+
+; The cell is READ through a typed binding: the transparent read fires at a
+; declared-type position, and the reference itself is never null.
+function peek(c: ref[ref[Item]?]) returns int
+{
+    let v: ref[Item]? c
+    if v = null
+        return 0
+    let r v as ref[Item]
+    r.v
+}
+
+var itv Item(41)
+var full: ref[Item]? &itv
+var empty: ref[Item]? null
+
+if peek(&full) <> 41
+{
+    Console.println "FAIL a converted cell handed in full"
+    exit 1
+}
+if peek(&empty) <> 0
+{
+    Console.println "FAIL a converted cell handed in empty"
+    exit 1
+}
+
+; the store-through of null actually reaches the pointee
+clear(&full)
+if peek(&full) <> 0
+{
+    Console.println "FAIL set c: null did not clear the pointee"
+    exit 1
+}
+
+; ... and the store-through of a reference does too
+fill(&empty, &itv)
+if peek(&empty) <> 41
+{
+    Console.println "FAIL set c: p did not reach the pointee"
+    exit 1
+}
+
+Console.println "PASS"

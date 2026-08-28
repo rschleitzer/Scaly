@@ -1,0 +1,35 @@
+; Regression: a null TEST on a pointer-pointee out-cell stays refused, and the
+; asymmetry with the STORE is the whole point (2026-08-28).
+;
+; ref_cell_null_store.scaly proves `set c: null` reaches the pointee of a
+; `ref[ref[X]?]`. The mirror reading — that `c = null` must therefore be asking
+; about the pointee too, since the reference itself is never null — is FALSE,
+; and exempting the gate for it was tried and MEASURED WRONG:
+;
+;   * `set` REWRITES the target into the deref (set_target_stores_through#), so
+;     the store genuinely lands in the pointee;
+;   * `=` against null takes the NPO presence-test path and never loads, so the
+;     comparison really is constant, exactly as the gate says.
+;
+; With the exemption in place `if c = null` answered FALSE for a cell holding
+; null, and the unwrap two lines down trapped at exit 21 — a true diagnostic
+; turned into a silent wrong answer, the one direction that must never happen.
+;
+; The honest spelling is the typed binding: `let v: ref[X]? c` and then
+; `if v = null`, which ref_cell_null_store.scaly uses throughout.
+;
+; xfail: null test on a non-optional reference
+
+define Item (v: int)
+
+function peek(c: ref[ref[Item]?]) returns int
+{
+    ; the reference is never null; this comparison is constant
+    if c = null
+        return 0
+    1
+}
+
+var itv Item(41)
+var cell: ref[Item]? &itv
+Console.println "`peek(&cell)`"

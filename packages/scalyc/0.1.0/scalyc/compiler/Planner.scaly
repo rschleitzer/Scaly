@@ -21632,6 +21632,81 @@ define Planner
             m
         }
 
+        ; ref_pointee_may_be_null#: is the POINTEE of this `ref[T]` itself a
+        ; slot that may hold nothing?
+        ;
+        ; The question BOTH null gates have to ask before they judge a
+        ; reference, and the one neither asked.  A `ref[ref[X]?]` -- the
+        ; pointer-pointee out-cell -- is a reference that always refers to
+        ; something, and what it refers to is an Option: `set r: null` writes
+        ; the pointee and `r = null` reads it, so neither statement is the lie
+        ; the gates were built to catch.  Judging the reference refused both
+        ; spellings, while `*r` is refused by report_deref_of_ref#, and the
+        ; tree was left with no way to say either thing.
+        ;
+        ; ★★★ IT SERVES THE WRITE SIDE ONLY, and that was measured rather than
+        ; reasoned.  `set r: null` reaches the pointee because
+        ; set_target_stores_through# rewrites the target into the deref; a
+        ; comparison `r = null` does NOT -- it takes the NPO presence-test path
+        ; and never loads -- so report_null_test_on_ref# keeps its verdict and
+        ; says so in as many words.  The first draft exempted both and turned a
+        ; true diagnostic into a constant comparison.
+        ;
+        ; ★ `pointer` counts as well as `Option`: a pointer pointee is nullable
+        ; by construction, which is the same reason report_null_into_ref#
+        ; leaves a `pointer[T]` TARGET alone.
+        function ref_pointee_may_be_null(t: PlannedType) returns bool
+        {
+            if t.name <> "ref"
+                return false
+            var inner: PlannedType t
+            if Planner.type_strip_one_reference(t, &inner) = false
+                return false
+            if inner.name = "Option"
+                return true
+            inner.name = "pointer"
+        }
+
+        ; null_set_target#: which type report_null_into_ref# must judge for a
+        ; `set` whose source is the bare null literal.
+        ;
+        ; `set r: null` on a `ref[T]` has exactly ONE reading -- a borrowed
+        ; reference cannot be rebound to nothing, so the assignment writes the
+        ; POINTEE, which is set_target_stores_through#'s rule for every other
+        ; source.  When that pointee is itself nullable the statement is
+        ; correct and the gate must judge the POINTEE, not the reference
+        ; around it.
+        ;
+        ; ★★★ It was found by CONVERTING, not by reading: the pointer-pointee
+        ; out-cell `out: ref[ref[X]?]` -- the route CLAUDE.md records as proven
+        ; and never executed -- opens with `set out: null` at nearly every one
+        ; of its sites, and the tree had NO spelling left for it.  Judging the
+        ; reference refused the honest form, while `set *out: null` is refused
+        ; by report_deref_of_ref#, so the two gates closed on each other and
+        ; the only way through was a scratch local (`var nothing: ref[X]? null`
+        ; then `set out: nothing`) -- a workaround for a statement the language
+        ; should simply accept.
+        ;
+        ; A pointee that is NOT nullable keeps the reference's own verdict:
+        ; storing null through into a non-optional pointee is the same lie one
+        ; level in, and `ref[int]` must still refuse it.
+        ;
+        ; ★ A BARE target only, for set_target_stores_through#'s reason -- a
+        ; member-access chain names the REFERENCE, not the pointee -- and the
+        ; two must agree, or the gate would fall silent on a statement the
+        ; rewrite does not take.
+        function null_set_target(target: PlannedOperand) returns PlannedType
+        {
+            if target.member_access <> null
+                return target.result_type
+            if Planner.ref_pointee_may_be_null(target.result_type) = false
+                return target.result_type
+            var inner: PlannedType target.result_type
+            if Planner.type_strip_one_reference(target.result_type, &inner) = false
+                return target.result_type
+            inner
+        }
+
         function set_target_stores_through(this: Planner, target_type: PlannedType, source_type: PlannedType, target_is_mutable: bool) returns bool
         {
             if target_type.name <> "ref"
@@ -22109,6 +22184,20 @@ define Planner
                 return
             if ref_type.name <> "ref"
                 return
+            ; ★★★ NO POINTEE EXEMPTION HERE, AND THE ASYMMETRY IS THE POINT.
+            ; It was tried for `ref[ref[X]?]` on the reasoning that `r = null`
+            ; must be reading the pointee, since the reference itself is never
+            ; null -- the same reasoning ref_pointee_may_be_null# serves on the
+            ; `set` side. It is TRUE of the write and FALSE of the read:
+            ; set_target_stores_through# REWRITES the target into the deref, so
+            ; the store really does reach the pointee, while a comparison
+            ; against `null` takes the NPO presence-test path and never loads.
+            ; Silencing the gate therefore turned a correct diagnostic into a
+            ; constant comparison -- `if c = null` answered FALSE for a cell
+            ; holding null, and the unwrap two lines down trapped at exit 21.
+            ; The honest spelling names the pointee: `let v: ref[X]? c` (a
+            ; typed binding, where the transparent read does fire) and then
+            ; `if v = null`.
 
             var sb StringBuilder()
             ; NO backticks in these literals -- an unescaped backtick opens a
@@ -22673,7 +22762,7 @@ define Planner
             ; A `set` whose target is a declared `ref[T]` and whose source is
             ; the bare null literal -- report_null_into_ref#.
             if a.target.length > 0
-                this.report_null_into_ref(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc)
+                this.report_null_into_ref(Planner.null_set_target(planned_target_collapsed), planned_source_collapsed, planned_source_collapsed.loc)
 
             ; A `ref[T]` TARGET whose source is the pointee stores THROUGH the
             ; reference -- set_target_stores_through#. Rewriting the target
