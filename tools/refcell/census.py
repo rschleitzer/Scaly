@@ -50,7 +50,7 @@ for f in glob.glob(PKG+'/**/*.scaly', recursive=True):
             elif inner=='void': cat='void'
             elif inner=='Page': cat='Page'
             elif inner in ('const_char',): cat='cstring'
-            elif inner in ('int','bool','u8','u32','u64','i8','i32','i64','size_t','char','double','float','byte'): cat='primitive'
+            elif inner in ('int','bool','u8','u16','u32','u64','i8','i16','i32','i64','size_t','char','double','float','byte'): cat='primitive'
             elif re.fullmatch(r'[A-Z]', inner): cat='generic-param'
             elif inner.startswith('pointer['): cat='pointer-to-pointer'
             elif re.match(r'LLVM|.*Ref$', inner): cat='llvm-handle'
