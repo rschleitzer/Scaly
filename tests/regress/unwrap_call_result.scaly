@@ -1,7 +1,7 @@
 ; `x as ref[T]` must mean the same thing whichever way x is spelled. It did
 ; not: a BARE NAME and a MEMBER hop cast, and a CALL RESULT exited 14 with
-; "Emitter: cannot cast this value to ref" -- rc 0, no file, no line, and no
-; output file. A returned `ref[T]?` comes back as a one-pointer aggregate
+; "Emitter: cannot cast this value to ref" -- exit 14, with no file, no line
+; and no output file. A returned `ref[T]?` comes back as a one-pointer aggregate
 ; where the same value in a local or a field arrives as a bare pointer, and
 ; the cast path had a rule only for the pointer.
 ;

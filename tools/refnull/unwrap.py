@@ -6,10 +6,22 @@ handed to a non-optional `ref[T]` parameter that flow narrowing could not
 prove.  The fix is always the same and the diagnostic names the type:
 `x` becomes `x as ref[T]`.
 
-Behaviour-preserving by construction.  The unwrap emits the exit-21 trap, and
-that trap fires exactly where the old code took a SIGSEGV at the first member
-hop -- so a site that works today keeps working, and one that does not now
-says so with the enclosing symbol's name instead of a bare signal.
+★★★READ THIS BEFORE RUNNING IT: the unwrap is the WRONG HALF of the fix at
+most sites, and this tool exists as the record of that measurement rather
+than as a recommended sweep.
+
+The first draft of this docstring claimed it was "behaviour-preserving by
+construction" -- the unwrap emits the exit-21 trap, and the trap was supposed
+to fire only where the old code already took a SIGSEGV.  That is FALSE.  A
+null that is merely STORED works today and derefs nothing; the trap kills it.
+Run over the ports, this took `packages/tscaly` to 3237 failures, EVERY ONE of
+them `exited 21`.
+
+The diagnostic offers two fixes and they are not interchangeable.  Where the
+callee genuinely accepts nothing, the honest fix is the NULLABLE PARAMETER,
+and which half applies is a per-site question the upstream C++ answers: a
+`const T&` cannot be null, a `T*` can.  Use this to ENUMERATE the sites, then
+decide each one; do not let it write them.
 
 Driven by the compiler's own reports, never by a pattern: only the planner
 knows which argument its narrowing already proved.
