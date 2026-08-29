@@ -73,7 +73,13 @@ _spec = _ilu.spec_from_file_location('refcell_scan', os.path.join(
 _rc = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_rc)
 frozen_names = _rc.frozen_names
 
-NON_ELEMENT = ('void', 'cstring')
+# ★★★`const_char` is EXCLUDED, and it is a COMPILER defect, not taste:
+# `Slice[const_char]` reads the wrong memory. Probed 2026-08-29 --
+# `Slice[const_char]("as", 2)` answers `w[0] == 2`, the LENGTH field, where the
+# identical `Slice[char]` and `Slice[u8]` answer 97. It compiles, runs, and is
+# silent; in tscaly it made every keyword scan as an identifier and took the
+# suite to 4044 failures. Re-test before lifting this.
+NON_ELEMENT = ('void', 'cstring', 'const_char')
 
 # a parameter whose NAME reads as a count of something
 # ★`cap`/`capacity` measure an OUTPUT buffer and are length-shaped names like

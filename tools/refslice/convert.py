@@ -31,6 +31,11 @@ def deref_to_subscript(line, buf):
         if end is None: return out
         out = out[:m.start()] + f'{buf}[' + out[m.end():end].strip() + ']' + out[end + 1:]
 
+def bare_deref_to_subscript(line, buf):
+    """`*name` with no arithmetic is element ZERO -- `(*d) as u8` and
+    `*d as int` are how these ports read the first byte."""
+    return re.sub(rf'\*{re.escape(buf)}(?![\w\[])', f'{buf}[0]', line)
+
 STR = re.compile(r'"(?:\\.|[^"\\])*"')
 
 def code_only(line):
@@ -78,7 +83,7 @@ def main(path, routine, buf, length, elem):
     # body
     for i in range(a, b + 1):
         s = lines[i]
-        s = deref_to_subscript(s, buf)
+        s = bare_deref_to_subscript(deref_to_subscript(s, buf), buf)
         if i > a:
             s = re.sub(rf'(?<![\w.]){re.escape(length)}(?![\w])', f'{buf}.length', s)
         lines[i] = s
