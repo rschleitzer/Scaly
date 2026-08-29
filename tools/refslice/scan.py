@@ -59,8 +59,12 @@ frozen_names = _rc.frozen_names
 NON_ELEMENT = ('void', 'cstring')
 
 # a parameter whose NAME reads as a count of something
-LEN_NAME = re.compile(r'^(n|len|length|count|size|num|nchars|cnt)$|'
-                      r'^(n|num)_\w+$|\w+_(len|length|count|size|n)$', re.I)
+# ★`cap`/`capacity` measure an OUTPUT buffer and are length-shaped names like
+# any other -- leaving them out put `encode_utf8_bytes(chars, len, out, cap)`'s
+# `out` in the LOOSE bucket, where it read as an unpairable buffer while its
+# length sat right beside it.
+LEN_NAME = re.compile(r'^(n|len|length|count|size|num|nchars|cnt|cap|capacity)$|'
+                      r'^(n|num)_\w+$|\w+_(len|length|count|size|n|cap|capacity)$', re.I)
 LEN_TYPE = ('size_t', 'int', 'u32', 'u64', 'i64', 'u16')
 
 def pkg_of(path):
