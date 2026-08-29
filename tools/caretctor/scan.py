@@ -135,6 +135,11 @@ def read_inits(files):
             i += 1
     return out
 
+def init_scope(inits, pkg):
+    """The concepts visible in `pkg`: its own plus the stdlib (prelude)."""
+    scope = dict(inits['scaly']); scope.update(inits[pkg]); return scope
+
+
 def hazard_table(inits):
     """{package: {(concept, arity): bool}} -- does THIS init allocate on `this`?
 
@@ -177,6 +182,7 @@ def scan(files, inits, table):
     sites = []
     for f in files:
         pkg = f.split('/')[1] if f.startswith('packages/') else '?'
+        scope = init_scope(inits, pkg if pkg in inits else 'scaly')
         # an out-of-tree fixture still gets the stdlib verdicts, which is what
         # makes the HAZARD arm demonstrable (see fixture/ -- a refuter that
         # cannot fire is worse than none).
@@ -224,6 +230,21 @@ def scan(files, inits, table):
             uses = use_profile(lines, store_at, name)
             if sigil:
                 v, note = 'SIGIL', 'Konstruktion traegt schon %s' % sigil
+            elif n_args not in scope.get(base, {}):
+                # ★ MEASURED, and it is a COMPILER defect, not a style question:
+                # `&T^page()` on a concept with no matching `init` takes the
+                # POSITIONAL-TUPLE path, which DROPS the sigil --
+                #     %tuple = alloca %NoInit
+                #     store %NoInit zeroinitializer, ptr %tuple
+                #     ret ptr %tuple
+                # a pointer into the dead frame, rc 0, nothing said.  The
+                # `allocate` + `set *p:` form copies that tuple onto the page
+                # and is CORRECT.  opensp's `EventAux` ("a data class with no
+                # init of its own") is exactly this shape and took the unit
+                # suite to rc 139 in `Lpd.get_name`.
+                v, note = 'NO-INIT', ('%s hat keinen init/%d -- die Tupel-Bahn '
+                                      'verliert das ^page-Sigil (Compiler-Defekt)'
+                                      % (base, n_args))
             elif haz.get((base, n_args)):
                 v, note = 'HAZARD', ('init %s/%d allokiert ueber `this` -- das Temporary '
                                      'ist hier nicht nur Verschwendung' % (base, n_args))
@@ -279,7 +300,9 @@ def main():
         if a.startswith('--verdict'):
             only = a.split('=', 1)[1] if '=' in a else sys.argv[sys.argv.index(a) + 1]
     roots = args or ['packages']
-    files = sorted({f for r in roots for f in glob.glob(r + '/**/*.scaly', recursive=True)})
+    files = sorted({f for r in roots
+                    for f in ([r] if r.endswith('.scaly') else
+                              glob.glob(r + '/**/*.scaly', recursive=True))})
     allf  = sorted(glob.glob('packages/**/*.scaly', recursive=True))
     inits = read_inits(allf)
     table = hazard_table(inits)
@@ -291,7 +314,7 @@ def main():
         sys.exit(2)
     sites = scan(files, inits, table)
 
-    order = ['CONVERT', 'HAZARD', 'FIELDWISE', 'COPY', 'SIGIL', 'NO-STORE', 'SKIP']
+    order = ['CONVERT', 'NO-INIT', 'HAZARD', 'FIELDWISE', 'COPY', 'SIGIL', 'NO-STORE', 'SKIP']
     for v in order:
         rows = [s for s in sites if s['verdict'] == v]
         if not rows or (only and v != only): continue
