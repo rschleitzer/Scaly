@@ -33,6 +33,14 @@ not by a tool.  So this scan reports exactly three verdicts:
            forwarder fixpoint calls many of these BUFFER, and this tool runs no
            fixpoint on purpose (see below).  Never a candidate either way.
 
+★★★A verdict here is NECESSARY, NEVER SUFFICIENT: the length must measure the
+buffer in ELEMENTS, and this tool cannot tell what a length counts.
+`make_translate(desc: pointer[u32], n_pairs: size_t)` scores ADJACENT and is a
+TRAP -- the body reads `*(desc + p*2)` and `*(desc + p*2 + 1)`, so the slice is
+`n_pairs * 2` long and the naive conversion would halve it and trap the last
+pair at exit 15.  Read the body's INDEX EXPRESSIONS before converting: an index
+that is not the bare loop variable means the length is not the element count.
+
 Evidence is the same as refout's: a BUFFER proves itself by ARITHMETIC or
 INDEXING on the name.  This tool does NOT run a forwarder fixpoint -- a
 forwarder has no length of its own to pair, so it cannot be a PAIRED candidate
