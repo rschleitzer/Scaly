@@ -15,6 +15,22 @@ is twice as long as the parameter says.
 """
 import re, sys
 
+def deref_to_subscript(line, buf):
+    """`*(buf + <expr>)` -> `buf[<expr>]`, with a BALANCED index: the index may
+    itself contain parentheses (`*(codes + (i as size_t))`)."""
+    out = line
+    while True:
+        m = re.search(rf'\*\(\s*{re.escape(buf)}\s*\+\s*', out)
+        if not m: return out
+        depth, end = 1, None
+        for k in range(m.end(), len(out)):
+            if out[k] == '(': depth += 1
+            elif out[k] == ')':
+                depth -= 1
+                if depth == 0: end = k; break
+        if end is None: return out
+        out = out[:m.start()] + f'{buf}[' + out[m.end():end].strip() + ']' + out[end + 1:]
+
 def routine_range(lines, name):
     start = None
     for i, l in enumerate(lines):
@@ -50,10 +66,21 @@ def main(path, routine, buf, length, elem):
     # body
     for i in range(a, b + 1):
         s = lines[i]
-        s = re.sub(rf'\*\({re.escape(buf)} \+ ([^()]*?)\)', rf'{buf}[\1]', s)
+        s = deref_to_subscript(s, buf)
         if i > a:
             s = re.sub(rf'(?<![\w.]){re.escape(length)}(?![\w])', f'{buf}.length', s)
         lines[i] = s
+
+    # ★★★VERIFY, because the failure is SILENT: pointer arithmetic on a `Slice`
+    # COMPILES -- `*(codes + (i as size_t))` on a converted parameter built and
+    # ran and read garbage (SIGBUS in AllowedParams::allow, corpus 380 -> 124).
+    # The first version of this tool used `\*\(name \+ ([^()]*?)\)`, which
+    # cannot match an index that itself contains parentheses, and left exactly
+    # that site behind. A leftover deref is a hard failure here, never a warning.
+    left = [i + 1 for i in range(a, b + 1) if re.search(rf'\*\(\s*{re.escape(buf)}\s*[+\-]', lines[i])]
+    if left:
+        sys.exit(f"REFUSED: {routine} still derefs {buf} at line(s) {left} -- "
+                 f"pointer arithmetic on a Slice compiles and reads garbage")
     open(path, 'w').write('\n'.join(lines))
     print(f"{path}: {routine}({buf}) -> Slice[{elem}]")
 
