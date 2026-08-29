@@ -7035,6 +7035,186 @@ define Planner
             Vector[PlannedOperand](out)
         }
 
+        ; field_is_cstr_pointer: type_is_cstr_pointer# for a FIELD, which may
+        ; still name the concept's own generic parameter. `Slice[T]` declares
+        ; `data: pointer[T]`, so the unsubstituted field type answers no for
+        ; every instantiation -- and Slice is exactly the concept that runs the
+        ; tuple path for all of its constructions. Resolve the inner name
+        ; against the construction's generic ARGUMENTS by position, the same
+        ; correspondence the instantiation itself uses. Only the one shape is
+        ; resolved: a deeper nesting is not a cstr pointer either way.
+        function field_is_cstr_pointer(
+            ft: PlannedType,
+            params: Vector[GenericParameter],
+            ctor_type: PlannedType
+        ) returns bool
+        {
+            if Planner.type_is_cstr_pointer(ft)
+                return true
+            if ft.name <> "pointer"
+                return false
+            if ft.generics = null
+                return false
+            let gs (*ft.generics)
+            if gs.length = 0
+                return false
+            let ip gs.get 0
+            if ip = null
+                return false
+            let inner (*ip)
+            if ctor_type.generics = null
+                return false
+            let args (*ctor_type.generics)
+            var result: bool false
+            var pi: size_t 0
+            while pi < params.length
+            {
+                let pp params.get pi
+                if pp <> null
+                    if pp.name = inner.name
+                        if pi < args.length
+                        {
+                            let ap args.get pi
+                            if ap <> null
+                            {
+                                let arg (*ap)
+                                if arg.name = "const_char"
+                                    set result: true
+                                if arg.name = "i8"
+                                    set result: true
+                                if arg.name = "char"
+                                    set result: true
+                                if arg.name = "u8"
+                                    set result: true
+                            }
+                        }
+                set pi: pi + 1
+            }
+            result
+        }
+
+        ; subst_cstr_pointer: the target type for the PlannedAs wrap. Where the
+        ; field type is already concrete it IS the target; where it named the
+        ; concept's generic parameter (`Slice[T].data`) there is no
+        ; substituted PlannedType to hand, and make_cstring_type# is the honest
+        ; one -- field_is_cstr_pointer# has already established that the
+        ; instantiated element is a C character type, and at LLVM level every
+        ; arm of that family is `ptr`.
+        function subst_cstr_pointer(
+            ft: PlannedType,
+            params: Vector[GenericParameter],
+            ctor_type: PlannedType
+        ) returns PlannedType
+        {
+            if Planner.type_is_cstr_pointer(ft)
+                return ft
+            Planner.make_cstring_type(ft.loc)
+        }
+
+        ; coerce_string_components_to_cstr: the TUPLE-path counterpart of
+        ; coerce_string_args_to_cstr#, closing the same hole one level down. A
+        ; construction that matched no init# falls through to the positional-
+        ; tuple path, where NO parameter list steers the argument -- so a
+        ; String literal bound to a pointer[const_char]-like FIELD was stored
+        ; as the varint-prefixed String constant (`@.sconst = c"\02as\00"`) and
+        ; the field then pointed at the LENGTH BYTE. `Holder("as", 2)` read 2
+        ; where the same record with a matching init# read 97; rc 0, nothing
+        ; said, and the two constants sit one line apart in the IR
+        ; (`.sconst = [4 x i8] c"\02as\00"` against `.str = [3 x i8] c"as\00"`).
+        ;
+        ; The FIELD type is the only thing that can decide this, exactly as the
+        ; PARAMETER type is at a call: at LLVM level a by-value String and a
+        ; const_char pointer are both `ptr`.
+        ;
+        ; Alignment is POSITIONAL, the tuple path's own rule. A NAMED component
+        ; is skipped rather than guessed at, and so is anything but a lone
+        ; String operand -- under-coercion is today's behaviour, over-coercion
+        ; would be a new wrong pointer. Emission-neutral where nothing coerces:
+        ; the vector is rebuilt only when a component actually changed.
+        function coerce_string_components_to_cstr(
+            this: Planner,
+            struct_name: String,
+            comps: ref[Vector[PlannedComponent]]?,
+            ctor_type: PlannedType
+        ) returns ref[Vector[PlannedComponent]]?
+        {
+            if comps = null
+                return comps
+            let concept_ref this.lookup_concept(struct_name)
+            if concept_ref = null
+                return comps
+            let c (*concept_ref)
+            var out_ref: ref[Vector[PlannedComponent]]? comps
+            choose c.definition
+                when s: Structure
+                {
+                    let cv (*comps)
+                    var changed: bool false
+                    var built Array[PlannedComponent]()
+                    var ci: size_t 0
+                    while ci < cv.length
+                    {
+                        let cp cv.get ci
+                        if cp <> null
+                        {
+                            let cc (*cp)
+                            var nc_value: ref[Vector[PlannedOperand]]? cc.value
+                            if cc.name = null
+                                if ci < s.properties.length
+                                {
+                                    let prop_ptr s.properties.get ci
+                                    if prop_ptr <> null
+                                        if prop_ptr.type <> null
+                                        {
+                                            let ft this.plan_type((*prop_ptr.type))
+                                            if Planner.field_is_cstr_pointer(ft, c.parameters, ctor_type)
+                                                if cc.value <> null
+                                                {
+                                                    let vals (*cc.value)
+                                                    if vals.length = 1
+                                                    {
+                                                        let vp vals.get 0
+                                                        if vp <> null
+                                                        {
+                                                            let a (*vp)
+                                                            if a.result_type.name = "String"
+                                                            {
+                                                                let target Planner.subst_cstr_pointer(ft, c.parameters, ctor_type)
+                                                                let casted PlannedAs(a.loc, target, &^this a)
+                                                                var one_arr Array[PlannedOperand]()
+                                                                one_arr.add(PlannedOperand(
+                                                                    a.loc,
+                                                                    PlannedExpression.As casted,
+                                                                    null,
+                                                                    ft
+                                                                ))
+                                                                var one_vec Vector[PlannedOperand](one_arr)
+                                                                set nc_value: &one_vec
+                                                                set changed: true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                }
+                            built.add(PlannedComponent(
+                                cc.loc, cc.name, nc_value, cc.attributes
+                            ))
+                        }
+                        set ci: ci + 1
+                    }
+                    if changed
+                    {
+                        var built_vec Vector[PlannedComponent](built)
+                        set out_ref: &built_vec
+                    }
+                    0
+                }
+                else
+                    0
+            out_ref
+        }
+
         ; fold_string_args_to_char: for a resolved call, fold each bare
         ; double-quoted char literal argument (a chainless String constant)
         ; whose matched parameter is char/u8/i8 into a validated
@@ -9883,6 +10063,15 @@ define Planner
                             ; No-op for a full construction or a plain tuple.
                             ; Mirrors stage-0 Planner.cpp:9229-9275.
                             set components_holder: this.fill_default_components(fn_name, second.loc, components_holder, ctor_struct_type, ctor_arg_types)
+
+                            ; A String literal bound to a pointer[const_char]-
+                            ; like FIELD is the c_data pointer, not the varint
+                            ; String record -- the tuple path's counterpart of
+                            ; the coercion every resolved call gets
+                            ; (coerce_string_components_to_cstr#). Runs AFTER
+                            ; the defaults are filled so a defaulted field's
+                            ; own literal is covered by the same walk.
+                            set components_holder: this.coerce_string_components_to_cstr(fn_name, components_holder, ctor_struct_type)
 
                             ; Propagate the type's lifetime into the tuple.
                             ; ctor_struct_type carries the lifetime from the

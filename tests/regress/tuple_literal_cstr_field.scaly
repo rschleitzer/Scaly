@@ -1,0 +1,83 @@
+; A String LITERAL bound to a pointer[const_char]-like FIELD on the
+; positional-tuple construction path is the c_data pointer, not the varint
+; String record.
+;
+; Before 2026-08-29 it was the record: a construction that matched no init#
+; falls through to the tuple path, where no parameter list steers the
+; argument, so the literal was stored as `@.sconst = c"\02as\00"` and the
+; field then pointed at the LENGTH BYTE. `Holder("as", 2).first()` answered
+; 2 where the identical record WITH a matching init# answered 97 — rc 0,
+; nothing said.
+;
+; `Slice[T]` declares only `init ()`, so EVERY `Slice[T](p, n)` runs this
+; path, which is why the defect was first recorded as a `Slice[const_char]`
+; one. The element type is innocent and every arm below proves it: each
+; reads 97 from a literal and 97 from a real buffer.
+
+define Holder (data: pointer[char], n: size_t)
+{
+    function first(this) returns int
+        *data as int
+}
+
+define HolderCC (data: pointer[const_char], n: size_t)
+{
+    function first(this) returns int
+        *data as int
+}
+
+define HolderInit (data: pointer[char], n: size_t)
+{
+    init(d: pointer[char], k: size_t)
+    {
+        set data: d
+        set n: k
+    }
+    function first(this) returns int
+        *data as int
+}
+
+var ok true
+
+; the tuple path, plain records
+if Holder("as", 2).first() <> 97
+    set ok: false
+if HolderCC("as", 2).first() <> 97
+    set ok: false
+
+; the same record with a matching init# — the arm that was always right
+if HolderInit("as", 2).first() <> 97
+    set ok: false
+
+; Slice, every element type, from a literal
+if (Slice[char]("as", 2)[0] as int) <> 97
+    set ok: false
+if (Slice[const_char]("as", 2)[0] as int) <> 97
+    set ok: false
+if (Slice[u8]("as", 2)[0] as int) <> 97
+    set ok: false
+
+; and from a real buffer — the direction that was never broken, kept as the
+; control so a fix that breaks it cannot pass
+let s String("as")
+let d s.c_data()
+if (Slice[char](d, 2)[0] as int) <> 97
+    set ok: false
+if (Slice[const_char](d, 2)[0] as int) <> 97
+    set ok: false
+if (Slice[u8](d, 2)[0] as int) <> 97
+    set ok: false
+
+; the length field is untouched by the coercion
+if Slice[char]("as", 2).length <> (2 as size_t)
+    set ok: false
+
+; a multi-character literal still reads its SECOND byte correctly — the
+; varint form would have shifted every index by one
+if (Slice[char]("as", 2)[1] as int) <> 115
+    set ok: false
+
+if ok
+    println "PASS"
+else
+    println "FAIL"
