@@ -7022,7 +7022,7 @@ define Emitter
         ; names in `set` (a dependency-package's provided symbols). Linear scan —
         ; the set is small (one entry per dep-package top-level function) and this
         ; runs once per module declaration at JIT setup.
-        function jit_symbol_in_set(this, sym_set: ref[Array[String]]?, name_ptr: pointer[const_char], name_len: size_t) returns bool
+        function jit_symbol_in_set(this, sym_set: ref[Array[String]]?, name_ptr: Slice[const_char]) returns bool
         {
             if sym_set = null
                 return false
@@ -7034,17 +7034,17 @@ define Emitter
                 if sp <> null
                 {
                     let s (*sp)
-                    if s.get_length() = name_len
+                    if s.get_length() = name_ptr.length
                     {
                         let sd s.c_data()
                         var j: size_t 0
                         var eq: bool true
-                        while j < name_len
+                        while j < name_ptr.length
                         {
-                            if (*(sd + j)) <> (*(name_ptr + j))
+                            if (*(sd + j)) <> (name_ptr[j])
                             {
                                 set eq: false
-                                set j: name_len
+                                set j: name_ptr.length
                             }
                             set j: j + 1
                         }
@@ -7089,7 +7089,7 @@ define Emitter
                             ; A dependency-package object provides the real body —
                             ; leave the declaration for the ORC object linker.
                             if is_scaly_mangled
-                                if this.jit_symbol_in_set(dep_symbols, name_ptr, name_len)
+                                if this.jit_symbol_in_set(dep_symbols, Slice[const_char](name_ptr, name_len))
                                     set is_scaly_mangled: false
                             ; Skip symbols the host process already exports —
                             ; the RBMM runtime + stdlib (Page.allocate, String/
