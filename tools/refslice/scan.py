@@ -91,13 +91,20 @@ _spec = _ilu.spec_from_file_location('refcell_scan', os.path.join(
 _rc = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_rc)
 frozen_names = _rc.frozen_names
 
-# ★★★`const_char` is EXCLUDED, and it is a COMPILER defect, not taste:
-# `Slice[const_char]` reads the wrong memory. Probed 2026-08-29 --
-# `Slice[const_char]("as", 2)` answers `w[0] == 2`, the LENGTH field, where the
-# identical `Slice[char]` and `Slice[u8]` answer 97. It compiles, runs, and is
-# silent; in tscaly it made every keyword scan as an identifier and took the
-# suite to 4044 failures. Re-test before lifting this.
-NON_ELEMENT = ('void', 'cstring', 'const_char')
+# ★★★`const_char` WAS excluded here for a compiler defect that turned out not
+# to be about the element type at all, and the exclusion is LIFTED (2026-08-29).
+# The trigger was a string LITERAL on the positional-tuple construction path:
+# the literal was materialised as the varint-prefixed String constant
+# (`c"\02as\00"`) and the `pointer[T]` field pointed at the LENGTH BYTE, so
+# `Slice[X]("as", 2)[0]` read 2 for EVERY X -- char and u8 included. tscaly's
+# 4044 failures were its keyword scans passing literals, which is exactly why
+# the const_char parameters looked guilty. Closed by
+# Planner.coerce_string_components_to_cstr#; gate
+# tests/regress/tuple_literal_cstr_field.scaly.
+# ★What has NOT changed: a conversion here still owes the deref/arithmetic
+# sweep below, and a `pointer[const_char]` fed from a literal is now correct
+# rather than merely excluded.
+NON_ELEMENT = ('void', 'cstring')
 
 # a parameter whose NAME reads as a count of something
 # ★`cap`/`capacity` measure an OUTPUT buffer and are length-shaped names like
