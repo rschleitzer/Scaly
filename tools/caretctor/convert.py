@@ -63,7 +63,7 @@ def plan(roots):
     bad = S.selftest(table)
     if bad:
         print('SELFTEST FAILED -- refusing to convert'); sys.exit(2)
-    sites = S.scan(files, inits, table)
+    sites = S.scan(files, inits, table, '--no-init-ok' in sys.argv)
 
     todo = collections.defaultdict(list); held = collections.Counter()
     for s in sites:

@@ -178,7 +178,7 @@ def enclosing_end(lines, i):
         if d < 0: return k
     return len(lines) - 1
 
-def scan(files, inits, table):
+def scan(files, inits, table, noinit_ok=False):
     sites = []
     for f in files:
         pkg = f.split('/')[1] if f.startswith('packages/') else '?'
@@ -231,20 +231,26 @@ def scan(files, inits, table):
             if sigil:
                 v, note = 'SIGIL', 'Konstruktion traegt schon %s' % sigil
             elif n_args not in scope.get(base, {}):
-                # ★ MEASURED, and it is a COMPILER defect, not a style question:
-                # `&T^page()` on a concept with no matching `init` takes the
-                # POSITIONAL-TUPLE path, which DROPS the sigil --
+                # ★ A concept with no matching `init` takes the POSITIONAL-TUPLE
+                # path, whose zero-argument data-class case is a deliberate
+                # exemption in fill_default_components.  That path USED TO DROP
+                # the `^page` sigil --
                 #     %tuple = alloca %NoInit
                 #     store %NoInit zeroinitializer, ptr %tuple
                 #     ret ptr %tuple
-                # a pointer into the dead frame, rc 0, nothing said.  The
-                # `allocate` + `set *p:` form copies that tuple onto the page
-                # and is CORRECT.  opensp's `EventAux` ("a data class with no
-                # init of its own") is exactly this shape and took the unit
-                # suite to rc 139 in `Lpd.get_name`.
-                v, note = 'NO-INIT', ('%s hat keinen init/%d -- die Tupel-Bahn '
-                                      'verliert das ^page-Sigil (Compiler-Defekt)'
-                                      % (base, n_args))
+                # an address in the dead frame, rc 0, nothing said.  Found by
+                # this conversion (opensp's `EventAux`, "a data class with no
+                # init of its own", as rc 139 in `Lpd.get_name`) and CLOSED on
+                # 2026-08-29 by `Emitter.region_alloc_tuple#`.
+                # ★★ The verdict stays SEPARATE rather than folding into
+                # CONVERT, because it is the one class whose conversion needs a
+                # compiler NEWER than the finding -- a checkout on an older seed
+                # still carries the dropping emission.  It is a note, not a
+                # hold: `--no-init-ok` converts them.
+                v = 'CONVERT' if noinit_ok else 'NO-INIT'
+                note = ('%s hat keinen init/%d -- die Tupel-Bahn; braucht den '
+                        'Compiler ab 2026-08-29 (region_alloc_tuple#)'
+                        % (base, n_args))
             elif haz.get((base, n_args)):
                 v, note = 'HAZARD', ('init %s/%d allokiert ueber `this` -- das Temporary '
                                      'ist hier nicht nur Verschwendung' % (base, n_args))
@@ -312,7 +318,7 @@ def main():
         for key, want, got, why in bad:
             print('   %s/%d  erwartet %s, bekommen %s  (%s)' % (key[0], key[1], want, got, why))
         sys.exit(2)
-    sites = scan(files, inits, table)
+    sites = scan(files, inits, table, '--no-init-ok' in sys.argv)
 
     order = ['CONVERT', 'NO-INIT', 'HAZARD', 'FIELDWISE', 'COPY', 'SIGIL', 'NO-STORE', 'SKIP']
     for v in order:
