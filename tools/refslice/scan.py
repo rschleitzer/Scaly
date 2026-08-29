@@ -24,6 +24,15 @@ not by a tool.  So this scan reports exactly three verdicts:
            `encode_utf8_bytes(chars, out, len)` measures the INPUT, not the
            output buffer.  The reader decides; the tool must not.
 
+  WRITTEN  the body STORES through the name (`set *(out + i): v`).  Not a
+           candidate: `Slice[T]` is a READ-ONLY view -- its `operator []`
+           answers T by value and it has no `put` -- so an output buffer has no
+           Slice spelling at all.  ★This is not a nicety: `Recognizer.zero_bytes`
+           and the `Message.put`/`ParserState.put_char` family all score
+           ADJACENT on their `(out, cap)` pair and would have been converted
+           into something that cannot compile, or worse, into a subscript store
+           the compiler now rejects outright (rc 4).
+
   LENLESS  a buffer parameter with no length in the signature.  Not a
            candidate; it is the reading work the campaign says is not
            mechanical.
@@ -90,6 +99,14 @@ def shares_stem(buf, ln):
     a, b = stem(buf), stem(ln)
     return bool(a) and a == b
 
+def writes(body, name):
+    """Does the body STORE through this name? Then it is an OUTPUT buffer and
+    `Slice[T]`, a read-only view, cannot express it."""
+    n = re.escape(name)
+    return bool(re.search(rf'\bset\s+\*\(\s*{n}\s*[+\-]', body)
+                or re.search(rf'\bset\s+\*{n}\b', body)
+                or re.search(rf'\bset\s+{n}\s*\[', body))
+
 def walks(body, name):
     """Does the body prove this name is a buffer -- arithmetic or indexing?"""
     n = re.escape(name)
@@ -109,6 +126,8 @@ def main(paths):
             if elem in NON_ELEMENT: continue
             if not walks(r['body'], pn):
                 rows.append(('UNWALKED', r, pn, elem, None)); continue
+            if writes(r['body'], pn):
+                rows.append(('WRITTEN', r, pn, elem, None)); continue
             if r['fn'] in frozen:
                 rows.append(('FROZEN', r, pn, elem, None)); continue
             lens = [(qi, qn) for qi, (qn, qt) in enumerate(params)
