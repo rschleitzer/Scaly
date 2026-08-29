@@ -5920,8 +5920,16 @@ check(not qrows, "none of the four quiet shapes is marked (%s)" % sorted(qrows))
 # what is checked: the parameter the title names must be a parameter OF THE
 # ENCLOSING ROUTINE, and it must appear in the store's own target. Both fail
 # immediately for an offset that belongs to another file.
+# ★ The sweep spans FOUR files, and the two extra ones are not decoration.
+# With only Style.scaly and Parser.scaly the total sat at 11 against a `> 10`
+# assertion, i.e. a margin of ONE — and the caretctor conversion (2026-08-29)
+# took `set *p: T(...)` out of Parser.scaly 69 times, tipping it to exactly 10.
+# A canary whose margin is one is a canary that reports the next refactor as a
+# defect, so the answer is more corpus, never a lower threshold.
 sweep = ["packages/dazzle/0.1.0/dazzle/Style.scaly",
-         "packages/opensp/0.1.0/opensp/Parser.scaly"]
+         "packages/dazzle/0.1.0/dazzle/Primitive.scaly",
+         "packages/opensp/0.1.0/opensp/Parser.scaly",
+         "packages/opensp/0.1.0/opensp/ParserState.scaly"]
 def routine_head(src, ln):
     j = ln - 1
     while j >= 0 and not re.match(r"\s*(function|procedure)\s", src[j]): j -= 1

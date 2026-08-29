@@ -11727,6 +11727,130 @@ define Emitter
         ; Tuple and Matrix Emission
         ; ========================================================================
 
+        ; The page allocation behind a region-allocated tuple, lifted out of
+        ; emit_tuple so BOTH of its construction paths can reach it.
+        ;
+        ; ★ It was inline in the per-field path only, and the zero-component
+        ; path above it allocated an `alloca` and returned THAT pointer even
+        ; when `is_region_alloc` was set -- so `T^page()` on a concept with no
+        ; matching `init` (the positional-tuple path, whose zero-argument
+        ; data-class case is a deliberate exemption in fill_default_components)
+        ; answered an address in the DEAD FRAME, rc 0 and nothing said.
+        ; Measured on opensp's `EventAux` as rc 139 in `Lpd.get_name`, with the
+        ; SGML corpus at 380/380 -- two further sites (`HuState`) were live on
+        ; the parser path and the corpus never touched them.
+        ;
+        ; Answers a null handle when the tuple is not region-allocated or the
+        ; page name resolves to nothing; the caller then falls back to
+        ; acquire_temp, exactly as the inline version did.
+        function region_alloc_tuple(this, tuple: PlannedTuple, struct_type: LLVMTypeRef) returns LLVMValueRef
+        {
+            var tuple_ptr: LLVMValueRef LLVMValueRef(null)
+            if tuple.is_region_alloc
+            {
+                var page_var_name: String "_rp"
+                var life_is_local: bool false
+                choose tuple.life
+                    when l: Local
+                        set life_is_local: true
+                    when r: Reference
+                        set page_var_name: r.location
+                    else
+                        0
+                var page_val_raw: LLVMValueRef LLVMValueRef(null)
+                ; Local life = the FUNCTION'S OWN region: materialise this
+                ; function's frame, exactly as emit_constructor_call does.
+                ; ★This used to `lookup_variable "local_page"` — a name nothing
+                ; has defined since the frame ABI landed (the emitter's local page
+                ; lives in `function_local_frame`, not in the variable table). The
+                ; lookup failed, `resolve_reference_page` found nothing either, and
+                ; the construction fell through to a STACK alloca at the bottom of
+                ; this function — for a type whose own bodies call
+                ; `Page.get(this)`, i.e. exactly the types that must NOT be stack
+                ; instances. It stayed invisible because every construction that
+                ; matched no init was diverted to a SYNTHESIZED empty constructor
+                ; (the padded `Structure.initializers`, Modeler.scaly), which
+                ; allocates on the frame page correctly; the Local branch here was
+                ; unreachable in practice (2026-08-02).
+                if life_is_local
+                {
+                    let local_frame get_local_frame()
+                    set page_val_raw: force_frame(local_frame)
+                }
+                if life_is_local = false
+                    set page_val_raw: lookup_variable page_var_name
+                ; A `^field` page sigil (host is a receiver member, not a local/param)
+                ; misses the variable table — resolve it as a field of `this`. Keeps
+                ; `return X^host()` (host a pointer[Page] field) on the receiver's page
+                ; instead of a dangling stack alloca. scaly/scalyc never `^field`, so
+                ; this is emission-neutral for the self-compile.
+                if page_val_raw.handle = null
+                    set page_val_raw: resolve_reference_page(page_var_name)
+                if page_val_raw.handle <> null
+                {
+                    var page_val page_val_raw
+                    if page_var_name = "this"
+                    {
+                        ; ^this: the receiver is an object pointer, not a
+                        ; pointer[Page] — wrap it in Page.get(this). Mirrors
+                        ; stage-0's planner (Planner.cpp generatePageGetThis).
+                        var get_fn lookup_function_cache("_Z3getPv")
+                        if get_fn.handle = null
+                            set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
+                        let get_ptr_ty LLVMPointerTypeInContext(context, 0)
+                        var get_param_tys Vector[LLVMTypeRef](1)
+                        get_param_tys.put(0, get_ptr_ty)
+                        let get_fn_ty LLVMFunctionType(get_ptr_ty, get_param_tys.data, 1, 0)
+                        if get_fn.handle = null
+                        {
+                            set get_fn: LLVMAddFunction(llvm_module, "_Z3getPv", get_fn_ty)
+                            LLVMSetLinkage(get_fn, LLVMLinkage.External())
+                            cache_function("_Z3getPv", get_fn)
+                        }
+                        var get_args Vector[LLVMValueRef](1)
+                        get_args.put(0, page_val)
+                        set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
+                    }
+                    ; `_rp` / `^rp` name the caller-page slot, which holds a FRAME
+                    ; since 2026-08-02; Page::allocate below needs the page.
+                    ; (resolve_reference_page has already forced its own result, so
+                    ; a value coming from there never matches here.)
+                    if current_frame_parent.handle <> null
+                        if page_val.handle = current_frame_parent.handle
+                            set page_val: force_frame(page_val)
+                    var alloc_func lookup_function_cache("_ZN4Page8allocateEmm")
+                    if alloc_func.handle = null
+                        set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+                    if alloc_func.handle = null
+                    {
+                        var alloc_param_types_d Vector[LLVMTypeRef](3)
+                        alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
+                        alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
+                        alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
+                        let alloc_ret_ty_d LLVMPointerTypeInContext(context, 0)
+                        let alloc_decl_ty LLVMFunctionType(alloc_ret_ty_d, alloc_param_types_d.data, 3, 0)
+                        set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
+                        LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+                        cache_function("_ZN4Page8allocateEmm", alloc_func)
+                    }
+                    let size_const LLVMSizeOf(struct_type)
+                    let align_const LLVMAlignOf(struct_type)
+                    var alloc_args Vector[LLVMValueRef](3)
+                    alloc_args.put(0, page_val)
+                    alloc_args.put(1, size_const)
+                    alloc_args.put(2, align_const)
+                    var alloc_param_types_c Vector[LLVMTypeRef](3)
+                    alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
+                    alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
+                    alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
+                    let alloc_ret_ty_c LLVMPointerTypeInContext(context, 0)
+                    let alloc_call_ty LLVMFunctionType(alloc_ret_ty_c, alloc_param_types_c.data, 3, 0)
+                    set tuple_ptr: LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "tuple.region")
+                }
+            }
+            tuple_ptr
+        }
+
         ; Emit a tuple construction
         function emit_tuple(this, tuple: PlannedTuple) returns LLVMValueRef
         {
@@ -11753,18 +11877,25 @@ define Emitter
                         set struct_type: lookup_struct_cache(tuple.tuple_type.name)
                     if struct_type.handle <> null
                     {
-                        let tuple_ptr acquire_temp(struct_type, "tuple")
+                        ; ★ The page FIRST, the stack only as the fallback.
+                        ; This branch used to acquire_temp unconditionally and
+                        ; then hand the alloca back whenever is_region_alloc was
+                        ; set -- an address in the dead frame for every
+                        ; `T^page()` whose concept declares no matching init.
+                        ; The comment that stood here said the planner never
+                        ; sets is_region_alloc; it does, through the reshape
+                        ; path's lifetime merge, and only the ALLOCATION was
+                        ; missing.
+                        var tuple_ptr region_alloc_tuple(tuple, struct_type)
+                        if tuple_ptr.handle = null
+                            set tuple_ptr: acquire_temp(struct_type, "tuple")
                         LLVMBuildStore(builder, LLVMConstNull struct_type, tuple_ptr)
                         ; Same load as the per-field-store branch below: when not
                         ; region-allocated, emit_binding needs the loaded struct
                         ; value so it alloca's a struct-typed slot for `var opts
                         ; Options()` instead of a ptr-typed slot. Without this,
                         ; subsequent `set opts.field: ...` GEPs corrupt the
-                        ; pointer instead of writing struct fields. Today the
-                        ; planner never sets is_region_alloc, so this fires for
-                        ; both Options() and Options() — matches stage-0 which
-                        ; treats both as stack-allocated for empty-arg data
-                        ; classes (no init#).
+                        ; pointer instead of writing struct fields.
                         if tuple.is_region_alloc = false
                             return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
                         return tuple_ptr
@@ -11949,109 +12080,7 @@ define Emitter
             ; this, every `Plan(...)` / `Vector[T]^rp(...)` data-class ctor goes
             ; to the stack and any caller storing the pointer past return-time
             ; gets dangling memory.
-            var tuple_ptr: LLVMValueRef LLVMValueRef(null)
-            if tuple.is_region_alloc
-            {
-                var page_var_name: String "_rp"
-                var life_is_local: bool false
-                choose tuple.life
-                    when l: Local
-                        set life_is_local: true
-                    when r: Reference
-                        set page_var_name: r.location
-                    else
-                        0
-                var page_val_raw: LLVMValueRef LLVMValueRef(null)
-                ; Local life = the FUNCTION'S OWN region: materialise this
-                ; function's frame, exactly as emit_constructor_call does.
-                ; ★This used to `lookup_variable "local_page"` — a name nothing
-                ; has defined since the frame ABI landed (the emitter's local page
-                ; lives in `function_local_frame`, not in the variable table). The
-                ; lookup failed, `resolve_reference_page` found nothing either, and
-                ; the construction fell through to a STACK alloca at the bottom of
-                ; this function — for a type whose own bodies call
-                ; `Page.get(this)`, i.e. exactly the types that must NOT be stack
-                ; instances. It stayed invisible because every construction that
-                ; matched no init was diverted to a SYNTHESIZED empty constructor
-                ; (the padded `Structure.initializers`, Modeler.scaly), which
-                ; allocates on the frame page correctly; the Local branch here was
-                ; unreachable in practice (2026-08-02).
-                if life_is_local
-                {
-                    let local_frame get_local_frame()
-                    set page_val_raw: force_frame(local_frame)
-                }
-                if life_is_local = false
-                    set page_val_raw: lookup_variable page_var_name
-                ; A `^field` page sigil (host is a receiver member, not a local/param)
-                ; misses the variable table — resolve it as a field of `this`. Keeps
-                ; `return X^host()` (host a pointer[Page] field) on the receiver's page
-                ; instead of a dangling stack alloca. scaly/scalyc never `^field`, so
-                ; this is emission-neutral for the self-compile.
-                if page_val_raw.handle = null
-                    set page_val_raw: resolve_reference_page(page_var_name)
-                if page_val_raw.handle <> null
-                {
-                    var page_val page_val_raw
-                    if page_var_name = "this"
-                    {
-                        ; ^this: the receiver is an object pointer, not a
-                        ; pointer[Page] — wrap it in Page.get(this). Mirrors
-                        ; stage-0's planner (Planner.cpp generatePageGetThis).
-                        var get_fn lookup_function_cache("_Z3getPv")
-                        if get_fn.handle = null
-                            set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
-                        let get_ptr_ty LLVMPointerTypeInContext(context, 0)
-                        var get_param_tys Vector[LLVMTypeRef](1)
-                        get_param_tys.put(0, get_ptr_ty)
-                        let get_fn_ty LLVMFunctionType(get_ptr_ty, get_param_tys.data, 1, 0)
-                        if get_fn.handle = null
-                        {
-                            set get_fn: LLVMAddFunction(llvm_module, "_Z3getPv", get_fn_ty)
-                            LLVMSetLinkage(get_fn, LLVMLinkage.External())
-                            cache_function("_Z3getPv", get_fn)
-                        }
-                        var get_args Vector[LLVMValueRef](1)
-                        get_args.put(0, page_val)
-                        set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
-                    }
-                    ; `_rp` / `^rp` name the caller-page slot, which holds a FRAME
-                    ; since 2026-08-02; Page::allocate below needs the page.
-                    ; (resolve_reference_page has already forced its own result, so
-                    ; a value coming from there never matches here.)
-                    if current_frame_parent.handle <> null
-                        if page_val.handle = current_frame_parent.handle
-                            set page_val: force_frame(page_val)
-                    var alloc_func lookup_function_cache("_ZN4Page8allocateEmm")
-                    if alloc_func.handle = null
-                        set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
-                    if alloc_func.handle = null
-                    {
-                        var alloc_param_types_d Vector[LLVMTypeRef](3)
-                        alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
-                        alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
-                        alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
-                        let alloc_ret_ty_d LLVMPointerTypeInContext(context, 0)
-                        let alloc_decl_ty LLVMFunctionType(alloc_ret_ty_d, alloc_param_types_d.data, 3, 0)
-                        set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
-                        LLVMSetLinkage(alloc_func, LLVMLinkage.External())
-                        cache_function("_ZN4Page8allocateEmm", alloc_func)
-                    }
-                    let size_const LLVMSizeOf(struct_type)
-                    let align_const LLVMAlignOf(struct_type)
-                    var alloc_args Vector[LLVMValueRef](3)
-                    alloc_args.put(0, page_val)
-                    alloc_args.put(1, size_const)
-                    alloc_args.put(2, align_const)
-                    var alloc_param_types_c Vector[LLVMTypeRef](3)
-                    alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
-                    alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
-                    alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
-                    let alloc_ret_ty_c LLVMPointerTypeInContext(context, 0)
-                    let alloc_call_ty LLVMFunctionType(alloc_ret_ty_c, alloc_param_types_c.data, 3, 0)
-                    set tuple_ptr: LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "tuple.region")
-                }
-            }
+            var tuple_ptr region_alloc_tuple(tuple, struct_type)
             if tuple_ptr.handle = null
                 set tuple_ptr: acquire_temp(struct_type, "tuple")
 

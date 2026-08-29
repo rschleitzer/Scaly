@@ -1,0 +1,72 @@
+; Regression: `T^page()` on a concept that declares NO matching `init` must
+; construct ON THAT PAGE (2026-08-29).
+;
+; Such a construction matches no `init` and is diverted to the POSITIONAL-TUPLE
+; path — for a zero-argument data class that diversion is deliberate, one of
+; fill_default_components' named exemptions. But emit_tuple's zero-component
+; branch acquired an `alloca` and handed THAT pointer back whenever
+; is_region_alloc was set, so the `^page` sigil was silently dropped and the
+; caller got an address in the dead frame:
+;
+;   %tuple = alloca %NoInit
+;   store %NoInit zeroinitializer, ptr %tuple
+;   ret ptr %tuple                              ← the frame is gone
+;
+; rc 0, no diagnostic. Measured in opensp as rc 139 in `Lpd.get_name` (its
+; `EventAux` is exactly this shape: "a data class with no init of its own"),
+; with the SGML corpus standing at 380/380 — two further sites were live on the
+; parser path and the corpus never touched them.
+;
+; The test is the one the plain probe could not be: it builds THREE records
+; from separate calls and reads the first two back AFTER the third. Under the
+; defect all three share one frame slot, so the earlier reads answer the last
+; record's values; a single record reads back correctly by luck and proves
+; nothing. `Page.get` additionally names the page the object actually sits on.
+;
+; Expected: PASS
+
+use scaly.memory.Page
+
+define NoInit (a: int, b: int)
+
+function make(host: ref[Page], x: int) returns ref[NoInit]
+{
+    let n &NoInit^host()
+    set n.a: x
+    set n.b: x * 10
+    n
+}
+
+let rp Page.allocate_root_page()
+let host rp as ref[Page]
+
+let one make(host, 1)
+let two make(host, 2)
+let three make(host, 3)
+
+var ok true
+
+; distinct storage: three calls, three objects
+if one.a <> 1
+    set ok: false
+if one.b <> 10
+    set ok: false
+if two.a <> 2
+    set ok: false
+if two.b <> 20
+    set ok: false
+if three.a <> 3
+    set ok: false
+if three.b <> 30
+    set ok: false
+
+; and the storage is the PAGE we named, not a frame
+let p1 (Page.get(one as pointer[void]) as size_t)
+let hp (rp as size_t)
+if p1 <> hp
+    set ok: false
+
+if ok
+    print "PASS"
+if ok = false
+    print "FAIL"
