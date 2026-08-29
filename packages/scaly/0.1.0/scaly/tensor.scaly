@@ -52,7 +52,7 @@ function powf(x: float, y: float) returns float extern
 ; call. ---
 
 ; C = A * B (A m x kk, B kk x n, C m x n). m % 4 = 0, n % 4 = 0.
-procedure mm_tiled(a: Vector[float], b: Vector[float], c: Vector[float], m: int, kk: int, n: int)
+procedure mm_tiled(a: Vector[float], b: Vector[float], c: ref[Vector[float]], m: int, kk: int, n: int)
 {
     let ap a.data
     let bp b.data
@@ -130,7 +130,7 @@ procedure mm_tiled(a: Vector[float], b: Vector[float], c: Vector[float], m: int,
 
 ; dA += dC * B^T : dA[i,x] += sum_j dC[i,j] * B[x,j]. dC m x n,
 ; B kk x n, dA m x kk. m % 4 = 0, kk % 4 = 0.
-procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], ga: Vector[float], m: int, kk: int, n: int)
+procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], ga: ref[Vector[float]], m: int, kk: int, n: int)
 {
     let gcp gc.data
     let bp b.data
@@ -209,7 +209,7 @@ procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], ga: Vector[float], m:
 
 ; dB += A^T * dC : dB[x,j] += sum_i A[i,x] * dC[i,j]. A m x kk,
 ; dC m x n, dB kk x n. kk % 4 = 0, n % 4 = 0.
-procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], gb: Vector[float], m: int, kk: int, n: int)
+procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], gb: ref[Vector[float]], m: int, kk: int, n: int)
 {
     let ap a.data
     let gcp gc.data
@@ -777,7 +777,7 @@ define Tape
         {
             if (n / 4) * 4 = n
             {
-                mm_tiled(na.value, nb.value, node.value, m, kk, n)
+                mm_tiled(na.value, nb.value, &node.value, m, kk, n)
                 return
             }
         }
@@ -826,7 +826,7 @@ define Tape
         {
             if kk4
             {
-                mm_tiled_dA(node.grad, nb.value, na.grad, m, kk, n)
+                mm_tiled_dA(node.grad, nb.value, &na.grad, m, kk, n)
                 set did_dA: true
             }
         }
@@ -856,7 +856,7 @@ define Tape
         {
             if n4
             {
-                mm_tiled_dB(na.value, node.grad, nb.grad, m, kk, n)
+                mm_tiled_dB(na.value, node.grad, &nb.grad, m, kk, n)
                 set did_dB: true
             }
         }

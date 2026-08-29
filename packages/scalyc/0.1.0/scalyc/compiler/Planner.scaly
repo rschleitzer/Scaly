@@ -3375,7 +3375,7 @@ define Planner
         ; The live narrowing facts, as indices into scope_bindings. The floor
         ; is scope_isolation_base for the reason lookup_local_binding#'s is:
         ; below it the bindings belong to the enclosing function.
-        function collect_narrowed(this: Planner, acc: Array[size_t])
+        function collect_narrowed(this: Planner, acc: ref[Array[size_t]])
         {
             var cn_i: size_t scope_isolation_base
             while cn_i < scope_bindings.length
@@ -3416,7 +3416,7 @@ define Planner
         ; Which of `snap` did the branch just planned RETIRE? Those are the
         ; ones the join re-clears once the OTHER branch has been planned
         ; against the restored facts.
-        function collect_retired(this: Planner, snap: Array[size_t], acc: Array[size_t])
+        function collect_retired(this: Planner, snap: Array[size_t], acc: ref[Array[size_t]])
         {
             var cr_i: size_t 0
             while cr_i < snap.length
@@ -4084,7 +4084,7 @@ define Planner
             this: Planner,
             members: Vector[Member],
             method_name: String,
-            acc: Array[Function]
+            acc: ref[Array[Function]]
         )
         {
             var i: size_t 0
@@ -13943,7 +13943,7 @@ define Planner
         ; check_message_pointee: what a fixed pointer slot's TARGET needs.
         ; Scalars/void/const_char buffers and page headers are fix-only;
         ; aggregates recurse.
-        function check_message_pointee(this: Planner, inner: PlannedType, loc: Span, seen: Array[String]) returns bool
+        function check_message_pointee(this: Planner, inner: PlannedType, loc: Span, seen: ref[Array[String]]) returns bool
         {
             if inner.name = "void"
                 return true
@@ -13961,7 +13961,7 @@ define Planner
         ; Also the instantiation-forcing pass: every reachable generic is
         ; instantiated so plan.structures/unions carry its layout for the
         ; Emitter's generator.
-        function check_message_type(this: Planner, t: PlannedType, loc: Span, seen: Array[String]) returns bool
+        function check_message_type(this: Planner, t: PlannedType, loc: Span, seen: ref[Array[String]]) returns bool
         {
             if t.variable <> null
             {
@@ -17774,7 +17774,7 @@ define Planner
         function collect_free_names(
             this: Planner,
             op: PlannedOperand,
-            acc: Array[String]
+            acc: ref[Array[String]]
         )
         {
             choose op.expr
@@ -17869,7 +17869,7 @@ define Planner
             false
         }
 
-        function collect_lambda_names_ops(this: Planner, ops_ref: ref[Vector[PlannedOperand]]?, uses: Array[String], bound: Array[String])
+        function collect_lambda_names_ops(this: Planner, ops_ref: ref[Vector[PlannedOperand]]?, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             if ops_ref = null
                 return
@@ -17884,13 +17884,13 @@ define Planner
             }
         }
 
-        function collect_lambda_names_action(this: Planner, act: PlannedAction, uses: Array[String], bound: Array[String])
+        function collect_lambda_names_action(this: Planner, act: PlannedAction, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             this.collect_lambda_names_ops(act.source, uses, bound)
             this.collect_lambda_names_ops(act.target, uses, bound)
         }
 
-        function collect_lambda_names_stmt(this: Planner, stmt: PlannedStatement, uses: Array[String], bound: Array[String])
+        function collect_lambda_names_stmt(this: Planner, stmt: PlannedStatement, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             choose stmt
                 when a: PlannedAction
@@ -17915,7 +17915,7 @@ define Planner
                     0
         }
 
-        function collect_lambda_names_stmts(this: Planner, stmts_ref: ref[Vector[PlannedStatement]]?, uses: Array[String], bound: Array[String])
+        function collect_lambda_names_stmts(this: Planner, stmts_ref: ref[Vector[PlannedStatement]]?, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             if stmts_ref = null
                 return
@@ -17930,14 +17930,14 @@ define Planner
             }
         }
 
-        function collect_lambda_names_stmt_opt(this: Planner, stmt_ref: ref[PlannedStatement]?, uses: Array[String], bound: Array[String])
+        function collect_lambda_names_stmt_opt(this: Planner, stmt_ref: ref[PlannedStatement]?, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             if stmt_ref = null
                 return
             this.collect_lambda_names_stmt((*stmt_ref), uses, bound)
         }
 
-        function collect_lambda_names(this: Planner, op: PlannedOperand, uses: Array[String], bound: Array[String])
+        function collect_lambda_names(this: Planner, op: PlannedOperand, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             choose op.expr
                 when v: PlannedVariable
@@ -34131,7 +34131,7 @@ define Planner
 
         ; Collect every Function member of a concept (struct/union) into acc.
         ; Mirrors collect_methods_in# but takes no name filter.
-        function gather_member_functions(this: Planner, members: Vector[Member], acc: Array[Function])
+        function gather_member_functions(this: Planner, members: Vector[Member], acc: ref[Array[Function]])
         {
             var i: size_t 0
             while i < members.length
