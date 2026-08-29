@@ -49,16 +49,18 @@ not by a tool.  So this scan reports exactly three verdicts:
            forwarder fixpoint calls many of these BUFFER, and this tool runs no
            fixpoint on purpose (see below).  Never a candidate either way.
 
-★★★AND `packages/scaly`'s `hashing.hash` IS EXCLUDED BY MEASUREMENT, not by
-rule: converting it to `Slice[char]` made `String.hash()` degenerate to a
-LENGTH-ONLY hash inside the stdlib archive -- two 18-byte files with different
-content hashed identically, which silently disabled scalyls' content-hash cache
-invalidation (`tests/lsp` chain-segment tests).  ★The same body copied into USER
-code distinguishes them correctly, and every isolated probe passes
-(`Slice[char]` from a name, from a pointer EXPRESSION, from a `pointer[u8]`),
-so the difference is the ARCHIVE: `linkonce_odr` promoted to `weak_odr` and run
-through `opt -O2`, the way libscaly.a is built.  Re-probe before converting
-anything else in `packages/scaly`.
+★★★AND `packages/scaly`'s `hashing.hash` IS EXCLUDED BY MEASUREMENT, and the
+measurement was RE-TAKEN on 2026-08-29: the earlier reading, that the stdlib
+ARCHIVE (`linkonce_odr`->`weak_odr` + whole-program `opt -O2`) computes a
+different answer, is WITHDRAWN.  The raw `-S` output is already wrong.
+`Slice[char]`'s `operator []` emits its bounds check correctly and then
+`ret i8 0` -- the `*(data + index)` is gone -- so `hash` XORs a zero per byte
+and `String.hash()` becomes a LENGTH-ONLY hash.  The trigger is that the
+operator's FIRST USE sits in a SUB-MODULE: the identical call moved into
+`containers.scaly` emits a correct body, and the element type is irrelevant
+(`Slice[i64]` breaks the same way; `u8` and `int` are fine only because their
+subscript callers are the test functions in `containers.scaly`).  Detector:
+`tools/opzero/scan.py`.  Until that is fixed, this parameter stays a pointer.
 
 ★★★A verdict here is NECESSARY, NEVER SUFFICIENT: the length must measure the
 buffer in ELEMENTS, and this tool cannot tell what a length counts.
