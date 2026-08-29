@@ -33,6 +33,13 @@ not by a tool.  So this scan reports exactly three verdicts:
            into something that cannot compile, or worse, into a subscript store
            the compiler now rejects outright (rc 4).
 
+  ADDRESSED the body binds an ELEMENT ADDRESS out of the name
+           (`let s slots + idx`) and works through it.  `Slice[T]`'s
+           `operator []` answers T BY VALUE, so it cannot express that at all:
+           `nameset.insert` writes `set s.name_ptr: ...` through exactly such a
+           local, and a Slice would have mutated a copy.  This is the hash-slot
+           table CLAUDE.md already names as a legitimate pointer shape.
+
   LENLESS  a buffer parameter with no length in the signature.  Not a
            candidate; it is the reading work the campaign says is not
            mechanical.
@@ -41,6 +48,17 @@ not by a tool.  So this scan reports exactly three verdicts:
            the ABSENCE of evidence, never evidence of a cell -- refout's
            forwarder fixpoint calls many of these BUFFER, and this tool runs no
            fixpoint on purpose (see below).  Never a candidate either way.
+
+★★★AND `packages/scaly`'s `hashing.hash` IS EXCLUDED BY MEASUREMENT, not by
+rule: converting it to `Slice[char]` made `String.hash()` degenerate to a
+LENGTH-ONLY hash inside the stdlib archive -- two 18-byte files with different
+content hashed identically, which silently disabled scalyls' content-hash cache
+invalidation (`tests/lsp` chain-segment tests).  ★The same body copied into USER
+code distinguishes them correctly, and every isolated probe passes
+(`Slice[char]` from a name, from a pointer EXPRESSION, from a `pointer[u8]`),
+so the difference is the ARCHIVE: `linkonce_odr` promoted to `weak_odr` and run
+through `opt -O2`, the way libscaly.a is built.  Re-probe before converting
+anything else in `packages/scaly`.
 
 ★★★A verdict here is NECESSARY, NEVER SUFFICIENT: the length must measure the
 buffer in ELEMENTS, and this tool cannot tell what a length counts.
@@ -113,6 +131,11 @@ def writes(body, name):
                 or re.search(rf'\bset\s+\*{n}\b', body)
                 or re.search(rf'\bset\s+{n}\s*\[', body))
 
+def addressed(body, name):
+    """Is an ELEMENT ADDRESS bound out of this name? A Slice cannot give one."""
+    n = re.escape(name)
+    return bool(re.search(rf'\b(let|var)\s+\w+\s+{n}\s*\+', body))
+
 def walks(body, name):
     """Does the body prove this name is a buffer -- arithmetic or indexing?"""
     n = re.escape(name)
@@ -134,6 +157,8 @@ def main(paths):
                 rows.append(('UNWALKED', r, pn, elem, None)); continue
             if writes(r['body'], pn):
                 rows.append(('WRITTEN', r, pn, elem, None)); continue
+            if addressed(r['body'], pn):
+                rows.append(('ADDRESSED', r, pn, elem, None)); continue
             if r['fn'] in frozen:
                 rows.append(('FROZEN', r, pn, elem, None)); continue
             lens = [(qi, qn) for qi, (qn, qt) in enumerate(params)

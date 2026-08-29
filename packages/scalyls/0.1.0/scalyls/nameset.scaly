@@ -55,14 +55,14 @@ define nameset
     ; FNV-1a over p[0,len) (mirrors scaly.containers.hashing.hash); used for
     ; BOTH insert (name bytes) and lookup (source bytes) so equal byte
     ; sequences hash identically.
-    function hash_ptr(p: pointer[u8], len: size_t) returns size_t
+    function hash_ptr(p: Slice[u8]) returns size_t
     {
         var h: size_t 0xcbf29ce484222325
         var prime: size_t 0x100000001b3
         var i: size_t 0
-        while i < len
+        while i < p.length
         {
-            let value (*(p + i)) as size_t
+            let value (p[i]) as size_t
             ; FNV-1a XOR step via the `xor` word operator (`^` is the
             ; lifetime sigil; the legacy `h // value` used an unknown
             ; operator the self-hosted emitter dropped — length-only hash).
@@ -79,16 +79,21 @@ define nameset
         let b s.get_buffer()
         if b = null
             return 0xcbf29ce484222325
-        nameset.hash_ptr(b + start, end - start)
+        nameset.hash_ptr(Slice[u8](b + start, end - start))
     }
 
     ; Byte-equality of a[0,len) and b[0,len) over two raw pointers.
-    function eq_ptr(a: pointer[u8], b: pointer[u8], len: size_t) returns bool
+    function eq_ptr(a: Slice[u8], b: Slice[u8]) returns bool
     {
+        ; ★Both sides carry their own length now, so the equality is total
+        ; rather than a promise the CALLER had to keep: the single `len`
+        ; parameter measured both buffers and nothing checked that.
+        if a.length <> b.length
+            return false
         var k: size_t 0
-        while k < len
+        while k < a.length
         {
-            if *(a + k) <> *(b + k)
+            if a[k] <> b[k]
                 return false
             set k: k + 1
         }
@@ -145,7 +150,7 @@ define nameset
                     return
                 }
                 if s.name_len = name_len
-                    if nameset.eq_ptr(s.name_ptr, name_ptr, name_len)
+                    if nameset.eq_ptr(Slice[u8](s.name_ptr, s.name_len), Slice[u8](name_ptr, name_len))
                     {
                         if kind > s.kind
                             set s.kind: kind
@@ -186,7 +191,7 @@ define nameset
                     let seglen j - i
                     if seglen > 0
                     {
-                        let h nameset.hash_ptr(base + i, seglen)
+                        let h nameset.hash_ptr(Slice[u8](base + i, seglen))
                         nameset.insert(slots, cap, base + i, seglen, h, kind)
                     }
                     set i: j
@@ -207,7 +212,7 @@ define nameset
                 if sbuf <> null
                 {
                     let sp sbuf + start
-                    let h nameset.hash_ptr(sp, tlen)
+                    let h nameset.hash_ptr(Slice[u8](sp, tlen))
                     let mask cap - 1
                     var idx h & mask
                     var probes: size_t 0
@@ -217,7 +222,7 @@ define nameset
                         if s.used = false
                             return (0 - 1) as i64
                         if s.name_len = tlen
-                            if nameset.eq_ptr(s.name_ptr, sp, tlen)
+                            if nameset.eq_ptr(Slice[u8](s.name_ptr, s.name_len), Slice[u8](sp, tlen))
                                 return s.kind
                         set idx: (idx + 1) & mask
                         set probes: probes + 1
