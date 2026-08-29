@@ -31,6 +31,18 @@ def deref_to_subscript(line, buf):
         if end is None: return out
         out = out[:m.start()] + f'{buf}[' + out[m.end():end].strip() + ']' + out[end + 1:]
 
+STR = re.compile(r'"(?:\\.|[^"\\])*"')
+
+def code_only(line):
+    """Comment and STRING LITERALS removed.
+
+    ★Brace counting must not see a `{` inside a string: TeXFOTBuilder writes
+    `b_raw(b, "\\Character{")`, whose brace never closes, so the routine's range
+    ran to the end of the FILE and the length substitution rewrote three
+    neighbouring parameter lists into `s.length: size_t`.
+    """
+    return STR.sub('""', line.split(';')[0])
+
 def routine_range(lines, name):
     start = None
     for i, l in enumerate(lines):
@@ -41,7 +53,7 @@ def routine_range(lines, name):
     j = start + 1
     depth = 0; seen = False
     while j < len(lines):
-        s = lines[j].split(';')[0]
+        s = code_only(lines[j])
         depth += s.count('{') - s.count('}')
         if '{' in s: seen = True
         if seen and depth <= 0: return (start, j)
@@ -77,7 +89,12 @@ def main(path, routine, buf, length, elem):
     # The first version of this tool used `\*\(name \+ ([^()]*?)\)`, which
     # cannot match an index that itself contains parentheses, and left exactly
     # that site behind. A leftover deref is a hard failure here, never a warning.
-    left = [i + 1 for i in range(a, b + 1) if re.search(rf'\*\(\s*{re.escape(buf)}\s*[+\-]', lines[i])]
+    # ★A BARE `*name` counts too, not only `*(name + i)`: `*data = 0x0D` on a
+    # converted parameter compiled, desugared the `=` to `Slice.equals`, and
+    # SIGSEGV'd inside it -- the deref does not need arithmetic to be wrong.
+    left = [i + 1 for i in range(a, b + 1)
+            if re.search(rf'\*\(\s*{re.escape(buf)}\s*[+\-]', lines[i])
+            or re.search(rf'\*{re.escape(buf)}(?![\w])', lines[i])]
     if left:
         sys.exit(f"REFUSED: {routine} still derefs {buf} at line(s) {left} -- "
                  f"pointer arithmetic on a Slice compiles and reads garbage")
