@@ -7089,7 +7089,7 @@ define Emitter
                             ; A dependency-package object provides the real body —
                             ; leave the declaration for the ORC object linker.
                             if is_scaly_mangled
-                                if this.jit_symbol_in_set(dep_symbols, Slice[char](name_ptr, name_len))
+                                if this.jit_symbol_in_set(dep_symbols, Slice[char](name_len, name_ptr))
                                     set is_scaly_mangled: false
                             ; Skip symbols the host process already exports —
                             ; the RBMM runtime + stdlib (Page.allocate, String/

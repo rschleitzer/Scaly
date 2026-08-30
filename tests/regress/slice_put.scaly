@@ -7,7 +7,7 @@
 ; the borrow-arithmetic campaign's write half (951 of 2401 `*(p + i)` sites)
 ; expressible.
 ;
-; NOT `Vector[T](data, len)`, the borrow init, even though the layout is the
+; NOT `Vector[T](len, data)`, the positional borrow, even though the layout is
 ; same modulo field order: that is a Vector the compiler believes OWNS its
 ; buffer — it takes local-page promotion it does not need, and
 ; emit_region_vector_body RELOCATES its data field on the assumption that it
@@ -30,7 +30,7 @@ while i < 8
     set i: i + 1
 }
 
-let s Slice[int](a.get_buffer(), 8)
+let s Slice[int](8, a.get_buffer())
 
 var k: size_t 0
 while k < 8

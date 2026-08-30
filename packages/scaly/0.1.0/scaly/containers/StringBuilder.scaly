@@ -43,7 +43,7 @@ define StringBuilder
         buffer.add character
 
     function append(this: StringBuilder, string: String)
-        buffer.add(Vector[char](string.get_buffer(), string.get_length()))
+        buffer.add(Vector[char](string.get_length(), string.get_buffer()))
 
     function append(this: StringBuilder, c_string: pointer[const_char])
     {
@@ -51,12 +51,12 @@ define StringBuilder
         if length = 0
             return
 
-        buffer.add(Vector[char](c_string as pointer[char], length))
+        buffer.add(Vector[char](length, c_string as pointer[char]))
     }
 
     function append(this: StringBuilder, start: pointer[char], length: size_t)
     {
-        buffer.add(Vector[char](start, length))
+        buffer.add(Vector[char](length, start))
     }
 
     ; Decimal formatting overloads — string interpolation desugars an

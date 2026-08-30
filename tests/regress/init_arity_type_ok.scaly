@@ -6,7 +6,7 @@
 ;
 ; The third construction is the shape that must stay SILENT: a concept whose
 ; declared inits all have a DIFFERENT arity is built positionally BY DESIGN,
-; which is what the stdlib's own `Slice[T](data + from, to - from)` does
+; which is what the stdlib's own `Slice[T](to - from, data + from)` does
 ; against its `init()`.
 ; Self-hosted-only. Expected: PASS
 

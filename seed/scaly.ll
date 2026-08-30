@@ -14,7 +14,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z14ReceivedRegion = type { ptr, ptr, i64, ptr, ptr, ptr }
 %_Z6VectorIiE = type { i64, ptr }
 %_Z14VectorIteratorIiE = type { ptr, i64 }
-%_Z5SliceIiE = type { ptr, i64 }
+%_Z5SliceIiE = type { i64, ptr }
 %_Z13SliceIteratorIiE = type { %_Z5SliceIiE, i64 }
 %_Z5ArrayIiE = type { i64, ptr }
 %_Z13ArrayIteratorIiE = type { ptr, i64 }
@@ -28,7 +28,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5ArrayI6StringE = type { i64, ptr }
 %_Z6VectorI6StringE = type { i64, ptr }
 %_Z14VectorIteratorI6StringE = type { ptr, i64 }
-%_Z5SliceI6StringE = type { ptr, i64 }
+%_Z5SliceI6StringE = type { i64, ptr }
 %_Z13SliceIteratorI6StringE = type { %_Z5SliceI6StringE, i64 }
 %_Z4ListI6StringE = type { ptr }
 %_Z4NodeI6StringE = type { %_Z6String, ptr }
@@ -42,7 +42,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeI11BuilderListI4SlotI6StringEEE = type { %_Z11BuilderListI4SlotI6StringEE, ptr }
 %_Z19BuilderListIteratorI11BuilderListI4SlotI6StringEEE = type { ptr }
 %_Z14VectorIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
-%_Z5SliceI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
+%_Z5SliceI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
 %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE = type { %_Z5SliceI11BuilderListI4SlotI6StringEEE, i64 }
 %_Z5ArrayI11BuilderListI4SlotI6StringEEE = type { i64, ptr }
 %_Z13ArrayIteratorI11BuilderListI4SlotI6StringEEE = type { ptr, i64 }
@@ -54,7 +54,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z14HashSetBuilderI6StringE = type { i64, ptr }
 %_Z6VectorI6VectorI6StringEE = type { i64, ptr }
 %_Z14VectorIteratorI6VectorI6StringEE = type { ptr, i64 }
-%_Z5SliceI6VectorI6StringEE = type { ptr, i64 }
+%_Z5SliceI6VectorI6StringEE = type { i64, ptr }
 %_Z13SliceIteratorI6VectorI6StringEE = type { %_Z5SliceI6VectorI6StringEE, i64 }
 %_Z5ArrayI6VectorI6StringEE = type { i64, ptr }
 %_Z13ArrayIteratorI6VectorI6StringEE = type { ptr, i64 }
@@ -67,7 +67,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z6VectorI12KeyValuePairI6StringiEE = type { i64, ptr }
 %_Z12KeyValuePairI6StringiE = type { %_Z6String, i64 }
 %_Z14VectorIteratorI12KeyValuePairI6StringiEE = type { ptr, i64 }
-%_Z5SliceI12KeyValuePairI6StringiEE = type { ptr, i64 }
+%_Z5SliceI12KeyValuePairI6StringiEE = type { i64, ptr }
 %_Z13SliceIteratorI12KeyValuePairI6StringiEE = type { %_Z5SliceI12KeyValuePairI6StringiEE, i64 }
 %_Z4ListI12KeyValuePairI6StringiEE = type { ptr }
 %_Z4NodeI12KeyValuePairI6StringiEE = type { %_Z12KeyValuePairI6StringiE, ptr }
@@ -79,7 +79,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6StringiEEE = type { ptr }
 %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE = type { i64, ptr }
 %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE = type { ptr, i64 }
-%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE = type { ptr, i64 }
+%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE = type { i64, ptr }
 %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE = type { %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, i64 }
 %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE = type { i64, ptr }
 %_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE = type { ptr, i64 }
@@ -89,7 +89,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z14HashMapBuilderI6StringiE = type { i64, ptr }
 %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE = type { i64, ptr }
 %_Z14VectorIteratorI6VectorI12KeyValuePairI6StringiEEE = type { ptr, i64 }
-%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE = type { ptr, i64 }
+%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE = type { i64, ptr }
 %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE = type { %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, i64 }
 %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE = type { i64, ptr }
 %_Z13ArrayIteratorI6VectorI12KeyValuePairI6StringiEEE = type { ptr, i64 }
@@ -105,7 +105,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z19BuilderListIteratorI4SlotI12KeyValuePairI6StringmEEE = type { ptr }
 %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE = type { i64, ptr }
 %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE = type { ptr, i64 }
-%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE = type { ptr, i64 }
+%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE = type { i64, ptr }
 %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE = type { %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, i64 }
 %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE = type { i64, ptr }
 %_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE = type { ptr, i64 }
@@ -115,20 +115,20 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z14HashMapBuilderI6StringmE = type { i64, ptr }
 %_Z6VectorI12KeyValuePairI6StringmEE = type { i64, ptr }
 %_Z14VectorIteratorI12KeyValuePairI6StringmEE = type { ptr, i64 }
-%_Z5SliceI12KeyValuePairI6StringmEE = type { ptr, i64 }
+%_Z5SliceI12KeyValuePairI6StringmEE = type { i64, ptr }
 %_Z13SliceIteratorI12KeyValuePairI6StringmEE = type { %_Z5SliceI12KeyValuePairI6StringmEE, i64 }
 %_Z5ArrayI12KeyValuePairI6StringmEE = type { i64, ptr }
 %_Z13ArrayIteratorI12KeyValuePairI6StringmEE = type { ptr, i64 }
 %_Z4ListI12KeyValuePairI6StringmEE = type { ptr }
 %_Z4NodeI12KeyValuePairI6StringmEE = type { %_Z12KeyValuePairI6StringmE, ptr }
 %_Z12ListIteratorI12KeyValuePairI6StringmEE = type { ptr }
-%_Z5SliceI1TE = type { ptr, i64 }
+%_Z5SliceI1TE = type { i64, ptr }
 %_Z13SliceIteratorI1TE = type { %_Z5SliceI1TE, i64 }
-%_Z5SliceI2u8E = type { ptr, i64 }
+%_Z5SliceI2u8E = type { i64, ptr }
 %_Z13SliceIteratorI2u8E = type { %_Z5SliceI2u8E, i64 }
 %_Z6Option = type { i8, [8 x i8] }
 %_Z6Result = type { i8, [8 x i8] }
-%_Z5Slice = type { ptr, i64 }
+%_Z5Slice = type { i64, ptr }
 %_Z13SliceIterator = type { %_Z5SliceI1TE, i64 }
 %_Z12ListIteratorI1TE = type { ptr }
 %_Z4NodeI1TE = type { ptr, ptr }
@@ -144,7 +144,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z11BuilderList = type { ptr }
 %_Z19BuilderListIteratorI11BuilderListI4SlotI1TEEE = type { ptr }
 %_Z14VectorIteratorI11BuilderListI4SlotI1TEEE = type { ptr, i64 }
-%_Z5SliceI11BuilderListI4SlotI1TEEE = type { ptr, i64 }
+%_Z5SliceI11BuilderListI4SlotI1TEEE = type { i64, ptr }
 %_Z13SliceIteratorI11BuilderListI4SlotI1TEEE = type { %_Z5SliceI11BuilderListI4SlotI1TEEE, i64 }
 %_Z12ListIteratorI11BuilderListI4SlotI1TEEE = type { ptr }
 %_Z13ArrayIteratorI11BuilderListI4SlotI1TEEE = type { ptr, i64 }
@@ -154,18 +154,18 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z11BuilderListI4SlotI1TEE = type { ptr }
 %_Z4SlotI1TE = type { ptr, i64 }
 %_Z14VectorIteratorI6VectorI1TEE = type { ptr, i64 }
-%_Z5SliceI6VectorI1TEE = type { ptr, i64 }
+%_Z5SliceI6VectorI1TEE = type { i64, ptr }
 %_Z13SliceIteratorI6VectorI1TEE = type { %_Z5SliceI6VectorI1TEE, i64 }
 %_Z12ListIteratorI6VectorI1TEE = type { ptr }
 %_Z13ArrayIteratorI6VectorI1TEE = type { ptr, i64 }
 %_Z19BuilderListIteratorI4SlotI12KeyValuePairI1K1VEEE = type { ptr }
 %_Z14VectorIteratorI11BuilderListI4SlotI12KeyValuePairI1K1VEEEE = type { ptr, i64 }
-%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI1K1VEEEE = type { ptr, i64 }
+%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI1K1VEEEE = type { i64, ptr }
 %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI1K1VEEEE = type { %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI1K1VEEEE, i64 }
 %_Z13ArrayIteratorI11BuilderListI4SlotI12KeyValuePairI1K1VEEEE = type { ptr, i64 }
 %_Z12ListIteratorI11BuilderListI4SlotI12KeyValuePairI1K1VEEEE = type { ptr }
 %_Z14VectorIteratorI12KeyValuePairI1K1VEE = type { ptr, i64 }
-%_Z5SliceI12KeyValuePairI1K1VEE = type { ptr, i64 }
+%_Z5SliceI12KeyValuePairI1K1VEE = type { i64, ptr }
 %_Z13SliceIteratorI12KeyValuePairI1K1VEE = type { %_Z5SliceI12KeyValuePairI1K1VEE, i64 }
 %_Z13ArrayIteratorI12KeyValuePairI1K1VEE = type { ptr, i64 }
 %_Z12ListIteratorI12KeyValuePairI1K1VEE = type { ptr }
@@ -175,13 +175,13 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4SlotI12KeyValuePairI1K1VEE = type { %_Z12KeyValuePairI1K1VE, i64 }
 %_Z12KeyValuePairI1K1VE = type { ptr, ptr }
 %_Z14VectorIteratorI6VectorI12KeyValuePairI1K1VEEE = type { ptr, i64 }
-%_Z5SliceI6VectorI12KeyValuePairI1K1VEEE = type { ptr, i64 }
+%_Z5SliceI6VectorI12KeyValuePairI1K1VEEE = type { i64, ptr }
 %_Z13SliceIteratorI6VectorI12KeyValuePairI1K1VEEE = type { %_Z5SliceI6VectorI12KeyValuePairI1K1VEEE, i64 }
 %_Z13ArrayIteratorI6VectorI12KeyValuePairI1K1VEEE = type { ptr, i64 }
 %_Z12ListIteratorI6VectorI12KeyValuePairI1K1VEEE = type { ptr }
 %_Z15HashMapIteratorI1K1VE = type { %_Z14VectorIteratorI6VectorI12KeyValuePairI1K1VEEE, %_Z14VectorIteratorI12KeyValuePairI1K1VEE }
 %_Z14VectorIteratorIcE = type { ptr, i64 }
-%_Z5SliceIcE = type { ptr, i64 }
+%_Z5SliceIcE = type { i64, ptr }
 %_Z13SliceIteratorIcE = type { %_Z5SliceIcE, i64 }
 %_Z13ArrayIteratorIcE = type { ptr, i64 }
 %_Z4ListIcE = type { ptr }
@@ -204,7 +204,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z8NodeDown = type { i64 }
 %_Z6VectorIfE = type { i64, ptr }
 %_Z14VectorIteratorIfE = type { ptr, i64 }
-%_Z5SliceIfE = type { ptr, i64 }
+%_Z5SliceIfE = type { i64, ptr }
 %_Z13SliceIteratorIfE = type { %_Z5SliceIfE, i64 }
 %_Z5ArrayIfE = type { i64, ptr }
 %_Z13ArrayIteratorIfE = type { ptr, i64 }
@@ -213,7 +213,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorIfE = type { ptr }
 %_Z6VectorI3i64E = type { i64, ptr }
 %_Z14VectorIteratorI3i64E = type { ptr, i64 }
-%_Z5SliceI3i64E = type { ptr, i64 }
+%_Z5SliceI3i64E = type { i64, ptr }
 %_Z13SliceIteratorI3i64E = type { %_Z5SliceI3i64E, i64 }
 %_Z5ArrayI3i64E = type { i64, ptr }
 %_Z13ArrayIteratorI3i64E = type { ptr, i64 }
@@ -224,7 +224,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5ArrayI8TapeNodeE = type { i64, ptr }
 %_Z6VectorI8TapeNodeE = type { i64, ptr }
 %_Z14VectorIteratorI8TapeNodeE = type { ptr, i64 }
-%_Z5SliceI8TapeNodeE = type { ptr, i64 }
+%_Z5SliceI8TapeNodeE = type { i64, ptr }
 %_Z13SliceIteratorI8TapeNodeE = type { %_Z5SliceI8TapeNodeE, i64 }
 %_Z4ListI8TapeNodeE = type { ptr }
 %_Z4NodeI8TapeNodeE = type { %_Z8TapeNode, ptr }
@@ -3183,7 +3183,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceIiE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceIiE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -3192,7 +3192,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceIiE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIiE %load.struct1, 0
+  %data = extractvalue %_Z5SliceIiE %load.struct1, 1
   %ptr.add = getelementptr inbounds i64, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -3200,7 +3200,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceIiE3putEmi(ptr %0, i64 %1, i64 %2) {
 entry:
   %load.struct = load %_Z5SliceIiE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -3212,7 +3212,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceIiE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIiE %load.struct1, 0
+  %data = extractvalue %_Z5SliceIiE %load.struct1, 1
   %ptr.add = getelementptr inbounds i64, ptr %data, i64 %1
   store i64 %2, ptr %ptr.add, align 8
   ret void
@@ -3221,7 +3221,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceIiE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceIiE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -3235,26 +3235,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceIiE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceIiE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceIiE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceIiE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceIiE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceIiE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceIiE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceIiE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceIiE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceIiE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -3270,17 +3270,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceIiE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceIiE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds i64, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceIiE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceIiE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds i64, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIiE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceIiE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceIiE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIiE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3289,7 +3289,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceIiE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceIiE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceIiE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIiE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIiE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceIiE, ptr %sret.result, align 8
@@ -3309,9 +3309,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceIiE6equalsE5SliceIiE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceIiE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %load.struct1 = load %_Z5SliceIiE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceIiE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIiE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -3320,7 +3320,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceIiE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceIiE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceIiE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -3329,11 +3329,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceIiE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIiE %load.struct7, 0
+  %data = extractvalue %_Z5SliceIiE %load.struct7, 1
   %load.struct8 = load %_Z5SliceIiE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceIiE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceIiE %load.struct8, 1
   %load.struct10 = load %_Z5SliceIiE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceIiE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceIiE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -3344,9 +3344,9 @@ define linkonce_odr i1 @_ZN5SliceIiE11starts_withE5SliceIiE(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceIiE, align 8
   %load.struct = load %_Z5SliceIiE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %load.struct1 = load %_Z5SliceIiE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceIiE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIiE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -3354,7 +3354,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIiE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIiE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceIiE6equalsE5SliceIiE(ptr %sret.result, ptr %1)
@@ -3365,9 +3365,9 @@ define linkonce_odr i1 @_ZN5SliceIiE9ends_withE5SliceIiE(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceIiE, align 8
   %load.struct = load %_Z5SliceIiE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %load.struct1 = load %_Z5SliceIiE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceIiE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIiE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -3376,11 +3376,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceIiE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceIiE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceIiE %load.struct3, 0
   %load.struct5 = load %_Z5SliceIiE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceIiE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceIiE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIiE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIiE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceIiE6equalsE5SliceIiE(ptr %sret.result, ptr %1)
@@ -3393,7 +3393,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorIiE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorIiE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorIiE %load.struct1, 0
-  %length = extractvalue %_Z5SliceIiE %slice, 1
+  %length = extractvalue %_Z5SliceIiE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -3403,7 +3403,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorIiE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorIiE %load.struct2, 0
-  %data = extractvalue %_Z5SliceIiE %slice3, 0
+  %data = extractvalue %_Z5SliceIiE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorIiE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorIiE %load.struct4, 1
   %ptr.add = getelementptr inbounds i64, ptr %data, i64 %position5
@@ -3436,9 +3436,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceIiEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -3446,14 +3446,14 @@ entry:
 define linkonce_odr void @_ZN6VectorIiE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceIiE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorIiE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorIiE %load.struct, 1
+  %length = extractvalue %_Z6VectorIiE %load.struct, 0
   %load.struct1 = load %_Z6VectorIiE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorIiE %load.struct1, 0
+  %data = extractvalue %_Z6VectorIiE %load.struct1, 1
   %tuple = alloca %_Z5SliceIiE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIiE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIiE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceIiE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIiE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3465,15 +3465,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorIiE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIiEC1EPim(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorIiE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorIiE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -4067,14 +4058,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayIiE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceIiE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayIiE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayIiE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayIiE %load.struct, 0
+  %call = call ptr @_ZN5ArrayIiE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceIiE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIiE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIiE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceIiE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIiE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -4527,12 +4518,15 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
   %field.inplace = getelementptr inbounds nuw %_Z13StringBuilder, ptr %0, i32 0, i32 0
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %1)
+  %call1 = call ptr @_ZN6String10get_bufferEv(ptr %1)
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  %call = call ptr @_ZN6String10get_bufferEv(ptr %1)
-  %call1 = call i64 @_ZN6String10get_lengthEv(ptr %1)
-  call void @_ZN6VectorIcEC1EPcm(ptr %struct.region, ptr %call, i64 %call1)
-  call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %struct.region)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z6VectorIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 %call, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z6VectorIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr %call1, ptr %tuple.field2, align 1
+  call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %tuple.region)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -4894,7 +4888,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI6StringE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -4903,7 +4897,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6StringE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI6StringE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z6String, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -4911,7 +4905,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI6StringE3putEm6String(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -4923,7 +4917,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6StringE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI6StringE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z6String, ptr %data, i64 %1
   %store.load = load %_Z6String, ptr %2, align 8
   store %_Z6String %store.load, ptr %ptr.add, align 8
@@ -4933,7 +4927,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI6StringE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -4947,26 +4941,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI6StringE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI6StringE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -4982,17 +4976,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI6StringE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI6StringE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z6String, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI6StringE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI6StringE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z6String, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -5001,7 +4995,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI6StringE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI6StringE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI6StringE, ptr %sret.result, align 8
@@ -5021,9 +5015,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -5032,7 +5026,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -5041,11 +5035,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6StringE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI6StringE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI6StringE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI6StringE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI6StringE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI6StringE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -5056,9 +5050,9 @@ define linkonce_odr i1 @_ZN5SliceI6StringE11starts_withE5SliceI6StringE(ptr %0, 
 entry:
   %sret.result = alloca %_Z5SliceI6StringE, align 8
   %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -5066,7 +5060,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %sret.result, ptr %1)
@@ -5077,9 +5071,9 @@ define linkonce_odr i1 @_ZN5SliceI6StringE9ends_withE5SliceI6StringE(ptr %0, ptr
 entry:
   %sret.result = alloca %_Z5SliceI6StringE, align 8
   %load.struct = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6StringE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6StringE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6StringE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -5088,11 +5082,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI6StringE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI6StringE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI6StringE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI6StringE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6StringE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6StringE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI6StringE6equalsE5SliceI6StringE(ptr %sret.result, ptr %1)
@@ -5105,7 +5099,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI6StringE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI6StringE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI6StringE %slice, 1
+  %length = extractvalue %_Z5SliceI6StringE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -5115,7 +5109,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI6StringE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI6StringE %slice3, 0
+  %data = extractvalue %_Z5SliceI6StringE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI6StringE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI6StringE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z6String, ptr %data, i64 %position5
@@ -5148,9 +5142,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI6StringEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -5158,14 +5152,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI6StringE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI6StringE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI6StringE %load.struct, 1
+  %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
   %load.struct1 = load %_Z6VectorI6StringE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI6StringE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI6StringE %load.struct1, 1
   %tuple = alloca %_Z5SliceI6StringE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -5177,15 +5171,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6StringEC1EP6Stringm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -5812,14 +5797,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI6StringE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6StringE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI6StringE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI6StringE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI6StringE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI6StringE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6StringE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6StringE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -6314,7 +6299,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI11BuilderListI4SlotI6StringEEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -6323,7 +6308,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -6331,7 +6316,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEE3putEm11BuilderListI4SlotI6StringEE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -6343,7 +6328,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %1
   %store.load = load %_Z11BuilderListI4SlotI6StringEE, ptr %2, align 8
   store %_Z11BuilderListI4SlotI6StringEE %store.load, ptr %ptr.add, align 8
@@ -6353,7 +6338,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -6367,26 +6352,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -6402,17 +6387,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -6421,7 +6406,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %sret.result, align 8
@@ -6441,9 +6426,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE6equalsE5SliceI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -6452,7 +6437,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -6461,11 +6446,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI6StringEE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -6476,9 +6461,9 @@ define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE11starts_withE5S
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -6486,7 +6471,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE6equalsE5SliceI11BuilderListI4SlotI6StringEEE(ptr %sret.result, ptr %1)
@@ -6497,9 +6482,9 @@ define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE9ends_withE5Slic
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -6508,11 +6493,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI6StringEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI11BuilderListI4SlotI6StringEEE6equalsE5SliceI11BuilderListI4SlotI6StringEEE(ptr %sret.result, ptr %1)
@@ -6525,7 +6510,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %slice, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -6535,7 +6520,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %slice3, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI6StringEEE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI6StringEEE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI6StringEE, ptr %data, i64 %position5
@@ -6568,9 +6553,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI6StringEEEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -6578,14 +6563,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 1
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
   %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct1, 1
   %tuple = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -6597,15 +6582,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1EP11BuilderListI4SlotI6StringEEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -7201,14 +7177,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI6StringEEE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI11BuilderListI4SlotI6StringEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -8132,7 +8108,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI6VectorI6StringEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -8141,7 +8117,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -8149,7 +8125,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI6VectorI6StringEE3putEm6VectorI6StringE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -8161,7 +8137,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %1
   %store.load = load %_Z6VectorIiE, ptr %2, align 8
   store %_Z6VectorIiE %store.load, ptr %ptr.add, align 8
@@ -8171,7 +8147,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -8185,26 +8161,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -8220,17 +8196,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI6VectorI6StringEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI6VectorI6StringEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -8239,7 +8215,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI6VectorI6StringEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI6VectorI6StringEE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI6VectorI6StringEE, ptr %sret.result, align 8
@@ -8259,9 +8235,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE6equalsE5SliceI6VectorI6StringEE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -8270,7 +8246,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -8279,11 +8255,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorIiE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -8294,9 +8270,9 @@ define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE11starts_withE5SliceI6VectorI
 entry:
   %sret.result = alloca %_Z5SliceI6VectorI6StringEE, align 8
   %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -8304,7 +8280,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI6VectorI6StringEE6equalsE5SliceI6VectorI6StringEE(ptr %sret.result, ptr %1)
@@ -8315,9 +8291,9 @@ define linkonce_odr i1 @_ZN5SliceI6VectorI6StringEE9ends_withE5SliceI6VectorI6St
 entry:
   %sret.result = alloca %_Z5SliceI6VectorI6StringEE, align 8
   %load.struct = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -8326,11 +8302,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI6VectorI6StringEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI6VectorI6StringEE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6VectorI6StringEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI6VectorI6StringEE6equalsE5SliceI6VectorI6StringEE(ptr %sret.result, ptr %1)
@@ -8343,7 +8319,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI6VectorI6StringEE %slice, 1
+  %length = extractvalue %_Z5SliceI6VectorI6StringEE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -8353,7 +8329,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI6VectorI6StringEE %slice3, 0
+  %data = extractvalue %_Z5SliceI6VectorI6StringEE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI6VectorI6StringEE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %position5
@@ -8386,9 +8362,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI6VectorI6StringEEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -8396,14 +8372,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI6VectorI6StringEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 1
+  %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
   %load.struct1 = load %_Z6VectorI6VectorI6StringEE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct1, 1
   %tuple = alloca %_Z5SliceI6VectorI6StringEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI6VectorI6StringEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -8415,15 +8391,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1EP6VectorI6StringEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -9019,14 +8986,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI6StringEE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI6VectorI6StringEE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI6VectorI6StringEE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI6VectorI6StringEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6VectorI6StringEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9893,7 +9860,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI12KeyValuePairI6StringiEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -9902,7 +9869,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringiE, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -9910,7 +9877,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI6StringiEE3putEm12KeyValuePairI6StringiE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -9922,7 +9889,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringiE, ptr %data, i64 %1
   %store.load = load %_Z12KeyValuePairI6StringiE, ptr %2, align 8
   store %_Z12KeyValuePairI6StringiE %store.load, ptr %ptr.add, align 8
@@ -9932,7 +9899,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringiEE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -9946,26 +9913,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -9981,17 +9948,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringiE, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringiE, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6StringiEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -10000,7 +9967,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI6StringiEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringiEE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI12KeyValuePairI6StringiEE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI12KeyValuePairI6StringiEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringiEE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %sret.result, align 8
@@ -10020,9 +9987,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringiEE6equalsE5SliceI12KeyValuePairI6StringiEE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -10031,7 +9998,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -10040,11 +10007,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6StringiE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -10055,9 +10022,9 @@ define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringiEE11starts_withE5SliceI
 entry:
   %sret.result = alloca %_Z5SliceI12KeyValuePairI6StringiEE, align 8
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -10065,7 +10032,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI12KeyValuePairI6StringiEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringiEE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI12KeyValuePairI6StringiEE6equalsE5SliceI12KeyValuePairI6StringiEE(ptr %sret.result, ptr %1)
@@ -10076,9 +10043,9 @@ define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringiEE9ends_withE5SliceI12K
 entry:
   %sret.result = alloca %_Z5SliceI12KeyValuePairI6StringiEE, align 8
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -10087,11 +10054,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI12KeyValuePairI6StringiEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringiEE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI12KeyValuePairI6StringiEE6equalsE5SliceI12KeyValuePairI6StringiEE(ptr %sret.result, ptr %1)
@@ -10104,7 +10071,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringiEE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringiEE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %slice, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -10114,7 +10081,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringiEE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %slice3, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringiEE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringiEE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringiE, ptr %data, i64 %position5
@@ -10147,9 +10114,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI6StringiEEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -10157,14 +10124,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6StringiEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringiEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct, 1
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct, 0
   %load.struct1 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct1, 1
   %tuple = alloca %_Z5SliceI12KeyValuePairI6StringiEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6StringiEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -10176,15 +10143,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI12KeyValuePairI6StringiEEC1EP12KeyValuePairI6StringiEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -10776,14 +10734,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6StringiEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringiEE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI12KeyValuePairI6StringiEE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6StringiEE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI12KeyValuePairI6StringiEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6StringiEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6StringiEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -11095,7 +11053,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -11104,7 +11062,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -11112,7 +11070,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE3putEm11BuilderListI4SlotI12KeyValuePairI6StringiEEE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -11124,7 +11082,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr %data, i64 %1
   %store.load = load %_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr %2, align 8
   store %_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE %store.load, ptr %ptr.add, align 8
@@ -11134,7 +11092,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -11148,26 +11106,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -11183,17 +11141,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -11202,7 +11160,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %sret.result, align 8
@@ -11222,9 +11180,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE6equalsE5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -11233,7 +11191,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -11242,11 +11200,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -11257,9 +11215,9 @@ define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEE
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -11267,7 +11225,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE6equalsE5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE(ptr %sret.result, ptr %1)
@@ -11278,9 +11236,9 @@ define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEE
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -11289,11 +11247,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE6equalsE5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE(ptr %sret.result, ptr %1)
@@ -11306,7 +11264,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %slice, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -11316,7 +11274,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %slice3, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringiEEE, ptr %data, i64 %position5
@@ -11349,9 +11307,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -11359,14 +11317,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 1
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
   %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 1
   %tuple = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -11378,15 +11336,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEEC1EP11BuilderListI4SlotI12KeyValuePairI6StringiEEEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -11982,14 +11931,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12771,7 +12720,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -12780,7 +12729,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -12788,7 +12737,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE3putEm6VectorI12KeyValuePairI6StringiEE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -12800,7 +12749,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %1
   %store.load = load %_Z6VectorIiE, ptr %2, align 8
   store %_Z6VectorIiE %store.load, ptr %ptr.add, align 8
@@ -12810,7 +12759,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -12824,26 +12773,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -12859,17 +12808,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12878,7 +12827,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %sret.result, align 8
@@ -12898,9 +12847,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE6equalsE5SliceI6VectorI12KeyValuePairI6StringiEEE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -12909,7 +12858,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -12918,11 +12867,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z6VectorIiE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -12933,9 +12882,9 @@ define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE11starts_wit
 entry:
   %sret.result = alloca %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, align 8
   %load.struct = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -12943,7 +12892,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE6equalsE5SliceI6VectorI12KeyValuePairI6StringiEEE(ptr %sret.result, ptr %1)
@@ -12954,9 +12903,9 @@ define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE9ends_withE5
 entry:
   %sret.result = alloca %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, align 8
   %load.struct = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -12965,11 +12914,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEE6equalsE5SliceI6VectorI12KeyValuePairI6StringiEEE(ptr %sret.result, ptr %1)
@@ -12982,7 +12931,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %slice, 1
+  %length = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -12992,7 +12941,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %slice3, 0
+  %data = extractvalue %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI6VectorI12KeyValuePairI6StringiEEE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z6VectorIiE, ptr %data, i64 %position5
@@ -13025,9 +12974,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI6StringiEEEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -13035,14 +12984,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI6StringiEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE %load.struct, 1
+  %length = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
   %load.struct1 = load %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 1
   %tuple = alloca %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -13054,15 +13003,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI6StringiEEEC1EP6VectorI12KeyValuePairI6StringiEEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -13658,14 +13598,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6StringiEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI6VectorI12KeyValuePairI6StringiEEE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI6VectorI12KeyValuePairI6StringiEEE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -14564,7 +14504,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -14573,7 +14513,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -14581,7 +14521,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE3putEm11BuilderListI4SlotI12KeyValuePairI6StringmEEE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -14593,7 +14533,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr %data, i64 %1
   %store.load = load %_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr %2, align 8
   store %_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE %store.load, ptr %ptr.add, align 8
@@ -14603,7 +14543,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -14617,26 +14557,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -14652,17 +14592,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -14671,7 +14611,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %sret.result, align 8
@@ -14691,9 +14631,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE6equalsE5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -14702,7 +14642,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -14711,11 +14651,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -14726,9 +14666,9 @@ define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEE
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -14736,7 +14676,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE6equalsE5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE(ptr %sret.result, ptr %1)
@@ -14747,9 +14687,9 @@ define linkonce_odr i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEE
 entry:
   %sret.result = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, align 8
   %load.struct = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -14758,11 +14698,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE6equalsE5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE(ptr %sret.result, ptr %1)
@@ -14775,7 +14715,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %slice, 1
+  %length = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -14785,7 +14725,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %slice3, 0
+  %data = extractvalue %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z11BuilderListI4SlotI12KeyValuePairI6StringmEEE, ptr %data, i64 %position5
@@ -14818,9 +14758,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -14828,14 +14768,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 1
+  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
   %load.struct1 = load %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 1
   %tuple = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -14847,15 +14787,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEEC1EP11BuilderListI4SlotI12KeyValuePairI6StringmEEEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -15451,14 +15382,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -16144,7 +16075,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI12KeyValuePairI6StringmEE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -16153,7 +16084,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringmE, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -16161,7 +16092,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI6StringmEE3putEm12KeyValuePairI6StringmE(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -16173,7 +16104,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringmE, ptr %data, i64 %1
   %store.load = load %_Z12KeyValuePairI6StringmE, ptr %2, align 8
   store %_Z12KeyValuePairI6StringmE %store.load, ptr %ptr.add, align 8
@@ -16183,7 +16114,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringmEE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -16197,26 +16128,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -16232,17 +16163,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringmE, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringmE, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6StringmEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -16251,7 +16182,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI6StringmEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringmEE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI12KeyValuePairI6StringmEE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI12KeyValuePairI6StringmEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringmEE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %sret.result, align 8
@@ -16271,9 +16202,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringmEE6equalsE5SliceI12KeyValuePairI6StringmEE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -16282,7 +16213,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -16291,11 +16222,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6StringmE, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -16306,9 +16237,9 @@ define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringmEE11starts_withE5SliceI
 entry:
   %sret.result = alloca %_Z5SliceI12KeyValuePairI6StringmEE, align 8
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -16316,7 +16247,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI12KeyValuePairI6StringmEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringmEE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI12KeyValuePairI6StringmEE6equalsE5SliceI12KeyValuePairI6StringmEE(ptr %sret.result, ptr %1)
@@ -16327,9 +16258,9 @@ define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI6StringmEE9ends_withE5SliceI12K
 entry:
   %sret.result = alloca %_Z5SliceI12KeyValuePairI6StringmEE, align 8
   %load.struct = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct, 0
   %load.struct1 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -16338,11 +16269,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI12KeyValuePairI6StringmEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringmEE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI12KeyValuePairI6StringmEE6equalsE5SliceI12KeyValuePairI6StringmEE(ptr %sret.result, ptr %1)
@@ -16355,7 +16286,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringmEE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI12KeyValuePairI6StringmEE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringmEE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %slice, 1
+  %length = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -16365,7 +16296,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI12KeyValuePairI6StringmEE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringmEE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %slice3, 0
+  %data = extractvalue %_Z5SliceI12KeyValuePairI6StringmEE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI12KeyValuePairI6StringmEE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI12KeyValuePairI6StringmEE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z12KeyValuePairI6StringmE, ptr %data, i64 %position5
@@ -16398,9 +16329,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI6StringmEEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -16408,14 +16339,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6StringmEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringmEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6StringmEE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI12KeyValuePairI6StringmEE %load.struct, 1
+  %length = extractvalue %_Z6VectorI12KeyValuePairI6StringmEE %load.struct, 0
   %load.struct1 = load %_Z6VectorI12KeyValuePairI6StringmEE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI12KeyValuePairI6StringmEE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI12KeyValuePairI6StringmEE %load.struct1, 1
   %tuple = alloca %_Z5SliceI12KeyValuePairI6StringmEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6StringmEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -16427,15 +16358,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI12KeyValuePairI6StringmEEC1EP12KeyValuePairI6StringmEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -17031,14 +16953,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6StringmEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI6StringmEE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI12KeyValuePairI6StringmEE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI12KeyValuePairI6StringmEE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI12KeyValuePairI6StringmEE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6StringmEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6StringmEE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -17492,7 +17414,7 @@ entry:
 define linkonce_odr i64 @_ZN5SliceIiEixEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceIiE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIiE %load.struct, 1
+  %length = extractvalue %_Z5SliceIiE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -17504,7 +17426,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceIiE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIiE %load.struct1, 0
+  %data = extractvalue %_Z5SliceIiE %load.struct1, 1
   %ptr.add = getelementptr inbounds i64, ptr %data, i64 %1
   %deref = load i64, ptr %ptr.add, align 8
   ret i64 %deref
@@ -17513,7 +17435,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr ptr @_ZN5SliceI2u8E3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -17522,7 +17444,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI2u8E %load.struct1, 0
+  %data = extractvalue %_Z5SliceI2u8E %load.struct1, 1
   %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -17530,7 +17452,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI2u8E3putEm2u8(ptr %0, i64 %1, i8 %2) {
 entry:
   %load.struct = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -17542,7 +17464,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI2u8E %load.struct1, 0
+  %data = extractvalue %_Z5SliceI2u8E %load.struct1, 1
   %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
   store i8 %2, ptr %ptr.add, align 1
   ret void
@@ -17551,7 +17473,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI2u8E8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -17565,26 +17487,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI2u8E %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI2u8E %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI2u8E %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI2u8E %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI2u8E %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI2u8E %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -17600,17 +17522,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI2u8E %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI2u8E, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI2u8E %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -17619,7 +17541,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI2u8E10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI2u8E, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI2u8E8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI2u8E, ptr %sret.result, align 8
@@ -17639,9 +17561,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI2u8E6equalsE5SliceI2u8E(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %load.struct1 = load %_Z5SliceI2u8E, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -17650,7 +17572,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI2u8E %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI2u8E %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -17659,11 +17581,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI2u8E %load.struct7, 0
+  %data = extractvalue %_Z5SliceI2u8E %load.struct7, 1
   %load.struct8 = load %_Z5SliceI2u8E, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI2u8E %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI2u8E %load.struct8, 1
   %load.struct10 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI2u8E %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI2u8E %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -17674,9 +17596,9 @@ define linkonce_odr i1 @_ZN5SliceI2u8E11starts_withE5SliceI2u8E(ptr %0, ptr %1) 
 entry:
   %sret.result = alloca %_Z5SliceI2u8E, align 8
   %load.struct = load %_Z5SliceI2u8E, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %load.struct1 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -17684,7 +17606,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI2u8E8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI2u8E6equalsE5SliceI2u8E(ptr %sret.result, ptr %1)
@@ -17695,9 +17617,9 @@ define linkonce_odr i1 @_ZN5SliceI2u8E9ends_withE5SliceI2u8E(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceI2u8E, align 8
   %load.struct = load %_Z5SliceI2u8E, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %load.struct1 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -17706,11 +17628,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI2u8E %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI2u8E %load.struct3, 0
   %load.struct5 = load %_Z5SliceI2u8E, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI2u8E %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI2u8E %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI2u8E8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI2u8E6equalsE5SliceI2u8E(ptr %sret.result, ptr %1)
@@ -17723,7 +17645,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI2u8E %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI2u8E, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI2u8E %load.struct1, 0
-  %length = extractvalue %_Z5SliceI2u8E %slice, 1
+  %length = extractvalue %_Z5SliceI2u8E %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -17733,7 +17655,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI2u8E, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI2u8E %load.struct2, 0
-  %data = extractvalue %_Z5SliceI2u8E %slice3, 0
+  %data = extractvalue %_Z5SliceI2u8E %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI2u8E, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI2u8E %load.struct4, 1
   %ptr.add = getelementptr inbounds i8, ptr %data, i64 %position5
@@ -17766,9 +17688,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI2u8EC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -17788,9 +17710,9 @@ entry:
 
 if.then:                                          ; preds = %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init, i32 0, i32 0
-  store ptr null, ptr %tuple.field, align 8
+  store i64 0, ptr %tuple.field, align 8
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init, i32 0, i32 1
-  store i64 0, ptr %tuple.field1, align 8
+  store ptr null, ptr %tuple.field1, align 8
   %sret.body = load %_Z5SliceI2u8E, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -17810,16 +17732,16 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq3, label %if.then4, label %if.end5
 
 while.exit:                                       ; preds = %if.then15, %while.cond
-  %load.struct20 = load %_Z6String, ptr %2, align 8
-  %data21 = extractvalue %_Z6String %load.struct20, 0
-  %index22 = load i64, ptr %index, align 8
-  %ptr.add23 = getelementptr inbounds i8, ptr %data21, i64 %index22
-  %ptr.add24 = getelementptr inbounds i8, ptr %ptr.add23, i64 1
-  %string_length25 = load i64, ptr %string_length, align 8
+  %string_length20 = load i64, ptr %string_length, align 8
+  %load.struct21 = load %_Z6String, ptr %2, align 8
+  %data22 = extractvalue %_Z6String %load.struct21, 0
+  %index23 = load i64, ptr %index, align 8
+  %ptr.add24 = getelementptr inbounds i8, ptr %data22, i64 %index23
+  %ptr.add25 = getelementptr inbounds i8, ptr %ptr.add24, i64 1
   %tuple.field26 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add24, ptr %tuple.field26, align 1
+  store i64 %string_length20, ptr %tuple.field26, align 1
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
-  store i64 %string_length25, ptr %tuple.field27, align 1
+  store ptr %ptr.add25, ptr %tuple.field27, align 1
   %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -17864,7 +17786,7 @@ if.end16:                                         ; preds = %if.end5
 define linkonce_odr i8 @_ZN5SliceI2u8EixEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -17876,7 +17798,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI2u8E %load.struct1, 0
+  %data = extractvalue %_Z5SliceI2u8E %load.struct1, 1
   %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
   %deref = load i8, ptr %ptr.add, align 1
   ret i8 %deref
@@ -17886,9 +17808,9 @@ define linkonce_odr i1 @_ZN5SliceI2u8EeqE5SliceI2u8E(ptr %0, ptr %1) {
 entry:
   %i = alloca i64, align 8
   %load.struct = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct, 1
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %load.struct1 = load %_Z5SliceI2u8E, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI2u8E %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -17897,11 +17819,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI2u8E %load.struct3, 0
+  %data = extractvalue %_Z5SliceI2u8E %load.struct3, 1
   %load.struct4 = load %_Z5SliceI2u8E, ptr %1, align 8
-  %data5 = extractvalue %_Z5SliceI2u8E %load.struct4, 0
+  %data5 = extractvalue %_Z5SliceI2u8E %load.struct4, 1
   %load.struct6 = load %_Z5SliceI2u8E, ptr %0, align 8
-  %length7 = extractvalue %_Z5SliceI2u8E %load.struct6, 1
+  %length7 = extractvalue %_Z5SliceI2u8E %load.struct6, 0
   %mul = mul i64 %length7, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
   store i64 0, ptr %i, align 1
   br label %while.cond
@@ -18412,7 +18334,7 @@ while.exit:                                       ; preds = %while.cond
 define linkonce_odr ptr @_ZN5Slice3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5Slice, ptr %0, align 8
-  %length = extractvalue %_Z5Slice %load.struct, 1
+  %length = extractvalue %_Z5Slice %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -18421,7 +18343,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5Slice, ptr %0, align 8
-  %data = extractvalue %_Z5Slice %load.struct1, 0
+  %data = extractvalue %_Z5Slice %load.struct1, 1
   %ptr.add = getelementptr inbounds ptr, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -18434,7 +18356,7 @@ entry:
 define linkonce_odr i1 @_ZN5Slice8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5Slice, ptr %0, align 8
-  %length = extractvalue %_Z5Slice %load.struct, 1
+  %length = extractvalue %_Z5Slice %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -18448,26 +18370,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5Slice, ptr %2, align 8
-  %length = extractvalue %_Z5Slice %load.struct, 1
+  %length = extractvalue %_Z5Slice %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5Slice, ptr %2, align 8
-  %length3 = extractvalue %_Z5Slice %load.struct2, 1
+  %length3 = extractvalue %_Z5Slice %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5Slice, ptr %2, align 8
-  %length6 = extractvalue %_Z5Slice %load.struct5, 1
+  %length6 = extractvalue %_Z5Slice %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5Slice, ptr %2, align 8
-  %length11 = extractvalue %_Z5Slice %load.struct10, 1
+  %length11 = extractvalue %_Z5Slice %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -18483,17 +18405,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5Slice, ptr %2, align 8
-  %data = extractvalue %_Z5Slice %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds ptr, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5Slice, ptr %2, align 8
+  %data = extractvalue %_Z5Slice %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds ptr, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI1TE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI1TE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -18502,7 +18424,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5Slice10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI1TE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5Slice, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5Slice, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5Slice8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI1TE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI1TE, ptr %sret.result, align 8
@@ -18549,9 +18471,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5Slice, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5Slice, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5Slice, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5Slice, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -18562,7 +18484,7 @@ entry:
   %position = extractvalue %_Z13SliceIterator %load.struct, 1
   %load.struct1 = load %_Z13SliceIterator, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIterator %load.struct1, 0
-  %length = extractvalue %_Z5SliceI1TE %slice, 1
+  %length = extractvalue %_Z5SliceI1TE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -18572,7 +18494,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIterator, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIterator %load.struct2, 0
-  %data = extractvalue %_Z5SliceI1TE %slice3, 0
+  %data = extractvalue %_Z5SliceI1TE %slice3, 1
   %load.struct4 = load %_Z13SliceIterator, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIterator %load.struct4, 1
   %ptr.add = getelementptr inbounds ptr, ptr %data, i64 %position5
@@ -18735,11 +18657,6 @@ entry:
 }
 
 define linkonce_odr void @_ZN6VectorI1TEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI1TEC1EP1Tm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret void
 }
@@ -18943,14 +18860,14 @@ entry:
 define linkonce_odr void @_ZN6Vector8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI1TE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI1TE %load.struct, 1
+  %length = extractvalue %_Z6VectorI1TE %load.struct, 0
   %load.struct1 = load %_Z6VectorI1TE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI1TE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI1TE %load.struct1, 1
   %tuple = alloca %_Z5SliceI1TE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI1TE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI1TE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -18962,11 +18879,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6Vector, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorC1EP1Tm(ptr %0, ptr %1, i64 %2) {
-entry:
   ret void
 }
 
@@ -19153,14 +19065,14 @@ entry:
 
 define linkonce_odr void @_ZN5Array8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI1TE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI1TE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI1TE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI1TE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI1TE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI1TE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI1TE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -19641,11 +19553,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI1TEEEC1EP11BuilderListI4SlotI1TEEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI1TEEEC1Em(ptr %0, i64 %1) {
 entry:
   ret void
@@ -20036,11 +19943,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN6VectorI6VectorI1TEEC1EP6VectorI1TEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI6VectorI1TEEC1Em(ptr %0, i64 %1) {
 entry:
   ret void
@@ -20331,11 +20233,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI1K1VEEEEC1EP11BuilderListI4SlotI12KeyValuePairI1K1VEEEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI12KeyValuePairI1K1VEEEEC1Em(ptr %0, i64 %1) {
 entry:
   ret void
@@ -20587,11 +20484,6 @@ entry:
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEEC1EP12KeyValuePairI1K1VEm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret void
 }
@@ -20922,11 +20814,6 @@ entry:
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEEC1EP6VectorI12KeyValuePairI1K1VEEm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret void
 }
@@ -21674,7 +21561,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceIcE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceIcE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIcE %load.struct, 1
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -21683,7 +21570,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceIcE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIcE %load.struct1, 0
+  %data = extractvalue %_Z5SliceIcE %load.struct1, 1
   %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -21691,7 +21578,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceIcE3putEmc(ptr %0, i64 %1, i8 %2) {
 entry:
   %load.struct = load %_Z5SliceIcE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIcE %load.struct, 1
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -21703,7 +21590,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceIcE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIcE %load.struct1, 0
+  %data = extractvalue %_Z5SliceIcE %load.struct1, 1
   %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
   store i8 %2, ptr %ptr.add, align 1
   ret void
@@ -21712,7 +21599,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceIcE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceIcE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIcE %load.struct, 1
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -21726,26 +21613,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceIcE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceIcE %load.struct, 1
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceIcE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceIcE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceIcE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceIcE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceIcE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceIcE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceIcE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceIcE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceIcE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -21761,17 +21648,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceIcE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceIcE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceIcE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceIcE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -21780,7 +21667,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceIcE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceIcE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceIcE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIcE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIcE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceIcE, ptr %sret.result, align 8
@@ -21800,9 +21687,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceIcE6equalsE5SliceIcE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceIcE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIcE %load.struct, 1
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %load.struct1 = load %_Z5SliceIcE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceIcE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIcE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -21811,7 +21698,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceIcE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceIcE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceIcE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -21820,11 +21707,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceIcE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIcE %load.struct7, 0
+  %data = extractvalue %_Z5SliceIcE %load.struct7, 1
   %load.struct8 = load %_Z5SliceIcE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceIcE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceIcE %load.struct8, 1
   %load.struct10 = load %_Z5SliceIcE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceIcE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceIcE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -21835,9 +21722,9 @@ define linkonce_odr i1 @_ZN5SliceIcE11starts_withE5SliceIcE(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceIcE, align 8
   %load.struct = load %_Z5SliceIcE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceIcE %load.struct, 1
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %load.struct1 = load %_Z5SliceIcE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceIcE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIcE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -21845,7 +21732,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIcE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIcE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceIcE6equalsE5SliceIcE(ptr %sret.result, ptr %1)
@@ -21856,9 +21743,9 @@ define linkonce_odr i1 @_ZN5SliceIcE9ends_withE5SliceIcE(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceIcE, align 8
   %load.struct = load %_Z5SliceIcE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceIcE %load.struct, 1
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %load.struct1 = load %_Z5SliceIcE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceIcE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIcE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -21867,11 +21754,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceIcE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceIcE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceIcE %load.struct3, 0
   %load.struct5 = load %_Z5SliceIcE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceIcE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceIcE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIcE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIcE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceIcE6equalsE5SliceIcE(ptr %sret.result, ptr %1)
@@ -21884,7 +21771,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorIcE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorIcE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorIcE %load.struct1, 0
-  %length = extractvalue %_Z5SliceIcE %slice, 1
+  %length = extractvalue %_Z5SliceIcE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -21894,7 +21781,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorIcE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorIcE %load.struct2, 0
-  %data = extractvalue %_Z5SliceIcE %slice3, 0
+  %data = extractvalue %_Z5SliceIcE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorIcE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorIcE %load.struct4, 1
   %ptr.add = getelementptr inbounds i8, ptr %data, i64 %position5
@@ -21927,9 +21814,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceIcEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -21937,14 +21824,14 @@ entry:
 define linkonce_odr void @_ZN6VectorIcE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceIcE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorIcE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorIcE %load.struct, 1
+  %length = extractvalue %_Z6VectorIcE %load.struct, 0
   %load.struct1 = load %_Z6VectorIcE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct1, 0
+  %data = extractvalue %_Z6VectorIcE %load.struct1, 1
   %tuple = alloca %_Z5SliceIcE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -21956,15 +21843,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorIcE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1EPcm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -22558,14 +22436,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayIcE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceIcE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayIcE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayIcE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayIcE %load.struct, 0
+  %call = call ptr @_ZN5ArrayIcE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceIcE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -23612,9 +23490,12 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z13StringBuilder, ptr %0, i32 0, i32 0
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIcEC1EPcm(ptr %struct.region, ptr %1, i64 %call)
-  call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %struct.region)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z6VectorIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 %call, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z6VectorIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr %1, ptr %tuple.field1, align 1
+  call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %tuple.region)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -23627,9 +23508,12 @@ entry:
   store ptr null, ptr %frame.parent, align 8
   %field.inplace = getelementptr inbounds nuw %_Z13StringBuilder, ptr %0, i32 0, i32 0
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIcEC1EPcm(ptr %struct.region, ptr %1, i64 %2)
-  call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %struct.region)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z6VectorIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 %2, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z6VectorIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr %1, ptr %tuple.field1, align 1
+  call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %tuple.region)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -29296,7 +29180,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceIfE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceIfE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIfE %load.struct, 1
+  %length = extractvalue %_Z5SliceIfE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -29305,7 +29189,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceIfE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIfE %load.struct1, 0
+  %data = extractvalue %_Z5SliceIfE %load.struct1, 1
   %ptr.add = getelementptr inbounds float, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -29313,7 +29197,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceIfE3putEmf(ptr %0, i64 %1, float %2) {
 entry:
   %load.struct = load %_Z5SliceIfE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIfE %load.struct, 1
+  %length = extractvalue %_Z5SliceIfE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -29325,7 +29209,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceIfE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIfE %load.struct1, 0
+  %data = extractvalue %_Z5SliceIfE %load.struct1, 1
   %ptr.add = getelementptr inbounds float, ptr %data, i64 %1
   store float %2, ptr %ptr.add, align 4
   ret void
@@ -29334,7 +29218,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceIfE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceIfE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIfE %load.struct, 1
+  %length = extractvalue %_Z5SliceIfE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -29348,26 +29232,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceIfE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceIfE %load.struct, 1
+  %length = extractvalue %_Z5SliceIfE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceIfE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceIfE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceIfE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceIfE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceIfE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceIfE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceIfE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceIfE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceIfE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -29383,17 +29267,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceIfE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceIfE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds float, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceIfE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceIfE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds float, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIfE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceIfE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceIfE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIfE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -29402,7 +29286,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceIfE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceIfE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceIfE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIfE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIfE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceIfE, ptr %sret.result, align 8
@@ -29422,9 +29306,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceIfE6equalsE5SliceIfE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceIfE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceIfE %load.struct, 1
+  %length = extractvalue %_Z5SliceIfE %load.struct, 0
   %load.struct1 = load %_Z5SliceIfE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceIfE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIfE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -29433,7 +29317,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceIfE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceIfE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceIfE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -29442,11 +29326,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceIfE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceIfE %load.struct7, 0
+  %data = extractvalue %_Z5SliceIfE %load.struct7, 1
   %load.struct8 = load %_Z5SliceIfE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceIfE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceIfE %load.struct8, 1
   %load.struct10 = load %_Z5SliceIfE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceIfE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceIfE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -29457,9 +29341,9 @@ define linkonce_odr i1 @_ZN5SliceIfE11starts_withE5SliceIfE(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceIfE, align 8
   %load.struct = load %_Z5SliceIfE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceIfE %load.struct, 1
+  %length = extractvalue %_Z5SliceIfE %load.struct, 0
   %load.struct1 = load %_Z5SliceIfE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceIfE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIfE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -29467,7 +29351,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIfE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIfE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceIfE6equalsE5SliceIfE(ptr %sret.result, ptr %1)
@@ -29478,9 +29362,9 @@ define linkonce_odr i1 @_ZN5SliceIfE9ends_withE5SliceIfE(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceIfE, align 8
   %load.struct = load %_Z5SliceIfE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceIfE %load.struct, 1
+  %length = extractvalue %_Z5SliceIfE %load.struct, 0
   %load.struct1 = load %_Z5SliceIfE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceIfE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceIfE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -29489,11 +29373,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceIfE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceIfE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceIfE %load.struct3, 0
   %load.struct5 = load %_Z5SliceIfE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceIfE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceIfE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceIfE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceIfE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceIfE6equalsE5SliceIfE(ptr %sret.result, ptr %1)
@@ -29506,7 +29390,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorIfE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorIfE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorIfE %load.struct1, 0
-  %length = extractvalue %_Z5SliceIfE %slice, 1
+  %length = extractvalue %_Z5SliceIfE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -29516,7 +29400,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorIfE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorIfE %load.struct2, 0
-  %data = extractvalue %_Z5SliceIfE %slice3, 0
+  %data = extractvalue %_Z5SliceIfE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorIfE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorIfE %load.struct4, 1
   %ptr.add = getelementptr inbounds float, ptr %data, i64 %position5
@@ -29549,9 +29433,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceIfEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -29559,14 +29443,14 @@ entry:
 define linkonce_odr void @_ZN6VectorIfE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceIfE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorIfE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorIfE %load.struct, 1
+  %length = extractvalue %_Z6VectorIfE %load.struct, 0
   %load.struct1 = load %_Z6VectorIfE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorIfE %load.struct1, 0
+  %data = extractvalue %_Z6VectorIfE %load.struct1, 1
   %tuple = alloca %_Z5SliceIfE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIfE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIfE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceIfE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIfE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -29578,15 +29462,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorIfE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIfEC1EPfm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorIfE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorIfE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -30180,14 +30055,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayIfE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceIfE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayIfE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayIfE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayIfE %load.struct, 0
+  %call = call ptr @_ZN5ArrayIfE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceIfE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIfE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIfE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceIfE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIfE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -32596,7 +32471,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI3i64E3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI3i64E %load.struct, 1
+  %length = extractvalue %_Z5SliceI3i64E %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -32605,7 +32480,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI3i64E %load.struct1, 0
+  %data = extractvalue %_Z5SliceI3i64E %load.struct1, 1
   %ptr.add = getelementptr inbounds i64, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -32613,7 +32488,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI3i64E3putEm3i64(ptr %0, i64 %1, i64 %2) {
 entry:
   %load.struct = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI3i64E %load.struct, 1
+  %length = extractvalue %_Z5SliceI3i64E %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -32625,7 +32500,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI3i64E %load.struct1, 0
+  %data = extractvalue %_Z5SliceI3i64E %load.struct1, 1
   %ptr.add = getelementptr inbounds i64, ptr %data, i64 %1
   store i64 %2, ptr %ptr.add, align 8
   ret void
@@ -32634,7 +32509,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI3i64E8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI3i64E %load.struct, 1
+  %length = extractvalue %_Z5SliceI3i64E %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -32648,26 +32523,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI3i64E, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI3i64E %load.struct, 1
+  %length = extractvalue %_Z5SliceI3i64E %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI3i64E, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI3i64E %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI3i64E %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI3i64E, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI3i64E %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI3i64E %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI3i64E, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI3i64E %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI3i64E %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -32683,17 +32558,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI3i64E, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI3i64E %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds i64, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI3i64E, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI3i64E %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds i64, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI3i64E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI3i64E, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -32702,7 +32577,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI3i64E10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI3i64E) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI3i64E, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI3i64E8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI3i64E) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI3i64E, ptr %sret.result, align 8
@@ -32722,9 +32597,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI3i64E6equalsE5SliceI3i64E(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI3i64E %load.struct, 1
+  %length = extractvalue %_Z5SliceI3i64E %load.struct, 0
   %load.struct1 = load %_Z5SliceI3i64E, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI3i64E %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI3i64E %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -32733,7 +32608,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI3i64E %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI3i64E %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -32742,11 +32617,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI3i64E %load.struct7, 0
+  %data = extractvalue %_Z5SliceI3i64E %load.struct7, 1
   %load.struct8 = load %_Z5SliceI3i64E, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI3i64E %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI3i64E %load.struct8, 1
   %load.struct10 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI3i64E %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI3i64E %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -32757,9 +32632,9 @@ define linkonce_odr i1 @_ZN5SliceI3i64E11starts_withE5SliceI3i64E(ptr %0, ptr %1
 entry:
   %sret.result = alloca %_Z5SliceI3i64E, align 8
   %load.struct = load %_Z5SliceI3i64E, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI3i64E %load.struct, 1
+  %length = extractvalue %_Z5SliceI3i64E %load.struct, 0
   %load.struct1 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI3i64E %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI3i64E %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -32767,7 +32642,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI3i64E8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI3i64E) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI3i64E6equalsE5SliceI3i64E(ptr %sret.result, ptr %1)
@@ -32778,9 +32653,9 @@ define linkonce_odr i1 @_ZN5SliceI3i64E9ends_withE5SliceI3i64E(ptr %0, ptr %1) {
 entry:
   %sret.result = alloca %_Z5SliceI3i64E, align 8
   %load.struct = load %_Z5SliceI3i64E, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI3i64E %load.struct, 1
+  %length = extractvalue %_Z5SliceI3i64E %load.struct, 0
   %load.struct1 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI3i64E %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI3i64E %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -32789,11 +32664,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI3i64E, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI3i64E %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI3i64E %load.struct3, 0
   %load.struct5 = load %_Z5SliceI3i64E, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI3i64E %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI3i64E %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI3i64E8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI3i64E) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI3i64E6equalsE5SliceI3i64E(ptr %sret.result, ptr %1)
@@ -32806,7 +32681,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI3i64E %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI3i64E, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI3i64E %load.struct1, 0
-  %length = extractvalue %_Z5SliceI3i64E %slice, 1
+  %length = extractvalue %_Z5SliceI3i64E %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -32816,7 +32691,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI3i64E, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI3i64E %load.struct2, 0
-  %data = extractvalue %_Z5SliceI3i64E %slice3, 0
+  %data = extractvalue %_Z5SliceI3i64E %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI3i64E, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI3i64E %load.struct4, 1
   %ptr.add = getelementptr inbounds i64, ptr %data, i64 %position5
@@ -32849,9 +32724,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI3i64EC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -32859,14 +32734,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI3i64E8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI3i64E) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI3i64E, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI3i64E %load.struct, 1
+  %length = extractvalue %_Z6VectorI3i64E %load.struct, 0
   %load.struct1 = load %_Z6VectorI3i64E, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI3i64E %load.struct1, 0
+  %data = extractvalue %_Z6VectorI3i64E %load.struct1, 1
   %tuple = alloca %_Z5SliceI3i64E, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI3i64E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI3i64E, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -32878,15 +32753,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI3i64E, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI3i64EC1EP3i64m(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI3i64E, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI3i64E, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -33480,14 +33346,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI3i64E8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI3i64E) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI3i64E10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI3i64E, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI3i64E %load.struct, 0
+  %call = call ptr @_ZN5ArrayI3i64E10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI3i64E, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI3i64E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI3i64E, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -34228,7 +34094,7 @@ entry:
 define linkonce_odr ptr @_ZN5SliceI8TapeNodeE3getEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -34237,7 +34103,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct1 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %data, i64 %1
   ret ptr %ptr.add
 }
@@ -34245,7 +34111,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr void @_ZN5SliceI8TapeNodeE3putEm8TapeNode(ptr %0, i64 %1, ptr %2) {
 entry:
   %load.struct = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 0
   %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -34257,7 +34123,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %load.struct1 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 0
+  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 1
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %data, i64 %1
   %store.load = load %_Z8TapeNode, ptr %2, align 8
   store %_Z8TapeNode %store.load, ptr %ptr.add, align 8
@@ -34267,7 +34133,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN5SliceI8TapeNodeE8is_emptyEv(ptr %0) {
 entry:
   %load.struct = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
 }
@@ -34281,26 +34147,26 @@ entry:
   store i64 %4, ptr %to, align 1
   %from1 = load i64, ptr %from, align 8
   %load.struct = load %_Z5SliceI8TapeNodeE, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 0
   %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %load.struct2 = load %_Z5SliceI8TapeNodeE, ptr %2, align 8
-  %length3 = extractvalue %_Z5SliceI8TapeNodeE %load.struct2, 1
+  %length3 = extractvalue %_Z5SliceI8TapeNodeE %load.struct2, 0
   store i64 %length3, ptr %from, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 8
   %load.struct5 = load %_Z5SliceI8TapeNodeE, ptr %2, align 8
-  %length6 = extractvalue %_Z5SliceI8TapeNodeE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI8TapeNodeE %load.struct5, 0
   %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
   %load.struct10 = load %_Z5SliceI8TapeNodeE, ptr %2, align 8
-  %length11 = extractvalue %_Z5SliceI8TapeNodeE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI8TapeNodeE %load.struct10, 0
   store i64 %length11, ptr %to, align 1
   br label %if.end9
 
@@ -34316,17 +34182,17 @@ if.then15:                                        ; preds = %if.end9
   br label %if.end16
 
 if.end16:                                         ; preds = %if.then15, %if.end9
-  %load.struct18 = load %_Z5SliceI8TapeNodeE, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct18, 0
+  %to18 = load i64, ptr %to, align 8
   %from19 = load i64, ptr %from, align 8
-  %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %data, i64 %from19
-  %to20 = load i64, ptr %to, align 8
+  %sub = sub i64 %to18, %from19
+  %load.struct20 = load %_Z5SliceI8TapeNodeE, ptr %2, align 8
+  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct20, 1
   %from21 = load i64, ptr %from, align 8
-  %sub = sub i64 %to20, %from21
+  %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %data, i64 %from21
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %tuple, i32 0, i32 0
-  store ptr %ptr.add, ptr %tuple.field, align 1
+  store i64 %sub, ptr %tuple.field, align 1
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field22, align 1
+  store ptr %ptr.add, ptr %tuple.field22, align 1
   %tuple.val = load %_Z5SliceI8TapeNodeE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI8TapeNodeE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -34335,7 +34201,7 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 define linkonce_odr void @_ZN5SliceI8TapeNodeE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI8TapeNodeE) %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %sret.result = alloca %_Z5SliceI8TapeNodeE, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI8TapeNodeE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI8TapeNodeE) %sret.result, ptr null, ptr %2, i64 %3, i64 %field.val)
   %sret.body = load %_Z5SliceI8TapeNodeE, ptr %sret.result, align 8
@@ -34355,9 +34221,9 @@ entry:
 define linkonce_odr i1 @_ZN5SliceI8TapeNodeE6equalsE5SliceI8TapeNodeE(ptr %0, ptr %1) {
 entry:
   %load.struct = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 0
   %load.struct1 = load %_Z5SliceI8TapeNodeE, ptr %1, align 8
-  %length2 = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 0
   %ne = icmp ne i64 %length, %length2
   br i1 %ne, label %if.then, label %if.end
 
@@ -34366,7 +34232,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI8TapeNodeE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI8TapeNodeE %load.struct3, 0
   %eq = icmp eq i64 %length4, 0
   br i1 %eq, label %if.then5, label %if.end6
 
@@ -34375,11 +34241,11 @@ if.then5:                                         ; preds = %if.end
 
 if.end6:                                          ; preds = %if.end
   %load.struct7 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct7, 0
+  %data = extractvalue %_Z5SliceI8TapeNodeE %load.struct7, 1
   %load.struct8 = load %_Z5SliceI8TapeNodeE, ptr %1, align 8
-  %data9 = extractvalue %_Z5SliceI8TapeNodeE %load.struct8, 0
+  %data9 = extractvalue %_Z5SliceI8TapeNodeE %load.struct8, 1
   %load.struct10 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length11 = extractvalue %_Z5SliceI8TapeNodeE %load.struct10, 1
+  %length11 = extractvalue %_Z5SliceI8TapeNodeE %load.struct10, 0
   %mul = mul i64 %length11, ptrtoint (ptr getelementptr (%_Z8TapeNode, ptr null, i32 1) to i64)
   %call = call i32 @memcmp(ptr %data, ptr %data9, i64 %mul)
   %eq12 = icmp eq i32 %call, 0
@@ -34390,9 +34256,9 @@ define linkonce_odr i1 @_ZN5SliceI8TapeNodeE11starts_withE5SliceI8TapeNodeE(ptr 
 entry:
   %sret.result = alloca %_Z5SliceI8TapeNodeE, align 8
   %load.struct = load %_Z5SliceI8TapeNodeE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 0
   %load.struct1 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -34400,7 +34266,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %1, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI8TapeNodeE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI8TapeNodeE) %sret.result, ptr null, ptr %0, i64 0, i64 %field.val)
   %call = call i1 @_ZN5SliceI8TapeNodeE6equalsE5SliceI8TapeNodeE(ptr %sret.result, ptr %1)
@@ -34411,9 +34277,9 @@ define linkonce_odr i1 @_ZN5SliceI8TapeNodeE9ends_withE5SliceI8TapeNodeE(ptr %0,
 entry:
   %sret.result = alloca %_Z5SliceI8TapeNodeE, align 8
   %load.struct = load %_Z5SliceI8TapeNodeE, ptr %1, align 8
-  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %load.struct, 0
   %load.struct1 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length2 = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 1
+  %length2 = extractvalue %_Z5SliceI8TapeNodeE %load.struct1, 0
   %gt = icmp ugt i64 %length, %length2
   br i1 %gt, label %if.then, label %if.end
 
@@ -34422,11 +34288,11 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct3 = load %_Z5SliceI8TapeNodeE, ptr %0, align 8
-  %length4 = extractvalue %_Z5SliceI8TapeNodeE %load.struct3, 1
+  %length4 = extractvalue %_Z5SliceI8TapeNodeE %load.struct3, 0
   %load.struct5 = load %_Z5SliceI8TapeNodeE, ptr %1, align 8
-  %length6 = extractvalue %_Z5SliceI8TapeNodeE %load.struct5, 1
+  %length6 = extractvalue %_Z5SliceI8TapeNodeE %load.struct5, 0
   %sub = sub i64 %length4, %length6
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN5SliceI8TapeNodeE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI8TapeNodeE) %sret.result, ptr null, ptr %0, i64 %sub, i64 %field.val)
   %call = call i1 @_ZN5SliceI8TapeNodeE6equalsE5SliceI8TapeNodeE(ptr %sret.result, ptr %1)
@@ -34439,7 +34305,7 @@ entry:
   %position = extractvalue %_Z13SliceIteratorI8TapeNodeE %load.struct, 1
   %load.struct1 = load %_Z13SliceIteratorI8TapeNodeE, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIteratorI8TapeNodeE %load.struct1, 0
-  %length = extractvalue %_Z5SliceI8TapeNodeE %slice, 1
+  %length = extractvalue %_Z5SliceI8TapeNodeE %slice, 0
   %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
@@ -34449,7 +34315,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct2 = load %_Z13SliceIteratorI8TapeNodeE, ptr %0, align 8
   %slice3 = extractvalue %_Z13SliceIteratorI8TapeNodeE %load.struct2, 0
-  %data = extractvalue %_Z5SliceI8TapeNodeE %slice3, 0
+  %data = extractvalue %_Z5SliceI8TapeNodeE %slice3, 1
   %load.struct4 = load %_Z13SliceIteratorI8TapeNodeE, ptr %0, align 8
   %position5 = extractvalue %_Z13SliceIteratorI8TapeNodeE %load.struct4, 1
   %ptr.add = getelementptr inbounds %_Z8TapeNode, ptr %data, i64 %position5
@@ -34482,9 +34348,9 @@ entry:
 
 define linkonce_odr void @_ZN5SliceI8TapeNodeEC1Ev(ptr %0) {
 entry:
-  %data = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 0
+  %data = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  %length = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 1
+  %length = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8
   ret void
 }
@@ -34492,14 +34358,14 @@ entry:
 define linkonce_odr void @_ZN6VectorI8TapeNodeE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI8TapeNodeE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z6VectorI8TapeNodeE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorI8TapeNodeE %load.struct, 1
+  %length = extractvalue %_Z6VectorI8TapeNodeE %load.struct, 0
   %load.struct1 = load %_Z6VectorI8TapeNodeE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorI8TapeNodeE %load.struct1, 0
+  %data = extractvalue %_Z6VectorI8TapeNodeE %load.struct1, 1
   %tuple = alloca %_Z5SliceI8TapeNodeE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
+  store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI8TapeNodeE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI8TapeNodeE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -34511,15 +34377,6 @@ entry:
   store i64 0, ptr %length, align 8
   %data = getelementptr inbounds nuw %_Z6VectorI8TapeNodeE, ptr %0, i32 0, i32 1
   store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI8TapeNodeEC1EP8TapeNodem(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI8TapeNodeE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI8TapeNodeE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
   ret void
 }
 
@@ -35111,14 +34968,14 @@ entry:
 
 define linkonce_odr void @_ZN5ArrayI8TapeNodeE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI8TapeNodeE) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %2)
   %load.struct = load %_Z5ArrayI8TapeNodeE, ptr %2, align 8
   %length = extractvalue %_Z5ArrayI8TapeNodeE %load.struct, 0
+  %call = call ptr @_ZN5ArrayI8TapeNodeE10get_bufferEv(ptr %2)
   %tuple = alloca %_Z5SliceI8TapeNodeE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %tuple, i32 0, i32 0
-  store ptr %call, ptr %tuple.field, align 1
+  store i64 %length, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field1, align 1
+  store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI8TapeNodeE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI8TapeNodeE, ptr null, i32 1) to i64), i1 false)
   ret void

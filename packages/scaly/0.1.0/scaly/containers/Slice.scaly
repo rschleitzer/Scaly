@@ -14,11 +14,19 @@
 ; Node and String have one -- emit_region_vector_body RELOCATES the data field
 ; on the assumption that it points into the region.
 ;
-; That is also why `Vector[T](data, len)`, the borrow init, is NOT the same
-; thing: it is a Vector the compiler believes owns its buffer. Use Slice for
-; a borrowed view, in both directions.
+; That is also why `Vector[T](len, data)` is NOT the same thing even though the
+; two records are now laid out identically: it is a Vector the compiler
+; believes OWNS its buffer. Use Slice for a borrowed view, in both directions.
+;
+; The field order is {length, data}, the same as Vector's, since 2026-08-30.
+; It diverged by accident and stayed that way because nothing checked a
+; POSITIONAL construction: `Slice[T]` declares only `init ()`, so no init of
+; arity 2 could ever match `Slice[T](n, p)` and flipping the list would have
+; silently reversed all 309 of the tree's construction sites. The tuple path
+; type-checks its components since the same day, so the flip was 2839
+; diagnostics -- every site, both directions -- and not one silent reversal.
 
-define Slice[T](data: pointer[T], length: size_t)
+define Slice[T](length: size_t, data: pointer[T])
 {
 
     ; Empty slice
@@ -92,7 +100,7 @@ define Slice[T](data: pointer[T], length: size_t)
         if from > to
             set from: to
 
-        Slice[T](data + from, to - from)
+        Slice[T](to - from, data + from)
     }
 
     ; Slice from start

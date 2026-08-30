@@ -150,10 +150,10 @@ define GpuTape
                 if is_leaf
                     scaly_mgpu_slot_write((ri * 4) as i32, node.value.data as pointer[void], bytes)
                 let p scaly_mgpu_slot_contents((ri * 4) as i32) as pointer[float]
-                set node.value: Vector[float](p, count as size_t)
+                set node.value: Vector[float](count as size_t, p)
                 scaly_mgpu_slot_alloc((ri * 4 + 1) as i32, bytes)
                 let g scaly_mgpu_slot_contents((ri * 4 + 1) as i32) as pointer[float]
-                set node.grad: Vector[float](g, count as size_t)
+                set node.grad: Vector[float](count as size_t, g)
             }
             let auxlen node.aux.length as int
             if auxlen > 0
@@ -161,7 +161,7 @@ define GpuTape
                 let abytes (auxlen * 4) as size_t
                 scaly_mgpu_slot_alloc((ri * 4 + 2) as i32, abytes)
                 let ap scaly_mgpu_slot_contents((ri * 4 + 2) as i32) as pointer[float]
-                set node.aux: Vector[float](ap, auxlen as size_t)
+                set node.aux: Vector[float](auxlen as size_t, ap)
             }
             let toklen node.tok.length as int
             if toklen > 0
@@ -170,7 +170,7 @@ define GpuTape
                 scaly_mgpu_slot_alloc((ri * 4 + 3) as i32, tbytes)
                 scaly_mgpu_slot_write((ri * 4 + 3) as i32, node.tok.data as pointer[void], tbytes)
                 let tkp scaly_mgpu_slot_contents((ri * 4 + 3) as i32) as pointer[i64]
-                set node.tok: Vector[i64](tkp, toklen as size_t)
+                set node.tok: Vector[i64](toklen as size_t, tkp)
             }
             var xtra 0 - 1
             if node.op = 4
@@ -289,7 +289,7 @@ define GpuTape
                         scaly_mgpu_slot_write((bs + ri * 4) as i32, node.value.data as pointer[void], bytes)
                 }
                 let p scaly_mgpu_slot_contents((bs + ri * 4) as i32) as pointer[float]
-                set node.value: Vector[float](p, count as size_t)
+                set node.value: Vector[float](count as size_t, p)
             }
             let auxlen node.aux.length as int
             if auxlen > 0
@@ -297,7 +297,7 @@ define GpuTape
                 let abytes (auxlen * 4) as size_t
                 scaly_mgpu_slot_alloc((bs + ri * 4 + 2) as i32, abytes)
                 let ap scaly_mgpu_slot_contents((bs + ri * 4 + 2) as i32) as pointer[float]
-                set node.aux: Vector[float](ap, auxlen as size_t)
+                set node.aux: Vector[float](auxlen as size_t, ap)
             }
             let toklen node.tok.length as int
             if toklen > 0
@@ -306,7 +306,7 @@ define GpuTape
                 scaly_mgpu_slot_alloc((bs + ri * 4 + 3) as i32, tbytes)
                 scaly_mgpu_slot_write((bs + ri * 4 + 3) as i32, node.tok.data as pointer[void], tbytes)
                 let tkp scaly_mgpu_slot_contents((bs + ri * 4 + 3) as i32) as pointer[i64]
-                set node.tok: Vector[i64](tkp, toklen as size_t)
+                set node.tok: Vector[i64](toklen as size_t, tkp)
             }
             var xtra 0 - 1
             if node.op = 4

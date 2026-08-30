@@ -4373,7 +4373,7 @@ define Planner
                         ; the existence of one, and the difference is what
                         ; separates a defect from the ordinary idiom.
                         ; `Slice[T]` declares `init()` and is nevertheless
-                        ; built as `Slice[T](data + from, to - from)` — the
+                        ; built as `Slice[T](to - from, data + from)` — the
                         ; documented positional construction of a data class,
                         ; correct, and no init of arity 2 could ever have
                         ; matched it. Where an init of the RIGHT arity exists
@@ -41859,7 +41859,7 @@ define Planner
             when t: PlannedTuple
                 Planner.extract_tuple_arg_types(t)
             else
-                Vector[PlannedType](null as pointer[PlannedType], 0)
+                Vector[PlannedType](0, null as pointer[PlannedType])
     }
 
     ; ========================================================================

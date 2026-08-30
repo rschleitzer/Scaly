@@ -40,8 +40,16 @@ define VectorIterator[T]
 ; construction must be page-resident — residency inference guarantees this
 ; (concept_needs_this_residency sees the Page.get(this) in these bodies and
 ; region-allocates the construction on the destination page chosen at the
-; call site). The borrow init (d, len) and the empty init allocate nothing
-; and stay stack-safe.
+; call site). The empty init allocates nothing and stays stack-safe, and so
+; does the BORROW construction `Vector[T](len, data)` -- which since
+; 2026-08-30 has no init of its own: it is the positional tuple path, filling
+; the two fields in declaration order. The explicit `init (d, len)` it
+; replaced existed only to reverse the argument order against the field list,
+; and once Slice was laid out the same way there was nothing left for it to
+; reverse. What made removing it safe rather than silent is that the tuple
+; path now type-checks its components (report_component_type_mismatch#): a
+; pointer in the length slot is a hard rc-4, which is how the two call sites
+; that no grep found were caught.
 define Vector[T]
 (
     length: size_t
@@ -52,12 +60,6 @@ define Vector[T]
     {
         set length: 0
         set data: null
-    }
-
-    init (d: pointer[T], len: size_t)
-    {
-        set length: len
-        set data: d
     }
 
     ; NOTE: each allocating init derives its page FIRST, at the top of the
@@ -174,5 +176,5 @@ define Vector[T]
         VectorIterator[T](this)
 
     function as_slice(this: Vector[T]) returns Slice[T]
-        Slice[T](data, length)
+        Slice[T](length, data)
 }

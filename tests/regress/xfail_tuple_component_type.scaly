@@ -7,7 +7,7 @@
 ; and everything between them was accepted at rc 0 and RAN.
 ;
 ; This is the gate the Slice layout question turned on. `Slice[T]` declares
-; only `init ()`, so no init of arity 2 could ever match `Slice[T](p, n)` and
+; only `init ()`, so no init of arity 2 could ever match `Slice[T](n, p)` and
 ; the exact-arity branch of fill_default_components# deliberately says nothing
 ; there; flipping that field list would have silently reversed every one of
 ; the tree's 306 constructions. Measured with the gate live: the same flip is

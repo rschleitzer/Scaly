@@ -436,7 +436,7 @@ define String (data: pointer[u8](null))
             set index: index + 1
         }
 
-        Slice[u8](data + index + 1, string_length)
+        Slice[u8](string_length, data + index + 1)
     }
 
     ; Check if string contains a character

@@ -19,7 +19,7 @@ procedure square_task(arg: pointer[void]) returns pointer[void]
     let i *cell
     let dp (*(((cell as size_t) + (8 as size_t)) as pointer[size_t])) as pointer[i64]
     let len *(((cell as size_t) + (16 as size_t)) as pointer[size_t])
-    var v Vector[i64](dp, len)
+    var v Vector[i64](len, dp)
     let n i as i64
     v.put(i, n * n)
     null
@@ -42,7 +42,7 @@ procedure churn_task(arg: pointer[void]) returns pointer[void]
         set k: k + 1
     }
     let s String("task-local region")
-    var v Vector[i64](dp, len)
+    var v Vector[i64](len, dp)
     let n i as i64
     v.put(i, n * (3 as i64))
     null

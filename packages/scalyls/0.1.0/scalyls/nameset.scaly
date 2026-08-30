@@ -79,7 +79,7 @@ define nameset
         let b s.get_buffer()
         if b = null
             return 0xcbf29ce484222325
-        nameset.hash_ptr(Slice[u8](b + start, end - start))
+        nameset.hash_ptr(Slice[u8](end - start, b + start))
     }
 
     ; Byte-equality of a[0,len) and b[0,len) over two raw pointers.
@@ -150,7 +150,7 @@ define nameset
                     return
                 }
                 if s.name_len = name_len
-                    if nameset.eq_ptr(Slice[u8](s.name_ptr, s.name_len), Slice[u8](name_ptr, name_len))
+                    if nameset.eq_ptr(Slice[u8](s.name_len, s.name_ptr), Slice[u8](name_len, name_ptr))
                     {
                         if kind > s.kind
                             set s.kind: kind
@@ -191,7 +191,7 @@ define nameset
                     let seglen j - i
                     if seglen > 0
                     {
-                        let h nameset.hash_ptr(Slice[u8](base + i, seglen))
+                        let h nameset.hash_ptr(Slice[u8](seglen, base + i))
                         nameset.insert(slots, cap, base + i, seglen, h, kind)
                     }
                     set i: j
@@ -212,7 +212,7 @@ define nameset
                 if sbuf <> null
                 {
                     let sp sbuf + start
-                    let h nameset.hash_ptr(Slice[u8](sp, tlen))
+                    let h nameset.hash_ptr(Slice[u8](tlen, sp))
                     let mask cap - 1
                     var idx h & mask
                     var probes: size_t 0
@@ -222,7 +222,7 @@ define nameset
                         if s.used = false
                             return (0 - 1) as i64
                         if s.name_len = tlen
-                            if nameset.eq_ptr(Slice[u8](s.name_ptr, s.name_len), Slice[u8](sp, tlen))
+                            if nameset.eq_ptr(Slice[u8](s.name_len, s.name_ptr), Slice[u8](tlen, sp))
                                 return s.kind
                         set idx: (idx + 1) & mask
                         set probes: probes + 1

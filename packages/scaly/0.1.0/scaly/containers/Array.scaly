@@ -250,7 +250,7 @@ define Array[T]
     ; price of the API, not a defect — but it is why a convenience does not
     ; belong on Array unless the ports actually need it.
     function as_slice(this: Array[T]) returns Slice[T]
-        Slice[T](this.get_buffer(), length)
+        Slice[T](length, this.get_buffer())
 
     function reallocate(this: Array[T])
     {
