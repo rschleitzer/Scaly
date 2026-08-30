@@ -1,0 +1,47 @@
+; hashing.hash takes a Slice[char], and its body reads through `get` rather
+; than the subscript.
+;
+; ★★★The subscript is NOT usable here and that is MEASURED, not cautious: a
+; generic concept's OPERATOR loses its result expression when its receiver is
+; CONSTRUCTED in the calling routine, and `String.hash()` constructs the Slice.
+; With `data[i]` in the body, `_ZN5SliceIcEixEm` emits its bounds check and
+; then `ret i8 0` -- tools/opzero/scan.py reports BODY DROPPED 1 on the very
+; root, and String.hash() degenerates to a LENGTH-ONLY hash. That silently
+; disabled scalyls' content-hash cache invalidation once already, which is why
+; this fixture tests the OBSERVABLE consequence and not the spelling.
+;
+; An ordinary METHOD is emitted for every instantiation and is correct in the
+; same build, so `data.get i` is the spelling. This test is the pin for both
+; halves: that the conversion happened, and that the hash still sees content.
+;
+; Expected: PASS
+
+; equal LENGTH, different content — the exact shape a length-only hash cannot
+; tell apart
+let a String("abcdefghijklmnopqr")
+let b String("rqponmlkjihgfedcba")
+if a.get_length() <> b.get_length()
+    exit 30
+if a.hash() = b.hash()
+    exit 31
+if a.hash() = 0
+    exit 32
+
+; equal content must agree
+let c String("abcdefghijklmnopqr")
+if a.hash() <> c.hash()
+    exit 33
+
+; a one-byte difference at the END must move the hash (FNV-1a folds forward,
+; so a truncated walk would miss exactly this)
+let d String("abcdefghijklmnopqz")
+if a.hash() = d.hash()
+    exit 34
+
+; and the empty string is a defined answer, not a crash
+let e String("")
+if e.hash() = 0
+    exit 35
+
+print "PASS"
+exit 0

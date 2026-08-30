@@ -387,7 +387,7 @@ define String (data: pointer[u8](null))
         ; zero-length buffer — equals() treats them as equal to any
         ; other empty string, so the hashes must agree too.
         if data = null
-            return hashing.hash(null as pointer[char], 0)
+            return hashing.hash(Slice[char](0, null as pointer[char]))
 
         var length: size_t 0
         var bit_count: size_t 0
@@ -406,7 +406,7 @@ define String (data: pointer[u8](null))
             set index: index + 1
         }
 
-        hashing.hash(data + index + 1, length)
+        hashing.hash(Slice[char](length, data + index + 1))
     }
 
     function get_iterator(this: String) returns StringIterator

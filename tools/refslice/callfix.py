@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 from scan import collect, PEELED
 
 DECL = re.compile(r'\s*(function|procedure|init)\b')
+ONLY = set()
 
 def split_args(text):
     out, depth, buf = [], 0, ''
@@ -50,7 +51,14 @@ def slice_targets(paths):
     seen = collections.Counter(r['fn'] for r in collect(paths))
     t = {}
     for r in collect(paths):
-        if seen[r['fn']] > 1: continue
+        # ★`--only` lifts the ambiguity guard for a name the READER has
+        # decided, and nothing else does. opensp declares `put` twice and
+        # `put_char` three times; the converted ones are MessageArg.put and
+        # ParserState.put_char, and their same-named partners in Esis/Rast take
+        # a different arity, so the arity guard below still refuses a wrong
+        # wrap. Without the flag the tool is right to drop the name -- with it,
+        # the evidence is the caller's, not the tool's.
+        if r['fn'] not in ONLY and seen[r['fn']] > 1: continue
         params = r['params']
         shift = 1 if params and params[0][0] in PEELED else 0
         slots = []
@@ -83,8 +91,28 @@ def fix_line(line, targets):
                     if len(args) < bi + 2: continue
                     a, b = args[bi].strip(), args[bi+1].strip()
                     if not a or a.startswith('Slice[') or not b: continue
+                    # ★★★A CHAIN converts, not a routine: once the CALLER's own
+                    # buffer parameter is a Slice too, its body reads
+                    # `f(out, out.length, …)` and the length is not a thing to
+                    # wrap, it is a surplus argument to DROP. The pair must be
+                    # exactly (name, name.length) -- anything looser is the
+                    # LOOSE verdict's mistake, a length that measures something
+                    # else. Found converting opensp's Message.put family, where
+                    # five forwarders sit between `format` and `put`.
+                    if b == a + '.length':
+                        args = args[:bi+1] + args[bi+2:]
+                        line = line[:start+1] + ', '.join(x.strip() for x in args) + line[end:]
+                        changed = True; break
                     if b.endswith('.length'): continue
-                    args = args[:bi] + [f'Slice[{elem}]({a}, {b})'] + args[bi+2:]
+                    # ★★★The LENGTH comes first: `Slice[T]` is {length, data}
+                    # since the 2026-08-30 flip, and the construction runs the
+                    # POSITIONAL tuple path (Slice declares only `init ()`), so
+                    # the order here IS the field order. This line read
+                    # `({a}, {b})` before the flip and would now put the
+                    # pointer in the length slot -- caught by
+                    # report_component_type_mismatch#, but a tool must not emit
+                    # a form the compiler rejects.
+                    args = args[:bi] + [f'Slice[{elem}]({b}, {a})'] + args[bi+2:]
                     line = line[:start+1] + ', '.join(x.strip() for x in args) + line[end:]
                     changed = True; break
                 if changed: break
@@ -112,4 +140,8 @@ def main(sitefile, paths):
     print("call sites rewritten:", total)
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2:] or ['packages'])
+    argv = sys.argv[1:]
+    if argv and argv[0].startswith('--only='):
+        ONLY = set(argv[0].split('=', 1)[1].split(','))
+        argv = argv[1:]
+    main(argv[0], argv[1:] or ['packages'])

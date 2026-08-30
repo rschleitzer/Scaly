@@ -15,6 +15,43 @@ is twice as long as the parameter says.
 """
 import re, sys
 
+def store_to_put(line, buf):
+    """`set *(buf + <expr>): <value>` -> `buf.put(<expr>, <value>)`.
+
+    ★★★It MUST run before deref_to_subscript#, which would otherwise turn the
+    same statement into `set buf[i]: v` -- a hard rc-4 since
+    report_subscript_assignment#, because `operator []` answers T BY VALUE and
+    there is no slot behind a subscript. `put` is the only write spelling, and
+    it is the reason a WRITTEN buffer became convertible at all (the scanner's
+    W-* verdicts, 2026-08-30).
+
+    ★The index is read with BALANCED parentheses for the reason the read side
+    is: `set *(codes + (i as size_t)): v` is the shape whose first matcher
+    missed it and left a live deref behind.
+    """
+    m = re.match(rf'(\s*)set\s+\*\(\s*{re.escape(buf)}\s*\+\s*', line)
+    if not m: return line
+    depth, end = 1, None
+    for k in range(m.end(), len(line)):
+        if line[k] == '(': depth += 1
+        elif line[k] == ')':
+            depth -= 1
+            if depth == 0: end = k; break
+    if end is None: return line
+    index = line[m.end():end].strip()
+    rest = line[end + 1:]
+    cm = re.match(r'\s*:\s*(.*)$', rest)
+    if not cm: return line
+    return f'{m.group(1)}{buf}.put({index}, {cm.group(1).rstrip()})'
+
+
+def bare_store_to_put(line, buf):
+    """`set *buf: v` with no arithmetic is element ZERO."""
+    m = re.match(rf'(\s*)set\s+\*{re.escape(buf)}(?![\w\[])\s*:\s*(.*)$', line)
+    if not m: return line
+    return f'{m.group(1)}{buf}.put(0, {m.group(2).rstrip()})'
+
+
 def deref_to_subscript(line, buf):
     """`*(buf + <expr>)` -> `buf[<expr>]`, with a BALANCED index: the index may
     itself contain parentheses (`*(codes + (i as size_t))`)."""
@@ -83,6 +120,7 @@ def main(path, routine, buf, length, elem):
     # body
     for i in range(a, b + 1):
         s = lines[i]
+        s = bare_store_to_put(store_to_put(s, buf), buf)
         s = bare_deref_to_subscript(deref_to_subscript(s, buf), buf)
         if i > a:
             s = re.sub(rf'(?<![\w.]){re.escape(length)}(?![\w])', f'{buf}.length', s)
@@ -103,6 +141,13 @@ def main(path, routine, buf, length, elem):
     if left:
         sys.exit(f"REFUSED: {routine} still derefs {buf} at line(s) {left} -- "
                  f"pointer arithmetic on a Slice compiles and reads garbage")
+    # ★And a surviving `set buf[i]:` is the OTHER half: rc 4 rather than
+    # garbage, but the tool must not emit a form the compiler rejects.
+    stores = [i + 1 for i in range(a, b + 1)
+              if re.search(rf'set\s+{re.escape(buf)}\[', lines[i])]
+    if stores:
+        sys.exit(f"REFUSED: {routine} assigns through a subscript on {buf} at "
+                 f"line(s) {stores} -- the write spelling is {buf}.put(i, v)")
     open(path, 'w').write('\n'.join(lines))
     print(f"{path}: {routine}({buf}) -> Slice[{elem}]")
 

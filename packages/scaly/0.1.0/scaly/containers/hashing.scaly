@@ -74,19 +74,26 @@ function get_prime(size: size_t) returns size_t
 }
 
 ; FNV-1a hash
-function hash(data: pointer[char], length: size_t) returns size_t
+function hash(data: Slice[char]) returns size_t
 {
     var hash: size_t 0xcbf29ce484222325
     var prime: size_t 0x100000001b3
     var i: size_t 0
-    while i < length
+    while i < data.length
     {
-        let value (*(data + i)) as size_t
+        ; ★★★`data.get i`, NOT `data[i]`: a generic concept's OPERATOR loses
+        ; its result expression when its receiver is CONSTRUCTED in the calling
+        ; routine, and String.hash() constructs the Slice. Measured on this very
+        ; conversion: `_ZN5SliceIcEixEm` emits its bounds check and then
+        ; `ret i8 0` -- the length-only hash this comment's history already
+        ; names. An ordinary METHOD is emitted for every instantiation and is
+        ; correct in the same build (tools/opzero/scan.py is the refuter).
+        let value (*(data.get i)) as size_t
         ; FNV-1a XOR step. `xor` is the word operator for bitwise XOR —
         ; the `^` token is Scaly's reference-lifetime sigil and cannot be
         ; written as a bitwise operator in expression position. (History:
         ; the legacy `hash // value` used an UNKNOWN operator the emitter
-        ; dropped — length-only hash; then the (a|b)-(a&b) identity, which
+        ; dropped — a length-only hash; then the (a|b)-(a&b) identity, which
         ; llc never folded back to xor — 3 ALU ops per byte.)
         set hash: (hash xor value) * prime
 
