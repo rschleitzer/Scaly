@@ -49,10 +49,22 @@ if HolderCC("as", 2).first() <> 97
 if HolderInit("as", 2).first() <> 97
     set ok: false
 
-; Slice, every element type, from a literal
+; Slice, every VALUE element type, from a literal.
+;
+; ★`Slice[const_char]` was covered here and is DELIBERATELY GONE (2026-08-30).
+; `const_char` is a POINTEE MARKER for the C boundary, not a value type: every
+; one of its occurrences in the tree is `pointer[const_char]` in an `extern` or
+; a cast, and `Planner.is_primitive_type_name` does not know the name, so a
+; bare `const_char` is `unknown type`. That never surfaced while `Slice`'s only
+; T-by-value member was `operator []`, which is emitted ONLY WHERE USED --
+; adding the `put` METHOD, which is emitted for EVERY instantiation, made
+; `Slice[const_char]` uncompilable. The element type is now `char` at all four
+; sites that used it (Emitter.jit_symbol_in_set, tscaly's Keywords/parser/
+; checker); `type_is_cstr_pointer#` accepts `pointer[char]`, so the literal
+; coercion this file guards is unchanged. **Do not restore these rows** --
+; restoring them re-breaks the build, and the cstr-FIELD coverage that is this
+; file's actual subject lives in HolderCC/HolderInit above.
 if (Slice[char]("as", 2)[0] as int) <> 97
-    set ok: false
-if (Slice[const_char]("as", 2)[0] as int) <> 97
     set ok: false
 if (Slice[u8]("as", 2)[0] as int) <> 97
     set ok: false
@@ -62,8 +74,6 @@ if (Slice[u8]("as", 2)[0] as int) <> 97
 let s String("as")
 let d s.c_data()
 if (Slice[char](d, 2)[0] as int) <> 97
-    set ok: false
-if (Slice[const_char](d, 2)[0] as int) <> 97
     set ok: false
 if (Slice[u8](d, 2)[0] as int) <> 97
     set ok: false

@@ -24,14 +24,20 @@ not by a tool.  So this scan reports exactly three verdicts:
            `encode_utf8_bytes(chars, out, len)` measures the INPUT, not the
            output buffer.  The reader decides; the tool must not.
 
-  WRITTEN  the body STORES through the name (`set *(out + i): v`).  Not a
-           candidate: `Slice[T]` is a READ-ONLY view -- its `operator []`
-           answers T by value and it has no `put` -- so an output buffer has no
-           Slice spelling at all.  ★This is not a nicety: `Recognizer.zero_bytes`
-           and the `Message.put`/`ParserState.put_char` family all score
-           ADJACENT on their `(out, cap)` pair and would have been converted
-           into something that cannot compile, or worse, into a subscript store
-           the compiler now rejects outright (rc 4).
+  W-*      the body STORES through the name (`set *(out + i): v`).  This USED
+           to be the verdict `WRITTEN`, reported as a non-candidate because
+           `Slice[T]` was a read-only view with no write spelling at all.
+           ★★★THAT IS WITHDRAWN: `Slice[T].put(index, value)` landed 2026-08-30
+           and stores THROUGH the view, so an output buffer converts like any
+           other and the write becomes `out.put(i, v)`.  A written buffer still
+           needs a LENGTH, so it runs the same pairing as a read-only one and
+           its verdict is prefixed `W-` (`W-ADJACENT`, `W-NAMED`, `W-LOOSE`,
+           `W-LENLESS`) -- the prefix is there because the REWRITE differs, not
+           because the candidacy does.
+           ★Do NOT convert a write into `set out[i]: v`: `operator []` answers
+           T BY VALUE, so there is no slot behind a subscript and the compiler
+           rejects that outright (rc 4, report_subscript_assignment#).  `put`
+           is the only write spelling.
 
   ADDRESSED the body binds an ELEMENT ADDRESS out of the name
            (`let s slots + idx`) and works through it.  `Slice[T]`'s
@@ -133,8 +139,10 @@ def shares_stem(buf, ln):
     return bool(a) and a == b
 
 def writes(body, name):
-    """Does the body STORE through this name? Then it is an OUTPUT buffer and
-    `Slice[T]`, a read-only view, cannot express it."""
+    """Does the body STORE through this name? Then it is an OUTPUT buffer, and
+    since Slice[T].put landed (2026-08-30) that is a REWRITE difference, not a
+    disqualification: the verdict is prefixed `W-` and the store becomes
+    `name.put(i, v)`."""
     n = re.escape(name)
     return bool(re.search(rf'\bset\s+\*\(\s*{n}\s*[+\-]', body)
                 or re.search(rf'\bset\s+\*{n}\b', body)
@@ -164,8 +172,7 @@ def main(paths):
             if elem in NON_ELEMENT: continue
             if not walks(r['body'], pn):
                 rows.append(('UNWALKED', r, pn, elem, None)); continue
-            if writes(r['body'], pn):
-                rows.append(('WRITTEN', r, pn, elem, None)); continue
+            written = writes(r['body'], pn)
             if addressed(r['body'], pn):
                 rows.append(('ADDRESSED', r, pn, elem, None)); continue
             if r['fn'] in frozen:
@@ -183,6 +190,8 @@ def main(paths):
                         verdict, ln = 'NAMED', qn; break
             if verdict == 'LENLESS' and lens:
                 verdict, ln = 'LOOSE', lens[0][1]
+            if written:
+                verdict = 'W-' + verdict
             rows.append((verdict, r, pn, elem, ln))
     return rows
 
@@ -193,7 +202,7 @@ if __name__ == '__main__':
     tally = collections.Counter()
     for v, r, pn, elem, ln in rows:
         tally[(v, pkg_of(r['file']))] += 1
-        if verbose and v in ('ADJACENT', 'NAMED'):
+        if verbose and v in ('ADJACENT', 'NAMED', 'W-ADJACENT', 'W-NAMED'):
             print(f"{v:8s} pointer[{elem}] {r['file']}:{r['line']} {r['fn']}({pn}, len={ln})")
     print('---')
     for (v, pkg), n in sorted(tally.items(), key=lambda kv: (-kv[1], kv[0])):

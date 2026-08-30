@@ -1,0 +1,79 @@
+; Regression: Slice[T].put stores THROUGH the borrowed view.
+;
+; Slice was a read-only view — operator[] answers T BY VALUE and there was no
+; write spelling at all, which is why tools/refslice/scan.py had to report 47
+; buffer parameters as WRITTEN (= not convertible): an output buffer had no
+; Slice spelling. `put` is the write twin of operator[], and it is what makes
+; the borrow-arithmetic campaign's write half (951 of 2401 `*(p + i)` sites)
+; expressible.
+;
+; NOT `Vector[T](data, len)`, the borrow init, even though the layout is the
+; same modulo field order: that is a Vector the compiler believes OWNS its
+; buffer — it takes local-page promotion it does not need, and
+; emit_region_vector_body RELOCATES its data field on the assumption that it
+; points into the region. Slice is the type that promises never to own, and
+; the Planner and Emitter both act on that promise.
+;
+; A METHOD rather than an operator, deliberately: `set s[i]: v` is a hard rc-4
+; on a container (report_subscript_assignment#), and a generic concept's
+; OPERATOR loses its result expression when its receiver is constructed in the
+; calling routine, while an ordinary method is emitted for every instantiation
+; and stays correct there (tools/opzero/scan.py).
+;
+; Expected: PASS
+
+var a Array[int]()
+var i 0
+while i < 8
+{
+    a.add 0
+    set i: i + 1
+}
+
+let s Slice[int](a.get_buffer(), 8)
+
+var k: size_t 0
+while k < 8
+{
+    s.put(k, (k as int) * 10)
+    set k: k + 1
+}
+
+; The store must land in the OWNER's buffer, not in a copy of the view.
+var sum 0
+var j 0
+while j < 8
+{
+    set sum: sum + a[j as size_t]
+    set j: j + 1
+}
+if sum <> 280
+    exit 30
+
+; and read back through the view itself
+var sum2 0
+var m: size_t 0
+while m < 8
+{
+    set sum2: sum2 + s[m]
+    set m: m + 1
+}
+if sum2 <> 280
+    exit 31
+
+; Overwriting an element is visible through both, so the view is not a copy.
+s.put(3, 999)
+if a[3] <> 999
+    exit 32
+if s[3] <> 999
+    exit 33
+
+; A sub-range shares the same memory: writing through the subslice is visible
+; in the parent. This is what a borrowed view has to mean.
+let tail s.slice_from(4)
+tail.put(0, 555)
+if a[4] <> 555
+    exit 34
+
+print "PASS"
+exit 0

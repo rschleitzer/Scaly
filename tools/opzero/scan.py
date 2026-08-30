@@ -14,22 +14,44 @@ so `hashing.hash` XOR'd a zero for every byte and `String.hash()` degenerated
 to a LENGTH-ONLY hash: two 18-byte files with different content hashed
 identically.  Nothing is reported, at any stage.
 
-★★★WHAT TRIGGERS IT (measured, and it is NOT what the earlier record said):
-the operator's FIRST use sits in a SUB-MODULE.  The identical call moved into
-`containers.scaly` -- the file that DECLARES the modules -- emits a correct
-body.  Three things the record blamed are refuted by experiment:
+★★★WHAT TRIGGERS IT (measured 2026-08-30, and it is NOT what either earlier
+record said): the operator's RECEIVER IS CONSTRUCTED IN THE CALLING ROUTINE.
+Received as a PARAMETER the body is CORRECT; constructed there -- inline or
+`let`-bound -- it is EMPTY.  A sub-module is NECESSARY BUT NOT SUFFICIENT, so
+the earlier "the CALLER'S FILE decides" is withdrawn.
+
+★★★AND IT IS NOT ABOUT `Slice`.  `Vector[char]`'s `operator []` empties in
+exactly the same shape -- the bounds check intact, reading field 0 `length`,
+then `ret i8 0`.  This is a property of the generic OPERATOR path; every
+stdlib container carrying one is exposed, and the `Slice`-shaped framing sent
+the reader hunting the wrong concept.
+
+Also refuted by experiment:
   * NOT the archive.  The raw `-S` output is already wrong, before
     `linkonce_odr`->`weak_odr` and before `opt -O2`.
-  * NOT `const_char`, and not the element type at all.  `Slice[i64]` breaks
-    the same way, and `Slice[u8]`/`Slice[int]` are correct only because their
-    only subscript callers are the test functions in `containers.scaly`.
+  * NOT `const_char`, and not the element type at all.  `char` and `i64`
+    break alike.
   * NOT module ORDER.  Moving `module hashing` after `module Slice` changes
     nothing.
+  * NOT a property of the concept's CONTENT.  A hand-written `Holder[T]` with
+    the identical operator body is CORRECT in every configuration tried:
+    constructed in its own declaring file, in another file of the same
+    package, in another PACKAGE, and after pre-instantiation through a method.
+    (`SliceCopy`, a textual rename of the whole Slice file, was correct too.)
+    What survives every probe is only HOW THE REAL PRELUDE CONTAINER IS
+    REACHED, and that is not root-caused.
+
 ★The STATEMENTS of the body are emitted (the bounds check is all there, with
-the right instantiated types, and it reads field 1 `length` correctly).  Only
+the right instantiated types, and it reads the length field correctly).  Only
 the RESULT expression is dropped -- explicit `return` included -- and with it
-the access to field 0 `data`, the one field whose type names the generic
+the access to the `data` field, the one whose type names the generic
 parameter.
+
+★★★THE SAFE SPELLING IS A METHOD.  `get(i)` and `put(i, v)` emit CORRECT
+bodies in the very build where `[i]` is empty: an ordinary method is emitted
+for EVERY instantiation, an operator only where USED.  On a locally
+constructed generic container, prefer `get`/`put` over `[]` until this is
+fixed.
 
 ★A program ROOT is unaffected: every isolated probe passes there, which is
 exactly why this hid behind "the archive builds it differently".

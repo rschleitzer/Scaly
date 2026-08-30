@@ -1,6 +1,22 @@
 ; Slice[T] - Non-owning view into contiguous memory
 ; Zero allocation, zero copy - just pointer + length
 ; Lifetime bounded by source data
+;
+; NON-OWNING is the whole contract, and it is NOT the same as read-only:
+; `put` below writes THROUGH the view into memory someone else owns, exactly
+; as `set *(p + i): v` does at the sites this type replaces. What the type
+; promises is that the buffer is not its own -- and three mechanisms in the
+; compiler act on that promise BY NAME: the Planner excludes a Slice-returning
+; construction from local-page promotion (operand_is_local_page_construction,
+; because result_owns_page_guts cannot tell a borrow struct from an owning
+; one) and carries Slice in its skip_dispatch list, and the Emitter
+; deliberately gives Slice NO region-serialization walker where Vector, Array,
+; Node and String have one -- emit_region_vector_body RELOCATES the data field
+; on the assumption that it points into the region.
+;
+; That is also why `Vector[T](data, len)`, the borrow init, is NOT the same
+; thing: it is a Vector the compiler believes owns its buffer. Use Slice for
+; a borrowed view, in both directions.
 
 define Slice[T](data: pointer[T], length: size_t)
 {
@@ -34,6 +50,28 @@ define Slice[T](data: pointer[T], length: size_t)
         }
 
         *(data + index)
+    }
+
+    ; Bounds-checked store THROUGH the view, into memory the Slice does not
+    ; own. The write twin of operator[]: an index at or past length is a
+    ; caller bug, so it traps rather than returning an ignorable failure.
+    ;
+    ; A METHOD, not an operator, and that is load-bearing: `set s[i]: v` is a
+    ; hard rc-4 on a container (operator[] answers T BY VALUE, so there is no
+    ; slot behind it), and a generic concept's OPERATOR additionally loses its
+    ; result expression when its receiver is constructed in the calling
+    ; routine -- an ordinary method is emitted for every instantiation and is
+    ; correct in that very build (tools/opzero/scan.py).
+    function put(this, index: size_t, value: T)
+    {
+        if index >= length
+        {
+            scaly_eputs "Slice.put: index out of bounds"
+            scaly_eputnl()
+            exit 15
+        }
+
+        set *(data + index): value
     }
 
     ; Check if empty
