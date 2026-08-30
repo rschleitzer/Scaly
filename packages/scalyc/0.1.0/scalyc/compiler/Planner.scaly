@@ -7430,10 +7430,62 @@ define Planner
             ; Closing it is a port sweep whose per-field verdict comes from the
             ; upstream references, not a compiler change, so it is its own
             ; campaign and is filed as one.
+            ; ★★★NULLABILITY ALONE is a DIFFERENT question from a type
+            ; mismatch, and it gets its own message. The ARGUMENT position
+            ; separates the two the same way -- report_method_arg_types#
+            ; reports the mismatch, option_arg_into_plain_ref# the Option --
+            ; and its own comment says why: "a genuine type mismatch is
+            ; report_method_arg_types#'s to report, and telling its author to
+            ; write an unwrap would be wrong advice."
+            ;
+            ; ★★★It must be asked at the OPERAND, not at the types: a name a
+            ; null test has already PROVEN in this branch is narrowed
+            ; (define_narrowed#), and narrowing is a fact about the NAME rather
+            ; than a type change, so no type-level question can see it.
+            ; Measured on the untouched tree: 211 findings from the pair alone,
+            ; 124 after narrowing -- 84 of them behind a guard the author had
+            ; already written.
             if Planner.option_arg_into_plain_ref(ft, at)
+            {
+                if this.option_arg_reaches_plain_ref(ft, a)
+                    this.report_option_component(struct_name, prop_ptr.name, ft, at, loc)
                 return
+            }
 
             this.report_component_mismatch(struct_name, prop_ptr.name, ft, at, loc)
+        }
+
+        ; The Option half's message, worded like report_option_arg# because it
+        ; is the same finding one position over: the unwrap is named, since
+        ; there is no flow narrowing of the TYPE and the cast is where the
+        ; exit-21 trap is emitted.
+        function report_option_component(
+            this: Planner,
+            struct_name: String,
+            field_name: String,
+            field_type: PlannedType,
+            arg_type: PlannedType,
+            loc: Span
+        )
+        {
+            let ofn Planner.get_readable_name(field_type)
+            let oan Planner.get_readable_name(arg_type)
+            var osb StringBuilder()
+            osb.append "optional reference in a positional construction: "
+            osb.append oan
+            osb.append " may be nothing, but "
+            osb.append struct_name
+            osb.append "."
+            osb.append field_name
+            osb.append " is declared "
+            osb.append ofn
+            osb.append " and must refer to something. Unwrap it (x as "
+            osb.append ofn
+            osb.append "), or declare the field nullable ("
+            osb.append ofn
+            osb.append "?)"
+            let omsg osb.to_string()
+            this.add_diagnostic(loc, String^this(omsg))
         }
 
         ; The message half, split out for the reason report_null_arg# splits

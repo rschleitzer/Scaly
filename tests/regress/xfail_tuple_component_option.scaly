@@ -1,0 +1,34 @@
+; The NULLABILITY half of the tuple-path check: an Option reaching a field
+; declared as a non-optional borrowed reference.
+;
+; A DIFFERENT question from the type mismatch its sibling gate reports, and it
+; carries its own message for the reason the ARGUMENT position splits the two
+; (report_method_arg_types# vs option_arg_into_plain_ref#): "telling its author
+; to write an unwrap would be wrong advice" where the types genuinely disagree.
+;
+; What it found on the untouched tree was 124 sites over two ports, and several
+; were declarations that LIE -- `break;` with no label filled
+; BreakOrContinueStatementData.label_name, which was declared non-optional.
+;
+; xfail: Hold.a is declared ref[Leaf]
+
+define Leaf (v: int)
+define Hold (a: ref[Leaf], b: int)
+
+function maybe(p: ref[Page], on: bool) returns ref[Leaf]?
+{
+    if on = false
+        return null
+    Leaf^p(7)
+}
+
+function build(p: ref[Page], on: bool) returns int
+{
+    let l maybe(p, on)
+    ; NOT guarded, NOT unwrapped: the Option itself reaches a `ref[Leaf]` field.
+    let h Hold(l, 3)
+    h.b
+}
+
+print "FAIL"
+exit 0

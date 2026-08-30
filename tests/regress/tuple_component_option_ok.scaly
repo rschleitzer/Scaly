@@ -1,0 +1,56 @@
+; The positive control for the tuple path's NULLABILITY half. Both routes out
+; of the diagnostic must work, and the third block is the one that decides
+; whether the gate is usable at all.
+;
+; Expected: PASS
+
+define Leaf (v: int)
+define Strict (a: ref[Leaf], b: int)      ; must refer to something
+define Loose  (a: ref[Leaf]?, b: int)     ; may be nothing
+
+function maybe(p: ref[Page], on: bool) returns ref[Leaf]?
+{
+    if on = false
+        return null
+    Leaf^p(7)
+}
+
+; ── 3. FLOW NARROWING — the reason the finding count is 124 and not 211 ────
+; A name a null test has already proven in this branch is narrowed
+; (define_narrowed#), and narrowing is a fact about the NAME, not a type
+; change: no type-level question can see it, so option_arg_reaches_plain_ref#
+; has to be asked at the OPERAND. Without this the gate would report 84 sites
+; where the author had already written the guard, and it would be unusable.
+function guarded(p: ref[Page], on: bool) returns int
+{
+    let l maybe(p, on)
+    if l = null
+        return -1
+    ; no cast here, and none is owed
+    let s Strict(l, 3)
+    s.a.v
+}
+
+let page Page.get(&page)
+
+; ── 1. the explicit unwrap ─────────────────────────────────────────────────
+let l1 maybe(page, true)
+let s1 Strict(l1 as ref[Leaf], 1)
+if s1.a.v <> 7
+    exit 30
+
+; ── 2. the nullable field ──────────────────────────────────────────────────
+let l2 maybe(page, false)
+let s2 Loose(l2, 2)
+if s2.a <> null
+    exit 31
+if s2.b <> 2
+    exit 32
+
+if guarded(page, true) <> 7
+    exit 33
+if guarded(page, false) <> -1
+    exit 34
+
+print "PASS"
+exit 0
