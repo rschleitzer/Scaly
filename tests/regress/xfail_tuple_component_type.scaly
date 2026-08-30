@@ -1,0 +1,34 @@
+; The TUPLE path type-checks its components against the field types.
+;
+; A construction that matches no init# is filled POSITIONALLY, and until
+; report_component_type_mismatch# landed nothing compared component i against
+; property i: only the COUNT was ever checked -- too many arguments is `wrong
+; number of arguments`, too few without defaults is fill_default_components# --
+; and everything between them was accepted at rc 0 and RAN.
+;
+; This is the gate the Slice layout question turned on. `Slice[T]` declares
+; only `init ()`, so no init of arity 2 could ever match `Slice[T](p, n)` and
+; the exact-arity branch of fill_default_components# deliberately says nothing
+; there; flipping that field list would have silently reversed every one of
+; the tree's 306 constructions. Measured with the gate live: the same flip is
+; 2839 diagnostics over the six package roots, both directions at every site.
+;
+; The pointee here is `char` ON PURPOSE. type_conformance_accepted#'s class 8
+; strips one level of indirection off the source and re-asks, so with it live
+; `pointer[char]` filling a `size_t` field is accepted (char is an integer)
+; while `pointer[Leaf]` in the same slot is caught -- a gate that answers by
+; the POINTEE's family is not a gate.
+;
+; xfail: cannot fill Hold.n
+
+define Hold (n: size_t, p: pointer[char])
+
+function build(v: pointer[char], len: size_t) returns int
+{
+    ; SWAPPED: the buffer into the length field, the length into the pointer.
+    let h Hold(v, len)
+    1
+}
+
+print "FAIL"
+exit 0

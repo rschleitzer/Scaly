@@ -7215,6 +7215,256 @@ define Planner
             out_ref
         }
 
+        ; report_component_type_mismatch#: the TUPLE path's type check, the
+        ; counterpart of check_initializer_match# one level down.
+        ;
+        ; A construction that matched no init# is filled POSITIONALLY, and
+        ; nothing ever compared component i against property i: `Holder(
+        ; buf.get_buffer(), 7)` on `(n: size_t, p: pointer[char])` stored the
+        ; pointer in the size_t field and the 7 in the pointer field, rc 0, and
+        ; ran. Only the COUNT was checked -- too many arguments is `wrong
+        ; number of arguments`, too few without defaults is
+        ; fill_default_components#, and everything between them was accepted.
+        ;
+        ; Runs AFTER coerce_string_components_to_cstr# so a String literal
+        ; already carries the field's cstr type: checking before it would
+        ; report every `Holder("as", 2)` that coercion exists to make right.
+        ;
+        ; The acceptor is type_conformance_accepted#, the LOOSE one the four
+        ; declared-type positions use. types_compatible# alone reports the
+        ; region-construction and Option-into-pointer shapes that are the
+        ; language rather than defects -- its own comment says so.
+        function report_component_type_mismatch(
+            this: Planner,
+            struct_name: String,
+            loc: Span,
+            comps: ref[Vector[PlannedComponent]]?,
+            ctor_type: PlannedType
+        )
+        {
+            if comps = null
+                return
+
+            ; An uninstantiated generic TEMPLATE binds no argument, so no field
+            ; type can be resolved against one. Same exemption
+            ; fill_default_components# carries, and for the same reason: every
+            ; instantiation is planned separately and IS checked.
+            if Planner.type_mentions_generic_param(ctor_type)
+                return
+
+            let concept_ref this.lookup_concept(struct_name)
+            if concept_ref = null
+                return
+            let c (*concept_ref)
+            choose c.definition
+                when s: Structure
+                    this.check_component_types(struct_name, s, c.parameters, comps, ctor_type, loc)
+                else
+                    0
+        }
+
+        ; The walk half, split out so the entry above stays one statement per
+        ; branch.
+        ;
+        ; ★The field types are planned inside enter_concept_generic_scope#, and
+        ; a hand-rolled apply_name_substitution# over (parameters x generics)
+        ; is NOT the same thing -- it was measured wrong: plan_type# resolves a
+        ; field annotation against the AMBIENT substitutions, i.e. the ones the
+        ; CALL SITE is being planned under. `ListIterator[Slot[T]](
+        ; slot_ptr.head)` inside HashSet[String] planned its own `current:
+        ; pointer[Node[T]]` as `pointer[Node[String]]` -- the ENCLOSING T --
+        ; and reported the correct argument as a mismatch. The scope helper
+        ; shadows exactly the names the concept declares itself, carries the
+        ; occurs check, and is what every other consumer of a concept's own
+        ; field types already uses.
+        function check_component_types(
+            this: Planner,
+            struct_name: String,
+            s: Structure,
+            params: Vector[GenericParameter],
+            comps: ref[Vector[PlannedComponent]]?,
+            ctor_type: PlannedType,
+            loc: Span
+        )
+        {
+            let cv (*comps)
+            if params.length = 0
+            {
+                this.check_components_in_scope(struct_name, s, cv, loc)
+                return
+            }
+
+            ; A generic concept whose parameters could not be bound to this
+            ; construction's arguments -- no generics on the type, too few of
+            ; them, or an occurs-check failure. Every field type would still
+            ; name an unbound parameter, so there is nothing to compare.
+            let snapshot this.enter_concept_generic_scope(struct_name, ctor_type)
+            if snapshot = null
+                return
+            this.check_components_in_scope(struct_name, s, cv, loc)
+            this.leave_concept_generic_scope(snapshot)
+        }
+
+        function check_components_in_scope(
+            this: Planner,
+            struct_name: String,
+            s: Structure,
+            cv: Vector[PlannedComponent],
+            loc: Span
+        )
+        {
+            var ci: size_t 0
+            while ci < cv.length
+            {
+                if ci < s.properties.length
+                    this.check_one_component_type(struct_name, s, ci, cv, loc)
+                set ci: ci + 1
+            }
+        }
+
+        ; One component against one property. Every early return here is a
+        ; position the check deliberately says NOTHING about, and each is a
+        ; measured exemption rather than a convenience.
+        function check_one_component_type(
+            this: Planner,
+            struct_name: String,
+            s: Structure,
+            ci: size_t,
+            cv: Vector[PlannedComponent],
+            loc: Span
+        )
+        {
+            let cp cv.get ci
+            if cp = null
+                return
+            let cc (*cp)
+
+            ; A NAMED component does not align with property ci -- the tuple
+            ; path fills positionally and ignores the name outright, so the
+            ; index says nothing about which field this value reaches.
+            if cc.name <> null
+                return
+            if cc.value = null
+                return
+            let vals (*cc.value)
+            if vals.length <> 1
+                return
+            let vp vals.get 0
+            if vp = null
+                return
+            let a (*vp)
+
+            let prop_ptr s.properties.get ci
+            if prop_ptr = null
+                return
+            if prop_ptr.type = null
+                return
+            let ft this.plan_type((*prop_ptr.type))
+
+            ; A field type still naming a generic parameter was never bound --
+            ; an answer about the PLANNER's knowledge, not about the code.
+            if Planner.type_mentions_generic_param(ft)
+                return
+            if ft.name.length = 0
+                return
+
+            ; The same restriction report_method_arg_types# carries: an
+            ; argument whose type is a fresh variable, unnamed or void matches
+            ; nothing, so a rejection over one says nothing about the source.
+            let at a.result_type
+            if at.name.length = 0
+                return
+            if at.name = "void"
+                return
+            if at.variable <> null
+                return
+            if Planner.type_mentions_generic_param(at)
+                return
+
+            ; ★★★The acceptor is type_conformance_accepted# MINUS its class 8,
+            ; and dropping that one class is what makes this gate answer the
+            ; question it was built for. Class 8 accepts ONE LEVEL OF
+            ; INDIRECTION -- it strips a pointer/ref off the source and
+            ; re-asks -- which is right at the four DECLARED-TYPE positions,
+            ; where a deref is a reading the language actually has. A tuple
+            ; COMPONENT is not one of those: emit_tuple stores the value into
+            ; the field slot as it stands, and nothing dereferences anything.
+            ;
+            ; Measured: with class 8 live, `pointer[char]` filling a `size_t`
+            ; field is ACCEPTED (strip to `char`, then integer-to-integer) --
+            ; and that is EXACTLY the Slice layout flip this gate exists to
+            ; catch. `pointer[Leaf]` into the same field was caught, because
+            ; the stripped pointee is a concept. A gate that answers by the
+            ; POINTEE's family is not a gate.
+            ;
+            ; So the refusal is asked FIRST: a reference-shaped source into a
+            ; target that is not reference-shaped. `pointer[void]` on either
+            ; side is exempt -- classes 3 and 6 exist for it, it is the tree's
+            ; own opaque-slot spelling, and it carries no pointee to strip.
+            var ref_into_value: bool false
+            if Planner.type_is_reference_shaped(at)
+                if Planner.type_is_reference_shaped(ft) = false
+                    if Planner.type_is_void_pointer(at) = false
+                        set ref_into_value: true
+            if ref_into_value = false
+                if Planner.type_conformance_accepted(ft, at)
+                    return
+
+            ; ★★★NULLABILITY ALONE is a DIFFERENT question from a type
+            ; mismatch, and this gate deliberately does not ask it. The
+            ; ARGUMENT position separates the two the same way --
+            ; report_method_arg_types# reports the mismatch,
+            ; option_arg_into_plain_ref# the Option -- and its own comment says
+            ; why: "a genuine type mismatch is report_method_arg_types#'s to
+            ; report, and telling its author to write an unwrap would be wrong
+            ; advice."
+            ;
+            ; ★★★It is an OPEN limit with a measured size, not an oversight.
+            ; Asking it here as well (option_arg_into_plain_ref# on the pair,
+            ; option_arg_reaches_plain_ref# on the operand so a guarded name
+            ; narrows) reports 124 sites on the untouched tree -- dazzle 26,
+            ; tscaly 98 -- every one of them an `Option[ref[X]]` reaching a
+            ; field declared `ref[X]`, and several of them declarations that
+            ; LIE: `break;` with no label fills
+            ; BreakOrContinueStatementData.label_name, declared non-optional.
+            ; Closing it is a port sweep whose per-field verdict comes from the
+            ; upstream references, not a compiler change, so it is its own
+            ; campaign and is filed as one.
+            if Planner.option_arg_into_plain_ref(ft, at)
+                return
+
+            this.report_component_mismatch(struct_name, prop_ptr.name, ft, at, loc)
+        }
+
+        ; The message half, split out for the reason report_null_arg# splits
+        ; its own: the walk above stays one statement per branch.
+        function report_component_mismatch(
+            this: Planner,
+            struct_name: String,
+            field_name: String,
+            field_type: PlannedType,
+            arg_type: PlannedType,
+            loc: Span
+        )
+        {
+            ; Both readable names are bound to a LOCAL first: a parenless
+            ; single-argument call swallows a CHAINED call whole, and the arity
+            ; gate then reports `got 0`.
+            let aname Planner.get_readable_name(arg_type)
+            let fname Planner.get_readable_name(field_type)
+            var sb StringBuilder()
+            sb.append "positional construction: "
+            sb.append aname
+            sb.append " cannot fill "
+            sb.append struct_name
+            sb.append "."
+            sb.append field_name
+            sb.append ", which is declared "
+            sb.append fname
+            let rmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
         ; fold_string_args_to_char: for a resolved call, fold each bare
         ; double-quoted char literal argument (a chainless String constant)
         ; whose matched parameter is char/u8/i8 into a validated
@@ -10072,6 +10322,11 @@ define Planner
                             ; the defaults are filled so a defaulted field's
                             ; own literal is covered by the same walk.
                             set components_holder: this.coerce_string_components_to_cstr(fn_name, components_holder, ctor_struct_type)
+
+                            ; The type check for this path. AFTER the coercion
+                            ; above, whose whole job is to give a String
+                            ; literal the field's cstr type.
+                            this.report_component_type_mismatch(fn_name, second.loc, components_holder, ctor_struct_type)
 
                             ; Propagate the type's lifetime into the tuple.
                             ; ctor_struct_type carries the lifetime from the

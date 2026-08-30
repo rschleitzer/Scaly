@@ -1,0 +1,94 @@
+; The positive control for report_component_type_mismatch#: every shape the
+; tuple-path type check must keep ACCEPTING. A gate that reports the language
+; is worse than no gate, and each block below is a class the check would have
+; broken had it asked a slightly different question.
+;
+; Expected: PASS
+
+; ── 1. The documented positional construction of a data class ───────────────
+; `Slice[T]` is the canonical one: it declares only `init ()`, so NO init can
+; ever match an arity-2 construction and the tuple path is the correct answer
+; rather than a fallback.
+define View (data: pointer[int], length: size_t)
+
+; ── 2. A concept's own generic parameter, bound from the CONSTRUCTION ───────
+; The field types must be planned in the CONCEPT's scope, not the call site's.
+; plan_type# resolves an annotation against the AMBIENT substitutions, so a
+; nested instantiation whose parameter shares the enclosing name gets the
+; WRONG binding: `ListIterator[Slot[T]]` inside `HashSet[String]` planned its
+; own `current: pointer[Node[T]]` as `pointer[Node[String]]` and reported a
+; correct argument. Both parameters below are called T on purpose.
+define Leaf2[T] (z: T)
+define Cell2[T] (cur: ref[Leaf2[T]]?)
+define Outer2[T] (tag: int)
+{
+    function go(this, l: ref[Leaf2[Leaf2[T]]]) returns int
+    {
+        let c Cell2[Leaf2[T]](l)
+        tag
+    }
+}
+
+; ── 3. Fields with DEFAULTS, filled by fill_default_components# ─────────────
+define Config (a: int, b: int(7), c: bool(true))
+
+; ── 4. A page-hosted construction standing for a reference ─────────────────
+; type_conformance_accepted#'s class 1: `Vector[T]^page(n)` yields a pointer
+; while its result_type names the object.
+define Owner (rows: ref[Vector[int]]?, n: int)
+
+; ── 5. An opaque slot: pointer[void] on either side (classes 3 and 6) ──────
+define Opaque (slot: pointer[void], kind: int)
+
+; ── 6. A String literal into a cstr field ─────────────────────────────────
+; coerce_string_components_to_cstr# runs BEFORE the check for exactly this:
+; checking first would report every literal that coercion exists to make right.
+define Named (text: pointer[const_char], n: int)
+
+let page Page.get(&page)
+
+; 1
+var buf Array[int]()
+buf.add 3
+buf.add 5
+let v View(buf.get_buffer(), 2)
+if *(v.data + 1) <> 5
+    exit 30
+if v.length <> 2
+    exit 31
+
+; 2
+let leaf Leaf2[int]^page(4)
+let outer_leaf Leaf2[Leaf2[int]]^page(*leaf)
+let o Outer2[int](9)
+if o.go(outer_leaf) <> 9
+    exit 32
+
+; 3 — both the full construction and the defaulted tails
+let c_full Config(1, 2, false)
+let c_part Config(1)
+if c_full.b <> 2
+    exit 33
+if c_part.b <> 7
+    exit 34
+if c_part.c = false
+    exit 35
+
+; 4
+let rows Vector[int]^page(2)
+let own Owner(rows, 1)
+if own.n <> 1
+    exit 36
+
+; 5
+let op Opaque(buf.get_buffer() as pointer[void], 2)
+if op.kind <> 2
+    exit 37
+
+; 6
+let nm Named("hello", 5)
+if nm.n <> 5
+    exit 38
+
+print "PASS"
+exit 0

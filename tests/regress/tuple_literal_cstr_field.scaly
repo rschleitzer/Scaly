@@ -71,9 +71,16 @@ if (Slice[u8]("as", 2)[0] as int) <> 97
 
 ; and from a real buffer — the direction that was never broken, kept as the
 ; control so a fix that breaks it cannot pass
+;
+; The cast is load-bearing and not noise: `c_data()` answers
+; pointer[const_char], and is_char_like_cross_compatible# accepts
+; (param=const_char, arg=char) but REFUSES the reverse on purpose — "you must
+; not silently assign immutable data to mutable storage". The tuple path never
+; asked until report_component_type_mismatch# landed; the `u8` line below
+; needs no cast because the u8 row of that table accepts the whole family.
 let s String("as")
 let d s.c_data()
-if (Slice[char](d, 2)[0] as int) <> 97
+if (Slice[char](d as pointer[char], 2)[0] as int) <> 97
     set ok: false
 if (Slice[u8](d, 2)[0] as int) <> 97
     set ok: false
