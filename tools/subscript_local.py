@@ -209,4 +209,9 @@ def main():
     print('SUMME:', tc, 'sites,', td, 'bindings dropped',
           '(angewendet)' if apply else '(nur gezählt)')
 
-main()
+# ★Under `if __name__`, for the reason recorded in tools/subscript.py: a bare
+# module-scope `main()` runs this tool with the IMPORTER's argv the moment
+# tools/sliceview.py imports its helpers -- with `--apply` and the importer's
+# file list.
+if __name__ == '__main__':
+    main()
