@@ -345,7 +345,7 @@ define Tape
 
     procedure add_node(this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) returns int
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         var node TapeNode(kind, in_a, in_b, in_c, r, n)
         let v Vector[float]^own_page((r * n) as size_t)
         let g Vector[float]^own_page((r * n) as size_t)
@@ -465,7 +465,7 @@ define Tape
         let nt buf + table
         let dim nt.cols
         let id this.add_node(TAPE_EMBEDDING, table, 0 - 1, 0 - 1, tokens, dim)
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         let tk Vector[i64]^own_page(ids)
         let node nodes.get_buffer() + id
         set node.tok: tk
@@ -476,7 +476,7 @@ define Tape
     procedure wsum(this: Tape, x: int, w: Vector[float]) returns int
     {
         let id this.add_node(TAPE_WSUM, x, 0 - 1, 0 - 1, 1, 1)
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         let ws Vector[float]^own_page(w)
         let node nodes.get_buffer() + id
         set node.aux: ws
@@ -490,7 +490,7 @@ define Tape
     procedure crossentropy(this: Tape, logits: int, targets: Vector[i64]) returns int
     {
         let id this.add_node(TAPE_CROSSENT, logits, 0 - 1, 0 - 1, 1, 1)
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         let tk Vector[i64]^own_page(targets)
         let node nodes.get_buffer() + id
         set node.tok: tk
@@ -553,7 +553,7 @@ define Tape
         let t nq.rows
         let d nq.cols
         let id this.add_node(TAPE_ATTENTION, q, k, v, t, d)
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         let scratch Vector[float]^own_page((2 * hs * t * win) as size_t)
         let node nodes.get_buffer() + id
         set node.aux: scratch
@@ -623,7 +623,7 @@ define Tape
     ; step count for bias correction.
     procedure adam_step(this: Tape, id: int, lr: float, b1: float, b2: float, e: float, t: int)
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         let node nodes.get_buffer() + id
         let total node.rows * node.cols
         let auxlen node.aux.length as int

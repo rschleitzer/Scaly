@@ -61,7 +61,7 @@ if three.b <> 30
     set ok: false
 
 ; and the storage is the PAGE we named, not a frame
-let p1 (Page.get(one as pointer[void]) as size_t)
+let p1 (Page.get(one) as size_t)
 let hp (rp as size_t)
 if p1 <> hp
     set ok: false

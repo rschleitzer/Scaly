@@ -66,7 +66,7 @@ define Vector[T]
     ; hoist stays as belt-and-braces and keeps the signal obvious.
     init (len: size_t)
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set length: len
         if len > 0
         {
@@ -79,7 +79,7 @@ define Vector[T]
 
     init (other: Vector[T])
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set length: other.length
         if length > 0
         {
@@ -92,7 +92,7 @@ define Vector[T]
 
     init (array: Array[T])
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set length: array.length
         if length > 0
         {
@@ -106,7 +106,7 @@ define Vector[T]
 
     init (list: List[T])
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set length: list.count()
         if length > 0
         {

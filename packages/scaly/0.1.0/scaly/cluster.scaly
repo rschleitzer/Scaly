@@ -467,7 +467,7 @@ define Cluster
     procedure dispose_peer(p: ref[NodePeer])
     {
         Thread.join(p.reader)
-        let pp Page.get(p as pointer[void])
+        let pp Page.get(p)
         pp.deallocate_extensions()
         Page.release_page(pp)
     }
@@ -478,7 +478,7 @@ define Cluster
     procedure dispose_message(rr: ref[ReceivedRegion])
     {
         rr.release()
-        let hp Page.get(rr as pointer[void])
+        let hp Page.get(rr)
         hp.deallocate_extensions()
         Page.release_page(hp)
     }

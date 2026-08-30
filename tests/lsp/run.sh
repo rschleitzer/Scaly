@@ -4744,7 +4744,7 @@ if [ $rc -eq 0 ]; then ok "lsp hover stays inside the document"; else bad "lsp h
 
 # ---- LSP server: hover resolves PER TOKEN, with generic arguments ---------
 # Three defects that made a whole line report one wrong type, all on
-# containers/Vector.scaly line 69, `let own_page Page.get(this as pointer[void])`:
+# containers/Vector.scaly line 69, `let own_page Page.get(this)`:
 #
 #  1. type_name# returned PlannedType.name, the BARE name — the resolved
 #     arguments sit beside it in .generics — so a `pointer[Page]` printed as
@@ -4779,7 +4779,7 @@ lines = doc.split("\n")
 def line_of(needle):
     return next(i for i, l in enumerate(lines) if l.strip() == needle)
 
-bind = line_of("let own_page Page.get(this as pointer[void])")
+bind = line_of("let own_page Page.get(this)")
 alloc = line_of("set data: own_page.allocate(len * sizeof T, alignof T) as pointer[T]")
 cond = line_of("if len > 0")
 

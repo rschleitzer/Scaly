@@ -71,7 +71,7 @@ define memory
             return -9
 
         let ptr page.allocate(sizeof int, alignof int) as pointer[int]
-        let retrieved_page Page.get(ptr as pointer[void])
+        let retrieved_page Page.get(ptr)
         if retrieved_page <> page
             return -10
 

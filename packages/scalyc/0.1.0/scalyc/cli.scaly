@@ -913,7 +913,7 @@ define cli
                     ; a diagnostic. Latent for as long as nothing reused the
                     ; freed page; the lazy region frames (2026-08-01) changed the
                     ; arena layout and made it fire every run.
-                    let obj_page Page.get(dep_objs as pointer[void])
+                    let obj_page Page.get(dep_objs)
                     let durable_obj String^obj_page(obj_path)
                     dep_objs.add durable_obj
                 }
@@ -980,7 +980,7 @@ define cli
         ; same page-anchoring idiom Array.add uses for its own storage.
         if dep_plan.functions <> null
         {
-            let sym_page Page.get(syms as pointer[void])
+            let sym_page Page.get(syms)
             for f in dep_plan.functions
             {
                 let durable_name String^sym_page(f.mangled_name)

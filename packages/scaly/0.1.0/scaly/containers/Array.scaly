@@ -70,7 +70,7 @@ define Array[T]
         set vector: null
         if size > 0
         {
-            let own_page Page.get(this as pointer[void])
+            let own_page Page.get(this)
             if size * sizeof T <= 0x400
                 set vector: Vector[T]^own_page(size)
             else
@@ -132,7 +132,7 @@ define Array[T]
             ; class derives from its capacity; a small one is abandoned
             ; to the region). NB `^page` constructions take LET-bound
             ; page names — a var binding mis-places the construction.
-            let own_page Page.get(this as pointer[void])
+            let own_page Page.get(this)
             let old_vector vector
             let old_small (vector.length * size) <= 0x400
             if new_length * size <= 0x400
@@ -152,7 +152,7 @@ define Array[T]
             }
             if old_small = false
             {
-                let old_exclusive_page Page.get(old_vector as pointer[void])
+                let old_exclusive_page Page.get(old_vector)
                 own_page.deallocate_exclusive_page old_exclusive_page
             }
         }
@@ -254,7 +254,7 @@ define Array[T]
 
     function reallocate(this: Array[T])
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         let size sizeof T
         if vector = null
         {
@@ -293,7 +293,7 @@ define Array[T]
         memcpy(new_vector.data, vector.data, vector.length * size)
         if old_small = false
         {
-            let old_exclusive_page Page.get(vector as pointer[void])
+            let old_exclusive_page Page.get(vector)
             own_page.deallocate_exclusive_page old_exclusive_page
         }
         set vector: new_vector

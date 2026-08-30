@@ -1764,7 +1764,7 @@ define Io
         Fiber.yield()
         ; Woken: the worker published the result before the inject.
         let res w.result
-        let wp Page.get(w as pointer[void])
+        let wp Page.get(w)
         wp.deallocate_extensions()
         Page.release_page_traced(wp, "Io.work_page")
         res
@@ -1803,7 +1803,7 @@ define Io
             set i: i + 1
         }
         close(pl.pipe_read as int)
-        let pp Page.get(pl as pointer[void])
+        let pp Page.get(pl)
         pp.deallocate_extensions()
         Page.release_page_traced(pp, "Io.pool_page")
         set io_pool: null
@@ -1966,7 +1966,7 @@ define Channel
     ; retired its handle, nothing can touch the record anymore.
     procedure dispose(m: ref[Channel])
     {
-        let mp Page.get(m as pointer[void])
+        let mp Page.get(m)
         mp.deallocate_extensions()
         Page.release_page_traced(mp, "Channel.record_page")
     }
@@ -2501,7 +2501,7 @@ define TaskGroup
         }
         close(g.pipe_write as int)
         close(g.pipe_read as int)
-        let gp Page.get(g as pointer[void])
+        let gp Page.get(g)
         gp.deallocate_extensions()
         Page.release_page_traced(gp, "TaskGroup.record_page")
     }
@@ -2648,7 +2648,7 @@ define TaskPool
         scaly_atomic_add_u64(sc, 1 as u64)
         let pp &g.pending
         let old scaly_atomic_add_u64(pp, 1 as u64)
-        let host Page.get(g as pointer[void])
+        let host Page.get(g)
         let w host.allocate(sizeof TaskItem, alignof TaskItem) as pointer[TaskItem]
         set w.next: null
         set w.fn: fn
@@ -2735,7 +2735,7 @@ define TaskPool
             set i: i + 1
         }
         close(pl.pipe_read as int)
-        let pp Page.get(pl as pointer[void])
+        let pp Page.get(pl)
         pp.deallocate_extensions()
         Page.release_page_traced(pp, "TaskPool.pool_page")
     }

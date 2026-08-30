@@ -24,7 +24,7 @@ use scaly.containers.String
 
 ; A String anchors a real region page; Page.get gives us a pointer to it.
 let anchor String(64 as size_t)
-let page Page.get(anchor.data as pointer[void])
+let page Page.get(anchor.data)
 
 let direct page.get_capacity(8 as size_t)
 let through (*page).get_capacity(8 as size_t)

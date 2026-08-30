@@ -38,7 +38,7 @@ define String (data: pointer[u8](null))
         let overall_length counter + 1 + length
         ; Over-allocate by 1 byte so c_data() is safely null-terminated for
         ; C APIs. Keeps the logical content length unchanged.
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
@@ -69,7 +69,7 @@ define String (data: pointer[u8](null))
         }
 
         let overall_length counter + 1 + length
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
@@ -96,7 +96,7 @@ define String (data: pointer[u8](null))
         }
 
         let overall_length counter + 1 + other.length
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest other.length
         var wi: size_t 0
@@ -131,7 +131,7 @@ define String (data: pointer[u8](null))
         }
 
         let overall_length counter + 1 + length
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
@@ -174,7 +174,7 @@ define String (data: pointer[u8](null))
             set index: index + 1
         }
         var overall_length index + 1 + length
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
         set *(data + overall_length): 0
@@ -182,7 +182,7 @@ define String (data: pointer[u8](null))
 
     init(character: u8)
     {
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set data: own_page.allocate(3, 1) as pointer[u8]
         set *data: 1
         set *(data + 1): character

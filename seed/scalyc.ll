@@ -7679,9 +7679,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -8967,9 +8967,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6StringE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -10610,9 +10610,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -11470,8 +11470,8 @@ if.then:                                          ; preds = %entry
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots22 = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots22, align 8
+  %slots20 = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots20, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -11490,10 +11490,10 @@ while.body:                                       ; preds = %while.cond
   br label %while.cond10
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct19 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %slots20 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct19, 1
-  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call21)
+  %field.inplace = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call19 = call ptr @_ZN4Page3getEPv(ptr %deref.recv)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call19)
   br label %if.end
 
 while.cond10:                                     ; preds = %while.body11, %while.body
@@ -11582,9 +11582,9 @@ while.body:                                       ; preds = %while.cond
   br i1 %call5, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct6 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %slots7 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct6, 1
-  %call8 = call ptr @_ZN4Page3getEPv(ptr %slots7)
+  %field.inplace6 = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  %deref.recv7 = load ptr, ptr %field.inplace6, align 8
+  %call8 = call ptr @_ZN4Page3getEPv(ptr %deref.recv7)
   %field.load = load { ptr }, ptr %1, align 8
   %tuple.field = getelementptr inbounds nuw %_Z4SlotI6StringE, ptr %tuple, i32 0, i32 0
   store { ptr } %field.load, ptr %tuple.field, align 1
@@ -13771,9 +13771,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI17DeclarationSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI17DeclarationSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -16500,9 +16500,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12MemberSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12MemberSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -19041,9 +19041,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI22GenericParameterSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -21729,9 +21729,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13VariantSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13VariantSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -23881,9 +23881,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI21GenericArgumentSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -25645,9 +25645,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI10ItemSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI10ItemSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -27593,9 +27593,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI9UseSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI9UseSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI9UseSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -29929,9 +29929,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12MethodSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12MethodSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12MethodSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -31520,9 +31520,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI10InitSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI10InitSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI10InitSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -35003,9 +35003,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12ExtendSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12ExtendSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12ExtendSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -36688,9 +36688,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15AttributeSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15AttributeSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15AttributeSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -38551,9 +38551,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13PackageSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13PackageSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI13PackageSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -40410,9 +40410,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13OperandSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13OperandSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI13OperandSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -41915,9 +41915,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI18MemberAccessSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -44748,9 +44748,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15ComponentSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15ComponentSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15ComponentSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -46731,9 +46731,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13ElementSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13ElementSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI13ElementSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -49132,9 +49132,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12BranchSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12BranchSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12BranchSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -50689,9 +50689,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI10CaseSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI10CaseSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI10CaseSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -53320,9 +53320,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI10WhenSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI10WhenSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI10WhenSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -54983,9 +54983,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15StatementSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15StatementSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15StatementSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -57819,9 +57819,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI17BindingSpecSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI17BindingSpecSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI17BindingSpecSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -59680,9 +59680,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI10PartSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI10PartSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -61336,9 +61336,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI14PropertySyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI14PropertySyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI14PropertySyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -64686,9 +64686,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12ActionSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12ActionSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12ActionSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -67277,9 +67277,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI10TypeSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI10TypeSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI10TypeSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -69045,9 +69045,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15ExtensionSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15ExtensionSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -70823,9 +70823,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6VectorI7OperandEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6VectorI7OperandEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -72105,9 +72105,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI9AttributeE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI9AttributeE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -73387,9 +73387,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI9ComponentE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI9ComponentE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -74669,9 +74669,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI9StatementE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI9StatementE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -75951,9 +75951,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI4CaseE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI4CaseE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -77233,9 +77233,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6BranchE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6BranchE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -78515,9 +78515,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI4WhenE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI4WhenE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -79797,9 +79797,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI4ItemE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI4ItemE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -81079,9 +81079,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI7OperandE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI7OperandE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -82361,9 +82361,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI16GenericParameterE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI16GenericParameterE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -83643,9 +83643,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI8PropertyE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI8PropertyE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI8PropertyE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -84925,9 +84925,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI3UseE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI3UseE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI3UseE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -86207,9 +86207,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI8FunctionE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI8FunctionE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -88439,9 +88439,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -89721,9 +89721,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI8Nameable8NameableEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -91013,9 +91013,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11InitializerE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11InitializerE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11InitializerE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -92295,9 +92295,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -93577,9 +93577,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String8NameableEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -95129,9 +95129,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -95807,8 +95807,8 @@ if.then:                                          ; preds = %entry
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %slots22 = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %slots22, align 8
+  %slots20 = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %slots20, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -95827,10 +95827,10 @@ while.body:                                       ; preds = %while.cond
   br label %while.cond10
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct19 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
-  %slots20 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct19, 1
-  %call21 = call ptr @_ZN4Page3getEPv(ptr %slots20)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call21)
+  %field.inplace = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call19 = call ptr @_ZN4Page3getEPv(ptr %deref.recv)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call1, ptr %call19)
   br label %if.end
 
 while.cond10:                                     ; preds = %while.body11, %while.body
@@ -95926,9 +95926,9 @@ while.body:                                       ; preds = %while.cond
   br i1 %call6, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct7 = load %_Z14HashMapBuilderI6String8NameableE, ptr %0, align 8
-  %slots8 = extractvalue %_Z14HashMapBuilderI6String8NameableE %load.struct7, 1
-  %call9 = call ptr @_ZN4Page3getEPv(ptr %slots8)
+  %field.inplace7 = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableE, ptr %0, i32 0, i32 1
+  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
+  %call9 = call ptr @_ZN4Page3getEPv(ptr %deref.recv8)
   %field.load = load { ptr }, ptr %1, align 8
   %tuple.field = getelementptr inbounds nuw %_Z12KeyValuePairI6String8NameableE, ptr %tuple, i32 0, i32 0
   store { ptr } %field.load, ptr %tuple.field, align 1
@@ -96884,9 +96884,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI7VariantE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI7VariantE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI7VariantE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -98166,9 +98166,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6MemberE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6MemberE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -99448,9 +99448,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6ModuleE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6ModuleE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -101488,9 +101488,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI4TypeE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI4TypeE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI4TypeE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -102770,9 +102770,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6VectorI4TypeEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6VectorI4TypeEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6VectorI4TypeEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -104433,9 +104433,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayIcE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -106707,9 +106707,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI14LifetimeSyntaxE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI14LifetimeSyntaxE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI14LifetimeSyntaxE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -116697,9 +116697,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -117979,9 +117979,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayImE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayImE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -119291,9 +119291,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -120573,9 +120573,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI14TypeConstraintE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI14TypeConstraintE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -121855,9 +121855,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -123137,9 +123137,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String7ConceptEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -124419,9 +124419,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI16PlannedStructureE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI16PlannedStructureE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -125701,9 +125701,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12PlannedUnionE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12PlannedUnionE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -126983,9 +126983,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15PlannedFunctionE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15PlannedFunctionE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -128265,9 +128265,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13PlannedGlobalE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13PlannedGlobalE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -129547,9 +129547,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String8FunctionEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -130829,9 +130829,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String6LambdaEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -132111,9 +132111,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String8OperatorEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -133849,9 +133849,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11PlannedTypeE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11PlannedTypeE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -134675,9 +134675,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12KeyValuePairI6String6ModuleEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -135957,9 +135957,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI17PlannerDiagnosticE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -137239,9 +137239,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI7ProgramE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI7ProgramE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -138521,9 +138521,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12EscapeRecordE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12EscapeRecordE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -146746,9 +146746,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI14PlannedOperandE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI14PlannedOperandE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -148549,9 +148549,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI19PlannedMemberAccessE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI19PlannedMemberAccessE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -151233,9 +151233,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI8OperatorE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI8OperatorE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI8OperatorE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -153114,9 +153114,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI16PlannedComponentE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI16PlannedComponentE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -176445,9 +176445,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11PlannedItemE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11PlannedItemE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11PlannedItemE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -183559,9 +183559,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6VectorI14PlannedOperandEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -195273,9 +195273,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15PlannedPropertyE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15PlannedPropertyE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15PlannedPropertyE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -202300,9 +202300,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI16PlannedStatementE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI16PlannedStatementE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -204790,9 +204790,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11PlannedWhenE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11PlannedWhenE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -206072,9 +206072,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13PlannedBranchE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13PlannedBranchE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -207354,9 +207354,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11PlannedCaseE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11PlannedCaseE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11PlannedCaseE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -238968,9 +238968,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15PlannedOperatorE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15PlannedOperatorE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -240250,9 +240250,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI18PlannedInitializerE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI18PlannedInitializerE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -243713,9 +243713,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI14PlannedConceptE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI14PlannedConceptE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI14PlannedConceptE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -246526,9 +246526,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI13PlannedModuleE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI13PlannedModuleE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI13PlannedModuleE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -247887,9 +247887,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI14PlannedVariantE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI14PlannedVariantE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI14PlannedVariantE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -251916,9 +251916,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -253591,9 +253591,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12TypeVariableE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12TypeVariableE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12TypeVariableE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -272082,9 +272082,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI12LLVMValueRefE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI12LLVMValueRefE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI12LLVMValueRefE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -274273,9 +274273,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI15LLVMMetadataRefE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI15LLVMMetadataRefE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI15LLVMMetadataRefE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -278364,9 +278364,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11LLVMTypeRefE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11LLVMTypeRefE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11LLVMTypeRefE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -288882,9 +288882,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI17LLVMBasicBlockRefE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -326401,9 +326401,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayIiE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayIiE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -327629,9 +327629,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI17IntrinsicTypeInfoE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI17IntrinsicTypeInfoE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI17IntrinsicTypeInfoE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 
@@ -328849,9 +328849,9 @@ if.end53:                                         ; preds = %if.then52, %if.end2
   br i1 %eq73, label %if.then74, label %if.end75
 
 if.then74:                                        ; preds = %if.end53
-  %load.struct76 = load %_Z5ArrayI11LoopContextE, ptr %0, align 8
-  %vector77 = extractvalue %_Z5ArrayI11LoopContextE %load.struct76, 1
-  %call78 = call ptr @_ZN4Page3getEPv(ptr %vector77)
+  %field.inplace76 = getelementptr inbounds nuw %_Z5ArrayI11LoopContextE, ptr %0, i32 0, i32 1
+  %deref.recv77 = load ptr, ptr %field.inplace76, align 8
+  %call78 = call ptr @_ZN4Page3getEPv(ptr %deref.recv77)
   call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call78)
   br label %if.end75
 

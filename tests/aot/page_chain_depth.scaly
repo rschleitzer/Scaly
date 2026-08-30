@@ -37,14 +37,14 @@ let pad String(3900 as size_t)
 ; The anchor's page is entered once and never allocated through again, so the
 ; chain from it is the uncollapsed one.
 let anchor String(3900 as size_t)
-let anchor_page Page.get(anchor.data as pointer[void])
+let anchor_page Page.get(anchor.data)
 
 ; Seed the growth on the page after the anchor's, then extend link by link.
 var prev String(3900 as size_t)
 var i: size_t 0
 while i < (150000 as size_t)
 {
-    let host Page.get(prev.data as pointer[void])
+    let host Page.get(prev.data)
     let filler String^host(3900 as size_t)
     set prev: filler
     set i: i + (1 as size_t)

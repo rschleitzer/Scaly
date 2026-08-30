@@ -23,7 +23,7 @@ define SC (data: pointer[u32](null), size: size_t(0))
     init(n: size_t)
     {
         set size: n
-        let own_page Page.get(this as pointer[void])
+        let own_page Page.get(this)
         set data: own_page.allocate(n * (4 as size_t), 4) as pointer[u32]
         var i: size_t 0
         while i < n
