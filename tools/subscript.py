@@ -12,22 +12,35 @@ not. The check is free once the trap call is `noreturn` (measured), but the
 checksum for this conversion is the SUITES plus a timing A/B, never an opcode
 comparison.
 
-★★★BLOCKED as of 2026-08-27, and the blocker is a COMPILER gap, not a tool
-one: **the subscript does not dispatch through an OPTION receiver.** A member
-access unwraps the pointer/ref/Option cascade (s99); `find_subscript_operator`
-does not, so on the ordinary port field shape `ref[Array[T]]?` the operand is
-left standing and `[i]` becomes an orphan --
+★★★THE 2026-08-27 BLOCKER IS LIFTED (measured 2026-08-30). It read: "the
+subscript does not dispatch through an OPTION receiver", so on the ordinary
+port field shape `ref[Array[T]]?` the `[i]` was left standing as an orphan
+operand. It no longer is -- probed in all four shapes, each compiled and RUN
+against `scalyc/build/scalyc`:
 
-    function pick(a: ref[Array[int]]?, i: size_t) returns int   a[i]
-    -> error: unexpected operand - missing operator, ... before this statement
-    -> error: the returned value does not conform ... Option[ref[Array[int]]]
-       where int is declared
+    function pick(a: ref[Array[int]]?, i: size_t) returns int   a[i]     -> 20
+    function poke(a: ref[Array[int]]?, i: size_t, v: int)  a.put(i, v)   -> 77
+    function pick2(a: ref[Vector[int]]?, i: size_t) returns int  a[i]    ->  5
 
-while `*(a.get_buffer() + i)` on the SAME receiver is fine. That is the
-standing bug pattern of this compiler one more time: a name test that does not
-know about the s113 Option wrapper. Fix the dispatch before running this tool
-over the ports -- a dry run on tscaly/parser.scaly converted 72 sites and three
-of them could not compile for exactly this reason.
+so the Option receiver takes the READ and the WRITE alike, and `Vector` as
+well as `Array`. Nothing in this file was changed to make that true; one of
+the ref/Option sweeps of the intervening days fixed the dispatch, and the note
+had simply outlived it. ★A blocker recorded against a COMPILER gap owes a
+re-probe before it is believed -- reading it was three days of not running
+this tool.
+
+★★★WHAT THE TOOL STILL CANNOT SEE IS THE RECEIVER'S TYPE, and that is what
+decides whether `X[i]` EXISTS at all: `Array`, `Vector` and `Slice` carry an
+`operator []`; `String` and the ports' own `StringC` carry a `get_buffer()`
+and NO subscript. So the rewrite is PROPOSED here and JUDGED by the compiler
+-- `tools/subscript_driver.py` emits every package root, reverts exactly the
+lines the compiler rejects, and repeats. 11 of 78 proposals were reverted that
+way on 2026-08-30 (`prog[pi]`, `lo.name[t]`, `t4[3]` -- all String receivers,
+plus one `Array[u16]` copy the planner would not subscript). ★The revert is at
+LINE granularity, not by file: reverting a whole file for one bad site throws
+away the good sites in it. ★And a CONFORMANCE error is reported at the
+FUNCTION's line, not the expression's, so the driver falls back to the nearest
+changed line at or after the one the compiler named.
 
 ★★★AND IT MUST NEVER TOUCH A `set` TARGET. `operator []` answers the element
 BY VALUE, so there is no slot behind `a[i]` to store into: `set a[i]: v` on a
