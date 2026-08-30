@@ -200,4 +200,11 @@ def main():
         total += n
     print("SUMME:", total, "(angewendet)" if apply else "(nur gezählt)")
 
-main()
+# ★Under `if __name__`, and that is not style: `tools/subscript_local.py`
+# imports the guards from this file, and a bare `main()` at module scope ran
+# THIS tool -- with the importer's `--apply` and the importer's file list --
+# every time that one started. It re-applied sites the driver had just
+# reverted, silently, and the only reason the tree survived it is that the
+# driver runs again afterwards.
+if __name__ == '__main__':
+    main()
