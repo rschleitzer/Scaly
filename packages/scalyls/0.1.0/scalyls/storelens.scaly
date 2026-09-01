@@ -788,7 +788,7 @@ define storelens
             let line_start k
             while k < bn
             {
-                if blob.get(k) = (0x0A as u8)
+                if blob.get(k) = 0x0A
                     break
                 set k: k + 1
             }
@@ -812,7 +812,7 @@ define storelens
     ; Is a line with the same leading OFFSET field already kept?
     function has_line(kept: String, line: String) returns bool
     {
-        let tab line.index_of(0x09 as u8)
+        let tab line.index_of(0x09)
         if tab <= 0
             return false
         let digits line.substring(0, tab as size_t)
@@ -823,7 +823,7 @@ define storelens
             let start k
             while k < kn
             {
-                if kept.get(k) = (0x0A as u8)
+                if kept.get(k) = 0x0A
                     break
                 set k: k + 1
             }
@@ -833,7 +833,7 @@ define storelens
             if end > start
             {
                 let ln kept.substring(start, end - start)
-                let t ln.index_of(0x09 as u8)
+                let t ln.index_of(0x09)
                 if t > 0
                 {
                     let d ln.substring(0, t as size_t)
@@ -860,7 +860,7 @@ define storelens
             let line_start k
             while k < bn
             {
-                if blob.get(k) = (0x0A as u8)
+                if blob.get(k) = 0x0A
                     break
                 set k: k + 1
             }
@@ -931,7 +931,7 @@ define storelens
                 set at_end: true
             else
             {
-                if line.get(k) = (0x09 as u8)
+                if line.get(k) = 0x09
                     set at_end: true
             }
             if at_end

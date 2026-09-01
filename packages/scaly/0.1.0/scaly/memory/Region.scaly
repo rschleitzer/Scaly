@@ -212,7 +212,7 @@ define Region
         set h[1]: total as u64
         set h[2]: n as u64
         set h[3]: (root as size_t) as u64
-        memcpy(((frame as size_t) + (32 as size_t)) as pointer[void], table as pointer[void], n * (16 as size_t))
+        memcpy(((frame as size_t) + 32) as pointer[void], table as pointer[void], n * 16)
 
         var off 32 + n * 16
         var r: size_t 0

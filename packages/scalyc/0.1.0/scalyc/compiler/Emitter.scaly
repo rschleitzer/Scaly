@@ -817,7 +817,7 @@ define Emitter
         function di_basic_type(this, name: String) returns LLVMMetadataRef
         {
             var bits: size_t 0
-            var enc: i32 (5 as i32)
+            var enc: i32 5
             if name = "bool"
             {
                 set bits: 8
@@ -16658,7 +16658,7 @@ define Emitter
             {
                 if dst_kind = ptr_kind
                 {
-                    if LLVMCountStructElementTypes(src_type) = (1 as u32)
+                    if LLVMCountStructElementTypes(src_type) = 1
                     {
                         let as_f0 LLVMStructGetTypeAtIndex(src_type, 0 as u32)
                         if LLVMGetTypeKind(as_f0) = ptr_kind

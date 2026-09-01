@@ -272,7 +272,7 @@ define symbols
     ;   Constant -> Constant(14); Delegate -> Function(12); Intrinsic -> Struct(23)
     function definition_symbol(rp, source: String, def: DefinitionSyntax) returns String
     {
-        var kind: i64 (23 as i64)
+        var kind: i64 23
         var children "[]"
         choose def.concept_
             when c: ClassSyntax
@@ -808,7 +808,7 @@ define symbols
         var i lf
         while i > 0
         {
-            if *(data + (i - 1)) = (0x0A as u8)
+            if *(data + (i - 1)) = 0x0A
                 return lf - i
             set i: i - 1
         }
@@ -824,12 +824,12 @@ define symbols
         while lc_off < target
         {
             let c *(data + lc_off)
-            if c = (0x0A as u8)
+            if c = 0x0A
             {
                 set lc_line: lc_line + 1
                 set lc_col: 0
             }
-            if c <> (0x0A as u8)
+            if c <> 0x0A
                 set lc_col: lc_col + 1
             set lc_off: lc_off + 1
         }
@@ -840,7 +840,7 @@ define symbols
             ; Stepping back OVER an LF: that LF was counted in the old line
             ; number and is not in the new one, and the column becomes the
             ; length of the line the LF closes.
-            if c = (0x0A as u8)
+            if c = 0x0A
             {
                 set lc_line: lc_line - 1
                 set lc_col: symbols.line_cursor_column_before(data, lc_off)
@@ -848,7 +848,7 @@ define symbols
             ; Otherwise the byte just stepped over is an ordinary one, so the
             ; column is one smaller — and it cannot be 0 here, since a column of
             ; 0 means the preceding byte IS an LF.
-            if c <> (0x0A as u8)
+            if c <> 0x0A
                 set lc_col: lc_col - 1
         }
     }
@@ -3986,7 +3986,7 @@ define symbols
     ; A `define X` -> the type's name item followed by its members' items.
     function completion_definition(rp, source: String, def: DefinitionSyntax) returns String
     {
-        var kind: i64 (22 as i64)
+        var kind: i64 22
         var members ""
         choose def.concept_
             when c: ClassSyntax
@@ -9551,7 +9551,7 @@ define symbols
     ; members' items.
     function ws_definition(rp, source: String, uri: String, def: DefinitionSyntax) returns String
     {
-        var kind: i64 (23 as i64)
+        var kind: i64 23
         var children ""
         choose def.concept_
             when c: ClassSyntax

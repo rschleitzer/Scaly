@@ -339,31 +339,31 @@ define semantic
         while j < n
         {
             let c source.get j
-            if c <> (0x20 as u8)
+            if c <> 0x20
                 break
             set j: j + 1
         }
         if j >= n
             return 0
         let after source.get j
-        if after = (0x28 as u8)
+        if after = 0x28
             return 0
-        if after = (0x5B as u8)
+        if after = 0x5B
             return 0
         var more true
-        if after <> (0x2E as u8)
+        if after <> 0x2E
             set more: false
         ; Backward: a dot means this token is itself a member.
         var i start
         while i > 0
         {
-            if source.get(i - 1) <> (0x20 as u8)
+            if source.get(i - 1) <> 0x20
                 break
             set i: i - 1
         }
         var member false
         if i > 0
-            if source.get(i - 1) = (0x2E as u8)
+            if source.get(i - 1) = 0x2E
                 set member: true
         if member
         {
@@ -381,16 +381,16 @@ define semantic
     ; depend on symbols.
     function is_ident_byte(c: u8) returns bool
     {
-        if c >= (0x61 as u8)
-            if c <= (0x7A as u8)
+        if c >= 0x61
+            if c <= 0x7A
                 return true
-        if c >= (0x41 as u8)
-            if c <= (0x5A as u8)
+        if c >= 0x41
+            if c <= 0x5A
                 return true
-        if c >= (0x30 as u8)
-            if c <= (0x39 as u8)
+        if c >= 0x30
+            if c <= 0x39
                 return true
-        if c = (0x5F as u8)
+        if c = 0x5F
             return true
         false
     }

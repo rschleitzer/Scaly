@@ -1345,7 +1345,7 @@ define IoPool
         let lp &pl.lock
         repeat
         {
-            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = 0
                 break
         }
     }
@@ -1445,7 +1445,7 @@ define Io
         var w s.wake
         if w = ((0 - 1) as i32)
         {
-            let tag (1 as size_t) as pointer[void]
+            let tag 1 as pointer[void]
             set w: scaly_eio_wake_create(q, tag)
             if w = ((0 - 1) as i32)
                 exit 107
@@ -1919,7 +1919,7 @@ define Channel
         let lp &m.lock
         repeat
         {
-            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = 0
                 break
         }
     }
@@ -2314,7 +2314,7 @@ define Channel
         set timed_out: false
         Io.ensure_wake()
         let me current_task as ref[SchedTask]?
-        let deadline scaly_eio_now_ns() + ((ms as i64) * (1000000 as i64))
+        let deadline scaly_eio_now_ns() + ((ms as i64) * 1000000)
         repeat
         {
             Channel.acquire(m)
@@ -2474,7 +2474,7 @@ define TaskGroup
     procedure wait(g: pointer[TaskGroup])
     {
         let pp &g.pending
-        while scaly_atomic_load_u64(pp) > (0 as u64)
+        while scaly_atomic_load_u64(pp) > 0
         {
             var byte u8[1]
             let n scaly_eio_read(g.pipe_read, byte as pointer[void], 1 as size_t)
@@ -2496,7 +2496,7 @@ define TaskGroup
         let ap &g.active
         repeat
         {
-            if scaly_atomic_load_u64(ap) = (0 as u64)
+            if scaly_atomic_load_u64(ap) = 0
                 break
         }
         close(g.pipe_write as int)
@@ -2535,7 +2535,7 @@ define TaskDeque
         let lp &d.lock
         repeat
         {
-            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = 0
                 break
         }
     }

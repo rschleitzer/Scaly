@@ -13,7 +13,7 @@ define F_OK: int 0
 procedure dir_access_worker(arg: pointer[void]) returns pointer[void]
 {
     if access(arg as pointer[const_char], F_OK) = 0
-        return (1 as size_t) as pointer[void]
+        return 1 as pointer[void]
     null
 }
 
@@ -23,20 +23,20 @@ procedure dir_isdir_worker(arg: pointer[void]) returns pointer[void]
     if dir = null
         return null
     closedir dir
-    (1 as size_t) as pointer[void]
+    1 as pointer[void]
 }
 
 procedure dir_create_worker(arg: pointer[void]) returns pointer[void]
 {
     if mkdir(arg as pointer[const_char], 493) = 0
-        return (1 as size_t) as pointer[void]
+        return 1 as pointer[void]
     null
 }
 
 procedure dir_remove_worker(arg: pointer[void]) returns pointer[void]
 {
     if rmdir(arg as pointer[const_char]) = 0
-        return (1 as size_t) as pointer[void]
+        return 1 as pointer[void]
     null
 }
 

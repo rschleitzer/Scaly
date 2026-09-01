@@ -80,7 +80,7 @@ define String (data: pointer[u8](null))
             set wi: wi + 1
         }
         set *(data + wi): wrest as u8
-        memcpy((data + counter + (1 as size_t)) as pointer[void], other, length)
+        memcpy((data + counter + 1) as pointer[void], other, length)
         set *(data + overall_length): 0
     }
 
@@ -108,7 +108,7 @@ define String (data: pointer[u8](null))
         }
         set *(data + wi): wrest as u8
         if other.length > 0
-            memcpy((data + counter + (1 as size_t)) as pointer[void], other.data, other.length)
+            memcpy((data + counter + 1) as pointer[void], other.data, other.length)
         set *(data + overall_length): 0
 
     }
@@ -142,7 +142,7 @@ define String (data: pointer[u8](null))
             set wi: wi + 1
         }
         set *(data + wi): wrest as u8
-        memcpy((data + counter + (1 as size_t)) as pointer[void], c_string, length)
+        memcpy((data + counter + 1) as pointer[void], c_string, length)
         set *(data + overall_length): 0
     }
 
@@ -242,7 +242,7 @@ define String (data: pointer[u8](null))
 
         var dest page.allocate(length + 1, 1)
         if data <> null
-            memcpy(dest, data + index + (1 as size_t), length)
+            memcpy(dest, data + index + 1, length)
 
         ; NUL terminator at offset `length` (last byte of the length+1
         ; allocation). The previous `+ index + length` form OOB-wrote past
@@ -280,10 +280,10 @@ define String (data: pointer[u8](null))
     {
         let buffer get_buffer()
         if buffer = null
-            return (0 as u8)
+            return 0
 
         if index >= get_length()
-            return (0 as u8)
+            return 0
 
         *(buffer + index)
     }
@@ -322,7 +322,7 @@ define String (data: pointer[u8](null))
         if data = null
             return true
 
-        memcmp(data + index + (1 as size_t), other.data + index + (1 as size_t), length) = 0
+        memcmp(data + index + 1, other.data + index + 1, length) = 0
     }
 
     function equals(this: String, other: pointer[const_char]) returns bool
@@ -353,7 +353,7 @@ define String (data: pointer[u8](null))
         if data = null
             return true
 
-        memcmp(data + index + (1 as size_t), other, length) = 0
+        memcmp(data + index + 1, other, length) = 0
     }
 
     function equals (this: String, other: Vector[char]) returns bool
@@ -378,7 +378,7 @@ define String (data: pointer[u8](null))
         if length <> other.length
             return false
 
-        memcmp(data + index + (1 as size_t), other.data, length) = 0
+        memcmp(data + index + 1, other.data, length) = 0
     }
 
     function hash(this: String) returns size_t

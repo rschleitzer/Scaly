@@ -27,7 +27,7 @@ procedure file_open_worker(arg: pointer[void]) returns pointer[void]
     rewind file
     set *cell: file as size_t
     set *(((cell as size_t) + 8) as pointer[size_t]): size as size_t
-    (1 as size_t) as pointer[void]
+    1 as pointer[void]
 }
 
 ; The blocking read+close (the second leg): freads the whole file
@@ -44,7 +44,7 @@ procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
     if size > 0
         fread(buf, 1, size, file)
     fclose file
-    (1 as size_t) as pointer[void]
+    1 as pointer[void]
 }
 
 ; The blocking existence probe (milestone 2.5 residual): access(2) on a
@@ -52,7 +52,7 @@ procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
 procedure file_access_worker(arg: pointer[void]) returns pointer[void]
 {
     if access(arg as pointer[const_char], F_OK) = 0
-        return (1 as size_t) as pointer[void]
+        return 1 as pointer[void]
     null
 }
 
@@ -71,7 +71,7 @@ procedure file_write_worker(arg: pointer[void]) returns pointer[void]
         return null
     fwrite(data, 1, len, file)
     fclose file
-    (1 as size_t) as pointer[void]
+    1 as pointer[void]
 }
 
 define File

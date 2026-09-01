@@ -130,7 +130,7 @@ define Cluster
         let lp &p.lock
         repeat
         {
-            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = 0
                 break
         }
     }
@@ -146,7 +146,7 @@ define Cluster
         let lp &p.wlock
         repeat
         {
-            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = 0
                 break
         }
     }
@@ -154,7 +154,7 @@ define Cluster
     function try_wacquire(p: pointer[NodePeer]) returns bool
     {
         let lp &p.wlock
-        scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = (0 as u64)
+        scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = 0
     }
 
     procedure wrelease(p: pointer[NodePeer])
@@ -214,7 +214,7 @@ define Cluster
         var got: size_t 0
         while got < 24
         {
-            let r Io.read(fd, ((inb as size_t) + got) as pointer[void], (24 as size_t) - got)
+            let r Io.read(fd, ((inb as size_t) + got) as pointer[void], 24 - got)
             if r <= 0
             {
                 close(fd)
@@ -599,7 +599,7 @@ define Cluster
                 Cluster.teardown(p, NODE_DOWN_SUSPECT)
                 break
             }
-            let r scaly_eio_read(fd, ((hdr as size_t) + got) as pointer[void], (24 as size_t) - got)
+            let r scaly_eio_read(fd, ((hdr as size_t) + got) as pointer[void], 24 - got)
             if r = ((0 - 2) as i64)
                 Cluster.poll_in(fd, NODE_HEARTBEAT_MS as i32)
             else

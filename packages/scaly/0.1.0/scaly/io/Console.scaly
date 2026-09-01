@@ -20,7 +20,7 @@ define Console
         ; stage-emitted code write(…,"\n",1) emitted a backslash, not a
         ; newline. Writing a 10 (LF) byte directly works in every stage,
         ; mirroring cli.print_diagnostics#'s numeric `10 as char` compare.
-        var nl: u8 (10 as u8)
+        var nl: u8 10
         let nl_ptr &nl
         Io.write_all(1, nl_ptr as pointer[void], 1)
     }

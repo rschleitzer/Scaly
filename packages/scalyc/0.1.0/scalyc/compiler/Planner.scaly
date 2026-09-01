@@ -26282,11 +26282,11 @@ define Planner
                                     escape_fn_index,
                                     cpc,
                                     (fwd_param_index as size_t),
-                                    (1 as size_t),
-                                    (0 as size_t),
-                                    (0 as size_t),
-                                    (0 as size_t),
-                                    (0 as size_t)
+                                    1,
+                                    0,
+                                    0,
+                                    0,
+                                    0
                                 ))
                         }
                     }
