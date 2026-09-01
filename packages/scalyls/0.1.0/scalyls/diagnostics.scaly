@@ -216,7 +216,7 @@ define diagnostics
         ; The sibling notifications follow, one per line.
         if extra.get_length() > 0
         {
-            sb.append(0x0A as char)
+            sb.append("\n" as char)
             sb.append extra
         }
         sb.to_string()
@@ -404,7 +404,7 @@ define diagnostics
         out.append head
         if tail.get_length() > 0
         {
-            out.append(0x0A as char)
+            out.append("\n" as char)
             out.append tail
         }
         out.to_string()
@@ -441,7 +441,7 @@ define diagnostics
             ; head swallows the comparison (CLAUDE.md's dropped-chain class; the
             ; arity gate reports it as "got 0").
             let fc files.get fi
-            if fc = (0x0A as char)
+            if fc = ("\n" as char)
             {
                 if fi > fstart
                 {
@@ -505,7 +505,7 @@ define diagnostics
         }
 
         sb.append(diagnostics.notification(symbols.path_to_uri(file), body.to_string()))
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.to_string()
     }
 
@@ -585,7 +585,7 @@ define diagnostics
     {
         var sb StringBuilder()
         sb.append m.file
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
 
         var i: size_t 0
         while i < m.modules.length
@@ -683,7 +683,7 @@ define diagnostics
         while i < len
         {
             let c s.get i
-            if c = (0x0A as char)
+            if c = ("\n" as char)
                 return i
             set i: i + 1
         }

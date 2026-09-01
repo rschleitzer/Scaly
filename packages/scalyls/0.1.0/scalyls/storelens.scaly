@@ -248,9 +248,9 @@ define storelens
                         if is_ptr
                         {
                             let nm (*it.name)
-                            sb.append(0x0A as char)
+                            sb.append("\n" as char)
                             sb.append nm
-                            sb.append(0x0A as char)
+                            sb.append("\n" as char)
                         }
                     }
                 }
@@ -446,9 +446,9 @@ define storelens
             when v: Variable
             {
                 var probe StringBuilder()
-                probe.append(0x0A as char)
+                probe.append("\n" as char)
                 probe.append(v.name)
-                probe.append(0x0A as char)
+                probe.append("\n" as char)
                 let key probe.to_string()
                 if params.contains key
                     return String(v.name)
@@ -771,7 +771,7 @@ define storelens
         sb.append stored
         sb.append(0x09 as char)
         sb.append carrier
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
     }
 
     ; DEDUPE BY OFFSET, as a second pass over the finished blob — a generic body
@@ -802,7 +802,7 @@ define storelens
                 if storelens.has_line(kept, line) = false
                 {
                     out.append line
-                    out.append(0x0A as char)
+                    out.append("\n" as char)
                 }
             }
         }

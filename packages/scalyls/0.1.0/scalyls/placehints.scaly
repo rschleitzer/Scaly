@@ -725,7 +725,7 @@ define placehints
         sb.append(json.format_i64(offset as i64))
         sb.append(0x09 as char)
         sb.append note
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
     }
 
     ; ★DEDUPE BY OFFSET, as a SECOND PASS over the finished blob.
@@ -785,7 +785,7 @@ define placehints
                         out.append(blob.get(i) as char)
                         set i: i + 1
                     }
-                    out.append(0x0A as char)
+                    out.append("\n" as char)
                 }
             }
         }

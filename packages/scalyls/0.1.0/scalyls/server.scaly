@@ -1185,7 +1185,7 @@ define server
             ; Bind the byte first — `payload.get i = X` is a parenless call
             ; whose head swallows the comparison.
             let c payload.get i
-            if c = (0x0A as char)
+            if c = ("\n" as char)
             {
                 if i > start
                 {

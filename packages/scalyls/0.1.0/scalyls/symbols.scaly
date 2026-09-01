@@ -1561,7 +1561,7 @@ define symbols
                         if symbols.list_contains(sb.to_string(), word) = false
                         {
                             symbols.append_fragment(sb, word)
-                            sb.append(0x0A as char)
+                            sb.append("\n" as char)
                             set *count: *count + 1
                         }
         }
@@ -2861,7 +2861,7 @@ define symbols
                 if ne > ns
                 {
                     symbols.append_fragment(&sb, symbols.substring(source, ns, ne))
-                    sb.append(0x0A as char)
+                    sb.append("\n" as char)
                 }
                 set i: ne
             }
@@ -2877,7 +2877,7 @@ define symbols
         var sb StringBuilder()
         symbols.append_fragment(&sb, list)
         symbols.append_fragment(&sb, word)
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.to_string()
     }
 
@@ -2903,7 +2903,7 @@ define symbols
             if item <> word
             {
                 symbols.append_fragment(&sb, item)
-                sb.append(0x0A as char)
+                sb.append("\n" as char)
             }
             set i: e + 1
         }
@@ -4424,9 +4424,9 @@ define symbols
 
         var vb StringBuilder()
         vb.append(symbols.fence())
-        vb.append(0x0A as char)
+        vb.append("\n" as char)
         symbols.append_fragment(&vb, doc)
-        vb.append(0x0A as char)
+        vb.append("\n" as char)
         vb.append(symbols.fence())
 
         var sb StringBuilder()
@@ -6566,12 +6566,12 @@ define symbols
 
         var sb StringBuilder()
         sb.append text
-        sb.append(0x0A as char)
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
+        sb.append("\n" as char)
         sb.append(symbols.fence())
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append doc
-        sb.append(0x0A as char)
+        sb.append("\n" as char)
         sb.append(symbols.fence())
         sb.to_string()
     }
@@ -6626,7 +6626,7 @@ define symbols
         while i > 0
         {
             let c source.get(i - 1)
-            if c = (0x0A as char)
+            if c = ("\n" as char)
                 return i
             set i: i - 1
         }
@@ -6687,7 +6687,7 @@ define symbols
             while le < limit
             {
                 let c source.get le
-                if c = (0x0A as char)
+                if c = ("\n" as char)
                     break
                 set le: le + 1
             }
@@ -6703,7 +6703,7 @@ define symbols
             }
 
             if first = false
-                sb.append(0x0A as char)
+                sb.append("\n" as char)
             while i < le
             {
                 sb.append(source.get(i) as char)
