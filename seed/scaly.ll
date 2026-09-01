@@ -24584,27 +24584,27 @@ entry:
 
 define linkonce_odr ptr @_ZN9Scheduler6createER4Page(ptr %0) {
 entry:
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z9Scheduler, ptr null, i32 1) to i64), i64 8)
-  %host = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 0
-  store ptr %0, ptr %host, align 8
-  %head = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 1
-  store ptr null, ptr %head, align 8
-  %tail = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 2
-  store ptr null, ptr %tail, align 8
-  %blocked = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 3
-  store i64 0, ptr %blocked, align 8
-  %eio = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 4
-  store i32 -1, ptr %eio, align 4
-  %io_waiting = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 5
-  store i64 0, ptr %io_waiting, align 8
-  %wake = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 6
-  store i32 -1, ptr %wake, align 4
-  %inject = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 7
-  store i64 0, ptr %inject, align 8
-  %chan_parked = getelementptr inbounds nuw %_Z9Scheduler, ptr %call, i32 0, i32 8
-  store i64 0, ptr %chan_parked, align 8
-  store ptr %call, ptr @current_scheduler, align 8
-  ret ptr %call
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z9Scheduler, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9Scheduler }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 0
+  store ptr %0, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 2
+  store ptr null, ptr %tuple.field2, align 1
+  %tuple.field3 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 3
+  store i64 0, ptr %tuple.field3, align 1
+  %tuple.field4 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 4
+  store i32 -1, ptr %tuple.field4, align 1
+  %tuple.field5 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 5
+  store i64 0, ptr %tuple.field5, align 1
+  %tuple.field6 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 6
+  store i32 -1, ptr %tuple.field6, align 1
+  %tuple.field7 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 7
+  store i64 0, ptr %tuple.field7, align 1
+  %tuple.field8 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 8
+  store i64 0, ptr %tuple.field8, align 1
+  store ptr %tuple.region, ptr @current_scheduler, align 8
+  ret ptr %tuple.region
 }
 
 define linkonce_odr void @_ZN9Scheduler7enqueueER9SchedTask(ptr %0) {
@@ -24704,26 +24704,26 @@ unwrap.trap:                                      ; preds = %entry
 unwrap.ok:                                        ; preds = %entry
   %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
   %host = extractvalue %_Z9Scheduler %load.struct, 0
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %host, i64 ptrtoint (ptr getelementptr (%_Z9SchedTask, ptr null, i32 1) to i64), i64 8)
-  %entry1 = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 0
-  store ptr %0, ptr %entry1, align 8
-  %call2 = call ptr @_ZN5Fiber12create_sizedER4PagePvm(ptr %host, ptr @_Z15scheduler_entryPv, i64 %2)
-  %fiber = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 1
-  store ptr %call2, ptr %fiber, align 8
-  %next = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 2
-  store ptr null, ptr %next, align 8
-  %waiter = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 3
-  store ptr null, ptr %waiter, align 8
-  %done = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 4
-  store i1 false, ptr %done, align 1
-  %disposed = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 5
-  store i1 false, ptr %disposed, align 1
-  %arg = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 6
-  store ptr %1, ptr %arg, align 8
-  %home = getelementptr inbounds nuw %_Z9SchedTask, ptr %call, i32 0, i32 7
-  store ptr %global.load, ptr %home, align 8
-  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %call)
-  ret ptr %call
+  %call = call ptr @_ZN5Fiber12create_sizedER4PagePvm(ptr %host, ptr @_Z15scheduler_entryPv, i64 %2)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %host, i64 ptrtoint (ptr getelementptr (%_Z9SchedTask, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9SchedTask }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 0
+  store ptr %0, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 1
+  store ptr %call, ptr %tuple.field1, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 2
+  store ptr null, ptr %tuple.field2, align 1
+  %tuple.field3 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 3
+  store ptr null, ptr %tuple.field3, align 1
+  %tuple.field4 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 4
+  store i1 false, ptr %tuple.field4, align 1
+  %tuple.field5 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 5
+  store i1 false, ptr %tuple.field5, align 1
+  %tuple.field6 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 6
+  store ptr %1, ptr %tuple.field6, align 1
+  %tuple.field7 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tuple.region, i32 0, i32 7
+  store ptr %global.load, ptr %tuple.field7, align 1
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %tuple.region)
+  ret ptr %tuple.region
 }
 
 define linkonce_odr ptr @_ZN9Scheduler9spawn_argEPvPv(ptr %0, ptr %1) {
@@ -26003,7 +26003,7 @@ if.end:                                           ; preds = %if.then, %entry
 
 define linkonce_odr ptr @_ZN2Io7offloadEPvPv(ptr %0, ptr %1) {
 entry:
-  %one32 = alloca ptr, align 8
+  %one34 = alloca ptr, align 8
   %one = alloca [1 x i8], align 1
   %grow = alloca i1, align 1
   %global.load = load ptr, ptr @current_task, align 8
@@ -26021,15 +26021,6 @@ if.end:                                           ; preds = %entry
   %add = add i64 %global.load2, 1
   store i64 %add, ptr @io_offloads, align 8
   %call3 = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.93)
-  %call4 = call ptr @_ZN4Page8allocateEmm(ptr %call3, i64 ptrtoint (ptr getelementptr (%_Z6IoWork, ptr null, i32 1) to i64), i64 8)
-  %next = getelementptr inbounds nuw %_Z6IoWork, ptr %call4, i32 0, i32 0
-  store ptr null, ptr %next, align 8
-  %fn = getelementptr inbounds nuw %_Z6IoWork, ptr %call4, i32 0, i32 1
-  store ptr %0, ptr %fn, align 8
-  %arg = getelementptr inbounds nuw %_Z6IoWork, ptr %call4, i32 0, i32 2
-  store ptr %1, ptr %arg, align 8
-  %result = getelementptr inbounds nuw %_Z6IoWork, ptr %call4, i32 0, i32 3
-  store ptr null, ptr %result, align 8
   %unwrap.isnull = icmp eq ptr %global.load, null
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
@@ -26041,112 +26032,121 @@ unwrap.trap:                                      ; preds = %if.end
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end
-  %task = getelementptr inbounds nuw %_Z6IoWork, ptr %call4, i32 0, i32 4
-  store ptr %global.load, ptr %task, align 8
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call3, i64 ptrtoint (ptr getelementptr (%_Z6IoWork, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6IoWork }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z6IoWork, ptr %tuple.region, i32 0, i32 0
+  store ptr null, ptr %tuple.field, align 1
+  %tuple.field4 = getelementptr inbounds nuw %_Z6IoWork, ptr %tuple.region, i32 0, i32 1
+  store ptr %0, ptr %tuple.field4, align 1
+  %tuple.field5 = getelementptr inbounds nuw %_Z6IoWork, ptr %tuple.region, i32 0, i32 2
+  store ptr %1, ptr %tuple.field5, align 1
+  %tuple.field6 = getelementptr inbounds nuw %_Z6IoWork, ptr %tuple.region, i32 0, i32 3
+  store ptr null, ptr %tuple.field6, align 1
+  %tuple.field7 = getelementptr inbounds nuw %_Z6IoWork, ptr %tuple.region, i32 0, i32 4
+  store ptr %global.load, ptr %tuple.field7, align 1
   call void @_ZN6IoPool7acquireEP6IoPool(ptr %call1)
   %load.struct = load %_Z6IoPool, ptr %call1, align 8
   %tail = extractvalue %_Z6IoPool %load.struct, 2
-  %eq5 = icmp eq ptr %tail, null
-  br i1 %eq5, label %if.then6, label %if.else
+  %eq8 = icmp eq ptr %tail, null
+  br i1 %eq8, label %if.then9, label %if.else
 
-if.then6:                                         ; preds = %unwrap.ok
+if.then9:                                         ; preds = %unwrap.ok
   %head = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 1
-  store ptr %call4, ptr %head, align 8
-  %tail8 = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 2
-  store ptr %call4, ptr %tail8, align 8
-  br label %if.end7
+  store ptr %tuple.region, ptr %head, align 8
+  %tail11 = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 2
+  store ptr %tuple.region, ptr %tail11, align 8
+  br label %if.end10
 
 if.else:                                          ; preds = %unwrap.ok
-  %load.struct9 = load %_Z6IoPool, ptr %call1, align 8
-  %tail10 = extractvalue %_Z6IoPool %load.struct9, 2
-  %next11 = getelementptr inbounds nuw %_Z6IoWork, ptr %tail10, i32 0, i32 0
-  store ptr %call4, ptr %next11, align 8
-  %tail12 = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 2
-  store ptr %call4, ptr %tail12, align 8
-  br label %if.end7
+  %load.struct12 = load %_Z6IoPool, ptr %call1, align 8
+  %tail13 = extractvalue %_Z6IoPool %load.struct12, 2
+  %next = getelementptr inbounds nuw %_Z6IoWork, ptr %tail13, i32 0, i32 0
+  store ptr %tuple.region, ptr %next, align 8
+  %tail14 = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 2
+  store ptr %tuple.region, ptr %tail14, align 8
+  br label %if.end10
 
-if.end7:                                          ; preds = %if.else, %if.then6
+if.end10:                                         ; preds = %if.else, %if.then9
   store i1 false, ptr %grow, align 1
-  %load.struct13 = load %_Z6IoPool, ptr %call1, align 8
-  %idle = extractvalue %_Z6IoPool %load.struct13, 6
-  %eq14 = icmp eq i64 %idle, 0
-  br i1 %eq14, label %if.then15, label %if.end16
+  %load.struct15 = load %_Z6IoPool, ptr %call1, align 8
+  %idle = extractvalue %_Z6IoPool %load.struct15, 6
+  %eq16 = icmp eq i64 %idle, 0
+  br i1 %eq16, label %if.then17, label %if.end18
 
-if.then15:                                        ; preds = %if.end7
-  %load.struct17 = load %_Z6IoPool, ptr %call1, align 8
-  %workers = extractvalue %_Z6IoPool %load.struct17, 5
+if.then17:                                        ; preds = %if.end10
+  %load.struct19 = load %_Z6IoPool, ptr %call1, align 8
+  %workers = extractvalue %_Z6IoPool %load.struct19, 5
   %lt = icmp slt i64 %workers, 4
-  br i1 %lt, label %if.then18, label %if.end19
+  br i1 %lt, label %if.then20, label %if.end21
 
-if.end16:                                         ; preds = %if.end19, %if.end7
+if.end18:                                         ; preds = %if.end21, %if.end10
   call void @_ZN6IoPool7releaseEP6IoPool(ptr %call1)
-  %grow24 = load i1, ptr %grow, align 1
-  br i1 %grow24, label %if.then25, label %if.end26
+  %grow26 = load i1, ptr %grow, align 1
+  br i1 %grow26, label %if.then27, label %if.end28
 
-if.then18:                                        ; preds = %if.then15
-  %load.struct20 = load %_Z6IoPool, ptr %call1, align 8
-  %workers21 = extractvalue %_Z6IoPool %load.struct20, 5
-  %add22 = add i64 %workers21, 1
-  %workers23 = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 5
-  store i64 %add22, ptr %workers23, align 8
+if.then20:                                        ; preds = %if.then17
+  %load.struct22 = load %_Z6IoPool, ptr %call1, align 8
+  %workers23 = extractvalue %_Z6IoPool %load.struct22, 5
+  %add24 = add i64 %workers23, 1
+  %workers25 = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 5
+  store i64 %add24, ptr %workers25, align 8
   store i1 true, ptr %grow, align 1
-  br label %if.end19
+  br label %if.end21
 
-if.end19:                                         ; preds = %if.then18, %if.then15
-  br label %if.end16
+if.end21:                                         ; preds = %if.then20, %if.then17
+  br label %if.end18
 
-if.then25:                                        ; preds = %if.end16
-  %call27 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z9io_workerPv, ptr %call1)
-  %load.struct28 = load %_Z6IoPool, ptr %call1, align 8
-  %workers29 = extractvalue %_Z6IoPool %load.struct28, 5
-  %sub = sub i64 %workers29, 1
+if.then27:                                        ; preds = %if.end18
+  %call29 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z9io_workerPv, ptr %call1)
   %load.struct30 = load %_Z6IoPool, ptr %call1, align 8
-  %handles = extractvalue %_Z6IoPool %load.struct30, 7
+  %workers31 = extractvalue %_Z6IoPool %load.struct30, 5
+  %sub = sub i64 %workers31, 1
+  %load.struct32 = load %_Z6IoPool, ptr %call1, align 8
+  %handles = extractvalue %_Z6IoPool %load.struct32, 7
   %as.ptrtoint = ptrtoint ptr %handles to i64
   %mul = mul i64 %sub, 8
-  %add31 = add i64 %as.ptrtoint, %mul
-  %as.inttoptr = inttoptr i64 %add31 to ptr
-  store i64 %call27, ptr %as.inttoptr, align 8
-  br label %if.end26
+  %add33 = add i64 %as.ptrtoint, %mul
+  %as.inttoptr = inttoptr i64 %add33 to ptr
+  store i64 %call29, ptr %as.inttoptr, align 8
+  br label %if.end28
 
-if.end26:                                         ; preds = %if.then25, %if.end16
+if.end28:                                         ; preds = %if.then27, %if.end18
   %arr.ptr = getelementptr inbounds [1 x i8], ptr %one, i64 0, i64 0
-  store ptr %arr.ptr, ptr %one32, align 8
-  %one33 = load ptr, ptr %one32, align 8
-  store i8 1, ptr %one33, align 1
+  store ptr %arr.ptr, ptr %one34, align 8
+  %one35 = load ptr, ptr %one34, align 8
+  store i8 1, ptr %one35, align 1
   %field.inplace = getelementptr inbounds nuw %_Z6IoPool, ptr %call1, i32 0, i32 4
   %field.val = load i32, ptr %field.inplace, align 4
-  %one34 = load ptr, ptr %one32, align 8
-  %call35 = call i64 @scaly_eio_write(i32 %field.val, ptr %one34, i64 1)
-  %global.load36 = load ptr, ptr @current_scheduler, align 8
-  %unwrap.isnull37 = icmp eq ptr %global.load36, null
-  br i1 %unwrap.isnull37, label %unwrap.trap38, label %unwrap.ok39
+  %one36 = load ptr, ptr %one34, align 8
+  %call37 = call i64 @scaly_eio_write(i32 %field.val, ptr %one36, i64 1)
+  %global.load38 = load ptr, ptr @current_scheduler, align 8
+  %unwrap.isnull39 = icmp eq ptr %global.load38, null
+  br i1 %unwrap.isnull39, label %unwrap.trap40, label %unwrap.ok41
 
-unwrap.trap38:                                    ; preds = %if.end26
+unwrap.trap40:                                    ; preds = %if.end28
   call void @_Z11scaly_eputsP10const_char(ptr @.unwrap.msg.96)
   call void @_Z11scaly_eputsP10const_char(ptr @.unwrap.at.97)
   call void @_Z12scaly_eputnlv()
   call void @exit(i32 21)
   unreachable
 
-unwrap.ok39:                                      ; preds = %if.end26
-  %load.struct40 = load %_Z9Scheduler, ptr %global.load36, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct40, 3
-  %add41 = add i64 %blocked, 1
-  %blocked42 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load36, i32 0, i32 3
-  store i64 %add41, ptr %blocked42, align 8
-  %load.struct43 = load %_Z9Scheduler, ptr %global.load36, align 8
-  %chan_parked = extractvalue %_Z9Scheduler %load.struct43, 8
-  %add44 = add i64 %chan_parked, 1
-  %chan_parked45 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load36, i32 0, i32 8
-  store i64 %add44, ptr %chan_parked45, align 8
+unwrap.ok41:                                      ; preds = %if.end28
+  %load.struct42 = load %_Z9Scheduler, ptr %global.load38, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct42, 3
+  %add43 = add i64 %blocked, 1
+  %blocked44 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load38, i32 0, i32 3
+  store i64 %add43, ptr %blocked44, align 8
+  %load.struct45 = load %_Z9Scheduler, ptr %global.load38, align 8
+  %chan_parked = extractvalue %_Z9Scheduler %load.struct45, 8
+  %add46 = add i64 %chan_parked, 1
+  %chan_parked47 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load38, i32 0, i32 8
+  store i64 %add46, ptr %chan_parked47, align 8
   call void @_ZN5Fiber5yieldEv()
-  %load.struct46 = load %_Z6IoWork, ptr %call4, align 8
-  %result47 = extractvalue %_Z6IoWork %load.struct46, 3
-  %call48 = call ptr @_ZN4Page3getEPv(ptr %call4)
-  call void @_ZN4Page21deallocate_extensionsEv(ptr %call48)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call48, ptr @.str.98)
-  ret ptr %result47
+  %load.struct48 = load %_Z6IoWork, ptr %tuple.region, align 8
+  %result = extractvalue %_Z6IoWork %load.struct48, 3
+  %call49 = call ptr @_ZN4Page3getEPv(ptr %tuple.region)
+  call void @_ZN4Page21deallocate_extensionsEv(ptr %call49)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call49, ptr @.str.98)
+  ret ptr %result
 }
 
 define linkonce_odr i64 @_ZN2Io17pool_worker_countEv() {
@@ -26209,32 +26209,32 @@ entry:
 define linkonce_odr ptr @_ZN7Channel14create_boundedE3i64(i64 %0) {
 entry:
   %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.100)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z7Channel, ptr null, i32 1) to i64), i64 8)
-  %lock = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 0
-  store i64 0, ptr %lock, align 8
-  %senders = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 1
-  store i64 1, ptr %senders, align 8
-  %closed = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 2
-  store i1 false, ptr %closed, align 1
-  %head = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 3
-  store ptr null, ptr %head, align 8
-  %tail = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 4
-  store ptr null, ptr %tail, align 8
-  %recv_head = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 5
-  store ptr null, ptr %recv_head, align 8
-  %recv_tail = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 6
-  store ptr null, ptr %recv_tail, align 8
-  %recv_sched = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 7
-  store ptr null, ptr %recv_sched, align 8
-  %capacity = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 8
-  store i64 %0, ptr %capacity, align 8
-  %count = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 9
-  store i64 0, ptr %count, align 8
-  %send_head = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 10
-  store ptr null, ptr %send_head, align 8
-  %send_tail = getelementptr inbounds nuw %_Z7Channel, ptr %call1, i32 0, i32 11
-  store ptr null, ptr %send_tail, align 8
-  ret ptr %call1
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z7Channel, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Channel }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 1
+  store i64 1, ptr %tuple.field1, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 2
+  store i1 false, ptr %tuple.field2, align 1
+  %tuple.field3 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 3
+  store ptr null, ptr %tuple.field3, align 1
+  %tuple.field4 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 4
+  store ptr null, ptr %tuple.field4, align 1
+  %tuple.field5 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 5
+  store ptr null, ptr %tuple.field5, align 1
+  %tuple.field6 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 6
+  store ptr null, ptr %tuple.field6, align 1
+  %tuple.field7 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 7
+  store ptr null, ptr %tuple.field7, align 1
+  %tuple.field8 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 8
+  store i64 %0, ptr %tuple.field8, align 1
+  %tuple.field9 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 9
+  store i64 0, ptr %tuple.field9, align 1
+  %tuple.field10 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 10
+  store ptr null, ptr %tuple.field10, align 1
+  %tuple.field11 = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 11
+  store ptr null, ptr %tuple.field11, align 1
+  ret ptr %tuple.region
 }
 
 define linkonce_odr ptr @_ZN7Channel6createEv() {
@@ -26372,11 +26372,11 @@ entry:
   %ran = alloca i1, align 1
   %room = alloca i1, align 1
   %call = call ptr @_ZN4Page3getEPv(ptr %1)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z11ChannelNode, ptr null, i32 1) to i64), i64 8)
-  %next = getelementptr inbounds nuw %_Z11ChannelNode, ptr %call1, i32 0, i32 0
-  store ptr null, ptr %next, align 8
-  %msg = getelementptr inbounds nuw %_Z11ChannelNode, ptr %call1, i32 0, i32 1
-  store ptr %1, ptr %msg, align 8
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z11ChannelNode, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11ChannelNode }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z11ChannelNode, ptr %tuple.region, i32 0, i32 0
+  store ptr null, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z11ChannelNode, ptr %tuple.region, i32 0, i32 1
+  store ptr %1, ptr %tuple.field1, align 1
   %global.load = load ptr, ptr @current_task, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
@@ -26397,7 +26397,7 @@ if.then2:                                         ; preds = %if.then
 if.end3:                                          ; preds = %if.then2, %if.then
   br label %if.end
 
-repeat.body:                                      ; preds = %if.end47, %if.end
+repeat.body:                                      ; preds = %if.end46, %if.end
   call void @_ZN7Channel7acquireEP7Channel(ptr %0)
   %load.struct5 = load %_Z7Channel, ptr %0, align 8
   %closed = extractvalue %_Z7Channel %load.struct5, 2
@@ -26444,139 +26444,139 @@ if.then19:                                        ; preds = %if.end12
   br i1 %eq, label %if.then22, label %if.else
 
 if.end20:                                         ; preds = %if.end12
-  %eq44 = icmp eq ptr %global.load, null
-  br i1 %eq44, label %if.then45, label %if.else46
+  %eq43 = icmp eq ptr %global.load, null
+  br i1 %eq43, label %if.then44, label %if.else45
 
 if.then22:                                        ; preds = %if.then19
   %head = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 3
-  store ptr %call1, ptr %head, align 8
+  store ptr %tuple.region, ptr %head, align 8
   %tail24 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 4
-  store ptr %call1, ptr %tail24, align 8
+  store ptr %tuple.region, ptr %tail24, align 8
   br label %if.end23
 
 if.else:                                          ; preds = %if.then19
   %load.struct25 = load %_Z7Channel, ptr %0, align 8
   %tail26 = extractvalue %_Z7Channel %load.struct25, 4
-  %next27 = getelementptr inbounds nuw %_Z11ChannelNode, ptr %tail26, i32 0, i32 0
-  store ptr %call1, ptr %next27, align 8
-  %tail28 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 4
-  store ptr %call1, ptr %tail28, align 8
+  %next = getelementptr inbounds nuw %_Z11ChannelNode, ptr %tail26, i32 0, i32 0
+  store ptr %tuple.region, ptr %next, align 8
+  %tail27 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 4
+  store ptr %tuple.region, ptr %tail27, align 8
   br label %if.end23
 
 if.end23:                                         ; preds = %if.else, %if.then22
-  %load.struct29 = load %_Z7Channel, ptr %0, align 8
-  %count30 = extractvalue %_Z7Channel %load.struct29, 9
-  %add = add i64 %count30, 1
-  %count31 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 9
-  store i64 %add, ptr %count31, align 8
+  %load.struct28 = load %_Z7Channel, ptr %0, align 8
+  %count29 = extractvalue %_Z7Channel %load.struct28, 9
+  %add = add i64 %count29, 1
+  %count30 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 9
+  store i64 %add, ptr %count30, align 8
   call void @_Z14deadlock_eventv()
-  %call32 = call ptr @_ZN7Channel12pop_receiverER7Channel(ptr %0)
-  %load.struct33 = load %_Z7Channel, ptr %0, align 8
-  %recv_sched = extractvalue %_Z7Channel %load.struct33, 7
+  %call31 = call ptr @_ZN7Channel12pop_receiverER7Channel(ptr %0)
+  %load.struct32 = load %_Z7Channel, ptr %0, align 8
+  %recv_sched = extractvalue %_Z7Channel %load.struct32, 7
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %ne34 = icmp ne ptr %call32, null
-  br i1 %ne34, label %if.then35, label %if.end36
+  %ne33 = icmp ne ptr %call31, null
+  br i1 %ne33, label %if.then34, label %if.end35
 
-if.then35:                                        ; preds = %if.end23
-  call void @_ZN7Channel5routeER9SchedTask(ptr %call32)
+if.then34:                                        ; preds = %if.end23
+  call void @_ZN7Channel5routeER9SchedTask(ptr %call31)
   ret void
 
-if.end36:                                         ; preds = %if.end23
-  %ne37 = icmp ne ptr %recv_sched, null
-  br i1 %ne37, label %if.then38, label %if.end39
+if.end35:                                         ; preds = %if.end23
+  %ne36 = icmp ne ptr %recv_sched, null
+  br i1 %ne36, label %if.then37, label %if.end38
 
-if.then38:                                        ; preds = %if.end36
-  %global.load40 = load ptr, ptr @current_scheduler, align 8
-  %ne41 = icmp ne ptr %recv_sched, %global.load40
-  br i1 %ne41, label %if.then42, label %if.end43
+if.then37:                                        ; preds = %if.end35
+  %global.load39 = load ptr, ptr @current_scheduler, align 8
+  %ne40 = icmp ne ptr %recv_sched, %global.load39
+  br i1 %ne40, label %if.then41, label %if.end42
 
-if.end39:                                         ; preds = %if.end43, %if.end36
+if.end38:                                         ; preds = %if.end42, %if.end35
   ret void
 
-if.then42:                                        ; preds = %if.then38
+if.then41:                                        ; preds = %if.then37
   call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %recv_sched)
-  br label %if.end43
+  br label %if.end42
 
-if.end43:                                         ; preds = %if.then42, %if.then38
-  br label %if.end39
+if.end42:                                         ; preds = %if.then41, %if.then37
+  br label %if.end38
 
-if.then45:                                        ; preds = %if.end20
+if.then44:                                        ; preds = %if.end20
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   store i1 false, ptr %ran, align 1
-  %global.load48 = load ptr, ptr @current_scheduler, align 8
-  %ne49 = icmp ne ptr %global.load48, null
-  br i1 %ne49, label %if.then50, label %if.end51
+  %global.load47 = load ptr, ptr @current_scheduler, align 8
+  %ne48 = icmp ne ptr %global.load47, null
+  br i1 %ne48, label %if.then49, label %if.end50
 
-if.else46:                                        ; preds = %if.end20
-  %next57 = getelementptr inbounds nuw %_Z9SchedTask, ptr %global.load, i32 0, i32 2
-  store ptr null, ptr %next57, align 8
-  %load.struct58 = load %_Z7Channel, ptr %0, align 8
-  %send_tail = extractvalue %_Z7Channel %load.struct58, 11
-  %eq59 = icmp eq ptr %send_tail, null
-  br i1 %eq59, label %if.then60, label %if.else61
+if.else45:                                        ; preds = %if.end20
+  %next56 = getelementptr inbounds nuw %_Z9SchedTask, ptr %global.load, i32 0, i32 2
+  store ptr null, ptr %next56, align 8
+  %load.struct57 = load %_Z7Channel, ptr %0, align 8
+  %send_tail = extractvalue %_Z7Channel %load.struct57, 11
+  %eq58 = icmp eq ptr %send_tail, null
+  br i1 %eq58, label %if.then59, label %if.else60
 
-if.end47:                                         ; preds = %unwrap.ok, %if.end55
+if.end46:                                         ; preds = %unwrap.ok, %if.end54
   br label %repeat.body
 
-if.then50:                                        ; preds = %if.then45
-  %call52 = call i1 @_ZN9Scheduler4stepEv()
-  store i1 %call52, ptr %ran, align 1
-  br label %if.end51
+if.then49:                                        ; preds = %if.then44
+  %call51 = call i1 @_ZN9Scheduler4stepEv()
+  store i1 %call51, ptr %ran, align 1
+  br label %if.end50
 
-if.end51:                                         ; preds = %if.then50, %if.then45
-  %ran53 = load i1, ptr %ran, align 1
-  %not = xor i1 %ran53, true
-  br i1 %not, label %if.then54, label %if.end55
+if.end50:                                         ; preds = %if.then49, %if.then44
+  %ran52 = load i1, ptr %ran, align 1
+  %not = xor i1 %ran52, true
+  br i1 %not, label %if.then53, label %if.end54
 
-if.then54:                                        ; preds = %if.end51
-  %call56 = call i32 @poll(ptr null, i64 0, i32 1)
-  br label %if.end55
+if.then53:                                        ; preds = %if.end50
+  %call55 = call i32 @poll(ptr null, i64 0, i32 1)
+  br label %if.end54
 
-if.end55:                                         ; preds = %if.then54, %if.end51
-  br label %if.end47
+if.end54:                                         ; preds = %if.then53, %if.end50
+  br label %if.end46
 
-if.then60:                                        ; preds = %if.else46
+if.then59:                                        ; preds = %if.else45
   %send_head = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 10
   store ptr %global.load, ptr %send_head, align 8
-  %send_tail63 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
-  store ptr %global.load, ptr %send_tail63, align 8
-  br label %if.end62
+  %send_tail62 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr %global.load, ptr %send_tail62, align 8
+  br label %if.end61
 
-if.else61:                                        ; preds = %if.else46
-  %load.struct64 = load %_Z7Channel, ptr %0, align 8
-  %send_tail65 = extractvalue %_Z7Channel %load.struct64, 11
-  %next66 = getelementptr inbounds nuw %_Z9SchedTask, ptr %send_tail65, i32 0, i32 2
-  store ptr %global.load, ptr %next66, align 8
-  %send_tail67 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
-  store ptr %global.load, ptr %send_tail67, align 8
-  br label %if.end62
+if.else60:                                        ; preds = %if.else45
+  %load.struct63 = load %_Z7Channel, ptr %0, align 8
+  %send_tail64 = extractvalue %_Z7Channel %load.struct63, 11
+  %next65 = getelementptr inbounds nuw %_Z9SchedTask, ptr %send_tail64, i32 0, i32 2
+  store ptr %global.load, ptr %next65, align 8
+  %send_tail66 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr %global.load, ptr %send_tail66, align 8
+  br label %if.end61
 
-if.end62:                                         ; preds = %if.else61, %if.then60
+if.end61:                                         ; preds = %if.else60, %if.then59
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %global.load68 = load ptr, ptr @current_scheduler, align 8
-  %unwrap.isnull = icmp eq ptr %global.load68, null
+  %global.load67 = load ptr, ptr @current_scheduler, align 8
+  %unwrap.isnull = icmp eq ptr %global.load67, null
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
-unwrap.trap:                                      ; preds = %if.end62
+unwrap.trap:                                      ; preds = %if.end61
   call void @_Z11scaly_eputsP10const_char(ptr @.unwrap.msg.104)
   call void @_Z11scaly_eputsP10const_char(ptr @.unwrap.at.105)
   call void @_Z12scaly_eputnlv()
   call void @exit(i32 21)
   unreachable
 
-unwrap.ok:                                        ; preds = %if.end62
-  %load.struct69 = load %_Z9Scheduler, ptr %global.load68, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct69, 3
-  %add70 = add i64 %blocked, 1
-  %blocked71 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load68, i32 0, i32 3
-  store i64 %add70, ptr %blocked71, align 8
-  %load.struct72 = load %_Z9Scheduler, ptr %global.load68, align 8
-  %chan_parked = extractvalue %_Z9Scheduler %load.struct72, 8
-  %add73 = add i64 %chan_parked, 1
-  %chan_parked74 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load68, i32 0, i32 8
-  store i64 %add73, ptr %chan_parked74, align 8
+unwrap.ok:                                        ; preds = %if.end61
+  %load.struct68 = load %_Z9Scheduler, ptr %global.load67, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct68, 3
+  %add69 = add i64 %blocked, 1
+  %blocked70 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load67, i32 0, i32 3
+  store i64 %add69, ptr %blocked70, align 8
+  %load.struct71 = load %_Z9Scheduler, ptr %global.load67, align 8
+  %chan_parked = extractvalue %_Z9Scheduler %load.struct71, 8
+  %add72 = add i64 %chan_parked, 1
+  %chan_parked73 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load67, i32 0, i32 8
+  store i64 %add72, ptr %chan_parked73, align 8
   call void @_ZN5Fiber5yieldEv()
-  br label %if.end47
+  br label %if.end46
 }
 
 define linkonce_odr void @_ZN7Channel12close_senderEP7Channel(ptr %0) {
@@ -27325,30 +27325,30 @@ while.exit29:                                     ; preds = %while.cond27
 
 define linkonce_odr void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %one17 = alloca ptr, align 8
+  %one18 = alloca ptr, align 8
   %one = alloca [1 x i8], align 1
   %addr.gep = getelementptr inbounds nuw %_Z8TaskPool, ptr %0, i32 0, i32 4
   %4 = atomicrmw add ptr %addr.gep, i64 1 seq_cst, align 8
   %addr.gep1 = getelementptr inbounds nuw %_Z9TaskGroup, ptr %3, i32 0, i32 0
   %5 = atomicrmw add ptr %addr.gep1, i64 1 seq_cst, align 8
   %call = call ptr @_ZN4Page3getEPv(ptr %3)
-  %call2 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8TaskItem, ptr null, i32 1) to i64), i64 8)
-  %next = getelementptr inbounds nuw %_Z8TaskItem, ptr %call2, i32 0, i32 0
-  store ptr null, ptr %next, align 8
-  %fn = getelementptr inbounds nuw %_Z8TaskItem, ptr %call2, i32 0, i32 1
-  store ptr %1, ptr %fn, align 8
-  %arg = getelementptr inbounds nuw %_Z8TaskItem, ptr %call2, i32 0, i32 2
-  store ptr %2, ptr %arg, align 8
-  %group = getelementptr inbounds nuw %_Z8TaskItem, ptr %call2, i32 0, i32 3
-  store ptr %3, ptr %group, align 8
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8TaskItem, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8TaskItem }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z8TaskItem, ptr %tuple.region, i32 0, i32 0
+  store ptr null, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z8TaskItem, ptr %tuple.region, i32 0, i32 1
+  store ptr %1, ptr %tuple.field2, align 1
+  %tuple.field3 = getelementptr inbounds nuw %_Z8TaskItem, ptr %tuple.region, i32 0, i32 2
+  store ptr %2, ptr %tuple.field3, align 1
+  %tuple.field4 = getelementptr inbounds nuw %_Z8TaskItem, ptr %tuple.region, i32 0, i32 3
+  store ptr %3, ptr %tuple.field4, align 1
   %load.struct = load %_Z8TaskPool, ptr %0, align 8
   %next_deque = extractvalue %_Z8TaskPool %load.struct, 2
   %idx = alloca i64, align 8
   store i64 %next_deque, ptr %idx, align 1
-  %idx3 = load i64, ptr %idx, align 8
-  %load.struct4 = load %_Z8TaskPool, ptr %0, align 8
-  %nworkers = extractvalue %_Z8TaskPool %load.struct4, 1
-  %ge = icmp sge i64 %idx3, %nworkers
+  %idx5 = load i64, ptr %idx, align 8
+  %load.struct6 = load %_Z8TaskPool, ptr %0, align 8
+  %nworkers = extractvalue %_Z8TaskPool %load.struct6, 1
+  %ge = icmp sge i64 %idx5, %nworkers
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -27356,44 +27356,44 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %idx5 = load i64, ptr %idx, align 8
-  %add = add i64 %idx5, 1
-  %next_deque6 = getelementptr inbounds nuw %_Z8TaskPool, ptr %0, i32 0, i32 2
-  store i64 %add, ptr %next_deque6, align 8
   %idx7 = load i64, ptr %idx, align 8
-  %call8 = call ptr @_ZN8TaskPool8deque_atER8TaskPool3i64(ptr %0, i64 %idx7)
-  call void @_ZN9TaskDeque7acquireEP9TaskDeque(ptr %call8)
-  %load.struct9 = load %_Z9TaskDeque, ptr %call8, align 8
-  %tail = extractvalue %_Z9TaskDeque %load.struct9, 2
+  %add = add i64 %idx7, 1
+  %next_deque8 = getelementptr inbounds nuw %_Z8TaskPool, ptr %0, i32 0, i32 2
+  store i64 %add, ptr %next_deque8, align 8
+  %idx9 = load i64, ptr %idx, align 8
+  %call10 = call ptr @_ZN8TaskPool8deque_atER8TaskPool3i64(ptr %0, i64 %idx9)
+  call void @_ZN9TaskDeque7acquireEP9TaskDeque(ptr %call10)
+  %load.struct11 = load %_Z9TaskDeque, ptr %call10, align 8
+  %tail = extractvalue %_Z9TaskDeque %load.struct11, 2
   %eq = icmp eq ptr %tail, null
-  br i1 %eq, label %if.then10, label %if.else
+  br i1 %eq, label %if.then12, label %if.else
 
-if.then10:                                        ; preds = %if.end
-  %head = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call8, i32 0, i32 1
-  store ptr %call2, ptr %head, align 8
-  %tail12 = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call8, i32 0, i32 2
-  store ptr %call2, ptr %tail12, align 8
-  br label %if.end11
+if.then12:                                        ; preds = %if.end
+  %head = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call10, i32 0, i32 1
+  store ptr %tuple.region, ptr %head, align 8
+  %tail14 = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call10, i32 0, i32 2
+  store ptr %tuple.region, ptr %tail14, align 8
+  br label %if.end13
 
 if.else:                                          ; preds = %if.end
-  %load.struct13 = load %_Z9TaskDeque, ptr %call8, align 8
-  %tail14 = extractvalue %_Z9TaskDeque %load.struct13, 2
-  %next15 = getelementptr inbounds nuw %_Z8TaskItem, ptr %tail14, i32 0, i32 0
-  store ptr %call2, ptr %next15, align 8
-  %tail16 = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call8, i32 0, i32 2
-  store ptr %call2, ptr %tail16, align 8
-  br label %if.end11
+  %load.struct15 = load %_Z9TaskDeque, ptr %call10, align 8
+  %tail16 = extractvalue %_Z9TaskDeque %load.struct15, 2
+  %next = getelementptr inbounds nuw %_Z8TaskItem, ptr %tail16, i32 0, i32 0
+  store ptr %tuple.region, ptr %next, align 8
+  %tail17 = getelementptr inbounds nuw %_Z9TaskDeque, ptr %call10, i32 0, i32 2
+  store ptr %tuple.region, ptr %tail17, align 8
+  br label %if.end13
 
-if.end11:                                         ; preds = %if.else, %if.then10
-  call void @_ZN9TaskDeque7releaseEP9TaskDeque(ptr %call8)
+if.end13:                                         ; preds = %if.else, %if.then12
+  call void @_ZN9TaskDeque7releaseEP9TaskDeque(ptr %call10)
   %arr.ptr = getelementptr inbounds [1 x i8], ptr %one, i64 0, i64 0
-  store ptr %arr.ptr, ptr %one17, align 8
-  %one18 = load ptr, ptr %one17, align 8
-  store i8 1, ptr %one18, align 1
+  store ptr %arr.ptr, ptr %one18, align 8
+  %one19 = load ptr, ptr %one18, align 8
+  store i8 1, ptr %one19, align 1
   %field.inplace = getelementptr inbounds nuw %_Z8TaskPool, ptr %0, i32 0, i32 6
   %field.val = load i32, ptr %field.inplace, align 4
-  %one19 = load ptr, ptr %one17, align 8
-  %call20 = call i64 @scaly_eio_write(i32 %field.val, ptr %one19, i64 1)
+  %one20 = load ptr, ptr %one18, align 8
+  %call21 = call i64 @scaly_eio_write(i32 %field.val, ptr %one20, i64 1)
   ret void
 }
 
@@ -28500,42 +28500,42 @@ if.then35:                                        ; preds = %if.end29
 
 if.end36:                                         ; preds = %if.end29
   %call40 = call ptr @_ZN4Page13allocate_pageEv()
-  %call41 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 ptrtoint (ptr getelementptr (%_Z8NodePeer, ptr null, i32 1) to i64), i64 8)
-  %lock = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 0
-  store i64 0, ptr %lock, align 8
-  %fd = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 1
-  store i32 %1, ptr %fd, align 4
-  %alive = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 2
-  store i1 true, ptr %alive, align 1
-  %peer_stamp = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 3
-  store i64 %deref33, ptr %peer_stamp, align 8
+  %call41 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 512, i64 8)
   %call42 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 512, i64 8)
-  %chan_ids = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 4
-  store ptr %call42, ptr %chan_ids, align 8
   %call43 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 512, i64 8)
-  %chans = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 5
-  store ptr %call43, ptr %chans, align 8
-  %chan_count = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 6
-  store i64 0, ptr %chan_count, align 8
-  %call44 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 512, i64 8)
-  %monitors = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 7
-  store ptr %call44, ptr %monitors, align 8
-  %monitor_count = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 8
-  store i64 0, ptr %monitor_count, align 8
-  %wlock = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 9
-  store i64 0, ptr %wlock, align 8
-  %call45 = call i64 @scaly_eio_now_ns()
-  %last_rx = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 10
-  store i64 %call45, ptr %last_rx, align 8
-  %reader = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 11
-  store i64 0, ptr %reader, align 8
-  %down_reason = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 12
-  store i64 0, ptr %down_reason, align 8
+  %call44 = call i64 @scaly_eio_now_ns()
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 ptrtoint (ptr getelementptr (%_Z8NodePeer, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8NodePeer }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 1
+  %tuple.field45 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 1
+  store i32 %1, ptr %tuple.field45, align 1
+  %tuple.field46 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 2
+  store i1 true, ptr %tuple.field46, align 1
+  %tuple.field47 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 3
+  store i64 %deref33, ptr %tuple.field47, align 1
+  %tuple.field48 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 4
+  store ptr %call41, ptr %tuple.field48, align 1
+  %tuple.field49 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 5
+  store ptr %call42, ptr %tuple.field49, align 1
+  %tuple.field50 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 6
+  store i64 0, ptr %tuple.field50, align 1
+  %tuple.field51 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 7
+  store ptr %call43, ptr %tuple.field51, align 1
+  %tuple.field52 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 8
+  store i64 0, ptr %tuple.field52, align 1
+  %tuple.field53 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 9
+  store i64 0, ptr %tuple.field53, align 1
+  %tuple.field54 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 10
+  store i64 %call44, ptr %tuple.field54, align 1
+  %tuple.field55 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 11
+  store i64 0, ptr %tuple.field55, align 1
+  %tuple.field56 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 12
+  store i64 0, ptr %tuple.field56, align 1
   call void @_ZN2Io15set_nonblockingE3i32(i32 %1)
-  %call46 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z17node_reader_entryPv, ptr %call41)
-  %reader47 = getelementptr inbounds nuw %_Z8NodePeer, ptr %call41, i32 0, i32 11
-  store i64 %call46, ptr %reader47, align 8
-  ret ptr %call41
+  %call57 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z17node_reader_entryPv, ptr %tuple.region)
+  %reader = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 11
+  store i64 %call57, ptr %reader, align 8
+  ret ptr %tuple.region
 }
 
 define linkonce_odr ptr @_ZN7Cluster6acceptEPN4scaly6memory4PageE3i32(ptr %0, i32 %1) {
@@ -28651,10 +28651,10 @@ if.end16:                                         ; preds = %if.end12
 define linkonce_odr void @_ZN7Cluster12deliver_downEP7Channel3i64(ptr %0, i64 %1) {
 entry:
   %call = call ptr @_ZN4Page13allocate_pageEv()
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8NodeDown, ptr null, i32 1) to i64), i64 8)
-  %reason = getelementptr inbounds nuw %_Z8NodeDown, ptr %call1, i32 0, i32 0
-  store i64 %1, ptr %reason, align 8
-  call void @_ZN7Channel4sendEP7ChannelPv(ptr %0, ptr %call1)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8NodeDown, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8NodeDown }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z8NodeDown, ptr %tuple.region, i32 0, i32 0
+  store i64 %1, ptr %tuple.field, align 1
+  call void @_ZN7Channel4sendEP7ChannelPv(ptr %0, ptr %tuple.region)
   call void @_ZN7Channel12close_senderEP7Channel(ptr %0)
   ret void
 }

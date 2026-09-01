@@ -926,16 +926,7 @@ define Scheduler
     ; so they survive any spawning fiber's region teardown.
     procedure create(host: ref[Page]) returns ref[Scheduler]
     {
-        let s host.allocate(sizeof Scheduler, alignof Scheduler) as pointer[Scheduler]
-        set s.host: host
-        set s.head: null
-        set s.tail: null
-        set s.blocked: 0
-        set s.eio: (0 - 1) as i32
-        set s.io_waiting: 0
-        set s.wake: (0 - 1) as i32
-        set s.inject: 0
-        set s.chan_parked: 0
+        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0)
         set current_scheduler: s as pointer[void]
         s
     }
@@ -981,15 +972,7 @@ define Scheduler
     {
         let s current_scheduler as ref[Scheduler]
         let host s.host
-        let t host.allocate(sizeof SchedTask, alignof SchedTask) as pointer[SchedTask]
-        set t.entry: fn
-        set t.fiber: Fiber.create_sized(host, &scheduler_entry, size)
-        set t.next: null
-        set t.waiter: null
-        set t.done: false
-        set t.disposed: false
-        set t.arg: arg
-        set t.home: s as pointer[void]
+        let t &SchedTask^host(fn, Fiber.create_sized(host, &scheduler_entry, size), null, null, false, false, arg, s as pointer[void])
         Scheduler.enqueue(t)
         t
     }
@@ -1714,12 +1697,7 @@ define Io
         ; The work record rides on its own heap page — freed below once
         ; the result is consumed.
         let p Page.allocate_page_traced("Io.work_page")
-        let w p.allocate(sizeof IoWork, alignof IoWork) as pointer[IoWork]
-        set w.next: null
-        set w.fn: fn
-        set w.arg: arg
-        set w.result: null
-        set w.task: me as ref[SchedTask]
+        let w &IoWork^p(null, fn, arg, null, me as ref[SchedTask])
         ; Queue the work; grow the pool when no worker is idle (up to
         ; the cap — beyond it the item waits for the next free worker).
         IoPool.acquire(pl)
@@ -1945,19 +1923,7 @@ define Channel
     procedure create_bounded(capacity: i64) returns ref[Channel]
     {
         let p Page.allocate_page_traced("Channel.record_page")
-        let m p.allocate(sizeof Channel, alignof Channel) as pointer[Channel]
-        set m.lock: 0
-        set m.senders: 1
-        set m.closed: false
-        set m.head: null
-        set m.tail: null
-        set m.recv_head: null
-        set m.recv_tail: null
-        set m.recv_sched: null
-        set m.capacity: capacity
-        set m.count: 0
-        set m.send_head: null
-        set m.send_tail: null
+        let m &Channel^p(0, 1, false, null, null, null, null, null, capacity, 0, null, null)
         m
     }
 
@@ -2047,9 +2013,7 @@ define Channel
     procedure send(m: pointer[Channel], msg: pointer[void])
     {
         let host Page.get(msg)
-        let n host.allocate(sizeof ChannelNode, alignof ChannelNode) as pointer[ChannelNode]
-        set n.next: null
-        set n.msg: msg
+        let n &ChannelNode^host(null, msg)
         let me current_task as ref[SchedTask]?
         ; A bounded task-sender may park and be woken cross-thread — arm
         ; the wake handle once, before any lock (ensure_wake syscalls and
@@ -2649,11 +2613,7 @@ define TaskPool
         let pp &g.pending
         let old scaly_atomic_add_u64(pp, 1 as u64)
         let host Page.get(g)
-        let w host.allocate(sizeof TaskItem, alignof TaskItem) as pointer[TaskItem]
-        set w.next: null
-        set w.fn: fn
-        set w.arg: arg
-        set w.group: g
+        let w &TaskItem^host(null, fn, arg, g)
         var idx pl.next_deque
         if idx >= pl.nworkers
             set idx: 0
