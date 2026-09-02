@@ -88,6 +88,11 @@ def other_use(code, name, spans):
             return True
     return False
 
+def REBIND(name):
+    """A later `let`/`var` of the same name ENDS the binding under scan."""
+    return re.compile(rf'^\s*(?:let|var)\s+{re.escape(name)}\b')
+
+
 def convert(lines, skip, keep_bindings=False):
     changed, dropped = 0, 0
     for a, b in routine_spans(lines):
@@ -117,6 +122,17 @@ def convert(lines, skip, keep_bindings=False):
             hits, ok, leftover = [], True, False
             for j in range(k + 1, len(body)):
                 code = codes[j]
+                # ★★★STOP AT A REBINDING OF THE SAME NAME.  Without this the
+                # scan runs to the END OF THE ROUTINE and the FIRST binding
+                # claims the sites of every later one, rewriting them with ITS
+                # receiver.  Measured in dazzle's Expression.can_eval:
+                # `when e: Call { let b e.args.get_buffer() ... }` followed by
+                # `when e: Sequence { let b e.seq.get_buffer() ... }` turned
+                # `*(b + i)` in the Sequence arm into `e.args[i]`.
+                # ★It surfaced only because SequenceExpr HAS NO `args` FIELD.
+                # Where both arms' concepts carry a same-named container the
+                # rewrite COMPILES and reads the WRONG ARRAY -- silently.
+                if REBIND(local).match(code): break
                 if not re.search(rf'\b{re.escape(local)}\b', code): continue
                 spans = deref_spans(code, local)
                 # a MINUS-offset walk (`*(b - 1)`) has no subscript reading
