@@ -263,6 +263,20 @@ define Planner
         ; delegate-typed value to an LLVM ptr (GAP B). Empty for the scaly
         ; package (no delegates) → map_type byte-identical, fixpoint-safe.
         delegate_names: Array[String]
+        ; TYPE ALIASES (`define LLVMValueRef pointer[LLVMOpaqueValue]`, modelled
+        ; in Modeler.scaly's ConstantSyntax branch with no operation as a
+        ; Concept whose Definition is a Type). plan_type# resolves an alias to
+        ; its target so NO later pass ever sees the alias name -- see the block
+        ; there for why resolving downstream instead is not an option.
+        ; ★This flag is what makes the resolution FREE where no alias exists:
+        ; plan_type# runs on every written type in the program, and an
+        ; unconditional concept lookup there would be paid by every compile.
+        ; False for a tree with no aliases => plan_type# is byte-identical.
+        has_type_aliases: bool
+        ; Recursion bound for an alias CHAIN (`define A B` / `define B A`),
+        ; threaded as a field rather than a parameter only because plan_type#
+        ; has ~500 call sites; 16 is far past any honest chain.
+        alias_depth: int
         ; The enclosing function's planned return type during body planning
         ; (GAP B): a lambda returned where this is a delegate type becomes an
         ; ESCAPING closure (env on the caller page `#`). Null outside a function
@@ -812,6 +826,8 @@ define Planner
             set instantiated_structures: Array[PlannedStructure]^this()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^this()
             set delegate_names: Array[String]^this()
+            set has_type_aliases: false
+            set alias_depth: 0
             set current_return_type: null
             set local_closure_names: Array[String]^this()
             set local_box_names: Array[String]^this()
@@ -1223,6 +1239,12 @@ define Planner
             choose c.definition
                 when d: Delegate
                     delegate_names.add(String^this(c.name))
+                when ta: Type
+                    ; A TYPE ALIAS exists in this compilation -- arm plan_type#'s
+                    ; resolution. Modeler.scaly builds Definition.Type at exactly
+                    ; ONE place (the ConstantSyntax branch with no operation), so
+                    ; this arm cannot be reached by anything else.
+                    set has_type_aliases: true
                 else
                     0
             ; Record the concept's origin (use-visibility stage 1) in
@@ -12564,7 +12586,7 @@ define Planner
                         }
 
                         ; s175: trailing FIELD access on a call result —
-                        ; `LLVMTypeOf(ret_val).handle <> llvm_rt.handle`.
+                        ; `LLVMTypeOf(ret_val) <> llvm_rt`.
                         ; The chaining loop above only consumes a tuple's
                         ; member_access when its last hop is a method
                         ; followed by an args Tuple; a plain field hop on
@@ -12573,7 +12595,7 @@ define Planner
                         ; the following binary operator failed to resolve,
                         ; and the whole statement vanished — stage-2's
                         ; prelude print/println implicit return (`if
-                        ; LLVMTypeOf(ret_val).handle <> llvm_rt.handle ...
+                        ; LLVMTypeOf(ret_val) <> llvm_rt ...
                         ; LLVMBuildRet`) collapsed to `unreachable`.
                         ; Re-resolve the hop names against the call's
                         ; result type and attach the chain, but ONLY when
@@ -16696,10 +16718,97 @@ define Planner
             this.add_diagnostic(page_span, String^this(pmsg))
         }
 
+        ; ================================================================
+        ; TYPE ALIAS resolution at the MODEL level
+        ; ================================================================
+        ; Rewrite a Model Type tree, replacing every alias name by its target,
+        ; BEFORE resolve_type_base# runs. That placement is the whole point:
+        ; resolve_type_base# joins the dotted name, recurses on its generic
+        ; arguments THROUGH ITSELF and builds the Itanium mangling -- it is
+        ; static, has no Planner state and so cannot look a concept up. An alias
+        ; nested inside `Array[LLVMValueRef]` is therefore never handed to
+        ; plan_type# at all and cannot be resolved there.
+        ; ★MEASURED, not reasoned: an env-gated probe over a converted scalyc
+        ; reported 28 427 `…Ref` types reaching plan_type#, EVERY one of them
+        ; with the flag armed and no generics -- i.e. every type plan_type# sees
+        ; is already resolved, and the survivors were the ones it never saw.
+        ; The tell in the diagnostics is a field declared with the alias
+        ; (`Option[ref[Array[LLVMValueRef]]]`) taking a value whose type has
+        ; resolved (`Array[pointer[LLVMOpaqueValue]]`).
+        function model_type_has_alias(this: Planner, t: Type, depth: int) returns bool
+        {
+            if depth >= 16
+                return false
+            if t.generics = null
+            {
+                let joined Planner.join_dotted_name(t.name)
+                let ac this.lookup_concept_any(joined)
+                if ac = null
+                    return false
+                let c ac as ref[Concept]
+                if c.parameters.length > 0
+                    return false
+                choose c.definition
+                    when at: Type
+                        return true
+                    else
+                        return false
+            }
+            let gens (*t.generics)
+            var i: size_t 0
+            while i < gens.length
+            {
+                let g_ptr gens.get i
+                if g_ptr <> null
+                    if this.model_type_has_alias((*g_ptr), depth + 1)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; The rewrite itself. Only ever called where model_type_has_alias# said
+        ; yes, so the common path allocates nothing.
+        function resolve_model_type_aliases(this: Planner, t: Type, depth: int) returns Type
+        {
+            if depth >= 16
+                return t
+            if t.generics = null
+            {
+                let joined Planner.join_dotted_name(t.name)
+                let ac this.lookup_concept_any(joined)
+                if ac = null
+                    return t
+                let c ac as ref[Concept]
+                if c.parameters.length > 0
+                    return t
+                choose c.definition
+                    when at: Type
+                        return this.resolve_model_type_aliases(at, depth + 1)
+                    else
+                        return t
+            }
+            let gens (*t.generics)
+            var out Vector[Type](gens.length)
+            var i: size_t 0
+            while i < gens.length
+            {
+                let g_ptr gens.get i
+                if g_ptr <> null
+                    out.put(i, this.resolve_model_type_aliases((*g_ptr), depth + 1))
+                set i: i + 1
+            }
+            Type(t.span, t.name, &out, t.lifetime)
+        }
+
         function plan_type(this: Planner, t: Type) returns PlannedType
         {
             this.report_unknown_page_name(t)
-            let base Planner.resolve_type_base(t)
+            var mt: Type t
+            if has_type_aliases
+                if this.model_type_has_alias(t, 0)
+                    set mt: this.resolve_model_type_aliases(t, 0)
+            let base Planner.resolve_type_base(mt)
 
             var after_subst: PlannedType base
             var subst_fired: bool false
@@ -16720,6 +16829,77 @@ define Planner
                 if after_subst.name <> base.name
                     set subst_fired: true
             }
+            ; ★The block below sits BEFORE the subst_fired early return ON
+            ; PURPOSE: a generic ARGUMENT arrives here through the substitution
+            ; path (`T` -> `LLVMValueRef`), and returning early left the alias
+            ; name in the instantiation while the concept's own FIELD types
+            ; resolved -- `Vector[LLVMValueRef]` filling a field declared
+            ; `Vector[pointer[LLVMOpaqueValue]]`, which the component gate
+            ; catches as a positional-construction mismatch.
+            ; ================================================================
+            ; TYPE ALIAS resolution -- `define LLVMValueRef pointer[LLVMOpaque]`
+            ; ================================================================
+            ; The Modeler builds such a declaration as a Concept whose
+            ; Definition is a Type (Modeler.scaly, the ConstantSyntax branch
+            ; with no operation). Before this block the alias NAME travelled all
+            ; the way into the Emitter, and the result was a SILENT MISCOMPILE
+            ; that only a METHOD showed:
+            ;   Emitter.needs_sret_for_return# asks the return type's NAME
+            ;   (`rt.name = "pointer"` / `= "ref"`), so an alias fell through to
+            ;   its `true` tail and was sret-ified. A FREE function escaped only
+            ;   because that predicate bails on a name not starting with `_ZN`.
+            ;   A method returning `ext()` then emitted
+            ;     %call = call ptr @ext(...)
+            ;     %sret.body = load { ptr }, ptr %call
+            ;     memcpy(sret_slot, %call, 8)
+            ;   -- DEREFERENCING the returned handle and copying the first eight
+            ;   bytes of the pointed-at object into the return slot. rc 0, no
+            ;   diagnostic.
+            ; ★It is resolved HERE, at the single point where a written type
+            ; becomes a PlannedType, and NOT in needs_sret_for_return#: that
+            ; predicate is one of MANY name-keyed questions (mangling encodes
+            ; `12LLVMValueRef` too), and teaching each one about aliases is the
+            ; name-test-instead-of-shape-test pattern this compiler keeps
+            ; paying for. Resolving at the root means no later pass can ask.
+            ; ★Guarded by has_type_aliases so a tree without aliases pays
+            ; nothing and emits byte-identically.
+            if has_type_aliases
+            {
+                if after_subst.generics = null
+                {
+                    if alias_depth < 16
+                    {
+                        let alias_c this.lookup_concept_any(after_subst.name)
+                        if alias_c <> null
+                        {
+                            let ac alias_c as ref[Concept]
+                            ; A GENERIC alias is not supported: its parameters
+                            ; would have to be bound from the use site, and
+                            ; nothing here carries them.
+                            if ac.parameters.length = 0
+                                choose ac.definition
+                                    when alias_target: Type
+                                    {
+                                        set alias_depth: alias_depth + 1
+                                        let resolved this.plan_type(alias_target)
+                                        set alias_depth: alias_depth - 1
+                                        return resolved
+                                    }
+                                    else
+                                        0
+                        }
+                    }
+                    else
+                    {
+                        var asb StringBuilder()
+                        asb.append "type alias resolves in a cycle: "
+                        asb.append after_subst.name
+                        let amsg asb.to_string()
+                        this.add_diagnostic(after_subst.loc, String^this(amsg))
+                    }
+                }
+            }
+
             if subst_fired
                 return after_subst
 
@@ -16738,9 +16918,9 @@ define Planner
             ; on generic args (via resolveType, not the static helper).
             if after_subst.mangled_name.get_length() > 0
             {
-                if t.generics <> null
+                if mt.generics <> null
                 {
-                    let model_gens (*t.generics)
+                    let model_gens (*mt.generics)
                     if model_gens.length > 0
                     {
                         var canon_gens Vector[PlannedType](model_gens.length)
