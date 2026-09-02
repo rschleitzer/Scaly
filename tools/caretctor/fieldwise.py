@@ -153,6 +153,22 @@ def is_literal(v):
 
 
 NAME = re.compile(r'^[a-z_]\w*$')
+CONSTS = set()          # module-level `define NAME: T v` -- compile-time constant
+MUTABLE = set()         # `mutable` / `shared` -- a call may write it
+
+
+def read_globals(files):
+    """★ A `define` constant and a `mutable` global read IDENTICALLY at a use
+    site, and they answer the movability question in opposite directions: the
+    first is fixed at compile time and may travel anywhere, the second is a
+    cell any sibling call can write.  Only the DECLARATION separates them, so
+    it is looked up rather than guessed from the name's shape."""
+    for f in files:
+        for c in S.load(f):
+            m = re.match(r'define\s+([A-Za-z_]\w*)\s*:', c)
+            if m: CONSTS.add(m.group(1)); continue
+            m = re.match(r'(?:mutable|shared)\s+([A-Za-z_]\w*)\s*:', c)
+            if m: MUTABLE.add(m.group(1))
 
 
 def is_movable(v, body):
@@ -172,7 +188,9 @@ def is_movable(v, body):
     """
     v = v.strip()
     if is_literal(v): return True
+    if v in CONSTS and v not in MUTABLE: return True
     if not NAME.match(v): return False
+    if v in MUTABLE: return False
     return not re.search(r'&\s*' + re.escape(v) + r'\b', body)
 
 
@@ -206,6 +224,21 @@ def analyse(site, lines, fields_by_pkg):
         break
     if not got:
         return 'NOFIELDS', None, 'keine `set %s.feld:` gefunden' % name
+    # ★ A run that stops at the first non-`set` line UNDERSTATES the site: the
+    # big initialisers interleave value-producing statements between their
+    # field assignments, and asking only about the leading run reports the rest
+    # as "unset without default" -- 32 sites read that way, and in 31 of them
+    # every field IS set, just further down.  So re-collect over the WHOLE
+    # block and let hoist_verdict# decide whether the construction can move to
+    # where the last assignment is.
+    whole, others = [], []
+    for k in range(i + 1, min(end + 1, len(lines))):
+        c = lines[k]
+        if not c.strip(): continue
+        m = SET.match(c)
+        if m and m.group(1) == name:
+            whole.append((m.group(2), m.group(3), k)); continue
+        others.append(k)
     # interleaving: the sets must be consecutive non-blank lines
     ks = [k for _, _, k in got]
     for a, b in zip(ks, ks[1:]):
@@ -230,12 +263,12 @@ def analyse(site, lines, fields_by_pkg):
     # sets nine fields in a swapped order and SKIPS `aux`, so a check that asks
     # about order alone calls it REORDER and the positional path then reports
     # `property has_markup would be left uninitialized`.
-    if sorted(idx) != list(range(len(idx))):
-        return 'GAP', None, 'Luecke: gesetzt %s, Deklaration %s' % (seen, order[:max(idx) + 1])
-    rest_all = decl[len(idx):]
-    nodef_all = [f for f, hd in rest_all if not hd]
-    if nodef_all:
-        return 'NODEFAULT', None, 'ungesetzt ohne Default: %s' % ', '.join(nodef_all)
+    if sorted(idx) != list(range(len(idx))) or [f for f, hd in decl[len(idx):] if not hd]:
+        pay, why = hoist_verdict(name, decl, whole, others, lines, i, end)
+        if pay: return 'HOIST', pay, why
+        if sorted(idx) != list(range(len(idx))):
+            return 'GAP', None, 'Luecke: %s' % why
+        return 'NODEFAULT', None, why
     if idx != sorted(idx):
         # ★ The permutation is not the question -- EVALUATION ORDER is.  A
         # reorder is safe exactly when no two values that CAN have a side
@@ -261,6 +294,51 @@ def analyse(site, lines, fields_by_pkg):
     return 'ORDERED', (got, last), '%d Felder, Praefix der Deklaration (%d)' % (len(got), len(decl))
 
 
+
+def hoist_verdict(name, decl, whole, others, lines, i, end):
+    """Can the construction move DOWN to where the last assignment is?
+
+    Conditions, each of which failed on a real site while this was written:
+
+      * every declared field set EXACTLY once, or unset ones carry a default
+        (a field set twice has no single argument);
+      * no statement between the allocation and the last assignment may MENTION
+        the bound name -- otherwise the object is read before it exists;
+      * ★ and the evaluation rule of the REORDER pass, now applied to the
+        interleaved statements as well: a value that must travel PAST anything
+        that is itself evaluated has to be movable (a literal, or a bare local
+        whose address is never taken).  The value AT the last assignment never
+        travels and is therefore free.
+    """
+    seen = [f for f, _, _ in whole]
+    if len(set(seen)) != len(seen):
+        return None, 'ein Feld wird mehrfach gesetzt'
+    order = [f for f, _ in decl]
+    if any(f not in order for f in seen):
+        return None, 'gesetztes Feld nicht in der Deklaration'
+    idx = [order.index(f) for f in seen]
+    if sorted(idx) != list(range(len(idx))):
+        return None, 'auch ueber den ganzen Block keine Praefix-Ueberdeckung'
+    nodef = [f for f, hd in decl[len(idx):] if not hd]
+    if nodef:
+        return None, 'ungesetzt ohne Default: %s' % ', '.join(nodef)
+    last = max(k for _, _, k in whole)
+    body = '\n'.join(lines)
+    for k in others:
+        if k > last: continue
+        if re.search(r'\b%s\b' % re.escape(name), lines[k]):
+            return None, 'Zeile %d nennt `%s` vor der Konstruktion' % (k + 1, name)
+    barrier = sorted([k for k in others if k < last] +
+                     [k for _, v, k in whole if k < last and not is_movable(v, body)])
+    for f, v, k in whole:
+        if k == last: continue
+        if any(b > k for b in barrier) and not is_movable(v, body):
+            return None, 'ortsfester Wert `%s` muesste an einer Auswertung vorbei' % f
+    ordered = [g for _, g in sorted(zip(idx, whole), key=lambda x: x[0])]
+    return (ordered, last), '%d Felder ueber %d Zwischenzeilen eingesammelt' % (
+        len(whole), len([k for k in others if k < last]))
+
+
 def collect(roots):
     files = sorted({f for r in roots
                     for f in ([r] if r.endswith('.scaly') else
@@ -271,6 +349,7 @@ def collect(roots):
     if bad:
         print('SELFTEST FAILED -- refusing to report'); sys.exit(2)
     fields = read_fields(allf)
+    read_globals(allf)
     sites = [s for s in S.scan(files, inits, table, False) if s['verdict'] == 'FIELDWISE']
     out = []
     for s in sites:
@@ -283,18 +362,19 @@ def collect(roots):
 JOURNAL = []
 JOURNAL_PATH = 'tools/caretctor/.journal.json'
 
-ORDER = ['ORDERED', 'REORDER-LIT', 'REORDER-EVAL', 'GAP', 'NODEFAULT', 'INTERLEAVED', 'SELFREF', 'NOFIELDS']
+ORDER = ['ORDERED', 'REORDER-LIT', 'HOIST', 'REORDER-EVAL', 'GAP', 'NODEFAULT', 'INTERLEAVED', 'SELFREF', 'NOFIELDS']
 
 
 def rewrite(sites, apply_):
     todo = collections.defaultdict(list)
     for s in sites:
-        if s['fw'] not in ('ORDERED', 'REORDER-LIT'): continue
+        if s['fw'] not in ('ORDERED', 'REORDER-LIT', 'HOIST'): continue
         raw = open(s['f'], encoding='utf-8').read().split('\n')
         code = S.load(s['f'])
         i = s['n'] - 1
         if not code[i].strip().startswith('let '): continue
         got, last = s['payload']
+        if s['fw'] == 'HOIST' and any(k > last for _, _, k in got): continue
         m = S.SITE.match(code[i])
         if not m: continue
         page = m.group(4)          # FIELDWISE sites carry no 'page' -- scan.py
@@ -308,13 +388,23 @@ def rewrite(sites, apply_):
             c = raw[k]
             if len(c) > len(code[k]) and ';' in c[len(code[k]):]:
                 tail.append(c[len(code[k]):].strip())
-        todo[s['f']].append((i, last, new, tail))
+        # ★ HOIST is not a contiguous run: the value-producing lines BETWEEN the
+        # assignments must stay where they are.  So the splice is not
+        # `raw[i:last+1] = [new]` -- it deletes the allocation and every
+        # assignment line, and puts the construction where the LAST one was.
+        if s['fw'] == 'HOIST':
+            kill = [i] + [k for _, _, k in got if k != last]
+            todo[s['f']].append((last, last, new, tail, kill))
+        else:
+            todo[s['f']].append((i, last, new, tail, []))
     for f, items in sorted(todo.items()):
         raw = open(f, encoding='utf-8').read().split('\n')
         orig = list(raw)
-        for i, last, new, tail in sorted(items, reverse=True):
+        for i, last, new, tail, kill in sorted(items, reverse=True):
             block = [new] + ['%s; %s' % (new[:len(new) - len(new.lstrip())], t.lstrip('; ')) for t in tail]
             raw[i:last + 1] = block
+            for k in sorted(kill, reverse=True):
+                del raw[k]
         if apply_:
             open(f, 'w', encoding='utf-8').write('\n'.join(raw))
             # ★ The journal is what makes a revert EXACT.  retry.py used to find
@@ -325,7 +415,7 @@ def rewrite(sites, apply_):
             # spliced a block back into the WRONG function, and the tell was a
             # cascade of `function not found: src.data_ptr` -- a name that was
             # never in scope there.  Match by CONTENT, never by position.
-            for i, last, new, tail in items:
+            for i, last, new, tail, kill in items:
                 JOURNAL.append(dict(f=f, new=new, orig=orig[i:last + 1]))
     if apply_ and JOURNAL:
         import json
