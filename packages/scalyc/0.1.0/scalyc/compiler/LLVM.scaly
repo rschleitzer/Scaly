@@ -12,26 +12,43 @@
 ; These are opaque pointer types representing LLVM objects
 ; In the LLVM-C API, these are typedefs to pointers to opaque structs
 
-define LLVMContextRef(handle: pointer[void])
-define LLVMModuleRef(handle: pointer[void])
-define LLVMBuilderRef(handle: pointer[void])
-define LLVMTypeRef(handle: pointer[void])
-define LLVMValueRef(handle: pointer[void])
-define LLVMBasicBlockRef(handle: pointer[void])
-define LLVMTargetRef(handle: pointer[void])
-define LLVMTargetMachineRef(handle: pointer[void])
-define LLVMTargetDataRef(handle: pointer[void])
-define LLVMPassManagerRef(handle: pointer[void])
-define LLVMMemoryBufferRef(handle: pointer[void])
-define LLVMDIBuilderRef(handle: pointer[void])
-define LLVMMetadataRef(handle: pointer[void])
-define LLVMAttributeRef(handle: pointer[void])
+define LLVMOpaqueContext()
+define LLVMContextRef pointer[LLVMOpaqueContext]
+define LLVMOpaqueModule()
+define LLVMModuleRef pointer[LLVMOpaqueModule]
+define LLVMOpaqueBuilder()
+define LLVMBuilderRef pointer[LLVMOpaqueBuilder]
+define LLVMOpaqueType()
+define LLVMTypeRef pointer[LLVMOpaqueType]
+define LLVMOpaqueValue()
+define LLVMValueRef pointer[LLVMOpaqueValue]
+define LLVMOpaqueBasicBlock()
+define LLVMBasicBlockRef pointer[LLVMOpaqueBasicBlock]
+define LLVMTarget()
+define LLVMTargetRef pointer[LLVMTarget]
+define LLVMOpaqueTargetMachine()
+define LLVMTargetMachineRef pointer[LLVMOpaqueTargetMachine]
+define LLVMOpaqueTargetData()
+define LLVMTargetDataRef pointer[LLVMOpaqueTargetData]
+define LLVMOpaquePassManager()
+define LLVMPassManagerRef pointer[LLVMOpaquePassManager]
+define LLVMOpaqueMemoryBuffer()
+define LLVMMemoryBufferRef pointer[LLVMOpaqueMemoryBuffer]
+define LLVMOpaqueDIBuilder()
+define LLVMDIBuilderRef pointer[LLVMOpaqueDIBuilder]
+define LLVMOpaqueMetadata()
+define LLVMMetadataRef pointer[LLVMOpaqueMetadata]
+define LLVMOpaqueAttributeRef()
+define LLVMAttributeRef pointer[LLVMOpaqueAttributeRef]
 ; The debug-record handle of LLVM's "new debug format" (RemoveDIs, LLVM 19).
 ; It replaced the LLVMValueRef that the old dbg.declare INTRINSIC was, which is
 ; why the insert entry point below both changed its name and its result type.
-define LLVMDbgRecordRef(handle: pointer[void])
-define LLVMUseRef(handle: pointer[void])
-define LLVMComdatRef(handle: pointer[void])
+define LLVMOpaqueDbgRecord()
+define LLVMDbgRecordRef pointer[LLVMOpaqueDbgRecord]
+define LLVMOpaqueUse()
+define LLVMUseRef pointer[LLVMOpaqueUse]
+define LLVMComdat()
+define LLVMComdatRef pointer[LLVMComdat]
 
 ; ============================================================================
 ; LLVM Enums
@@ -620,7 +637,8 @@ procedure LLVMDisposeTargetMachine(machine: LLVMTargetMachineRef) extern
 ; New-PM pass builder (llvm-c/Transforms/PassBuilder.h): run a textual
 ; pass pipeline (e.g. "default<O2>") over a module against a TargetMachine.
 ; Used by the -O flag for AOT object emission.
-define LLVMPassBuilderOptionsRef(handle: pointer[void])
+define LLVMOpaquePassBuilderOptions()
+define LLVMPassBuilderOptionsRef pointer[LLVMOpaquePassBuilderOptions]
 function LLVMCreatePassBuilderOptions() returns LLVMPassBuilderOptionsRef extern
 function LLVMRunPasses(mod: LLVMModuleRef, passes: pointer[const_char], tm: LLVMTargetMachineRef, options: LLVMPassBuilderOptionsRef) returns LLVMErrorRef extern
 procedure LLVMDisposePassBuilderOptions(options: LLVMPassBuilderOptionsRef) extern
@@ -760,14 +778,22 @@ procedure LLVMMetadataReplaceAllUsesWith(temp_target: LLVMMetadataRef, replaceme
 ; message is read with LLVMGetErrorMessage and which MUST be consumed with
 ; LLVMConsumeError (else leak/abort). See Emitter.jit_execute_int.
 
-define LLVMOrcLLJITRef(handle: pointer[void])
-define LLVMOrcLLJITBuilderRef(handle: pointer[void])
-define LLVMOrcJITDylibRef(handle: pointer[void])
-define LLVMOrcThreadSafeContextRef(handle: pointer[void])
-define LLVMOrcThreadSafeModuleRef(handle: pointer[void])
-define LLVMOrcDefinitionGeneratorRef(handle: pointer[void])
-define LLVMOrcJITTargetMachineBuilderRef(handle: pointer[void])
-define LLVMErrorRef(handle: pointer[void])
+define LLVMOrcOpaqueLLJIT()
+define LLVMOrcLLJITRef pointer[LLVMOrcOpaqueLLJIT]
+define LLVMOrcOpaqueLLJITBuilder()
+define LLVMOrcLLJITBuilderRef pointer[LLVMOrcOpaqueLLJITBuilder]
+define LLVMOrcOpaqueJITDylib()
+define LLVMOrcJITDylibRef pointer[LLVMOrcOpaqueJITDylib]
+define LLVMOrcOpaqueThreadSafeContext()
+define LLVMOrcThreadSafeContextRef pointer[LLVMOrcOpaqueThreadSafeContext]
+define LLVMOrcOpaqueThreadSafeModule()
+define LLVMOrcThreadSafeModuleRef pointer[LLVMOrcOpaqueThreadSafeModule]
+define LLVMOrcOpaqueDefinitionGenerator()
+define LLVMOrcDefinitionGeneratorRef pointer[LLVMOrcOpaqueDefinitionGenerator]
+define LLVMOrcOpaqueJITTargetMachineBuilder()
+define LLVMOrcJITTargetMachineBuilderRef pointer[LLVMOrcOpaqueJITTargetMachineBuilder]
+define LLVMOpaqueError()
+define LLVMErrorRef pointer[LLVMOpaqueError]
 
 ; ThreadSafeContext: the module being JITted MUST be built in the LLVMContext
 ; owned by the ThreadSafeContext, otherwise addIRModule crashes. So we create

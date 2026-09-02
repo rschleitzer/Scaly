@@ -12586,7 +12586,11 @@ define Planner
                         }
 
                         ; s175: trailing FIELD access on a call result —
-                        ; `LLVMTypeOf(ret_val) <> llvm_rt`.
+                        ; `LLVMTypeOf(ret_val).handle <> llvm_rt.handle`.
+                        ; (The `.handle` spelling is HISTORICAL: the LLVM
+                        ; handles were one-field structs until 2026-09-02 and
+                        ; are pointer aliases now. The example is kept as it
+                        ; was because it documents the SHAPE that broke.)
                         ; The chaining loop above only consumes a tuple's
                         ; member_access when its last hop is a method
                         ; followed by an args Tuple; a plain field hop on
@@ -12595,7 +12599,7 @@ define Planner
                         ; the following binary operator failed to resolve,
                         ; and the whole statement vanished — stage-2's
                         ; prelude print/println implicit return (`if
-                        ; LLVMTypeOf(ret_val) <> llvm_rt ...
+                        ; LLVMTypeOf(ret_val).handle <> llvm_rt.handle ...
                         ; LLVMBuildRet`) collapsed to `unreachable`.
                         ; Re-resolve the hop names against the call's
                         ; result type and attach the chain, but ONLY when
