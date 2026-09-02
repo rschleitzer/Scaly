@@ -23,50 +23,51 @@ Usage:  python3 tools/caretctor/retry.py packages/dazzle/0.1.0/*.scaly
         (run AFTER `fieldwise.py <pkg> --apply`, with the conversion uncommitted
         -- the original text is read from `git show HEAD:<file>`)
 """
-import re, subprocess, sys, os, collections
 
+import re, subprocess, sys, os, json
+
+JOURNAL_PATH = 'tools/caretctor/.journal.json'
 ROOTS = sys.argv[1:]
-PKG = ROOTS[0].split('/')[1]
+if not ROOTS:
+    print('usage: retry.py <root.scaly> ...  (after fieldwise.py <pkg> --apply)')
+    sys.exit(2)
+if not os.path.exists(JOURNAL_PATH):
+    print('retry: no %s -- run `fieldwise.py <pkg> --apply` first' % JOURNAL_PATH)
+    sys.exit(2)
+journal = json.load(open(JOURNAL_PATH, encoding='utf-8'))
+# ★ keyed by the LINE'S CONTENT, never by its position: the file shifts under
+# every revert, and one file can hold a dozen sites at one indent.
+by_text = {}
+for e in journal:
+    by_text.setdefault((e['f'], e['new'].strip()), []).append(e)
+
 held = []
-
-def orig_lines(path):
-    return subprocess.run(['git','show',f'HEAD:{path}'],capture_output=True,text=True).stdout.split('\n')
-
-for _ in range(60):
+for _ in range(200):
     err = None
     for r in ROOTS:
-        n = os.path.basename(r)[:-6]
-        p = subprocess.run(['./scalyc/build/scalyc','-S','--no-prelude','--no-tests',
-                            '-o','/dev/null', r], capture_output=True, text=True)
+        p = subprocess.run(['./scalyc/build/scalyc', '-S', '--no-prelude', '--no-tests',
+                            '-o', '/dev/null', r], capture_output=True, text=True)
         out = (p.stdout + p.stderr).strip()
         if out:
             m = re.match(r'(\S+?\.scaly):(\d+):(\d+): (.*)', out.split('\n')[0])
-            if not m: print('UNPARSED:', out.split('\n')[0]); sys.exit(1)
+            if not m:
+                print('UNPARSED:', out.split('\n')[0]); sys.exit(1)
             err = (m.group(1), int(m.group(2)), m.group(4)); break
     if err is None:
         print('alle Roots sauber'); break
     f, line, msg = err
     cur = open(f, encoding='utf-8').read().split('\n')
-    bad = cur[line-1]
-    m = re.match(r'^(\s*)let (\w+) &(\S+?)\^(\w+)\(', bad)
-    if not m:
-        print(f'ZURUECKGEHALTEN? Zeile ist keine Konversion: {f}:{line}: {bad.strip()[:80]}')
-        print('  ->', msg); sys.exit(1)
-    # find the same `let NAME` in the ORIGINAL file and splice its block back
-    name, indent = m.group(2), m.group(1)
-    o = orig_lines(f)
-    cand = [i for i,l in enumerate(o)
-            if re.match(rf'^{re.escape(indent)}let {re.escape(name)}\s+\S+\.allocate\s*\(', l)]
-    if len(cand) != 1:
-        # disambiguate by nearest line number
-        cand = sorted(cand, key=lambda i: abs(i-(line-1)))[:1]
-    i = cand[0]
-    block = [o[i]]
-    k = i+1
-    while k < len(o) and re.match(rf'^\s*set {re.escape(name)}\.\w+\s*:', o[k]):
-        block.append(o[k]); k += 1
-    cur[line-1:line] = block
-    open(f,'w',encoding='utf-8').write('\n'.join(cur))
+    key = (f, cur[line - 1].strip())
+    if key not in by_text or not by_text[key]:
+        print('HALT: %s:%d ist keine Konversion dieses Laufs' % (f, line))
+        print('  ->', msg)
+        print('  ->', cur[line - 1].strip()[:100])
+        sys.exit(1)
+    e = by_text[key].pop()
+    cur[line - 1:line] = e['orig']
+    open(f, 'w', encoding='utf-8').write('\n'.join(cur))
     held.append((f, line, msg))
-    print(f'zurueckgenommen {f}:{line}  ({len(block)-1} Felder)  <- {msg}')
-print(f'\n{len(held)} Sites zurueckgehalten')
+    print('zurueckgenommen %s:%d (%d Zeilen)  <- %s' % (f, line, len(e['orig']), msg))
+else:
+    print('HALT: 200 Runden ohne sauberen Stand'); sys.exit(1)
+print('\n%d Sites zurueckgehalten' % len(held))

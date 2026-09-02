@@ -123,6 +123,35 @@ def read_fields(files):
     return out
 
 
+# ★★★ Which values may MOVE, and the first answer was too weak.
+#
+# The tempting rule is "a value without a call is pure, so it may move".  It is
+# WRONG: a member read is call-free and still observes state, so hoisting
+# `b: this.counter` in FRONT of `a: bump(this)` reads a different value.  A
+# name can be rebound, a member can be written, a global can be mutable -- and
+# nothing in a line-shaped tool can see which.
+#
+# So the rule is the one that needs no analysis: **only a LITERAL may move.**
+# A literal has no evaluation at all -- a number, `true`/`false`, `null`, a
+# string or char literal, and arithmetic over those (`0 - 1`).  Everything else
+# keeps its relative position, and a permutation that disturbs that order is
+# not converted.
+#
+# ★ Measured over the tree's 26 REORDER sites this is not a theoretical
+# tightening: it is what the opensp `Event` family needs and gets (the swapped
+# pairs there are `false, false` against `null, null`), and it is what refuses
+# the MifFOTBuilder records, whose moved values are `String()` constructions.
+LITERAL = re.compile(r"""^(?:\d+|0[xX][0-9a-fA-F]+|true|false|null|"[^"]*"|\'[^\']*\')$""")
+
+
+def is_literal(v):
+    """No evaluation whatsoever: a literal, or arithmetic over literals."""
+    v = v.strip()
+    if v.startswith('(') and v.endswith(')'): v = v[1:-1].strip()
+    parts = [p for p in re.split(r'\s*[-+*/%]\s*', v) if p]
+    return bool(parts) and all(LITERAL.match(p) for p in parts)
+
+
 SET = re.compile(r'^\s*set\s+(\w+)\.(\w+)\s*:\s*(.+?)\s*$')
 
 
@@ -170,14 +199,35 @@ def analyse(site, lines, fields_by_pkg):
     if len(idx) != len(seen):
         miss = [f for f in seen if f not in order]
         return 'NOFIELDS', None, 'gesetztes Feld nicht in der Deklaration: %s' % ', '.join(miss)
-    if idx != sorted(idx):
-        return 'REORDER', None, 'Reihenfolge %s vs. Deklaration %s' % (seen, order[:len(seen)])
-    if idx != list(range(len(idx))):
+    # ★★★ CONTIGUITY IS ASKED FIRST, AND FOR BOTH ORDERS.  Getting this wrong
+    # is what a REORDER branch invites: the set fields being a PERMUTATION and
+    # their being a PREFIX are different questions, and `Event.scaly`'s
+    # `make_start_element_no_aux` is exactly the pair that separates them -- it
+    # sets nine fields in a swapped order and SKIPS `aux`, so a check that asks
+    # about order alone calls it REORDER and the positional path then reports
+    # `property has_markup would be left uninitialized`.
+    if sorted(idx) != list(range(len(idx))):
         return 'GAP', None, 'Luecke: gesetzt %s, Deklaration %s' % (seen, order[:max(idx) + 1])
-    rest = decl[len(idx):]
-    nodef = [f for f, hd in rest if not hd]
-    if nodef:
-        return 'NODEFAULT', None, 'ungesetzt ohne Default: %s' % ', '.join(nodef)
+    rest_all = decl[len(idx):]
+    nodef_all = [f for f, hd in rest_all if not hd]
+    if nodef_all:
+        return 'NODEFAULT', None, 'ungesetzt ohne Default: %s' % ', '.join(nodef_all)
+    if idx != sorted(idx):
+        # ★ The permutation is not the question -- EVALUATION ORDER is.  A
+        # reorder is safe exactly when no two values that CAN have a side
+        # effect swap relative position; pure values (a literal, a name, a
+        # member chain) may move freely.
+        evald = [k for k, (_, v, _) in enumerate(got) if not is_literal(v)]
+        moved = [idx[k] for k in evald]
+        safe = moved == sorted(moved)
+        # the payload is the argument list in DECLARATION order -- that is what
+        # the positional path fills, and the whole point of the verdict
+        ordered = [g for _, g in sorted(zip(idx, got), key=lambda x: x[0])]
+        return ('REORDER-LIT' if safe else 'REORDER-EVAL'), (ordered, last), \
+               ('nur Literale bewegen sich (%d ausgewertete Werte behalten ihre '
+                'Reihenfolge)' % len(evald)) if safe else \
+               ('ausgewertete Werte tauschen die Reihenfolge: %s vs. %s'
+                % (seen, order[:len(seen)]))
     return 'ORDERED', (got, last), '%d Felder, Praefix der Deklaration (%d)' % (len(got), len(decl))
 
 
@@ -200,13 +250,16 @@ def collect(roots):
     return out
 
 
-ORDER = ['ORDERED', 'REORDER', 'GAP', 'NODEFAULT', 'INTERLEAVED', 'SELFREF', 'NOFIELDS']
+JOURNAL = []
+JOURNAL_PATH = 'tools/caretctor/.journal.json'
+
+ORDER = ['ORDERED', 'REORDER-LIT', 'REORDER-EVAL', 'GAP', 'NODEFAULT', 'INTERLEAVED', 'SELFREF', 'NOFIELDS']
 
 
 def rewrite(sites, apply_):
     todo = collections.defaultdict(list)
     for s in sites:
-        if s['fw'] != 'ORDERED': continue
+        if s['fw'] not in ('ORDERED', 'REORDER-LIT'): continue
         raw = open(s['f'], encoding='utf-8').read().split('\n')
         code = S.load(s['f'])
         i = s['n'] - 1
@@ -228,10 +281,26 @@ def rewrite(sites, apply_):
         todo[s['f']].append((i, last, new, tail))
     for f, items in sorted(todo.items()):
         raw = open(f, encoding='utf-8').read().split('\n')
+        orig = list(raw)
         for i, last, new, tail in sorted(items, reverse=True):
             block = [new] + ['%s; %s' % (new[:len(new) - len(new.lstrip())], t.lstrip('; ')) for t in tail]
             raw[i:last + 1] = block
-        if apply_: open(f, 'w', encoding='utf-8').write('\n'.join(raw))
+        if apply_:
+            open(f, 'w', encoding='utf-8').write('\n'.join(raw))
+            # ★ The journal is what makes a revert EXACT.  retry.py used to find
+            # the original block by matching indent + binding name in
+            # `git show HEAD:<file>` and disambiguating by LINE NUMBER -- in a
+            # file whose lines have already shifted, and where `Event.scaly`
+            # has fourteen `let ev host.allocate(...)` at one indent.  It
+            # spliced a block back into the WRONG function, and the tell was a
+            # cascade of `function not found: src.data_ptr` -- a name that was
+            # never in scope there.  Match by CONTENT, never by position.
+            for i, last, new, tail in items:
+                JOURNAL.append(dict(f=f, new=new, orig=orig[i:last + 1]))
+    if apply_ and JOURNAL:
+        import json
+        with open(JOURNAL_PATH, 'w', encoding='utf-8') as fh:
+            json.dump(JOURNAL, fh, indent=1)
     return todo
 
 
