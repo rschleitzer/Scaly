@@ -25,11 +25,23 @@ function read(fd: int, buf: pointer[void], count: size_t) returns size_t extern
 function memset(dest: pointer[void], value: i32, count: size_t) returns pointer[void] extern
 function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
 
+; ---- Opaque C stream/directory handles -------------------------------------
+; C names these types; it does not hand out `void*` for them. `FILE` is
+; `typedef struct _IO_FILE FILE;` and `DIR` is a struct too, so `pointer[void]`
+; here was our laziness, not the prototype's. The empty concept carries the
+; IDENTITY (the C-header idiom this tree already uses for the LLVM handles),
+; which makes `fclose(dirp)` a planner error instead of a silent run.
+; ABI-identical: an empty concept behind a pointer lowers to a bare `ptr`.
+; Declared in the PRELUDE so there is ONE declaration per opaque kind for the
+; whole tree — every package sees these without a `use`.
+define OpaqueFile()
+define OpaqueDir()
+
 ; File I/O functions (stdio.h)
-function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
-function fclose(stream: pointer[void]) returns i32 extern
-function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
-function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
+function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
+function fclose(stream: pointer[OpaqueFile]) returns i32 extern
+function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
+function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
 ; Seeking and telling go through the eio shim, NOT through libc's fseek/ftell.
 ; Those carry `long` offsets — 64-bit on LP64, 32-bit on LLP64 (Win64) — and one
 ; committed seed serves every target, so a single declaration cannot describe
@@ -38,15 +50,15 @@ function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer
 ; flip. The 64-bit variants exist everywhere but under OS-specific names
 ; (ftello/fseeko vs _ftelli64/_fseeki64), which is containment rule (a).
 ; See packages/scaly/0.1.0/scaly/fiber/eio.c and check 4 of tests/abi/run.sh.
-function scaly_eio_seek(stream: pointer[void], offset: int, whence: int) returns int extern
-function scaly_eio_tell(stream: pointer[void]) returns int extern
+function scaly_eio_seek(stream: pointer[OpaqueFile], offset: int, whence: int) returns int extern
+function scaly_eio_tell(stream: pointer[OpaqueFile]) returns int extern
 ; rewind() takes no offset and returns nothing, so it has no `long` to get
 ; wrong and stays a direct extern.
-function rewind(stream: pointer[void]) extern
+function rewind(stream: pointer[OpaqueFile]) extern
 
 ; Directory functions (dirent.h)
-function opendir(name: pointer[const_char]) returns pointer[void] extern
-function closedir(dirp: pointer[void]) returns i32 extern
+function opendir(name: pointer[const_char]) returns pointer[OpaqueDir] extern
+function closedir(dirp: pointer[OpaqueDir]) returns i32 extern
 
 ; File system functions (unistd.h)
 function access(path: pointer[const_char], mode: int) returns i32 extern

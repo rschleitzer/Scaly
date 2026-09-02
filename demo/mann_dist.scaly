@@ -809,7 +809,7 @@ else
             set tries: tries + 1
             if tries > 400
                 exit 3
-            poll(null as pointer[void], 0 as i32, 50 as i32)
+            poll(null as pointer[pollfd], 0 as u64, 50 as i32)
             set peer: Cluster.connect("127.0.0.1", PORT)
         }
         let hp Page.allocate_page()

@@ -34,7 +34,11 @@ define Modeler
 
     ; libc float parsing for FloatingPointLiteral (exact, correctly rounded;
     ; a hand-rolled digit walk would accumulate error).
-    function strtod(nptr: pointer[const_char], endptr: pointer[void]) returns double extern
+    ; `endptr` is `char **` in C, not `void *`. dazzle/Interpreter.scaly declares
+    ; the same symbol `pointer[pointer[u8]]`; two declarations of one C symbol
+    ; must not disagree (tests/abi/run.sh check 3 cannot see it -- both lower to
+    ; a bare `ptr`).
+    function strtod(nptr: pointer[const_char], endptr: pointer[pointer[u8]]) returns double extern
 
     ; Decode the escape sequences the lexer validated in a string literal's
     ; raw payload: \" \\ \' \n \r \t \0 and \uXXXX (UTF-8 encoded). A literal
@@ -163,7 +167,7 @@ define Modeler
                 ; literal in a program compiled to zero).
                 let float_text float_lit.value
                 let float_cstr float_text.to_c_string()
-                let float_val strtod(float_cstr, null)
+                let float_val strtod(float_cstr, null as pointer[pointer[u8]])
                 Constant.FloatingPoint(FloatingPointConstant(loc, float_val))
             }
             when hex_lit: HexLiteral

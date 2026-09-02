@@ -52,13 +52,13 @@ use scalyc.compiler.parser
 ; the scaly package) so no scaly/scalyc source is touched (fixpoint-safe).
 ; popen runs `/bin/sh -c <cmd>` — portable across macOS + Linux, sidestepping
 ; the platform-specific `struct dirent` layout that raw readdir would need.
-function popen(command: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
-function pclose(stream: pointer[void]) returns i32 extern
+function popen(command: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
+function pclose(stream: pointer[OpaqueFile]) returns i32 extern
 ; fgetc returns a C `int` (32-bit). It MUST be i32, not Scaly's 64-bit int:
 ; at EOF the C -1 (0xFFFFFFFF) would zero-extend to 4294967295 in a 64-bit
 ; register, so an i64 `c < 0` EOF test never fires and the read loop spins
 ; forever (worker hang -> poll timeout -> null result).
-function fgetc(stream: pointer[void]) returns i32 extern
+function fgetc(stream: pointer[OpaqueFile]) returns i32 extern
 
 ; Syntax tree types (parser output). Imported by payload type so the
 ; `choose ... when x: TSyntax` arms resolve.

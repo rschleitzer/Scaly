@@ -18,7 +18,7 @@ procedure worker(arg: pointer[void]) returns pointer[void]
     let ch_v *cell
     let ch ch_v as pointer[Channel]
     ; let the main context reach its timed wait first
-    poll(null as pointer[void], 0 as i32, 150 as i32)
+    poll(null as pointer[pollfd], 0 as u64, 150 as i32)
     let mp Page.allocate_page()
     let m mp.allocate(sizeof TMsg, alignof TMsg) as pointer[TMsg]
     set m.value: 7

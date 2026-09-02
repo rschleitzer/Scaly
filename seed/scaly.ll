@@ -28908,7 +28908,7 @@ entry:
   %as.inttoptr = inttoptr i64 %add to ptr
   store i16 1, ptr %as.inttoptr, align 2
   %pfd4 = load ptr, ptr %pfd1, align 8
-  %call = call i32 @poll(ptr %pfd4, i32 1, i32 %1)
+  %call = call i32 @poll(ptr %pfd4, i64 1, i32 %1)
   ret void
 }
 

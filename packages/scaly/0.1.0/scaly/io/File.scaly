@@ -38,7 +38,7 @@ procedure file_open_worker(arg: pointer[void]) returns pointer[void]
 procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[size_t]
-    let file (*cell) as pointer[void]
+    let file (*cell) as pointer[OpaqueFile]
     let size *(((cell as size_t) + 8) as pointer[size_t])
     let buf (*(((cell as size_t) + 16) as pointer[size_t])) as pointer[void]
     if size > 0

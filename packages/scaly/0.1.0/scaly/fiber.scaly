@@ -315,10 +315,10 @@ procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern
 ; handed to arm). read/write return -2 for would-block, -1 for hard errors.
 function scaly_eio_create() returns i32 extern
 function scaly_eio_arm(q: i32, fd: i32, for_write: i32, tag: pointer[void]) returns i32 extern
-function scaly_eio_wait(q: i32, tags: pointer[void], max: i32) returns i32 extern
+function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns i32 extern
 ; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
 ; bounded wait behind cross-thread deadlock detection, M2.4 residual).
-function scaly_eio_wait_timeout(q: i32, tags: pointer[void], max: i32, ms: i32) returns i32 extern
+function scaly_eio_wait_timeout(q: i32, tags: pointer[pointer[void]], max: i32, ms: i32) returns i32 extern
 function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
 procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
@@ -402,7 +402,7 @@ procedure scaly_stack_guard(base: pointer[void], len: size_t) returns i32 extern
 ; rule: fixed prototypes, POSIX-uniform, no errno. pthread_t is opaque
 ; and pointer-sized on all four LP64 targets — carried as size_t.
 procedure pthread_create(thread: pointer[size_t], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
-procedure pthread_join(thread: size_t, retval: pointer[void]) returns i32 extern
+procedure pthread_join(thread: size_t, retval: pointer[pointer[void]]) returns i32 extern
 
 ; Indirect-call primitive (milestone 2.3b): an extern name with no
 ; symbol anywhere — the Emitter lowers it to a bare ptr(ptr) indirect
@@ -528,8 +528,22 @@ procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
 ; nfds is `nfds_t`: 32 bits on macOS, 64 on glibc. `u64` is portable both ways
 ; (the caller writes the whole register; a 32-bit callee reads the low half),
 ; and it keeps this declaration type-identical to the one in scalyls/worker.scaly
-; -- both land in the same linked binary.
-procedure poll(fds: pointer[void], nfds: u64, timeout: i32) returns i32 extern
+; -- both land in the same linked binary. That claim used to be FALSE in the
+; first parameter: this side said `pointer[void]` while scalyls said
+; `pointer[pollfd]`, and check 3 of tests/abi/run.sh cannot see the difference
+; because both lower to a bare `ptr`. `pollfd` is declared HERE, in the
+; prelude, so the tree has ONE declaration of the struct: a second top-level
+; `define pollfd` would mangle to the same LLVM struct name and one of the two
+; would silently win the whole-stack link.
+; struct pollfd { int fd; short events; short revents; } -- 8 bytes, the C
+; layout on LP64 (i32 + i16 + i16).
+define pollfd
+(
+    fd: i32
+    events: i16
+    revents: i16
+)
+procedure poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
 
 ; POSIX pipe(2) — the worker pool's blocking wait channel (milestone
 ; 2.5). int[2] on both OSes: direct extern.
@@ -1136,7 +1150,7 @@ define Scheduler
             ; At least one fd-readiness waiter: block until the OS reports
             ; progress. External I/O is never a channel deadlock, so this
             ; leg is unbounded exactly as before.
-            set n: scaly_eio_wait(s.eio, tagbuf as pointer[void], 64 as i32)
+            set n: scaly_eio_wait(s.eio, tagbuf as pointer[pointer[void]], 64 as i32)
         }
         else
         {
@@ -1153,7 +1167,7 @@ define Scheduler
             let tp &d.threads
             let e0 scaly_atomic_load_u64(ep)
             scaly_atomic_add_u64(bp, 1 as u64)
-            set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[void], 64 as i32, CHAN_DEADLOCK_MS)
+            set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[pointer[void]], 64 as i32, CHAN_DEADLOCK_MS)
             if n = 0
             {
                 let e1 scaly_atomic_load_u64(ep)
@@ -1463,7 +1477,7 @@ define Io
             set ev: 4
         ; events is the u16 at offset 4 (revents at 6 is poll's to fill).
         set *(((pfd as size_t) + 4) as pointer[u16]): ev as u16
-        poll(pfd as pointer[void], 1 as u64, (0 - 1) as i32)
+        poll(pfd as pointer[pollfd], 1 as u64, (0 - 1) as i32)
     }
 
     ; Park until fd is ready. A task arms the fd (oneshot, tagged with
@@ -2081,7 +2095,7 @@ define Channel
                 if current_scheduler <> null
                     set ran: Scheduler.step()
                 if not ran
-                    poll(null as pointer[void], 0 as u64, 1 as i32)
+                    poll(null as pointer[pollfd], 0 as u64, 1 as i32)
             }
             else
             {
@@ -2242,7 +2256,7 @@ define Channel
     {
         let s current_scheduler as ref[Scheduler]
         var tagbuf u8[512]
-        let n scaly_eio_wait_timeout(s.eio, tagbuf as pointer[void], 64 as i32, slice_ms)
+        let n scaly_eio_wait_timeout(s.eio, tagbuf as pointer[pointer[void]], 64 as i32, slice_ms)
         if n = ((0 - 1) as i32)
             exit 107
         var i 0
@@ -2366,7 +2380,7 @@ define Thread
     ; Wait until the thread's entry returned (its result is discarded).
     procedure join(t: size_t)
     {
-        let rc pthread_join(t, null)
+        let rc pthread_join(t, null as pointer[pointer[void]])
         if rc <> 0
             exit 109
     }

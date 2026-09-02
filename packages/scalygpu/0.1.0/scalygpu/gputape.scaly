@@ -48,10 +48,10 @@
 
 function exit(code: i32) extern
 function powf(x: float, y: float) returns float extern
-function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
-function fclose(stream: pointer[void]) returns i32 extern
-function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
-function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
+function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
+function fclose(stream: pointer[OpaqueFile]) returns i32 extern
+function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
+function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
 
 function scaly_mgpu_available() returns i32 extern
 function scaly_mgpu_init() returns i32 extern

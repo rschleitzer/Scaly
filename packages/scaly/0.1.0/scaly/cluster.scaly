@@ -477,7 +477,7 @@ define Cluster
         set *(pfd as pointer[i32]): fd
         ; POLLIN=1 on both OSes (inlined like Io.wait_ready).
         set *(((pfd as size_t) + 4) as pointer[u16]): 1
-        poll(pfd as pointer[void], 1 as i32, ms)
+        poll(pfd as pointer[pollfd], 1 as u64, ms)
     }
 
     ; Read exactly count bytes; bounded polls keep the suspicion clock

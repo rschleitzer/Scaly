@@ -64,14 +64,9 @@ function kill(pid: int, sig: int) returns i32 extern
 function poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
 function signal(sig: int, handler: pointer[void]) returns pointer[void] extern
 
-; struct pollfd { int fd; short events; short revents; } — 8 bytes, matches
-; the C layout on LP64 (i32 + i16 + i16).
-define pollfd
-(
-    fd: i32
-    events: i16
-    revents: i16
-)
+; `pollfd` itself is declared in the PRELUDE (scaly/fiber.scaly), which also
+; declares poll: a top-level `define` mangles without its module, so a second
+; one here would collide with it silently in the whole-stack link.
 
 define POLLIN i16 1
 define SIGKILL int 9

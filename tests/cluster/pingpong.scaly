@@ -81,7 +81,7 @@ procedure run_a()
         set tries: tries + 1
         if tries > 100
             exit 3
-        poll(null as pointer[void], 0 as i32, 100 as i32)
+        poll(null as pointer[pollfd], 0 as u64, 100 as i32)
         set peer: Cluster.connect("127.0.0.1", PORT)
     }
 
