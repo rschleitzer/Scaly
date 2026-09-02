@@ -152,6 +152,30 @@ def is_literal(v):
     return bool(parts) and all(LITERAL.match(p) for p in parts)
 
 
+NAME = re.compile(r'^[a-z_]\w*$')
+
+
+def is_movable(v, body):
+    """May this value change position without changing what the program reads?
+
+    A LITERAL may, trivially.  ★ So may a BARE LOCAL NAME -- a parameter or a
+    `let`/`var` -- because a stack slot can only be written from elsewhere if
+    its ADDRESS escapes, and that is spelled `&name` and nothing else.  So the
+    condition is mechanical: the enclosing body contains no `&name`.
+
+    ★★★ A MEMBER READ is deliberately NOT movable even though it is call-free.
+    `mc.s_black` reads through a reference, and any sibling call holding that
+    reference may write the field between the two positions.  That is the
+    distinction the first version of this rule got wrong by asking "does it
+    contain a call" -- purity of the EXPRESSION says nothing about the
+    stability of what it READS.
+    """
+    v = v.strip()
+    if is_literal(v): return True
+    if not NAME.match(v): return False
+    return not re.search(r'&\s*' + re.escape(v) + r'\b', body)
+
+
 SET = re.compile(r'^\s*set\s+(\w+)\.(\w+)\s*:\s*(.+?)\s*$')
 
 
@@ -217,15 +241,21 @@ def analyse(site, lines, fields_by_pkg):
         # reorder is safe exactly when no two values that CAN have a side
         # effect swap relative position; pure values (a literal, a name, a
         # member chain) may move freely.
-        evald = [k for k, (_, v, _) in enumerate(got) if not is_literal(v)]
+        # ★ the `&name` search must cover the WHOLE FILE, not the block below
+        # the allocation: an address taken EARLIER in the same function is
+        # exactly as escaping, and a block-scoped search would not see it.
+        # Over-conservative on purpose -- a false hold costs a site, a false
+        # move costs a wrong read.
+        body = '\n'.join(lines)
+        evald = [k for k, (_, v, _) in enumerate(got) if not is_movable(v, body)]
         moved = [idx[k] for k in evald]
         safe = moved == sorted(moved)
         # the payload is the argument list in DECLARATION order -- that is what
         # the positional path fills, and the whole point of the verdict
         ordered = [g for _, g in sorted(zip(idx, got), key=lambda x: x[0])]
         return ('REORDER-LIT' if safe else 'REORDER-EVAL'), (ordered, last), \
-               ('nur Literale bewegen sich (%d ausgewertete Werte behalten ihre '
-                'Reihenfolge)' % len(evald)) if safe else \
+               ('nur Literale/ungebundene Namen bewegen sich (%d ortsfeste Werte '
+                'behalten ihre Reihenfolge)' % len(evald)) if safe else \
                ('ausgewertete Werte tauschen die Reihenfolge: %s vs. %s'
                 % (seen, order[:len(seen)]))
     return 'ORDERED', (got, last), '%d Felder, Praefix der Deklaration (%d)' % (len(got), len(decl))
