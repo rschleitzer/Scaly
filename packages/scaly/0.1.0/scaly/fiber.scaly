@@ -2395,15 +2395,11 @@ define TaskGroup
     procedure create() returns ref[TaskGroup]
     {
         let p Page.allocate_page_traced("TaskGroup.record_page")
-        let g p.allocate(sizeof TaskGroup, alignof TaskGroup) as pointer[TaskGroup]
-        set g.pending: 0
-        set g.active: 0
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
         if rc <> 0
             exit 112
-        set g.pipe_read: *(fds as pointer[i32])
-        set g.pipe_write: *(((fds as size_t) + 4) as pointer[i32])
+        let g &TaskGroup^p(0, 0, *(fds as pointer[i32]), *(((fds as size_t) + 4) as pointer[i32]))
         g
     }
 

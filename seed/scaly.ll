@@ -27019,18 +27019,13 @@ if.end35:                                         ; preds = %if.then34, %if.end3
 define linkonce_odr ptr @_ZN9TaskGroup6createEv() {
 entry:
   %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.111)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z9TaskGroup, ptr null, i32 1) to i64), i64 8)
-  %pending = getelementptr inbounds nuw %_Z9TaskGroup, ptr %call1, i32 0, i32 0
-  store i64 0, ptr %pending, align 8
-  %active = getelementptr inbounds nuw %_Z9TaskGroup, ptr %call1, i32 0, i32 1
-  store i64 0, ptr %active, align 8
   %fds = alloca [8 x i8], align 1
   %arr.ptr = getelementptr inbounds [8 x i8], ptr %fds, i64 0, i64 0
-  %fds2 = alloca ptr, align 8
-  store ptr %arr.ptr, ptr %fds2, align 8
-  %fds3 = load ptr, ptr %fds2, align 8
-  %call4 = call i32 @pipe(ptr %fds3)
-  %ne = icmp ne i32 %call4, 0
+  %fds1 = alloca ptr, align 8
+  store ptr %arr.ptr, ptr %fds1, align 8
+  %fds2 = load ptr, ptr %fds1, align 8
+  %call3 = call i32 @pipe(ptr %fds2)
+  %ne = icmp ne i32 %call3, 0
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -27038,18 +27033,23 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %fds5 = load ptr, ptr %fds2, align 8
-  %deref = load i32, ptr %fds5, align 4
-  %pipe_read = getelementptr inbounds nuw %_Z9TaskGroup, ptr %call1, i32 0, i32 2
-  store i32 %deref, ptr %pipe_read, align 4
-  %fds6 = load ptr, ptr %fds2, align 8
-  %as.ptrtoint = ptrtoint ptr %fds6 to i64
+  %fds4 = load ptr, ptr %fds1, align 8
+  %deref = load i32, ptr %fds4, align 4
+  %fds5 = load ptr, ptr %fds1, align 8
+  %as.ptrtoint = ptrtoint ptr %fds5 to i64
   %add = add i64 %as.ptrtoint, 4
   %as.inttoptr = inttoptr i64 %add to ptr
-  %deref7 = load i32, ptr %as.inttoptr, align 4
-  %pipe_write = getelementptr inbounds nuw %_Z9TaskGroup, ptr %call1, i32 0, i32 3
-  store i32 %deref7, ptr %pipe_write, align 4
-  ret ptr %call1
+  %deref6 = load i32, ptr %as.inttoptr, align 4
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z9TaskGroup, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9TaskGroup }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z9TaskGroup, ptr %tuple.region, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 1
+  %tuple.field7 = getelementptr inbounds nuw %_Z9TaskGroup, ptr %tuple.region, i32 0, i32 1
+  store i64 0, ptr %tuple.field7, align 1
+  %tuple.field8 = getelementptr inbounds nuw %_Z9TaskGroup, ptr %tuple.region, i32 0, i32 2
+  store i32 %deref, ptr %tuple.field8, align 1
+  %tuple.field9 = getelementptr inbounds nuw %_Z9TaskGroup, ptr %tuple.region, i32 0, i32 3
+  store i32 %deref6, ptr %tuple.field9, align 1
+  ret ptr %tuple.region
 }
 
 define linkonce_odr void @_ZN9TaskGroup10finish_oneEP9TaskGroup(ptr %0) {
