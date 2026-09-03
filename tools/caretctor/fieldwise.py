@@ -365,10 +365,22 @@ JOURNAL_PATH = 'tools/caretctor/.journal.json'
 ORDER = ['ORDERED', 'REORDER-LIT', 'HOIST', 'REORDER-EVAL', 'GAP', 'NODEFAULT', 'INTERLEAVED', 'SELFREF', 'NOFIELDS']
 
 
-def rewrite(sites, apply_):
+def rewrite(sites, apply_, reorder_eval_ok=False):
+    ok = ['ORDERED', 'REORDER-LIT', 'HOIST']
+    # ★ `--reorder-eval-ok` is a READER's verdict, not a widening of the rule.
+    # The tool holds a REORDER site whenever any value it cannot prove pure
+    # changes relative position, and an `A | B` fold of two module-level
+    # `define`s is exactly such a value -- pure in fact, opaque to the scan.
+    # Measured over the tree's four REORDER-EVAL sites, all in MifFOTBuilder:
+    # the ONLY field out of declaration order is `set_props`, its value is that
+    # constant fold, and it crosses nothing evaluated in two of them and one
+    # call in the other two -- with no second call to swap against.  The flag
+    # exists so that judgement is written down and re-checked per run, the way
+    # convert.py's `--no-init-ok` is.
+    if reorder_eval_ok: ok.append('REORDER-EVAL')
     todo = collections.defaultdict(list)
     for s in sites:
-        if s['fw'] not in ('ORDERED', 'REORDER-LIT', 'HOIST'): continue
+        if s['fw'] not in ok: continue
         raw = open(s['f'], encoding='utf-8').read().split('\n')
         code = S.load(s['f'])
         i = s['n'] - 1
@@ -379,7 +391,19 @@ def rewrite(sites, apply_):
         if not m: continue
         page = m.group(4)          # FIELDWISE sites carry no 'page' -- scan.py
         indent = m.group(1)        # classifies and continues before setting it
-        args = ', '.join(v for _, v, _ in got)
+        # ★★★ THE VALUE MUST COME FROM THE RAW LINE, NOT FROM `code()`.
+        # scan.code# replaces an escape INSIDE a string by two spaces so that a
+        # `;` in a literal cannot read as a comment -- length-preserving, which
+        # is what makes it safe to scan and fatal to write back.  Measured: it
+        # turned `String^host("<$pagenum\\>")` into `String^host("<$pagenum  >")`
+        # in MifFOTBuilder, silently, and the file still compiled.  The offsets
+        # agree because the normalisation preserves length, so the fix is to
+        # slice `raw` at the span the match found in `code`.
+        vals = []
+        for fld, v, k in got:
+            mk = SET.match(code[k])
+            vals.append(raw[k][mk.start(3):mk.end(3)] if mk else v)
+        args = ', '.join(vals)
         ty = s['ty'].strip()
         new = '%slet %s &%s^%s(%s)' % (indent, s['name'], ty, page, args)
         # carry any trailing comments of the replaced lines
@@ -431,6 +455,7 @@ def main():
         if a.startswith('--verdict='): only = a.split('=', 1)[1]
     sites = collect(roots)
     apply_ = '--apply' in sys.argv
+    reorder_eval_ok = '--reorder-eval-ok' in sys.argv
     show = '--apply' in sys.argv or '--show' in sys.argv or only
     if show:
         for v in ORDER:
@@ -440,7 +465,7 @@ def main():
             for s in rows:
                 print('  %s:%d  [%s]  -> %s' % (s['f'], s['n'], s['ty'], s['fwnote']))
             print()
-    todo = rewrite(sites, apply_)
+    todo = rewrite(sites, apply_, reorder_eval_ok)
     n = sum(len(v) for v in todo.values())
     print('--- %d FIELDWISE-Sites' % len(sites))
     for v in ORDER:
