@@ -1,0 +1,33 @@
+; A METHOD CALL ON A `pointer[T]` RECEIVER WAS SILENTLY DROPPED — rc 0, no
+; diagnostic, and the whole body came out `ret void`, even for a method name
+; that exists NOWHERE in the tree. report_unresolved_method_call# reports it.
+;
+; The mechanism is the call DETECTION, not the lookup: it accepts a member_access
+; chain whose last hop is_method, or a PlannedType head. resolve_member_access#
+; records an unresolved hop as a placeholder with is_method=false and a VOID
+; result, so `is_call` stayed false, the operand pair collapsed, and the s185
+; not-found gate — which lives INSIDE `if is_call` — was never reached.
+;
+; ★The receiver's type decided whether anything was said, and only by accident:
+; for a CONCEPT the emitter later tripped over the dangling member READ (exit 16,
+; no file and no line); for a PRIMITIVE pointee map_type answers `i8`, the
+; emitter's struct-shaped trap does not fire, and nothing at all was said.
+; `pointer[char]` is therefore the shape this pins.
+;
+; It was live: tscaly's get_property_name_for_known_symbol_name wrote its
+; fallback name with three `buf.put(w, …)` into a `buf: pointer[char]` and had
+; emitted NOTHING since the first port. The write on a raw buffer is
+; `set *(buf + i): v`; method_on_pointer_receiver_ok.scaly is the positive twin.
+; xfail: method not found: put in type char
+
+procedure fill(q: pointer[char])
+{
+    q.put(0, "A" as char)
+}
+
+function main() returns int
+{
+    var buf char[8]
+    fill(&buf[0])
+    0
+}

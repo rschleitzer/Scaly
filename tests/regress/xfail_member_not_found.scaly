@@ -6,7 +6,14 @@
 ; non-variant hop has a VOID result and its parent maps to a sized concrete
 ; struct. Only viable after glob-type-disambiguation stopped the glob-
 ; ambiguity path from relying on the field-0 fallback.
-; xfail: member not found
+;
+; ★Since 2026-09-03 this shape is caught EARLIER and better: an unresolved hop
+; FOLLOWED BY AN ARGS TUPLE is report_unresolved_method_call#'s hard rc-4, with
+; a file:line:col the emitter's guard could never give (it has no source
+; location, which is why exit 16 printed a bare name). The emitter guard is NOT
+; redundant — it still covers the READ form, `let x b.nonexistent`, where there
+; is no args tuple and nothing for the planner's call detection to key on.
+; xfail: method not found: nonexistent in type Box
 
 define Box
 (

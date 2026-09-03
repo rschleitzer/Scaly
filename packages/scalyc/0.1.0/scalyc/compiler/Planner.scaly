@@ -9938,6 +9938,12 @@ define Planner
                                 0
                     }
 
+                    ; A call the two branches above BOTH refuse, because the
+                    ; member it names does not exist — see
+                    ; report_unresolved_method_call#. ONE statement calling a
+                    ; static helper, per the s178 alloca-pool rule.
+                    this.report_unresolved_method_call(is_call, result, second)
+
                     if is_call
                     {
                         ; Struct/Union value construction. When fn_name
@@ -24089,6 +24095,89 @@ define Planner
             ; in scope, and add_diagnostic stores the message beyond this frame.
             let vmsg vsb.to_string()
             this.add_diagnostic(loc, String^this(vmsg))
+        }
+
+        ; ★★★ A METHOD CALL WHOSE MEMBER DOES NOT EXIST WAS NOT A CALL AT ALL,
+        ; AND THAT IS WHY IT VANISHED. Call detection above accepts exactly two
+        ; shapes -- a member_access chain whose LAST HOP is_method, or a
+        ; PlannedType head -- and an unresolved hop is neither: resolve_member_
+        ; access# records a placeholder with is_method=false and a VOID result
+        ; type, so `is_call` stays false, the operand pair collapses, and the
+        ; statement leaves no trace. rc 0, no diagnostic, not even a dropped-
+        ; call message, because the s185 not-found gate lives INSIDE `if
+        ; is_call` and was never reached.
+        ;
+        ; ★★★The receiver's type decided whether ANYTHING was said, and only by
+        ; accident: for a CONCEPT the emitter later tripped over the dangling
+        ; member READ (`Emitter: member not found`, exit 16, no file and no
+        ; line), while for a PRIMITIVE pointee -- `q.put(0, c)` on a
+        ; `q: pointer[char]`, which derefs to `char` -- map_type answers `i8`,
+        ; the emitter's struct-shaped trap does not fire, and the whole body
+        ; came out `ret void`. Measured 2026-09-03: tscaly's
+        ; get_property_name_for_known_symbol_name wrote its fallback name with
+        ; three `buf.put(w, ...)` into a `buf: pointer[char]` and had emitted
+        ; NOTHING since the first port.
+        ;
+        ; ★The gate asks for the placeholder EXACTLY: last hop not a method,
+        ; void result, and a NON-EMPTY parent name. The empty name is the one
+        ; legitimate recovery the placeholder arm documents (a base that itself
+        ; did not resolve, already reported at its own line); a resolved
+        ; property hop carries its own type, so a delegate-typed field called
+        ; through `obj.f(args)` is untouched.
+        function report_unresolved_method_call(
+            this: Planner,
+            is_call: bool,
+            recv: PlannedOperand,
+            second: PlannedOperand
+        )
+        {
+            if is_call
+                return
+            if recv.member_access = null
+                return
+            var second_is_args: bool false
+            choose second.expr
+                when rumc_tp: PlannedTuple
+                    set second_is_args: true
+                else
+                    0
+            if second_is_args = false
+                return
+            let rumc_ma (*recv.member_access)
+            if rumc_ma.length = 0
+                return
+            let rumc_last_ptr rumc_ma.get(rumc_ma.length - 1)
+            if rumc_last_ptr = null
+                return
+            let rumc_last (*rumc_last_ptr)
+            if rumc_last.is_method
+                return
+            if rumc_last.result_type.name <> "void"
+                return
+            if rumc_last.parent_type.name.get_length() = 0
+                return
+            ; ★★★An UNINSTANTIATED generic parameter answers nothing here and
+            ; must not be judged: `key.hash()` inside `HashMap[K, V]` looks the
+            ; member up on the bare `K`, records the same void placeholder, and
+            ; resolves only when the concept is instantiated. Measured: without
+            ; this the stdlib does not build (HashMap, HashSet, HashMapBuilder,
+            ; HashSetBuilder, 22 diagnostics). Same question and the same helper
+            ; the rest of the compiler asks -- a single uppercase letter.
+            if Planner.is_generic_type_param_name(rumc_last.parent_type.name)
+                return
+            ; A fresh type VARIABLE is the constraint solver's placeholder, not a
+            ; type that could carry members.
+            if rumc_last.parent_type.variable <> null
+                return
+
+            var rumc_sb StringBuilder()
+            rumc_sb.append "method not found: "
+            rumc_sb.append rumc_last.name
+            rumc_sb.append " in type "
+            rumc_sb.append rumc_last.parent_type.name
+            ; Same pinning idiom as report_receiver_arity# above.
+            let rumc_msg rumc_sb.to_string()
+            this.add_diagnostic(second.loc, String^this(rumc_msg))
         }
 
         function report_unknown_identifier(this: Planner, op: PlannedOperand)

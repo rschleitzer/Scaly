@@ -1,0 +1,60 @@
+; The positive twin of xfail_method_on_pointer_receiver.scaly. The gate must not
+; touch what legitimately resolves THROUGH a pointer: lookup_method# auto-derefs
+; `pointer[T]`/`ref[T]`, so a real method of the pointee is a normal call, and a
+; raw buffer is written with `set *(p + i): v` — the spelling the dropped
+; `put` should have been.
+;
+; ★The generic-parameter exemption is pinned here too: `key.hash()` inside a
+; HashMap instantiation looks the member up on the bare `K` while the template
+; is planned and records the same void placeholder the gate keys on. Without the
+; exemption the STDLIB does not build (22 diagnostics over HashMap, HashSet and
+; the two Builders), so any use of a HashMap is the pin.
+
+define Boxy
+(
+    k: int
+)
+{
+    init()
+        set k: 7
+
+    function twice(this: Boxy) returns int
+        k * 2
+}
+
+procedure fill(q: pointer[char])
+{
+    set *(q + 0): "A" as char
+    set *(q + 1): "B" as char
+}
+
+function main() returns int
+{
+    var b Boxy()
+    let pb &b
+
+    ; a real method resolves THROUGH the pointer (lookup_method#'s auto-deref)
+    if pb.twice() <> 14
+        return 1
+
+    var buf char[8]
+    fill(&buf[0])
+    if (buf[0] as int) <> 65
+        return 2
+    if (buf[1] as int) <> 66
+        return 3
+
+    ; the generic-parameter exemption: K is unresolved while the template is
+    ; planned, and `key.hash()` must not be judged there
+    var hb HashMapBuilder[String, int]()
+    hb.add(String("a"), 1)
+    var hm HashMap[String, int](*hb)
+    let got hm[String("a")]
+    if got = null
+        return 4
+    if (*got) <> 1
+        return 5
+
+    println "PASS"
+    0
+}

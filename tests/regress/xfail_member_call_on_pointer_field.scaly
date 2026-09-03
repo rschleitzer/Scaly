@@ -1,4 +1,10 @@
-; xfail: member not found: Other.no_such_member
+; xfail: method not found: no_such_member in type Other
+;
+; ★The expectation moved 2026-09-03: this is now the PLANNER's
+; report_unresolved_method_call#, a hard rc-4 that names the file, line and
+; column, rather than the emitter's location-less exit 16. The diagnosis below
+; stands unchanged and is why the emitter trap had to be repaired as well --
+; the READ form of the same shape still goes through it.
 ;
 ; A member call on a POINTER-typed FIELD used to compile with rc 0, and the
 ; call simply was not in the emitted body (2026-08-19). The identical call on a
