@@ -63,7 +63,16 @@ a hard defect; there is no benign shape that matches.
 import re, sys
 
 OPERATOR = re.compile(r'(ix|ps|mi|ml|dv|eq|ne|lt|gt)E[a-z0-9]*$')
-CONSTANT_RET = re.compile(r'ret \w+ (0|null|zeroinitializer|false)$')
+# ★★★A FLOATING-POINT ZERO IS A CONSTANT RETURN TOO, and leaving it out made
+# this scan answer BODY DROPPED 0 on a build where `Slice[double]`'s operator[]
+# was demonstrably empty: LLVM prints it `ret double 0.000000e+00`, which the
+# integer-only pattern did not match.  Measured 2026-09-03 while converting
+# dazzle's CieData -- the probe answered 0 instead of 8 at rc 0 and this file
+# called it clean.  A refuter that cannot fire is worse than none, and this one
+# could not fire for any f32/f64 container in the tree.
+CONSTANT_RET = re.compile(
+    r'ret \w+ (0|null|zeroinitializer|false|'
+    r'0\.0+e\+0+|0\.0+|-?0x0+(?:p\+0)?)$')
 
 def scan(path):
     cur, body, bad, total = None, [], [], 0
