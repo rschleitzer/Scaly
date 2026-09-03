@@ -104,7 +104,52 @@ def routine_range(lines, name):
         j += 1
     return (start, len(lines) - 1)
 
-def main(path, routine, buf, length, elem):
+CALLHEAD = re.compile(r'(?<![\w.])([A-Za-z_][\w.]*)\s*\(')
+
+def call_args_carrying(line, buf):
+    """Every call on `line` one of whose top-level ARGUMENTS is exactly `buf`.
+
+    ★★★This is the bug the tool MINTS and cannot otherwise see. The length
+    substitution below rewrites a forwarding `f(buf, n)` into `f(buf, buf.length)`,
+    which hands a `Slice` to a parameter still declared `pointer[T]`. Nothing
+    catches it: both lower to `ptr`, `emit_call` synthesizes the callee type from
+    the ARGUMENTS, the suite stays green, and the callee reads the Slice STRUCT as
+    its buffer. Three such sites were minted in one session (2026-09-03).
+
+    The verdict is per CALLEE and belongs to the reader, not to a regex: the call
+    is right when that callee is converted too (then the length argument is
+    surplus and `callfix.py` drops it) and wrong when it is not (then the spelling
+    is `buf.data`). So the sites are REFUSED and `--forward=NAME[,NAME]`
+    acknowledges the ones whose callee the reader has decided about.
+    """
+    out = []
+    for m in CALLHEAD.finditer(line):
+        depth, end = 1, None
+        for k in range(m.end(), len(line)):
+            if line[k] in '([': depth += 1
+            elif line[k] in ')]':
+                depth -= 1
+                if depth == 0: end = k; break
+        if end is None: continue
+        name = m.group(1)
+        if name.endswith('.' + buf) or name == buf: continue   # buf is the RECEIVER
+        for a in split_top(line[m.end():end]):
+            if a.strip() == buf: out.append(name); break
+    return out
+
+
+def split_top(text):
+    out, depth, cur = [], 0, ''
+    for ch in text:
+        if ch in '([': depth += 1
+        elif ch in ')]': depth -= 1
+        if ch == ',' and depth == 0:
+            out.append(cur); cur = ''; continue
+        cur += ch
+    out.append(cur); return out
+
+
+def main(path, routine, buf, length, elem, forward=()):
     lines = open(path).read().split('\n')
     rng = routine_range(lines, routine)
     if rng is None: sys.exit(f"routine not found: {routine}")
@@ -148,8 +193,24 @@ def main(path, routine, buf, length, elem):
     if stores:
         sys.exit(f"REFUSED: {routine} assigns through a subscript on {buf} at "
                  f"line(s) {stores} -- the write spelling is {buf}.put(i, v)")
+    # ★★★And the THIRD one, which is the bug this tool MINTS rather than leaves:
+    # the length substitution turns a forwarding `f(buf, n)` into `f(buf, buf.length)`,
+    # handing a Slice to a parameter still declared `pointer[T]`. That COMPILES.
+    fwd = [(i + 1, c) for i in range(a + 1, b + 1)
+           for c in call_args_carrying(code_only(lines[i]), buf)
+           if c not in forward]
+    if fwd:
+        where = ', '.join(f"{c} (line {i})" for i, c in fwd)
+        sys.exit(f"REFUSED: {routine} hands {buf} on to {where} -- a Slice into a "
+                 f"pointer parameter compiles and reads the struct as its buffer. "
+                 f"Convert the callee too, or write {buf}.data; then re-run with "
+                 f"--forward={','.join(sorted(set(c for _, c in fwd)))}")
     open(path, 'w').write('\n'.join(lines))
     print(f"{path}: {routine}({buf}) -> Slice[{elem}]")
 
 if __name__ == '__main__':
-    main(*sys.argv[1:6])
+    argv = [a for a in sys.argv[1:] if not a.startswith('--')]
+    fwd = set()
+    for a in sys.argv[1:]:
+        if a.startswith('--forward='): fwd |= set(a.split('=', 1)[1].split(','))
+    main(*argv[:5], forward=fwd)
