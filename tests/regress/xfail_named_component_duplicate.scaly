@@ -1,0 +1,5 @@
+; A field may be given a value once. A last-wins rule would make the first
+; value's side effects invisible.
+; xfail: is given a value twice
+define Rec (alpha: int, beta: int, gamma: int)
+var r Rec(alpha: 3, alpha: 1, beta: 2)

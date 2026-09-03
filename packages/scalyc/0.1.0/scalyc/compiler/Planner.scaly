@@ -4219,6 +4219,218 @@ define Planner
                     null
         }
 
+        ; reorder_named_components#: give a NAMED tuple component its meaning.
+        ;
+        ; ★★★ The grammar has carried the name since the beginning -- `Component`
+        ; is `Operand+ [':' Operand+]` and `Modeler.handle_component#` puts it in
+        ; `Model.Component.name` -- and the construction path IGNORED it, filling
+        ; positionally. Measured before this landed: `Rec(gamma: 3, alpha: 1,
+        ; beta: 2)` on `define Rec (alpha, beta, gamma)` answered `3 1 2` at rc 0
+        ; with nothing said. Worse than a wrong value: `check_one_component_type#`
+        ; RETURNS EARLY on a named component -- exactly because the name meant
+        ; nothing -- so the labelled spelling also switched OFF the type check
+        ; that would have caught it. A spelling that looks like documentation and
+        ; silently disables a gate is the worst shape this compiler has.
+        ;
+        ; What it does: when ANY component carries a name, resolve every name to
+        ; a property index and return the components in DECLARATION order, with
+        ; the names STRIPPED so the positional check downstream applies to them
+        ; like any other. No name anywhere -> the input unchanged, so every
+        ; existing construction in the tree emits byte-identically.
+        ;
+        ; ★ The rules are deliberately strict, because each looser one has a
+        ; silent failure behind it:
+        ;   * name one field and you must name them ALL -- a mixed list would
+        ;     make the reader compute which positions the labels shifted.
+        ;   * an unknown name is an error, never a positional fallback.
+        ;   * a field named twice is an error; the last-wins rule would make the
+        ;     first value's side effects invisible.
+        ;   * the named fields must be a PREFIX of the declaration. A trailing
+        ;     omission is what fill_default_components# fills; a MIDDLE one it
+        ;     cannot, and inventing a value here would be the uninitialised-field
+        ;     class this path already exists to prevent.
+        ; ★ `rp` is DECLARED, not inferred. The body constructs nothing itself
+        ; -- it only forwards to place_named_components# -- so page-inference
+        ; rule 1 (`body_may_allocate`) correctly answers NO, and the vector the
+        ; callee builds then lands on THIS routine's frame, which is released
+        ; at the return. Measured: one named construction compiled, TWO in one
+        ; file segfaulted the planner (rc 139), because the second reused the
+        ; released frame. The mangled name is where it shows: the sibling
+        ; restamp_components# carries `PN4scaly6memory4PageE` and this one did
+        ; not.
+        function reorder_named_components(
+            rp,
+            this: Planner,
+            struct_name: String,
+            loc: Span,
+            provided: ref[Vector[PlannedComponent]]?,
+            ctor_type: PlannedType
+        ) returns ref[Vector[PlannedComponent]]?
+        {
+            if provided = null
+                return provided
+            let pv (*provided)
+            var named: size_t 0
+            var ci: size_t 0
+            while ci < pv.length
+            {
+                let cp pv.get ci
+                if cp <> null
+                    if cp.name <> null
+                        set named: named + 1
+                set ci: ci + 1
+            }
+            if named = 0
+                return provided
+            let concept_ref this.lookup_concept(struct_name)
+            if concept_ref = null
+                return provided
+            let c (*concept_ref)
+            var out_ref: ref[Vector[PlannedComponent]]? provided
+            choose c.definition
+                when s: Structure
+                    set out_ref: this.place_named_components(struct_name, s, loc, pv, named)
+            out_ref
+        }
+
+        ; The Structure half of reorder_named_components#, split out so the
+        ; caller stays one statement per rule (the s178 alloca-pool discipline).
+        function place_named_components(
+            this: Planner,
+            struct_name: String,
+            s: Structure,
+            loc: Span,
+            pv: Vector[PlannedComponent],
+            named: size_t
+        ) returns ref[Vector[PlannedComponent]]?
+        {
+            if named <> pv.length
+            {
+                var msb StringBuilder()
+                msb.append "a construction of "
+                msb.append struct_name
+                msb.append " that names one field must name them all: "
+                msb.append named
+                msb.append " of "
+                msb.append pv.length
+                msb.append " components carry a name"
+                let rmsg msb.to_string()
+                this.add_diagnostic(loc, String^this(rmsg))
+                return null
+            }
+            ; slot i holds the component that named property i, -1 if none
+            var slots Array[int]()
+            var pi: size_t 0
+            while pi < s.properties.length
+            {
+                slots.add(0 - 1)
+                set pi: pi + 1
+            }
+            var ci: size_t 0
+            while ci < pv.length
+            {
+                let cp pv.get ci
+                if cp <> null
+                {
+                    let cc (*cp)
+                    if cc.name <> null
+                    {
+                        let nm (*cc.name)
+                        var found: int 0 - 1
+                        var qi: size_t 0
+                        while qi < s.properties.length
+                        {
+                            let pp s.properties.get qi
+                            if pp <> null
+                                if pp.name.equals(nm)
+                                    set found: qi as int
+                            set qi: qi + 1
+                        }
+                        if found < 0
+                        {
+                            var msb StringBuilder()
+                            msb.append struct_name
+                            msb.append " has no field called "
+                            msb.append nm
+                            let rmsg msb.to_string()
+                            this.add_diagnostic(loc, String^this(rmsg))
+                            return null
+                        }
+                        let prev slots.get (found as size_t)
+                        if prev <> null
+                            if (*prev) >= 0
+                            {
+                                var msb StringBuilder()
+                                msb.append "field "
+                                msb.append nm
+                                msb.append " of "
+                                msb.append struct_name
+                                msb.append " is given a value twice"
+                                let rmsg msb.to_string()
+                                this.add_diagnostic(loc, String^this(rmsg))
+                                return null
+                            }
+                        slots.put(found as size_t, ci as int)
+                    }
+                }
+                set ci: ci + 1
+            }
+            ; the named fields must be a PREFIX -- a gap cannot be filled
+            var seen_gap: bool false
+            var first_gap: size_t s.properties.length
+            var pk: size_t 0
+            while pk < s.properties.length
+            {
+                let sp slots.get pk
+                if sp <> null
+                {
+                    if (*sp) < 0
+                    {
+                        if seen_gap = false
+                            set first_gap: pk
+                        set seen_gap: true
+                    }
+                    else
+                        if seen_gap
+                        {
+                            var msb StringBuilder()
+                            msb.append "a named construction of "
+                            msb.append struct_name
+                            msb.append " may leave only TRAILING fields unnamed: "
+                            let pp s.properties.get first_gap
+                            if pp <> null
+                                msb.append pp.name
+                            msb.append " has no value, and a later field does"
+                            let rmsg msb.to_string()
+                            this.add_diagnostic(loc, String^this(rmsg))
+                            return null
+                        }
+                }
+                set pk: pk + 1
+            }
+            ; rebuild in declaration order, names stripped so the positional
+            ; type check downstream sees them like any other component
+            var out Array[PlannedComponent]()
+            var pj: size_t 0
+            while pj < s.properties.length
+            {
+                let sp slots.get pj
+                if sp <> null
+                    if (*sp) >= 0
+                    {
+                        let cp pv.get ((*sp) as size_t)
+                        if cp <> null
+                        {
+                            let cc (*cp)
+                            out.add(PlannedComponent(cc.loc, null, cc.value, cc.attributes))
+                        }
+                    }
+                set pj: pj + 1
+            }
+            var out_vec Vector[PlannedComponent](out)
+            &out_vec
+        }
+
         ; fill_default_components: for a data-class construction that matched
         ; no explicit init#, append default-value components for every
         ; property beyond the provided count (`Config()` with all-defaulted
@@ -10392,6 +10604,14 @@ define Planner
                             ; (`Config()` / `Config(true)` with defaulted fields).
                             ; No-op for a full construction or a plain tuple.
                             ; Mirrors stage-0 Planner.cpp:9229-9275.
+                            ; A LABELLED component list is resolved and put in
+                            ; declaration order FIRST -- everything below this
+                            ; line reasons about position, including the arity
+                            ; fill and the type check, and a name that has not
+                            ; been placed yet would make all three answer about
+                            ; the wrong field (reorder_named_components#).
+                            set components_holder: this.reorder_named_components(fn_name, second.loc, components_holder, ctor_struct_type)
+
                             set components_holder: this.fill_default_components(fn_name, second.loc, components_holder, ctor_struct_type, ctor_arg_types)
 
                             ; A String literal bound to a pointer[const_char]-

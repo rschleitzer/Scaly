@@ -26,6 +26,7 @@ use scalyc.compiler.Model.*
 ; globals are rejected inside a namespace body).
 mutable modeler_error_count: size_t 0
 
+
 define Modeler
 {
     ; ============================================================================
@@ -362,9 +363,17 @@ define Modeler
                     if name_op_ptr <> null
                     {
                         let name_op (*name_op_ptr)
+                        ; ★★★ The arm is `Name`, not `Type`. This `choose`
+                        ; asked for `TypeSyntax` from the day it was written
+                        ; and a bare identifier in operand position is
+                        ; `ExpressionSyntax.Name` -- so the extraction was
+                        ; DEAD, every `T(field: value)` reached the planner
+                        ; unnamed, and the construction path filled it
+                        ; positionally without a word. Measured 2026-09-03:
+                        ; `Rec(gamma: 3, alpha: 1, beta: 2)` answered `3 1 2`.
                         choose name_op.expression
-                            when type_expr: TypeSyntax
-                                set name: String(type_expr.name.name)
+                            when name_expr: NameSyntax
+                                set name: String(name_expr.name)
                             else {}
                     }
                 }

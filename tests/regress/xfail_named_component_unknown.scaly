@@ -1,0 +1,5 @@
+; A named component must name a field the type HAS. Before this was checked,
+; the name was ignored outright and the value was filed positionally.
+; xfail: has no field called
+define Rec (alpha: int, beta: int, gamma: int)
+var r Rec(nosuchfield: 3, alpha: 1, beta: 2)

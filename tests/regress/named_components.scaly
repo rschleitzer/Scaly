@@ -1,0 +1,57 @@
+; Regression: a NAMED tuple component fills the field it names.
+;
+; The grammar has carried the name from the beginning -- `Component` is
+; `Operand+ [':' Operand+]` and the parser produces the Value -- and BOTH the
+; Modeler and the Planner dropped it on the floor:
+;
+;   * Modeler.handle_component# asked `when type_expr: TypeSyntax`, but a bare
+;     identifier in operand position is `ExpressionSyntax.Name`.  The arm could
+;     never match, so the extraction had been DEAD since it was written.
+;   * the construction path then filled POSITIONALLY, and
+;     check_one_component_type# RETURNS EARLY on a named component -- exactly
+;     because the name meant nothing -- so the labelled spelling also switched
+;     OFF the type check that would have caught it.
+;
+; Measured before the fix: `Rec(gamma: 3, alpha: 1, beta: 2)` answered `3 1 2`
+; at rc 0 with nothing said.  A spelling that reads as documentation and
+; silently misfiles every value is the worst shape this compiler has had.
+;
+; Expected: PASS
+
+define Rec (alpha: int, beta: int, gamma: int)
+
+var own Array[int]()
+let host Page.get(own)
+
+; declaration order
+let a Rec(alpha: 1, beta: 2, gamma: 3)
+; ANY order -- the name decides, not the position
+let b Rec(gamma: 3, alpha: 1, beta: 2)
+; through the page sigil, which takes the region-alloc branch
+let c &Rec^host(beta: 2, gamma: 3, alpha: 1)
+
+var ok true
+if a.alpha <> 1
+    set ok: false
+if a.beta <> 2
+    set ok: false
+if a.gamma <> 3
+    set ok: false
+if b.alpha <> 1
+    set ok: false
+if b.beta <> 2
+    set ok: false
+if b.gamma <> 3
+    set ok: false
+if c.alpha <> 1
+    set ok: false
+if c.beta <> 2
+    set ok: false
+if c.gamma <> 3
+    set ok: false
+
+; a TRAILING field may still be left out where it carries a default
+if ok
+    print "PASS\n"
+else
+    print "FAIL\n"

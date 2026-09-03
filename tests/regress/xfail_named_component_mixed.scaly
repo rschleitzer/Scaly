@@ -1,0 +1,5 @@
+; Name one field and you must name them all: a mixed list would make the
+; reader compute which positions the labels shifted.
+; xfail: must name them all
+define Rec (alpha: int, beta: int, gamma: int)
+var r Rec(alpha: 1, 2, gamma: 3)

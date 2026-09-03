@@ -1,0 +1,6 @@
+; Only TRAILING fields may be left unnamed -- a trailing omission is what
+; fill_default_components# fills, a MIDDLE one it cannot, and inventing a
+; value would be the uninitialised-field class this path exists to prevent.
+; xfail: may leave only TRAILING fields unnamed
+define Rec (alpha: int, beta: int, gamma: int)
+var r Rec(alpha: 1, gamma: 3)
