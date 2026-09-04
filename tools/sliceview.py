@@ -41,14 +41,40 @@ into an element address (`let e b + k`), walked backwards (`*(b - 1)`) or
 dereferenced bare (`*b`) is left alone -- converting it would hand a slice
 STRUCT to a pointer parameter with nothing said at any stage.
 
+
+★★★THE SECOND MODE HOLDS THE VIEW ONE LEVEL UP, and it exists because
+`tools/subscript_driver.py` says in so many words that this file is the answer
+for a `String` receiver "aber es beansprucht sie nicht von selbst".  The
+driver reverted 28 of 29 proposals on 2026-09-04 for one structural reason --
+the ports walk STRING bytes and `String` has NO `operator []` -- and every one
+of those reverted sites is this shape:
+
+    let pn this.prog_name                 let pn this.prog_name.as_slice()
+    while pi < pn.get_length()      ->    while pi < pn.length
+        ... *(pn.get_buffer() + pi) ...       ... pn[pi] ...
+
+The local is bound to the CONTAINER, not to its buffer, so the first mode
+(which keys on `let b <recv>.get_buffer()`) never saw it, and `subscript.py`
+proposed `pn[pi]` on the String itself, which does not exist.  The view is
+taken ONCE at the binding -- on a `String` that matters beyond taste, because
+`get_buffer()` decodes the varint length prefix by walking bytes and every
+inline site re-walked it.
+
+The guards are the first mode's: every use of the local must be a walk
+`*(x.get_buffer() + i)` or a `x.get_length()`, a MINUS offset refuses, a walk
+in the TARGET half of a `set` refuses (a `String` has no `put`, and the
+container half is `Slice.put`, which the first mode already writes), and the
+RHS must be a plain name/member chain or one call -- `let bl b as ref[Array[
+ref[Type]?]]` would otherwise get `.as_slice()` appended INSIDE the cast.
+
 Usage: tools/sliceview.py [--apply] <file.scaly>...
 """
 import re, sys
 
 sys.path.insert(0, __file__.rsplit('/', 1)[0])
 from subscript_local import (BIND, routine_spans, strip_comment, deref_spans,
-                             other_use)
-from subscript import set_source_start
+                             other_use, REBIND)
+from subscript import set_source_start, balanced_index
 
 def rewrite_reads(text, local):
     out = text
@@ -66,8 +92,20 @@ def convert(lines):
             m = BIND.match(codes[k])
             if not m: continue
             indent, local, recv = m.group(1), m.group(2), m.group(3)
-            hits, ok = [], True
+            # ★★★STOP AT A REBINDING OF THE SAME NAME -- `tools/subscript_local.py`
+            # carries the rule and this file was written without it, which made
+            # the tool REFUSE ITS OWN EARLIER WORK: two `when` arms of
+            # `Modeler.handle_literal` each hoist `let buf <lit>.value` and walk
+            # it, the hex arm was converted first, and its `let buf ...as_slice()`
+            # then read as a non-deref USE of the integer arm's `buf` -- so the
+            # integer arm was reported unconvertible for as long as its sibling
+            # was converted. A scan that runs past a rebinding also answers
+            # about the WRONG receiver; the sibling tool records that measurement.
+            end = len(body)
             for j in range(k + 1, len(body)):
+                if REBIND(local).match(codes[j]): end = j; break
+            hits, ok = [], True
+            for j in range(k + 1, end):
                 code = codes[j]
                 if not re.search(rf'\b{re.escape(local)}\b', code): continue
                 spans = deref_spans(code, local)
@@ -122,7 +160,7 @@ def convert(lines):
             # silent wrong read, so the conversion is BACKED OUT if one is
             # left. `tools/refslice/convert.py` earned this rule; this file
             # had to earn it again.
-            for j in range(k + 1, len(body)):
+            for j in range(k + 1, end):
                 if deref_spans(strip_comment(body[j]), local):
                     raise SystemExit(
                         f'sliceview: raw deref of {local!r} survives the '
@@ -130,12 +168,98 @@ def convert(lines):
         lines[a:b] = body
     return lines, changed
 
+
+# ---------------------------------------------------------------- second mode
+LET = re.compile(r"^(\s*)((?:let|var)\s+([A-Za-z_][A-Za-z0-9_']*)\s+)(.+?)\s*$")
+# a name/member chain, optionally ONE trailing call -- nothing with an `as`,
+# an operator or a sigil, where appending `.as_slice()` would rebind the dot.
+PLAIN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.']*(\(.*\))?$")
+
+
+def view_spans(code, name):
+    """Every `*( name.get_buffer() [<+> IDX] )`: (start, end, index).
+
+    None when the walk is BACKWARDS -- `*(x.get_buffer() - 1)` has no subscript
+    reading, the same refusal the first mode makes.
+    """
+    out, pos = [], 0
+    n = re.escape(name)
+    head = re.compile(rf'\*\(\s*{n}\.get_buffer\s*\(\s*\)\s*')
+    while True:
+        m = head.search(code, pos)
+        if not m: return out
+        rest = code[m.end():]
+        if rest.startswith(')'):
+            out.append((m.start(), m.end() + 1, '0')); pos = m.end() + 1; continue
+        mo = re.match(r'([+\-])\s*', rest)
+        if not mo: pos = m.end(); continue
+        if mo.group(1) == '-': return None
+        inner = balanced_index(code, m.end() + mo.end())
+        if inner is None: pos = m.end(); continue
+        idx, after = inner
+        out.append((m.start(), after, idx.strip())); pos = after
+
+
+def rewrite_view(line, local):
+    """The walks become subscripts and `get_length()` becomes the field."""
+    spans = view_spans(strip_comment(line), local)
+    out = line
+    for s, e, ix in reversed(spans):
+        out = out[:s] + f'{local}[{ix}]' + out[e:]
+    return re.sub(rf'\b{re.escape(local)}\.get_length\s*\(\s*\)',
+                  f'{local}.length', out)
+
+
+def convert_view(lines):
+    changed = 0
+    for a, b in routine_spans(lines):
+        body = lines[a:b]
+        codes = [strip_comment(l) for l in body]
+        for k in range(len(body)):
+            m = LET.match(codes[k])
+            if not m: continue
+            indent, decl, local, rhs = m.groups()
+            if not PLAIN.match(rhs): continue
+            if rhs.endswith('.get_buffer()') or rhs.endswith('.as_slice()'): continue
+            end = len(body)
+            for j in range(k + 1, len(body)):
+                if REBIND(local).match(codes[j]): end = j; break
+            hits, ok, walks = [], True, 0
+            for j in range(k + 1, end):
+                code = codes[j]
+                if not re.search(rf'\b{re.escape(local)}\b', code): continue
+                spans = view_spans(code, local)
+                if spans is None: ok = False; break
+                # ★A walk in the TARGET half of a `set` is a WRITE, and this
+                # mode has no write form: the receiver is typically a `String`,
+                # which carries no `put` at all. The first mode writes
+                # `Slice.put` for a container; here the site is left alone.
+                src = set_source_start(code)
+                if src and any(s < src - 1 for s, _, _ in spans): ok = False; break
+                rest = code
+                for s, e, _ in reversed(spans): rest = rest[:s] + ' ' * (e - s) + rest[e:]
+                rest = re.sub(rf'\b{re.escape(local)}\.get_length\s*\(\s*\)', ' ', rest)
+                if re.search(rf'\b{re.escape(local)}\b', rest): ok = False; break
+                walks += len(spans)
+                hits.append(j)
+            if not ok or not walks: continue
+            for j in hits:
+                body[j] = rewrite_view(body[j], local)
+            body[k] = f'{indent}{decl}{rhs}.as_slice()'
+            changed += walks
+            codes = [strip_comment(l) for l in body]
+        lines[a:b] = body
+    return lines, changed
+
+
 def main():
     apply = '--apply' in sys.argv
     total = 0
     for p in [x for x in sys.argv[1:] if not x.startswith('--')]:
         lines = open(p, encoding='utf8').read().split('\n')
         new, c = convert(list(lines))
+        new, c2 = convert_view(new)
+        c += c2
         if c:
             print('%5d  %s' % (c, p))
             if apply: open(p, 'w', encoding='utf8').write('\n'.join(new))

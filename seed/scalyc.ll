@@ -102773,19 +102773,19 @@ entry:
   %tuple128 = alloca %_Z11HexConstant, align 8
   %variant.ptr125 = alloca %_Z8Constant, align 8
   %digit = alloca i64, align 8
+  %tuple79 = alloca %_Z21FloatingPointConstant, align 8
+  %variant.ptr77 = alloca %_Z8Constant, align 8
+  %tuple64 = alloca %_Z15BooleanConstant, align 8
+  %variant.ptr61 = alloca %_Z8Constant, align 8
+  %tuple51 = alloca %_Z15IntegerConstant, align 8
+  %variant.ptr48 = alloca %_Z8Constant, align 8
+  %i = alloca i64, align 8
+  %arg.tmp40 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr %1, ptr %frame.parent, align 8
-  %sret.result88 = alloca %_Z5SliceI2u8E, align 8
-  %tuple78 = alloca %_Z21FloatingPointConstant, align 8
-  %variant.ptr76 = alloca %_Z8Constant, align 8
-  %tuple63 = alloca %_Z15BooleanConstant, align 8
-  %variant.ptr60 = alloca %_Z8Constant, align 8
-  %tuple50 = alloca %_Z15IntegerConstant, align 8
-  %variant.ptr47 = alloca %_Z8Constant, align 8
-  %i = alloca i64, align 8
-  %arg.tmp39 = alloca { ptr }, align 8
+  %sret.result38 = alloca %_Z5SliceI2u8E, align 8
   %value37 = alloca i64, align 8
   %tuple27 = alloca %_Z16FragmentConstant, align 8
   %variant.ptr24 = alloca %_Z8Constant, align 8
@@ -102816,13 +102816,13 @@ entry:
     i8 1, label %choose.when8
     i8 2, label %choose.when21
     i8 3, label %choose.when34
-    i8 4, label %choose.when57
-    i8 5, label %choose.when70
-    i8 6, label %choose.when85
+    i8 4, label %choose.when58
+    i8 5, label %choose.when71
+    i8 6, label %choose.when86
   ]
 
-choose.end:                                       ; preds = %choose.else, %while.exit94, %choose.when70, %choose.when57, %while.exit, %choose.when21, %choose.when8, %choose.when
-  %choose.value = phi %_Z8Constant [ %variant.val7, %choose.when ], [ %variant.val20, %choose.when8 ], [ %variant.val33, %choose.when21 ], [ %variant.val56, %while.exit ], [ %variant.val69, %choose.when57 ], [ %variant.val84, %choose.when70 ], [ %variant.val134, %while.exit94 ], [ %variant.val143, %choose.else ]
+choose.end:                                       ; preds = %choose.else, %while.exit94, %choose.when71, %choose.when58, %while.exit, %choose.when21, %choose.when8, %choose.when
+  %choose.value = phi %_Z8Constant [ %variant.val7, %choose.when ], [ %variant.val20, %choose.when8 ], [ %variant.val33, %choose.when21 ], [ %variant.val57, %while.exit ], [ %variant.val70, %choose.when58 ], [ %variant.val85, %choose.when71 ], [ %variant.val134, %while.exit94 ], [ %variant.val143, %choose.else ]
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store %_Z8Constant %choose.value, ptr %0, align 1
   ret void
@@ -102899,108 +102899,107 @@ choose.when34:                                    ; preds = %entry
   %"variant.c_data().ptr35" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 1
   %variant.val36 = load %_Z14IntegerLiteral, ptr %"variant.c_data().ptr35", align 8
   store i64 0, ptr %value37, align 1
-  %value38 = extractvalue %_Z14IntegerLiteral %variant.val36, 0
-  store { ptr } %value38, ptr %arg.tmp39, align 1
-  %call = call ptr @_ZN6String10get_bufferEv(ptr %arg.tmp39)
-  %value40 = extractvalue %_Z14IntegerLiteral %variant.val36, 0
-  store { ptr } %value40, ptr %arg.tmp39, align 1
-  %call41 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp39)
+  %value39 = extractvalue %_Z14IntegerLiteral %variant.val36, 0
+  store { ptr } %value39, ptr %arg.tmp40, align 1
+  call void @_ZN6String8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI2u8E) %sret.result38, ptr %frame, ptr %arg.tmp40)
+  %value41 = extractvalue %_Z14IntegerLiteral %variant.val36, 0
+  store { ptr } %value41, ptr %arg.tmp40, align 1
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp40)
   store i64 0, ptr %i, align 1
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %choose.when34
   %i42 = load i64, ptr %i, align 8
-  %lt = icmp ult i64 %i42, %call41
+  %lt = icmp ult i64 %i42, %call
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %i43 = load i64, ptr %i, align 8
-  %ptr.add = getelementptr inbounds i8, ptr %call, i64 %i43
-  %deref = load i8, ptr %ptr.add, align 1
-  %value44 = load i64, ptr %value37, align 8
-  %mul = mul i64 %value44, 10
-  %sub = sub i8 %deref, 48
+  %call44 = call i8 @_ZN5SliceI2u8EixEm(ptr %sret.result38, i64 %i43)
+  %value45 = load i64, ptr %value37, align 8
+  %mul = mul i64 %value45, 10
+  %sub = sub i8 %call44, 48
   %as.zext = zext i8 %sub to i64
   %add = add i64 %mul, %as.zext
   store i64 %add, ptr %value37, align 1
-  %i45 = load i64, ptr %i, align 8
-  %add46 = add i64 %i45, 1
-  store i64 %add46, ptr %i, align 1
+  %i46 = load i64, ptr %i, align 8
+  %add47 = add i64 %i46, 1
+  store i64 %add47, ptr %i, align 1
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  %variant.tag.ptr48 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr47, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr48, align 1
-  %value49 = load i64, ptr %value37, align 8
-  %field.load51 = load %_Z4Span, ptr %tuple.region, align 8
-  %tuple.field52 = getelementptr inbounds nuw %_Z15IntegerConstant, ptr %tuple50, i32 0, i32 0
-  store %_Z4Span %field.load51, ptr %tuple.field52, align 1
-  %tuple.field53 = getelementptr inbounds nuw %_Z15IntegerConstant, ptr %tuple50, i32 0, i32 1
-  store i64 %value49, ptr %tuple.field53, align 1
-  %tuple.val54 = load %_Z15IntegerConstant, ptr %tuple50, align 8
-  %variant.data.ptr55 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr47, i32 0, i32 1
-  store %_Z15IntegerConstant %tuple.val54, ptr %variant.data.ptr55, align 1
-  %variant.val56 = load %_Z8Constant, ptr %variant.ptr47, align 1
+  %variant.tag.ptr49 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr48, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr49, align 1
+  %value50 = load i64, ptr %value37, align 8
+  %field.load52 = load %_Z4Span, ptr %tuple.region, align 8
+  %tuple.field53 = getelementptr inbounds nuw %_Z15IntegerConstant, ptr %tuple51, i32 0, i32 0
+  store %_Z4Span %field.load52, ptr %tuple.field53, align 1
+  %tuple.field54 = getelementptr inbounds nuw %_Z15IntegerConstant, ptr %tuple51, i32 0, i32 1
+  store i64 %value50, ptr %tuple.field54, align 1
+  %tuple.val55 = load %_Z15IntegerConstant, ptr %tuple51, align 8
+  %variant.data.ptr56 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr48, i32 0, i32 1
+  store %_Z15IntegerConstant %tuple.val55, ptr %variant.data.ptr56, align 1
+  %variant.val57 = load %_Z8Constant, ptr %variant.ptr48, align 1
   br label %choose.end
 
-choose.when57:                                    ; preds = %entry
-  %"variant.c_data().ptr58" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 1
-  %variant.val59 = load %_Z14BooleanLiteral, ptr %"variant.c_data().ptr58", align 1
-  %variant.tag.ptr61 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr60, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr61, align 1
-  %value62 = extractvalue %_Z14BooleanLiteral %variant.val59, 0
-  %field.load64 = load %_Z4Span, ptr %tuple.region, align 8
-  %tuple.field65 = getelementptr inbounds nuw %_Z15BooleanConstant, ptr %tuple63, i32 0, i32 0
-  store %_Z4Span %field.load64, ptr %tuple.field65, align 1
-  %tuple.field66 = getelementptr inbounds nuw %_Z15BooleanConstant, ptr %tuple63, i32 0, i32 1
-  store i1 %value62, ptr %tuple.field66, align 1
-  %tuple.val67 = load %_Z15BooleanConstant, ptr %tuple63, align 8
-  %variant.data.ptr68 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr60, i32 0, i32 1
-  store %_Z15BooleanConstant %tuple.val67, ptr %variant.data.ptr68, align 1
-  %variant.val69 = load %_Z8Constant, ptr %variant.ptr60, align 1
+choose.when58:                                    ; preds = %entry
+  %"variant.c_data().ptr59" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 1
+  %variant.val60 = load %_Z14BooleanLiteral, ptr %"variant.c_data().ptr59", align 1
+  %variant.tag.ptr62 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr61, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr62, align 1
+  %value63 = extractvalue %_Z14BooleanLiteral %variant.val60, 0
+  %field.load65 = load %_Z4Span, ptr %tuple.region, align 8
+  %tuple.field66 = getelementptr inbounds nuw %_Z15BooleanConstant, ptr %tuple64, i32 0, i32 0
+  store %_Z4Span %field.load65, ptr %tuple.field66, align 1
+  %tuple.field67 = getelementptr inbounds nuw %_Z15BooleanConstant, ptr %tuple64, i32 0, i32 1
+  store i1 %value63, ptr %tuple.field67, align 1
+  %tuple.val68 = load %_Z15BooleanConstant, ptr %tuple64, align 8
+  %variant.data.ptr69 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr61, i32 0, i32 1
+  store %_Z15BooleanConstant %tuple.val68, ptr %variant.data.ptr69, align 1
+  %variant.val70 = load %_Z8Constant, ptr %variant.ptr61, align 1
   br label %choose.end
 
-choose.when70:                                    ; preds = %entry
-  %"variant.c_data().ptr71" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 1
-  %variant.val72 = load %_Z20FloatingPointLiteral, ptr %"variant.c_data().ptr71", align 8
-  %value73 = extractvalue %_Z20FloatingPointLiteral %variant.val72, 0
-  store { ptr } %value73, ptr %arg.tmp39, align 1
-  %call74 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %arg.tmp39)
-  %call75 = call double @strtod(ptr %call74, ptr null)
-  %variant.tag.ptr77 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr76, i32 0, i32 0
-  store i8 3, ptr %variant.tag.ptr77, align 1
-  %field.load79 = load %_Z4Span, ptr %tuple.region, align 8
-  %tuple.field80 = getelementptr inbounds nuw %_Z21FloatingPointConstant, ptr %tuple78, i32 0, i32 0
-  store %_Z4Span %field.load79, ptr %tuple.field80, align 1
-  %tuple.field81 = getelementptr inbounds nuw %_Z21FloatingPointConstant, ptr %tuple78, i32 0, i32 1
-  store double %call75, ptr %tuple.field81, align 1
-  %tuple.val82 = load %_Z21FloatingPointConstant, ptr %tuple78, align 8
-  %variant.data.ptr83 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr76, i32 0, i32 1
-  store %_Z21FloatingPointConstant %tuple.val82, ptr %variant.data.ptr83, align 1
-  %variant.val84 = load %_Z8Constant, ptr %variant.ptr76, align 1
+choose.when71:                                    ; preds = %entry
+  %"variant.c_data().ptr72" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 1
+  %variant.val73 = load %_Z20FloatingPointLiteral, ptr %"variant.c_data().ptr72", align 8
+  %value74 = extractvalue %_Z20FloatingPointLiteral %variant.val73, 0
+  store { ptr } %value74, ptr %arg.tmp40, align 1
+  %call75 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %arg.tmp40)
+  %call76 = call double @strtod(ptr %call75, ptr null)
+  %variant.tag.ptr78 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr77, i32 0, i32 0
+  store i8 3, ptr %variant.tag.ptr78, align 1
+  %field.load80 = load %_Z4Span, ptr %tuple.region, align 8
+  %tuple.field81 = getelementptr inbounds nuw %_Z21FloatingPointConstant, ptr %tuple79, i32 0, i32 0
+  store %_Z4Span %field.load80, ptr %tuple.field81, align 1
+  %tuple.field82 = getelementptr inbounds nuw %_Z21FloatingPointConstant, ptr %tuple79, i32 0, i32 1
+  store double %call76, ptr %tuple.field82, align 1
+  %tuple.val83 = load %_Z21FloatingPointConstant, ptr %tuple79, align 8
+  %variant.data.ptr84 = getelementptr inbounds nuw %_Z8Constant, ptr %variant.ptr77, i32 0, i32 1
+  store %_Z21FloatingPointConstant %tuple.val83, ptr %variant.data.ptr84, align 1
+  %variant.val85 = load %_Z8Constant, ptr %variant.ptr77, align 1
   br label %choose.end
 
-choose.when85:                                    ; preds = %entry
-  %"variant.c_data().ptr86" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 1
-  %variant.val87 = load %_Z10HexLiteral, ptr %"variant.c_data().ptr86", align 8
+choose.when86:                                    ; preds = %entry
+  %"variant.c_data().ptr87" = getelementptr inbounds nuw %_Z7Literal, ptr %choose.union, i32 0, i32 1
+  %variant.val88 = load %_Z10HexLiteral, ptr %"variant.c_data().ptr87", align 8
   store i64 0, ptr %value37, align 1
-  %value89 = extractvalue %_Z10HexLiteral %variant.val87, 0
-  store { ptr } %value89, ptr %arg.tmp39, align 1
-  call void @_ZN6String8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI2u8E) %sret.result88, ptr %frame, ptr %arg.tmp39)
-  %value90 = extractvalue %_Z10HexLiteral %variant.val87, 0
-  store { ptr } %value90, ptr %arg.tmp39, align 1
-  %call91 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp39)
+  %value89 = extractvalue %_Z10HexLiteral %variant.val88, 0
+  store { ptr } %value89, ptr %arg.tmp40, align 1
+  call void @_ZN6String8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI2u8E) %sret.result38, ptr %frame, ptr %arg.tmp40)
+  %value90 = extractvalue %_Z10HexLiteral %variant.val88, 0
+  store { ptr } %value90, ptr %arg.tmp40, align 1
+  %call91 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp40)
   store i64 0, ptr %i, align 1
   br label %while.cond92
 
-while.cond92:                                     ; preds = %if.end116, %choose.when85
+while.cond92:                                     ; preds = %if.end116, %choose.when86
   %i95 = load i64, ptr %i, align 8
   %lt96 = icmp ult i64 %i95, %call91
   br i1 %lt96, label %while.body93, label %while.exit94
 
 while.body93:                                     ; preds = %while.cond92
   %i97 = load i64, ptr %i, align 8
-  %call98 = call i8 @_ZN5SliceI2u8EixEm(ptr %sret.result88, i64 %i97)
+  %call98 = call i8 @_ZN5SliceI2u8EixEm(ptr %sret.result38, i64 %i97)
   store i64 0, ptr %digit, align 1
   %ge = icmp uge i8 %call98, 48
   br i1 %ge, label %lor.rhs, label %lor.end

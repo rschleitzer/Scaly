@@ -24,7 +24,14 @@ ist strukturell: die Ports laufen ueberwiegend STRING-Bytes, und `String` hat
 also ist jedes `pid[fs]` (`this.public_id`), `loc[k]` (`this.out_loc`),
 `t4[3]`, `lo.name[t]` und `s.put(i, ..)` (`String^this(n)`) ein harter Fehler.
 Die Tools sehen keine Typen und koennen das nicht wissen; `sliceview.py` ist
-die Antwort fuer diese Receiver, aber es beansprucht sie nicht von selbst.
+die Antwort fuer diese Receiver -- und **seit 2026-09-04 beansprucht es sie
+auch selbst** (zweiter Modus, `convert_view`): der `String`-Receiver wird an
+seiner BINDUNG zur Sicht (`let pn this.prog_name.as_slice()`), die Walks
+werden `pn[pi]`, `get_length()` wird `.length`. Gemessen: 11 Sites, genau die
+Menge, die dieser Driver am 2026-09-04 zurueckgebaut hat. **Ein Vorschlag von
+`subscript.py` auf einem `String`-Receiver ist also kein Kandidat fuer diesen
+Driver, sondern einer fuer `sliceview.py`** -- erst das eine Tool laufen
+lassen, dann bleibt fuer den Driver nur noch, was wirklich ein Container ist.
 
 **Konsequenz fuer den naechsten Sweep: die Tools NIE direkt --apply auf die
 Ports, immer ueber diesen Driver** -- und eine Kandidatenzahl aus einem

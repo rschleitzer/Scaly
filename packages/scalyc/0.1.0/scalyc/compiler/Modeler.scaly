@@ -149,12 +149,12 @@ define Modeler
             when int_lit: IntegerLiteral
             {
                 var value: size_t 0
-                let buf int_lit.value.get_buffer()
+                let buf int_lit.value.as_slice()
                 let len int_lit.value.get_length()
                 var i: size_t 0
                 while i < len
                 {
-                    let byte *(buf + i)
+                    let byte buf[i]
                     set value: value * 10 + ((byte - 48) as size_t)
                     set i: i + 1
                 }
