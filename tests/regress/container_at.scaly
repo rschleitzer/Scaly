@@ -1,0 +1,74 @@
+; Regression: Array.at / Slice.at hand out a BORROWED REFERENCE to element i.
+;
+; The third member of a family whose other two were there from the start:
+; `[]` answers the element BY VALUE and traps, `put(i, v)` writes it and traps,
+; `get(i)` hands out a `ref[T]?` for the lookup that may legitimately miss.
+; `at(i)` is the borrow for the case where a past-the-end index is a CALLER
+; BUG — the distinction `[]` against `get` already draws for the value half.
+;
+; It exists for the ports' `let node a.get_buffer() + id` shape, where `node`
+; is then used as a record reference. This test pins exactly what that shape
+; needs, and NOT the spelling: a read through the reference, a write that is
+; visible in the OWNER's buffer, the same through a `ref[Array[T]]` receiver
+; (the ports' parameter form), and a Slice view that shares the memory.
+;
+; The trap itself is not exercised here: the harness judges a test by its
+; stdout being "PASS", so a fixture that exits 15 cannot report. It is the same
+; inline arm as operator[]'s and put's.
+;
+; Expected: PASS
+
+define Rec (a: int, b: int)
+
+procedure bump(rows: ref[Array[Rec]], i: size_t)
+{
+    ; the ports' shape: a ref[Array] parameter, a record reference out of it
+    let node rows.at(i)
+    set node.a: node.a + 100
+}
+
+var arr Array[Rec]()
+arr.add(Rec(1, 2))
+arr.add(Rec(3, 4))
+arr.add(Rec(5, 6))
+
+; read through the reference
+let n1 arr.at(1)
+if n1.a <> 3
+    exit 30
+if n1.b <> 4
+    exit 31
+
+; write through it — the store must land in the OWNER's buffer, not in a copy
+set n1.a: 7
+let e1 arr[1]
+if e1.a <> 7
+    exit 32
+
+; and through a ref[Array[T]] parameter, which is how the ports hold it
+bump(&arr, 2)
+let e2 arr[2]
+if e2.a <> 105
+    exit 33
+
+; the same on a borrowed view: the Slice does not own the memory, so a write
+; through it is visible in the array it was taken from
+let s arr.as_slice()
+let n0 s.at(0)
+set n0.b: 42
+let e0 arr[0]
+if e0.b <> 42
+    exit 34
+
+; a sub-range shares that memory too
+let tail s.slice_from(1)
+let t0 tail.at(0)
+if t0.a <> 7
+    exit 35
+set t0.b: 77
+let e1b arr[1]
+if e1b.b <> 77
+    exit 36
+
+print "PASS"
+exit 0

@@ -134,13 +134,12 @@ define GpuTape
         var mv_v Vector[int]^hp(np as size_t)
         var ps_v Vector[int]^hp(np as size_t)
         scaly_mgpu_slots_init((nn * 4 + nn + np) as i32)
-        let buf t.nodes.get_buffer()
         let xs xs_v.data
         var nextslot nn * 4
         var ri 0
         while ri < nn
         {
-            let node buf + ri
+            let node t.nodes.at(ri)
             let count node.rows * node.cols
             let is_leaf node.op = 0
             if count > 0
@@ -181,7 +180,7 @@ define GpuTape
             }
             if node.op = 7
             {
-                let na buf + node.a
+                let na t.nodes.at(node.a)
                 scaly_mgpu_slot_alloc(nextslot as i32, (na.rows * 4) as size_t)
                 set xtra: nextslot
                 set nextslot: nextslot + 1
@@ -195,7 +194,7 @@ define GpuTape
         var ai 0
         while ai < np
         {
-            let node buf + pp[ai]
+            let node t.nodes.at(pp[ai])
             let total node.rows * node.cols
             scaly_mgpu_slot_alloc(nextslot as i32, (total * 2 * 4) as size_t)
             set mvp[ai]: nextslot
@@ -254,7 +253,6 @@ define GpuTape
             Console.println("error: GpuTape: slot registry allocation failed")
             exit(1)
         }
-        let buf t.nodes.get_buffer()
         let lp leaves.data
         let plp primary_leaves.data
         let pbase primary.base
@@ -263,7 +261,7 @@ define GpuTape
         var ri 0
         while ri < nn
         {
-            let node buf + ri
+            let node t.nodes.at(ri)
             let count node.rows * node.cols
             let is_leaf node.op = 0
             var shared_of 0 - 1
@@ -317,7 +315,7 @@ define GpuTape
             }
             if node.op = 7
             {
-                let na buf + node.a
+                let na t.nodes.at(node.a)
                 scaly_mgpu_slot_alloc(nextslot as i32, (na.rows * 4) as size_t)
                 set xtra: nextslot
                 set nextslot: nextslot + 1
@@ -371,8 +369,7 @@ define GpuTape
     ; attach_gen graph lives in its reserved block.
     procedure encode_fwd(this: GpuTape, id: int)
     {
-        let buf tape.nodes.get_buffer()
-        let node buf + id
+        let node tape.nodes.at(id)
         let kind node.op
         if kind = 0
             return
@@ -386,8 +383,8 @@ define GpuTape
         let xs xslot.data
         if kind = 1
         {
-            let na buf + ia
-            let nb buf + ib
+            let na tape.nodes.at(ia)
+            let nb tape.nodes.at(ib)
             let m na.rows
             let kk na.cols
             let nn nb.cols
@@ -404,7 +401,7 @@ define GpuTape
             scaly_mgpu_enc_embed_fwd((bb + ia * 4) as i32, (bb + id * 4 + 3) as i32, sv as i32, r as i32, n as i32)
         if kind = 7
         {
-            let na buf + ia
+            let na tape.nodes.at(ia)
             let rr na.rows
             let nn na.cols
             scaly_mgpu_enc_ce_fwd((bb + ia * 4) as i32, (bb + id * 4 + 3) as i32, xs[id] as i32, sv as i32, rr as i32, nn as i32)
@@ -415,7 +412,7 @@ define GpuTape
             scaly_mgpu_enc_add((bb + ia * 4) as i32, (bb + ib * 4) as i32, sv as i32, (r * n) as i32)
         if kind = 10
         {
-            let nb buf + ib
+            let nb tape.nodes.at(ib)
             let yr nb.rows
             scaly_mgpu_enc_add_bcast_fwd((bb + ia * 4) as i32, (bb + ib * 4) as i32, sv as i32, r as i32, n as i32, yr as i32)
         }
@@ -432,8 +429,7 @@ define GpuTape
             Console.println("error: GpuTape: backward on a forward-only (attach_gen) tape")
             exit(1)
         }
-        let buf tape.nodes.get_buffer()
-        let node buf + id
+        let node tape.nodes.at(id)
         let kind node.op
         if kind = 0
             return
@@ -447,8 +443,8 @@ define GpuTape
         let xs xslot.data
         if kind = 1
         {
-            let na buf + ia
-            let nb buf + ib
+            let na tape.nodes.at(ia)
+            let nb tape.nodes.at(ib)
             let m na.rows
             let kk na.cols
             let nn nb.cols
@@ -474,7 +470,7 @@ define GpuTape
             scaly_mgpu_enc_embed_bwd(sg as i32, (bb + id * 4 + 3) as i32, (bb + ia * 4 + 1) as i32, r as i32, n as i32)
         if kind = 7
         {
-            let na buf + ia
+            let na tape.nodes.at(ia)
             let rr na.rows
             let nn na.cols
             scaly_mgpu_enc_ce_bwd((bb + ia * 4) as i32, (bb + id * 4 + 3) as i32, sg as i32, (bb + ia * 4 + 1) as i32, rr as i32, nn as i32)
@@ -488,7 +484,7 @@ define GpuTape
         }
         if kind = 10
         {
-            let nb buf + ib
+            let nb tape.nodes.at(ib)
             let yr nb.rows
             scaly_mgpu_enc_acc((bb + ia * 4 + 1) as i32, sg as i32, (r * n) as i32)
             scaly_mgpu_enc_add_bcast_bwd_dy(sg as i32, (bb + ib * 4 + 1) as i32, r as i32, n as i32, yr as i32)
@@ -511,17 +507,16 @@ define GpuTape
             this.encode_fwd(i)
             set i: i + 1
         }
-        let buf tape.nodes.get_buffer()
         var z 0
         while z < nnodes
         {
-            let node buf + z
+            let node tape.nodes.at(z)
             let count node.rows * node.cols
             if count > 0
                 scaly_mgpu_enc_fill((bb + z * 4 + 1) as i32, count as i32, 0.0)
             set z: z + 1
         }
-        let lnode buf + loss
+        let lnode tape.nodes.at(loss)
         let lcount lnode.rows * lnode.cols
         scaly_mgpu_enc_fill((bb + loss * 4 + 1) as i32, lcount as i32, 1.0)
         var j loss
@@ -548,13 +543,12 @@ define GpuTape
     procedure encode_adam(this: GpuTape, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float)
     {
         let bb base
-        let buf tape.nodes.get_buffer()
         let pp pids.data
         let mvp mvslot.data
         var i 0
         while i < nparam
         {
-            let node buf + pp[i]
+            let node tape.nodes.at(pp[i])
             let total node.rows * node.cols
             scaly_mgpu_enc_adam((bb + pp[i] * 4) as i32, (bb + pp[i] * 4 + 1) as i32, mvp[i] as i32, total as i32, lr, b1, b2, eps, bc1, bc2)
             set i: i + 1
@@ -623,12 +617,11 @@ define GpuTape
         if f = null
             return 0
         fwrite(cfg.data as pointer[void], 4, cfg.length, f)
-        let buf tape.nodes.get_buffer()
         let pp pids.data
         var i 0
         while i < nparam
         {
-            let node buf + pp[i]
+            let node tape.nodes.at(pp[i])
             let total node.rows * node.cols
             fwrite(node.value.data as pointer[void], 4, total as size_t, f)
             set i: i + 1
@@ -667,12 +660,11 @@ define GpuTape
             Console.println("error: GpuTape: checkpoint config mismatch - delete it or match the model config")
             exit(1)
         }
-        let buf tape.nodes.get_buffer()
         let pp pids.data
         var li 0
         while li < nparam
         {
-            let node buf + pp[li]
+            let node tape.nodes.at(pp[li])
             let total node.rows * node.cols
             fread(node.value.data as pointer[void], 4, total as size_t, f)
             set li: li + 1

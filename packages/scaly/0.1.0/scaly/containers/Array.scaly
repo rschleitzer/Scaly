@@ -180,6 +180,51 @@ define Array[T]
         vector.data + i
     }
 
+    ; The REFERENCE twin of operator[], and the third member of a family whose
+    ; other two were there from the start: `[]` answers the element BY VALUE and
+    ; traps, `put(i, v)` writes it and traps, and `get(i)` hands out a borrowed
+    ; `ref[T]?` for the lookup that may LEGITIMATELY miss. What was missing is
+    ; the borrow for the case where a past-the-end index is a CALLER BUG — the
+    ; very distinction `[]` against `get` already draws for the value half.
+    ;
+    ; ★★★It exists because the ports write `let node a.get_buffer() + id` and
+    ; then use `node` as a record reference (`node.field`, `set node.field: v`).
+    ; Both halves go through a `ref` unchanged, so the conversion touches only
+    ; the binding — 122 sites converted in one pass by `tools/refat.py`
+    ; (`tensor` 80, `gputape` 20, `CharsetDecl` 10, `ParserState` 8, and one
+    ; each in `Parser`, `Rast`, `LangObj`, `binder`), which also deleted the 31
+    ; buffer hoists that had no user left.
+    ;
+    ; ★★★THE PRICE IS +32 832 BYTES IN THE COMPILER BINARY for `at` on `Array`
+    ; and `Slice` together, measured 3 369 816 -> 3 402 648. That is the same
+    ; order as the ~31 KB `as_slice` below records, and for the same reason: an
+    ; ordinary method is emitted for EVERY instantiation, and the runtime
+    ; ARCHIVE promotes `linkonce_odr` to `weak_odr`, which GlobalDCE may not
+    ; drop. ★In a PROGRAM root the dead instances DO go away — measured 8 -> 0
+    ; on the `onsgmls` root under `opt -O2` — so the cost is the archive's, not
+    ; every consumer's. It is the price of the API, not a defect.
+    ;
+    ; ★The route that existed — `a.get(id) as ref[T]` — is NOT the same thing
+    ; and the IR says why: it emits the call (with its own bounds check) PLUS an
+    ; `unwrap.isnull` PLUS `exit 21`, i.e. two branches for one question, and
+    ; the trap then names a mangled symbol where the fault is a bounds
+    ; violation. Here the one check carries the one message.
+    ;
+    ; ★The trap sits INLINE for the reason the operator below records, and the
+    ; arm is COLD and ends in `exit` (noreturn since 2026-08-27), so LLVM proves
+    ; it redundant against a loop condition and deletes it, message and all.
+    function at(this: Array[T], i: size_t) returns ref[T]
+    {
+        if i >= length
+        {
+            scaly_eputs "Array.at: index out of bounds"
+            scaly_eputnl()
+            exit 15
+        }
+
+        vector.data + i
+    }
+
     ; Drop every element but KEEP the buffer, so refilling costs no allocation
     ; and the region sees nothing at all. For a queue that is repeatedly filled
     ; and then wholly consumed this is the difference between a buffer that

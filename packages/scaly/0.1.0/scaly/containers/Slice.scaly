@@ -60,6 +60,28 @@ define Slice[T](length: size_t, data: pointer[T])
         *(data + index)
     }
 
+    ; The REFERENCE twin of operator[] — see `Array.at`, which carries the
+    ; account. Here for symmetry rather than for a population: the borrow sites
+    ; the ports have are on `Array`, and a view that cannot hand out a borrowed
+    ; element while the array it was taken from can would be a hole in the one
+    ; type whose whole contract is borrowing.
+    ;
+    ; A METHOD for the same load-bearing reason `put` is one: a generic
+    ; concept's OPERATOR loses its result expression when its receiver is
+    ; constructed in the calling routine (tools/opzero/scan.py), while an
+    ; ordinary method is emitted for every instantiation and is correct there.
+    function at(this, index: size_t) returns ref[T]
+    {
+        if index >= length
+        {
+            scaly_eputs "Slice.at: index out of bounds"
+            scaly_eputnl()
+            exit 15
+        }
+
+        data + index
+    }
+
     ; Bounds-checked store THROUGH the view, into memory the Slice does not
     ; own. The write twin of operator[]: an index at or past length is a
     ; caller bug, so it traps rather than returning an ignorable failure.
