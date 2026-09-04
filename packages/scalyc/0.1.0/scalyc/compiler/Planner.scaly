@@ -6920,11 +6920,103 @@ define Planner
         ; Returns null when no overload matches; callers fall back to a
         ; fresh type variable so the constraint solver can recover.
         ; ================================================================
+        ; Bind a generic function's parameters to an EXPLICIT type-argument
+        ; list and monomorphise it. Mirrors the inferred path (the
+        ; instantiate_generic_function call in lookup_method#) in every respect
+        ; but where the bindings come from.
+        function instantiate_explicit_generic_call(
+            this: Planner,
+            f: Function,
+            generics: Vector[PlannedType],
+            arg_types: Vector[PlannedType]
+        ) returns ref[MethodMatch]?
+        {
+            var param_start: size_t 0
+            if f.input.length > 0
+            {
+                let first_ptr f.input.get 0
+                if first_ptr <> null
+                    if first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        if fname = "this"
+                            set param_start: 1
+                    }
+            }
+            if f.input.length - param_start <> arg_types.length
+                return null
+
+            var bind_arr Array[KeyValuePair[String, PlannedType]]()
+            var bi: size_t 0
+            while bi < f.parameters.length
+            {
+                let gp_ptr f.parameters.get bi
+                let ga_ptr generics.get bi
+                if gp_ptr <> null
+                    if ga_ptr <> null
+                        bind_arr.add(KeyValuePair[String, PlannedType](gp_ptr.name, (*ga_ptr)))
+                set bi: bi + 1
+            }
+            if bind_arr.length <> f.parameters.length
+                return null
+            var bindings Vector[KeyValuePair[String, PlannedType]](bind_arr)
+
+            let inst this.instantiate_generic_function(f, bindings)
+            var inst_return: PlannedType Planner.make_void_type()
+            if inst.return_type <> null
+                set inst_return: (*inst.return_type)
+
+            var ptypes_arr Array[PlannedType]()
+            var pi: size_t 0
+            while pi < arg_types.length
+            {
+                let ap arg_types.get pi
+                if ap <> null
+                    ptypes_arr.add (*ap)
+                set pi: pi + 1
+            }
+            var ptypes_vec Vector[PlannedType](ptypes_arr)
+
+            var takes_this: bool false
+            if param_start > 0
+                set takes_this: true
+            MethodMatch^this(
+                null,
+                inst.mangled_name,
+                inst_return,
+                &ptypes_vec,
+                inst.page_parameter <> null,
+                inst.can_throw,
+                inst.throws_type,
+                false,
+                takes_this,
+                false
+            )
+        }
+
         function resolve_function_call(
             this: Planner,
             name: String,
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
+        ) returns ref[MethodMatch]?
+            this.resolve_function_call_generic(name, arg_types, arg_ops, null)
+
+        ; ★★★A generic FREE function whose type parameter appears only in the
+        ; RETURN type has nothing to infer from, and until 2026-09-04 this walk
+        ; simply matched the UNINSTANTIATED declaration: the emitted symbol
+        ; carried no type argument, its return type was the generic `Slice[T]`,
+        ; and `sizeof T` folded to 8. The caller read a garbage value at rc 0.
+        ; The explicit list (`f[u64](...)`) rides operand 0 as a PlannedType's
+        ; `generics` — measured — so it is threaded down here and bound by
+        ; POSITION, exactly as instantiate_generic_function binds an inferred
+        ; one. Inference still runs first for everything it can reach.
+        function resolve_function_call_generic(
+            this: Planner,
+            name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
+            explicit_generics: ref[Vector[PlannedType]]?
         ) returns ref[MethodMatch]?
         {
             let candidates this.lookup_functions(name)
@@ -6935,6 +7027,34 @@ define Planner
                 sb.append name
                 this.add_error(sb.to_string())
                 return null
+            }
+
+            ; Pass 0: an EXPLICIT type-argument list instantiates a generic
+            ; candidate before any of the type-matching passes see it. Bound by
+            ; position, arity-checked on both lists; a candidate that is not
+            ; generic, or whose arity disagrees, falls through untouched.
+            if explicit_generics <> null
+            {
+                let eg (*explicit_generics)
+                var gi: size_t 0
+                while gi < candidates.length
+                {
+                    let gf_ptr candidates.get gi
+                    if gf_ptr <> null
+                    {
+                        let gf (*gf_ptr)
+                        if gf.parameters.length > 0
+                        {
+                            if gf.parameters.length = eg.length
+                            {
+                                let inst_match this.instantiate_explicit_generic_call(gf, eg, arg_types)
+                                if inst_match <> null
+                                    return inst_match
+                            }
+                        }
+                    }
+                    set gi: gi + 1
+                }
             }
 
             ; Pass 1: exact matches (types_equal).
@@ -10869,7 +10989,19 @@ define Planner
                             }
                         let arg_types Vector[PlannedType](arg_types_arr_s90)
                         let arg_ops Vector[PlannedOperand](arg_ops_arr_s90)
-                        var match_ref this.resolve_function_call(fn_name, arg_types, arg_ops)
+                        ; ★The explicit type-argument list of `f[u64](...)` rides
+                        ; operand 0: the s107 pre-pass folded `name + Matrix` into
+                        ; a PlannedType whose `generics` hold it, and only the NAME
+                        ; was being read off it here.
+                        var call_generics: ref[Vector[PlannedType]]? null
+                        let cg0 ops.get 0
+                        if cg0 <> null
+                            choose cg0.expr
+                                when cgt: PlannedType
+                                    set call_generics: cgt.generics
+                                else
+                                    0
+                        var match_ref this.resolve_function_call_generic(fn_name, arg_types, arg_ops, call_generics)
 
                         ; First-hop method dispatch (s75): when fn_name
                         ; is a dotted name `arg.starts_with` and `arg`
