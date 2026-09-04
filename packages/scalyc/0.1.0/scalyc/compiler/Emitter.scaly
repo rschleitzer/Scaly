@@ -6293,11 +6293,11 @@ define Emitter
             set wi: wi + 1
 
             ; content bytes
-            let buf value.get_buffer()
+            let buf value.as_slice()
             var ci: size_t 0
             while ci < content_len
             {
-                let b *(buf + ci)
+                let b buf[ci]
                 bytes.put(wi, LLVMConstInt(i8ty, b as size_t, 0))
                 set wi: wi + 1
                 set ci: ci + 1

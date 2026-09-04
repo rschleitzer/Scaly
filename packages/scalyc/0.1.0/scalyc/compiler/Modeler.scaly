@@ -47,12 +47,12 @@ define Modeler
     function decode_escapes(raw: String) returns String
     {
         let len raw.get_length()
-        let buf raw.get_buffer()
+        let buf raw.as_slice()
         var has_escape false
         var scan: size_t 0
         while scan < len
         {
-            if *(buf + scan) = 92
+            if buf[scan] = 92
                 set has_escape: true
             set scan: scan + 1
         }
@@ -63,7 +63,7 @@ define Modeler
         var i: size_t 0
         while i < len
         {
-            let b *(buf + i)
+            let b buf[i]
             if b <> 92
             {
                 sb.append(b as char)
@@ -73,7 +73,7 @@ define Modeler
             {
                 ; The lexer only emits a string token when every escape is
                 ; one of " \ ' n r t 0 or \uXXXX, so buf[i + 1] exists.
-                let e *(buf + i + 1)
+                let e buf[i + 1]
                 if e = 110
                     sb.append("\n" as char)
                 if e = 116
@@ -98,7 +98,7 @@ define Modeler
                     var k: size_t 0
                     while k < 4
                     {
-                        let h *(buf + i + 2 + k)
+                        let h buf[i + 2 + k]
                         var d: size_t 0
                         if h <= 57
                             set d: (h - 48) as size_t
@@ -176,12 +176,12 @@ define Modeler
                 ; Token includes the 0x prefix; 'x' decodes as 0 which is harmless
                 ; since only a 0 has been accumulated before it (strtoull parity).
                 var value: size_t 0
-                let buf hex_lit.value.get_buffer()
+                let buf hex_lit.value.as_slice()
                 let len hex_lit.value.get_length()
                 var i: size_t 0
                 while i < len
                 {
-                    let byte *(buf + i)
+                    let byte buf[i]
                     var digit: size_t 0
                     if (byte >= 48) && (byte <= 57)
                         set digit: (byte - 48) as size_t
@@ -488,11 +488,11 @@ define Modeler
     function string_has_interpolation(raw: String) returns bool
     {
         let len raw.get_length()
-        let buf raw.get_buffer()
+        let buf raw.as_slice()
         var i: size_t 0
         while i < len
         {
-            let b *(buf + i)
+            let b buf[i]
             if b = 96
                 return true
             if b = 92
@@ -524,7 +524,7 @@ define Modeler
     function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns Expression
     {
         let len raw.get_length()
-        let buf raw.get_buffer()
+        let buf raw.as_slice()
 
         ; Validation walk: backticks must pair up, no embedded expression is
         ; empty, and inside an expression only the \" \\ \' escapes (plus an
@@ -538,7 +538,7 @@ define Modeler
         var i: size_t 0
         while i < len
         {
-            let b *(buf + i)
+            let b buf[i]
             if b = 96
             {
                 if in_expr
@@ -558,7 +558,7 @@ define Modeler
                 {
                     if in_expr
                     {
-                        let e *(buf + i + 1)
+                        let e buf[i + 1]
                         var ok_escape false
                         if e = 34
                             set ok_escape: true
@@ -612,7 +612,7 @@ define Modeler
             var is_tick false
             if is_end = false
             {
-                let b *(buf + i)
+                let b buf[i]
                 if b = 96
                     set is_tick: true
                 else
@@ -634,12 +634,12 @@ define Modeler
                     var k seg_start
                     while k < i
                     {
-                        let eb *(buf + k)
+                        let eb buf[k]
                         if eb = 92
                         {
                             ; Validated above: decode so embedded string
                             ; literals arrive unescaped in the sub-source.
-                            src.append((*(buf + k + 1)) as char)
+                            src.append((buf[k + 1]) as char)
                             set k: k + 2
                         }
                         else
@@ -669,7 +669,7 @@ define Modeler
                         var k seg_start
                         while k < i
                         {
-                            src.append((*(buf + k)) as char)
+                            src.append((buf[k]) as char)
                             set k: k + 1
                         }
                         src.append("\")\n")
