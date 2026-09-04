@@ -112,6 +112,19 @@ define StringBuilder
     function get_length(this: StringBuilder) returns size_t
         buffer.get_length()
 
+    ; ★DIE LETZTE (Zeiger, Laenge)-PAARSTELLE DES BAUMES, und sie bleibt
+    ; absichtlich stehen.  Die anderen 131 sind kollabiert (`tools/pairslice.py`):
+    ; opensp/dazzle ueber `StringC.as_slice()`, und die sechs im generierten
+    ; `parser.scaly` ueber `String(x)` -- ein Copy-`init`, das es die ganze Zeit
+    ; gab.  Hier ginge das nicht: `buffer` ist ein `Array[char]`, und `String`
+    ; hat kein `init(Slice[char])`.
+    ;
+    ; ★★★EINES ZU BAUEN WAERE API-FLAECHE FUER GENAU EINE AUFRUFSTELLE.  Es
+    ; gehoert dorthin, wo eine POPULATION es braucht -- `String.get_buffer()`
+    ; hat 340 Aufrufstellen, aber die sind Walks und nicht Paare, und fuer die
+    ; ist `as_slice()` (gibt es) plus `tools/sliceview.py` die Form.  Solange
+    ; niemand ausser dieser Zeile danach fragt, ist das Paar hier billiger als
+    ; ein sechstes 1-Argument-`init` auf `String`.
     function to_string(this: StringBuilder) returns String
         String(buffer.get_buffer(), buffer.get_length())
 }

@@ -125,17 +125,17 @@ define Parser
                 var ret_deep: Literal
                 choose literal.value
                     when il: IntegerLiteral
-                        set ret_deep: Literal.Integer(IntegerLiteral(String(il.value.get_buffer(), il.value.get_length())))
+                        set ret_deep: Literal.Integer(IntegerLiteral(String(il.value)))
                     when sl: StringLiteral
-                        set ret_deep: Literal.String(StringLiteral(String(sl.value.get_buffer(), sl.value.get_length())))
+                        set ret_deep: Literal.String(StringLiteral(String(sl.value)))
                     when cl: CharacterLiteral
-                        set ret_deep: Literal.Character(CharacterLiteral(String(cl.value.get_buffer(), cl.value.get_length())))
+                        set ret_deep: Literal.Character(CharacterLiteral(String(cl.value)))
                     when fl: FragmentLiteral
-                        set ret_deep: Literal.Fragment(FragmentLiteral(String(fl.value.get_buffer(), fl.value.get_length())))
+                        set ret_deep: Literal.Fragment(FragmentLiteral(String(fl.value)))
                     when fp: FloatingPointLiteral
-                        set ret_deep: Literal.FloatingPoint(FloatingPointLiteral(String(fp.value.get_buffer(), fp.value.get_length())))
+                        set ret_deep: Literal.FloatingPoint(FloatingPointLiteral(String(fp.value)))
                     when hl: HexLiteral
-                        set ret_deep: Literal.Hex(HexLiteral(String(hl.value.get_buffer(), hl.value.get_length())))
+                        set ret_deep: Literal.Hex(HexLiteral(String(hl.value)))
                     else
                         set ret_deep: literal.value
                 lexer.empty()
