@@ -10295,12 +10295,27 @@ define Planner
                                         if tag >= 0
                                         {
                                             set is_variant_ctor: true
+                                            ; ★The page SIGIL rides on the operand's own
+                                            ; PlannedType (`Thing.Alpha^host(...)`), and
+                                            ; rebuilding the union type from the NAME used to
+                                            ; hard-code Unspecified here — so a sigil on a
+                                            ; variant construction was dropped in silence and
+                                            ; `allocate(...) as pointer[T]` + `set *p:` was the
+                                            ; only way to put one on a page. The sibling branch
+                                            ; above (the variant HOP) keeps the type and its
+                                            ; lifetime; this one now keeps the lifetime too.
+                                            var variant_life: Lifetime Lifetime.Unspecified(Unspecified())
+                                            choose result.expr
+                                                when vt: PlannedType
+                                                    set variant_life: vt.life
+                                                else
+                                                    0
                                             set ctor_union_type: PlannedType(
                                                 result.loc,
                                                 prefix,
                                                 Planner.mangle_structure(prefix, null),
                                                 null,
-                                                Lifetime.Unspecified(Unspecified()),
+                                                variant_life,
                                                 null,
                                                 "",
                                                 null

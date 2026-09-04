@@ -11743,14 +11743,22 @@ define Emitter
         ; Answers a null handle when the tuple is not region-allocated or the
         ; page name resolves to nothing; the caller then falls back to
         ; acquire_temp, exactly as the inline version did.
+        ; The page resolution behind a region construction, taken by LIFETIME
+        ; rather than by tuple, so the VARIANT path can reach it too: a
+        ; `Thing.Alpha^host(...)` carries its sigil on `union_type.life` and
+        ; used to land on a stack `alloca` with the sigil dropped in silence —
+        ; the same class as the 2026-08-29 tuple-path fix, one bahn over.
         function region_alloc_tuple(this, tuple: PlannedTuple, struct_type: LLVMTypeRef) returns LLVMValueRef
+            this.region_alloc_life(tuple.is_region_alloc, tuple.life, struct_type)
+
+        function region_alloc_life(this, is_region: bool, life: Lifetime, struct_type: LLVMTypeRef) returns LLVMValueRef
         {
             var tuple_ptr: LLVMValueRef null
-            if tuple.is_region_alloc
+            if is_region
             {
                 var page_var_name: String "_rp"
                 var life_is_local: bool false
-                choose tuple.life
+                choose life
                     when l: Local
                         set life_is_local: true
                     when r: Reference
@@ -16886,8 +16894,26 @@ define Emitter
                 return null
             }
 
-            ; Allocate space for the union
-            let union_ptr acquire_temp(union_type, "variant.ptr")
+            ; Allocate space for the union.
+            ; ★A `^name` sigil on a variant construction (`Thing.Alpha^host(...)`)
+            ; rides on the union TYPE's lifetime, and this used to ignore it and
+            ; take a stack temp regardless — so the only way to put a variant on a
+            ; page was `allocate(...) as pointer[T]` + `set *p:`, which is why 179
+            ; sites of the tree spell it that way. Only Reference is honoured
+            ; here: it is the form with no user in the tree today, so every
+            ; existing construction keeps the temp it always had.
+            var union_ptr: LLVMValueRef null
+            choose vc.union_type.life
+                when r: scalyc.compiler.Model.Reference
+                    set union_ptr: this.region_alloc_life(true, vc.union_type.life, union_type)
+                else
+                    0
+            var is_page_variant: bool true
+            if union_ptr = null
+            {
+                set is_page_variant: false
+                set union_ptr: acquire_temp(union_type, "variant.ptr")
+            }
 
             ; Store the tag (field 0)
             let i8_type LLVMInt8TypeInContext(context)
@@ -16932,7 +16958,14 @@ define Emitter
                 }
             }
 
-            ; Load and return the union value
+            ; Load and return the union value.
+            ; ★A PAGE-allocated variant answers its POINTER instead: loading it
+            ; here would hand the caller a value, `&` would copy it into a stack
+            ; temp, and the reference the sigil was written for would point at
+            ; the dead frame (measured: rc 139 with `ret ptr %addr.tmp`). The
+            ; tuple path answers a pointer in the same situation.
+            if is_page_variant
+                return union_ptr
             LLVMBuildLoad2(builder, union_type, union_ptr, "variant.val")
         }
 

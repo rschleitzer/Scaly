@@ -1,0 +1,81 @@
+; Regression: `Union.Variant^page(...)` must construct ON THAT PAGE (2026-09-04).
+;
+; The sibling of `tuple_path_page_sigil.scaly`, one bahn over. A variant
+; construction took a stack temp unconditionally and answered the LOADED union
+; VALUE, so a `^page` sigil on it was dropped in silence: the planner rebuilt
+; the union type from the dotted NAME with `Lifetime.Unspecified` hard-coded,
+; and the emitter never asked for a lifetime at all.
+;
+;   %variant.ptr = alloca %Thing        ← the sigil said host
+;   ...
+;   ret ptr %addr.tmp                   ← the frame is gone
+;
+; The consequence was not a diagnostic but a MISSING SPELLING: with no way to
+; put a variant on a page, every such record had to be built as
+; `allocate(sizeof T, alignof T) as pointer[T]` + `set *p: T.Variant(...)`,
+; and 179 sites of the tree are that shape.
+;
+; Like its sibling this builds THREE records from separate calls and reads the
+; first two back AFTER the third: under the defect they share one frame slot,
+; so the earlier reads answer the last record's payload. A single record reads
+; back correctly by luck. `Page.get` additionally names the page the object
+; actually sits on.
+;
+; Under the previous compiler this file does not even compile — the escape
+; checker refuses the return, which is the honest verdict there.
+;
+; Expected: PASS
+
+use scaly.memory.Page
+
+define Payload (v: int)
+
+define Thing union
+(
+    Alpha: Payload
+    Beta: int
+)
+
+function make(host: ref[Page], x: int) returns ref[Thing]
+{
+    let t Thing.Alpha^host(Payload(x))
+    &t
+}
+
+function value_of(t: ref[Thing]) returns int
+{
+    choose t
+        when a: Payload
+            return a.v
+        when b: int
+            return b
+    0
+}
+
+let rp Page.allocate_root_page()
+let host rp as ref[Page]
+
+let one make(host, 1)
+let two make(host, 2)
+let three make(host, 3)
+
+var ok true
+
+; distinct storage: three calls, three objects
+if value_of(one) <> 1
+    set ok: false
+if value_of(two) <> 2
+    set ok: false
+if value_of(three) <> 3
+    set ok: false
+
+; and the storage is the PAGE we named, not a frame
+let p1 (Page.get(one) as size_t)
+let hp (rp as size_t)
+if p1 <> hp
+    set ok: false
+
+if ok
+    print "PASS"
+if ok = false
+    print "FAIL"
