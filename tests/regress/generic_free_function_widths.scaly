@@ -1,0 +1,56 @@
+; Regression: two instantiations of one generic free function must not share a
+; SYMBOL (2026-09-04). Sibling of generic_free_function.scaly.
+;
+; It exercises the STDLIB's `allocate_slice[T]` rather than a locally declared
+; twin, because that is where the collision was measured: a function declared
+; in the compiled ROOT is re-planned per call and did not reproduce it.
+;
+; Itanium encodes the PARAMETER types, which distinguishes two instantiations
+; whenever T appears in the signature. It distinguishes NOTHING when T appears
+; only in the RETURN type: `allocate_slice[T](host, n) returns Slice[T]` mangled
+; identically for every T, the first definition won under linkonce_odr, and
+; every other call landed in it — a `[u64]` call reaching a `[u8]` body and
+; allocating 4 bytes where it asked for 32.
+;
+; ★★★THE NARROW INSTANTIATION MUST COME FIRST, AND IT MUST BE THE FIRST IN THE
+; WHOLE FILE. Under the defect the winner is whichever is instantiated first;
+; with the wide one first every later call merely OVER-allocates and everything
+; reads back correctly. That is why this lives in its own file rather than in
+; the sibling, which instantiates [u64] near the top for its own purposes.
+;
+; ★The check is the ALLOCATION SIZE, not a value. The defect answers plausible
+; values — the bump allocator has room behind the short buffer, so the writes
+; land, read back correctly, and overrun whatever follows. Two consecutive
+; allocations from one page are adjacent, so the distance between their buffers
+; IS the size the first one took: 4 under the defect, at least 32 when the
+; instantiation is its own.
+;
+; Expected: PASS
+
+use scaly.memory.Page
+
+let rp Page.allocate_root_page()
+let host rp as ref[Page]
+
+var ok true
+
+; the NARROW instantiation first — it is the one that would win
+var narrow allocate_slice[u8](host, 4 as size_t)
+narrow.put(0 as size_t, 3 as u8)
+
+var w1 allocate_slice[u64](host, 4 as size_t)
+var w2 allocate_slice[u64](host, 4 as size_t)
+let gap (w2.data as size_t) - (w1.data as size_t)
+if gap < (32 as size_t)
+    set ok: false
+
+w1.put(3 as size_t, 4444 as u64)
+if (w1[3 as size_t] as int) <> 4444
+    set ok: false
+if (narrow[0 as size_t] as int) <> 3
+    set ok: false
+
+if ok
+    print "PASS"
+if ok = false
+    print "FAIL"

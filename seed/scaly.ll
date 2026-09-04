@@ -18790,6 +18790,19 @@ entry:
   ret void
 }
 
+define linkonce_odr %_Z5SliceI1TE @_Z14allocate_slicePN4scaly6memory4PageER4Pagem(ptr %0, ptr %1, i64 %2) {
+entry:
+  %mul = mul i64 %2, 8
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
+  %tuple = alloca %_Z5SliceI1TE, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 0
+  store i64 %2, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI1TE, ptr %tuple, i32 0, i32 1
+  store ptr %call, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI1TE, ptr %tuple, align 8
+  ret %_Z5SliceI1TE %tuple.val
+}
+
 define linkonce_odr ptr @_ZN12ListIterator4nextEv(ptr %0) {
 entry:
   %old_current = alloca ptr, align 8

@@ -205,3 +205,25 @@ define SliceIterator[T](slice: Slice[T], position: size_t(0))
         result
     }
 }
+
+; allocate_slice[T]: n elements of T on `host`, as a borrowed view of them.
+;
+; The typed counterpart of the tree's own
+; `Slice[T](n, host.allocate(n * sizeof T, alignof T) as pointer[T])`, which 76
+; sites spell by hand -- `Escape.scaly` among them, and it is the shape that
+; makes the `as pointer[T]` cast unavoidable: `Page.allocate` answers raw
+; memory, so SOMETHING has to give it a type, and doing that at the call site
+; is what puts a pointer there.
+;
+; ★It answers a Slice and not a Vector deliberately: the PAGE owns the buffer,
+; the view does not, which is exactly Slice's contract. A Vector here would be
+; a container the compiler believes owns its storage -- see the header above.
+;
+; ★It is a generic FREE function, a shape that answered GARBAGE until
+; 2026-09-04: T appears only in the RETURN type, so there is nothing to infer
+; and `f[u64](...)`'s explicit list had to reach the resolver first
+; (resolve_function_call_generic#). `tests/regress/generic_free_function.scaly`
+; is the gate, and it checks two element widths because a folded `sizeof T`
+; is right for a 64-bit one by accident.
+function allocate_slice[T](host: ref[Page], n: size_t) returns Slice[T]
+    Slice[T](n, host.allocate(n * sizeof T, alignof T) as pointer[T])

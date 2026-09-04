@@ -32311,11 +32311,47 @@ define Planner
             ; Extern C functions keep their unmangled name so LLVM can
             ; resolve them against libc / system libraries. Mirrors
             ; Planner.cpp:11806-11808's IsExtern ? Func.Name : mangle.
+            ; ★★★A function's OWN type parameters must reach its symbol, or two
+            ; instantiations collide on one name. Itanium encodes the PARAMETER
+            ; types, which is enough whenever T appears in the signature
+            ; (`first_of[T](s: Slice[T])` mangles as ...5SliceI3u64E and
+            ; ...5SliceI2u8E, two symbols, correct since forever). It is NOT
+            ; enough when T appears only in the RETURN type: `allocate_slice[T]
+            ; (host: ref[Page], n: size_t)` mangles identically for every T, so
+            ; the FIRST instantiation wins under linkonce_odr and every other
+            ; call lands in it — measured as a `[u64]` call reaching a `[u8]`
+            ; body and allocating 4 bytes where 32 were asked for: a buffer
+            ; overflow that answers plausible values. The active substitution of
+            ; each own type parameter is therefore appended to the NAME.
+            ; f.parameters is empty for an ordinary method (a generic CONCEPT's
+            ; parameters live on the concept), so nothing in the tree moves.
+            var mname_holder Vector[String](1)
+            mname_holder.put(0, String(f.name))
+            if f.parameters.length > 0
+            {
+                var nb StringBuilder()
+                nb.append f.name
+                var tpi: size_t 0
+                while tpi < f.parameters.length
+                {
+                    let tp_ptr f.parameters.get tpi
+                    if tp_ptr <> null
+                    {
+                        let sub this.lookup_type_substitution(tp_ptr.name)
+                        if sub <> null
+                            nb.append(Planner.encode_type((*sub)))
+                    }
+                    set tpi: tpi + 1
+                }
+                mname_holder.put(0, nb.to_string())
+            }
+            let mname (*mname_holder.get(0))
+
             var mangled_holder Vector[String](1)
             if Planner.is_extern_impl(f.implementation)
                 mangled_holder.put(0, String(f.name))
             if Planner.is_extern_impl(f.implementation) = false
-                mangled_holder.put(0, Planner.mangle_function(f.name, &input_holder, parent, has_page))
+                mangled_holder.put(0, Planner.mangle_function(mname, &input_holder, parent, has_page))
             let mangled (*mangled_holder.get(0))
 
             var can_throw: bool false
