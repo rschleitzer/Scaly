@@ -29,6 +29,23 @@ for root,dirs,fs in os.walk('packages'):
         for m in list(PAT.finditer(src)):
             if m.group('len') != m.group('len2'):
                 st['Laenge weicht ab']+=1; continue
+            # ★★★DER ESCAPE-CHECKER REFUESIERT DEN AUFRUF, WO DAS ZIEL EIN
+            # FELD AUF EINEM PARAMETER IST.  `set this.keys: allocate_slice[..]`
+            # im `init` geht, `set m.keys: ...` auf einem `ref[PtrMap]`-Parameter
+            # ist ein *reference into a local page escapes via store*: der
+            # Checker kann nicht durch den Aufruf hindurchsehen, dass der Slice
+            # auf `m.host` liegt und nicht auf der Frame-Page, waehrend die
+            # Handform ihren `allocate`-Aufruf INLINE zeigt.  Gemessen an
+            # Jit.scaly:672 und Escape.scaly:346 (README, Abschnitt "Ernte").
+            # Ohne diese Regel bietet jeder Lauf dieselben vier Sites erneut an
+            # und der Compiler wirft sie erneut zurueck.
+            line = src[src.rfind('\n', 0, m.start())+1 : m.start()]
+            tgt = re.match(r'\s*set\s+([A-Za-z_][A-Za-z0-9_]*)\.', line)
+            if tgt and tgt.group(1) != 'this':
+                st['BLOCKIERT (escape: Feld auf Parameter)']+=1
+                if not apply:
+                    print(f"{p}  BLOCKIERT: {line.strip()[:72]}...")
+                continue
             new=f"allocate_slice[{m.group('t')}]({m.group('page')}, {m.group('len')})"
             out=out.replace(m.group(0), new, 1)
             st['KONVERTIERT']+=1

@@ -13,6 +13,23 @@ revert exactly those lines to their pre-rewrite text, emit again.  Stops when
 a pass is clean or when a pass reverts nothing (which means the error is NOT
 one of our lines and the run has to be read by a human).
 
+★★★DIE KANDIDATENZAHL DER DREI TOOLS IST KEINE ERNTEPROGNOSE, UND IM
+PORT-CODE IST SIE FAST VOLLSTAENDIG UNECHT.  Gemessen 2026-09-04 ueber die
+Port-Pakete (opensp, dazzle, tscaly, scalygpu): `subscript.py` 11 Sites,
+`subscript_local.py` 14, `allocslice.py` 4 -- zusammen 29 Vorschlaege, von
+denen dieser Driver **28 zurueckgebaut** hat und **genau EINER** ueberlebte
+(`Partition.set_code`, ein `Array[u16]`).  Der Grund ist einer einziger und er
+ist strukturell: die Ports laufen ueberwiegend STRING-Bytes, und `String` hat
+`get_buffer()` und `as_slice()`, aber **weder `operator []` noch `put`** --
+also ist jedes `pid[fs]` (`this.public_id`), `loc[k]` (`this.out_loc`),
+`t4[3]`, `lo.name[t]` und `s.put(i, ..)` (`String^this(n)`) ein harter Fehler.
+Die Tools sehen keine Typen und koennen das nicht wissen; `sliceview.py` ist
+die Antwort fuer diese Receiver, aber es beansprucht sie nicht von selbst.
+
+**Konsequenz fuer den naechsten Sweep: die Tools NIE direkt --apply auf die
+Ports, immer ueber diesen Driver** -- und eine Kandidatenzahl aus einem
+Dry-Run erst dann als Ernte melden, wenn der Driver sie bestaetigt hat.
+
 Usage: tools/subscript_driver.py <baseline-git-ref-or-'HEAD'>
 """
 import os, re, subprocess, sys, collections
