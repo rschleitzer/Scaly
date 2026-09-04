@@ -209,11 +209,35 @@ define SliceIterator[T](slice: Slice[T], position: size_t(0))
 ; allocate_slice[T]: n elements of T on `host`, as a borrowed view of them.
 ;
 ; The typed counterpart of the tree's own
-; `Slice[T](n, host.allocate(n * sizeof T, alignof T) as pointer[T])`, which 76
-; sites spell by hand -- `Escape.scaly` among them, and it is the shape that
-; makes the `as pointer[T]` cast unavoidable: `Page.allocate` answers raw
-; memory, so SOMETHING has to give it a type, and doing that at the call site
-; is what puts a pointer there.
+; `Slice[T](n, host.allocate(n * sizeof T, alignof T) as pointer[T])`, and it is
+; the shape that makes the `as pointer[T]` cast unavoidable: `Page.allocate`
+; answers raw memory, so SOMETHING has to give it a type, and doing that at the
+; call site is what puts a pointer there.  In here the cast stands ONCE.
+;
+; ★The hand-written spelling is COLLECTED -- `tools/allocslice_inline.py` reads
+; zero over `packages/` since 2026-09-04, after 28 further sites (opensp 22,
+; dazzle 4, and the tool's own two files).  The tool proves `B == L * sizeof T`
+; and `A == alignof T` TEXTUALLY and leaves lying what it cannot prove; the
+; arithmetic was then re-checked ON THE IR, pair by pair, where every converted
+; allocation kept its exact `sizeof` constexpr and its alignment.
+;
+; ★★★THE ARGUMENT WAS NEVER A COUNT BUT AN ASYMMETRY: `Escape.scaly` and
+; `Jit.scaly` call this function in the `init` and wrote the same allocation by
+; hand in the REHASH of the same file.  CLAUDE.md calls that shape the proof
+; and not the hint.
+;
+; ★★★AND THE REHASH IS WHERE THE ESCAPE CHECKER SPEAKS UP: `set m.keys:
+; allocate_slice[u64](h, new_cap)` on a `m: ref[EsMap]` is refused -- *reference
+; into a local page escapes via store* -- where the INLINE form was accepted,
+; because `region_of_operand` reads the region straight off `h.allocate(...)`
+; and a CALL hides it.  The annotation that restores exactly what the inline
+; form said is `^h`, and the sigil is ANNOTATION ONLY here: this function's
+; caller-page parameter is DEAD (rule 1 grants it for the construction below,
+; whose value is materialised in a stack temp and returned by value), so every
+; call site in the tree passes `ptr null` for it and `^h` and `#` emit the SAME
+; call.  ★Prefer `^h` over `#` anyway: they are equal only while that parameter
+; stays dead, and `h` is the page the buffer actually comes from, while the
+; caller's page need not outlive the map at all.
 ;
 ; ★It answers a Slice and not a Vector deliberately: the PAGE owns the buffer,
 ; the view does not, which is exactly Slice's contract. A Vector here would be
