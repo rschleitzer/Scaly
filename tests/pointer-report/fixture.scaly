@@ -96,3 +96,28 @@ procedure call_shapes(h: pointer[Sized], raw: pointer[u8], s: Slice[u8], leaf: p
     memcpy(raw as pointer[void], raw as pointer[void], 1)   ; arg-extern x2 (+ casts)
     k + a + b + b2 + c
 }
+
+; A CONSTRUCTION's arguments carry no receiver; the initializer's input does.
+; The pointer buffer must be read against `contents`, not against `origin`.
+define Origin (id: int)
+define Source (origin: ref[Origin]?, contents: pointer[u8], length: size_t)
+{
+    init(origin: ref[Origin]?, contents: pointer[u8], length: size_t)
+    {
+        set this.origin: origin
+        set this.contents: contents
+        set this.length: length
+    }
+}
+define Anchor (target: ref[Origin])
+{
+    init(target: ref[Origin])
+        set this.target: target
+}
+procedure build_sources(o: pointer[Origin], raw: pointer[u8]) returns int
+{
+    var org Origin(1)
+    let s Source(&org, raw, 3)                      ; arg pointer[u8] -> Source.init(contents)
+    let a Anchor(o)                                 ; h-pointer-into-ref -> Anchor.init(target)
+    (s.length as int) + a.target.id
+}

@@ -1890,13 +1890,35 @@ define PointerCensus
             var params: ref[Vector[PlannedItem]]? null
             var resolved false
             var takes_this false
+            ; A CONSTRUCTION's arguments carry no receiver while the
+            ; initializer's `input` starts with `this`: params are read one
+            ; slot ahead. Measured before this: 25 `pointer[u32]` hazards in
+            ; opensp, every one `InputSource(origin, contents, length)` with
+            ; the buffer read against the `origin` parameter.
+            var is_init false
+            var param_shift: size_t 0
             var callee_extern false
+            if call.name = "init"
+                set is_init: true
             var callee_name String(call.name)
             if callee <> null
             {
                 let cf callee.unwrap()
                 set callee_name: String(cf.name)
                 set resolved: true
+                ; An initializer is recorded in plan.functions too (named
+                ; `init`, with `this` first), so it resolves HERE before the
+                ; structure table is asked: the construction shape is decided
+                ; by the name, not by which table answered.
+                if cf.name = "init"
+                {
+                    set is_init: true
+                    ; Name the constructed type: `Source.init`, not `init`.
+                    var nb StringBuilder()
+                    nb.append call.result_type.name
+                    nb.append ".init"
+                    set callee_name: nb.to_string()
+                }
                 if PointerCensus.fn_is_body(cf) = false
                     set callee_extern: true
                 set params: cf.input
@@ -1907,7 +1929,12 @@ define PointerCensus
                 if ini <> null
                 {
                     set resolved: true
+                    set is_init: true
                     set params: ini.unwrap().input
+                    var nb StringBuilder()
+                    nb.append call.result_type.name
+                    nb.append ".init"
+                    set callee_name: nb.to_string()
                 }
                 else
                 {
@@ -1949,6 +1976,12 @@ define PointerCensus
                     }
                 }
             }
+            if is_init
+                if takes_this
+                {
+                    set takes_this: false
+                    set param_shift: 1
+                }
             var i: size_t 0
             while i < argc
             {
@@ -1968,9 +2001,9 @@ define PointerCensus
                     var param_name String("")
                     if params <> null
                     {
-                        if i < params.length
+                        if i + param_shift < params.length
                         {
-                            let it_ptr params.get i
+                            let it_ptr params.get(i + param_shift)
                             if it_ptr <> null
                             {
                                 let it it_ptr.unwrap()

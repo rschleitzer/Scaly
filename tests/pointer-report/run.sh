@@ -59,8 +59,17 @@ check "Slice into a generic method's pointer param is a hazard (got $n)" '[ "$n"
 n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:96:.*arg-extern pointer\[void\] -> memcpy(")
 check "pointer into an extern is arg-extern, both args (got $n)" '[ "$n" = "2" ]'
 n=$(printf "%s\n" "$got" | grep -c ": h-mixed-params ")
-check "mixed ref/pointer parameter lists reported: walk + mixed (got $n)" '[ "$n" = "2" ]'
+check "mixed ref/pointer parameter lists reported: walk + mixed + Source.init (got $n)" '[ "$n" = "3" ]'
 check "nothing unresolved in the fixture"  'printf "%s\n" "$got" | head -1 | grep -q "arg-unresolved 0"'
+
+# A construction's args carry no receiver while the initializer's input does:
+# the buffer is read against `contents`, and a pointer into a ref init param
+# is the hazard.
+n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:120:.*arg pointer\[u8\] -> Source.init(contents)")
+check "construction arg aligned to init param (got $n)" '[ "$n" = "1" ]'
+n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:121:.*h-pointer-into-ref pointer\[Origin\] -> Anchor.init(target)")
+check "pointer into a ref init param is a hazard (got $n)" '[ "$n" = "1" ]'
+check "no init argument read against the wrong slot" '! printf "%s\n" "$got" | grep -q "init(origin)"'
 
 # Diagnostics gate ordering: the report must survive a root with a hard
 # diagnostic (that is the half-converted root the census exists for).
