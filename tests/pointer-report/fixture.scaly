@@ -121,3 +121,13 @@ procedure build_sources(o: pointer[Origin], raw: pointer[u8]) returns int
     let a Anchor(o)                                 ; h-pointer-into-ref -> Anchor.init(target)
     (s.length as int) + a.target.id
 }
+
+; A store into a `pointer[ref[X]]` buffer goes THROUGH the slot's (uninitialized)
+; pointee, never INTO the slot; the Option element rebinds and is an ordinary
+; store. Both compile at rc 0, which is why the census must tell them apart.
+procedure fill_slots(host: ref[Page], lr: ref[Leaf], buf: pointer[ref[Leaf]], obuf: pointer[ref[Leaf]?], cell: pointer[ref[Leaf]])
+{
+    set *(buf + 0): lr                              ; h-store-through-ref-slot (arith)
+    set *cell: lr                                   ; h-store-through-ref-slot (plain)
+    set *(obuf + 0): lr                             ; store-arith: the Option slot rebinds
+}

@@ -1224,6 +1224,8 @@ define cli
         head.append(cli.format_size(pc.n_h_slice_ptr))
         head.append ", h-mixed-params "
         head.append(cli.format_size(pc.n_h_mixed))
+        head.append ", h-store-through-ref-slot "
+        head.append(cli.format_size(pc.n_h_store_slot))
         head.append "; optional-ref derefs (not listed) "
         head.append(cli.format_size(pc.n_optref_deref))
         head.append ", bodies unfiled "

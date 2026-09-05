@@ -40,6 +40,15 @@
 ;   h-mixed-params                 a signature with both `ref` and `pointer`
 ;                                  parameters, one campaign's verdict on one
 ;                                  neighbour and none on the other
+;   h-store-through-ref-slot       HAZARD: `set *(p + i): v` / `set *p: v` on a
+;                                  `pointer[ref[X]]` -- the slot's pointee is a
+;                                  non-optional ref, so the RHS reads as ITS
+;                                  pointee and the target writes as its pointee:
+;                                  a struct copy through whatever pointer the
+;                                  slot holds, never a store INTO the slot
+;                                  (measured 2026-09-05, `and_analyze1`). The
+;                                  Option element `pointer[ref[X]?]` rebinds
+;                                  and is an ordinary store.
 ;
 ; The callee is read off `plan.functions` by `PlannedCall.mangled_name`; a
 ; call's args line up with the callee's `input` INCLUDING its `this`, which is
@@ -157,6 +166,7 @@ define PointerCensus
         n_h_ptr_ref: size_t
         n_h_slice_ptr: size_t
         n_h_mixed: size_t
+        n_h_store_slot: size_t
 
         ; Source file of the declaration or body currently walked.
         current_file: String
@@ -211,6 +221,7 @@ define PointerCensus
             set n_h_ptr_ref: 0
             set n_h_slice_ptr: 0
             set n_h_mixed: 0
+            set n_h_store_slot: 0
             set dd_slots: Vector[size_t]^this(DD_CAP)
             set dd_hashes: Array[size_t]^this()
             set dd_offsets: Array[size_t]^this()
@@ -453,6 +464,8 @@ define PointerCensus
                 return 18
             if cls = "h-mixed-params"
                 return 19
+            if cls = "h-store-through-ref-slot"
+                return 20
             0
         }
 
@@ -496,6 +509,8 @@ define PointerCensus
                 set n_h_slice_ptr: n_h_slice_ptr + 1
             if cid = 19
                 set n_h_mixed: n_h_mixed + 1
+            if cid = 20
+                set n_h_store_slot: n_h_store_slot + 1
         }
 
         function record_typed(this: PointerCensus, offset: size_t, cls: String, t: PlannedType)
@@ -1169,6 +1184,98 @@ define PointerCensus
             null
         }
 
+        ; Is `op` a `*q` whose `q` is a `pointer[ref[X]]` (plain or `q + i`)?
+        function operand_is_deref_of_ref_slot(op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when call: Call
+                {
+                    if call.name <> "*"
+                        return false
+                    if call.args = null
+                        return false
+                    if call.args.length <> 1
+                        return false
+                    let q call.args.get 0
+                    if q = null
+                        return false
+                    let qv q.unwrap()
+                    let inner_args PointerCensus.arith_args(qv)
+                    if inner_args <> null
+                    {
+                        let base inner_args.get 0
+                        if base = null
+                            return false
+                        return PointerCensus.is_ref_slot_pointer(base.unwrap().result_type)
+                    }
+                    PointerCensus.is_ref_slot_pointer(qv.result_type)
+                }
+                else
+                    return false
+        }
+
+        ; Walk the children of the slot pointer under `*q` / `*(q + i)`.
+        function walk_below_deref(this: PointerCensus, op: PlannedOperand)
+        {
+            choose op.expr
+                when call: Call
+                {
+                    if call.args = null
+                        return
+                    let q call.args.get 0
+                    if q = null
+                        return
+                    let qv q.unwrap()
+                    let inner_args PointerCensus.arith_args(qv)
+                    if inner_args <> null
+                        this.find_operands(inner_args)
+                    else
+                        this.find_operand(qv)
+                }
+                else
+                    0
+        }
+
+        ; The slot pointer's type under such a deref (for the report line).
+        function deref_slot_type(op: PlannedOperand) returns PlannedType
+        {
+            choose op.expr
+                when call: Call
+                {
+                    let q call.args.get 0
+                    let qv q.unwrap()
+                    let inner_args PointerCensus.arith_args(qv)
+                    if inner_args <> null
+                    {
+                        let base inner_args.get 0
+                        return base.unwrap().result_type
+                    }
+                    return qv.result_type
+                }
+                else
+                    return PointerCensus.void_type()
+        }
+
+        ; `pointer[ref[X]]` (or `pointer[ref[X]]?`): a slot whose pointee is a
+        ; NON-optional reference. `pointer[ref[X]?]` is deliberately excluded:
+        ; a store into an Option slot rebinds.
+        function is_ref_slot_pointer(t: PlannedType) returns bool
+        {
+            let core PointerCensus.peel_option(t)
+            if core.name <> "pointer"
+                return false
+            if core.generics = null
+                return false
+            if core.generics.length <> 1
+                return false
+            let inner core.generics.get 0
+            if inner = null
+                return false
+            inner.unwrap().name = "ref"
+        }
+
         ; `ref[T]` or `ref[T]?` in the plan.
         function is_ref_shaped(t: PlannedType) returns bool
         {
@@ -1380,20 +1487,39 @@ define PointerCensus
                     if a_ptr = null
                         return false
                     let a (*a_ptr)
+                    ; The planner REWRITES a set target whose type is a ref into
+                    ; the deref (`set_target_stores_through#`), so a store into a
+                    ; `pointer[ref[X]]` slot arrives here as `*(*(p + i))` or
+                    ; `*(*p)`: a deref whose argument is itself a deref of the
+                    ; slot pointer. That nesting IS the hazard.
+                    if PointerCensus.operand_is_deref_of_ref_slot(a)
+                    {
+                        this.record_typed(head.loc.start, "h-store-through-ref-slot", PointerCensus.deref_slot_type(a))
+                        ; ONE site: walk below the slot pointer, not the inner deref.
+                        this.walk_below_deref(a)
+                        return true
+                    }
                     let inner_args PointerCensus.arith_args(a)
                     if inner_args <> null
                     {
                         let base inner_args.get 0
                         if base <> null
                         {
-                            this.record_typed(head.loc.start, "store-arith", base.unwrap().result_type)
+                            let bt base.unwrap().result_type
+                            if PointerCensus.is_ref_slot_pointer(bt)
+                                this.record_typed(head.loc.start, "h-store-through-ref-slot", bt)
+                            else
+                                this.record_typed(head.loc.start, "store-arith", bt)
                         }
                         this.find_operands(inner_args)
                         return true
                     }
                     if PointerCensus.is_pointer_shaped(a.result_type)
                     {
-                        this.record_typed(head.loc.start, "store", a.result_type)
+                        if PointerCensus.is_ref_slot_pointer(a.result_type)
+                            this.record_typed(head.loc.start, "h-store-through-ref-slot", a.result_type)
+                        else
+                            this.record_typed(head.loc.start, "store", a.result_type)
                         this.find_operand(a)
                         return true
                     }

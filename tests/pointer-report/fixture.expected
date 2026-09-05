@@ -1,4 +1,4 @@
-pointer-report: 64 sites; extern 4, param 14, return 1, field 3, variant 1, local 5, deref 3, deref-arith 1, arith 5, cast 6, null-cast 1, null-test 1, store 3, arg 2, arg-extern 8, arg-unresolved 0, h-pointer-into-ref 2, h-slice-into-pointer 1, h-mixed-params 3; optional-ref derefs (not listed) 1, bodies unfiled 0, alias handles (not listed) 3
+pointer-report: 71 sites; extern 4, param 17, return 1, field 3, variant 1, local 5, deref 3, deref-arith 1, arith 5, cast 6, null-cast 1, null-test 1, store 4, arg 2, arg-extern 8, arg-unresolved 0, h-pointer-into-ref 2, h-slice-into-pointer 1, h-mixed-params 4, h-store-through-ref-slot 2; optional-ref derefs (not listed) 1, bodies unfiled 0, alias handles (not listed) 3
 pointer-report: tests/pointer-report/fixture.scaly:8:16: extern-param pointer[void] memcpy(dst)
 pointer-report: tests/pointer-report/fixture.scaly:8:37: extern-param pointer[void] memcpy(src)
 pointer-report: tests/pointer-report/fixture.scaly:8:68: extern-return pointer[void] memcpy
@@ -22,6 +22,10 @@ pointer-report: tests/pointer-report/fixture.scaly:105:32: param pointer[u8] Sou
 pointer-report: tests/pointer-report/fixture.scaly:105:5: h-mixed-params Source
 pointer-report: tests/pointer-report/fixture.scaly:117:24: param pointer[Origin] build_sources(o)
 pointer-report: tests/pointer-report/fixture.scaly:117:45: param pointer[u8] build_sources(raw)
+pointer-report: tests/pointer-report/fixture.scaly:128:54: param pointer[ref[Leaf]] fill_slots(buf)
+pointer-report: tests/pointer-report/fixture.scaly:128:79: param pointer[Option[ref[Leaf]]] fill_slots(obuf)
+pointer-report: tests/pointer-report/fixture.scaly:128:106: param pointer[ref[Leaf]] fill_slots(cell)
+pointer-report: tests/pointer-report/fixture.scaly:128:1: h-mixed-params fill_slots
 pointer-report: tests/pointer-report/fixture.scaly:25:15: deref pointer[u8]
 pointer-report: tests/pointer-report/fixture.scaly:26:15: deref-arith pointer[u8]
 pointer-report: tests/pointer-report/fixture.scaly:27:5: local pointer[u8] tail
@@ -58,3 +62,6 @@ pointer-report: tests/pointer-report/fixture.scaly:96:16: cast pointer[u8] as po
 pointer-report: tests/pointer-report/fixture.scaly:96:38: cast pointer[u8] as pointer[void]
 pointer-report: tests/pointer-report/fixture.scaly:120:22: arg pointer[u8] -> Source.init(contents)
 pointer-report: tests/pointer-report/fixture.scaly:121:17: h-pointer-into-ref pointer[Origin] -> Anchor.init(target)
+pointer-report: tests/pointer-report/fixture.scaly:130:5: h-store-through-ref-slot pointer[ref[Leaf]]
+pointer-report: tests/pointer-report/fixture.scaly:131:5: h-store-through-ref-slot pointer[ref[Leaf]]
+pointer-report: tests/pointer-report/fixture.scaly:132:5: store-arith pointer[Option[ref[Leaf]]]
