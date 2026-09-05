@@ -1,0 +1,42 @@
+; Fixture for tools/lenfix/scan.py --selftest. NOT part of any package; it is
+; read only by the self-test, which walks this directory instead of packages/.
+;
+; ★★★IT EXISTS BECAUSE THE FIRST SELF-TEST DIED OF ITS OWN HARVEST. It asserted
+; that `get_identifier_token(buf)` comes out CHAIN-ADJACENT — the real chain the
+; tool was calibrated on — and the moment that chain was converted the assertion
+; failed, reporting "the fixpoint does not fire" about a fixpoint that works.
+; A self-test keyed on a CANDIDATE is a self-test with an expiry date; this one
+; is keyed on a shape the tree cannot take away.
+
+; leaf: walks its buffer, but its own signature carries no length (the length
+; belongs to the OTHER parameter). refslice calls this LENLESS.
+function leaf_walks_no_len(buf: pointer[char], word: Slice[char]) returns bool
+{
+    var i: int 0
+    while i < word.length
+    {
+        if (*(buf + i) as int) <> (word[i] as int)
+            return false
+        set i: i + 1
+    }
+    true
+}
+
+; forwarder: carries (buf, len) in its signature — perfect ADJACENT form — and
+; proves NOTHING itself; only the callee proves buf is a buffer. This is the
+; class refslice discards as UNWALKED, and the one this tool exists to find.
+function forwarder_pairs_and_forwards(buf: pointer[char], len: int) returns bool
+{
+    if len < 2
+        return false
+    leaf_walks_no_len(buf, Slice[char](2, "as"))
+}
+
+; negative control: same ADJACENT shape, forwards to a callee that proves
+; nothing about the buffer. Must NOT come out as a chain candidate — otherwise
+; the fixpoint is propagating on the call alone rather than on the proof.
+function sink_proves_nothing(p: pointer[char], q: int) returns bool
+    q > 0
+
+function forwarder_to_nothing(buf: pointer[char], len: int) returns bool
+    sink_proves_nothing(buf, len)

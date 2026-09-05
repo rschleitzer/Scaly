@@ -151,6 +151,20 @@ def main(paths, want_selftest=False):
         for qi, qn in lens:
             if qi == pi + 1:
                 pairing, ln = 'ADJACENT', qn; break
+        # ★★★THE SECOND FINDING, INDEPENDENT OF THE FIXPOINT: the family's
+        # LEN_NAME pattern knows `n`, `len`, `<stem>_len` and `n_<stem>`, but
+        # not `<stem>n` -- so `names_equal(a: pointer[char], an: int, b:
+        # pointer[char], bn: int)` is invisible to every scan in the family
+        # although it is perfect ADJACENT form AND walks its own body. Nine such
+        # roots, and `names_equal`/`names_equal_fold` alone are the root of 14
+        # of the chains above. Kept NARROW on purpose -- the length name must be
+        # the buffer's own name plus one of three suffixes, which is adjacency
+        # and stem-sharing at once; a looser rule is the LOOSE verdict's mistake
+        # (`insert(slots, name_len)` measures the NAME, not the slot table).
+        if pairing is None and pi + 1 < len(params):
+            qn, qt = params[pi + 1]
+            if qt.strip() in LEN_TYPE and qn in (pn + 'n', pn + 'len', pn + 'sz'):
+                pairing, ln = 'ADJACENT', qn
         if pairing is None:
             for qi, qn in lens:
                 if shares_stem(pn, qn):
@@ -170,15 +184,40 @@ def main(paths, want_selftest=False):
             v = 'W-' + v
         rows.append((v, r, pn, elem, ln, key in proven))
 
-    if want_selftest:
-        # the calibration case: get_identifier_token carries (buf, len) and its
-        # body walks nothing -- only the chain through kw_eq can prove it.
-        hit = [x for x in rows if x[1]['fn'] == 'get_identifier_token' and x[2] == 'buf']
-        ok = bool(hit) and hit[0][0].startswith('CHAIN-')
-        print(f"selftest: get_identifier_token(buf) -> {hit[0][0] if hit else 'NOT FOUND'}"
-              f"   {'OK' if ok else 'FAILED — the fixpoint does not fire, every zero below is meaningless'}")
-        if not ok: sys.exit(1)
     return rows
+
+
+def selftest():
+    """Run the fixpoint over tools/lenfix/fixture and demand the known shapes.
+
+    ★★★KEYED ON A FIXTURE, NEVER ON A CANDIDATE. The first version asserted that
+    the real `get_identifier_token(buf)` comes out CHAIN-ADJACENT; converting
+    that chain -- the tool's whole purpose -- made it report that the fixpoint
+    does not fire. A self-test a successful harvest can break is worse than
+    none, because it fails exactly when the tool is working.
+
+    Three demands, and the third is the one that makes the other two mean
+    anything: a forwarder to a callee that proves NOTHING must not be reported.
+    Without it, a fixpoint that propagated on the mere existence of a call would
+    pass.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    rows = main([os.path.join(here, 'fixture')])
+    got = {(r['fn'], pn): v for v, r, pn, elem, ln, pr in rows}
+    want = {('forwarder_pairs_and_forwards', 'buf'): 'CHAIN-ADJACENT',
+            ('leaf_walks_no_len', 'buf'):            'LENLESS',
+            ('forwarder_to_nothing', 'buf'):         'UNPROVEN-ADJACENT'}
+    bad = 0
+    for k, expect in want.items():
+        actual = got.get(k, 'NOT FOUND')
+        ok = actual == expect
+        if not ok: bad += 1
+        print(f"  selftest {'OK  ' if ok else 'FAIL'} {k[0]}({k[1]}) -> {actual}"
+              f"{'' if ok else '   expected ' + expect}")
+    if bad:
+        print("selftest FAILED — the fixpoint does not behave; every count below is meaningless")
+        sys.exit(1)
+    print("selftest: OK (fixpoint fires, and does not fire on a call that proves nothing)")
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +255,9 @@ if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
     if '--chains' in sys.argv:
         chains(args or ['packages']); sys.exit(0)
-    rows = main(args or ['packages'], want_selftest='--selftest' in sys.argv)
+    if '--selftest' in sys.argv:
+        selftest()
+    rows = main(args or ['packages'])
     verbose = '-v' in sys.argv
     tally = collections.Counter()
     for v, r, pn, elem, ln, pr in rows:
