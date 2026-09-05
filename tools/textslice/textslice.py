@@ -255,7 +255,9 @@ class Spec:
         self.outpair = d.get('outpair', [])        # (file, fn, line, out_data, out_len, new) -- the two out-params become ONE `new: ref[Slice[char]]`
         self.method_concepts = d.get('method_concepts', [])   # concepts whose accessors are METHODS (any receiver spelling)
         self.ambiguous_fields = d.get('ambiguous_fields', []) # new field names that other records use for a non-slice
-        self.slice_fields = d.get('slice_fields', [])         # field names ALREADY of type Slice[char] (a later chain's knowledge)
+        self.slice_fields = d.get('slice_fields', [])
+        self.views = d.get('views', [])
+        self.this_slice_fields = d.get('this_slice_fields', [])   # Slice[char] fields read BARE (implicit this) inside their concept                      # (file, old_decl_line_text, new_decl_line_text): a buffer local becomes a VIEW before the pass runs         # field names ALREADY of type Slice[char] (a later chain's knowledge)
 
 def load_spec(path):
     ns = {}
@@ -276,6 +278,15 @@ def main():
     log = collections.Counter()
 
     retlen_fns = {}
+    # ---- 0. views: `let d text.get_buffer() as pointer[char]` -> `let d Slice[char](…)`, so the pass
+    # below reads every later `*(d + i)` as a walk on a slice local (a hand edit AFTER the pass is blind here)
+    for (fpath, old, new) in spec.views:
+        lines = files[fpath]
+        hits = [i for i, l in enumerate(lines) if split_code_comment(l)[0].strip() == old.strip()]
+        assert len(hits) == 1, (fpath, old, len(hits))
+        ind = re.match(r'\s*', lines[hits[0]]).group(0)
+        lines[hits[0]] = ind + new.strip()
+        log['views'] += 1
     # ---- 1. field declarations
     field_pairs = {}   # data_field -> (len_field, new)
     for (fpath, rec, dfld, lfld, new) in spec.fields:
@@ -343,7 +354,7 @@ def main():
         pair_idx = []; lenless_idx = []
         for (ptr, ln) in pairs:
             pi = names.index(ptr)
-            assert re.match(rf'{re.escape(ptr)}\s*:\s*pointer\[char\]$', params[pi]), (fpath, fn, params[pi])
+            assert re.match(rf'{re.escape(ptr)}\s*:\s*pointer\[(const_)?char\]$', params[pi]), (fpath, fn, params[pi])
             params[pi] = f'{ptr}: Slice[char]'
             if ln is None:
                 lenless_idx.append(pi - (1 if has_this else 0)); continue      # a bounded VIEW whose offsets stay explicit
@@ -520,6 +531,7 @@ def main():
         field) does not count -- used where a wrong yes rewrites a null test."""
         e = e.strip()
         if e in locals_ and locals_[e][0] == 'slice': return True
+        if e in spec.this_slice_fields and e not in locals_: return True
         if e in locals_ and locals_[e][0] == 'slice?': return not strict
         if re.match(r'^Slice\[char\]\(', e): return True
         if re.search(r'\.(subslice|slice_from|as_slice)\([^()]*\)$', e): return True
@@ -724,6 +736,9 @@ def main():
                         n_, ty_ = stack_arrays[am.group(1)]
                         cast_ = ' as pointer[char]' if ty_ != 'char' else ''
                         args[li_] = f'{lead}Slice[char]({n_} as size_t, &{am.group(1)}[0]{cast_})'; log['stack-array-view'] += 1; continue
+                    dm_ = re.match(r'^([\w.]+)\.data$', a_s)
+                    if dm_ and is_slice_expr(dm_.group(1), locals_):
+                        args[li_] = f'{lead}{dm_.group(1)}'; log['data-collapse'] += 1; continue
                     pm_ = re.match(r'^([\w.]+)\s*\+\s*(.+)$', a_s)
                     if pm_ and is_slice_expr(pm_.group(1), locals_):
                         args[li_] = f'{lead}{pm_.group(1)}.slice_from({pm_.group(2).strip()} as size_t)'; log['slice-from'] += 1; continue
@@ -948,6 +963,9 @@ def main():
                 elif ty is None and is_slice_expr(init, locals_):
                     locals_[nm_] = ('slice?', init)
                 else:
+                    # a RE-declaration of the name with a non-slice initializer (a second `let buf
+                    # host.allocate(...)` in a sibling block) ends the slice reading of that name
+                    slice_locals.discard(nm_)
                     src = length_source(init, locals_)
                     if src is not None: locals_[nm_] = ('len', src)
                     elif nm_ in locals_: del locals_[nm_]
