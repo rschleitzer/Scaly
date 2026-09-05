@@ -39,7 +39,10 @@ define Page
     region: pointer[Page]
 )
 {
-    function allocate_page() returns pointer[Page]
+    ; Answers a borrowed reference, never null: a bucket is created when none
+    ; is free, and the page address is computed from it. Return types are not
+    ; part of the Itanium name, so no caller's symbol moves.
+    function allocate_page() returns ref[Page]
     {
         ; Extension and exclusive pages come from the HeapBucket.
         if heap_head = null
@@ -136,7 +139,7 @@ define Page
     ; cooperation (see SCALY_TRACE_HEAP in root_pages.scaly). Use the
     ; SAME site string at the matching alloc and release call; a
     ; mismatched label shows up as a permanent false imbalance.
-    function allocate_page_traced(site: pointer[const_char]) returns pointer[Page]
+    function allocate_page_traced(site: pointer[const_char]) returns ref[Page]
     {
         let page Page.allocate_page()
         scaly_heap_trace_alloc site
@@ -381,7 +384,7 @@ define Page
         capacity
     }
 
-    function allocate_exclusive_page(this: Page) returns pointer[Page]
+    function allocate_exclusive_page(this: Page) returns ref[Page]
     {
         let page allocate_page()
         exclusive_pages.add page

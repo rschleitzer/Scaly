@@ -10,9 +10,9 @@ define memory
 
     function test_page_allocate() returns int
     {
+        ; allocate_page answers a ref[Page] and never null, so the old
+        ; `if page = null` guard here was a constant that read as a check.
         var page Page.allocate_page()
-        if page = null
-            return -1
 
         page.deallocate_extensions()
         Page.release_page(page)
@@ -21,9 +21,9 @@ define memory
 
     function test_page_allocate_int() returns int
     {
+        ; allocate_page answers a ref[Page] and never null, so the old
+        ; `if page = null` guard here was a constant that read as a check.
         var page Page.allocate_page()
-        if page = null
-            return -2
 
         let ptr page.allocate(sizeof int, alignof int) as pointer[int]
         if ptr = null
@@ -40,9 +40,9 @@ define memory
 
     function test_page_multiple_allocs() returns int
     {
+        ; allocate_page answers a ref[Page] and never null, so the old
+        ; `if page = null` guard here was a constant that read as a check.
         var page Page.allocate_page()
-        if page = null
-            return -5
 
         let p1 page.allocate(sizeof int, alignof int) as pointer[int]
         let p2 page.allocate(sizeof int, alignof int) as pointer[int]
@@ -66,9 +66,9 @@ define memory
 
     function test_page_get() returns int
     {
+        ; allocate_page answers a ref[Page] and never null, so the old
+        ; `if page = null` guard here was a constant that read as a check.
         var page Page.allocate_page()
-        if page = null
-            return -9
 
         let ptr page.allocate(sizeof int, alignof int) as pointer[int]
         let retrieved_page Page.get(ptr)

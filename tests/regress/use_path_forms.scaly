@@ -12,12 +12,11 @@ use scaly.memory.runtime                    ; a module, no concepts at all
 use scaly.memory.root_pages.getenv          ; a function
 use scaly.containers.*                      ; a glob
 
+; allocate_page answers a ref[Page] (never null), so the `use` of Page is
+; exercised by allocating and releasing rather than by a null guard that
+; the declaration makes constant.
 let p Page.allocate_page()
-if p = null
-{
-    Console.println "FAIL no page"
-    exit 1
-}
+Page.release_page(p)
 if sizeof StackBucketHeader <> (16 as size_t)
 {
     Console.println "FAIL StackBucketHeader"
