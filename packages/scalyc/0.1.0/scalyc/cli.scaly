@@ -26,6 +26,7 @@ use scalyc.compiler.Modeler
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
+use scalyc.compiler.PointerCensus
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
@@ -64,6 +65,7 @@ define Options
     use_vis: bool           ; --use-vis: advisory use-visibility measurement
     no_use_vis: bool        ; --no-use-vis: disable strict use visibility
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
+    pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -93,6 +95,7 @@ define Options
         set use_vis: false
         set no_use_vis: false
         set task_plan: false
+        set pointer_report: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -189,6 +192,10 @@ define cli
                 else if arg = "--task-plan"
                 {
                     set opts.task_plan: true
+                }
+                else if arg = "--pointer-report"
+                {
+                    set opts.pointer_report: true
                 }
                 else if arg = "-O0"
                 {
@@ -318,6 +325,8 @@ define cli
         Console.println("  --plan         Run planner (type resolution)")
         Console.println "  --no-prelude   Skip auto-loading prelude module"
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
+        Console.println("  --task-plan    Report the parallelizability verdict of every for loop")
+        Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
@@ -554,6 +563,17 @@ define cli
         ; survives a failing compile.
         if opts.use_vis
             cli.print_use_vis(&planner)
+
+        ; --pointer-report: raw-pointer census (advisory, PointerCensus.scaly).
+        ; Deliberately in the --use-vis slot, BEFORE the diagnostics gate: a
+        ; half-converted root with one hard diagnostic must still measure,
+        ; because that is exactly the root the census is for.
+        if opts.pointer_report
+        {
+            var census PointerCensus.PointerCensus()
+            census.analyze(plan, &model, opts.input_file)
+            cli.print_pointer_report(&census)
+        }
 
         ; s185 (roadmap Step C): hard diagnostics — constructs the
         ; planner could not resolve and the emitter would silently
@@ -1156,16 +1176,85 @@ define cli
         head.append " parallelizable"
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
+        cli.print_located("task-plan: ", &tp.report_files, &tp.report_offsets, &tp.report_verdicts)
+    }
 
+    ; --pointer-report: the head line carries one count per class, then one
+    ; located line per site (PointerCensus.scaly has the class list).
+    function print_pointer_report(pc: ref[PointerCensus.PointerCensus])
+    {
+        var head StringBuilder()
+        head.append "pointer-report: "
+        head.append(cli.format_size(pc.total()))
+        head.append " sites; extern "
+        head.append(cli.format_size(pc.n_extern))
+        head.append ", param "
+        head.append(cli.format_size(pc.n_param))
+        head.append ", return "
+        head.append(cli.format_size(pc.n_return))
+        head.append ", field "
+        head.append(cli.format_size(pc.n_field))
+        head.append ", variant "
+        head.append(cli.format_size(pc.n_variant))
+        head.append ", local "
+        head.append(cli.format_size(pc.n_local))
+        head.append ", deref "
+        head.append(cli.format_size(pc.n_deref))
+        head.append ", deref-arith "
+        head.append(cli.format_size(pc.n_deref_arith))
+        head.append ", arith "
+        head.append(cli.format_size(pc.n_arith))
+        head.append ", cast "
+        head.append(cli.format_size(pc.n_cast))
+        head.append ", null-cast "
+        head.append(cli.format_size(pc.n_null_cast))
+        head.append ", null-test "
+        head.append(cli.format_size(pc.n_null_test))
+        head.append ", store "
+        head.append(cli.format_size(pc.n_store))
+        head.append ", arg "
+        head.append(cli.format_size(pc.n_arg))
+        head.append ", arg-extern "
+        head.append(cli.format_size(pc.n_arg_extern))
+        head.append ", arg-unresolved "
+        head.append(cli.format_size(pc.n_arg_unresolved))
+        head.append ", h-pointer-into-ref "
+        head.append(cli.format_size(pc.n_h_ptr_ref))
+        head.append ", h-slice-into-pointer "
+        head.append(cli.format_size(pc.n_h_slice_ptr))
+        head.append ", h-mixed-params "
+        head.append(cli.format_size(pc.n_h_mixed))
+        head.append "; optional-ref derefs (not listed) "
+        head.append(cli.format_size(pc.n_optref_deref))
+        head.append ", bodies unfiled "
+        head.append(cli.format_size(pc.n_unfiled))
+        head.append ", alias handles (not listed) "
+        head.append(cli.format_size(pc.n_handle))
+        let head_str head.to_string()
+        Console.println(head_str.to_c_string())
+        cli.print_located("pointer-report: ", &pc.report_files, &pc.report_offsets, &pc.report_texts)
+    }
+
+    ; Shared located-report printer: one `<prefix><file>:<line>:<col>: <text>`
+    ; line per slot of three parallel arrays. The byte offset is relative to
+    ; the slot's own source file, so re-read the file when it changes
+    ; (entries arrive grouped by file, one read per file).
+    function print_located(
+        prefix: String,
+        files: ref[Array[String]],
+        offsets: ref[Array[size_t]],
+        texts: ref[Array[String]]
+    )
+    {
         var cur_path String("")
         var cur_src String("")
         var have_src false
         var i: size_t 0
-        while i < tp.report_files.length
+        while i < files.length
         {
-            let fp tp.report_files.get i
-            let op_ tp.report_offsets.get i
-            let vp tp.report_verdicts.get i
+            let fp files.get i
+            let op_ offsets.get i
+            let vp texts.get i
             if fp <> null
             {
                 var need_read false
@@ -1204,7 +1293,7 @@ define cli
                     set off: off + 1
                 }
                 var msg StringBuilder()
-                msg.append "task-plan: "
+                msg.append prefix
                 msg.append((*fp))
                 msg.append ":"
                 msg.append(cli.format_size(line))

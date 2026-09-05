@@ -1,0 +1,2064 @@
+; PointerCensus.scaly - the `--pointer-report` pass: every use of a raw
+; `pointer[T]` in a compilation root, classified off the PLAN rather than off
+; the source text.
+;
+; WHY A PLAN PASS. The pointer→ref campaign ran on Python text scans, and every
+; class those scans got wrong was a question the Planner had already answered:
+; a cast is a declaration without a colon; `p[i]` is arithmetic on a
+; `pointer[Array[X]]` and a dispatch on a `ref[Array[X]]`; a `Slice` handed to a
+; `pointer` parameter compiles silently; which SIDE of a `set` an occurrence is
+; on. This pass reads the resolved types and reports one line per site, so a
+; residue number is a MEASUREMENT that can be re-run, not a figure inherited
+; from a scan whose population nobody checked.
+;
+; WHAT IT REPORTS (one line each, `<class> <detail>`, located file:line:col
+; by the cli like `--task-plan`):
+;   extern-param / extern-return   a pointer in an `extern` declaration
+;   param / return / field / variant / local
+;                                  a pointer in a declared position
+;   deref                          `*p` on a pointer (a `*` on `ref[T]?` is
+;                                  the language's Option spelling and is
+;                                  COUNTED, never listed)
+;   deref-arith                    `*(p + i)` -- the buffer walk
+;   arith                          `p + i` / `p - i` as a value
+;   cast / null-cast               `x as pointer[T]` / `null as pointer[T]`
+;   null-test                      `p = null` / `p <> null` on a pointer
+;   store / store-arith            `set *p: v` / `set *(p + i): v`
+;   arg                            a pointer handed to a callee whose parameter
+;                                  is a pointer too -- the forwarder chain,
+;                                  `-> callee(param)`
+;   arg-extern                     a pointer on its way to an `extern` (class X
+;                                  of the doctrine: the cast there is forced)
+;   arg-unresolved                 a pointer handed to a callee the flat
+;                                  function table does not hold (intrinsic,
+;                                  indirect, cross-package)
+;   h-pointer-into-ref             HAZARD: a pointer-shaped value reaching a
+;                                  parameter declared `ref[T]` / `ref[T]?`
+;                                  (the `null as pointer[X]` spelling class)
+;   h-slice-into-pointer           HAZARD: a `Slice` handed to a `pointer`
+;                                  parameter -- compiles, reads the struct
+;   h-mixed-params                 a signature with both `ref` and `pointer`
+;                                  parameters, one campaign's verdict on one
+;                                  neighbour and none on the other
+;
+; The callee is read off `plan.functions` by `PlannedCall.mangled_name`; a
+; call's args line up with the callee's `input` INCLUDING its `this`, which is
+; why the receiver of a method call is never a site (the pointer-ness of a
+; receiver local is counted at the local). Where a name is recorded twice a
+; body wins over an extern stub (the lazy method hook records a stub first).
+;
+; WHAT IT DOES NOT DO. It never reads the emission and never asks whether a
+; call type-checks -- `emit_call` synthesizes the callee type from the
+; ARGUMENTS, so "it compiled" is not evidence here. It runs BEFORE the hard
+; diagnostics gate (the `--use-vis` slot), so a half-converted root still
+; measures; every ref in the plan is therefore tested for null before use.
+;
+; PROVENANCE. Declarations are walked over the MODEL (`Program.module_`):
+; a `Module` carries its `file`, and the Model tree holds every declaration
+; of THIS root exactly once, as written. The Plan cannot serve that half --
+; `plan_namespace#` plans a namespace's sub-modules for their side effects
+; only and leaves `PlannedNamespace.modules` null, so for a library root the
+; planned module tree is empty; and a generic concept's methods appear in
+; `plan.functions` once per instantiation, filed under the REQUESTING file.
+; Reading the written type also means a TYPE ALIAS (`define LLVMValueRef
+; pointer[LLVMOpaqueValue]`) is NOT a pointer here -- the named handle is the
+; accepted form, and only the alias's own definition line names a pointer.
+; Bodies are walked over the flat `plan.functions`, whose
+; `PlannedFunction.file` is the function's own module file. Report strings
+; live on this pass's page (`String^this`), the `--task-plan` idiom: a
+; default-local copy dangles by print time.
+;
+; SHAPE, NOT NAME. `ref[T]?` is `Option[ref[T]]` and `pointer[T]?` is
+; `Option[pointer[T]]` (s113), so every shape question here peels the Option
+; first. A `this` parameter is planned as `pointer[T]` by the Planner itself
+; and is skipped by NAME -- it is the compiler's wrapper, not the author's.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.Planner.*
+use scaly.io.File
+
+; Dedupe table size: a power of two (the probe mask is DD_CAP - 1). The table
+; stops admitting new keys at half load and every later site is recorded
+; undeduplicated, so a root with more than 131072 sites still reports, only
+; with instantiation duplicates past that point.
+define DD_CAP int 262144
+
+define PointerCensus
+{
+    define PointerCensus
+    (
+        ; One slot per reported site, in walk order: the owning file, the
+        ; site's byte offset in that file, and the `<class> <detail>` text.
+        report_files: Array[String]
+        report_offsets: Array[size_t]
+        report_texts: Array[String]
+
+        ; Per-class counters for the head line.
+        n_extern: size_t
+        n_param: size_t
+        n_return: size_t
+        n_field: size_t
+        n_variant: size_t
+        n_local: size_t
+        n_deref: size_t
+        n_deref_arith: size_t
+        n_arith: size_t
+        n_cast: size_t
+        n_null_cast: size_t
+        n_null_test: size_t
+        n_store: size_t
+        n_arg: size_t
+        ; `*opt` on a `ref[T]?` -- counted for calibration, never listed.
+        n_optref_deref: size_t
+        ; Bodies whose `file` could not be verified nor re-derived (below);
+        ; their sites are NOT reported, and the head line says how many.
+        n_unfiled: size_t
+
+        ; Every module file of this root (collected on the Model walk) and
+        ; its text, read on first use. `PlannedFunction.file` is the
+        ; REQUESTING file for a lazily instantiated generic body, so before a
+        ; body is walked its header is looked for at `loc.start` in that file
+        ; (storelens.scaly's join), and on a miss in every other file of the
+        ; root. Measured before this: 13 of 1875 stdlib sites filed under
+        ; `containers.scaly`, the file that requested HashMap[String, int].
+        src_files: Array[String]
+        src_texts: Array[String]
+        src_loaded: Array[size_t]
+
+        ; Pointees of the root's TYPE ALIASES (`define LLVMValueRef
+        ; pointer[LLVMOpaqueValue]` puts `LLVMOpaqueValue` here). The alias is
+        ; resolved before planning, so in a BODY the handle arrives as
+        ; `pointer[LLVMOpaqueValue]` and would be counted like any pointer;
+        ; the named handle is the ACCEPTED form (one declaration per opaque
+        ; kind), so such a site is COUNTED under `handle` and never listed.
+        ; Measured before this: 7081 of scalyc's 9289 sites were LLVM handles.
+        handle_pointees: Array[String]
+        n_handle: size_t
+
+        ; Step 3: callee resolution. Open addressing over DD_CAP slots holding
+        ; index + 1 into plan.functions, keyed by the mangled name's hash.
+        plan_functions: ref[Vector[PlannedFunction]]?
+        fn_slots: Vector[size_t]
+        ; Initializers live under plan.structures, not in plan.functions: a
+        ; second table keyed the same way, holding (structure index << 16 |
+        ; initializer index) + 1.
+        plan_structures: ref[Vector[PlannedStructure]]?
+        init_slots: Vector[size_t]
+        ; Every `extern` name of this root AND of its dependency packages
+        ; (`Program.packages`): a dependency's extern has no entry in this
+        ; root's plan.functions, so `memcpy` from the stdlib would otherwise
+        ; read as unresolved.
+        extern_names: Array[String]
+        n_arg_extern: size_t
+        n_arg_unresolved: size_t
+        n_h_ptr_ref: size_t
+        n_h_slice_ptr: size_t
+        n_h_mixed: size_t
+
+        ; Source file of the declaration or body currently walked.
+        current_file: String
+
+        ; Dedupe over (file, offset, class). A generic concept's methods sit
+        ; in plan.functions ONCE PER INSTANTIATION, all with the same file
+        ; and offsets, so without this every site in a generic body counts
+        ; as many times as the root instantiates it (`Vector.scaly:121`
+        ; came out five times over the stdlib). Open addressing over
+        ; DD_CAP slots holding site index + 1; the parallel arrays carry
+        ; the key so a probe compares the whole triple.
+        dd_slots: Vector[size_t]
+        dd_hashes: Array[size_t]
+        dd_offsets: Array[size_t]
+        dd_classes: Array[size_t]
+    )
+    {
+        init()
+        {
+            set report_files: Array[String]^this()
+            set report_offsets: Array[size_t]^this()
+            set report_texts: Array[String]^this()
+            set n_extern: 0
+            set n_param: 0
+            set n_return: 0
+            set n_field: 0
+            set n_variant: 0
+            set n_local: 0
+            set n_deref: 0
+            set n_deref_arith: 0
+            set n_arith: 0
+            set n_cast: 0
+            set n_null_cast: 0
+            set n_null_test: 0
+            set n_store: 0
+            set n_arg: 0
+            set n_optref_deref: 0
+            set n_unfiled: 0
+            set current_file: String^this("")
+            set src_files: Array[String]^this()
+            set src_texts: Array[String]^this()
+            set src_loaded: Array[size_t]^this()
+            set handle_pointees: Array[String]^this()
+            set n_handle: 0
+            set plan_functions: null
+            set fn_slots: Vector[size_t]^this(DD_CAP)
+            set plan_structures: null
+            set init_slots: Vector[size_t]^this(DD_CAP)
+            set extern_names: Array[String]^this()
+            set n_arg_extern: 0
+            set n_arg_unresolved: 0
+            set n_h_ptr_ref: 0
+            set n_h_slice_ptr: 0
+            set n_h_mixed: 0
+            set dd_slots: Vector[size_t]^this(DD_CAP)
+            set dd_hashes: Array[size_t]^this()
+            set dd_offsets: Array[size_t]^this()
+            set dd_classes: Array[size_t]^this()
+        }
+
+        ; ================================================================
+        ; Entry point: declarations over the module tree, then every
+        ; planned body plus the program's top-level statements.
+        ; ================================================================
+        function analyze(this: PointerCensus, plan: Plan, model: ref[Program], entry_file: String)
+        {
+            this.walk_model_module(model.module_)
+            var pi: size_t 0
+            while pi < model.packages.length
+            {
+                let pkg model.packages.get pi
+                if pkg <> null
+                    this.collect_externs_module((*pkg))
+                set pi: pi + 1
+            }
+            set plan_functions: plan.functions
+            set plan_structures: plan.structures
+            this.index_functions()
+            this.index_initializers()
+            if plan.functions <> null
+            {
+                for func in plan.functions
+                {
+                    choose func.impl
+                        when action: Action
+                        {
+                            let home this.resolve_body_file(func)
+                            if home.get_length() > 0
+                            {
+                                set current_file: String^this(home)
+                                this.find_action(action)
+                            }
+                            else
+                                set n_unfiled: n_unfiled + 1
+                        }
+                        else
+                            0
+                }
+            }
+            if plan.statements <> null
+            {
+                set current_file: String^this(entry_file)
+                for stmt in plan.statements
+                    this.find_statement(stmt)
+            }
+        }
+
+        function total(this: PointerCensus) returns size_t
+            report_offsets.length
+
+        ; ================================================================
+        ; Type shape. Every question peels the s113 Option wrapper first.
+        ; ================================================================
+
+        ; The type under a one-argument `Option`, or the type itself.
+        function peel_option(t: PlannedType) returns PlannedType
+        {
+            if t.name <> "Option"
+                return t
+            if t.generics = null
+                return t
+            let gens (*t.generics)
+            if gens.length <> 1
+                return t
+            let inner_ptr gens.get 0
+            if inner_ptr = null
+                return t
+            (*inner_ptr)
+        }
+
+        function void_type() returns PlannedType
+            PlannedType(Span(0, 0), "void", "v", null, Lifetime.Unspecified(Unspecified()), null, "", null)
+
+        ; `pointer[T]` or `pointer[T]?`.
+        function is_pointer_shaped(t: PlannedType) returns bool
+        {
+            let core PointerCensus.peel_option(t)
+            core.name = "pointer"
+        }
+
+        ; `ref[T]?` -- the one deref spelling that is the language's own.
+        function is_optional_ref(t: PlannedType) returns bool
+        {
+            if t.name <> "Option"
+                return false
+            let core PointerCensus.peel_option(t)
+            core.name = "ref"
+        }
+
+        ; A `pointer[X]` (or `pointer[X]?`) whose X is an alias pointee.
+        function is_handle(this: PointerCensus, t: PlannedType) returns bool
+        {
+            let core PointerCensus.peel_option(t)
+            if core.name <> "pointer"
+                return false
+            if core.generics = null
+                return false
+            if core.generics.length <> 1
+                return false
+            let inner core.generics.get 0
+            if inner = null
+                return false
+            let pointee inner.unwrap().name
+            var i: size_t 0
+            while i < handle_pointees.length
+            {
+                let h handle_pointees.get i
+                if h <> null
+                    if (*h) = pointee
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; The receiver the planner passes for a sibling method call: the
+        ; `this` variable, planned as `pointer[T]` by the compiler itself.
+        function operand_is_this(op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when v: Variable
+                    return v.name = "this"
+                else
+                    return false
+        }
+
+        ; ================================================================
+        ; Recording. `text` must ALREADY live on this pass's page -- every
+        ; caller copies with `String^this(...)` before calling, because the
+        ; escape checker reads a callee that stores its argument as storing
+        ; the caller's LOCAL (it is field-insensitive and does not see that
+        ; a copy inside would be made): "argument on the local page is
+        ; stored beyond the frame by record".
+        ; ================================================================
+        function record(this: PointerCensus, offset: size_t, cls: String, text: String)
+        {
+            let cid PointerCensus.class_id(cls)
+            if this.dedupe_seen(offset, cid)
+                return
+            let file_copy String^this(current_file)
+            report_files.add file_copy
+            report_offsets.add offset
+            report_texts.add text
+            this.bump(cid)
+        }
+
+        ; Answers true when (current_file, offset, cid) was recorded before;
+        ; otherwise inserts it and answers false.
+        function dedupe_seen(this: PointerCensus, offset: size_t, cid: size_t) returns bool
+        {
+            let fh current_file.hash()
+            let mask (DD_CAP as size_t) - 1
+            var h fh
+            set h: h xor (offset * 0x9E3779B97F4A7C15)
+            set h: h xor (cid * 0x100000001B3)
+            set h: h & mask
+            var probes: size_t 0
+            while probes < mask
+            {
+                let slot_ptr dd_slots.get h
+                if slot_ptr = null
+                    return false
+                let slot (*slot_ptr)
+                if slot = 0
+                {
+                    if dd_hashes.length * 2 >= (DD_CAP as size_t)
+                        return false
+                    dd_slots.put(h, dd_hashes.length + 1)
+                    dd_hashes.add fh
+                    dd_offsets.add offset
+                    dd_classes.add cid
+                    return false
+                }
+                let idx slot - 1
+                let ph dd_hashes.get idx
+                let po dd_offsets.get idx
+                let pc dd_classes.get idx
+                if ph <> null
+                    if po <> null
+                        if pc <> null
+                            if (*ph) = fh
+                                if (*po) = offset
+                                    if (*pc) = cid
+                                        return true
+                set h: (h + 1) & mask
+                set probes: probes + 1
+            }
+            false
+        }
+
+        function class_id(cls: String) returns size_t
+        {
+            if cls = "extern-param"
+                return 1
+            if cls = "extern-return"
+                return 1
+            if cls = "param"
+                return 2
+            if cls = "return"
+                return 3
+            if cls = "field"
+                return 4
+            if cls = "variant"
+                return 5
+            if cls = "local"
+                return 6
+            if cls = "deref"
+                return 7
+            if cls = "deref-arith"
+                return 8
+            if cls = "arith"
+                return 9
+            if cls = "cast"
+                return 10
+            if cls = "null-cast"
+                return 11
+            if cls = "null-test"
+                return 12
+            if cls = "store"
+                return 13
+            if cls = "store-arith"
+                return 13
+            if cls = "arg"
+                return 14
+            if cls = "arg-extern"
+                return 15
+            if cls = "arg-unresolved"
+                return 16
+            if cls = "h-pointer-into-ref"
+                return 17
+            if cls = "h-slice-into-pointer"
+                return 18
+            if cls = "h-mixed-params"
+                return 19
+            0
+        }
+
+        function bump(this: PointerCensus, cid: size_t)
+        {
+            if cid = 1
+                set n_extern: n_extern + 1
+            if cid = 2
+                set n_param: n_param + 1
+            if cid = 3
+                set n_return: n_return + 1
+            if cid = 4
+                set n_field: n_field + 1
+            if cid = 5
+                set n_variant: n_variant + 1
+            if cid = 6
+                set n_local: n_local + 1
+            if cid = 7
+                set n_deref: n_deref + 1
+            if cid = 8
+                set n_deref_arith: n_deref_arith + 1
+            if cid = 9
+                set n_arith: n_arith + 1
+            if cid = 10
+                set n_cast: n_cast + 1
+            if cid = 11
+                set n_null_cast: n_null_cast + 1
+            if cid = 12
+                set n_null_test: n_null_test + 1
+            if cid = 13
+                set n_store: n_store + 1
+            if cid = 14
+                set n_arg: n_arg + 1
+            if cid = 15
+                set n_arg_extern: n_arg_extern + 1
+            if cid = 16
+                set n_arg_unresolved: n_arg_unresolved + 1
+            if cid = 17
+                set n_h_ptr_ref: n_h_ptr_ref + 1
+            if cid = 18
+                set n_h_slice_ptr: n_h_slice_ptr + 1
+            if cid = 19
+                set n_h_mixed: n_h_mixed + 1
+        }
+
+        function record_typed(this: PointerCensus, offset: size_t, cls: String, t: PlannedType)
+        {
+            if this.is_handle(t)
+            {
+                set n_handle: n_handle + 1
+                return
+            }
+            var sb StringBuilder()
+            sb.append cls
+            sb.append " "
+            sb.append(Planner.get_readable_name(t))
+            let text sb.to_string()
+            let text_copy String^this(text)
+            this.record(offset, cls, text_copy)
+        }
+
+        function record_named(this: PointerCensus, offset: size_t, cls: String, t: PlannedType, name: String)
+        {
+            if this.is_handle(t)
+            {
+                set n_handle: n_handle + 1
+                return
+            }
+            var sb StringBuilder()
+            sb.append cls
+            sb.append " "
+            sb.append(Planner.get_readable_name(t))
+            sb.append " "
+            sb.append name
+            let text sb.to_string()
+            let text_copy String^this(text)
+            this.record(offset, cls, text_copy)
+        }
+
+        ; ================================================================
+        ; Declarations: the MODEL module tree carries the file.
+        ; ================================================================
+
+        ; Last segment of a Model type name (`scaly.memory.Page` -> `Page`).
+        function model_last_segment(t: Type) returns String
+        {
+            if t.name.length = 0
+                return ""
+            let last t.name.get(t.name.length - 1)
+            if last = null
+                return ""
+            String((*last))
+        }
+
+        ; `pointer[T]` or `pointer[T]?` as WRITTEN (s113 wraps `T?` into
+        ; `Option[T]` at Model level, so the Option is peeled here too).
+        function model_is_pointer(t: Type) returns bool
+        {
+            let last PointerCensus.model_last_segment(t)
+            if last = "pointer"
+                return true
+            if last <> "Option"
+                return false
+            if t.generics = null
+                return false
+            if t.generics.length <> 1
+                return false
+            let inner t.generics.get 0
+            if inner = null
+                return false
+            PointerCensus.model_is_pointer((*inner))
+        }
+
+        ; Readable rendering of a Model type: `a.b.Name[T, U]`.
+        function model_type_name(t: Type) returns String
+        {
+            var sb StringBuilder()
+            var i: size_t 0
+            while i < t.name.length
+            {
+                if i > 0
+                    sb.append "."
+                let seg t.name.get i
+                if seg <> null
+                    sb.append((*seg))
+                set i: i + 1
+            }
+            if t.generics <> null
+            {
+                sb.append "["
+                var g: size_t 0
+                while g < t.generics.length
+                {
+                    if g > 0
+                        sb.append ", "
+                    let gt t.generics.get g
+                    if gt <> null
+                        sb.append(PointerCensus.model_type_name((*gt)))
+                    set g: g + 1
+                }
+                sb.append "]"
+            }
+            sb.to_string()
+        }
+
+        function record_model_typed(this: PointerCensus, offset: size_t, cls: String, t: Type, name: String)
+        {
+            var sb StringBuilder()
+            sb.append cls
+            sb.append " "
+            sb.append(PointerCensus.model_type_name(t))
+            sb.append " "
+            sb.append name
+            let text sb.to_string()
+            let text_copy String^this(text)
+            this.record(offset, cls, text_copy)
+        }
+
+        function walk_model_module(this: PointerCensus, m: Module)
+        {
+            set current_file: String^this(m.file)
+            this.remember_file(m.file)
+            this.walk_members(m.members)
+            var i: size_t 0
+            while i < m.modules.length
+            {
+                let sub m.modules.get i
+                if sub <> null
+                    this.walk_model_module((*sub))
+                set i: i + 1
+            }
+            ; Restore: a sibling walked after this one belongs to ITS file,
+            ; and the caller's remaining members to the caller's.
+            set current_file: String^this(m.file)
+        }
+
+        function walk_members(this: PointerCensus, members: Vector[Member])
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get i
+                if m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                            this.walk_model_function(f)
+                        when o: Operator
+                            this.walk_model_signature(o.input, o.returns_, false, o.name, o.span.start)
+                        when c: Concept
+                            this.walk_model_concept(c)
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+        }
+
+        function walk_model_function(this: PointerCensus, f: Function)
+        {
+            var is_extern false
+            choose f.implementation
+                when e: Extern
+                    set is_extern: true
+                else
+                    0
+            if is_extern
+                this.remember_extern(f.name)
+            this.walk_model_signature(f.input, f.returns_, is_extern, f.name, f.span.start)
+        }
+
+        function remember_extern(this: PointerCensus, name: String)
+        {
+            let copy String^this(name)
+            extern_names.add copy
+        }
+
+        function is_extern_name(this: PointerCensus, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < extern_names.length
+            {
+                let e extern_names.get i
+                if e <> null
+                    if (*e) = name
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; Dependency packages: only their extern NAMES are wanted.
+        function collect_externs_module(this: PointerCensus, m: Module)
+        {
+            this.collect_externs_members(m.members)
+            var i: size_t 0
+            while i < m.modules.length
+            {
+                let sub m.modules.get i
+                if sub <> null
+                    this.collect_externs_module((*sub))
+                set i: i + 1
+            }
+        }
+
+        function collect_externs_members(this: PointerCensus, members: Vector[Member])
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get i
+                if m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                        {
+                            choose f.implementation
+                                when e: Extern
+                                    this.remember_extern(f.name)
+                                else
+                                    0
+                        }
+                        when c: Concept
+                        {
+                            choose c.definition
+                                when st: Structure
+                                {
+                                    this.collect_externs_members(st.members)
+                                    var mi: size_t 0
+                                    while mi < st.modules.length
+                                    {
+                                        let sub st.modules.get mi
+                                        if sub <> null
+                                            this.collect_externs_module((*sub))
+                                        set mi: mi + 1
+                                    }
+                                }
+                                when un: Union
+                                    this.collect_externs_members(un.members)
+                                when ns: Namespace
+                                {
+                                    this.collect_externs_members(ns.members)
+                                    var mi: size_t 0
+                                    while mi < ns.modules.length
+                                    {
+                                        let sub ns.modules.get mi
+                                        if sub <> null
+                                            this.collect_externs_module((*sub))
+                                        set mi: mi + 1
+                                    }
+                                }
+                                else
+                                    0
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+        }
+
+        ; `ref[T]` or `ref[T]?` as written.
+        function model_is_ref(t: Type) returns bool
+        {
+            let last PointerCensus.model_last_segment(t)
+            if last = "ref"
+                return true
+            if last <> "Option"
+                return false
+            if t.generics = null
+                return false
+            if t.generics.length <> 1
+                return false
+            let inner t.generics.get 0
+            if inner = null
+                return false
+            PointerCensus.model_is_ref((*inner))
+        }
+
+        function walk_model_signature(
+            this: PointerCensus,
+            input: Vector[Item],
+            returns_: ref[Type]?,
+            is_extern: bool,
+            owner: String,
+            owner_off: size_t
+        )
+        {
+            var n_ptr: size_t 0
+            var n_ref: size_t 0
+            var i: size_t 0
+            while i < input.length
+            {
+                let item_ptr input.get i
+                if item_ptr <> null
+                {
+                    let item (*item_ptr)
+                    var is_this false
+                    if item.name <> null
+                    {
+                        if (*item.name) = "this"
+                            set is_this: true
+                    }
+                    if is_this = false
+                    {
+                        if item.type <> null
+                        {
+                            let t (*item.type)
+                            if PointerCensus.model_is_ref(t)
+                                set n_ref: n_ref + 1
+                            if PointerCensus.model_is_pointer(t)
+                            {
+                                set n_ptr: n_ptr + 1
+                                var pname String("")
+                                if item.name <> null
+                                    set pname: String((*item.name))
+                                var sb StringBuilder()
+                                sb.append owner
+                                sb.append "("
+                                sb.append pname
+                                sb.append ")"
+                                let where sb.to_string()
+                                if is_extern
+                                {
+                                    this.record_model_typed(item.span.start, "extern-param", t, where)
+                                }
+                                else
+                                {
+                                    this.record_model_typed(item.span.start, "param", t, where)
+                                }
+                            }
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            ; The signpost of a half-converted routine: one campaign's verdict
+            ; on one parameter and none on its neighbour.
+            if is_extern = false
+                if n_ptr > 0
+                    if n_ref > 0
+                    {
+                        var sb StringBuilder()
+                        sb.append "h-mixed-params "
+                        sb.append owner
+                        let text sb.to_string()
+                        let text_copy String^this(text)
+                        this.record(owner_off, "h-mixed-params", text_copy)
+                    }
+            if returns_ <> null
+            {
+                let rt (*returns_)
+                if PointerCensus.model_is_pointer(rt)
+                {
+                    if is_extern
+                    {
+                        this.record_model_typed(rt.span.start, "extern-return", rt, owner)
+                    }
+                    else
+                    {
+                        this.record_model_typed(rt.span.start, "return", rt, owner)
+                    }
+                }
+            }
+        }
+
+        function walk_model_concept(this: PointerCensus, c: Concept)
+        {
+            choose c.definition
+                when s: Structure
+                {
+                    var i: size_t 0
+                    while i < s.properties.length
+                    {
+                        let p_ptr s.properties.get i
+                        if p_ptr <> null
+                        {
+                            let p (*p_ptr)
+                            if p.type <> null
+                            {
+                                let pt (*p.type)
+                                if PointerCensus.model_is_pointer(pt)
+                                {
+                                    var sb StringBuilder()
+                                    sb.append c.name
+                                    sb.append "."
+                                    sb.append p.name
+                                    let where sb.to_string()
+                                    this.record_model_typed(p.span.start, "field", pt, where)
+                                }
+                            }
+                        }
+                        set i: i + 1
+                    }
+                    var ii: size_t 0
+                    while ii < s.initializers.length
+                    {
+                        let ini_ptr s.initializers.get ii
+                        if ini_ptr <> null
+                        {
+                            let ini (*ini_ptr)
+                            this.walk_model_signature(ini.input, null, false, c.name, ini.span.start)
+                        }
+                        set ii: ii + 1
+                    }
+                    this.walk_members(s.members)
+                    var mi: size_t 0
+                    while mi < s.modules.length
+                    {
+                        let sub s.modules.get mi
+                        if sub <> null
+                            this.walk_model_module((*sub))
+                        set mi: mi + 1
+                    }
+                }
+                when u: Union
+                {
+                    var i: size_t 0
+                    while i < u.variants.length
+                    {
+                        let v_ptr u.variants.get i
+                        if v_ptr <> null
+                        {
+                            let v (*v_ptr)
+                            if v.type <> null
+                            {
+                                let vt (*v.type)
+                                if PointerCensus.model_is_pointer(vt)
+                                {
+                                    var sb StringBuilder()
+                                    sb.append c.name
+                                    sb.append "."
+                                    sb.append v.name
+                                    let where sb.to_string()
+                                    this.record_model_typed(v.span.start, "variant", vt, where)
+                                }
+                            }
+                        }
+                        set i: i + 1
+                    }
+                    this.walk_members(u.members)
+                }
+                when alias: Type
+                {
+                    ; `define Name pointer[X]`: remember X as a handle pointee.
+                    if PointerCensus.model_last_segment(alias) = "pointer"
+                    {
+                        if alias.generics <> null
+                        {
+                            if alias.generics.length = 1
+                            {
+                                let inner alias.generics.get 0
+                                if inner <> null
+                                {
+                                    let pointee PointerCensus.model_last_segment((*inner))
+                                    let copy String^this(pointee)
+                                    handle_pointees.add copy
+                                }
+                            }
+                        }
+                    }
+                }
+                when ns: Namespace
+                {
+                    this.walk_members(ns.members)
+                    var mi: size_t 0
+                    while mi < ns.modules.length
+                    {
+                        let sub ns.modules.get mi
+                        if sub <> null
+                            this.walk_model_module((*sub))
+                        set mi: mi + 1
+                    }
+                }
+                else
+                    0
+        }
+
+        ; ================================================================
+        ; Callee lookup by mangled name.
+        ; ================================================================
+        function fn_is_body(f: PlannedFunction) returns bool
+        {
+            choose f.impl
+                when action: Action
+                    return true
+                else
+                    return false
+        }
+
+        function index_functions(this: PointerCensus)
+        {
+            if plan_functions = null
+                return
+            let mask (DD_CAP as size_t) - 1
+            var i: size_t 0
+            while i < plan_functions.length
+            {
+                if i * 2 >= (DD_CAP as size_t)
+                    return
+                let f_ptr plan_functions.get i
+                if f_ptr <> null
+                {
+                    let f (*f_ptr)
+                    var h f.mangled_name.hash() & mask
+                    var probes: size_t 0
+                    var done false
+                    while done = false
+                    {
+                        if probes >= mask
+                            set done: true
+                        if done = false
+                        {
+                            let slot_ptr fn_slots.get h
+                            if slot_ptr = null
+                                set done: true
+                            if done = false
+                            {
+                                let slot (*slot_ptr)
+                                if slot = 0
+                                {
+                                    fn_slots.put(h, i + 1)
+                                    set done: true
+                                }
+                                else
+                                {
+                                    let other plan_functions.get(slot - 1)
+                                    if other <> null
+                                    {
+                                        if other.unwrap().mangled_name = f.mangled_name
+                                        {
+                                            ; Same symbol twice: a body beats a stub.
+                                            if PointerCensus.fn_is_body(f)
+                                                fn_slots.put(h, i + 1)
+                                            set done: true
+                                        }
+                                    }
+                                    if done = false
+                                    {
+                                        set h: (h + 1) & mask
+                                        set probes: probes + 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
+        function index_initializers(this: PointerCensus)
+        {
+            if plan_structures = null
+                return
+            let mask (DD_CAP as size_t) - 1
+            var si: size_t 0
+            while si < plan_structures.length
+            {
+                let s_ptr plan_structures.get si
+                if s_ptr <> null
+                {
+                    let st s_ptr.unwrap()
+                    if st.initializers <> null
+                    {
+                        var ii: size_t 0
+                        while ii < st.initializers.length
+                        {
+                            let in_ptr st.initializers.get ii
+                            if in_ptr <> null
+                            {
+                                let ini in_ptr.unwrap()
+                                var h ini.mangled_name.hash() & mask
+                                var probes: size_t 0
+                                var done false
+                                while done = false
+                                {
+                                    if probes >= mask
+                                        set done: true
+                                    if done = false
+                                    {
+                                        let slot_ptr init_slots.get h
+                                        if slot_ptr = null
+                                            set done: true
+                                        if done = false
+                                        {
+                                            if (*slot_ptr) = 0
+                                            {
+                                                if si < 65536
+                                                    if ii < 65536
+                                                        init_slots.put(h, (si * 65536) + ii + 1)
+                                                set done: true
+                                            }
+                                            else
+                                            {
+                                                set h: (h + 1) & mask
+                                                set probes: probes + 1
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            set ii: ii + 1
+                        }
+                    }
+                }
+                set si: si + 1
+            }
+        }
+
+        function find_initializer(this: PointerCensus, mangled: String) returns ref[PlannedInitializer]?
+        {
+            if plan_structures = null
+                return null
+            if mangled.get_length() = 0
+                return null
+            let mask (DD_CAP as size_t) - 1
+            var h mangled.hash() & mask
+            var probes: size_t 0
+            while probes < mask
+            {
+                let slot_ptr init_slots.get h
+                if slot_ptr = null
+                    return null
+                let slot (*slot_ptr)
+                if slot = 0
+                    return null
+                let si (slot - 1) / 65536
+                let ii (slot - 1) % 65536
+                let s_ptr plan_structures.get si
+                if s_ptr <> null
+                {
+                    let st s_ptr.unwrap()
+                    if st.initializers <> null
+                    {
+                        let in_ptr st.initializers.get ii
+                        if in_ptr <> null
+                            if in_ptr.unwrap().mangled_name = mangled
+                                return in_ptr
+                    }
+                }
+                set h: (h + 1) & mask
+                set probes: probes + 1
+            }
+            null
+        }
+
+        function find_function(this: PointerCensus, mangled: String) returns ref[PlannedFunction]?
+        {
+            if plan_functions = null
+                return null
+            if mangled.get_length() = 0
+                return null
+            let mask (DD_CAP as size_t) - 1
+            var h mangled.hash() & mask
+            var probes: size_t 0
+            while probes < mask
+            {
+                let slot_ptr fn_slots.get h
+                if slot_ptr = null
+                    return null
+                let slot (*slot_ptr)
+                if slot = 0
+                    return null
+                let cand plan_functions.get(slot - 1)
+                if cand <> null
+                    if cand.unwrap().mangled_name = mangled
+                        return cand
+                set h: (h + 1) & mask
+                set probes: probes + 1
+            }
+            null
+        }
+
+        ; `ref[T]` or `ref[T]?` in the plan.
+        function is_ref_shaped(t: PlannedType) returns bool
+        {
+            let core PointerCensus.peel_option(t)
+            core.name = "ref"
+        }
+
+        ; ================================================================
+        ; Source files: the join that verifies a body's file.
+        ; ================================================================
+        function remember_file(this: PointerCensus, file: String)
+        {
+            if file.get_length() = 0
+                return
+            var i: size_t 0
+            while i < src_files.length
+            {
+                let f src_files.get i
+                if f <> null
+                    if (*f) = file
+                        return
+                set i: i + 1
+            }
+            let copy String^this(file)
+            src_files.add copy
+            let empty String^this("")
+            src_texts.add empty
+            src_loaded.add 0
+        }
+
+        ; The text of the i-th remembered file, read on first use.
+        function source_of(this: PointerCensus, i: size_t) returns ref[String]?
+        {
+            let loaded src_loaded.get i
+            if loaded = null
+                return null
+            if (*loaded) = 0
+            {
+                let f src_files.get i
+                if f = null
+                    return null
+                let text File.read_to_string((*f))
+                let copy String^this(text)
+                src_texts.put(i, copy)
+                src_loaded.put(i, 1)
+            }
+            src_texts.get i
+        }
+
+        ; Does `src` read `lit` at offset `off`?
+        function text_at(src: String, off: size_t, lit: String) returns bool
+        {
+            let n lit.get_length()
+            if off + n > src.get_length()
+                return false
+            var i: size_t 0
+            while i < n
+            {
+                if src.get(off + i) <> lit.get(i)
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        ; A routine header at `off`: one of the four keywords, then the
+        ; routine's own name after the blanks. A lambda body has a synthetic
+        ; name and starts at its backslash.
+        function header_at(src: String, off: size_t, name: String) returns bool
+        {
+            if PointerCensus.text_at(src, off, "\\")
+                return true
+            var kw_len: size_t 0
+            if PointerCensus.text_at(src, off, "function")
+                set kw_len: 8
+            if PointerCensus.text_at(src, off, "procedure")
+                set kw_len: 9
+            if PointerCensus.text_at(src, off, "operator")
+                set kw_len: 8
+            if PointerCensus.text_at(src, off, "init")
+                set kw_len: 4
+            if kw_len = 0
+                return false
+            if kw_len = 4
+                return true
+            var p off + kw_len
+            let len src.get_length()
+            while p < len
+            {
+                let c src.get p
+                if c <> 32
+                    if c <> 9
+                        break
+                set p: p + 1
+            }
+            PointerCensus.text_at(src, p, name)
+        }
+
+        ; The file a body was WRITTEN in: its own `file` when the header
+        ; checks out there, else the one remembered file where it does, else
+        ; the empty string. A body from a DEPENDENCY package (a stdlib generic
+        ; instantiated by this root) names a file outside this root's module
+        ; tree; it is remembered here on first sight, so its sites are
+        ; reported under their true file and the sweep's union dedupes them.
+        function resolve_body_file(this: PointerCensus, func: PlannedFunction) returns String
+        {
+            this.remember_file(func.file)
+            var i: size_t 0
+            var own: size_t src_files.length
+            while i < src_files.length
+            {
+                let f src_files.get i
+                if f <> null
+                    if (*f) = func.file
+                        set own: i
+                set i: i + 1
+            }
+            if own < src_files.length
+            {
+                let src this.source_of(own)
+                if src <> null
+                    if PointerCensus.header_at((*src), func.loc.start, func.name)
+                        return String(func.file)
+            }
+            set i: 0
+            while i < src_files.length
+            {
+                if i <> own
+                {
+                    let src this.source_of(i)
+                    if src <> null
+                        if PointerCensus.header_at((*src), func.loc.start, func.name)
+                        {
+                            let f src_files.get i
+                            if f <> null
+                                return String((*f))
+                        }
+                }
+                set i: i + 1
+            }
+            String("")
+        }
+
+        ; ================================================================
+        ; Bodies: the TaskPlanner's closed arm list, with the sites read
+        ; off each operand before its children are walked.
+        ; ================================================================
+
+        function find_operands(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.find_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        function find_statement_ref(this: PointerCensus, stmt: ref[PlannedStatement]?)
+        {
+            if stmt <> null
+            {
+                let s stmt
+                this.find_statement((*s))
+            }
+        }
+
+        ; A `set` whose target is a deref is a store THROUGH a pointer --
+        ; the side of a `set` no text scan could tell apart.
+        function find_action(this: PointerCensus, act: PlannedAction)
+        {
+            this.find_operands(act.source)
+            if act.target = null
+                return
+            var handled false
+            if act.target.length > 0
+            {
+                let head_ptr act.target.get 0
+                if head_ptr <> null
+                {
+                    let head (*head_ptr)
+                    set handled: this.note_store_target(head)
+                }
+            }
+            if handled = false
+                this.find_operands(act.target)
+        }
+
+        ; Answers true when the target head is a store through a pointer and
+        ; has been reported (and its children walked) here.
+        function note_store_target(this: PointerCensus, head: PlannedOperand) returns bool
+        {
+            if head.member_access <> null
+                return false
+            choose head.expr
+                when call: Call
+                {
+                    if call.name <> "*"
+                        return false
+                    if call.args = null
+                        return false
+                    if call.args.length <> 1
+                        return false
+                    let a_ptr call.args.get 0
+                    if a_ptr = null
+                        return false
+                    let a (*a_ptr)
+                    let inner_args PointerCensus.arith_args(a)
+                    if inner_args <> null
+                    {
+                        let base inner_args.get 0
+                        if base <> null
+                        {
+                            this.record_typed(head.loc.start, "store-arith", base.unwrap().result_type)
+                        }
+                        this.find_operands(inner_args)
+                        return true
+                    }
+                    if PointerCensus.is_pointer_shaped(a.result_type)
+                    {
+                        this.record_typed(head.loc.start, "store", a.result_type)
+                        this.find_operand(a)
+                        return true
+                    }
+                    return false
+                }
+                else
+                    return false
+        }
+
+        function find_statement(this: PointerCensus, stmt: PlannedStatement)
+        {
+            choose stmt
+                when action: Action
+                    this.find_action(action)
+                when binding: Binding
+                {
+                    this.note_binding(binding)
+                    this.find_operands(binding.operation)
+                }
+                when ret: Return
+                    this.find_operands(ret.result)
+                when throw_stmt: Throw
+                    this.find_operands(throw_stmt.result)
+                when brk: Break
+                    this.find_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        ; A local whose (declared or inferred) type is a pointer. This is
+        ; where `let p allocate(...) as pointer[X]` surfaces -- the cast that
+        ; is a declaration without a colon.
+        function note_binding(this: PointerCensus, binding: PlannedBinding)
+        {
+            var have_type false
+            var t: PlannedType PointerCensus.void_type()
+            if binding.binding_item.item_type <> null
+            {
+                set t: (*binding.binding_item.item_type)
+                set have_type: true
+            }
+            if have_type = false
+            {
+                ; An UNTYPED binding carries no item_type; its type is the
+                ; collapsed initializer's. This is where the cast-declaration
+                ; `let p allocate(...) as pointer[X]` surfaces.
+                if binding.operation <> null
+                {
+                    if binding.operation.length = 1
+                    {
+                        let o_ptr binding.operation.get 0
+                        if o_ptr <> null
+                        {
+                            set t: o_ptr.unwrap().result_type
+                            set have_type: true
+                        }
+                    }
+                }
+            }
+            if have_type = false
+                return
+            if PointerCensus.is_pointer_shaped(t) = false
+                return
+            var pname String("")
+            if binding.binding_item.name <> null
+                set pname: String((*binding.binding_item.name))
+            this.record_named(binding.loc.start, "local", t, pname)
+        }
+
+        ; The pointer under `p + i` / `p - i`, or null when `op` is not that.
+        function arith_base(op: PlannedOperand) returns ref[PlannedOperand]?
+        {
+            if op.member_access <> null
+                return null
+            choose op.expr
+                when call: Call
+                {
+                    var is_arith false
+                    if call.name = "+"
+                        set is_arith: true
+                    if call.name = "-"
+                        set is_arith: true
+                    if is_arith = false
+                        return null
+                    if call.args = null
+                        return null
+                    if call.args.length <> 2
+                        return null
+                    let lhs call.args.get 0
+                    if lhs = null
+                        return null
+                    if PointerCensus.is_pointer_shaped(lhs.unwrap().result_type) = false
+                        return null
+                    return lhs
+                }
+                else
+                    return null
+        }
+
+        ; The argument vector of `p + i` / `p - i` on a pointer, or null.
+        function arith_args(op: PlannedOperand) returns ref[Vector[PlannedOperand]]?
+        {
+            if op.member_access <> null
+                return null
+            choose op.expr
+                when call: Call
+                {
+                    var is_arith false
+                    if call.name = "+"
+                        set is_arith: true
+                    if call.name = "-"
+                        set is_arith: true
+                    if is_arith = false
+                        return null
+                    if call.args = null
+                        return null
+                    if call.args.length <> 2
+                        return null
+                    let lhs call.args.get 0
+                    if lhs = null
+                        return null
+                    if PointerCensus.is_pointer_shaped(lhs.unwrap().result_type) = false
+                        return null
+                    return call.args
+                }
+                else
+                    return null
+        }
+
+        ; A string LITERAL, bare or under the planner's own cstr wrap
+        ; (`coerce_string_args_to_cstr#` puts a synthetic PlannedAs over a
+        ; literal bound for a `pointer[const_char]` parameter). Neither is a
+        ; pointer the AUTHOR wrote, so neither is a site.
+        function operand_is_string_literal(op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when c: Constant
+                {
+                    choose c.value
+                        when sc: String
+                            return true
+                        else
+                            return false
+                }
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return false
+                    let r as_expr.value
+                    PointerCensus.operand_is_string_literal((*r))
+                }
+                else
+                    return false
+        }
+
+        function operand_is_null(op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when c: Constant
+                {
+                    choose c.value
+                        when n: Null
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+        }
+
+        function find_operand(this: PointerCensus, op: PlannedOperand)
+        {
+            choose op.expr
+                when call: Call
+                {
+                    ; note_call answers true when it has walked the children
+                    ; itself (the `*(p + i)` shape, reported as ONE site).
+                    if this.note_call(op, call) = false
+                        this.find_operands(call.args)
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        let rv (*r)
+                        var judge PointerCensus.is_pointer_shaped(as_expr.target_type)
+                        if PointerCensus.operand_is_string_literal(rv)
+                            set judge: false
+                        ; A `String` VALUE handed to a cstr parameter is wrapped
+                        ; the same way (`fopen(path, ...)` with a String path):
+                        ; the planner's conversion, not an author's cast.
+                        if rv.result_type.name = "String"
+                            set judge: false
+                        if judge
+                        {
+                            if this.is_handle(as_expr.target_type)
+                            {
+                                set n_handle: n_handle + 1
+                                set judge: false
+                            }
+                        }
+                        if judge
+                        {
+                            if PointerCensus.operand_is_null(rv)
+                            {
+                                this.record_typed(op.loc.start, "null-cast", as_expr.target_type)
+                            }
+                            else
+                            {
+                                var sb StringBuilder()
+                                sb.append "cast "
+                                sb.append(Planner.get_readable_name(rv.result_type))
+                                sb.append " as "
+                                sb.append(Planner.get_readable_name(as_expr.target_type))
+                                let text sb.to_string()
+                                let text_copy String^this(text)
+                                this.record(op.loc.start, "cast", text_copy)
+                            }
+                        }
+                        this.find_operand(rv)
+                    }
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        let rv (*r)
+                        if is_expr.is_null_check
+                        {
+                            if PointerCensus.is_pointer_shaped(rv.result_type)
+                            {
+                                this.record_typed(op.loc.start, "null-test", rv.result_type)
+                            }
+                        }
+                        this.find_operand(rv)
+                    }
+                }
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.find_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.find_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.find_operands(iff.condition)
+                    this.find_statement_ref(iff.consequent)
+                    this.find_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.find_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.find_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.find_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.find_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.find_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.find_operands(fr.expr)
+                    this.find_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.find_operands(wh.cond.operation)
+                    this.find_action(wh.body)
+                }
+                when rp: Repeat
+                    this.find_action(rp.body)
+                when tr: Try
+                {
+                    this.find_operands(tr.cond.operation)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.find_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(tr.alternative)
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.find_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.find_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when bx: Box
+                {
+                    if bx.value <> null
+                    {
+                        let r bx.value
+                        this.find_operand((*r))
+                    }
+                }
+                else
+                    0
+        }
+
+        ; The call-shaped sites: deref, arithmetic, null comparison, and a
+        ; pointer handed to a callee.
+        function note_call(this: PointerCensus, op: PlannedOperand, call: PlannedCall) returns bool
+        {
+            if call.args = null
+                return false
+            let argc call.args.length
+            if call.name = "*"
+            {
+                if argc = 1
+                {
+                    let a_ptr call.args.get 0
+                    if a_ptr <> null
+                    {
+                        let a (*a_ptr)
+                        ; `*(p + i)` first: the sum is pointer-typed too, so
+                        ; asked second it would read as a plain deref.
+                        let inner_args PointerCensus.arith_args(a)
+                        if inner_args <> null
+                        {
+                            let base inner_args.get 0
+                            if base <> null
+                            {
+                                this.record_typed(op.loc.start, "deref-arith", base.unwrap().result_type)
+                            }
+                            this.find_operands(inner_args)
+                            return true
+                        }
+                        if PointerCensus.is_pointer_shaped(a.result_type)
+                        {
+                            this.record_typed(op.loc.start, "deref", a.result_type)
+                        }
+                        else
+                        {
+                            if PointerCensus.is_optional_ref(a.result_type)
+                                set n_optref_deref: n_optref_deref + 1
+                        }
+                    }
+                    return false
+                }
+            }
+            var is_arith false
+            if call.name = "+"
+                set is_arith: true
+            if call.name = "-"
+                set is_arith: true
+            if is_arith
+            {
+                if argc = 2
+                {
+                    let inner PointerCensus.arith_base(op)
+                    if inner <> null
+                    {
+                        this.record_typed(op.loc.start, "arith", inner.unwrap().result_type)
+                    }
+                    return false
+                }
+            }
+            var is_eq false
+            if call.name = "="
+                set is_eq: true
+            if call.name = "<>"
+                set is_eq: true
+            if is_eq
+            {
+                if argc = 2
+                {
+                    let l_ptr call.args.get 0
+                    let r_ptr call.args.get 1
+                    if l_ptr <> null
+                    {
+                        if r_ptr <> null
+                        {
+                            let l (*l_ptr)
+                            let r (*r_ptr)
+                            var tested: ref[PlannedOperand]? null
+                            if PointerCensus.operand_is_null(r)
+                                set tested: l_ptr
+                            if PointerCensus.operand_is_null(l)
+                                set tested: r_ptr
+                            if tested <> null
+                            {
+                                let t tested.unwrap().result_type
+                                if PointerCensus.is_pointer_shaped(t)
+                                {
+                                    this.record_typed(op.loc.start, "null-test", t)
+                                }
+                            }
+                        }
+                    }
+                    return false
+                }
+            }
+            if call.name = "&"
+                return false
+            if call.is_operator
+                return false
+            ; Arguments, judged against the callee's DECLARED parameters.
+            let callee this.find_function(call.mangled_name)
+            var params: ref[Vector[PlannedItem]]? null
+            var resolved false
+            var takes_this false
+            var callee_extern false
+            var callee_name String(call.name)
+            if callee <> null
+            {
+                let cf callee.unwrap()
+                set callee_name: String(cf.name)
+                set resolved: true
+                if PointerCensus.fn_is_body(cf) = false
+                    set callee_extern: true
+                set params: cf.input
+            }
+            else
+            {
+                let ini this.find_initializer(call.mangled_name)
+                if ini <> null
+                {
+                    set resolved: true
+                    set params: ini.unwrap().input
+                }
+                else
+                {
+                    if this.is_extern_name(call.mangled_name)
+                    {
+                        set resolved: true
+                        set callee_extern: true
+                    }
+                    else
+                    {
+                        ; A construction whose initializer this root does not
+                        ; hold (a dependency's `String(ptr, len)`): name the
+                        ; constructed type so the line reads `String.init`.
+                        if call.name = "init"
+                        {
+                            var nb StringBuilder()
+                            nb.append call.result_type.name
+                            nb.append ".init"
+                            set callee_name: nb.to_string()
+                        }
+                    }
+                }
+            }
+            if params <> null
+            {
+                if params.length > 0
+                {
+                    let first params.get 0
+                    if first <> null
+                    {
+                        let fi first.unwrap()
+                        ; The receiver item is `this`, or carries no name at
+                        ; all (Array.reallocate's does, measured).
+                        if fi.name = null
+                            set takes_this: true
+                        else
+                            if (*fi.name) = "this"
+                                set takes_this: true
+                    }
+                }
+            }
+            var i: size_t 0
+            while i < argc
+            {
+                var skip false
+                if i = 0
+                    if takes_this
+                        set skip: true
+                let a_ptr call.args.get i
+                if a_ptr = null
+                    set skip: true
+                if skip = false
+                {
+                    let a (*a_ptr)
+                    ; The declared parameter behind this argument, if known.
+                    var have_param false
+                    var param_type: PlannedType PointerCensus.void_type()
+                    var param_name String("")
+                    if params <> null
+                    {
+                        if i < params.length
+                        {
+                            let it_ptr params.get i
+                            if it_ptr <> null
+                            {
+                                let it it_ptr.unwrap()
+                                if it.item_type <> null
+                                {
+                                    set param_type: (*it.item_type)
+                                    set have_param: true
+                                }
+                                if it.name <> null
+                                    set param_name: String((*it.name))
+                            }
+                        }
+                    }
+                    var where StringBuilder()
+                    where.append " -> "
+                    where.append callee_name
+                    if have_param
+                    {
+                        where.append "("
+                        where.append param_name
+                        where.append ")"
+                    }
+                    else
+                    {
+                        where.append "["
+                        where.append(Planner.size_to_string(i))
+                        where.append "]"
+                    }
+                    let where_str where.to_string()
+
+                    var judge PointerCensus.is_pointer_shaped(a.result_type)
+                    if PointerCensus.operand_is_string_literal(a)
+                        set judge: false
+                    if PointerCensus.operand_is_this(a)
+                        set judge: false
+                    ; A bare `null` types as pointer[void]; into an Option
+                    ; parameter it is the language's own spelling, not a site.
+                    if PointerCensus.operand_is_null(a)
+                        set judge: false
+                    if judge
+                    {
+                        if this.is_handle(a.result_type)
+                        {
+                            set n_handle: n_handle + 1
+                            set judge: false
+                        }
+                    }
+                    if judge
+                    {
+                        var cls String("arg")
+                        if resolved = false
+                            set cls: String("arg-unresolved")
+                        if callee_extern
+                            set cls: String("arg-extern")
+                        if have_param
+                            if callee_extern = false
+                                if PointerCensus.is_ref_shaped(param_type)
+                                    set cls: String("h-pointer-into-ref")
+                        var sb StringBuilder()
+                        sb.append cls
+                        sb.append " "
+                        sb.append(Planner.get_readable_name(a.result_type))
+                        sb.append where_str
+                        let text sb.to_string()
+                        let text_copy String^this(text)
+                        this.record(a.loc.start, cls, text_copy)
+                    }
+                    else
+                    {
+                        ; A Slice where the callee declared a pointer: rc 0,
+                        ; the callee reads the struct as its buffer.
+                        if have_param
+                            if a.result_type.name = "Slice"
+                                if PointerCensus.is_pointer_shaped(param_type)
+                                {
+                                    var sb StringBuilder()
+                                    sb.append "h-slice-into-pointer "
+                                    sb.append(Planner.get_readable_name(a.result_type))
+                                    sb.append where_str
+                                    let text sb.to_string()
+                                    let text_copy String^this(text)
+                                    this.record(a.loc.start, "h-slice-into-pointer", text_copy)
+                                }
+                    }
+                }
+                set i: i + 1
+            }
+            false
+        }
+    }
+}

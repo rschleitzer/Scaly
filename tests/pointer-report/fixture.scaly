@@ -1,0 +1,98 @@
+; Fixture for the --pointer-report gate (tests/pointer-report/run.sh).
+; One site per class the census reports, plus the shapes it must NOT list:
+; a borrowed ref, a `*opt` on a ref[T]?, a `this` parameter.
+
+define Leaf (k: int)
+
+; extern-param + extern-return
+function memcpy(dst: pointer[void], src: pointer[void], n: size_t) returns pointer[void] extern
+
+define Holder
+(
+    buf: pointer[u8]            ; field
+    next: ref[Holder]?          ; NOT listed: a ref
+)
+
+define Payload union
+(
+    Raw: pointer[Leaf]          ; variant
+    Cooked: Leaf
+)
+
+; param (raw), NOT listed: this, r
+function walk(this: Holder, raw: pointer[u8], r: ref[Leaf], n: size_t) returns pointer[u8]   ; return
+{
+    let first *raw                          ; deref
+    let third *(raw + 2)                    ; deref-arith
+    let tail raw + n                        ; arith
+    set *raw: 7                             ; store
+    set *(raw + 1): 8                       ; store-arith
+    var p: pointer[u8] null                 ; local (typed)
+    if raw <> null                          ; null-test
+        set p: raw
+    let q raw as pointer[void]              ; local (inferred) + cast
+    let z null as pointer[Leaf]             ; local + null-cast
+    memcpy(q, raw as pointer[void], n)      ; arg x2 (q, cast) -- the cast is listed as cast too
+    let opt: ref[Leaf]? null
+    if opt <> null
+        let v *opt                          ; NOT listed (counted): deref of ref[T]?
+    raw
+}
+
+; Dedupe control: a generic body is planned once per instantiation, so the
+; deref below must be listed ONCE although Box[int] and Box[u8] both exist.
+define Box[T] (p: pointer[T])           ; field (generic, listed once)
+{
+    function first(this) returns T
+        *p                              ; deref (generic, listed once)
+}
+
+function use_boxes(a: pointer[int], b: pointer[u8]) returns int
+{
+    let bi Box[int](a)
+    let bu Box[u8](b)
+    bi.first() + (bu.first() as int)
+}
+
+; Alias-handle control: the named handle is the accepted form, so a site typed
+; through the alias is COUNTED under "alias handles" and never listed.
+define OpaqueThing()
+define ThingRef pointer[OpaqueThing]
+function thing_new() returns ThingRef extern
+function thing_use(t: ThingRef) extern
+function use_handles()
+{
+    let t thing_new()                       ; local via alias: NOT listed
+    if t <> null                            ; null-test via alias: NOT listed
+        thing_use(t)                        ; arg via alias: NOT listed
+}
+
+; Step 3: the callee's DECLARED parameter decides the class of an argument.
+function takes_ptr(p: pointer[u8], n: size_t) returns int
+    n as int
+function takes_ref(r: ref[Leaf]?) returns int
+    3
+function mixed(a: pointer[int], b: ref[int]) returns int   ; h-mixed-params
+    *a + b
+define Sized (n: int)
+{
+    function size(this) returns int   n
+}
+; The compiler's own gate (report_method_arg_types#) judges NON-GENERIC
+; receivers only, so a Slice into a GENERIC concept's pointer parameter still
+; compiles at rc 0 -- the shape the census must see where the compiler cannot.
+define GenBox[T] (v: T)
+{
+    function take(this, p: pointer[u8], n: size_t) returns int   n as int
+}
+procedure call_shapes(h: pointer[Sized], raw: pointer[u8], s: Slice[u8], leaf: pointer[Leaf]) returns int
+{
+    let k h.size()                                  ; receiver: NOT an arg site
+    let a takes_ptr(raw, 3)                         ; arg pointer[u8] -> takes_ptr(p)
+    let b takes_ref(leaf)                           ; h-pointer-into-ref
+    let b2 takes_ref(null)                          ; bare null: NOT a site
+    let g GenBox[int](1)
+    let c g.take(s, s.length)                       ; h-slice-into-pointer
+    memcpy(raw as pointer[void], raw as pointer[void], 1)   ; arg-extern x2 (+ casts)
+    k + a + b + b2 + c
+}

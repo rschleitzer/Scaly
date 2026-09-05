@@ -13,6 +13,7 @@ define compiler
     module FunctionIndex ; O(1) name -> ordered registry-index chain (used by Planner)
     module Planner
     module TaskPlanner  ; Stage-3 Plan analysis pass (parallelizability), runs after Planner
+    module PointerCensus ; --pointer-report: raw-pointer census off the Plan (reads Planner statics)
     module LLVM
     module Emitter
 
