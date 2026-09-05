@@ -131,3 +131,29 @@ procedure fill_slots(host: ref[Page], lr: ref[Leaf], buf: pointer[ref[Leaf]], ob
     set *cell: lr                                   ; h-store-through-ref-slot (plain)
     set *(obuf + 0): lr                             ; store-arith: the Option slot rebinds
 }
+
+; Provenance of a buffer walk's base, and the length in reach: a field walk
+; names its concept's length field, a parameter walk its integer neighbour, a
+; local the KIND of its initializer, a call result its receiver's length.
+define Grid (cells: pointer[int], count: size_t, title: String)
+{
+    function cell(this, i: size_t) returns int
+        *(cells + i)                                ; deref-arith base=field(Grid.cells) len=Grid.count
+}
+procedure provenance(host: ref[Page], src: pointer[u8], n: size_t, arr: ref[Array[u8]]) returns int
+{
+    let buf host.allocate(n, 1) as pointer[u8]      ; local; the walks on it say base=local(buf<-alloc)
+    set *(buf + 0): *(src + 1)                      ; store-arith base=local(buf<-alloc); deref-arith base=param(src) len=n
+    let view arr.get_buffer()                       ; local; base=local(view<-call(...))
+    let w *(view + 2)                               ; deref-arith base=local(view<-call(...))
+    let direct *(arr.get_buffer() + 3)              ; deref-arith base=call(get_buffer) recv=Array len=Array.length
+    (*buf as int) + (w as int) + (direct as int)
+}
+; A fixed-size stack array walks in place (kind stack[N]); a length found only
+; by the fallback (an integer parameter BEFORE the pointer) is marked `?`.
+procedure fallbacks(n: size_t, src: pointer[u8]) returns int
+{
+    var stack_buf u8[4]
+    set *(stack_buf + 1): *(src + 0)                ; store-arith base=local(stack_buf<-stack[4]); deref-arith base=param(src) len=n?
+    *(stack_buf + 1) as int
+}

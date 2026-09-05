@@ -21,6 +21,26 @@
 ;                                  COUNTED, never listed)
 ;   deref-arith                    `*(p + i)` -- the buffer walk
 ;   arith                          `p + i` / `p - i` as a value
+;       The three buffer-walk classes (deref-arith, store-arith, arith) carry
+;       the PROVENANCE of the walked pointer and the length in reach:
+;         base=param(p) len=n            a parameter; `n` is the first integer
+;                                        parameter after it (else any, `len=n?`)
+;         base=local(p<-alloc)           a local; after `<-` the KIND of its
+;                                        initializer: alloc (allocate/malloc/
+;                                        ...), stack[N] (`var b u8[N]`),
+;                                        param(x), local(x), field(T.f),
+;                                        call(f), deref, arith, addr, null, ...
+;         base=field(T.f) len=T.n        a field read; `n` the first integer
+;                                        sibling field whose name says length
+;                                        (len/size/count/cap/n), else the first
+;                                        integer sibling marked `len=T.n?`
+;         base=call(f) recv=T len=T.n    a call result (`x.get_buffer() + i`);
+;                                        the receiver concept and ITS length
+;         base=global(g) / deref / arith / other
+;       A `*(X.get_buffer() + i)` whose receiver KNOWS its length is `X.at(i)`
+;       or `X[i]` waiting to be written; a `param` walk with a `len` beside it
+;       is a `Slice`; a `local(p<-alloc)` walk is a candidate for
+;       `allocate_slice`. The verdict is still READ at the site.
 ;   cast / null-cast               `x as pointer[T]` / `null as pointer[T]`
 ;   null-test                      `p = null` / `p <> null` on a pointer
 ;   store / store-arith            `set *p: v` / `set *(p + i): v`
@@ -168,6 +188,14 @@ define PointerCensus
         n_h_mixed: size_t
         n_h_store_slot: size_t
 
+        ; Per-body context for the buffer-walk provenance (`base=`/`len=`):
+        ; the parameters of the body being walked (null for the program's
+        ; top-level statements), and every pointer-typed local recorded so
+        ; far in this body with the KIND of its initializer (parallel arrays).
+        cur_params: ref[Vector[PlannedItem]]?
+        loc_names: Array[String]
+        loc_kinds: Array[String]
+
         ; Source file of the declaration or body currently walked.
         current_file: String
 
@@ -222,6 +250,9 @@ define PointerCensus
             set n_h_slice_ptr: 0
             set n_h_mixed: 0
             set n_h_store_slot: 0
+            set cur_params: null
+            set loc_names: Array[String]^this()
+            set loc_kinds: Array[String]^this()
             set dd_slots: Vector[size_t]^this(DD_CAP)
             set dd_hashes: Array[size_t]^this()
             set dd_offsets: Array[size_t]^this()
@@ -258,6 +289,9 @@ define PointerCensus
                             if home.get_length() > 0
                             {
                                 set current_file: String^this(home)
+                                set cur_params: func.input
+                                set loc_names: Array[String]^this()
+                                set loc_kinds: Array[String]^this()
                                 this.find_action(action)
                             }
                             else
@@ -270,6 +304,9 @@ define PointerCensus
             if plan.statements <> null
             {
                 set current_file: String^this(entry_file)
+                set cur_params: null
+                set loc_names: Array[String]^this()
+                set loc_kinds: Array[String]^this()
                 for stmt in plan.statements
                     this.find_statement(stmt)
             }
@@ -1509,7 +1546,7 @@ define PointerCensus
                             if PointerCensus.is_ref_slot_pointer(bt)
                                 this.record_typed(head.loc.start, "h-store-through-ref-slot", bt)
                             else
-                                this.record_typed(head.loc.start, "store-arith", bt)
+                                this.record_walk(head.loc.start, "store-arith", base.unwrap())
                         }
                         this.find_operands(inner_args)
                         return true
@@ -1586,7 +1623,488 @@ define PointerCensus
             var pname String("")
             if binding.binding_item.name <> null
                 set pname: String((*binding.binding_item.name))
+            ; A fixed-size stack array (`var buf u8[64]`) is planned as a pointer
+            ; with an array_size; its walk indexes in place and is the pure
+            ; idiom (`tools/stackarray.py`'s class), so the kind names it.
+            if t.array_size.get_length() > 0
+            {
+                var kb StringBuilder()
+                kb.append "stack["
+                kb.append t.array_size
+                kb.append "]"
+                loc_names.add(String^this(pname))
+                loc_kinds.add(String^this(kb.to_string()))
+            }
+            else
+                this.note_local(pname, binding.operation)
             this.record_named(binding.loc.start, "local", t, pname)
+        }
+
+        ; ================================================================
+        ; Provenance of a buffer walk's base (`base=`) and the length in
+        ; reach (`len=`). The class stays the same, so the union's dedupe
+        ; and every count are untouched; only the detail grows.
+        ; ================================================================
+
+        ; Remember a pointer-typed local with the KIND of its initializer.
+        function note_local(this: PointerCensus, name: String, ops: ref[Vector[PlannedOperand]]?)
+        {
+            let kind this.initializer_kind(ops)
+            loc_names.add(String^this(name))
+            loc_kinds.add(String^this(kind))
+        }
+
+        function local_kind(this: PointerCensus, name: String) returns String
+        {
+            ; Latest declaration wins (a name may be re-bound in a later block).
+            var i loc_names.length
+            while i > 0
+            {
+                set i: i - 1
+                let n loc_names.get i
+                if n <> null
+                    if (*n) = name
+                    {
+                        let k loc_kinds.get i
+                        if k <> null
+                            return String((*k))
+                        return String("")
+                    }
+            }
+            String("")
+        }
+
+        ; Index of `name` in the current body's parameters, or -1.
+        function param_index(this: PointerCensus, name: String) returns int
+        {
+            if cur_params = null
+                return 0 - 1
+            var i: size_t 0
+            while i < cur_params.length
+            {
+                let it cur_params.get i
+                if it <> null
+                {
+                    let item it.unwrap()
+                    if item.name <> null
+                        if (*item.name) = name
+                            return i as int
+                }
+                set i: i + 1
+            }
+            0 - 1
+        }
+
+        function is_integer_type(t: PlannedType) returns bool
+        {
+            let n t.name
+            if n = "int"
+                return true
+            if n = "uint"
+                return true
+            if n = "size_t"
+                return true
+            if n = "i8"
+                return true
+            if n = "i16"
+                return true
+            if n = "i32"
+                return true
+            if n = "i64"
+                return true
+            if n = "u8"
+                return true
+            if n = "u16"
+                return true
+            if n = "u32"
+                return true
+            if n = "u64"
+                return true
+            false
+        }
+
+        function item_is_integer(it: PlannedItem) returns bool
+        {
+            if it.item_type = null
+                return false
+            PointerCensus.is_integer_type((*it.item_type))
+        }
+
+        function item_name(it: PlannedItem) returns String
+        {
+            if it.name = null
+                return String("")
+            String((*it.name))
+        }
+
+        ; The length beside a pointer PARAMETER: the first integer parameter
+        ; after it, else the first integer parameter anywhere, else "".
+        function neighbour_length(this: PointerCensus, idx: int) returns String
+        {
+            if cur_params = null
+                return String("")
+            var i: size_t (idx + 1) as size_t
+            while i < cur_params.length
+            {
+                let it cur_params.get i
+                if it <> null
+                    if PointerCensus.item_is_integer(it.unwrap())
+                        return PointerCensus.item_name(it.unwrap())
+                set i: i + 1
+            }
+            set i: 0
+            while i < cur_params.length
+            {
+                if (i as int) <> idx
+                {
+                    let it cur_params.get i
+                    if it <> null
+                        if PointerCensus.item_is_integer(it.unwrap())
+                        {
+                            var sb StringBuilder()
+                            sb.append(PointerCensus.item_name(it.unwrap()))
+                            sb.append "?"
+                            return sb.to_string()
+                        }
+                }
+                set i: i + 1
+            }
+            String("")
+        }
+
+        ; The planned structure behind a type, by mangled name first (an
+        ; instantiation carries its own), then by bare name.
+        function find_structure(this: PointerCensus, t: PlannedType) returns ref[PlannedStructure]?
+        {
+            if plan_structures = null
+                return null
+            var i: size_t 0
+            while i < plan_structures.length
+            {
+                let sp plan_structures.get i
+                if sp <> null
+                    if sp.unwrap().mangled_name = t.mangled_name
+                        return sp
+                set i: i + 1
+            }
+            set i: 0
+            while i < plan_structures.length
+            {
+                let sp plan_structures.get i
+                if sp <> null
+                    if sp.unwrap().name = t.name
+                        return sp
+                set i: i + 1
+            }
+            null
+        }
+
+        function name_says_length(n: String) returns bool
+        {
+            if n.contains(String("len"))
+                return true
+            if n.contains(String("size"))
+                return true
+            if n.contains(String("count"))
+                return true
+            if n.contains(String("cap"))
+                return true
+            if n = "n"
+                return true
+            if n.starts_with(String("n_"))
+                return true
+            false
+        }
+
+        ; `T.n` for the first integer field of T that reads like a length,
+        ; else the first integer field, else "".
+        function sibling_length(this: PointerCensus, t: PlannedType) returns String
+        {
+            let core PointerCensus.peel_option(t)
+            let sp this.find_structure(core)
+            if sp = null
+                return String("")
+            let st sp.unwrap()
+            if st.properties = null
+                return String("")
+            var first String("")
+            var i: size_t 0
+            while i < st.properties.length
+            {
+                let pp st.properties.get i
+                if pp <> null
+                {
+                    let prop pp.unwrap()
+                    if PointerCensus.is_integer_type(prop.prop_type)
+                    {
+                        var sb StringBuilder()
+                        sb.append st.name
+                        sb.append "."
+                        sb.append prop.name
+                        let full sb.to_string()
+                        if PointerCensus.name_says_length(prop.name)
+                            return full
+                        if first.get_length() = 0
+                        {
+                            var qb StringBuilder()
+                            qb.append full
+                            qb.append "?"
+                            set first: qb.to_string()
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            first
+        }
+
+        function is_alloc_name(n: String) returns bool
+        {
+            if n = "allocate"
+                return true
+            if n = "allocate_oversized"
+                return true
+            if n = "malloc"
+                return true
+            if n = "calloc"
+                return true
+            if n = "realloc"
+                return true
+            if n = "aligned_alloc"
+                return true
+            if n = "scaly_aligned_alloc"
+                return true
+            if n = "mmap"
+                return true
+            false
+        }
+
+        ; The KIND of an operand, for a local's initializer: where the
+        ; pointer came from. A cast is transparent -- it is the declaration,
+        ; not the source.
+        function operand_kind(this: PointerCensus, op: PlannedOperand) returns String
+        {
+            if op.member_access <> null
+            {
+                let ma op.member_access
+                if ma.length > 0
+                {
+                    let last ma.get(ma.length - 1)
+                    if last <> null
+                    {
+                        let hop last.unwrap()
+                        var sb StringBuilder()
+                        if hop.is_method
+                            sb.append "call("
+                        else
+                            sb.append "field("
+                        sb.append hop.parent_type.name
+                        sb.append "."
+                        sb.append hop.name
+                        sb.append ")"
+                        return sb.to_string()
+                    }
+                }
+                return String("field")
+            }
+            choose op.expr
+                when v: Variable
+                {
+                    var sb StringBuilder()
+                    if this.param_index(v.name) >= 0
+                        sb.append "param("
+                    else
+                        sb.append "local("
+                    sb.append v.name
+                    sb.append ")"
+                    return sb.to_string()
+                }
+                when g: GlobalRef
+                {
+                    var sb StringBuilder()
+                    sb.append "global("
+                    sb.append g.name
+                    sb.append ")"
+                    return sb.to_string()
+                }
+                when c: Constant
+                {
+                    if PointerCensus.operand_is_null(op)
+                        return String("null")
+                    return String("const")
+                }
+                when call: Call
+                {
+                    if call.name = "*"
+                        return String("deref")
+                    if call.name = "&"
+                        return String("addr")
+                    if PointerCensus.arith_base(op) <> null
+                        return String("arith")
+                    if PointerCensus.is_alloc_name(call.name)
+                        return String("alloc")
+                    var sb StringBuilder()
+                    sb.append "call("
+                    sb.append call.name
+                    sb.append ")"
+                    return sb.to_string()
+                }
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return String("cast")
+                    let r as_expr.value
+                    return this.operand_kind((*r))
+                }
+                when bx: Box
+                    return String("box")
+                else
+                    return String("other")
+        }
+
+        function initializer_kind(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) returns String
+        {
+            if ops = null
+                return String("none")
+            if ops.length <> 1
+                return String("expr")
+            let o ops.get 0
+            if o = null
+                return String("expr")
+            this.operand_kind(o.unwrap())
+        }
+
+        ; Does the callee of `call` take a receiver (first param `this`)?
+        function call_takes_this(this: PointerCensus, call: PlannedCall) returns bool
+        {
+            let callee this.find_function(call.mangled_name)
+            if callee = null
+                return false
+            let cf callee.unwrap()
+            if cf.input = null
+                return false
+            if cf.input.length = 0
+                return false
+            let first cf.input.get 0
+            if first = null
+                return false
+            let fi first.unwrap()
+            if fi.name = null
+                return true
+            (*fi.name) = "this"
+        }
+
+        ; ` base=... len=...` for the base of a buffer walk.
+        function base_detail(this: PointerCensus, base: PlannedOperand) returns String
+        {
+            var sb StringBuilder()
+            sb.append " base="
+            var len String("")
+            var kind_done false
+            if base.member_access <> null
+            {
+                let ma base.member_access
+                if ma.length > 0
+                {
+                    let last ma.get(ma.length - 1)
+                    if last <> null
+                    {
+                        let hop last.unwrap()
+                        ; A field walk names its concept's length; a method
+                        ; result (`x.get_buffer() + i` as a member hop) the same.
+                        set len: this.sibling_length(hop.parent_type)
+                    }
+                }
+            }
+            else
+            {
+                choose base.expr
+                    when v: Variable
+                    {
+                        let idx this.param_index(v.name)
+                        if idx >= 0
+                            set len: this.neighbour_length(idx)
+                        else
+                        {
+                            let k this.local_kind(v.name)
+                            if k.get_length() > 0
+                            {
+                                sb.append "local("
+                                sb.append v.name
+                                sb.append "<-"
+                                sb.append k
+                                sb.append ")"
+                                set kind_done: true
+                            }
+                        }
+                    }
+                    when call: Call
+                    {
+                        if call.args <> null
+                            if call.args.length > 0
+                                if this.call_takes_this(call)
+                                {
+                                    let a0 call.args.get 0
+                                    if a0 <> null
+                                    {
+                                        let recv PointerCensus.peel_option(a0.unwrap().result_type)
+                                        var rt recv
+                                        ; Through a pointer/ref receiver: the pointee.
+                                        if recv.name = "pointer"
+                                            if recv.generics <> null
+                                                if recv.generics.length = 1
+                                                {
+                                                    let g recv.generics.get 0
+                                                    if g <> null
+                                                        set rt: g.unwrap()
+                                                }
+                                        if recv.name = "ref"
+                                            if recv.generics <> null
+                                                if recv.generics.length = 1
+                                                {
+                                                    let g recv.generics.get 0
+                                                    if g <> null
+                                                        set rt: g.unwrap()
+                                                }
+                                        sb.append "call("
+                                        sb.append call.name
+                                        sb.append ") recv="
+                                        sb.append rt.name
+                                        set kind_done: true
+                                        set len: this.sibling_length(rt)
+                                    }
+                                }
+                    }
+                    else
+                        0
+            }
+            if kind_done = false
+                sb.append(this.operand_kind(base))
+            if len.get_length() > 0
+            {
+                sb.append " len="
+                sb.append len
+            }
+            sb.to_string()
+        }
+
+        ; A buffer-walk site: class, type, then provenance.
+        function record_walk(this: PointerCensus, offset: size_t, cls: String, base: PlannedOperand)
+        {
+            let t base.result_type
+            if this.is_handle(t)
+            {
+                set n_handle: n_handle + 1
+                return
+            }
+            var sb StringBuilder()
+            sb.append cls
+            sb.append " "
+            sb.append(Planner.get_readable_name(t))
+            sb.append(this.base_detail(base))
+            let text sb.to_string()
+            let text_copy String^this(text)
+            this.record(offset, cls, text_copy)
         }
 
         ; The pointer under `p + i` / `p - i`, or null when `op` is not that.
@@ -1937,7 +2455,7 @@ define PointerCensus
                             let base inner_args.get 0
                             if base <> null
                             {
-                                this.record_typed(op.loc.start, "deref-arith", base.unwrap().result_type)
+                                this.record_walk(op.loc.start, "deref-arith", base.unwrap())
                             }
                             this.find_operands(inner_args)
                             return true
@@ -1967,7 +2485,7 @@ define PointerCensus
                     let inner PointerCensus.arith_base(op)
                     if inner <> null
                     {
-                        this.record_typed(op.loc.start, "arith", inner.unwrap().result_type)
+                        this.record_walk(op.loc.start, "arith", inner.unwrap())
                     }
                     return false
                 }

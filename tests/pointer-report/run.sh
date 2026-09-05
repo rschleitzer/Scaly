@@ -59,7 +59,7 @@ check "Slice into a generic method's pointer param is a hazard (got $n)" '[ "$n"
 n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:96:.*arg-extern pointer\[void\] -> memcpy(")
 check "pointer into an extern is arg-extern, both args (got $n)" '[ "$n" = "2" ]'
 n=$(printf "%s\n" "$got" | grep -c ": h-mixed-params ")
-check "mixed ref/pointer parameter lists reported: walk + mixed + Source.init + fill_slots (got $n)" '[ "$n" = "4" ]'
+check "mixed ref/pointer parameter lists reported: walk + mixed + Source.init + fill_slots + provenance (got $n)" '[ "$n" = "5" ]'
 check "nothing unresolved in the fixture"  'printf "%s\n" "$got" | head -1 | grep -q "arg-unresolved 0"'
 
 # A construction's args carry no receiver while the initializer's input does:
@@ -77,6 +77,18 @@ n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:13[0-9]:.*h-store-through-ref-
 check "stores through a pointer[ref[X]] slot are hazards, arith + plain (got $n)" '[ "$n" = "2" ]'
 n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:13[0-9]:.*store-arith pointer\[Option\[ref\[Leaf\]\]\]")
 check "store into a pointer[ref[X]?] slot is an ordinary store-arith (got $n)" '[ "$n" = "1" ]'
+
+# Provenance of a buffer walk's base and the length in reach: the class is
+# unchanged (the union's dedupe never sees the detail), the detail says where
+# the walked pointer came from.
+check "param walk names its integer neighbour"        'printf "%s\n" "$got" | grep -q "fixture.scaly:26:15: deref-arith pointer\[u8\] base=param(raw) len=n$"'
+check "field walk names the concept length"           'printf "%s\n" "$got" | grep -q "fixture.scaly:141:9: deref-arith pointer\[int\] base=field(Grid.cells) len=Grid.count$"'
+check "allocated local walk says local(p<-alloc)"     'printf "%s\n" "$got" | grep -q "fixture.scaly:146:5: store-arith pointer\[u8\] base=local(buf<-alloc)$"'
+check "local from a call says local(p<-call(f))"      'printf "%s\n" "$got" | grep -q "fixture.scaly:148:11: deref-arith pointer\[u8\] base=local(view<-call(get_buffer))$"'
+check "call-result walk names receiver and its length" 'printf "%s\n" "$got" | grep -q "fixture.scaly:149:16: deref-arith pointer\[u8\] base=call(get_buffer) recv=Array len=Array.length$"'
+check "Option slot store keeps its provenance"        'printf "%s\n" "$got" | grep -q "fixture.scaly:132:5: store-arith pointer\[Option\[ref\[Leaf\]\]\] base=param(obuf)$"'
+check "stack array walk says local(p<-stack[N])"       'printf "%s\n" "$got" | grep -q "fixture.scaly:157:5: store-arith pointer\[u8\] base=local(stack_buf<-stack\[4\])$"'
+check "fallback length (integer param before) is marked ?" 'printf "%s\n" "$got" | grep -q "fixture.scaly:157:25: deref-arith pointer\[u8\] base=param(src) len=n?$"'
 
 # Diagnostics gate ordering: the report must survive a root with a hard
 # diagnostic (that is the half-converted root the census exists for).

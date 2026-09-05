@@ -33,3 +33,16 @@ echo "-- by class"
 awk '{print $NF}' "$OUT/union.txt" | sort | uniq -c | sort -rn
 echo "-- by package"
 sed -E 's#^pointer-report: packages/([^/]+)/.*: ([a-z-]+)$#\1#' "$OUT/union.txt" | sort | uniq -c | sort -rn
+# Buffer walks (deref-arith / store-arith / arith) by the PROVENANCE of the
+# walked pointer: `base=param(p) len=n`, `base=local(p<-alloc)`,
+# `base=field(T.f) len=T.n`, `base=call(f) recv=T len=T.n`. The full detail
+# lines, deduplicated by site, land in walks.txt; the histogram below folds
+# the names away and keeps the kind, the kind of a local's initializer, and
+# whether a length is in reach.
+cat "$OUT"/*.txt | grep -E '^pointer-report: .*:[0-9]+:[0-9]+: (deref-arith|store-arith|arith) ' \
+  | sort -u > "$OUT/walks.txt"
+echo "-- buffer walks by provenance ($(wc -l < "$OUT/walks.txt") sites -> $OUT/walks.txt)"
+sed -E 's/.* base=//; s/ recv=[^ ]+//; s/ len=.*/ len/; s/local\([A-Za-z_0-9]+<-([a-z]+)(\([^)]*\)|\[[^]]*\])?\)/local(<-\1)/; s/(param|field|call|global|local)\([^)<]*\)/\1(..)/' "$OUT/walks.txt" \
+  | sort | uniq -c | sort -rn
+echo "-- buffer walks by pointee"
+sed -E 's/^pointer-report: [^ ]+ (deref-arith|store-arith|arith) (pointer\[[^ ]*\]).*/\2/' "$OUT/walks.txt" | sort | uniq -c | sort -rn | head -12
