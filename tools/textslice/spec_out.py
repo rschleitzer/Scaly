@@ -1,0 +1,56 @@
+# Kette 14: die Out-Parameter-Familie -- `out_data: ref[pointer[char]]` (+ `out_len: ref[int]`) in tscaly
+C = 'packages/tscaly/0.1.0/tscaly/checker.scaly'
+B = 'packages/tscaly/0.1.0/tscaly/binder.scaly'
+T = 'packages/tscaly/0.1.0/tscaly/tspath.scaly'
+SPEC = dict(
+    root='packages/tscaly/0.1.0',
+    params=[], fields=[],
+    # accessors already converted by chain 13: named so the scans know a slice when they see one
+    accessors=[
+        ('AstNode.identifier_text_of', 'AstNode.identifier_text_length_of', None),
+        ('AstNode.literal_text_of', 'AstNode.literal_text_length_of', None),
+        ('AstNode.property_name_text_of', 'AstNode.property_name_text_length_of', None),
+        ('Symbol.name_of', 'Symbol.name_len_of', None),
+        ('SymbolTable.entry_name_at', 'SymbolTable.entry_name_len_at', None),
+        ('Binder.classifiable_name_at', 'Binder.classifiable_name_len_at', None),
+        ('Checker.member_name_at', 'Checker.member_name_len_at', None),
+        ('Checker.literal_text_of', 'Checker.literal_text_length_of', None),
+        ('Checker.union_key_property', 'Checker.union_key_property_len', None),
+        ('Scanner.token_value', 'Scanner.token_value_length', None),
+        ('Checker.copy_name_to_page', None, None),
+    ],
+    slice_fields=['text', 'token_value', 'file_name', 'key_property', 'local_jsx_namespace', 'local_jsx_fragment_namespace'],
+    method_concepts=['Scanner', 'Checker'],
+    ambiguous_fields=['name', 'parameter_name'],
+    records={},
+    retlen=[],
+    retlen_int=[
+        (C, 'decimal_name', 17218, 'out_data'),
+        (C, 'plain_name', 17246, 'out_data'),
+        (C, 'unresolved_path', 21401, 'out_data'),
+        (T, 'combine_paths', 590, 'out_data'),
+        (T, 'get_normalized_absolute_path', 644, 'out_data'),
+        (T, 'normalized_absolute_path', 876, 'out_data'),
+        (B, 'internal_name_unprefixed', 1388, 'out_data'),
+        (B, 'internal_name', 1404, 'out_data'),
+        (B, 'private_identifier_name', 4616, 'out_data'),
+        (B, 'anonymous_parameter_name', 7370, 'out_data'),
+    ],
+    outpair=[
+        (C, 'get_accessed_property_name', 38607, 'out_data', 'out_len', 'out_name'),
+        (C, 'get_key_property_name', 40578, 'out_data', 'out_len', 'out_name'),
+        (C, 'get_key_property_candidate_name', 40673, 'out_data', 'out_len', 'out_name'),
+        (C, 'effective_property_name', 60677, 'out_data', 'out_len', 'out_name'),
+        (C, 'literal_property_name', 60788, 'out_data', 'out_len', 'out_name'),
+        (C, 'spelling_candidate_name', 65631, 'out_d', 'out_n', 'out_name'),
+        (C, 'get_jsx_namespace', 100538, 'out_data', 'out_len', 'out_name'),
+        (C, 'get_local_jsx_namespace', 100601, 'out_data', 'out_len', 'out_name'),
+        (C, 'get_jsx_element_properties_name', 100773, 'out_data', 'out_len', 'out_name'),
+        (C, 'get_jsx_element_children_property_name', 100776, 'out_data', 'out_len', 'out_name'),
+        (C, 'get_name_from_jsx_element_attributes_container', 100783, 'out_data', 'out_len', 'out_name'),
+        (C, 'jsx_tag_name_text', 101206, 'out_data', 'out_len', 'out_name'),
+        (B, 'get_declaration_name', 5232, 'out_data', 'out_len', 'out_name'),
+        (B, 'literal_declaration_name', 5520, 'out_data', 'out_len', 'out_name'),
+        (B, 'entity_access_name_text', 6310, 'out_data', 'out_len', 'out_name'),
+    ],
+)

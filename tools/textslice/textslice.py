@@ -250,8 +250,11 @@ class Spec:
         self.records = d.get('records', {})      # record -> [(field_idx_of_data)]
         self.manual = d.get('manual', [])        # notes only
         self.retlen = d.get('retlen', [])          # (file, fn, line, out_len) -- `buf/out_len` routines that now RETURN the Slice
+        self.retlen_int = d.get('retlen_int', [])  # (file, fn, line, out_data) -- `(…, out_data: ref[pointer[char]]) returns int` -> returns Slice[char]
+        self.outpair = d.get('outpair', [])        # (file, fn, line, out_data, out_len, new) -- the two out-params become ONE `new: ref[Slice[char]]`
         self.method_concepts = d.get('method_concepts', [])   # concepts whose accessors are METHODS (any receiver spelling)
         self.ambiguous_fields = d.get('ambiguous_fields', []) # new field names that other records use for a non-slice
+        self.slice_fields = d.get('slice_fields', [])         # field names ALREADY of type Slice[char] (a later chain's knowledge)
 
 def load_spec(path):
     ns = {}
@@ -415,6 +418,82 @@ def main():
                 pending = None
             k += 1
         log['retlen'] += 1
+
+    # ---- 3c. retlen_int routines: `(…, out_data: ref[pointer[char]]) returns int` -> `returns Slice[char]`
+    def find_decl(lines, fn, line, pat):
+        cands = [i for i in range(max(0, line - 80), min(len(lines), line + 5)) if re.match(pat, code_only(lines[i]))]
+        if not cands: cands = [i for i in range(len(lines)) if re.match(pat, code_only(lines[i]))]
+        return min(cands, key=lambda c: abs(c - (line - 1))) if cands else None
+    def outarg_matches(expr, name):
+        """`f(a, b, name)` -> `f(a, b)` if `name` is a bare top-level argument; else None."""
+        m = re.match(r'^([\w.]+)\(', expr)
+        if not m or balanced_end(expr, expr.index('(')) != len(expr) - 1: return None
+        op = expr.index('('); args = split_top(expr[op + 1:-1])
+        if not any(a.strip() == name for a in args): return None
+        return expr[:op + 1] + ', '.join(a.strip() for a in args if a.strip() != name) + ')'
+    for (fpath, fn, line, oname) in spec.retlen_int:
+        lines = files[fpath]
+        i = find_decl(lines, fn, line, rf'\s*(function|procedure)\s+{re.escape(fn)}\s*\(')
+        if i is None: print(f'WARN retlen_int not found {fn}'); continue
+        sig, je, bs, be = routine_at(lines, i)
+        code, cmt = split_code_comment(sig)
+        op = code.index('('); cl = balanced_end(code, op)
+        params = [p_.strip() for p_ in split_top(code[op + 1:cl])]
+        names = [p_.split(':')[0].strip() for p_ in params]
+        has_this = names[0] == 'this'
+        oi = names.index(oname)
+        assert re.match(rf'{re.escape(oname)}\s*:\s*ref\[pointer\[char\]\]$', params[oi]), (fn, params[oi])
+        params[oi] = None
+        rest = re.sub(r'returns\s+int\b', 'returns Slice[char]', code[cl:])
+        newsig = code[:op + 1] + ', '.join(p_ for p_ in params if p_ is not None) + rest + cmt
+        del lines[i:je + 1]; lines.insert(i, newsig)
+        shift = -(je - i); bs += shift; be += shift
+        retlen_fns[fn] = (len(names) - (1 if has_this else 0), oi - (1 if has_this else 0))   # same caller machinery as retlen
+        pending = None; k = bs
+        while k <= be:
+            cd, cm = split_code_comment(lines[k])
+            m = re.match(rf'^(\s*)set\s+{re.escape(oname)}\s*:\s*(.*)$', cd)
+            if m:
+                pending = m.group(2).strip(); del lines[k]; be -= 1; continue
+            m = re.match(r'^(\s*)(return\s+)?(.+?)\s*$', cd)
+            if m and cd.strip() and not re.match(r'^\s*[{}]\s*$', cd):
+                ind, ret, expr = m.group(1), m.group(2) or '', m.group(3)
+                last_code = max((x for x in range(bs, be + 1) if code_only(lines[x]).strip() not in ('', '}')), default=be)
+                is_tail = (k == last_code)
+                fwd = outarg_matches(expr, oname)
+                if fwd is not None:
+                    lines[k] = f'{ind}{ret}{fwd}' + cm
+                elif pending is not None and (ret or is_tail):
+                    lines[k] = f'{ind}{ret}Slice[char]({expr}, {pending})' + cm
+                    pending = None
+            k += 1
+        log['retlen_int'] += 1
+
+    # ---- 3d. outpair routines: `out_data: ref[pointer[char]], out_len: ref[int]` -> `new: ref[Slice[char]]`
+    outpair_fns = {}   # bare fn -> (old_arity, d_idx, l_idx, new)
+    outpair_bodies = []
+    for (fpath, fn, line, od, ol, new) in spec.outpair:
+        lines = files[fpath]
+        i = find_decl(lines, fn, line, rf'\s*(function|procedure)\s+{re.escape(fn)}\s*\(')
+        if i is None: print(f'WARN outpair not found {fn}'); continue
+        sig, je, bs, be = routine_at(lines, i)
+        code, cmt = split_code_comment(sig)
+        op = code.index('('); cl = balanced_end(code, op)
+        params = [p_.strip() for p_ in split_top(code[op + 1:cl])]
+        names = [p_.split(':')[0].strip() for p_ in params]
+        has_this = names[0] == 'this'
+        di = names.index(od); li_ = names.index(ol)
+        assert re.match(rf'{re.escape(od)}\s*:\s*ref\[pointer\[char\]\]$', params[di]), (fn, params[di])
+        assert re.match(rf'{re.escape(ol)}\s*:\s*ref\[int\]$', params[li_]), (fn, params[li_])
+        params[di] = f'{new}: ref[Slice[char]]'; params[li_] = None
+        newsig = code[:op + 1] + ', '.join(p_ for p_ in params if p_ is not None) + code[cl:] + cmt
+        del lines[i:je + 1]; lines.insert(i, newsig)
+        shift = -(je - i); bs += shift; be += shift
+        outpair_fns[fn] = (len(names) - (1 if has_this else 0), di - (1 if has_this else 0), li_ - (1 if has_this else 0), new)
+        outpair_bodies.append((fpath, fn, od, ol, new, i))
+        # forwarding calls `g(..., od, ol)` inside the body are rewritten by the call pass (bare names -> new)
+        log['outpair'] += 1
+
     # forwarding calls between retlen routines and every caller: handled in the call pass via retlen_fns
 
     # ---- 4. record positional constructions as callees
@@ -477,7 +556,7 @@ def main():
     acc_new_qual = {v[1] for v in acc_pairs.values()}
     method_acc_bare = {v[1].split('.')[-1] for v in acc_pairs.values() if v[1].split('.')[0] in spec.method_concepts}
     AMBIGUOUS = set(spec.ambiguous_fields)
-    unamb_fields = {v[1] for v in field_pairs.values()} - AMBIGUOUS
+    unamb_fields = ({v[1] for v in field_pairs.values()} | set(spec.slice_fields)) - AMBIGUOUS
 
     def acc_call_is_slice(name):
         """`Q.f` names a slice-returning accessor: exact for a concept static,
@@ -544,7 +623,7 @@ def main():
                 # ★A literal may replace the wrap ONLY where a declared target type is in hand; the RHS
                 # of an UNTYPED binding is not one -- `let nm "NaN"` binds a String (CLAUDE.md), and
                 # three such bindings cost six stage-2 units (empty names, NaN, "module").
-                untyped_binding = re.match(r'^\s*(let|var)\s+\w+\s+Slice\[char\]\(', out) is not None and m.start() == re.match(r'^\s*(let|var)\s+\w+\s+', out).end()
+                untyped_binding = (re.match(r'^\s*(let|var)\s+\w+\s+Slice\[char\]\(', out) is not None and m.start() == re.match(r'^\s*(let|var)\s+\w+\s+', out).end()) or re.match(r'^\s*set\s+[\w.]+\s*:\s*Slice\[char\]\(', out) is not None
                 if re.match(r'^"', a_s) and untyped_binding:
                     out = out[:op + 1] + ','.join(args) + out[end:]
                     pos = op + 1; continue
@@ -569,6 +648,22 @@ def main():
                 del args[oi_]
                 out = out[:op + 1] + ','.join(args) + out[end:]
                 log['retlen-call'] += 1
+                pos = op + 1; continue
+            if bare in outpair_fns and len(args) == outpair_fns[bare][0]:
+                ar_, di_, li_, new_ = outpair_fns[bare]
+                args = [rewrite_call_line(a, locals_, where) for a in args]
+                da = args[di_].strip(); la = args[li_].strip()
+                dm = re.match(r'^&(\w+)$', da); lm = re.match(r'^&(\w+)$', la)
+                if dm and lm:
+                    outpair_callers.append((where, dm.group(1), lm.group(1)))
+                    args[di_] = ' &' + dm.group(1) if args[di_].startswith(' ') else '&' + dm.group(1)
+                elif re.match(r'^\w+$', da) and re.match(r'^\w+$', la) and cur_outpair_new is not None:
+                    args[di_] = (' ' if args[di_].startswith(' ') else '') + cur_outpair_new   # forwarding the routine's own out-param
+                else:
+                    checks.append(f'{where}: OUTPAIR unexpected arguments {da}, {la} of {name}')
+                del args[li_]
+                out = out[:op + 1] + ','.join(args) + out[end:]
+                log['outpair-call'] += 1
                 pos = op + 1; continue
             if bare == 'String' and '.' not in name and len(args) == 2:
                 args = [rewrite_call_line(a, locals_, where) for a in args]
@@ -632,7 +727,58 @@ def main():
             pos = op + 1
         return out
 
+    # ---- 3d (body): the out-pair stores, once length_source is defined
+    for (fpath, fn, od, ol, new, i0) in outpair_bodies:
+        lines = files[fpath]
+        i = find_decl(lines, fn, i0 + 1, rf'\s*(function|procedure)\s+{re.escape(fn)}\s*\(')
+        sig, je, bs, be = routine_at(lines, i)
+        k = bs
+        while k <= be:
+            cd, cm = split_code_comment(lines[k])
+            m1 = re.match(rf'^(\s*)set\s+{re.escape(od)}\s*:\s*(.*)$', cd)
+            m2 = re.match(rf'^(\s*)set\s+{re.escape(ol)}\s*:\s*(.*)$', cd)
+            if m1:
+                # partner: the next code line must be `set ol: B`
+                j = k + 1
+                while j <= be and code_only(lines[j]).strip() == '': j += 1
+                pm = re.match(rf'^(\s*)set\s+{re.escape(ol)}\s*:\s*(.*)$', code_only(lines[j])) if j <= be else None
+                a_s = m1.group(2).strip()
+                if pm is None:
+                    checks.append(f'{fpath}:{k+1}: OUTPAIR store of {od} without a {ol} partner in {fn}: {cd.strip()}'); k += 1; continue
+                b_s = pm.group(2).strip(); ind = m1.group(1)
+                # ★The escape checker refuses `set out: <construction>` and `set out: <call result>` through
+                # a `ref[Slice[char]]` ("reference into a local page escapes via store" -- it cannot see that
+                # a Slice does not own), and accepts a plain PATH (field, parameter) and the two MEMBER
+                # stores. So: one store where the pair collapses to a path, else the members.
+                md = re.match(r'^(.+)\.data$', a_s)
+                src = length_source(b_s, {})
+                pnames = set(names)
+                if md and src is not None and norm(src) == norm(md.group(1)) and (re.match(r'^\w+\.[\w.]+$', md.group(1)) or md.group(1) in pnames):
+                    lines[k] = f'{ind}set {new}: {md.group(1)}' + cm; del lines[j]; be -= 1
+                else:
+                    lines[k] = f'{ind}set {new}.data: {a_s}' + cm
+                    lines[j] = f'{ind}set {new}.length: {b_s}' + cm
+                log['outpair-store'] += 1
+            elif m2:
+                # `set ol: f(..., od)` -- a retlen_int forward: bind the returned view, store its members
+                fwd = outarg_matches(m2.group(2).strip(), od)
+                if fwd is not None:
+                    ind = m2.group(1)
+                    prev = max((z for z in range(bs, k) if code_only(lines[z]).strip()), default=None)
+                    braced = prev is not None and re.match(r'^\s*(if|else|while|for)\b', code_only(lines[prev])) is not None and not code_only(lines[prev]).rstrip().endswith('{')
+                    body_ = [f'{ind}let out_v {fwd}' + cm, f'{ind}set {new}.data: out_v.data', f'{ind}set {new}.length: out_v.length']
+                    if braced:
+                        pind = ind[:-4] if len(ind) >= 4 else ''
+                        body_ = [f'{pind}{{'] + body_ + [f'{pind}}}']
+                    lines[k:k + 1] = body_
+                    be += len(body_) - 1; k += len(body_) - 1
+                    log['outpair-forward'] += 1
+                else:
+                    checks.append(f'{fpath}:{k+1}: OUTPAIR lone store of {ol} in {fn}: {cd.strip()}')
+            k += 1
     retlen_callers = []
+    outpair_callers = []   # (where, X, Y): `f(..., &X, &Y)` -> `f(..., &X)`; X becomes the Slice local, Y its `.length`
+    cur_outpair_new = None
     # local tables per routine while scanning a file top to bottom
     BIND = re.compile(r'^\s*(let|var)\s+(\w+)(?:\s*:\s*([^\s]+(?:\[[^\]]*\])?))?\s+(.*)$')
     for p, lines in files.items():
@@ -669,14 +815,18 @@ def main():
             sig = code_only('\n'.join(lines[s_:je + 1]))
             rptr[s_] = set(re.findall(r'(\w+)\s*:\s*ref\[pointer\[char\]\]', sig))
             for k in range(bs, be + 1):
-                mm = re.match(r'\s*(let|var)\s+(\w+)\s*:\s*pointer\[char\](?![\w])', code_only(lines[k]))
+                mm = re.match(r'\s*(let|var)\s+(\w+)\s*:\s*pointer\[char\](?![\w])', code_only(lines[k])) or re.match(r'\s*(let|var)\s+(\w+)\s+null\s+as\s+pointer\[char\]\s*$', code_only(lines[k]))
                 if mm: rptr[s_].add(mm.group(2))
         cur = None; locals_ = {}; ptr_targets = set(); slice_locals = set(); len_alias = {}
         for k in range(len(lines)):
             r = routine_containing(routines, k)
             if r is not cur:
                 cur = r; locals_ = {}; ptr_targets = set(); slice_locals = set(); len_alias = {}
+                cur_outpair_new = None
                 if r:
+                    sig_ = code_only('\n'.join(lines[r[1]:r[2] + 1]))
+                    mo = re.search(r'(\w+)\s*:\s*ref\[Slice\[char\]\]', sig_)
+                    if mo: cur_outpair_new = mo.group(1)
                     ptr_targets = rptr.get(r[1], set())
                     for nm_ in rparams.get(r[1], ()): locals_[nm_] = ('slice', nm_)
                     # -- pre-pass B (per routine): pointer locals whose every store is a slice, paired with a length local
@@ -746,7 +896,20 @@ def main():
             # that dereferences the null it was handed (SIGSEGV, found by the stage-1 dumper).
             code = re.sub(r'((?:[\w.]+\([^()]*(?:\([^()]*\))?[^()]*\))|(?:(?<![\w.])[\w.]+))\s+(=|<>)\s+null\b', nulltest, code)
             # calls
+            n_before = len(retlen_callers)
             code = rewrite_call_line(code, locals_, f'{p}:{k+1}')
+            if len(retlen_callers) > n_before:
+                # a retlen(_int) call on this line: if the statement binds the LENGTH (`let Y f(...)` /
+                # `set Y: f(...)`) and the out-arg was `&X`, the statement becomes `set X: f(...)`
+                where_, X_ = retlen_callers[-1]
+                sm2 = re.match(r'^(\s*)(?:let\s+(\w+)\s+|set\s+(\w+)\s*:\s*)(.*)$', code)
+                if sm2 and re.match(r'^[\w.]+\(', sm2.group(4).strip()) and balanced_end(sm2.group(4).strip(), sm2.group(4).strip().index('(')) == len(sm2.group(4).strip()) - 1:
+                    Y_ = sm2.group(2) or sm2.group(3)
+                    if Y_ != X_ and not re.search(r'\.length\b', Y_):
+                        code = f'{sm2.group(1)}set {X_}: {sm2.group(4).strip()}'
+                        retlen_callers.pop()
+                        outpair_callers.append((where_, X_, Y_ if sm2.group(3) else '=' + Y_))   # '=Y': a let, no decl to delete
+                        log['retlen-int-caller'] += 1
             # `set X: <slice>` where X is a pointer-typed local or a ref[pointer[char]] out-param: boundary, `.data`
             sm = re.match(r'^(\s*set\s+)(\*?\w+)\s*:\s*(.*)$', code)
             if sm and cur is not None:
@@ -772,6 +935,64 @@ def main():
                 lines[k] = code + cmt
                 log['lines'] += 1
 
+    # ---- 5a. pointer locals whose stores are all slice-valued now (a retlen_int result, a `.data`
+    # boundary with its `set Y: <len>` partner, or a raw pointer with a partner length): one Slice var.
+    for p, lines in files.items():
+        for (nm, s_, je, bs, be) in all_routines(lines):
+            # ★code_only DROPS string literals -- the first cut rewrote `f(host, "default")` into `f(host, )`;
+            # match on the comment-free code WITH its strings.
+            body = {x: split_code_comment(lines[x])[0] for x in range(bs, be + 1) if lines[x] != '\x00DELETE'}
+            for x, c in list(body.items()):
+                dm = re.match(r'(\s*)var\s+(\w+)\s*:\s*pointer\[char\]\s+null\s*$', c) or re.match(r'(\s*)var\s+(\w+)\s+null\s+as\s+pointer\[char\]\s*$', c)
+                if not dm: continue
+                pl = dm.group(2); ind = dm.group(1)
+                stores = [y for y, cc in body.items() if re.match(rf'\s*set\s+{re.escape(pl)}\s*:', cc)]
+                if not stores: continue
+                plan = []; partner = None; ok = True
+                sl_ = {}
+                for y in stores:
+                    rhs = re.match(rf'\s*set\s+{re.escape(pl)}\s*:\s*(.*)$', body[y]).group(1).strip()
+                    nxt = min((z for z in body if z > y and body[z].strip()), default=None)
+                    pm = re.match(r'\s*set\s+(\w+)\s*:\s*(.*)$', body[nxt]) if nxt is not None else None
+                    if is_slice_expr(rhs, sl_) or re.match(r'^[\w.]+\.\w+\([^()]*\)$', rhs) and acc_call_is_slice(rhs[:rhs.index('(')]) or (rhs.split('(')[0].split('.')[-1] in retlen_fns):
+                        plan.append((y, rhs, None)); continue
+                    md = re.match(r'^(.+)\.data$', rhs)
+                    if pm and md and norm(length_source(pm.group(2).strip(), sl_) or '') == norm(md.group(1)):
+                        if partner is None: partner = pm.group(1)
+                        if partner != pm.group(1): ok = False; break
+                        plan.append((y, md.group(1), nxt)); continue
+                    if pm and re.match(r'^[\w.\[\]()&+ ]+$', rhs) and re.match(r'^[\w.() +-]+$', pm.group(2).strip()) and pm.group(1) != pl:
+                        if partner is None: partner = pm.group(1)
+                        if partner != pm.group(1): ok = False; break
+                        plan.append((y, f'Slice[char]({pm.group(2).strip()}, {rhs})', nxt)); continue
+                    ok = False; break
+                if not ok: 
+                    checks.append(f'{p}:{x+1}: PTR-LOCAL2 {pl} in {nm}: a store the pass cannot type'); continue
+                if partner is not None:
+                    pdecl = [y for y, cc in body.items() if re.match(rf'\s*var\s+{re.escape(partner)}\s*(:\s*int)?\s+0\s*$', cc)]
+                    others = [y for y, cc in body.items() if re.match(rf'\s*set\s+{re.escape(partner)}\s*:', cc) and y not in [q for (_, _, q) in plan]]
+                    if len(pdecl) != 1 or others:
+                        checks.append(f'{p}:{x+1}: PTR-LOCAL2 {pl} in {nm}: partner {partner} not clean (decl {len(pdecl)}, other sets {len(others)})'); continue
+                    lines[pdecl[0]] = '\x00DELETE'
+                lines[x] = f'{ind}var {pl} Slice[char]()'
+                for (y, rhs2, q) in plan:
+                    lines[y] = re.match(r'\s*', lines[y]).group(0) + f'set {pl}: {rhs2}'
+                    if q is not None: lines[q] = '\x00DELETE'
+                for z in range(bs, be + 1):
+                    if lines[z] == '\x00DELETE': continue
+                    cd_, cm_ = split_code_comment(lines[z])
+                    if partner is not None:
+                        cd_ = sub_outside_strings(rf'(?<![\w.]){re.escape(partner)}(?![\w(])', f'{pl}.length', cd_)
+                    mm2 = re.match(rf'^(\s*)set\s+([\w.]+)\.data:\s*{re.escape(pl)}\s*$', cd_)
+                    if mm2 and z + 1 <= be and re.match(rf'^\s*set\s+{re.escape(mm2.group(2))}\.length:\s*{re.escape(pl)}\.length\s*$', code_only(lines[z + 1])):
+                        cd_ = f'{mm2.group(1)}set {mm2.group(2)}: {pl}'; lines[z + 1] = '\x00DELETE'
+                    cd_ = re.sub(rf'(?<![\w.]){re.escape(pl)}\s+(=|<>)\s+null\b', rf'{pl}.data \1 null', cd_)
+                    cd_ = re.sub(rf'Slice\[char\]\(\s*{re.escape(pl)}\.length\s*,\s*{re.escape(pl)}\s*\)', pl, cd_)
+                    cd_ = re.sub(rf'(?<![\w.]){re.escape(pl)}\s+as\s+pointer\[', f'{pl}.data as pointer[', cd_)
+                    cd_ = rewrite_derefs(cd_, pl)
+                    lines[z] = cd_ + cm_
+                log['ptr-local-pair2'] += 1
+
     # ---- 5b. retlen callers: `let nd f(..., &nl)` -> the local `nl` is `nd.length` from its
     # declaration to the end of the BLOCK that declares it (a routine may declare `nl` twice
     # in sibling blocks); a `var nd: pointer[char] null` receiver becomes `var nd Slice[char]()`.
@@ -783,36 +1004,66 @@ def main():
             depth += c.count('{') - c.count('}')
             if depth < 0: return x - 1
         return len(lines) - 1
+    jobs = []
     for (where, ln_) in retlen_callers:
         fp, li = where.rsplit(':', 1); li = int(li) - 1
-        lines = files[fp]
-        cd0 = code_only(lines[li])
+        cd0 = code_only(files[fp][li])
         bm = re.match(r'^\s*(let|var)\s+(\w+)\s', cd0) or re.match(r'^\s*set\s+(\w+)\s*:', cd0)
         if not bm: checks.append(f'{where}: RETLEN caller without a binding for {ln_}: {cd0.strip()}'); continue
-        bound = bm.group(bm.lastindex)
+        jobs.append((where, bm.group(bm.lastindex), ln_))
+    for (where, X_, Y_) in outpair_callers: jobs.append((where, X_, Y_))
+    done_jobs = set()
+    for (where, bound, ln_) in jobs:
+        fp, li = where.rsplit(':', 1); li = int(li) - 1
+        lines = files[fp]
+        is_let = ln_.startswith('=')
+        ln_ = ln_.lstrip('=')
         rs = all_routines(lines); r = routine_containing(rs, li)
-        if not r: continue
+        if not r:
+            # a program ROOT's top-level statements: the scope is the rest of the file
+            r = ('<top>', 0, 0, li, len(lines) - 1)
         nm0, s0, je0, bs0, be0 = r
-        decls = [x for x in range(bs0, li) if re.match(rf'\s*var\s+{re.escape(ln_)}\s+0\s*$', code_only(lines[x]))]
-        if not decls:
-            checks.append(f'{where}: RETLEN caller local {ln_} has no `var {ln_} 0` before the call'); continue
-        d0 = decls[-1]; e0 = block_end(lines, d0)
-        other = [x for x in range(d0, e0 + 1) if re.match(rf'\s*set\s+{re.escape(ln_)}\s*:', code_only(lines[x]))]
-        if other:
-            checks.append(f'{where}: RETLEN caller local {ln_} is also assigned in its block'); continue
-        pd = [x for x in range(bs0, li) if re.match(rf'\s*var\s+{re.escape(bound)}\s*:\s*pointer\[char\]\s+null\s*$', code_only(lines[x]))]
+        if not is_let and not any(re.search(rf'(?<![\w.]){re.escape(ln_)}(?![\w(])', code_only(lines[x])) for x in range(bs0, be0 + 1) if lines[x] != '\x00DELETE'):
+            log['out-caller-already-clean'] += 1; continue   # the length local was already gone (an earlier chain)
+        if is_let:
+            d0 = li; e0 = block_end(lines, li + 1)
+            other = [x for x in range(li + 1, e0 + 1) if re.match(rf'\s*(set|let|var)\s+{re.escape(ln_)}\b', code_only(lines[x]))]
+            if other:
+                checks.append(f'{where}: OUT caller: length `{ln_}` is rebound later in the block'); continue
+        else:
+            decls = [x for x in range(bs0, li) if re.match(rf'\s*var\s+{re.escape(ln_)}\s*(:\s*int)?\s+0\s*$', code_only(lines[x]))]
+            if not decls:
+                checks.append(f'{where}: OUT caller local {ln_} has no `var {ln_} 0` before the call'); continue
+            d0 = decls[-1]; e0 = block_end(lines, d0)
+            if (fp, d0) in done_jobs: continue      # a second call in the same block, same receiver pair
+            done_jobs.add((fp, d0))
+            other = [x for x in range(d0, e0 + 1) if re.match(rf'\s*set\s+{re.escape(ln_)}\s*:', code_only(lines[x]))]
+            if other:
+                checks.append(f'{where}: OUT caller local {ln_} is also assigned in its block'); continue
+        pd = [x for x in range(bs0, li + 1) if re.match(rf'\s*var\s+{re.escape(bound)}\s*:\s*pointer\[char\]\s+null\s*$|\s*var\s+{re.escape(bound)}\s+null\s+as\s+pointer\[char\]\s*$', code_only(lines[x]))]
         if pd:
             ind = re.match(r'\s*', lines[pd[-1]]).group(0)
             lines[pd[-1]] = f'{ind}var {bound} Slice[char]()'
-        lines[d0] = '\x00DELETE'
+        elif not is_let and not re.search(rf'\b(let|var)\s+{re.escape(bound)}\b', '\n'.join(code_only(l) for l in lines[bs0:li] if l != '\x00DELETE')):
+            checks.append(f'{where}: OUT caller: receiver `{bound}` has no `var {bound}: pointer[char] null` in reach')
+        if not is_let: lines[d0] = '\x00DELETE'
         for x in range(d0, e0 + 1):
             if lines[x] == '\x00DELETE': continue
             cd_, cm_ = split_code_comment(lines[x])
             cd_ = sub_outside_strings(rf'(?<![\w.]){re.escape(ln_)}(?![\w(])', f'{bound}.length', cd_)
             cd_ = re.sub(rf'(?<![\w.]){re.escape(bound)}\s+(=|<>)\s+null\b', rf'{bound}.data \1 null', cd_)
             cd_ = re.sub(rf'Slice\[char\]\(\s*{re.escape(bound)}\.length\s*,\s*{re.escape(bound)}\s*\)', bound, cd_)
+            cd_ = re.sub(rf'(?<![\w.]){re.escape(bound)}\s+as\s+pointer\[', f'{bound}.data as pointer[', cd_)
             cd_ = rewrite_derefs(cd_, bound)
             lines[x] = cd_ + cm_
+        # second sweep: `set X.data: bound` + `set X.length: bound.length` -> `set X: bound` (the partner line
+        # is only in its final form once the substitution above has passed it)
+        for x in range(d0, e0 + 1):
+            if lines[x] == '\x00DELETE': continue
+            cd_, cm_ = split_code_comment(lines[x])
+            mm2 = re.match(rf'^(\s*)set\s+([\w.]+)\.data:\s*{re.escape(bound)}\s*$', cd_)
+            if mm2 and x + 1 <= e0 and re.match(rf'^\s*set\s+{re.escape(mm2.group(2))}\.length:\s*{re.escape(bound)}\.length\s*$', code_only(lines[x + 1])):
+                lines[x] = f'{mm2.group(1)}set {mm2.group(2)}: {bound}' + cm_; lines[x + 1] = '\x00DELETE'
         log['retlen-caller'] += 1
     for p, lines in files.items():
         files[p] = [l for l in lines if l != '\x00DELETE']
