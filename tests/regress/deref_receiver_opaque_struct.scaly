@@ -22,9 +22,12 @@
 use scaly.memory.Page
 use scaly.containers.String
 
-; A String anchors a real region page; Page.get gives us a pointer to it.
+; A String anchors a real region page. Page.get answers a ref[Page] (since
+; 2026-09-05); the shape pinned here is the DEREF RECEIVER on a POINTER to an
+; opaque struct, so the pointer is taken back explicitly (a cast keeps the
+; address meaning).
 let anchor String(64 as size_t)
-let page Page.get(anchor.data)
+let page Page.get(anchor.data) as pointer[Page]
 
 let direct page.get_capacity(8 as size_t)
 let through (*page).get_capacity(8 as size_t)

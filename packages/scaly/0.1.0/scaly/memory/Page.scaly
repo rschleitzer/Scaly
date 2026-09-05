@@ -360,7 +360,12 @@ define Page
         s as size_t
     }
 
-    function get(address: pointer[void]) returns pointer[Page]
+    ; Answers a borrowed reference: the page header is always there for a
+    ; page-hosted address (a null would mean address 0), and the RETURN is
+    ; not part of the Itanium name, so `_Z3getPv` — which the Emitter looks
+    ; up by that literal — stays put. Measured 2026-09-05: `let host
+    ; Page.get(...)` was the origin of 551 pointer-into-ref sites in the ports.
+    function get(address: pointer[void]) returns ref[Page]
     {
         let mask ~((PAGE_SIZE - 1) as size_t)
         let page (address as size_t & mask) as pointer[Page]
