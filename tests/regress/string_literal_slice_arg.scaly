@@ -1,0 +1,100 @@
+; Regression: a string LITERAL materialises into a Slice[char] parameter.
+;
+; Before this, `f("as")` against `function f(word: Slice[char])` was a hard
+; `function not found` — the only spelling that resolved was the two-component
+; construction with the length written out by hand, `f(Slice[char](2, "as"))`.
+; That is why several hundred `pointer[const_char]` parameters never converted
+; to a borrowed view: the conversion itself was correct and the CALL SITES were
+; the price, one hand-counted byte length each.
+;
+; It rides the char-fold pass, which is fallback-only: it runs after the exact,
+; string-i8 and compatible passes have all failed, so nothing that resolved
+; before this can be displaced and emission for existing code is unchanged.
+;
+; The materialised operand is the same plan tree the explicit construction
+; builds, so both spellings emit the same three instructions — store the
+; length, store the plain .str pointer, load the struct. This test asserts the
+; OBSERVABLE consequence: the two forms must agree, and the length must be the
+; literal's DECODED byte count (an escape is one byte, not two).
+;
+; Expected: PASS
+
+function sum_bytes(word: Slice[char]) returns int
+{
+    var sum: int 0
+    var i: int 0
+    while i < word.length
+    {
+        set sum: sum + (word[i] as int)
+        set i: i + 1
+    }
+    sum
+}
+
+function length_of(word: Slice[char]) returns int
+    word.length as int
+
+; A METHOD taking the view resolves the same way — 26 of the tree's 93
+; char-slice signatures declare `this`, and they reach a literal through
+; method_params_match# rather than check_function_match#. The argument-type
+; diagnostic (report_method_arg_types#) must exempt the same shape, or a call
+; the compiler just accepted is reported as an error.
+define Counter (base: int)
+{
+    function weigh(this, word: Slice[char]) returns int
+    {
+        var sum: int base
+        var i: int 0
+        while i < word.length
+        {
+            set sum: sum + (word[i] as int)
+            set i: i + 1
+        }
+        sum
+    }
+}
+
+var ok: bool true
+
+; The two spellings must agree in content and in length.
+if sum_bytes("as") <> sum_bytes(Slice[char](2, "as"))
+    set ok: false
+if length_of("as") <> 2
+    set ok: false
+
+; A single-byte literal must NOT be diverted into the char fold: the parameter
+; is a Slice, so it materialises as a one-element view rather than folding to a
+; CharacterConstant.
+if length_of("a") <> 1
+    set ok: false
+if sum_bytes("a") <> 97
+    set ok: false
+
+; The empty literal is a zero-length view, not a null one — length is what
+; every Slice operation reads, and the loop must simply not run.
+if length_of("") <> 0
+    set ok: false
+if sum_bytes("") <> 0
+    set ok: false
+
+; An ESCAPE decodes before the length is taken. "\n" is ONE byte (10); a length
+; read off the source spelling would say two and walk one byte past the end.
+if length_of("\n") <> 1
+    set ok: false
+if sum_bytes("\n") <> 10
+    set ok: false
+
+; A longer literal, to prove nothing is capped at the char-fold's one byte.
+if length_of("keyword") <> 7
+    set ok: false
+
+let c Counter(1000)
+if c.weigh("as") <> 1212
+    set ok: false
+if c.weigh("") <> 1000
+    set ok: false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"

@@ -2638,6 +2638,93 @@ define Planner
             op
         }
 
+        ; materialize_string_operand_to_slice: turn a chainless String constant
+        ; into the `Slice[elem]` VALUE its declared parameter asks for — the
+        ; exact plan tree the hand-written `Slice[char](2, "as")` builds, so
+        ; the emitter needs no new path and the two spellings emit the same
+        ; three instructions (store length, store the plain .str pointer, load
+        ; the struct).
+        ;
+        ; The length is the literal's DECODED byte count, which is why this
+        ; must happen here and not in the emitter: `s.value` has already run
+        ; the Modeler's escape decoding, so "\n" is one byte and not two. The
+        ; data component is the same PlannedAs wrap coerce_string_args_to_cstr#
+        ; uses, against pointer[elem] — emit_as lowers a constant String to the
+        ; plain NUL-terminated .str global there, and the terminator sits one
+        ; past the slice's own length, unseen by every Slice operation and
+        ; available to a `data`-taking C callee.
+        function materialize_string_operand_to_slice(
+            this: Planner,
+            op: PlannedOperand,
+            slice_type: PlannedType
+        ) returns PlannedOperand
+        {
+            if op.member_access <> null
+                return op
+            if slice_type.generics = null
+                return op
+            let gens (*slice_type.generics)
+            if gens.length <> 1
+                return op
+            let elem_ptr gens.get 0
+            if elem_ptr = null
+                return op
+            let elem_type (*elem_ptr)
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when s: StringConstant
+                        {
+                            let n s.value.get_length()
+                            let len_c Constant.Integer(IntegerConstant(s.span, n))
+                            let len_op PlannedOperand(
+                                op.loc,
+                                PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant len_c),
+                                null,
+                                Planner.make_size_type()
+                            )
+                            let data_type Planner.make_pointer_type(elem_type)
+                            let data_cast PlannedAs(op.loc, data_type, &^this op)
+                            let data_op PlannedOperand(
+                                op.loc,
+                                PlannedExpression.As data_cast,
+                                null,
+                                data_type
+                            )
+                            var len_vals Array[PlannedOperand]()
+                            len_vals.add len_op
+                            var len_holder Vector[PlannedOperand](len_vals)
+                            var data_vals Array[PlannedOperand]()
+                            data_vals.add data_op
+                            var data_holder Vector[PlannedOperand](data_vals)
+                            var comps Array[PlannedComponent]()
+                            comps.add(PlannedComponent(op.loc, null, &len_holder, null))
+                            comps.add(PlannedComponent(op.loc, null, &data_holder, null))
+                            var comps_holder Vector[PlannedComponent](comps)
+                            let tup PlannedTuple(
+                                op.loc,
+                                &comps_holder,
+                                slice_type,
+                                false,
+                                Lifetime.Unspecified(Unspecified()),
+                                null
+                            )
+                            return PlannedOperand(
+                                op.loc,
+                                PlannedExpression.Tuple tup,
+                                null,
+                                slice_type
+                            )
+                        }
+                        else
+                            return op
+                }
+                else
+                    return op
+            op
+        }
+
         ; True when `op` is a chainless string-constant operand (the shape
         ; fold_string_operand_to_char converts).
         function operand_is_string_constant(this: Planner, op: PlannedOperand) returns bool
@@ -2671,6 +2758,34 @@ define Planner
             if t.name = "i8"
                 return true
             false
+        }
+
+        ; type_is_char_slice: a `Slice[char]`-family parameter — the borrowed
+        ; view a string literal materialises into. It is the THIRD literal
+        ; target of this family, beside type_is_char_like (a scalar char) and
+        ; type_is_cstr_pointer (a bare C pointer), and the only one that is not
+        ; a retype or a cast: `Slice[T]` is {length, data}, so the literal
+        ; becomes a two-component CONSTRUCTION — see
+        ; materialize_string_operand_to_slice#.
+        ;
+        ; ★Why this exists at all: without it a `Slice[char]` parameter can
+        ; only be fed by writing the length out by hand at every call site
+        ; (`kw_eq(buf, Slice[char](2, "as"))`), which is what kept several
+        ; hundred pointer[const_char] parameters from converting — the
+        ; conversion was correct and the CALL SITES were the price.
+        function type_is_char_slice(t: PlannedType) returns bool
+        {
+            if t.name <> "Slice"
+                return false
+            if t.generics = null
+                return false
+            let gs (*t.generics)
+            if gs.length <> 1
+                return false
+            let ip gs.get 0
+            if ip = null
+                return false
+            Planner.type_is_char_like((*ip))
         }
 
         ; type_is_float_like: a floating-point target (float / f32 / double /
@@ -6186,6 +6301,17 @@ define Planner
                                 set ok: true
                                 set any_fold: true
                             }
+                    ; String-literal-into-Slice fallback: a string literal
+                    ; matches a Slice[char] parameter and materialises into the
+                    ; {length, data} view at the call-construction site.
+                    if ok = false
+                        if arg.name = "String"
+                            if Planner.type_is_char_slice(planned_p)
+                                if this.arg_is_foldable_char_string(arg_ops, j)
+                                {
+                                    set ok: true
+                                    set any_fold: true
+                                }
                     if ok = false
                         return false
                 }
@@ -6348,6 +6474,15 @@ define Planner
                             if Planner.type_is_float_like(planned_p)
                                 if this.arg_is_foldable_float(arg_ops, j)
                                     set ok: true
+                    ; String-literal-into-Slice fallback: a string literal
+                    ; matches a Slice[char] parameter and materialises into the
+                    ; {length, data} view at the call-construction site.
+                    if ok = false
+                        if char_fold
+                            if arg.name = "String"
+                                if Planner.type_is_char_slice(planned_p)
+                                    if this.arg_is_foldable_char_string(arg_ops, j)
+                                        set ok: true
                     if ok = false
                         return null
                     ; Ensure a by-value cross-package param type's layout so the
@@ -7912,6 +8047,20 @@ define Planner
                                     out.add(this.fold_string_operand_to_char(a, pt))
                                     set folded: true
                                 }
+                            ; String literal into a Slice[char] parameter:
+                            ; materialise the {length, data} view the callee
+                            ; declares. Unlike every other arm here this is a
+                            ; CONSTRUCTION rather than a fold or a cast, and it
+                            ; is what lets a borrowed-view signature be called
+                            ; without the author counting the literal's bytes
+                            ; at the call site.
+                            if folded = false
+                                if Planner.type_is_char_slice(pt)
+                                    if this.operand_is_string_constant(a)
+                                    {
+                                        out.add(this.materialize_string_operand_to_slice(a, pt))
+                                        set folded: true
+                                    }
                             ; Float literal into a float-family parameter:
                             ; retype the default-f64 literal to the matched
                             ; parameter's width so the call site emits the
@@ -14341,6 +14490,18 @@ define Planner
                             if Planner.type_is_float_like(planned_p)
                                 if this.arg_is_foldable_float(arg_ops, j)
                                     set ok: true
+                    ; String-literal-into-Slice fallback (see
+                    ; candidate_matches_char_fold). No operator in the tree
+                    ; declares a Slice parameter today; the arm is here so the
+                    ; three call routes answer alike, since an asymmetry
+                    ; between them reads as a defect in whichever one is met
+                    ; first.
+                    if ok = false
+                        if char_fold
+                            if arg.name = "String"
+                                if Planner.type_is_char_slice(planned_p)
+                                    if this.arg_is_foldable_char_string(arg_ops, j)
+                                        set ok: true
                     if ok = false
                         return null
                 }
@@ -14786,6 +14947,17 @@ define Planner
                             if Planner.type_is_float_like(planned_p)
                                 if this.arg_is_foldable_float(arg_ops, j)
                                     set ok: true
+                    ; String-literal-into-Slice fallback (see
+                    ; candidate_matches_char_fold): a METHOD taking a
+                    ; Slice[char] is reached by a literal the same way a free
+                    ; function is — 26 of the 93 char-slice signatures in the
+                    ; tree declare `this`.
+                    if ok = false
+                        if char_fold
+                            if arg.name = "String"
+                                if Planner.type_is_char_slice(planned_p)
+                                    if this.arg_is_foldable_char_string(arg_ops, j)
+                                        set ok: true
                     if ok = false
                         return false
                 }
@@ -24392,6 +24564,17 @@ define Planner
                                     if Planner.type_is_float_like(planned_p)
                                         if this.arg_is_foldable_float(arg_ops, j)
                                             set ok: true
+                                ; A string literal materialising into a
+                                ; Slice[char] parameter. This exemption is not
+                                ; optional: method_params_match# now RESOLVES
+                                ; such a call, so without it the gate would
+                                ; report a hard error for an argument the
+                                ; compiler had just accepted.
+                                if ok = false
+                                    if arg.name = "String"
+                                        if Planner.type_is_char_slice(planned_p)
+                                            if this.arg_is_foldable_char_string(arg_ops, j)
+                                                set ok: true
                                 if ok = false
                                 {
                                     set reported: true
