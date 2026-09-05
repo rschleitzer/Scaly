@@ -99,6 +99,15 @@ mutable idx_epoch: size_t 0
 
 define symindex
 {
+    ; Borrowed views over the two malloc'd tables: a slot is reached through
+    ; `at(i)` (bounds-checked, answers ref[IdxSlot]) instead of pointer
+    ; arithmetic. Inside the namespace, so `symindex.idx_view()` and the
+    ; definition mangle alike.
+    function idx_view() returns Slice[IdxSlot]
+        Slice[IdxSlot](IDX_CAP as size_t, idx_slots)
+    function dir_view() returns Slice[DirSlot]
+        Slice[DirSlot](DIR_CAP as size_t, dir_slots)
+
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves idx_slots null; callers then treat every file as a cache miss.
     procedure ensure()
@@ -264,7 +273,7 @@ define symindex
         let idx symindex.find path
         if idx >= 0
         {
-            let s idx_slots + idx
+            let s symindex.idx_view().at(idx as size_t)
             symindex.set_blob(s, blob)
             set s.chash: chash
             return
@@ -274,7 +283,7 @@ define symindex
         var i 0
         while i < IDX_CAP
         {
-            let s idx_slots + i
+            let s symindex.idx_view().at(i as size_t)
             if s.used = false
             {
                 symindex.set_path(s, path)
@@ -388,7 +397,7 @@ define symindex
         }
         if target < 0
             set target: 0
-        let s dir_slots + target
+        let s symindex.dir_view().at(target as size_t)
         symindex.set_dir_path(s, dir)
         symindex.set_dir_list(s, listing)
         set s.used: true

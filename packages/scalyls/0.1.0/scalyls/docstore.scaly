@@ -58,6 +58,11 @@ mutable ws_root_len:  size_t 0
 
 define docstore
 {
+    ; Borrowed view over the malloc'd table: a slot is reached through `at(i)`
+    ; (bounds-checked, answers ref[DocSlot]) instead of pointer arithmetic.
+    function doc_view() returns Slice[DocSlot]
+        Slice[DocSlot](DOC_CAP as size_t, doc_slots)
+
     ; Record the workspace root (a filesystem path) as a fresh malloc'd copy,
     ; freeing any previous one. Empty path leaves it null.
     procedure set_workspace_root(path: String)
@@ -192,7 +197,7 @@ define docstore
         let idx docstore.find uri
         if idx >= 0
         {
-            let s doc_slots + idx
+            let s docstore.doc_view().at(idx as size_t)
             docstore.set_text(s, text)
             return
         }
@@ -201,7 +206,7 @@ define docstore
         var i 0
         while i < DOC_CAP
         {
-            let s doc_slots + i
+            let s docstore.doc_view().at(i as size_t)
             if s.used = false
             {
                 docstore.set_uri(s, uri)

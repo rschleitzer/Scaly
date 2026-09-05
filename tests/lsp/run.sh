@@ -4762,7 +4762,7 @@ if [ $rc -eq 0 ]; then ok "lsp hover stays inside the document"; else bad "lsp h
 #     and no initializer operand covers the name) answers with the type its
 #     initializer produces.
 #
-# Asserted EXACTLY: a substring check would pass `pointer` for `pointer[Page]`,
+# Asserted EXACTLY: a substring check would pass `ref` for `ref[Page]`,
 # which is the bug. Lines are found by CONTENT, the file is a real tree file.
 SCALY_HOME="$(pwd)" python3 - <<'PY'
 import sys, json, subprocess, os
@@ -4785,8 +4785,8 @@ cond = line_of("if len > 0")
 
 # (line, token, occurrence index, expected type)
 probes = [
-    (bind,  "own_page", 0, "pointer[Page]"),       # untyped binding NAME
-    (bind,  "Page",     0, "pointer[Page]"),       # the call it is bound to
+    (bind,  "own_page", 0, "ref[Page]"),           # untyped binding NAME (Page.get answers ref[Page] since 2026-09-05)
+    (bind,  "Page",     0, "ref[Page]"),           # the call it is bound to
     (bind,  "this",     0, "pointer[Vector[T]]"),  # nested generic argument
     (alloc, "len",      0, "size_t"),              # an argument INSIDE the call
     (alloc, "data",     0, "pointer[T]"),          # the assignment target
