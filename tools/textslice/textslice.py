@@ -186,11 +186,12 @@ def rewrite_derefs(line, ptr):
             idx = re.sub(rf'^\s*{P}\s*\+\s*', '', code[op + 1:end]).strip()
             cm = re.match(r'\s*:\s*(.*)$', code[end + 1:])
             if cm:
-                return f'{m.group(1)}{ptr}.put({idx}, {cm.group(1).rstrip()})' + cmt
+                val = rewrite_derefs(cm.group(1).rstrip(), ptr)   # `set *(out + a): *(out + b)` -- the value reads the same buffer
+                return f'{m.group(1)}{ptr}.put({idx}, {val})' + cmt
     # set *ptr: v -> ptr.put(0, v)
     m3 = re.match(rf'(\s*)set\s+\*{P}(?![\w\[])\s*:\s*(.*)$', code)
     if m3:
-        return f'{m3.group(1)}{ptr}.put(0, {m3.group(2).rstrip()})' + cmt
+        return f'{m3.group(1)}{ptr}.put(0, {rewrite_derefs(m3.group(2).rstrip(), ptr)})' + cmt
     # *(ptr + e) -> ptr[e]
     while True:
         m = re.search(rf'\*\(\s*{P}\s*\+\s*', code)
@@ -633,6 +634,13 @@ def main():
                         log['rewrap-' + how] += 1
                         out = out[:m.start()] + na + out[end + 1:]
                         pos = m.start() + len(na); continue
+                    if is_slice_expr(a_s, locals_) and re.match(r'^\w+$', a_s):
+                        # `Slice[char](n, buf)` over a scratch VIEW: the first n elements -- read at the site
+                        na = f'{a_s}.subslice(0, {b_s} as size_t)'
+                        checks.append(f'{where}: REWRAP-PREFIX {na}  (read: is `{b_s}` the written length of `{a_s}`?)')
+                        log['rewrap-prefix'] += 1
+                        out = out[:m.start()] + na + out[end + 1:]
+                        pos = m.start() + len(na); continue
                     checks.append(f'{where}: REWRAP a={a_s} b={b_s}')
                 out = out[:op + 1] + ','.join(args) + out[end:]
                 pos = op + 1; continue
@@ -710,7 +718,15 @@ def main():
             # conversion touches no call site, so every such argument is READ here.
             for li_ in lenless:
                 if li_ < len(args):
-                    a_s = args[li_].strip()
+                    a_s = args[li_].strip(); lead = re.match(r'\s*', args[li_]).group(0)
+                    am = re.match(r'^&(\w+)\[0\](\s+as\s+pointer\[char\])?$', a_s)
+                    if am and am.group(1) in stack_arrays:
+                        n_, ty_ = stack_arrays[am.group(1)]
+                        cast_ = ' as pointer[char]' if ty_ != 'char' else ''
+                        args[li_] = f'{lead}Slice[char]({n_} as size_t, &{am.group(1)}[0]{cast_})'; log['stack-array-view'] += 1; continue
+                    pm_ = re.match(r'^([\w.]+)\s*\+\s*(.+)$', a_s)
+                    if pm_ and is_slice_expr(pm_.group(1), locals_):
+                        args[li_] = f'{lead}{pm_.group(1)}.slice_from({pm_.group(2).strip()} as size_t)'; log['slice-from'] += 1; continue
                     if not (is_slice_expr(a_s, locals_) or re.match(r'^Slice\[char\]\(', a_s) or re.match(r'^"', a_s)):
                         checks.append(f'{where}: POINTER-INTO-SLICE? arg {li_} `{a_s}` of {name}')
             newargs = []; skip = set()
@@ -823,7 +839,11 @@ def main():
             if r is not cur:
                 cur = r; locals_ = {}; ptr_targets = set(); slice_locals = set(); len_alias = {}
                 cur_outpair_new = None
+                stack_arrays = {}
                 if r:
+                    for x_ in range(r[3], r[4] + 1):
+                        am_ = re.match(r'\s*var\s+(\w+)\s+(char|u8)\[(\w+)\]\s*$', code_only(lines[x_]))
+                        if am_: stack_arrays[am_.group(1)] = (am_.group(3), am_.group(2))
                     sig_ = code_only('\n'.join(lines[r[1]:r[2] + 1]))
                     mo = re.search(r'(\w+)\s*:\s*ref\[Slice\[char\]\]', sig_)
                     if mo: cur_outpair_new = mo.group(1)
