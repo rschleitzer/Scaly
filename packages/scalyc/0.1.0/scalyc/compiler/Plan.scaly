@@ -460,14 +460,14 @@ define PlannedGlobalRef
 )
 
 ; `&^obj v` — box a by-value value onto a page (Page.get(target_page)),
-; copy the whole value, yield pointer[X]. Replaces the hand-rolled
+; copy the whole value, yield ref[X]. Replaces the hand-rolled
 ; `var H Vector[X]^rp(1); H.put(0, v); H.get(0)` holder idiom.
 define PlannedBox
 (
     loc: Span
     value: ref[PlannedOperand]?      ; the value to copy onto the page
     target_page: String              ; Reference location: "this", "rp", ...
-    box_type: PlannedType            ; pointer[X]
+    box_type: PlannedType            ; ref[X] (a borrowed reference to the page copy)
 )
 
 define PlannedExpression union

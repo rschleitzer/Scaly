@@ -2883,7 +2883,7 @@ define Emitter
             LLVMBuildMemCpy(builder, d, 1, src_ptr, 1, size_const)
         }
 
-        ; `&^obj v` — box a COPY of value v onto obj's page, yield pointer[X].
+        ; `&^obj v` — box a COPY of value v onto obj's page, yield ref[X].
         ; Mirrors the struct-construction region-alloc path (resolve page →
         ; Page::allocate(sizeof, alignof) → copy the value in → return ptr) but
         ; for a single pre-existing value rather than field-by-field init.

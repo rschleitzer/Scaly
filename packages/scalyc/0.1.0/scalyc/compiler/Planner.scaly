@@ -9983,7 +9983,12 @@ define Planner
                                     0
                             if is_box
                             {
-                                let box_ty Planner.make_pointer_type(rest_result.result_type)
+                                ; A box yields a BORROWED reference to the page copy, as `&x`
+                                ; has since 2026-08-23: the value cannot be null and the
+                                ; caller does no arithmetic on it. (Was pointer[X]; the five
+                                ; `&^this PlannedType(...)` boxes handed to a ref[PlannedType]?
+                                ; parameter were the compiler's last pointer-into-ref sites.)
+                                let box_ty Planner.make_ref_type(rest_result.result_type)
                                 ; Call-result page promotion: when the boxed value
                                 ; is DIRECTLY a call (`&^this this.plan_type(tt)`),
                                 ; the callee allocates its sret result's heap

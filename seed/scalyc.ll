@@ -166742,7 +166742,7 @@ choose.when2238:                                  ; preds = %if.then2231
 
 if.then2242:                                      ; preds = %choose.end2236
   %field.inplace2245 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %sret.result2165, i32 0, i32 3
-  call void @_ZN7Planner17make_pointer_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11PlannedType) %sret.result2244, ptr %1, ptr %field.inplace2245)
+  call void @_ZN7Planner13make_ref_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret(%_Z11PlannedType) %sret.result2244, ptr %1, ptr %field.inplace2245)
   %binding.load2246 = load %_Z14PlannedOperand, ptr %sret.result2165, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %value_to_box, ptr align 1 %sret.result2165, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
   %load.struct2247 = load %_Z14PlannedOperand, ptr %sret.result2165, align 8
