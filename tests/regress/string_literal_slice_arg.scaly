@@ -34,6 +34,27 @@ function sum_bytes(word: Slice[char]) returns int
 function length_of(word: Slice[char]) returns int
     word.length as int
 
+; The RETURN position materialises too (convert_tail_literal#), which serves the
+; other three declared-type positions. Both the explicit `return` and the
+; implicit tail: without this a `returns Slice[char]` function could not be
+; written with a literal at all — the conformance gate refuses it.
+function keyword_for(async: bool) returns Slice[char]
+{
+    if async
+        return "asyncIterator"
+    "iterator"
+}
+
+; ★An UNTYPED binding is NOT one of those positions and must stay explicit:
+; nothing there declares a Slice, so a bare literal binds as a String and
+; `.data`/`.length` then read the STRING's fields — the varint-prefixed
+; `@.sconst`, not the plain `@.str`. It compiles and is silently wrong.
+function untyped_binding_still_needs_the_construction() returns int
+{
+    let nm Slice[char](3, "NaN")
+    nm.length as int
+}
+
 ; A METHOD taking the view resolves the same way — 26 of the tree's 93
 ; char-slice signatures declare `this`, and they reach a literal through
 ; method_params_match# rather than check_function_match#. The argument-type
@@ -92,6 +113,13 @@ let c Counter(1000)
 if c.weigh("as") <> 1212
     set ok: false
 if c.weigh("") <> 1000
+    set ok: false
+
+if length_of(keyword_for(true)) <> 13
+    set ok: false
+if length_of(keyword_for(false)) <> 8
+    set ok: false
+if untyped_binding_still_needs_the_construction() <> 3
     set ok: false
 
 if ok

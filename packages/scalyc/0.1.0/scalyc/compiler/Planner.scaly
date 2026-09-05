@@ -28864,6 +28864,23 @@ define Planner
             if Planner.type_is_float_like(rt)
                 if this.operand_is_float_constant(op)
                     return PlannedOperand^this(op.loc, op.expr, null, rt)
+            ; A string literal RETURNED into a Slice[char] — the same
+            ; materialisation the ARGUMENT position does
+            ; (materialize_string_operand_to_slice#), here for the other three
+            ; declared-type positions this function serves. It belongs beside
+            ; the three arms above rather than in a rule of its own: they are
+            ; one question asked at one place, and an asymmetry between the
+            ; argument and the return reads as a defect in whichever the reader
+            ; meets first. ★Without it a `returns Slice[char]` function cannot
+            ; be written with a literal at all — the conformance gate refuses
+            ; it, which is loud, but it refuses the very spelling the call
+            ; sites now use.
+            if Planner.type_is_char_slice(rt)
+                if this.operand_is_string_constant(op)
+                {
+                    let sliced this.materialize_string_operand_to_slice(op, rt)
+                    return PlannedOperand^this(sliced.loc, sliced.expr, sliced.member_access, sliced.result_type)
+                }
 
             choose op.expr
                 when ch: PlannedChoose
