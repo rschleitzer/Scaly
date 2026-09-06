@@ -948,11 +948,11 @@ define format
         sb.to_string()
     }
 
-    function key(rp, k: pointer[const_char]) returns String
+    function key(rp, k: Slice[char]) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)
-        sb.append k
+        sb.append(k.data, k.length)
         sb.append("\"" as char)
         sb.append(":" as char)
         sb.to_string()

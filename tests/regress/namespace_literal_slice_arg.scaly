@@ -1,0 +1,49 @@
+; Regression: a string LITERAL reaches a Slice[char] parameter of a NAMESPACE
+; function whose qualifier is ALSO the name of a Structure -- the compiler's own
+; shape (`define Planner { … define Planner (…) }`), where `Planner.make_
+; primitive_type("void", "v")` was a hard `function not found`.
+;
+; The qualifier resolves to the STRUCTURE, which declares no such static, so the
+; call falls to the dotted-call fallback (Planner.resolve_dotted_call#), which
+; used to hand the matcher an EMPTY operand vector -- and every literal fallback
+; of the matcher (the char fold, the float retype, the string-literal-into-Slice
+; materialisation) asks the OPERAND whether it is a constant. With explicit
+; `Slice[char](4, "void")` arguments the same call resolved, which is what hid
+; the gap: no port has a namespace and a structure of one name. Found 2026-09-06
+; converting the compiler's own ASCII-literal parameters. Under the previous
+; compiler this file is rc 4 (`function not found: Words.weigh`).
+;
+; Expected: PASS
+
+define Words
+{
+    function weigh(word: Slice[char]) returns int
+        word.length as int
+
+    function two(a: Slice[char], b: Slice[char]) returns int
+        (a.length as int) * 10 + (b.length as int)
+
+    ; The char fold through the same fallback.
+    function first(word: Slice[char], c: char) returns bool
+        word[0] = c
+
+    define Words (k: int)
+    {
+        function bump(this) returns int   k + 1
+    }
+}
+
+var ok true
+if Words.weigh("abc") <> 3
+    set ok: false
+if Words.two("void", "v") <> 41
+    set ok: false
+if Words.first("void", "v") = false
+    set ok: false
+if Words.first("void", "x")
+    set ok: false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"

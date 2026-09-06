@@ -49,6 +49,19 @@ function keyword_for(async: bool) returns Slice[char]
 ; nothing there declares a Slice, so a bare literal binds as a String and
 ; `.data`/`.length` then read the STRING's fields — the varint-prefixed
 ; `@.sconst`, not the plain `@.str`. It compiles and is silently wrong.
+; A TYPED binding and a `set` materialise too (2026-09-06, plan_binding# and
+; plan_action#): the declared type is in hand at both, and a converted routine
+; wants a local it can REBIND to another literal. `let`, `var` and `set` are
+; each covered; the lengths prove the view (not a String) landed in the slot.
+function rebound_view(right: bool) returns int
+{
+    let fixed: Slice[char] "left"
+    var side: Slice[char] "left"
+    if right
+        set side: "right"
+    (fixed.length as int) * 100 + (side.length as int)
+}
+
 function untyped_binding_still_needs_the_construction() returns int
 {
     let nm Slice[char](3, "NaN")
@@ -120,6 +133,11 @@ if length_of(keyword_for(true)) <> 13
 if length_of(keyword_for(false)) <> 8
     set ok: false
 if untyped_binding_still_needs_the_construction() <> 3
+    set ok: false
+
+if rebound_view(false) <> 404
+    set ok: false
+if rebound_view(true) <> 405
     set ok: false
 
 if ok

@@ -148,7 +148,22 @@ define json
 
     ; Look up a member of an object by key. Returns Null when the value is
     ; not an object or the key is absent.
-    function get(this: JsonValue, key: pointer[const_char]) returns JsonValue
+    ; A String member key against a `Slice[char]` literal, byte for byte, no allocation.
+    function key_equals(s: String, k: Slice[char]) returns bool
+    {
+        if s.get_length() <> k.length
+            return false
+        var i: size_t 0
+        while i < k.length
+        {
+            if s.get(i) <> (k[i] as u8)
+                return false
+            set i: i + 1
+        }
+        true
+    }
+
+    function get(this: JsonValue, key: Slice[char]) returns JsonValue
     {
         choose this
             when obj: Object
@@ -157,7 +172,7 @@ define json
                 while i < obj.count
                 {
                     let mm (*(obj.members + i))
-                    if mm.key = key
+                    if json.key_equals(mm.key, key)
                         return mm.value
 
                     set i: i + 1
@@ -553,16 +568,16 @@ define json
 
     ; Matches `lit` at the cursor; advances past it and returns true on a
     ; hit, leaves the cursor untouched and returns false on a miss.
-    function match_literal(p: ref[JsonParser], lit: pointer[const_char]) returns bool
+    function match_literal(p: ref[JsonParser], lit: Slice[char]) returns bool
     {
-        let len strlen lit
+        let len lit.length
         var i: size_t 0
         while i < len
         {
             if (p.pos + i) >= p.source.get_length()
                 return false
 
-            if p.source.get(p.pos + i) <> (*(lit as pointer[u8] + i))
+            if p.source.get(p.pos + i) <> (lit[i] as u8)
                 return false
 
             set i: i + 1

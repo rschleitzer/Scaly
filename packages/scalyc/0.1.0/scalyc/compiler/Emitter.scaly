@@ -7167,9 +7167,10 @@ define Emitter
         ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
         ; LLVMGetErrorMessage itself consumes the error and yields a C string the
         ; caller must dispose; do NOT also call LLVMConsumeError.
-        procedure report_jit_error(this, err: LLVMErrorRef, ctx: pointer[const_char])
+        procedure report_jit_error(this, err: LLVMErrorRef, ctx: Slice[char])
         {
-            Console.println ctx
+            write(1, ctx.data as pointer[void], ctx.length)
+            Console.println("")
             let msg LLVMGetErrorMessage(err)
             if msg <> null
             {

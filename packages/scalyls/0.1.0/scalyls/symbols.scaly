@@ -903,11 +903,11 @@ define symbols
     }
 
     ; `"key":`
-    function key(rp, k: pointer[const_char]) returns String
+    function key(rp, k: Slice[char]) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)
-        sb.append k
+        sb.append(k.data, k.length)
         sb.append("\"" as char)
         sb.append(":" as char)
         sb.to_string()
@@ -925,7 +925,7 @@ define symbols
     ; Code makes a span instead of a link) and suppresses the arguments; a
     ; non-empty one is invoked with `argument` as its single string parameter,
     ; which is all a JSON-RPC argument can carry.
-    function lens_object(rp, source: String, offset: size_t, width: size_t, title: String, command_id: pointer[const_char], argument: String) returns String
+    function lens_object(rp, source: String, offset: size_t, width: size_t, title: String, command_id: Slice[char], argument: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -939,9 +939,9 @@ define symbols
         sb.append("," as char)
         sb.append(symbols.key("command"))
         sb.append("\"" as char)
-        sb.append command_id
+        sb.append(command_id.data, command_id.length)
         sb.append("\"" as char)
-        let id String(command_id)
+        let id String(command_id.data, command_id.length)
         if id.get_length() > 0
         {
             sb.append("," as char)
@@ -3826,10 +3826,10 @@ define symbols
     ; SignatureHelp that pops up one keystroke later (signature_param_labels#
     ; drops it for the same reason), and two surfaces disagreeing about the
     ; arity of the same call is worse than either answer alone.
-    function routine_detail_text(rp, source: String, kind: pointer[const_char], routine: RoutineSyntax) returns String
+    function routine_detail_text(rp, source: String, kind: Slice[char], routine: RoutineSyntax) returns String
     {
         var sb StringBuilder()
-        sb.append kind
+        sb.append(kind.data, kind.length)
         if routine.generics <> null
         {
             let g (*routine.generics)
@@ -3906,7 +3906,7 @@ define symbols
     }
 
     ; The same, reached through a TargetSyntax (a named routine or a bare one).
-    function target_detail_text(rp, source: String, kind: pointer[const_char], target: TargetSyntax) returns String
+    function target_detail_text(rp, source: String, kind: Slice[char], target: TargetSyntax) returns String
     {
         choose target
             when named: NamedSyntax
@@ -6502,7 +6502,7 @@ define symbols
     }
 
     ; `kind name` when start <= offset < end, else "".
-    function hover_leaf(rp, source: String, start: size_t, end: size_t, offset: size_t, kind: pointer[const_char], name: String) returns String
+    function hover_leaf(rp, source: String, start: size_t, end: size_t, offset: size_t, kind: Slice[char], name: String) returns String
     {
         if offset >= start
             if offset < end
@@ -6716,10 +6716,10 @@ define symbols
     }
 
     ; `kind name`.
-    function kind_name_text(rp, kind: pointer[const_char], name: String) returns String
+    function kind_name_text(rp, kind: Slice[char], name: String) returns String
     {
         var sb StringBuilder()
-        sb.append kind
+        sb.append(kind.data, kind.length)
         sb.append(" " as char)
         sb.append name
         sb.to_string()
@@ -6735,11 +6735,11 @@ define symbols
     ; the enclosing routine and goToDefinition at the same position resolved
     ; correctly, i.e. the two contradicted each other. `in` costs three
     ; characters and cannot be read that way.
-    function enclosing_text(rp, kind: pointer[const_char], name: String) returns String
+    function enclosing_text(rp, kind: Slice[char], name: String) returns String
     {
         var sb StringBuilder()
         sb.append "in "
-        sb.append kind
+        sb.append(kind.data, kind.length)
         sb.append(" " as char)
         sb.append name
         sb.to_string()
@@ -6767,7 +6767,7 @@ define symbols
     ; --------------------------------------------------------------------
 
     ; Hover for a function / procedure / operator (top level or a member).
-    function hover_routine(rp, source: String, start: size_t, end: size_t, offset: size_t, kind: pointer[const_char], target: TargetSyntax) returns String
+    function hover_routine(rp, source: String, start: size_t, end: size_t, offset: size_t, kind: Slice[char], target: TargetSyntax) returns String
     {
         if offset < start
             return ""
@@ -6782,7 +6782,7 @@ define symbols
 
     ; The constituent under `offset`, or the whole signature; inside the body
     ; `in kind name`.
-    function hover_signature(rp, source: String, start: size_t, offset: size_t, kind: pointer[const_char], name: String, routine: RoutineSyntax) returns String
+    function hover_signature(rp, source: String, start: size_t, offset: size_t, kind: Slice[char], name: String, routine: RoutineSyntax) returns String
     {
         let body_start symbols.implementation_start(routine.implementation)
         if offset >= body_start
@@ -6837,10 +6837,10 @@ define symbols
     ; so the hover says what the line says (unlike signature_param_labels#,
     ; which feeds SignatureHelp at a CALL site, where the receiver is written
     ; before the dot and counting it would misalign activeParameter).
-    function routine_signature_text(rp, source: String, kind: pointer[const_char], name: String, routine: RoutineSyntax) returns String
+    function routine_signature_text(rp, source: String, kind: Slice[char], name: String, routine: RoutineSyntax) returns String
     {
         var sb StringBuilder()
-        sb.append kind
+        sb.append(kind.data, kind.length)
         sb.append(" " as char)
         sb.append name
         if routine.generics <> null
@@ -6866,10 +6866,10 @@ define symbols
 
     ; `role Type` — `returns pointer[OpenElement]`, `throws Error`. (`label` is
     ; a reserved word, hence `role`.)
-    function labeled_type_text(rp, role: pointer[const_char], source: String, ty: TypeSyntax) returns String
+    function labeled_type_text(rp, role: Slice[char], source: String, ty: TypeSyntax) returns String
     {
         var sb StringBuilder()
-        sb.append role
+        sb.append(role.data, role.length)
         sb.append(" " as char)
         sb.append(symbols.type_text(source, ty))
         sb.to_string()

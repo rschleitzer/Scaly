@@ -818,7 +818,7 @@ define worker
         ANALYZE_TIMEOUT_MS
     }
 
-    function exchange(rp, kind: pointer[const_char], uri: String, text: String, position: String, fallback: String) returns String
+    function exchange(rp, kind: Slice[char], uri: String, text: String, position: String, fallback: String) returns String
     {
         var attempts: int 0
         while attempts < 2
@@ -831,7 +831,7 @@ define worker
 
             ; Send the request as four raw frames: kind, uri, doc text,
             ; packed cursor position.
-            let kind_str String(kind)
+            let kind_str String(kind.data, kind.length)
             rpc.write_message_fd(worker_in, kind_str)
             rpc.write_message_fd(worker_in, uri)
             rpc.write_message_fd(worker_in, text)
@@ -859,7 +859,7 @@ define worker
                 ; broken. One line here is the difference between "go to
                 ; definition sometimes does nothing" and a budget to raise.
                 scaly_eputs "scalyls: request '"
-                scaly_eputs kind
+                write(2, kind.data as pointer[void], kind.length)
                 scaly_eputs "' exceeded its "
                 scaly_eputi(budget as i64)
                 scaly_eputs " ms budget - answering empty, respawning worker\n"

@@ -164,10 +164,10 @@ define Planner
     ; logic gets a precise, visible failure (not a silent null).
     ; ========================================================================
 
-    function not_implemented(method_name: pointer[const_char]) returns int
+    function not_implemented(method_name: Slice[char]) returns int
     {
         scaly_eputs "scalyc Planner stub not implemented: "
-        scaly_eputs method_name
+        write(2, method_name.data as pointer[void], method_name.length)
         scaly_eputs "\n"
         exit 111
         0
@@ -177,7 +177,7 @@ define Planner
     ; The exit() in not_implemented terminates the process, so the dummy
     ; PlannedOperand below is never observed — it exists only so Scaly's
     ; type checker accepts the call site.
-    function not_implemented_operand(method_name: pointer[const_char]) returns PlannedOperand
+    function not_implemented_operand(method_name: Slice[char]) returns PlannedOperand
     {
         Planner.not_implemented method_name
         PlannedOperand(
@@ -6713,7 +6713,8 @@ define Planner
             this: Planner,
             prefix: String,
             suffix: String,
-            arg_types: Vector[PlannedType]
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
             if arg_types.length > 0
@@ -6721,16 +6722,27 @@ define Planner
                 if this.is_namespace_this_method(prefix, suffix)
                 {
                     var tail_arr Array[PlannedType]()
+                    var tail_ops_arr Array[PlannedOperand]()
                     var tci: size_t 1
                     while tci < arg_types.length
                     {
                         let tap arg_types.get tci
                         if tap <> null
                             tail_arr.add((*tap))
+                        ; The operands travel with the types (see
+                        ; resolve_dotted_call#); an operand list of another
+                        ; length is not this call's and is dropped whole.
+                        if arg_ops.length = arg_types.length
+                        {
+                            let top arg_ops.get tci
+                            if top <> null
+                                tail_ops_arr.add((*top))
+                        }
                         set tci: tci + 1
                     }
                     var tail_vec Vector[PlannedType](tail_arr)
-                    return this.resolve_function_call(suffix, tail_vec, Vector[PlannedOperand]())
+                    var tail_ops Vector[PlannedOperand](tail_ops_arr)
+                    return this.resolve_function_call(suffix, tail_vec, tail_ops)
                 }
             }
             null
@@ -6824,11 +6836,23 @@ define Planner
         ; statement — adding a branch there perturbed its s178 alloca pool.
         ; Try the normal this-implicit overload first; if that misses, try the
         ; namespace this-method-with-explicit-receiver form.
+        ; ★★★The OPERANDS travel with the types since 2026-09-06. Both resolves
+        ; below used to hand resolve_function_call# an EMPTY operand vector, and
+        ; every literal fallback of the matcher (the char fold, the float retype,
+        ; the string-literal-into-Slice[char] materialisation) asks the OPERAND
+        ; whether it is a constant -- with no operands in hand the fallback pass
+        ; never matched, and a NAMESPACE function taking a `Slice[char]` could
+        ; not be reached by a literal at all: `Planner.make_primitive_type("void",
+        ; "v")` was a hard "function not found" while the identical call on a
+        ; Structure's static resolved (that path selects by name and arity and
+        ; folds at the construction site). Found converting the compiler's own
+        ; ASCII-literal parameters; gate `tests/regress/namespace_literal_slice_arg.scaly`.
         function resolve_dotted_call(
             this: Planner,
             prefix: String,
             suffix: String,
-            arg_types: Vector[PlannedType]
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
             ; A qualified static call on a Structure concept — defer to the s155
@@ -6837,10 +6861,10 @@ define Planner
             ; from stealing a same-named free function.
             if this.concept_has_static(prefix, suffix)
                 return null
-            let m this.resolve_function_call(suffix, arg_types, Vector[PlannedOperand]())
+            let m this.resolve_function_call(suffix, arg_types, arg_ops)
             if m <> null
                 return m
-            this.resolve_namespace_this_method(prefix, suffix, arg_types)
+            this.resolve_namespace_this_method(prefix, suffix, arg_types, arg_ops)
         }
 
         ; resolve_static_method_on: resolve an UNQUALIFIED bare call `fn_name`
@@ -11649,7 +11673,7 @@ define Planner
                                 ; diamond) perturbed the pool's liveness and aliased
                                 ; match_ref onto a recycled slot (two_vec), losing
                                 ; the value before the final mangled-name read.
-                                set match_ref: this.resolve_dotted_call(prefix, suffix, arg_types)
+                                set match_ref: this.resolve_dotted_call(prefix, suffix, arg_types, arg_ops)
 
                                 if match_ref <> null
                                 {
@@ -22339,6 +22363,19 @@ define Planner
                     )
                 }
 
+            ; String literal in a Slice[char]-annotated binding
+            ; (`var s: Slice[char] "text"`): the same materialisation the
+            ; argument and the return position do
+            ; (materialize_string_operand_to_slice#). Added 2026-09-06 with the
+            ; ASCII-literal parameter campaign: a converted routine wants a
+            ; local it can REBIND to another literal (`var side: Slice[char]
+            ; "left"` … `set side: "right"`), and without this the conformance
+            ; gate below refused the very spelling the parameters now use. The
+            ; assignment-side counterpart is in plan_action#.
+            if Planner.type_is_char_slice(binding_type)
+                if this.operand_is_string_constant(collapsed)
+                    set collapsed: this.materialize_string_operand_to_slice(collapsed, binding_type)
+
             ; Float literal in a float-annotated binding (`var x: float 1.5`):
             ; retype the default-f64 literal to the annotated width so the
             ; alloca, the store and every later load agree on the slot type.
@@ -24973,6 +25010,17 @@ define Planner
             if a.target.length > 0
                 if set_stores_through = false
                     this.report_unassignable_ref_target(planned_target_collapsed, planned_target_collapsed.loc)
+
+            ; String literal assigned into a Slice[char] target (`set s: "text"`
+            ; with s a Slice[char] local or field): materialise the view, as
+            ; plan_binding# does for a typed binding since 2026-09-06. AHEAD of
+            ; the conformance report below -- the cstr wrap further down may sit
+            ; after it because a String into a pointer[const_char] is accepted
+            ; by the conformance classes anyway; a String into a Slice is not.
+            if a.target.length > 0
+                if Planner.type_is_char_slice(planned_target_collapsed.result_type)
+                    if this.operand_is_string_constant(planned_source_collapsed)
+                        set planned_source_collapsed: this.materialize_string_operand_to_slice(planned_source_collapsed, planned_target_collapsed.result_type)
 
             ; A `ref[T]` source into a `T` target is the VALUE, not the
             ; reference -- deref_ref_into_pointee#. Ahead of the conformance
@@ -37545,12 +37593,12 @@ define Planner
     ; go through these factories so the codes stay consistent everywhere.
     ; ========================================================================
 
-    function make_primitive_type(name: pointer[const_char], mangled: pointer[const_char]) returns PlannedType
+    function make_primitive_type(name: Slice[char], mangled: Slice[char]) returns PlannedType
     {
         PlannedType(
             Span(0, 0),
-            String(name),
-            String(mangled),
+            String(name.data, name.length),
+            String(mangled.data, mangled.length),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,

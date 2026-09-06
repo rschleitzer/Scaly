@@ -1503,22 +1503,22 @@ define server
     }
 
     ; `"key":`  (quoted key followed by a colon)
-    function key(rp, k: pointer[const_char]) returns String
+    function key(rp, k: Slice[char]) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)
-        sb.append k
+        sb.append(k.data, k.length)
         sb.append("\"" as char)
         sb.append(":" as char)
         sb.to_string()
     }
 
     ; `"s"`  (quoted string literal; no escaping — fixed ASCII only)
-    function quoted(rp, s: pointer[const_char]) returns String
+    function quoted(rp, s: Slice[char]) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)
-        sb.append s
+        sb.append(s.data, s.length)
         sb.append("\"" as char)
         sb.to_string()
     }
