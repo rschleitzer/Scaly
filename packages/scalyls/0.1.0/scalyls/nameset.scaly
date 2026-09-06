@@ -40,12 +40,11 @@ function malloc(size: size_t) returns pointer[void] extern
 ; drops a name (it then colours by shape, not a crash).
 define NS_CAP int 32768
 
-; One table slot: a BORROWED pointer/length into a name list's buffer, the
+; One table slot: a BORROWED view into a name list's buffer, the
 ; token type to colour the name (1 type / 2 function), and a `used` flag.
 define NameSlot
 (
-    name_ptr: pointer[u8]
-    name_len: size_t
+    name:     Slice[u8]
     kind:     i64
     used:     bool
 )
@@ -113,8 +112,8 @@ define nameset
         {
             let s slots + i
             set s.used: false
-            set s.name_ptr: null
-            set s.name_len: 0
+            set s.name.data: null
+            set s.name.length: 0
             set s.kind: 0 - 1
             set i: i + 1
         }
@@ -127,13 +126,13 @@ define nameset
             free(slots as pointer[void])
     }
 
-    ; Insert (or raise the kind of) the name at name_ptr[0,name_len) with the
+    ; Insert (or raise the kind of) the name `name` views with the
     ; precomputed hash `h`. Open addressing, linear probe. An existing entry for
     ; the same name is only ever raised (kind 2 function > 1 type), so function
     ; wins regardless of order. A full table drops the name silently.
-    procedure insert(slots: pointer[NameSlot], cap: size_t, name_ptr: pointer[u8], name_len: size_t, h: size_t, kind: i64)
+    procedure insert(slots: pointer[NameSlot], cap: size_t, name: Slice[u8], h: size_t, kind: i64)
     {
-        if name_len > 0
+        if name.length > 0
         {
             let mask cap - 1
             var idx h & mask
@@ -143,14 +142,13 @@ define nameset
                 let s slots + idx
                 if s.used = false
                 {
-                    set s.name_ptr: name_ptr
-                    set s.name_len: name_len
+                    set s.name: name
                     set s.kind: kind
                     set s.used: true
                     return
                 }
-                if s.name_len = name_len
-                    if nameset.eq_ptr(Slice[u8](s.name_len, s.name_ptr), Slice[u8](name_len, name_ptr))
+                if s.name.length = name.length
+                    if nameset.eq_ptr(s.name, name)
                     {
                         if kind > s.kind
                             set s.kind: kind
@@ -170,8 +168,8 @@ define nameset
         let llen list.get_length()
         if llen > 0
         {
-            let base list.get_buffer()
-            if base <> null
+            let base list.as_slice()
+            if base.length = llen
             {
                 var i: size_t 0
                 while i < llen
@@ -191,8 +189,9 @@ define nameset
                     let seglen j - i
                     if seglen > 0
                     {
-                        let h nameset.hash_ptr(Slice[u8](seglen, base + i))
-                        nameset.insert(slots, cap, base + i, seglen, h, kind)
+                        let seg base.subslice(i, j)
+                        let h nameset.hash_ptr(seg)
+                        nameset.insert(slots, cap, seg, h, kind)
                     }
                     set i: j
                 }
@@ -208,11 +207,11 @@ define nameset
             let tlen end - start
             if tlen > 0
             {
-                let sbuf source.get_buffer()
-                if sbuf <> null
+                let sbuf source.as_slice()
+                if sbuf.length >= end
                 {
-                    let sp sbuf + start
-                    let h nameset.hash_ptr(Slice[u8](tlen, sp))
+                    let sp sbuf.subslice(start, end)
+                    let h nameset.hash_ptr(sp)
                     let mask cap - 1
                     var idx h & mask
                     var probes: size_t 0
@@ -221,8 +220,8 @@ define nameset
                         let s slots + idx
                         if s.used = false
                             return (0 - 1) as i64
-                        if s.name_len = tlen
-                            if nameset.eq_ptr(Slice[u8](s.name_len, s.name_ptr), Slice[u8](tlen, sp))
+                        if s.name.length = tlen
+                            if nameset.eq_ptr(s.name, sp)
                                 return s.kind
                         set idx: (idx + 1) & mask
                         set probes: probes + 1

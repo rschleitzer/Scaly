@@ -803,12 +803,12 @@ define symbols
     ; The column of `lf` — the offset of an LF byte — i.e. the distance back to
     ; the byte after the previous LF. Bounded by one line's length, and reached
     ; only when a BACKWARD step crosses a line boundary.
-    function line_cursor_column_before(data: pointer[u8], lf: size_t) returns size_t
+    function line_cursor_column_before(text: Slice[u8], lf: size_t) returns size_t
     {
         var i lf
         while i > 0
         {
-            if *(data + (i - 1)) = 0x0A
+            if text[i - 1] = 0x0A
                 return lf - i
             set i: i - 1
         }
@@ -821,6 +821,7 @@ define symbols
     procedure line_cursor_seek(target: size_t)
     {
         let data lc_data
+        let text Slice[u8](lc_len, data)
         while lc_off < target
         {
             let c *(data + lc_off)
@@ -843,7 +844,7 @@ define symbols
             if c = 0x0A
             {
                 set lc_line: lc_line - 1
-                set lc_col: symbols.line_cursor_column_before(data, lc_off)
+                set lc_col: symbols.line_cursor_column_before(text, lc_off)
             }
             ; Otherwise the byte just stepped over is an ordinary one, so the
             ; column is one smaller — and it cannot be 0 here, since a column of
