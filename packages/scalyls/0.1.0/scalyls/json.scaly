@@ -36,11 +36,11 @@ use scaly.memory.runtime
 ; Empty payload for the Null variant (see PAYLOADLESS-VARIANT NOTE).
 define JsonNull ()
 
-; A contiguous, count-tagged run of JsonValues / JsonMembers. `items` /
-; `members` is null when count is 0.
-define JsonArray (count: size_t, items: pointer[JsonValue])
+; A contiguous run of JsonValues / JsonMembers as a view (length + buffer);
+; an empty array / object holds the empty view.
+define JsonArray (items: Slice[JsonValue])
 define JsonMember (key: String, value: JsonValue)
-define JsonObject (count: size_t, members: pointer[JsonMember])
+define JsonObject (members: Slice[JsonMember])
 
 define JsonValue union
 (
@@ -125,7 +125,7 @@ define json
     {
         choose this
             when arr: Array
-                arr.count
+                arr.items.length
             else
                 0 as size_t
     }
@@ -137,10 +137,10 @@ define json
         choose this
             when arr: Array
             {
-                if i >= arr.count
+                if i >= arr.items.length
                     return JsonValue.Null(JsonNull())
 
-                *(arr.items + i)
+                arr.items[i]
             }
             else
                 json.null_value()
@@ -169,9 +169,9 @@ define json
             when obj: Object
             {
                 var i: size_t 0
-                while i < obj.count
+                while i < obj.members.length
                 {
-                    let mm (*(obj.members + i))
+                    let mm obj.members[i]
                     if json.key_equals(mm.key, key)
                         return mm.value
 
@@ -263,17 +263,17 @@ define json
 
         ; Materialize the List into a contiguous, order-preserving buffer.
         if count = 0
-            return JsonValue.Object(JsonObject(0, null))
+            return JsonValue.Object(JsonObject(null))
 
-        let buf rp.allocate(count * sizeof JsonMember, alignof JsonMember) as pointer[JsonMember]
+        let buf allocate_slice[JsonMember](rp as ref[Page], count)
         var it members.get_iterator()
         var i count
         while let m it.next()
         {
             set i: i - 1
-            set *(buf + i): *m
+            buf.put(i, *m)
         }
-        JsonValue.Object(JsonObject(count, buf))
+        JsonValue.Object(JsonObject(buf))
     }
 
     function parse_array(rp, p: ref[JsonParser]) returns JsonValue
@@ -306,17 +306,17 @@ define json
         }
 
         if count = 0
-            return JsonValue.Array(JsonArray(0, null))
+            return JsonValue.Array(JsonArray(null))
 
-        let buf rp.allocate(count * sizeof JsonValue, alignof JsonValue) as pointer[JsonValue]
+        let buf allocate_slice[JsonValue](rp as ref[Page], count)
         var it items.get_iterator()
         var i count
         while let e it.next()
         {
             set i: i - 1
-            set *(buf + i): *e
+            buf.put(i, *e)
         }
-        JsonValue.Array(JsonArray(count, buf))
+        JsonValue.Array(JsonArray(buf))
     }
 
     function parse_string(rp, p: ref[JsonParser]) returns String
@@ -623,12 +623,12 @@ define json
                 var sb StringBuilder()
                 sb.append("[" as char)    ; '['
                 var i: size_t 0
-                while i < arr.count
+                while i < arr.items.length
                 {
                     if i > 0
                         sb.append("," as char)       ; ','
 
-                    sb.append(json.stringify(*(arr.items + i)))
+                    sb.append(json.stringify(arr.items[i]))
                     set i: i + 1
                 }
                 sb.append("]" as char)    ; ']'
@@ -639,12 +639,12 @@ define json
                 var sb StringBuilder()
                 sb.append("{" as char)    ; '{'
                 var i: size_t 0
-                while i < obj.count
+                while i < obj.members.length
                 {
                     if i > 0
                         sb.append("," as char)
 
-                    let mm (*(obj.members + i))
+                    let mm obj.members[i]
                     sb.append(json.quote_string(mm.key))
                     sb.append(":" as char)           ; ':'
                     sb.append(json.stringify(mm.value))
