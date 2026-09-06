@@ -2757,6 +2757,15 @@ define Planner
                 return true
             if t.name = "i8"
                 return true
+            ; A DEREFERENCED `pointer[const_char]` is a byte too: `*(t + 1) <> "C"`
+            ; folded nothing, so the literal stayed a String STRUCT beside an i8,
+            ; and the `<>` arm of the emitter dropped the whole `if` in silence --
+            ; tests/regress/cstr_literal_return.scaly passed with five of its
+            ; checks never run (found 2026-09-06 when that bail became loud).
+            ; `const_char` stays a pointee marker everywhere else (see
+            ; is_primitive_type_name); this predicate feeds only the literal folds.
+            if t.name = "const_char"
+                return true
             false
         }
 
@@ -13838,19 +13847,16 @@ define Planner
                     ; constant is a POINTER — the raw comparison was a silent
                     ; pointer compare). Multi-byte strings hard-error inside
                     ; the fold.
-                    var lhs_is_charlike: bool false
-                    if result.result_type.name = "char"
-                        set lhs_is_charlike: true
-                    if result.result_type.name = "u8"
-                        set lhs_is_charlike: true
+                    ; ★Through type_is_char_like# since 2026-09-06 -- the inline
+                    ; `char`/`u8` name tests that stood here missed `i8` and the
+                    ; DEREFERENCED `pointer[const_char]`, so `*(t + 1) <> "C"` kept
+                    ; a String struct beside an i8 and the emitter dropped the `if`
+                    ; (tests/regress/cstr_literal_return.scaly ran none of its checks).
+                    let lhs_is_charlike Planner.type_is_char_like(result.result_type)
                     if lhs_is_charlike
                         if this.operand_is_string_constant(rhs)
                             set rhs: this.fold_string_operand_to_char(rhs, result.result_type)
-                    var rhs_is_charlike: bool false
-                    if rhs.result_type.name = "char"
-                        set rhs_is_charlike: true
-                    if rhs.result_type.name = "u8"
-                        set rhs_is_charlike: true
+                    let rhs_is_charlike Planner.type_is_char_like(rhs.result_type)
                     if rhs_is_charlike
                         if this.operand_is_string_constant(result)
                             set result: this.fold_string_operand_to_char(result, rhs.result_type)

@@ -11492,8 +11492,27 @@ define Emitter
                 if is_float
                     return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), l, r, "eq")
 
+                ; ★★★LOUD since 2026-09-06. The silent `return null` here turned a
+                ; comparison into a CONSTANT false (the grouped `(list[i]) = ent`
+                ; above, rc 0, for the whole life of the grove port). A kind
+                ; mismatch at this point is a planner or emitter defect, never
+                ; a program's -- the compile aborts and names the function.
                 if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
-                    return null
+                {
+                    scaly_eputs "Emitter: '=' between operands of different LLVM kinds in "
+                    let kind_fn current_function_label()
+                    scaly_eputs kind_fn
+                    scaly_eputs ": "
+                    let kind_l LLVMPrintTypeToString(LLVMTypeOf l)
+                    scaly_eputs(kind_l as pointer[const_char])
+                    scaly_eputs " vs "
+                    let kind_r LLVMPrintTypeToString(LLVMTypeOf r)
+                    scaly_eputs(kind_r as pointer[const_char])
+                    scaly_eputs "\n"
+                    LLVMDisposeMessage kind_l
+                    LLVMDisposeMessage kind_r
+                    exit 14
+                }
                 return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), l, r, "eq")
             }
 
@@ -11503,7 +11522,21 @@ define Emitter
                     return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), l, r, "ne")
 
                 if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
-                    return null
+                {
+                    scaly_eputs "Emitter: '<>' between operands of different LLVM kinds in "
+                    let kind_fn current_function_label()
+                    scaly_eputs kind_fn
+                    scaly_eputs ": "
+                    let kind_l LLVMPrintTypeToString(LLVMTypeOf l)
+                    scaly_eputs(kind_l as pointer[const_char])
+                    scaly_eputs " vs "
+                    let kind_r LLVMPrintTypeToString(LLVMTypeOf r)
+                    scaly_eputs(kind_r as pointer[const_char])
+                    scaly_eputs "\n"
+                    LLVMDisposeMessage kind_l
+                    LLVMDisposeMessage kind_r
+                    exit 14
+                }
                 return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), l, r, "ne")
             }
 
@@ -11624,19 +11657,28 @@ define Emitter
                                 if LLVMGetTypeKind(result_ty) = LLVMTypeKind.Pointer()
                                     return option_value
 
-                                ; Regular union case - option_value is pointer to union
-                                ; Union layout: { i8 tag, [N x i8] payload }
-                                ; GEP to field 1 (payload) and load
-                                let option_type LLVMTypeOf(option_value)
-
-                                ; Try to get struct type from cache
-                                ; For now, use direct load assuming NPO representation
-                                return LLVMBuildLoad2(builder, result_ty, option_value, "unwrap.value")
+                                ; A POINTER TO A NON-NPO UNION `{ i8 tag, [N x i8] payload }`:
+                                ; the payload is FIELD 1. ★This arm used to load `result_ty`
+                                ; from the union's own address -- byte 0, the TAG -- and the
+                                ; arm below handed a union VALUE back as if it were the T.
+                                ; Both were silent: `o.unwrap() <> 42` on an `Option[int]`
+                                ; compared a union struct with an i64, and the emitter's
+                                ; kind-mismatch bail dropped the `if` (2026-09-06, found by
+                                ; making that bail loud; tests/regress/user_option_result_
+                                ; slice.scaly had never run that check).
+                                let union_ty map_type(arg.unwrap().result_type)
+                                if union_ty = null
+                                    return null
+                                let payload_ptr LLVMBuildStructGEP2(builder, union_ty, option_value, 1, "unwrap.payload")
+                                return LLVMBuildLoad2(builder, result_ty, payload_ptr, "unwrap.value")
                             }
 
-                            ; If option_value is already a struct value, extract field 1
-                            ; This shouldn't normally happen for well-formed code
-                            return option_value
+                            ; A non-NPO union VALUE: spill it and read the payload at field 1.
+                            let option_type LLVMTypeOf(option_value)
+                            let spill acquire_temp(option_type, "unwrap.spill")
+                            LLVMBuildStore(builder, option_value, spill)
+                            let payload_ptr2 LLVMBuildStructGEP2(builder, option_type, spill, 1, "unwrap.payload")
+                            return LLVMBuildLoad2(builder, result_ty, payload_ptr2, "unwrap.value")
                         }
                     }
                 }
@@ -11951,6 +11993,33 @@ define Emitter
                     }
                 }
             }
+
+            ; ★★★A single anonymous component whose tuple_type is an NPO Option
+            ; (`Option[ref[T]]`, pointer-shaped) is a GROUPING -- `(list[i])`
+            ; around a subscript into a container of nullable references --
+            ; never a construction, and the cache lookup above cannot tell:
+            ; it asks the NAME "Option", and some other instantiation of
+            ; Option sits in the cache as a struct. Measured 2026-09-06:
+            ; `(list[i]) = ent` built a `{ ptr }` wrapper around the loaded
+            ; pointer, the `=` arm of emit_intrinsic_binary_op bailed on the
+            ; kind mismatch, and the comparison answered CONSTANT false at
+            ; rc 0 -- dazzle's `GroveInfo.entity_is_defaulted`, the grove
+            ; props3 red. The paren-free `list[i] = ent` never came here.
+            ; Ask the SHAPE (is_npo_option), never the name; gate
+            ; tests/regress/grouped_optional_element_compare.scaly.
+            if is_struct_construction
+                if tuple.components.length = 1
+                    if is_npo_option(tuple.tuple_type)
+                    {
+                        let g_first tuple.components.get 0
+                        if g_first <> null
+                        {
+                            let gf (*g_first)
+                            if gf.name = null
+                                if gf.value <> null
+                                    return emit_operands gf.value
+                        }
+                    }
 
             ; s160: a single anonymous component wrapping a struct deref
             ; `(*ptr)` is a GROUPING, not a construction, even when tuple_type

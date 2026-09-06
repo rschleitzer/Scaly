@@ -70,7 +70,11 @@ if s.is_empty()
     print("FAIL")
     exit 10
 }
-if *(s.get(1)) <> 20
+; `*(s.get(1)) <> 20` stood here and was never checked: the deref of the
+; `ref[int]?` is typed as the reference, the compare of a pointer with an int
+; has no arm, and the emitter dropped the whole `if` in silence until 2026-09-06
+; (the bail is loud now). The element access is `s[1]`.
+if s[1] <> 20
 {
     print("FAIL")
     exit 11

@@ -20,28 +20,12 @@ define List[T]
         i
     }
 
-    function remove(this: List[T], element: T) returns bool
-    {
-        var node head
-        var previous_node: pointer[Node[T]] null
-        while node <> null
-        {
-            if node.element = element
-            {
-                if previous_node <> null
-                    set previous_node.next: node.next
-
-                if node = head
-                    set head: node.next
-
-                return true
-            }
-            set previous_node: node
-            set node: node.next
-        }
-
-        false
-    }
+    ; ★`remove(element: T)` is GONE (2026-09-06), like BuilderList's: it compared
+    ; `node.element = element` on a GENERIC T, which has no equality for a struct
+    ; T, and a method is emitted for EVERY instantiation (List[Slot[String]],
+    ; List[WhenSyntax], ...). The emitter used to drop the whole `if` silently;
+    ; the loud kind-mismatch gate in emit_intrinsic_binary_op found it. Nothing
+    ; in the tree called it (PageList and ISet carry their own `remove`).
 
     function get_iterator(this: List[T]) returns ListIterator[T]
         ListIterator[T](head)

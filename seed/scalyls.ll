@@ -3310,73 +3310,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListIcE6removeEc(ptr %0, i8 %1) {
-entry:
-  %load.struct = load %_Z4ListIcE, ptr %0, align 8
-  %head = extractvalue %_Z4ListIcE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeIcE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeIcE %load.struct3, 0
-  %eq = icmp eq i8 %element, %1
-  br i1 %eq, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-
-if.then:                                          ; preds = %while.body
-  %previous_node4 = load ptr, ptr %previous_node, align 8
-  %ne5 = icmp ne ptr %previous_node4, null
-  br i1 %ne5, label %if.then6, label %if.end7
-
-if.end:                                           ; preds = %while.body
-  %node21 = load ptr, ptr %node, align 8
-  store ptr %node21, ptr %previous_node, align 1
-  %node22 = load ptr, ptr %node, align 8
-  %load.struct23 = load %_Z4NodeIcE, ptr %node22, align 8
-  %next24 = extractvalue %_Z4NodeIcE %load.struct23, 1
-  store ptr %next24, ptr %node, align 1
-  br label %while.cond
-
-if.then6:                                         ; preds = %if.then
-  %node8 = load ptr, ptr %node, align 8
-  %load.struct9 = load %_Z4NodeIcE, ptr %node8, align 8
-  %next = extractvalue %_Z4NodeIcE %load.struct9, 1
-  %ptr.load = load ptr, ptr %previous_node, align 8
-  %next10 = getelementptr inbounds nuw %_Z4NodeIcE, ptr %ptr.load, i32 0, i32 1
-  store ptr %next, ptr %next10, align 8
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.then6, %if.then
-  %node11 = load ptr, ptr %node, align 8
-  %load.struct12 = load %_Z4ListIcE, ptr %0, align 8
-  %head13 = extractvalue %_Z4ListIcE %load.struct12, 0
-  %eq14 = icmp eq ptr %node11, %head13
-  br i1 %eq14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end7
-  %node17 = load ptr, ptr %node, align 8
-  %load.struct18 = load %_Z4NodeIcE, ptr %node17, align 8
-  %next19 = extractvalue %_Z4NodeIcE %load.struct18, 1
-  %head20 = getelementptr inbounds nuw %_Z4ListIcE, ptr %0, i32 0, i32 0
-  store ptr %next19, ptr %head20, align 8
-  br label %if.end16
-
-if.end16:                                         ; preds = %if.then15, %if.end7
-  ret i1 true
-}
-
 define linkonce_odr void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListIcE, ptr %2, align 8
@@ -4531,37 +4464,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI10JsonMemberE6removeE10JsonMember(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI10JsonMemberE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI10JsonMemberE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI10JsonMemberE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI10JsonMemberE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI10JsonMemberE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI10JsonMemberE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI10JsonMemberE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI10JsonMemberE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI10JsonMemberE, ptr %2, align 8
@@ -4676,37 +4578,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI9JsonValueE6removeE9JsonValue(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI9JsonValueE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI9JsonValueE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI9JsonValueE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI9JsonValueE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI9JsonValueE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI9JsonValueE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI9JsonValueE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueE) %0, ptr %1, ptr %2) {
@@ -7457,72 +7328,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI6StringE6removeE6String(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6StringE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6StringE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %base.deref = load ptr, ptr %node, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z4NodeI6StringE, ptr %base.deref, i32 0, i32 0
-  %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %1)
-  br i1 %call, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-
-if.then:                                          ; preds = %while.body
-  %previous_node2 = load ptr, ptr %previous_node, align 8
-  %ne3 = icmp ne ptr %previous_node2, null
-  br i1 %ne3, label %if.then4, label %if.end5
-
-if.end:                                           ; preds = %while.body
-  %node18 = load ptr, ptr %node, align 8
-  store ptr %node18, ptr %previous_node, align 1
-  %node19 = load ptr, ptr %node, align 8
-  %load.struct20 = load %_Z4NodeI6StringE, ptr %node19, align 8
-  %next21 = extractvalue %_Z4NodeI6StringE %load.struct20, 1
-  store ptr %next21, ptr %node, align 1
-  br label %while.cond
-
-if.then4:                                         ; preds = %if.then
-  %node6 = load ptr, ptr %node, align 8
-  %load.struct7 = load %_Z4NodeI6StringE, ptr %node6, align 8
-  %next = extractvalue %_Z4NodeI6StringE %load.struct7, 1
-  %ptr.load = load ptr, ptr %previous_node, align 8
-  %next8 = getelementptr inbounds nuw %_Z4NodeI6StringE, ptr %ptr.load, i32 0, i32 1
-  store ptr %next, ptr %next8, align 8
-  br label %if.end5
-
-if.end5:                                          ; preds = %if.then4, %if.then
-  %node9 = load ptr, ptr %node, align 8
-  %load.struct10 = load %_Z4ListI6StringE, ptr %0, align 8
-  %head11 = extractvalue %_Z4ListI6StringE %load.struct10, 0
-  %eq = icmp eq ptr %node9, %head11
-  br i1 %eq, label %if.then12, label %if.end13
-
-if.then12:                                        ; preds = %if.end5
-  %node14 = load ptr, ptr %node, align 8
-  %load.struct15 = load %_Z4NodeI6StringE, ptr %node14, align 8
-  %next16 = extractvalue %_Z4NodeI6StringE %load.struct15, 1
-  %head17 = getelementptr inbounds nuw %_Z4ListI6StringE, ptr %0, i32 0, i32 0
-  store ptr %next16, ptr %head17, align 8
-  br label %if.end13
-
-if.end13:                                         ; preds = %if.then12, %if.end5
-  ret i1 true
-}
-
 define linkonce_odr void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI6StringE, ptr %2, align 8
@@ -8831,37 +8636,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI6VectorI6StringEE6removeE6VectorI6StringE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6VectorI6StringEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6VectorI6StringEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6VectorI6StringEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6VectorI6StringEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6VectorI6StringEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6VectorI6StringEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI6StringEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI6VectorI6StringEE, ptr %2, align 8
@@ -9033,72 +8807,6 @@ entry:
   ret void
 }
 
-define linkonce_odr i1 @_ZN11BuilderListI6StringE6removeE6String(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z11BuilderListI6StringE, ptr %0, align 8
-  %head = extractvalue %_Z11BuilderListI6StringE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %base.deref = load ptr, ptr %node, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z4NodeI6StringE, ptr %base.deref, i32 0, i32 0
-  %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %1)
-  br i1 %call, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-
-if.then:                                          ; preds = %while.body
-  %previous_node2 = load ptr, ptr %previous_node, align 8
-  %ne3 = icmp ne ptr %previous_node2, null
-  br i1 %ne3, label %if.then4, label %if.end5
-
-if.end:                                           ; preds = %while.body
-  %node18 = load ptr, ptr %node, align 8
-  store ptr %node18, ptr %previous_node, align 1
-  %node19 = load ptr, ptr %node, align 8
-  %load.struct20 = load %_Z4NodeI6StringE, ptr %node19, align 8
-  %next21 = extractvalue %_Z4NodeI6StringE %load.struct20, 1
-  store ptr %next21, ptr %node, align 1
-  br label %while.cond
-
-if.then4:                                         ; preds = %if.then
-  %node6 = load ptr, ptr %node, align 8
-  %load.struct7 = load %_Z4NodeI6StringE, ptr %node6, align 8
-  %next = extractvalue %_Z4NodeI6StringE %load.struct7, 1
-  %ptr.load = load ptr, ptr %previous_node, align 8
-  %next8 = getelementptr inbounds nuw %_Z4NodeI6StringE, ptr %ptr.load, i32 0, i32 1
-  store ptr %next, ptr %next8, align 8
-  br label %if.end5
-
-if.end5:                                          ; preds = %if.then4, %if.then
-  %node9 = load ptr, ptr %node, align 8
-  %load.struct10 = load %_Z11BuilderListI6StringE, ptr %0, align 8
-  %head11 = extractvalue %_Z11BuilderListI6StringE %load.struct10, 0
-  %eq = icmp eq ptr %node9, %head11
-  br i1 %eq, label %if.then12, label %if.end13
-
-if.then12:                                        ; preds = %if.end5
-  %node14 = load ptr, ptr %node, align 8
-  %load.struct15 = load %_Z4NodeI6StringE, ptr %node14, align 8
-  %next16 = extractvalue %_Z4NodeI6StringE %load.struct15, 1
-  %head17 = getelementptr inbounds nuw %_Z11BuilderListI6StringE, ptr %0, i32 0, i32 0
-  store ptr %next16, ptr %head17, align 8
-  br label %if.end13
-
-if.end13:                                         ; preds = %if.then12, %if.end5
-  ret i1 true
-}
-
 define linkonce_odr ptr @_ZN11BuilderListI6StringE8get_headEv(ptr %0) {
 entry:
   %load.struct = load %_Z11BuilderListI6StringE, ptr %0, align 8
@@ -9257,37 +8965,6 @@ entry:
   %head2 = getelementptr inbounds nuw %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   store ptr %tuple.region, ptr %head2, align 8
   ret void
-}
-
-define linkonce_odr i1 @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE6removeE11BuilderListI4SlotI6StringEE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %head = extractvalue %_Z11BuilderListI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI11BuilderListI4SlotI6StringEEE8get_headEv(ptr %0) {
@@ -10494,37 +10171,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI11BuilderListI4SlotI6StringEEE6removeE11BuilderListI4SlotI6StringEE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI11BuilderListI4SlotI6StringEEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI6StringEEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
@@ -10699,37 +10345,6 @@ entry:
   %head2 = getelementptr inbounds nuw %_Z11BuilderListI4SlotI6StringEE, ptr %0, i32 0, i32 0
   store ptr %tuple.region, ptr %head2, align 8
   ret void
-}
-
-define linkonce_odr i1 @_ZN11BuilderListI4SlotI6StringEE6removeE4SlotI6StringE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z11BuilderListI4SlotI6StringEE, ptr %0, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI6StringEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI4SlotI6StringEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI4SlotI6StringEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI4SlotI6StringEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI4SlotI6StringEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI4SlotI6StringEE8get_headEv(ptr %0) {
@@ -12690,37 +12305,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String12LocalBindingEE6removeE12KeyValuePairI6String12LocalBindingE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String12LocalBindingEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String12LocalBindingEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String12LocalBindingEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String12LocalBindingEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String12LocalBindingEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String12LocalBindingEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String12LocalBindingEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String12LocalBindingEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI12KeyValuePairI6String12LocalBindingEE, ptr %2, align 8
@@ -14024,73 +13608,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListImE6removeEm(ptr %0, i64 %1) {
-entry:
-  %load.struct = load %_Z4ListImE, ptr %0, align 8
-  %head = extractvalue %_Z4ListImE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeImE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeImE %load.struct3, 0
-  %eq = icmp eq i64 %element, %1
-  br i1 %eq, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-
-if.then:                                          ; preds = %while.body
-  %previous_node4 = load ptr, ptr %previous_node, align 8
-  %ne5 = icmp ne ptr %previous_node4, null
-  br i1 %ne5, label %if.then6, label %if.end7
-
-if.end:                                           ; preds = %while.body
-  %node21 = load ptr, ptr %node, align 8
-  store ptr %node21, ptr %previous_node, align 1
-  %node22 = load ptr, ptr %node, align 8
-  %load.struct23 = load %_Z4NodeImE, ptr %node22, align 8
-  %next24 = extractvalue %_Z4NodeImE %load.struct23, 1
-  store ptr %next24, ptr %node, align 1
-  br label %while.cond
-
-if.then6:                                         ; preds = %if.then
-  %node8 = load ptr, ptr %node, align 8
-  %load.struct9 = load %_Z4NodeImE, ptr %node8, align 8
-  %next = extractvalue %_Z4NodeImE %load.struct9, 1
-  %ptr.load = load ptr, ptr %previous_node, align 8
-  %next10 = getelementptr inbounds nuw %_Z4NodeImE, ptr %ptr.load, i32 0, i32 1
-  store ptr %next, ptr %next10, align 8
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.then6, %if.then
-  %node11 = load ptr, ptr %node, align 8
-  %load.struct12 = load %_Z4ListImE, ptr %0, align 8
-  %head13 = extractvalue %_Z4ListImE %load.struct12, 0
-  %eq14 = icmp eq ptr %node11, %head13
-  br i1 %eq14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end7
-  %node17 = load ptr, ptr %node, align 8
-  %load.struct18 = load %_Z4NodeImE, ptr %node17, align 8
-  %next19 = extractvalue %_Z4NodeImE %load.struct18, 1
-  %head20 = getelementptr inbounds nuw %_Z4ListImE, ptr %0, i32 0, i32 0
-  store ptr %next19, ptr %head20, align 8
-  br label %if.end16
-
-if.end16:                                         ; preds = %if.then15, %if.end7
-  ret i1 true
-}
-
 define linkonce_odr void @_ZN4ListImE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorImE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListImE, ptr %2, align 8
@@ -15391,37 +14908,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String11PlannedTypeEE6removeE12KeyValuePairI6String11PlannedTypeE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String11PlannedTypeEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String11PlannedTypeEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String11PlannedTypeEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String11PlannedTypeEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String11PlannedTypeEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String11PlannedTypeEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String11PlannedTypeEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String11PlannedTypeEE) %0, ptr %1, ptr %2) {
@@ -16730,37 +16216,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI14TypeConstraintE6removeE14TypeConstraint(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI14TypeConstraintE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI14TypeConstraintE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI14TypeConstraintE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI14TypeConstraintE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI14TypeConstraintE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI14TypeConstraintE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI14TypeConstraintE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI14TypeConstraintE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI14TypeConstraintE, ptr %2, align 8
@@ -18065,37 +17520,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairIm11PlannedTypeEE6removeE12KeyValuePairIm11PlannedTypeE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairIm11PlannedTypeEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairIm11PlannedTypeEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairIm11PlannedTypeEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairIm11PlannedTypeEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairIm11PlannedTypeEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairIm11PlannedTypeEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairIm11PlannedTypeEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairIm11PlannedTypeEE) %0, ptr %1, ptr %2) {
@@ -19782,37 +19206,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI6VectorI7OperandEE6removeE6VectorI7OperandE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6VectorI7OperandEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6VectorI7OperandEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6VectorI7OperandEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6VectorI7OperandEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6VectorI7OperandEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6VectorI7OperandEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI6VectorI7OperandEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI7OperandEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI6VectorI7OperandEE, ptr %2, align 8
@@ -21117,37 +20510,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI9StatementE6removeE9Statement(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI9StatementE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI9StatementE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI9StatementE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI9StatementE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI9StatementE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI9StatementE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI9StatementE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9StatementE) %0, ptr %1, ptr %2) {
@@ -22456,37 +21818,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI4CaseE6removeE4Case(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI4CaseE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI4CaseE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI4CaseE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI4CaseE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI4CaseE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI4CaseE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI4CaseE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI4CaseE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI4CaseE, ptr %2, align 8
@@ -23791,37 +23122,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI6BranchE6removeE6Branch(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6BranchE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6BranchE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6BranchE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6BranchE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6BranchE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6BranchE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI6BranchE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6BranchE) %0, ptr %1, ptr %2) {
@@ -25130,37 +24430,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI4WhenE6removeE4When(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI4WhenE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI4WhenE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI4WhenE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI4WhenE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI4WhenE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI4WhenE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI4WhenE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI4WhenE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI4WhenE, ptr %2, align 8
@@ -26465,37 +25734,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI4ItemE6removeE4Item(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI4ItemE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI4ItemE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI4ItemE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI4ItemE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI4ItemE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI4ItemE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI4ItemE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI4ItemE) %0, ptr %1, ptr %2) {
@@ -27804,37 +27042,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI7OperandE6removeE7Operand(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI7OperandE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI7OperandE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI7OperandE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI7OperandE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI7OperandE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI7OperandE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI7OperandE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI7OperandE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI7OperandE, ptr %2, align 8
@@ -29139,37 +28346,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI9ComponentE6removeE9Component(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI9ComponentE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI9ComponentE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI9ComponentE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI9ComponentE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI9ComponentE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI9ComponentE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI9ComponentE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9ComponentE) %0, ptr %1, ptr %2) {
@@ -30478,37 +29654,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI9AttributeE6removeE9Attribute(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI9AttributeE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI9AttributeE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI9AttributeE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI9AttributeE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI9AttributeE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI9AttributeE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI9AttributeE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9AttributeE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI9AttributeE, ptr %2, align 8
@@ -31813,37 +30958,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI16GenericParameterE6removeE16GenericParameter(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI16GenericParameterE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI16GenericParameterE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI16GenericParameterE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI16GenericParameterE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI16GenericParameterE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI16GenericParameterE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI16GenericParameterE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI16GenericParameterE) %0, ptr %1, ptr %2) {
@@ -33152,37 +32266,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI3UseE6removeE3Use(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI3UseE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI3UseE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI3UseE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI3UseE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI3UseE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI3UseE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI3UseE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI3UseE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI3UseE, ptr %2, align 8
@@ -34487,37 +33570,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI6MemberE6removeE6Member(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6MemberE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6MemberE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6MemberE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6MemberE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6MemberE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6MemberE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI6MemberE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6MemberE) %0, ptr %1, ptr %2) {
@@ -35826,37 +34878,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI8FunctionE6removeE8Function(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI8FunctionE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI8FunctionE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI8FunctionE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI8FunctionE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI8FunctionE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI8FunctionE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI8FunctionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI8FunctionE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI8FunctionE, ptr %2, align 8
@@ -36165,11 +35186,6 @@ entry:
   ret i64 0
 }
 
-define linkonce_odr i1 @_ZN4ListI6VectorI12KeyValuePairI1K8NameableEEE6removeE6VectorI12KeyValuePairI1K8NameableEE(ptr %0, ptr %1) {
-entry:
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI6VectorI12KeyValuePairI1K8NameableEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI12KeyValuePairI1K8NameableEEE) %0, ptr %1, ptr %2) {
 entry:
   ret void
@@ -36405,11 +35421,6 @@ entry:
   ret i64 0
 }
 
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI1K8NameableEE6removeE12KeyValuePairI1K8NameableE(ptr %0, ptr %1) {
-entry:
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI12KeyValuePairI1K8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI1K8NameableEE) %0, ptr %1, ptr %2) {
 entry:
   ret void
@@ -36448,37 +35459,6 @@ entry:
   %head2 = getelementptr inbounds nuw %_Z11BuilderListI8FunctionE, ptr %0, i32 0, i32 0
   store ptr %tuple.region, ptr %head2, align 8
   ret void
-}
-
-define linkonce_odr i1 @_ZN11BuilderListI8FunctionE6removeE8Function(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z11BuilderListI8FunctionE, ptr %0, align 8
-  %head = extractvalue %_Z11BuilderListI8FunctionE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI8FunctionE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI8FunctionE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI8FunctionE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI8FunctionE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI8FunctionE8get_headEv(ptr %0) {
@@ -36588,11 +35568,6 @@ entry:
 define linkonce_odr void @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE3addER4Page11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1, ptr %2) {
 entry:
   ret void
-}
-
-define linkonce_odr i1 @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE6removeE11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1) {
-entry:
-  ret i1 false
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE8get_headEv(ptr %0) {
@@ -36815,11 +35790,6 @@ entry:
   ret i64 0
 }
 
-define linkonce_odr i1 @_ZN4ListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE6removeE11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE(ptr %0, ptr %1) {
-entry:
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI12KeyValuePairI1K8NameableEEEE) %0, ptr %1, ptr %2) {
 entry:
   ret void
@@ -36853,11 +35823,6 @@ entry:
 define linkonce_odr void @_ZN11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE3addER4Page4SlotI12KeyValuePairI1K8NameableEE(ptr %0, ptr %1, ptr %2) {
 entry:
   ret void
-}
-
-define linkonce_odr i1 @_ZN11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE6removeE4SlotI12KeyValuePairI1K8NameableEE(ptr %0, ptr %1) {
-entry:
-  ret i1 false
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI4SlotI12KeyValuePairI1K8NameableEEE8get_headEv(ptr %0) {
@@ -38141,37 +37106,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI6VectorI12KeyValuePairI8Nameable8NameableEEE6removeE6VectorI12KeyValuePairI8Nameable8NameableEE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6VectorI12KeyValuePairI8Nameable8NameableEEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6VectorI12KeyValuePairI8Nameable8NameableEEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI12KeyValuePairI8Nameable8NameableEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE) %0, ptr %1, ptr %2) {
@@ -39478,37 +38412,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI8Nameable8NameableEE6removeE12KeyValuePairI8Nameable8NameableE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI8Nameable8NameableEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI8Nameable8NameableEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI8Nameable8NameableEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI8Nameable8NameableEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI8Nameable8NameableEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI8Nameable8NameableEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI8Nameable8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI8Nameable8NameableEE) %0, ptr %1, ptr %2) {
@@ -40827,37 +39730,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI6VectorI12KeyValuePairI6String8NameableEEE6removeE6VectorI12KeyValuePairI6String8NameableEE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6VectorI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6VectorI12KeyValuePairI6String8NameableEEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6VectorI12KeyValuePairI6String8NameableEEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6VectorI12KeyValuePairI6String8NameableEEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6VectorI12KeyValuePairI6String8NameableEEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6VectorI12KeyValuePairI6String8NameableEEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI6VectorI12KeyValuePairI6String8NameableEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI12KeyValuePairI6String8NameableEEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI6VectorI12KeyValuePairI6String8NameableEEE, ptr %2, align 8
@@ -42164,37 +41036,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String8NameableEE6removeE12KeyValuePairI6String8NameableE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String8NameableEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String8NameableEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String8NameableEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String8NameableEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String8NameableEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String8NameableEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String8NameableEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String8NameableEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI12KeyValuePairI6String8NameableEE, ptr %2, align 8
@@ -42487,37 +41328,6 @@ entry:
   %head2 = getelementptr inbounds nuw %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, i32 0, i32 0
   store ptr %tuple.region, ptr %head2, align 8
   ret void
-}
-
-define linkonce_odr i1 @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE6removeE11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %head = extractvalue %_Z11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE8get_headEv(ptr %0) {
@@ -43724,37 +42534,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE6removeE11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI11BuilderListI4SlotI12KeyValuePairI6String8NameableEEEE, ptr %2, align 8
@@ -43929,37 +42708,6 @@ entry:
   %head2 = getelementptr inbounds nuw %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %0, i32 0, i32 0
   store ptr %tuple.region, ptr %head2, align 8
   ret void
-}
-
-define linkonce_odr i1 @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE6removeE4SlotI12KeyValuePairI6String8NameableEE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE, ptr %0, align 8
-  %head = extractvalue %_Z11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI4SlotI12KeyValuePairI6String8NameableEEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr ptr @_ZN11BuilderListI4SlotI12KeyValuePairI6String8NameableEEE8get_headEv(ptr %0) {
@@ -45333,37 +44081,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String7ConceptEE6removeE12KeyValuePairI6String7ConceptE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String7ConceptEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String7ConceptEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String7ConceptEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String7ConceptEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String7ConceptEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String7ConceptEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String7ConceptEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String7ConceptEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI12KeyValuePairI6String7ConceptEE, ptr %2, align 8
@@ -46668,37 +45385,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI16PlannedStructureE6removeE16PlannedStructure(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI16PlannedStructureE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI16PlannedStructureE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI16PlannedStructureE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI16PlannedStructureE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI16PlannedStructureE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI16PlannedStructureE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI16PlannedStructureE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI16PlannedStructureE) %0, ptr %1, ptr %2) {
@@ -48007,37 +46693,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI12PlannedUnionE6removeE12PlannedUnion(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12PlannedUnionE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12PlannedUnionE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12PlannedUnionE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12PlannedUnionE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12PlannedUnionE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12PlannedUnionE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI12PlannedUnionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12PlannedUnionE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI12PlannedUnionE, ptr %2, align 8
@@ -49342,37 +47997,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI15PlannedFunctionE6removeE15PlannedFunction(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI15PlannedFunctionE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI15PlannedFunctionE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI15PlannedFunctionE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI15PlannedFunctionE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI15PlannedFunctionE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI15PlannedFunctionE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI15PlannedFunctionE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI15PlannedFunctionE) %0, ptr %1, ptr %2) {
@@ -50681,37 +49305,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI13PlannedGlobalE6removeE13PlannedGlobal(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI13PlannedGlobalE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI13PlannedGlobalE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI13PlannedGlobalE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI13PlannedGlobalE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI13PlannedGlobalE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI13PlannedGlobalE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI13PlannedGlobalE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI13PlannedGlobalE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI13PlannedGlobalE, ptr %2, align 8
@@ -52016,37 +50609,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String8FunctionEE6removeE12KeyValuePairI6String8FunctionE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String8FunctionEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String8FunctionEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String8FunctionEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String8FunctionEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String8FunctionEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String8FunctionEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String8FunctionEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String8FunctionEE) %0, ptr %1, ptr %2) {
@@ -53355,37 +51917,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String6LambdaEE6removeE12KeyValuePairI6String6LambdaE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String6LambdaEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String6LambdaEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String6LambdaEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String6LambdaEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String6LambdaEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String6LambdaEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String6LambdaEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String6LambdaEE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI12KeyValuePairI6String6LambdaEE, ptr %2, align 8
@@ -54690,37 +53221,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String8OperatorEE6removeE12KeyValuePairI6String8OperatorE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String8OperatorEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String8OperatorEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String8OperatorEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String8OperatorEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String8OperatorEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String8OperatorEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String8OperatorEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String8OperatorEE) %0, ptr %1, ptr %2) {
@@ -56407,37 +54907,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI11PlannedTypeE6removeE11PlannedType(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI11PlannedTypeE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI11PlannedTypeE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI11PlannedTypeE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI11PlannedTypeE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI11PlannedTypeE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI11PlannedTypeE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI11PlannedTypeE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11PlannedTypeE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI11PlannedTypeE, ptr %2, align 8
@@ -57364,37 +55833,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI12KeyValuePairI6String6ModuleEE6removeE12KeyValuePairI6String6ModuleE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12KeyValuePairI6String6ModuleEE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12KeyValuePairI6String6ModuleEE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12KeyValuePairI6String6ModuleEE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12KeyValuePairI6String6ModuleEE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12KeyValuePairI6String6ModuleEE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12KeyValuePairI6String6ModuleEE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI6String6ModuleEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6String6ModuleEE) %0, ptr %1, ptr %2) {
@@ -58701,37 +57139,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI17PlannerDiagnosticE6removeE17PlannerDiagnostic(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI17PlannerDiagnosticE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI17PlannerDiagnosticE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI17PlannerDiagnosticE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI17PlannerDiagnosticE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI17PlannerDiagnosticE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI17PlannerDiagnosticE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI17PlannerDiagnosticE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI17PlannerDiagnosticE) %0, ptr %1, ptr %2) {
@@ -60418,37 +58825,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI6ModuleE6removeE6Module(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI6ModuleE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI6ModuleE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI6ModuleE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI6ModuleE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI6ModuleE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI6ModuleE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI6ModuleE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6ModuleE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI6ModuleE, ptr %2, align 8
@@ -61375,37 +59751,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI7ProgramE6removeE7Program(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI7ProgramE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI7ProgramE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI7ProgramE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI7ProgramE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI7ProgramE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI7ProgramE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI7ProgramE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI7ProgramE) %0, ptr %1, ptr %2) {
@@ -62712,37 +61057,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI12EscapeRecordE6removeE12EscapeRecord(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12EscapeRecordE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12EscapeRecordE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12EscapeRecordE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12EscapeRecordE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12EscapeRecordE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12EscapeRecordE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI12EscapeRecordE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12EscapeRecordE) %0, ptr %1, ptr %2) {
@@ -68928,37 +67242,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI17DeclarationSyntaxE6removeE17DeclarationSyntax(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI17DeclarationSyntaxE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI17DeclarationSyntaxE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI17DeclarationSyntaxE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI17DeclarationSyntaxE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI17DeclarationSyntaxE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI17DeclarationSyntaxE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI17DeclarationSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI17DeclarationSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI17DeclarationSyntaxE, ptr %2, align 8
@@ -71356,37 +69639,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI12MemberSyntaxE6removeE12MemberSyntax(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI12MemberSyntaxE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI12MemberSyntaxE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI12MemberSyntaxE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI12MemberSyntaxE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI12MemberSyntaxE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI12MemberSyntaxE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI12MemberSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12MemberSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI12MemberSyntaxE, ptr %2, align 8
@@ -72828,37 +71080,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI13VariantSyntaxE6removeE13VariantSyntax(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI13VariantSyntaxE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI13VariantSyntaxE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI13VariantSyntaxE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI13VariantSyntaxE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI13VariantSyntaxE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI13VariantSyntaxE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI13VariantSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI13VariantSyntaxE) %0, ptr %1, ptr %2) {
@@ -82227,37 +80448,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI10ItemSyntaxE6removeE10ItemSyntax(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI10ItemSyntaxE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI10ItemSyntaxE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI10ItemSyntaxE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI10ItemSyntaxE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI10ItemSyntaxE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI10ItemSyntaxE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI10ItemSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI10ItemSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI10ItemSyntaxE, ptr %2, align 8
@@ -84534,37 +82724,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI10PartSyntaxE6removeE10PartSyntax(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI10PartSyntaxE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI10PartSyntaxE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI10PartSyntaxE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI10PartSyntaxE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI10PartSyntaxE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI10PartSyntaxE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI10PartSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI10PartSyntaxE) %0, ptr %1, ptr %2) {
@@ -96185,37 +94344,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI21GenericArgumentSyntaxE6removeE21GenericArgumentSyntax(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI21GenericArgumentSyntaxE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI21GenericArgumentSyntaxE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI21GenericArgumentSyntaxE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI21GenericArgumentSyntaxE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI21GenericArgumentSyntaxE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI21GenericArgumentSyntaxE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI21GenericArgumentSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI21GenericArgumentSyntaxE) %0, ptr %1, ptr %2) {
@@ -116150,37 +114278,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI15ExtensionSyntaxE6removeE15ExtensionSyntax(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI15ExtensionSyntaxE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI15ExtensionSyntaxE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI15ExtensionSyntaxE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI15ExtensionSyntaxE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI15ExtensionSyntaxE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI15ExtensionSyntaxE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI15ExtensionSyntaxE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI15ExtensionSyntaxE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI15ExtensionSyntaxE, ptr %2, align 8
@@ -121829,37 +119926,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI16PlannedStatementE6removeE16PlannedStatement(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI16PlannedStatementE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI16PlannedStatementE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI16PlannedStatementE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI16PlannedStatementE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI16PlannedStatementE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI16PlannedStatementE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI16PlannedStatementE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI16PlannedStatementE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI16PlannedStatementE, ptr %2, align 8
@@ -123751,37 +121817,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI14PlannedOperandE6removeE14PlannedOperand(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI14PlannedOperandE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI14PlannedOperandE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI14PlannedOperandE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI14PlannedOperandE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI14PlannedOperandE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI14PlannedOperandE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI14PlannedOperandE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI14PlannedOperandE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI14PlannedOperandE, ptr %2, align 8
@@ -125136,37 +123171,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI18PlannedInitializerE6removeE18PlannedInitializer(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI18PlannedInitializerE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI18PlannedInitializerE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI18PlannedInitializerE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI18PlannedInitializerE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI18PlannedInitializerE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI18PlannedInitializerE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI18PlannedInitializerE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI18PlannedInitializerE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI18PlannedInitializerE, ptr %2, align 8
@@ -126471,37 +124475,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI15PlannedOperatorE6removeE15PlannedOperator(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI15PlannedOperatorE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI15PlannedOperatorE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI15PlannedOperatorE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI15PlannedOperatorE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI15PlannedOperatorE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI15PlannedOperatorE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI15PlannedOperatorE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI15PlannedOperatorE) %0, ptr %1, ptr %2) {
@@ -129420,37 +127393,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI16PlannedComponentE6removeE16PlannedComponent(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI16PlannedComponentE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI16PlannedComponentE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI16PlannedComponentE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI16PlannedComponentE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI16PlannedComponentE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI16PlannedComponentE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI16PlannedComponentE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI16PlannedComponentE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI16PlannedComponentE, ptr %2, align 8
@@ -130755,37 +128697,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI13PlannedBranchE6removeE13PlannedBranch(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI13PlannedBranchE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI13PlannedBranchE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI13PlannedBranchE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI13PlannedBranchE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI13PlannedBranchE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI13PlannedBranchE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI13PlannedBranchE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI13PlannedBranchE) %0, ptr %1, ptr %2) {
@@ -132094,37 +130005,6 @@ while.exit:                                       ; preds = %while.cond
   ret i64 %i3
 }
 
-define linkonce_odr i1 @_ZN4ListI11PlannedWhenE6removeE11PlannedWhen(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI11PlannedWhenE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI11PlannedWhenE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI11PlannedWhenE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI11PlannedWhenE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI11PlannedWhenE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI11PlannedWhenE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-}
-
 define linkonce_odr void @_ZN4ListI11PlannedWhenE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11PlannedWhenE) %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z4ListI11PlannedWhenE, ptr %2, align 8
@@ -133429,37 +131309,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI19PlannedMemberAccessE6removeE19PlannedMemberAccess(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI19PlannedMemberAccessE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI19PlannedMemberAccessE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI19PlannedMemberAccessE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI19PlannedMemberAccessE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI19PlannedMemberAccessE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI19PlannedMemberAccessE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI19PlannedMemberAccessE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI19PlannedMemberAccessE) %0, ptr %1, ptr %2) {
@@ -136141,37 +133990,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI11PlannedItemE6removeE11PlannedItem(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI11PlannedItemE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI11PlannedItemE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI11PlannedItemE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI11PlannedItemE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI11PlannedItemE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI11PlannedItemE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI11PlannedItemE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11PlannedItemE) %0, ptr %1, ptr %2) {
@@ -138963,37 +136781,6 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 8
   ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListI15PlannedPropertyE6removeE15PlannedProperty(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI15PlannedPropertyE, ptr %0, align 8
-  %head = extractvalue %_Z4ListI15PlannedPropertyE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeI15PlannedPropertyE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeI15PlannedPropertyE %load.struct3, 0
-  %node4 = load ptr, ptr %node, align 8
-  store ptr %node4, ptr %previous_node, align 1
-  %node5 = load ptr, ptr %node, align 8
-  %load.struct6 = load %_Z4NodeI15PlannedPropertyE, ptr %node5, align 8
-  %next = extractvalue %_Z4NodeI15PlannedPropertyE %load.struct6, 1
-  store ptr %next, ptr %node, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
 }
 
 define linkonce_odr void @_ZN4ListI15PlannedPropertyE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI15PlannedPropertyE) %0, ptr %1, ptr %2) {

@@ -1,0 +1,69 @@
+; Regression: a PARENTHESISED subscript into a container of nullable references,
+; compared with a reference, as the WHOLE condition of an `if`.
+;
+; `if (list[i]) = ent` answered CONSTANT false -- rc 0, nothing said -- while the
+; paren-free `if list[i] = ent` compared the pointers. The parenthesis makes the
+; subscript a one-component Tuple whose tuple_type is the element's
+; `Option[ref[T]]`; emit_tuple# asked the struct cache by the NAME "Option",
+; another instantiation of Option was cached as a struct, so the grouping was
+; emitted as a `{ ptr }` CONSTRUCTION, and the `=` arm of the binary-op emitter
+; then bailed SILENTLY on the kind mismatch. Found 2026-09-06 behind dazzle's
+; grove props3 red (`GroveInfo.entity_is_defaulted`): a defaulted entity
+; answered `defaulted?=#f` for the whole life of the grove port. The bail is a
+; loud exit 14 now, so this class cannot be silent again. Expected: PASS
+
+define Leafy (v: int)
+
+var arr Array[ref[Leafy]?]()
+var a Leafy(1)
+var b Leafy(2)
+let ra &a
+let rb &b
+arr.add(ra)
+
+var vec Vector[ref[Leafy]?](1)
+vec.put(0, ra)
+
+var eq_same false
+if (arr[0]) = ra
+    set eq_same: true
+var eq_other false
+if (arr[0]) = rb
+    set eq_other: true
+var ne_other false
+if (arr[0]) <> rb
+    set ne_other: true
+var ne_same false
+if (arr[0]) <> ra
+    set ne_same: true
+var veq_same false
+if (vec[0]) = ra
+    set veq_same: true
+var veq_other false
+if (vec[0]) = rb
+    set veq_other: true
+; the paren-free spelling stays what it was
+var plain false
+if arr[0] = ra
+    set plain: true
+
+var ok true
+if eq_same = false
+    set ok: false
+if eq_other
+    set ok: false
+if ne_other = false
+    set ok: false
+if ne_same
+    set ok: false
+if veq_same = false
+    set ok: false
+if veq_other
+    set ok: false
+if plain = false
+    set ok: false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"
