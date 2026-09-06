@@ -35692,7 +35692,15 @@ define Planner
                 let fp2 all.get di
                 if fp2 <> null
                 {
-                    let f2 (*fp2)
+                    var f2 (*fp2)
+                    ; alias in the return position: see function_needs_caller_page.
+                    if has_type_aliases
+                        if f2.returns_ <> null
+                            if this.model_type_has_alias((*f2.returns_), 0)
+                            {
+                                let f2_rt this.resolve_model_type_aliases((*f2.returns_), 0)
+                                set f2.returns_: &f2_rt
+                            }
                     if Planner.takes_explicit_page_arg(f2)
                         if this.array_contains_name(prepass_veto_names, f2.name) = false
                             prepass_veto_names.add(String^this(f2.name))
@@ -35724,7 +35732,15 @@ define Planner
                 let fp3 all.get ai
                 if fp3 <> null
                 {
-                    let f3 (*fp3)
+                    var f3 (*fp3)
+                    ; alias in the return position: see function_needs_caller_page.
+                    if has_type_aliases
+                        if f3.returns_ <> null
+                            if this.model_type_has_alias((*f3.returns_), 0)
+                            {
+                                let f3_rt this.resolve_model_type_aliases((*f3.returns_), 0)
+                                set f3.returns_: &f3_rt
+                            }
                     var f3_direct: bool false
                     if Planner.needs_implicit_return_page(f3)
                         set f3_direct: true
@@ -35757,7 +35773,15 @@ define Planner
                     let fp all.get ii
                     if fp <> null
                     {
-                        let f (*fp)
+                        var f (*fp)
+                        ; alias in the return position: see function_needs_caller_page.
+                        if has_type_aliases
+                            if f.returns_ <> null
+                                if this.model_type_has_alias((*f.returns_), 0)
+                                {
+                                    let f_rt this.resolve_model_type_aliases((*f.returns_), 0)
+                                    set f.returns_: &f_rt
+                                }
                         var known: bool false
                         if this.array_contains_name(transitive_page_names, f.name)
                             set known: true
@@ -42677,14 +42701,55 @@ define Planner
     ; sibling that does (transitive_page_names, built by build_transitive_page_
     ; set). Consulted at every has_page / page_param_ref / requires_page_param
     ; site; `pl` supplies the precomputed transitive set.
+    ; env-gated probe (SCALYC_PAGE_PROBE=1): one line per page-granting
+    ; return of function_needs_caller_page, tagged R1..R7 -- the instrument
+    ; CLAUDE.md asks to rebuild for every page question, kept this time.
+    function page_probe(func: Function, tag: pointer[const_char])
+    {
+        if getenv("SCALYC_PAGE_PROBE") = null
+            return
+        scaly_eputs "page "
+        scaly_eputs tag
+        scaly_eputs " "
+        scaly_eputs(func.name.to_c_string())
+        scaly_eputs "\n"
+    }
+
     function function_needs_caller_page(pl: Planner, func: Function) returns bool
     {
-        if Planner.needs_implicit_return_page(func)
+        ; ★A TYPE ALIAS in the return position (`define NICRef pointer[NIC]`)
+        ; is resolved to its target BEFORE any of the seven rules reads
+        ; `returns_` (2026-09-06). plan_type# resolves aliases for every
+        ; PLANNED type, but these rules ask the MODEL type, where an alias
+        ; name reads as a by-value CONCEPT: `get_nic() returns NICRef` took
+        ; a caller page it cannot use, and through the transitive sets the
+        ; page cascaded into every caller that hands the result on (eight
+        ; functions in dazzle; the LLVM-handle accessors of this compiler
+        ; carried the same needless page since the aliases landed). The
+        ; resolved copy lives on this frame; nothing below stores it.
+        var f func
+        if pl.has_type_aliases
+            if func.returns_ <> null
+                if pl.model_type_has_alias((*func.returns_), 0)
+                {
+                    let rt pl.resolve_model_type_aliases((*func.returns_), 0)
+                    set f.returns_: &rt
+                }
+        if Planner.needs_implicit_return_page(f)
+        {
+            Planner.page_probe(func, "R1")
             return true
-        if Planner.proc_needs_caller_page_for_storage(func)
+        }
+        if Planner.proc_needs_caller_page_for_storage(f)
+        {
+            Planner.page_probe(func, "R2")
             return true
-        if Planner.body_references_rp(func)
+        }
+        if Planner.body_references_rp(f)
+        {
+            Planner.page_probe(func, "R3")
             return true
+        }
         ; body-`#`-scan, GATED on a ref/pointer return type. A `parse_X_list`
         ; returns `ref[Vector[XSyntax]]?` (a primitive ref → needs_implicit_return_page
         ; is false) and builds the returned `Vector[XSyntax]#(acc)` on the caller
@@ -42695,24 +42760,38 @@ define Planner
         ; not forward rp. NEUTRAL on sigiled source: such a function is already a
         ; `#` decl (the `#` needs an rp), so page_parameter is set and has_page is
         ; true regardless.
-        if func.returns_ <> null
-            if Planner.is_reference_shaped_return((*func.returns_))
-                if Planner.body_has_call_lifetime(func)
+        if f.returns_ <> null
+            if Planner.is_reference_shaped_return((*f.returns_))
+                if Planner.body_has_call_lifetime(f)
+                {
+                    Planner.page_probe(func, "R4")
                     return true
+                }
         ; WP7: a `pointer[T]`-return whose tail constructs T by value needs the
         ; rp page (and `#`-style mangling) so the promoted construction lives on
         ; the caller page. The no-sigil complement of the body_has_call_lifetime
         ; gate above.
-        if Planner.body_returns_value_ctor_as_pointer(func)
+        if Planner.body_returns_value_ctor_as_pointer(f)
+        {
+            Planner.page_probe(func, "R5")
             return true
+        }
         if Planner.static_name_in_set(pl.transitive_page_names, func.name)
+        {
+            Planner.page_probe(func, "R6")
             return true
+        }
         ; the return-position set (build_transitive_page_set's second rule): a
         ; pointer/ref-returning function that hands out a page-needing call's
         ; result must own the caller page, or the result lives on its own frame.
         ; Keyed by IDENTITY — a same-named sibling that returns a borrowed pointer
         ; must not inherit the page.
-        Planner.static_func_in_set(pl.return_page_names, pl.return_page_starts, pl.return_page_ends, func)
+        if Planner.static_func_in_set(pl.return_page_names, pl.return_page_starts, pl.return_page_ends, func)
+        {
+            Planner.page_probe(func, "R7")
+            return true
+        }
+        false
     }
 
     ; membership in an identity-keyed function set: the name plus the source span,

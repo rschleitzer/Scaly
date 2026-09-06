@@ -1522,7 +1522,7 @@ define symbols
 
     ; Append every buffer identifier whose distance from `name` is exactly `d`,
     ; skipping duplicates and stopping at three in total.
-    procedure append_candidates_at(sb: ref[StringBuilder], count: pointer[size_t], source: String, name: String, d: size_t)
+    procedure append_candidates_at(sb: ref[StringBuilder], count: ref[size_t], source: String, name: String, d: size_t)
     {
         let n source.get_length()
         var i: size_t 0
@@ -1555,14 +1555,14 @@ define symbols
             let word symbols.substring(source, i, e)
             set i: e
 
-            if *count < 3
+            if count < 3
                 if word <> name
                     if symbols.edit_distance(word, name, d) = d
                         if symbols.list_contains(sb.to_string(), word) = false
                         {
                             symbols.append_fragment(sb, word)
                             sb.append("\n" as char)
-                            set *count: *count + 1
+                            set count: count + 1
                         }
         }
     }

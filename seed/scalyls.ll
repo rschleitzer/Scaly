@@ -74557,7 +74557,7 @@ while.exit:                                       ; preds = %while.cond
 if.then5:                                         ; preds = %while.body
   %addr.heap = load ptr, ptr %sb, align 8
   %d7 = load i64, ptr %d, align 8
-  call void @_ZN7symbols20append_candidates_atER13StringBuilderPm6String6Stringm(ptr %addr.heap, ptr %count, ptr %2, ptr %3, i64 %d7)
+  call void @_ZN7symbols20append_candidates_atER13StringBuilderRm6String6Stringm(ptr %addr.heap, ptr %count, ptr %2, ptr %3, i64 %d7)
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %while.body
@@ -74608,7 +74608,7 @@ if.end8:                                          ; preds = %while.body
   br label %while.cond
 }
 
-define linkonce_odr void @_ZN7symbols20append_candidates_atER13StringBuilderPm6String6Stringm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN7symbols20append_candidates_atER13StringBuilderRm6String6Stringm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
 entry:
   %sret.result38 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
