@@ -368,4 +368,48 @@ define Region
         set rr.root: root_new as pointer[void]
         rr
     }
+
+    ; --- catching a panic (TRAPS.md 0) --------------------------------------
+    ;
+    ; The requirement is that a programmer can handle an out-of-bounds index
+    ; instead of watching the process die. `try` is not built yet; this is the
+    ; same mechanism one call earlier: run `body(arg)` with a catch point on
+    ; the stack, and if a bounds trap fires anywhere inside -- at any depth,
+    ; including in library code the caller did not write -- the guarded CALL
+    ; ends instead of the program.
+    ;
+    ; ★It lives on `Region` and not as a free function because a user program
+    ; cannot resolve a cross-package free function with a concept-pointer
+    ; parameter (CLAUDE.md, Package system); concept STATICS resolve fine.
+    ;
+    ; ★`caught` is a `pointer[i32]` and not a `ref[bool]`: the shim writes a C
+    ; `int`, and a bool would be the wrong WIDTH -- the silent half of the
+    ; extern-ABI class the abi gate exists for.
+    ;
+    ; ★The two function pointers are how the shim reaches the region-stack
+    ; watermark and the unwind without writing their Itanium mangled names
+    ; into C, which would freeze their signatures (CLAUDE.md, eight symbols
+    ; already pay that price).
+    function run_guarded(body: pointer[void], arg: pointer[void], caught: pointer[i32]) returns i64
+        scaly_catch_run(body, arg, &scaly_panic_mark, &scaly_panic_unwind_to, caught)
+
+    ; What the panic said, once run_guarded reported one. Allocation-free by
+    ; construction: the regions between the trap and the catch point are gone
+    ; by the time this can be asked, so the detail travels as scalars and a
+    ; static string.
+    function panic_what() returns pointer[const_char]
+        scaly_panic_last_what()
+
+    function panic_index() returns i64
+        scaly_panic_last_index()
+
+    function panic_length() returns i64
+        scaly_panic_last_length()
+
+    ; Is a catch point installed on this thread's stack? The panic helper asks
+    ; the shim the same question implicitly; this is for a caller that wants to
+    ; know whether a trap would end the process.
+    function catch_active() returns bool
+        scaly_catch_active() <> 0
+
 }

@@ -162,7 +162,18 @@ procedure scaly_eputi(n: i64)
     write(2 as int, (buf + pos) as pointer[void], len as size_t)
 }
 
-; The ONE place a bounds violation ends the program.
+; The catch-point shim (scaly/memory/panic.c). scaly_panic_jump answers 0 when
+; NO catch point is installed and does not return at all when one is: it
+; longjmps, which is why the helper below stays noreturn either way.
+procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: size_t) returns i32 extern
+function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
+function scaly_catch_active() returns i32 extern
+function scaly_panic_last_what() returns pointer[const_char] extern
+function scaly_panic_last_index() returns i64 extern
+function scaly_panic_last_length() returns i64 extern
+
+; The ONE place a bounds violation ends the program -- unless somebody asked
+; to catch it.
 ;
 ; Every `if i >= length` in Slice, Array and Vector routes here (eight sites,
 ; TRAPS.md 2.1) instead of writing its own message and calling `exit` inline.
@@ -192,6 +203,12 @@ procedure scaly_eputi(n: i64)
 ; into scaly_eputs, which is the documented exception for the C boundary.
 procedure scaly_panic_oob(what: pointer[const_char], index: size_t, length: size_t)
 {
+    ; A catch point on the stack takes it: the jump ends the guarded CALL, and
+    ; the caller decides what that means. Without one this returns 0 and the
+    ; program ends exactly as it did before -- a program that never asks to
+    ; catch anything sees no change at all.
+    scaly_panic_jump(what, index, length)
+
     scaly_eputs(what)
     scaly_eputs(": index out of bounds (index ")
     scaly_eputi(index as i64)

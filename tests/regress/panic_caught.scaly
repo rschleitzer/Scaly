@@ -1,0 +1,110 @@
+; Regression: ein Programmierer kann eine Grenzverletzung BEHANDELN, statt
+; zuzusehen, wie der Prozess endet (TRAPS.md 0).
+;
+; Der Trap liegt tief unten in Code, der nichts von Fangpunkten weiss -- so
+; wie eine Bibliothek, die `[]` benutzt und die der Aufrufer nicht aendern
+; kann. Jeder der drei Rahmen forciert vorher eine Region: dass die
+; zurueckkommen, prueft der Wasserstand am Ende.
+;
+; Erwartet: PASS
+
+function deep3(n: i64) returns i64
+{
+    let s String("etwas auf der lokalen Region")
+    var buf int[2]
+    set buf[0]: 10
+    let v Slice[int](2, &buf[0])
+    if n > 0
+        return v[(n as size_t) + 4]        ; Index 5 in einer Sicht der Laenge 2
+    (s.get_length() as i64)
+}
+
+function deep2(n: i64) returns i64
+{
+    let s String("auch dieser Rahmen hat eine Region")
+    deep3(n) + ((s.get_length() as i64) / 34)
+}
+
+function deep1(n: i64) returns i64
+{
+    let s String("und dieser")
+    deep2(n) + ((s.get_length() as i64) / 10)
+}
+
+function body_panics(arg: pointer[void]) returns i64
+    deep1(1)
+
+function body_ok(arg: pointer[void]) returns i64
+    deep1(0)
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    ; (1) ohne Fangpunkt wuerde derselbe Zugriff den Prozess beenden --
+    ;     das prueft trap_slice_subscript.scaly, hier nur die Aussage:
+    if Region.catch_active()
+    {
+        print "FAIL: ein Fangpunkt stand schon"
+        return 1
+    }
+
+    ; (2) mit Fangpunkt endet der geschuetzte AUFRUF
+    var caught: i32 0
+    let r Region.run_guarded(&body_panics, null as pointer[void], &caught)
+    if caught = 0
+    {
+        print "FAIL: das Panic wurde nicht gefangen"
+        return 2
+    }
+
+    ; (3) und es sagt, was es sah
+    let idx Region.panic_index()
+    let len Region.panic_length()
+    if idx <> 5
+    {
+        print "FAIL: falscher Index"
+        return 3
+    }
+    if len <> 2
+    {
+        print "FAIL: falsche Laenge"
+        return 4
+    }
+
+    ; (4) danach laeuft das Programm weiter, und ein gueltiger Lauf geht durch
+    var caught2: i32 0
+    let r2 Region.run_guarded(&body_ok, null as pointer[void], &caught2)
+    if caught2 <> 0
+    {
+        print "FAIL: der gueltige Lauf hat gepanickt"
+        return 5
+    }
+    if r2 < 1
+    {
+        print "FAIL: der gueltige Lauf hat nichts geliefert"
+        return 6
+    }
+
+    ; (5) und die Regionen der uebersprungenen Rahmen sind zurueck: nach
+    ;     vielen Faengen muss der Wasserstand dort stehen, wo er stand
+    let mark_before scaly_panic_mark()
+    var i 0
+    while i < 200
+    {
+        var c3: i32 0
+        let rr Region.run_guarded(&body_panics, null as pointer[void], &c3)
+        if c3 = 0
+        {
+            print "FAIL: ein spaeterer Fang blieb aus"
+            return 7
+        }
+        set i: i + 1
+    }
+    if scaly_panic_mark() <> mark_before
+    {
+        print "FAIL: der Wasserstand der Regionen ist verschoben"
+        return 8
+    }
+
+    print "PASS"
+    0
+}
