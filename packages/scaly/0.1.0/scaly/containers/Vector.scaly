@@ -148,11 +148,7 @@ define Vector[T]
     function put(this: Vector[T], i: size_t, item: T)
     {
         if i >= length
-        {
-            scaly_eputs "Vector.put: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Vector.put", i, length)
 
         set *(data + i): item
     }
@@ -163,11 +159,7 @@ define Vector[T]
     operator [](i: size_t) returns T
     {
         if i >= length
-        {
-            scaly_eputs "Vector[]: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Vector[]", i, length)
 
         *(data + i)
     }

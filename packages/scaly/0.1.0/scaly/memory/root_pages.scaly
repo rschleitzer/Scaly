@@ -162,6 +162,46 @@ procedure scaly_eputi(n: i64)
     write(2 as int, (buf + pos) as pointer[void], len as size_t)
 }
 
+; The ONE place a bounds violation ends the program.
+;
+; Every `if i >= length` in Slice, Array and Vector routes here (eight sites,
+; TRAPS.md 2.1) instead of writing its own message and calling `exit` inline.
+; Three reasons, in the order they matter:
+;
+; 1. It is where a FANGPUNKT goes. The requirement in TRAPS.md 0 is that the
+;    programmer can handle an OoB where it happens, and a jump to a registered
+;    catch point has to be installed at ONE site, not at eight -- and never at
+;    the 929 call sites, which is what makes this the cheap preparation rather
+;    than the change itself. Nothing about the language moves yet.
+; 2. The trap can finally say WHAT it saw. `index 4, length 4` was unavailable
+;    before because the message was assembled inline at each site.
+; 3. `what` names the routine, so the eight messages stay distinguishable and
+;    the gates in tests/regress/trap_*.scaly keep pinning them one by one.
+;
+; ★★★It stays FREE OF COST at the access site, and that is measured, not
+; assumed: LLVM's function-attrs infers `noreturn` here (the body ends in
+; `exit`, which the Emitter marks) and then proves the cold arm redundant
+; against a loop condition and deletes it, message and all -- byte for byte the
+; emission of the inline form (TRAPS.md 1.2/1.6). ★The inference needs the BODY
+; in view: it holds while a program compiles the stdlib along with it, and a
+; separately compiled archive at a lower opt level does not get it. Should that
+; ever change, the fix is one name in `Emitter.mark_noreturn_callee`, whose list
+; is deliberately closed.
+;
+; `what` is a `pointer[const_char]` and not a `Slice[char]`: it goes straight
+; into scaly_eputs, which is the documented exception for the C boundary.
+procedure scaly_panic_oob(what: pointer[const_char], index: size_t, length: size_t)
+{
+    scaly_eputs(what)
+    scaly_eputs(": index out of bounds (index ")
+    scaly_eputi(index as i64)
+    scaly_eputs(", length ")
+    scaly_eputi(length as i64)
+    scaly_eputs(")")
+    scaly_eputnl()
+    exit 15
+}
+
 ; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array
 ; `char[]` lookup table would be a module-level array constant, which
 ; stage-1's planner emits as an external declaration (no body) — the
@@ -587,6 +627,59 @@ procedure scaly_release_frame(f: pointer[Frame])
         return
     set f.page: null as pointer[Page]
     scaly_release_root_page_full p
+}
+
+; --------------------------------------------------------------------------
+; Panic unwinding: giving the region stack back when control LEAVES by a jump
+; (TRAPS.md 0 and 5). Nothing calls this yet -- the catch point that will is
+; still to be built -- but the two halves it needs exist, and they are here
+; rather than in the eventual catch machinery because this file owns the
+; release side of the region stack.
+;
+; ★★★Why a WATERMARK and not a walk of the frame chain: a `Frame` lives on the
+; C stack of the function that owns it and is reached only child->parent
+; (scaly_force_frame above), so from a catch point there is no way DOWN to its
+; descendants. But every forced frame's page comes from the thread's
+; StackBucket via Page.allocate_root_page, and that is a STACK with one top
+; (`stack_top`). So the catch point records the top, and the unwind pops back
+; to it. This is the same shape as dazzle's frame mark.
+;
+; ★★★And it must POP rather than assign: scaly_release_root_page enforces
+; strict LIFO and abort()s on a mismatch, so overwriting `stack_top` would
+; skip the extension chains and the exclusive pages that
+; scaly_release_root_page_full frees -- the leak the LIFO check exists to
+; catch. Cost is one full release per frame that was actually FORCED, which is
+; what a normal return would have paid anyway; the jump only moves WHEN.
+;
+; ★A `longjmp` skips every epilogue between the trap and the catch point, so
+; the scaly_release_frame calls of the skipped frames never run. That is
+; exactly what this replaces -- and it is safe because those frames are gone
+; with the stack they lived on, so nothing can release the same page twice.
+
+; The watermark a catch point records before it runs guarded code.
+function scaly_panic_mark() returns pointer[Page]
+    stack_top
+
+; Root pages this thread gave back through a panic unwind — the proof that
+; they came back at all, in the shape cmscratch and framemark use.
+mutable panic_pages_unwound: i64 0
+
+function scaly_panic_pages_unwound() returns i64
+    panic_pages_unwound
+
+; Pop the region stack back to `mark`, releasing each root page in full.
+; A mark of null unwinds the whole stack; a mark that is already the top is a
+; no-op, so a catch point in the same frame as the trap costs nothing.
+procedure scaly_panic_unwind_to(mark: pointer[Page])
+{
+    while stack_top <> mark
+    {
+        let top stack_top
+        if top = null
+            return
+        scaly_release_root_page_full top
+        set panic_pages_unwound: panic_pages_unwound + 1
+    }
 }
 
 ; --------------------------------------------------------------------------

@@ -48,15 +48,15 @@ pointer-report: tests/pointer-report/fixture.scaly:35:19: cast pointer[u8] as po
 pointer-report: tests/pointer-report/fixture.scaly:47:9: deref pointer[T]
 pointer-report: tests/pointer-report/fixture.scaly:76:5: deref pointer[int]
 pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:45:9: arith pointer[u8] base=field(Slice.data) len=Slice.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:82:9: arith pointer[u8] base=field(Slice.data) len=Slice.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:104:9: store-arith pointer[u8] base=field(Slice.data) len=Slice.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:125:27: arith pointer[u8] base=field(Slice.data) len=Slice.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:145:21: arg-extern pointer[void] -> memcmp[0]
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:145:50: arg-extern pointer[void] -> memcmp[1]
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:145:21: cast pointer[u8] as pointer[void]
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:145:50: cast pointer[u8] as pointer[void]
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:225:9: local pointer[u8] result
-pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:225:20: arith pointer[u8] base=field(Slice.data) len=Slice.length
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:74:9: arith pointer[u8] base=field(Slice.data) len=Slice.length
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:92:9: store-arith pointer[u8] base=field(Slice.data) len=Slice.length
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:113:27: arith pointer[u8] base=field(Slice.data) len=Slice.length
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:133:21: arg-extern pointer[void] -> memcmp[0]
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:133:50: arg-extern pointer[void] -> memcmp[1]
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:133:21: cast pointer[u8] as pointer[void]
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:133:50: cast pointer[u8] as pointer[void]
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:213:9: local pointer[u8] result
+pointer-report: packages/scaly/0.1.0/scaly/containers/Slice.scaly:213:20: arith pointer[u8] base=field(Slice.data) len=Slice.length
 pointer-report: tests/pointer-report/fixture.scaly:91:20: arg pointer[u8] -> takes_ptr(p)
 pointer-report: tests/pointer-report/fixture.scaly:92:20: h-pointer-into-ref pointer[Leaf] -> takes_ref(r)
 pointer-report: tests/pointer-report/fixture.scaly:95:17: h-slice-into-pointer Slice[u8] -> take(p)
@@ -75,7 +75,7 @@ pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:108:22: arith 
 pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:109:9: store pointer[u8]
 pointer-report: packages/scaly/0.1.0/scaly/containers/Vector.scaly:133:9: arith pointer[u8] base=field(Vector.data) len=Vector.length
 pointer-report: packages/scaly/0.1.0/scaly/containers/Vector.scaly:142:9: arith pointer[u8] base=field(Vector.data) len=Vector.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Vector.scaly:157:9: store-arith pointer[u8] base=field(Vector.data) len=Vector.length
+pointer-report: packages/scaly/0.1.0/scaly/containers/Vector.scaly:153:9: store-arith pointer[u8] base=field(Vector.data) len=Vector.length
 pointer-report: packages/scaly/0.1.0/scaly/containers/Vector.scaly:75:68: cast pointer[void] as pointer[u8]
 pointer-report: packages/scaly/0.1.0/scaly/containers/Vector.scaly:76:19: arg-extern pointer[u8] -> memset[0]
 pointer-report: packages/scaly/0.1.0/scaly/containers/Vector.scaly:88:71: cast pointer[void] as pointer[u8]
@@ -99,13 +99,13 @@ pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:170:19: arg-ex
 pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:170:40: arg-extern pointer[u8] -> memcpy(src)
 pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:170:19: arith pointer[u8] base=field(Vector.data) len=Vector.length
 pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:180:9: arith pointer[u8] base=field(Vector.data) len=Vector.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:225:9: arith pointer[u8] base=field(Vector.data) len=Vector.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:253:9: store-arith pointer[u8] base=field(Vector.data) len=Vector.length
+pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:221:9: arith pointer[u8] base=field(Vector.data) len=Vector.length
+pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:245:9: store-arith pointer[u8] base=field(Vector.data) len=Vector.length
 pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:51:9: arith pointer[u8] base=call(get_buffer) recv=Array len=Array.length
-pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:327:19: arg-extern pointer[u8] -> memcpy(dst)
-pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:327:35: arg-extern pointer[u8] -> memcpy(src)
-pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:338:15: arg-extern pointer[u8] -> memcpy(dst)
-pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:338:31: arg-extern pointer[u8] -> memcpy(src)
+pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:321:19: arg-extern pointer[u8] -> memcpy(dst)
+pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:321:35: arg-extern pointer[u8] -> memcpy(src)
+pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:332:15: arg-extern pointer[u8] -> memcpy(dst)
+pointer-report: packages/scaly/0.1.0/scaly/containers/Array.scaly:332:31: arg-extern pointer[u8] -> memcpy(src)
 pointer-report: tests/pointer-report/fixture.scaly:145:5: local pointer[u8] buf
 pointer-report: tests/pointer-report/fixture.scaly:145:33: cast pointer[void] as pointer[u8]
 pointer-report: tests/pointer-report/fixture.scaly:146:19: deref-arith pointer[u8] base=param(src) len=n

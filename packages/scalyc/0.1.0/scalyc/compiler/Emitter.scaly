@@ -3798,6 +3798,28 @@ define Emitter
                 set known: true
             if name = "_exit"
                 set known: true
+            ; The stdlib's bounds panic (scaly/memory/root_pages.scaly). It is
+            ; the only SCALY routine in this list, and it is here by its MANGLED
+            ; name because that is the name the on-the-fly declaration path
+            ; below carries -- the body lives in libscaly.a, so a program's
+            ; module sees a `declare` and LLVM cannot infer the attribute the
+            ; way it does inside the archive (where the body ends in `exit`).
+            ;
+            ; ★★★The attribute is NOT about deleting the check: SCEV deletes
+            ; that on its own against a loop condition, measured with a plain
+            ; `declare`. It is about the cold arm not POISONING the hot path.
+            ; Without it LLVM must assume the panic returns and may have
+            ; written memory, so every CSE across a check dies: two accesses
+            ; to one index kept two checks, reloaded `length` AND `data` after
+            ; the cold arm, and added two loads where the attribute turns the
+            ; pair into `shl i64 %deref, 1` (TRAPS.md 1.2).
+            ;
+            ; ★★★A mangled name written out as a literal FREEZES the routine's
+            ; parameter types -- the eighth such case in this tree, and
+            ; CLAUDE.md's rule applies: grep for this string before re-signing
+            ; scaly_panic_oob. The RETURN is free (Itanium does not encode it).
+            if name = "_Z15scaly_panic_oobP10const_charmm"
+                set known: true
             if known = false
                 return
 

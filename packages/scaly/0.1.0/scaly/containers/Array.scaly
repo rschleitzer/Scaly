@@ -211,16 +211,12 @@ define Array[T]
     ; violation. Here the one check carries the one message.
     ;
     ; ★The trap sits INLINE for the reason the operator below records, and the
-    ; arm is COLD and ends in `exit` (noreturn since 2026-08-27), so LLVM proves
-    ; it redundant against a loop condition and deletes it, message and all.
+    ; arm is COLD and calls scaly_panic_oob (2026-09-07), which LLVM proves
+    ; redundant against a loop condition and deletes, message and all.
     function at(this: Array[T], i: size_t) returns ref[T]
     {
         if i >= length
-        {
-            scaly_eputs "Array.at: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Array.at", i, length)
 
         vector.data + i
     }
@@ -244,11 +240,7 @@ define Array[T]
     function put(this: Array[T], i: size_t, item: T)
     {
         if i >= length
-        {
-            scaly_eputs "Array.put: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Array.put", i, length)
 
         set *(vector.data + i): item
     }
@@ -263,10 +255,16 @@ define Array[T]
     ; dead `linkonce_odr` functions the whole-program `opt -O2` cannot drop (a
     ; linkonce_odr symbol may be referenced from another module), and the
     ; compiler binary grew 80 KB for containers nobody subscripts.
-    ; ★The arm is COLD and ends in `exit`, which carries the noreturn attribute
-    ; since 2026-08-27 — that is what lets LLVM prove the guard redundant
-    ; against a loop condition and delete this block entirely, message and all,
-    ; so the checked access is instruction-identical to a raw pointer walk.
+    ; ★The arm is COLD, and the checked access comes out instruction-identical
+    ; to a raw pointer walk — LLVM deletes the guard entirely, message and all.
+    ; ★★★Measured 2026-09-07, because the reason written here until then was
+    ; WRONG: it is not the noreturn attribute. SCEV proves `i >= length`
+    ; against the loop's own `i < length` and drops the block, and it does so
+    ; even for a plain `declare` with no attribute at all. What the attribute
+    ; buys is the OTHER case — an index the loop cannot bound. Without it LLVM
+    ; must assume scaly_panic_oob returns having written memory, so every CSE
+    ; across a check dies: two accesses to one index kept two checks and
+    ; reloaded both `length` and `data`. Account in TRAPS.md 1.2.
 
     ; The ORDINARY element access, and it reads like the reference ports it
     ; serves: Clark's `v[i]` and tsgo's `x[i]`. An index past the end is a
@@ -278,11 +276,7 @@ define Array[T]
     {
         ; `i >= length` avoids the `i + 1` overflow at SIZE_MAX.
         if i >= length
-        {
-            scaly_eputs "Array[]: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Array[]", i, length)
 
         *(vector.data + i)
     }

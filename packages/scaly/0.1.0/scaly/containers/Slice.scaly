@@ -51,11 +51,7 @@ define Slice[T](length: size_t, data: pointer[T])
     operator [](index: size_t) returns T
     {
         if index >= length
-        {
-            scaly_eputs "Slice[]: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Slice[]", index, length)
 
         *(data + index)
     }
@@ -73,11 +69,7 @@ define Slice[T](length: size_t, data: pointer[T])
     function at(this, index: size_t) returns ref[T]
     {
         if index >= length
-        {
-            scaly_eputs "Slice.at: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Slice.at", index, length)
 
         data + index
     }
@@ -95,11 +87,7 @@ define Slice[T](length: size_t, data: pointer[T])
     function put(this, index: size_t, value: T)
     {
         if index >= length
-        {
-            scaly_eputs "Slice.put: index out of bounds"
-            scaly_eputnl()
-            exit 15
-        }
+            scaly_panic_oob("Slice.put", index, length)
 
         set *(data + index): value
     }
