@@ -1,0 +1,14 @@
+; Tor: Slice.at -- die geborgte Referenz. Eine METHODE und damit ein anderer
+; Emissionsweg als operator[] (eine Methode wird fuer JEDE Instanziierung
+; emittiert, ein Operator nur dort, wo er benutzt wird).
+; expect-rc: 15
+; expect-out: Slice.at: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var buf int[4]
+    set buf[0]: 10
+    let s Slice[int](4, &buf[0])
+    let r s.at((argc as size_t) + 3)
+    r
+}

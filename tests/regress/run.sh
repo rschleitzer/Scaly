@@ -50,12 +50,44 @@ for f in tests/regress/*.scaly; do
         if [ -z "$LLVM_LIBDIR" ]; then source tools/llvm-env.sh >/dev/null; fi
         extra=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
       fi
-      "$STAGE" -o "$bin" "$f" "${extra[@]}" >/dev/null 2>&1
-      out=$("$bin" 2>/dev/null)
-      if [ "$out" = "PASS" ]; then
-        pass=$((pass+1))
+      if grep -q '^; expect-rc: ' "$f"; then
+        # RUNTIME-TRAP gate: the fixture must COMPILE cleanly and then abort
+        # with the given exit code. It exists because a hard trap cannot live
+        # in the PASS branch above — the program never reaches a print — so
+        # without this branch nothing in the tree ever fires a trap, and a
+        # bounds check that stopped being emitted would leave every suite
+        # green (TRAPS.md 1.5). Keyed on the MARKER and not on a name prefix,
+        # so a fixture cannot fall into the wrong branch by being renamed.
+        #
+        # The compile must SUCCEED: a broken compiler exits nonzero too, and
+        # scoring that as a pass is exactly the failure this gate is for.
+        # `; expect-out:` (repeatable) pins the trap's own message, so an
+        # unrelated abort with the same code cannot satisfy the test.
+        want_rc=$(sed -n 's/^; expect-rc: //p' "$f" | head -1)
+        crc=0
+        "$STAGE" -o "$bin" "$f" "${extra[@]}" >/dev/null 2>&1 || crc=$?
+        if [ $crc -ne 0 ]; then
+          fail=$((fail+1)); failures+=("$t: compile failed rc=$crc")
+        else
+          out=$("$bin" 2>&1); rc=$?
+          missing=""
+          while IFS= read -r w; do
+            [ -n "$w" ] && ! printf '%s' "$out" | grep -qF "$w" && missing="$w"
+          done < <(sed -n 's/^; expect-out: //p' "$f")
+          if [ "$rc" = "$want_rc" ] && [ -z "$missing" ]; then
+            pass=$((pass+1))
+          else
+            fail=$((fail+1)); failures+=("$t: rc=$rc want=$want_rc missing='$missing' out='$out'")
+          fi
+        fi
       else
-        fail=$((fail+1)); failures+=("$t: '$out'")
+        "$STAGE" -o "$bin" "$f" "${extra[@]}" >/dev/null 2>&1
+        out=$("$bin" 2>/dev/null)
+        if [ "$out" = "PASS" ]; then
+          pass=$((pass+1))
+        else
+          fail=$((fail+1)); failures+=("$t: '$out'")
+        fi
       fi
       ;;
   esac

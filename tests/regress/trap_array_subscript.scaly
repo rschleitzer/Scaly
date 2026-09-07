@@ -1,0 +1,11 @@
+; Tor: Array.operator[].
+; expect-rc: 15
+; expect-out: Array[]: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var arr Array[int]()
+    arr.add(10)
+    arr.add(11)
+    arr[(argc as size_t) + 1]
+}

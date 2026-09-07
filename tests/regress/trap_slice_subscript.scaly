@@ -1,0 +1,22 @@
+; Tor: der Bounds-Check von Slice.operator[] MUSS in der Emission ankommen.
+;
+; Es ist der erste Test des Baums, der einen LAUFZEIT-Trap wirklich ausloest
+; (TRAPS.md 1.5: bis 2026-09-07 tat das keiner, und der Laeufer konnte es auch
+; nicht bewerten -- ein Fixture, das mit exit 15 endet, druckt kein PASS).
+; Der Marker `; expect-rc:` ist genau dafuer da.
+;
+; Der Empfaenger ist LOKAL konstruiert, und das ist die riskante Form: ein
+; generischer Operator verliert dort sein Resultat (tools/opzero/scan.py), den
+; Bounds-Check aber nicht. Dass das so bleibt, haelt dieser Test fest.
+;
+; Der Index kommt aus argc, damit er nicht wegfaltet.
+; expect-rc: 15
+; expect-out: Slice[]: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var buf int[4]
+    set buf[0]: 10
+    let s Slice[int](4, &buf[0])
+    s[(argc as size_t) + 3]
+}

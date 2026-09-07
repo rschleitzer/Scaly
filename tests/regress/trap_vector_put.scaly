@@ -1,0 +1,13 @@
+; Tor: Vector.put -- der Schreibweg.
+; expect-rc: 15
+; expect-out: Vector.put: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var arr Array[int]()
+    arr.add(10)
+    arr.add(11)
+    let v Vector[int](arr)
+    v.put((argc as size_t) + 1, 99)
+    0
+}

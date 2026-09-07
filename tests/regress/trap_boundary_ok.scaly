@@ -1,0 +1,40 @@
+; Die negative Kontrolle zu den acht trap_*-Toren: derselbe Aufbau, aber am
+; LETZTEN GUELTIGEN Index. Ohne sie koennte jedes Tor gruen sein, weil das
+; Fixture-Muster IMMER trappt -- ein Pruefer, der nicht auch bestehen kann,
+; beweist nichts. Erwartet: PASS.
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let last (argc as size_t) - 1        ; argc = 1 -> Index 0
+
+    var buf int[4]
+    set buf[0]: 10
+    let s Slice[int](4, &buf[0])
+    if s[last] <> 10
+        exit 30
+    if s.at(last) <> 10
+        exit 31
+    s.put(last, 11)
+    if s[last] <> 11
+        exit 32
+
+    var arr Array[int]()
+    arr.add(20)
+    if arr[last] <> 20
+        exit 33
+    if arr.at(last) <> 20
+        exit 34
+    arr.put(last, 21)
+    if arr[last] <> 21
+        exit 35
+
+    let v Vector[int](arr)
+    if v[last] <> 21
+        exit 36
+    v.put(last, 22)
+    if v[last] <> 22
+        exit 37
+
+    print "PASS"
+    0
+}

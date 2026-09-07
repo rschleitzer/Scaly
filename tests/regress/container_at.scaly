@@ -12,9 +12,10 @@
 ; visible in the OWNER's buffer, the same through a `ref[Array[T]]` receiver
 ; (the ports' parameter form), and a Slice view that shares the memory.
 ;
-; The trap itself is not exercised here: the harness judges a test by its
-; stdout being "PASS", so a fixture that exits 15 cannot report. It is the same
-; inline arm as operator[]'s and put's.
+; The trap itself is not exercised here, but it IS exercised now: since
+; 2026-09-07 the `; expect-rc:` gate runs all eight bounds traps as their own
+; fixtures (trap_slice_*, trap_array_*, trap_vector_*, plus trap_boundary_ok as
+; the negative control). This test keeps the in-bounds half.
 ;
 ; Expected: PASS
 

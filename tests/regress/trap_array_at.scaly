@@ -1,0 +1,12 @@
+; Tor: Array.at -- die geborgte Referenz.
+; expect-rc: 15
+; expect-out: Array.at: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var arr Array[int]()
+    arr.add(10)
+    arr.add(11)
+    let r arr.at((argc as size_t) + 1)
+    r
+}

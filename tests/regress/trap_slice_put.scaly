@@ -1,0 +1,14 @@
+; Tor: Slice.put -- der Schreibweg. Er schreibt DURCH die Sicht in Speicher,
+; der ihr nicht gehoert, weshalb ein Index daneben hier fremden Speicher
+; ueberschreiben wuerde. Die Pruefung ist also nicht nur Diagnose.
+; expect-rc: 15
+; expect-out: Slice.put: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var buf int[4]
+    set buf[0]: 10
+    let s Slice[int](4, &buf[0])
+    s.put((argc as size_t) + 3, 99)
+    0
+}

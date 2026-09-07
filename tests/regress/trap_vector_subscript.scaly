@@ -1,0 +1,13 @@
+; Tor: Vector.operator[]. Der Vector ist FESTER Groesse und wird hier aus
+; einem Array eingefroren -- die Form, die der Baum benutzt.
+; expect-rc: 15
+; expect-out: Vector[]: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var arr Array[int]()
+    arr.add(10)
+    arr.add(11)
+    let v Vector[int](arr)
+    v[(argc as size_t) + 1]
+}
