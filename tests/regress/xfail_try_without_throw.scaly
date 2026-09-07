@@ -1,0 +1,26 @@
+; Expected-failure: ein `try`, dessen Bedingung nichts wirft, ist eine Luege --
+; die `when`-Arme sind unerreichbar.
+;
+; Bis 2026-09-07 uebersetzte diese Form WORTLOS und tat nichts: der Arm wurde
+; nicht emittiert (die 55 kam im IR nicht vor), und ein Laufzeit-Trap beendete
+; den Prozess mit rc 15, als staende kein try da. Ein Autor konnte damit einen
+; behandelten Fall hinschreiben, der keiner ist.
+;
+; Ein Laufzeit-Trap ist kein `throw`: fangbar ist er heute nur um einen AUFRUF
+; herum, mit Region.run_guarded (tests/regress/panic_caught.scaly).
+; xfail: this try cannot catch anything
+
+define OobErr union (Oob: Detail)
+define Detail(index: size_t)
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var buf int[2]
+    set buf[0]: 10
+    let s Slice[int](2, &buf[0])
+
+    try let x s[(argc as size_t) + 4]
+        when e: Oob
+            return 55
+    x as int
+}

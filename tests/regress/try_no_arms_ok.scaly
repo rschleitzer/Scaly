@@ -1,0 +1,22 @@
+; Die Grenze der Regel aus xfail_try_without_throw: gemeldet wird ein try mit
+; unerreichbaren `when`-ARMEN. Ein try ohne Arme sagt nichts ueber Fehlerarten
+; und bleibt unbehelligt -- sonst waere die Diagnose eine Aussage ueber die
+; Form statt ueber die Unerreichbarkeit.
+;
+; Erwartet: PASS
+
+function plain(n: int) returns int
+    n + 1
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    try let v plain(argc)
+    else
+        return 9
+
+    if v <> 2
+        return 1
+
+    print "PASS"
+    0
+}

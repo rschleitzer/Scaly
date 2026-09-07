@@ -20348,6 +20348,75 @@ define Planner
             )
         }
 
+        ; try_condition_can_throw#: does ANY operand of a try's condition throw?
+        ;
+        ; plan_try below reads only the LAST operand, because that is where the
+        ; Result wrapper it has to unpack sits. For the DIAGNOSIS the question
+        ; is the other one -- is there anything in this condition that could
+        ; throw at all -- and it must be asked over every operand, or a
+        ; condition like `f() + 1` with a throwing `f` would be reported as a
+        ; lie when it is not one.
+        function try_condition_can_throw(bind: PlannedBinding) returns bool
+        {
+            if bind.operation = null
+                return false
+
+            let ops (*bind.operation)
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get(i)
+                if op_ptr <> null
+                {
+                    let op (*op_ptr)
+                    choose op.expr
+                        when call: Call
+                        {
+                            if call.can_throw
+                                return true
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; report_try_without_throw#: a `try` whose condition cannot throw.
+        ;
+        ; ★★★It used to compile in TOTAL SILENCE and do nothing: the `when`
+        ; arms were not emitted at all -- `try let x s[i] when e: Oob return 55`
+        ; ended the process with rc 15 and the 55 never appeared in the IR, and
+        ; `try let v plain(argc) when e: X` simply ran the call and dropped the
+        ; arm (both measured 2026-09-07 on the production binary). So an author
+        ; could write a handled case that is none, and nothing anywhere said a
+        ; word.
+        ;
+        ; ★It is the CONDITION that is judged, never the arms: a `try` with no
+        ; arms at all is left alone, and so is one whose condition throws
+        ; somewhere other than in its last operand.
+        ;
+        ; ★A bounds violation is exactly what an author reaches for here (see
+        ; TRAPS.md), so the message names the route that DOES catch one today
+        ; instead of only refusing.
+        procedure report_try_without_throw(this: Planner, t: Try, bind: PlannedBinding)
+        {
+            if t.catches.length = 0
+                return
+
+            if Planner.try_condition_can_throw(bind)
+                return
+
+            var tsb StringBuilder()
+            ; No raw backticks in a compiler string: they are interpolation
+            ; (CLAUDE.md), and the parse error names the interpolation rather
+            ; than this line.
+            tsb.append "this try cannot catch anything: its condition calls no throws function, so the when arms are unreachable -- a runtime trap (a bounds violation, exit 15) is NOT caught by try; guard the call with Region.run_guarded, or drop the try"
+            let tmsg tsb.to_string()
+            this.add_diagnostic(t.span, String^this(tmsg))
+        }
+
         ; plan_try: try { binding } catch WhenPatterns else alt.
         function plan_try(this: Planner, t: Try) returns PlannedTry
         {
@@ -20395,6 +20464,8 @@ define Planner
                     }
                 }
             }
+
+            this.report_try_without_throw(t, planned_bind)
 
             var catches_arr Array[PlannedWhen]()
             var ci: size_t 0
