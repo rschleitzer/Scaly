@@ -247,6 +247,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @trace_entries = thread_local global ptr null
 @"9TRACE_MAX" = internal constant i64 8192
 @fmt_scratch = thread_local global ptr null
+@panic_oob_count = thread_local global i64 0
 @panic_pages_unwound = thread_local global i64 0
 @heap_trace_state = global i64 0
 @heap_trace = global ptr null
@@ -1419,8 +1420,17 @@ declare i64 @scaly_panic_last_index()
 
 declare i64 @scaly_panic_last_length()
 
+define linkonce_odr i64 @_Z21scaly_panic_oob_countv() {
+entry:
+  %global.load = load i64, ptr @panic_oob_count, align 8
+  ret i64 %global.load
+}
+
 define linkonce_odr void @_Z15scaly_panic_oobP10const_charmm(ptr %0, i64 %1, i64 %2) {
 entry:
+  %global.load = load i64, ptr @panic_oob_count, align 8
+  %add = add i64 %global.load, 1
+  store i64 %add, ptr @panic_oob_count, align 8
   %call = call i32 @scaly_panic_jump(ptr %0, i64 %1, i64 %2)
   call void @_Z11scaly_eputsP10const_char(ptr %0)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6)
@@ -3189,6 +3199,12 @@ entry:
 define linkonce_odr i64 @_ZN6Region12panic_lengthEv() {
 entry:
   %call = call i64 @scaly_panic_last_length()
+  ret i64 %call
+}
+
+define linkonce_odr i64 @_ZN6Region11panic_countEv() {
+entry:
+  %call = call i64 @_Z21scaly_panic_oob_countv()
   ret i64 %call
 }
 
@@ -36037,7 +36053,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 467076
+  %parfor.x.add = mul i64 %parfor.x.iters, 467396
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.192, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -36350,7 +36366,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 350084
+  %parfor.x.add = mul i64 %parfor.x.iters, 350404
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.207, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -36649,7 +36665,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 695255
+  %parfor.x.add = mul i64 %parfor.x.iters, 695895
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.217, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -37021,7 +37037,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 348702
+  %parfor.x.add = mul i64 %parfor.x.iters, 349022
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.227, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -37381,7 +37397,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 344521
+  %parfor.x.add = mul i64 %parfor.x.iters, 344841
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.232, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -38416,7 +38432,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 344900
+  %parfor.x.add = mul i64 %parfor.x.iters, 345220
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.242, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -38715,7 +38731,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 344784
+  %parfor.x.add = mul i64 %parfor.x.iters, 345104
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.247, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -39086,7 +39102,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 467652
+  %parfor.x.add = mul i64 %parfor.x.iters, 467972
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.197, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -39395,7 +39411,7 @@ pfor.exit.n105:                                   ; preds = %pfor.exit.acct104
   br i1 %parfor.x.ran206, label %pfor.exit.add106, label %pfor.done103
 
 pfor.exit.add106:                                 ; preds = %pfor.exit.n105
-  %parfor.x.add207 = mul i64 %parfor.x.iters205, 467652
+  %parfor.x.add207 = mul i64 %parfor.x.iters205, 467972
   %parfor.x.v0208 = load i64, ptr @parfor.site.vol.202, align 8
   %parfor.x.v1209 = add i64 %parfor.x.v0208, %parfor.x.add207
   %parfor.x.over210 = icmp sgt i64 %parfor.x.v1209, 1099511627776
@@ -39724,7 +39740,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 352644
+  %parfor.x.add = mul i64 %parfor.x.iters, 352964
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.212, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -40048,7 +40064,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 347721
+  %parfor.x.add = mul i64 %parfor.x.iters, 348041
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.222, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
@@ -40774,7 +40790,7 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
   br i1 %parfor.x.ran, label %pfor.exit.add, label %pfor.done
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
-  %parfor.x.add = mul i64 %parfor.x.iters, 357404
+  %parfor.x.add = mul i64 %parfor.x.iters, 357724
   %parfor.x.v0 = load i64, ptr @parfor.site.vol.237, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776

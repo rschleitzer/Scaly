@@ -406,6 +406,15 @@ define Region
     function panic_length() returns i64
         scaly_panic_last_length()
 
+    ; How many bounds traps this thread has raised, caught and fatal alike.
+    ; The counter sits at the ONE panic site (root_pages.scaly), which is what
+    ; makes it a single load instead of eight; TRAPS.md 4 is the question it
+    ; answers. ★A caller that wants the count for a WINDOW takes a delta --
+    ; there is deliberately no reset, because two callers resetting one
+    ; thread-local counter would each destroy the other's measurement.
+    function panic_count() returns i64
+        scaly_panic_oob_count()
+
     ; Is a catch point installed on this thread's stack? The panic helper asks
     ; the shim the same question implicitly; this is for a caller that wants to
     ; know whether a trap would end the process.

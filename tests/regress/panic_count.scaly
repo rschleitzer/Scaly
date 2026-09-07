@@ -1,0 +1,96 @@
+; Regression: der Zähler am Panic-Ort (TRAPS.md 4).
+;
+; Die Bestandsaufnahme nannte als erste Unbekannte, wie oft ein Bounds-Trap im
+; Betrieb wirklich feuert -- keine Zahl, kein Zähler. Seit alle acht Traps
+; durch `scaly_panic_oob` laufen, ist das eine Stelle, und dieses Tor hält
+; fest, dass sie zählt: den GEFANGENEN Trap ebenso wie den tödlichen, denn ein
+; langlebiger Prozess sieht nur die gefangenen und die stehen in keinem
+; Exit-Code.
+;
+; Erwartet: PASS
+
+function trapper(n: i64) returns i64
+{
+    var buf int[2]
+    set buf[0]: 10
+    let v Slice[int](2, &buf[0])
+    if n > 0
+        return v[(n as size_t) + 4]        ; Index 5 in einer Sicht der Länge 2
+    v[0] as i64
+}
+
+function body_panics(arg: pointer[void]) returns i64
+    trapper(1)
+
+function body_ok(arg: pointer[void]) returns i64
+    trapper(0)
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    ; (1) vor dem ersten Trap steht der Zähler auf 0
+    if Region.panic_count() <> 0
+    {
+        print "FAIL: der Zähler stand nicht auf 0"
+        return 1
+    }
+
+    ; (2) ein gültiger Lauf bewegt ihn nicht -- gezählt wird der Trap, nicht
+    ;     der Zugriff, sonst wäre die Zahl eine Zugriffsstatistik
+    var caught_ok: i32 0
+    let r0 Region.run_guarded(&body_ok, null as pointer[void], &caught_ok)
+    if caught_ok <> 0
+    {
+        print "FAIL: der gültige Lauf hat gepanickt"
+        return 2
+    }
+    if Region.panic_count() <> 0
+    {
+        print "FAIL: der gültige Lauf hat gezählt"
+        return 3
+    }
+
+    ; (3) ein gefangener Trap zählt genau einmal
+    var caught: i32 0
+    let r1 Region.run_guarded(&body_panics, null as pointer[void], &caught)
+    if caught = 0
+    {
+        print "FAIL: das Panic wurde nicht gefangen"
+        return 4
+    }
+    if Region.panic_count() <> 1
+    {
+        print "FAIL: ein gefangener Trap zählte nicht genau einmal"
+        return 5
+    }
+
+    ; (4) und die Zahl ist eine Zahl: 50 Fänge sind 50, nicht "mehr als 0"
+    let before Region.panic_count()
+    var i 0
+    while i < 50
+    {
+        var c: i32 0
+        let rr Region.run_guarded(&body_panics, null as pointer[void], &c)
+        if c = 0
+        {
+            print "FAIL: ein späterer Fang blieb aus"
+            return 6
+        }
+        set i: i + 1
+    }
+    if Region.panic_count() - before <> 50
+    {
+        print "FAIL: die Differenz über 50 Fänge stimmt nicht"
+        return 7
+    }
+
+    ; (5) der Concept-Static und die freie Funktion sind dieselbe Zelle -- die
+    ;     eine ist die Oberfläche, die andere der Ort
+    if Region.panic_count() <> scaly_panic_oob_count()
+    {
+        print "FAIL: Region.panic_count und scaly_panic_oob_count weichen ab"
+        return 8
+    }
+
+    print "PASS"
+    0
+}

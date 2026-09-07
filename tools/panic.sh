@@ -8,7 +8,7 @@
 # and every scalyc/scalyls link lists it explicitly (see tools/seed.sh,
 # tools/build-from-seed.sh, tools/verify-seed.sh, tools/install.sh).
 #
-# Usage: tools/ctime.sh [output.o]
+# Usage: tools/panic.sh [output.o]
 set -e
 cd "$(dirname "$0")/.."
 

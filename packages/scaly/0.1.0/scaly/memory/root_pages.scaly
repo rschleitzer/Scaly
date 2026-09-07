@@ -201,8 +201,40 @@ function scaly_panic_last_length() returns i64 extern
 ;
 ; `what` is a `pointer[const_char]` and not a `Slice[char]`: it goes straight
 ; into scaly_eputs, which is the documented exception for the C boundary.
+
+; Bounds traps this THREAD raised, caught and fatal alike (TRAPS.md 4, the
+; first of the three things that inventory did not know: nobody had a number
+; for how often a trap fires in operation, because a fatal one printed and
+; left and a caught one said nothing at all).
+;
+; ★It counts the RAISE and not the death, so a guarded process that survives
+; 200 of them reports 200 -- that is the number the FHIR-server case needs,
+; where every trap is caught and none is visible in an exit code.
+;
+; ★★It is THREAD-LOCAL, like `panic_pages_unwound` below and like every
+; `mutable` global in this language: a trap raised by a worker of a
+; self-scaled `for` is counted on THAT thread and cannot be read from here. A
+; process-wide total would need a `shared` cell, and a `shared` SCALAR cannot
+; be bumped atomically today (`&global` on a scalar mis-emits, CLAUDE.md) --
+; so it would move into the C shim, and the cross-thread panic is an open
+; corner anyway (TRAPS.md 5.5). Stated rather than half-answered.
+;
+; ★It costs the cold path one load, one add and one store, and the access
+; site nothing: the arm is still deleted whole where LLVM proves it
+; unreachable, and `scaly_panic_oob` still ends in `exit`, so the noreturn
+; inference that 1.2/1.6 hang on is unchanged.
+mutable panic_oob_count: i64 0
+
+function scaly_panic_oob_count() returns i64
+    panic_oob_count
+
 procedure scaly_panic_oob(what: pointer[const_char], index: size_t, length: size_t)
 {
+    ; Count BEFORE the jump: scaly_panic_jump does not return when a catch
+    ; point is installed, so a bump behind it would count only the traps that
+    ; kill the process -- the ones nobody needs a counter for.
+    set panic_oob_count: panic_oob_count + 1
+
     ; A catch point on the stack takes it: the jump ends the guarded CALL, and
     ; the caller decides what that means. Without one this returns 0 and the
     ; program ends exactly as it did before -- a program that never asks to

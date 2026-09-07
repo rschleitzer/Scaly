@@ -197,9 +197,16 @@ HAVE_LLVM=$(printf '%s\n' "$ALL" | grep -E "$LLVMLIB")
 # need the Windows SDK. That makes this an advisory answer, not a linker's —
 # but it answers "is anything unprovided" NOW, before the archive plumbing
 # exists, and a symbol missing here is missing either way.
+# ★panic.c stands here although it is NOT Windows-specific: this list is "what
+# our own C sources define", and the panic shim is one of them (it is on every
+# link line, tools/panic.sh). It was missing when the shim landed, so the six
+# scaly_catch_*/scaly_panic_* symbols were reported MISSING and this tool said
+# INCOMPLETE — an advisory that is red for a known reason hides the next symbol
+# that is missing for a real one.
 WIN_C="packages/scaly/0.1.0/scaly/fiber/eio_win.c
 packages/scaly/0.1.0/scaly/win32/posixcompat.c
-packages/scaly/0.1.0/scaly/time/ctime.c"
+packages/scaly/0.1.0/scaly/time/ctime.c
+packages/scaly/0.1.0/scaly/memory/panic.c"
 WIN_S="packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_win.S"
 
 # A definition is a non-indented line naming a function, whose body opens
@@ -222,6 +229,24 @@ defs_of_c() {
           while (nx ~ /^[ \t]*$/) { if ((getline nx) <= 0) break }
           if (nx ~ /^[ \t]*\{/) ok = 1
         }
+      }
+      else {
+        # Third shape: a PARAMETER LIST CONTINUED over lines. panic.c writes
+        # scaly_catch_run that way, and without this it was reported MISSING
+        # -- the same false alarm the one-liner shape above exists for.
+        while ((getline nx) > 0) {
+          if (++cont > 8) break
+          if (nx ~ /;[ \t]*$/) break                 # a multi-line PROTOTYPE
+          if (nx ~ /\{/) { ok = 1; break }
+          if (nx ~ /\)[ \t]*$/) {
+            if ((getline nx2) > 0) {
+              while (nx2 ~ /^[ \t]*$/) { if ((getline nx2) <= 0) break }
+              if (nx2 ~ /^[ \t]*\{/) ok = 1
+            }
+            break
+          }
+        }
+        cont = 0
       }
       if (ok) { sub(/\(.*/, "", cand); sub(/.*[ \t*]/, "", cand); print cand }
     }' "$1"
