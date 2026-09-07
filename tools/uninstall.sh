@@ -58,7 +58,7 @@ fi
 
 # Drop the runtime archive the installer built (cheap to rebuild; reinstalling
 # or a direct build recreates it).
-for f in "$REPO/lib/libscaly.a" "$REPO/lib/libscaly.o" "$REPO/lib/fcontext.o" "$REPO/lib/eio.o" "$REPO/lib/ctime.o"; do
+for f in "$REPO/lib/libscaly.a" "$REPO/lib/libscaly.o" "$REPO/lib/fcontext.o" "$REPO/lib/eio.o" "$REPO/lib/ctime.o" "$REPO/lib/panic.o"; do
   if [ -e "$f" ]; then
     rm -f "$f"
     echo "uninstall: removed $f"
@@ -67,6 +67,6 @@ done
 rmdir "$REPO/lib" 2>/dev/null || true
 
 # Best-effort: also clear the ephemeral /tmp archive a non-installed build uses.
-rm -f /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o 2>/dev/null || true
+rm -f /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o 2>/dev/null || true
 
 echo "uninstall: done — scalyc/build/scalyc and the source tree are untouched."

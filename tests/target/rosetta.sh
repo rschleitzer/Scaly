@@ -55,12 +55,12 @@ echo "rosetta: building the $TRIPLE runtime archive"
 "$SCALYC" --target "$TRIPLE" -c --no-prelude --no-tests \
           -o "$WORK/libscaly.o" packages/scaly/0.1.0/scaly.scaly \
     || { echo "rosetta: FAIL — runtime cross-emit"; exit 1; }
-for s in fcontext eio ctime; do
+for s in fcontext eio ctime panic; do
     SCALY_ARCH=x86_64 "tools/$s.sh" "$WORK/$s.o" \
         || { echo "rosetta: FAIL — $s.sh with SCALY_ARCH=x86_64"; exit 1; }
 done
 ar rcs "$WORK/libscaly.a" "$WORK/libscaly.o" "$WORK/fcontext.o" \
-       "$WORK/eio.o" "$WORK/ctime.o" || { echo "rosetta: FAIL — ar"; exit 1; }
+       "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" || { echo "rosetta: FAIL — ar"; exit 1; }
 
 # ---- the AOT corpus, as ground truth --------------------------------------
 # Compare against each test's `; Expected:` comment, exactly as

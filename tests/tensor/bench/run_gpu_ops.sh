@@ -31,7 +31,8 @@ if [ ! -f /tmp/libscaly.a ] || find packages/scaly -name '*.scaly' -newer /tmp/l
   tools/fcontext.sh /tmp/fcontext.o
   tools/eio.sh /tmp/eio.o
   tools/ctime.sh /tmp/ctime.o
-  ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o
+  tools/panic.sh /tmp/panic.o
+  ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
 fi
 
 # scalygpu package object (same recipe: non-generic package bodies come

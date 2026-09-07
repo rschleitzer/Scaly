@@ -38,7 +38,8 @@ rebuild_runtime() {
   tools/fcontext.sh /tmp/fcontext.o
   tools/eio.sh /tmp/eio.o
   tools/ctime.sh /tmp/ctime.o
-  rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o
+  tools/panic.sh /tmp/panic.o
+  rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
 }
 
 # The self-hosted ROOT needs the archive two-step to build stage1 (it emits

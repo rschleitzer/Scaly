@@ -21,6 +21,7 @@ if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\
 fi
 if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
   tools/ctime.sh /tmp/ctime.o && ar rcs /tmp/libscaly.a /tmp/ctime.o
+  tools/panic.sh /tmp/panic.o && ar rcs /tmp/libscaly.a /tmp/panic.o
 fi
 
 pass=0; fail=0; failures=()

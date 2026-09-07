@@ -143,6 +143,7 @@ fi
 tools/fcontext.sh "$WORK/fcontext.o"
 tools/eio.sh "$WORK/eio.o"
 tools/ctime.sh "$WORK/ctime.o"
+tools/panic.sh "$WORK/panic.o"
 
 # -lm AFTER the objects: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/
 # logf/powf, and on Linux those live in a separate libm (macOS has them in
@@ -150,7 +151,7 @@ tools/ctime.sh "$WORK/ctime.o"
 # still undefined, so the library must FOLLOW its references. Harmless on macOS
 # (/usr/lib/libm.dylib re-exports libSystem).
 mkdir -p "$(dirname "$OUT")"
-${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" \
+${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT"
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"
@@ -182,7 +183,8 @@ fi
 cp "$WORK/fcontext.o" /tmp/fcontext.o
 cp "$WORK/eio.o" /tmp/eio.o
 cp "$WORK/ctime.o" /tmp/ctime.o
-rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o
+cp "$WORK/panic.o" /tmp/panic.o
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 
 # Build the scalyls language server from its seed, when committed. scalyls is
@@ -216,7 +218,7 @@ if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -
         fi
         SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
-    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" \
+    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
         -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 fi

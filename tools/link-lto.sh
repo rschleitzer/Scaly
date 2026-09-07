@@ -57,6 +57,7 @@ sed 's/^define linkonce_odr /define linkonce_odr hidden /' "$WORK/whole.ll" > "$
 "$ROOT/tools/fcontext.sh" "$WORK/fcontext.o" >/dev/null 2>&1
 "$ROOT/tools/eio.sh"      "$WORK/eio.o"      >/dev/null 2>&1
 "$ROOT/tools/ctime.sh"    "$WORK/ctime.o"    >/dev/null 2>&1
+"$ROOT/tools/panic.sh"    "$WORK/panic.o"    >/dev/null 2>&1
 
 # Empty-array expansion under `set -u` needs the +-guard below (bash 3.2 on
 # macOS treats "${arr[@]}" of an empty array as unbound).
@@ -80,5 +81,5 @@ if [ -n "${LINK_EXTRA:-}" ]; then
   # shellcheck disable=SC2206
   EXTRA=(${LINK_EXTRA})
 fi
-${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "$WORK/whole.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" ${EXTRA[@]+"${EXTRA[@]}"} -lm -o "$OUT" \
+${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "$WORK/whole.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" ${EXTRA[@]+"${EXTRA[@]}"} -lm -o "$OUT" \
   || { echo "link-lto: FAIL (link)" >&2; exit 1; }

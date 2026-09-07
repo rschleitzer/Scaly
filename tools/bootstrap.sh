@@ -59,7 +59,8 @@ echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive)"
 tools/fcontext.sh /tmp/fcontext.o
 tools/eio.sh /tmp/eio.o
 tools/ctime.sh /tmp/ctime.o
-rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o
+tools/panic.sh /tmp/panic.o
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
 
 echo "bootstrap: stage1 -> stage2"
 ( ulimit -s 65520
