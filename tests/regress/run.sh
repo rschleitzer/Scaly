@@ -81,13 +81,32 @@ for f in tests/regress/*.scaly; do
           fi
         fi
       else
-        "$STAGE" -o "$bin" "$f" "${extra[@]}" >/dev/null 2>&1
-        out=$("$bin" 2>/dev/null)
+        # ★The build's own rc and the program's STDERR are part of the
+        # verdict, not noise. Until 2026-09-07 this branch threw both away —
+        # `failures+=("$t: '$out'")` — so a failure that printed nothing to
+        # stdout was reported as `name: ''` and said NOTHING about which of
+        # three very different things happened: the compile failed (the binary
+        # was rm'd above, so `$bin` is missing and `$out` is empty), the
+        # program crashed, or a runtime trap fired. All three of those write
+        # to stderr — exit 19's page diagnostic, scaly_release_root_page's
+        # LIFO abort, every emitter trap — and closure_escape failed exactly
+        # once that way, unreproducibly in 500+ runs, with no evidence left.
+        # The comparison itself stays STDOUT-ONLY: a test that writes to
+        # stderr and still prints PASS must keep passing.
+        cerr=$(mktemp); rerr=$(mktemp)
+        crc=0
+        "$STAGE" -o "$bin" "$f" "${extra[@]}" > "$cerr" 2>&1 || crc=$?
+        out=$("$bin" 2>"$rerr"); rc=$?
         if [ "$out" = "PASS" ]; then
           pass=$((pass+1))
         else
-          fail=$((fail+1)); failures+=("$t: '$out'")
+          fail=$((fail+1))
+          detail="rc=$rc"
+          [ $crc -ne 0 ] && detail="$detail compile-rc=$crc compile='$(tail -2 "$cerr" | tr '\n' ' ')'"
+          [ -s "$rerr" ] && detail="$detail stderr='$(head -c 300 "$rerr" | tr '\n' ' ')'"
+          failures+=("$t: '$out' $detail")
         fi
+        rm -f "$cerr" "$rerr"
       fi
       ;;
   esac
