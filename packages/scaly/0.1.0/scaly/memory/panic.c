@@ -175,6 +175,29 @@ void scaly_catch_caught(void)
     free(f);
 }
 
+/* --- what a `when` arm needs ---------------------------------------------
+ *
+ * The kind, as the variant TAG of the prelude's RuntimeFault. ★★★The mapping
+ * is a contract with scaly/memory/runtime.scaly: 0 is OutOfBounds because it
+ * is that union's first variant, and a new trap kind must be appended THERE
+ * and here in the same order, or an arm would bind the wrong payload. There is
+ * one kind today, which is why this is a constant.
+ */
+int scaly_panic_last_kind(void) { return 0; }
+
+/* Fill an OutOfBoundsFault in place. The emitter allocates the record (it
+ * knows the type from the arm) and hands the pointer here, so the FIELD
+ * LAYOUT stays in one place instead of being rebuilt with GEPs in the
+ * compiler: two size_t in declaration order, index then length. */
+void scaly_panic_fill_bounds(void *dst)
+{
+    size_t *out = (size_t *)dst;
+    if (!out)
+        return;
+    out[0] = scaly_last_index;
+    out[1] = scaly_last_length;
+}
+
 int scaly_catch_active(void) { return scaly_catch_top != 0; }
 
 const char *scaly_panic_last_what(void)

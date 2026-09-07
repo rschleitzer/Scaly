@@ -34,6 +34,33 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; ABI-identical: an empty concept behind a pointer lowers to a bare `ptr`.
 ; Declared in the PRELUDE so there is ONE declaration per opaque kind for the
 ; whole tree — every package sees these without a `use`.
+; --- the value a `try` catches -------------------------------------------
+;
+; A runtime fault is what a trap USED to be: `exit 15` ended the process, and
+; nothing could look at it (TRAPS.md 0). Since 2026-09-07 a `try` can catch
+; one, and these are the types its arms select on:
+;
+;     try let x a[i]
+;         when e: OutOfBounds
+;             report(e.index, e.length)
+;
+; ★It is a UNION and not a record because that is what `when` arms are: the
+; planner resolves an arm name to a variant tag of the scrutinee's union
+; (plan_when -> lookup_variant_tag), so a single record would have no arm to
+; select. The union has one variant today and room for the rest of the trap
+; family in TRAPS.md 2.4 -- a null unwrap, an oversized page -- each of which
+; needs its own decision about whether it MAY be caught at all.
+;
+; ★The names are deliberately specific: everything here lives in the prelude,
+; where a short name like `Bounds` would be taken away from every program in
+; the tree (CLAUDE.md, prelude names are TAKEN).
+define OutOfBoundsFault (index: size_t, length: size_t)
+
+define RuntimeFault union
+(
+    OutOfBounds: OutOfBoundsFault
+)
+
 define OpaqueFile()
 define OpaqueDir()
 

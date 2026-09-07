@@ -1,0 +1,71 @@
+; Regression: `try ... when e: OutOfBounds` faengt einen Laufzeit-PANIC und
+; bindet dessen Detail TYPISIERT (TRAPS.md 0, 5.1).
+;
+; Die Arm-Form ist der Grund, warum das Panic-Union RuntimeFault im Prelude
+; steht: ein `when`-Arm ist eine Auswahl ueber einen Variantentag, also
+; braucht ein fangbarer Fehler ein Union und keinen Record.
+;
+; Geprueft wird:
+;   (1) der Arm bindet e mit e.index / e.length
+;   (2) Locals des FAENGERS ueberleben den Sprung (returns_twice)
+;   (3) die Regionen der uebersprungenen Rahmen kommen zurueck
+;   (4) Verschachtelung: ein try mit Arm IM Arm eines anderen
+;   (5) Arm UND else zusammen, auf dem Erfolgspfad
+;
+; Kein Union-Wert wird materialisiert: jeder Arm kennt seinen Payload-Typ, der
+; Emitter legt den Record an und der Shim fuellt ihn (emit_try_panic_catch#).
+;
+; Erwartet: PASS
+function deep(n: i64) returns i64
+{
+    let s String("eine Region auf diesem Rahmen")
+    var buf int[2]
+    set buf[0]: 7
+    let v Slice[int](2, &buf[0])
+    if n > 0
+        return v[(n as size_t) + 4]
+    (s.get_length() as i64)
+}
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var vor 100
+    set vor: vor + argc
+    let mark0 scaly_panic_mark()
+
+    ; (1) Arm bindet typisiert, (2) Locals ueberleben
+    try let a deep(1)
+        when e: OutOfBounds
+        {
+            if e.index <> (5 as size_t)
+                return 1
+            if e.length <> (2 as size_t)
+                return 2
+            if vor <> 101
+                return 3
+
+            ; (4) Verschachtelung mit Arm
+            try let b deep(1)
+                when e2: OutOfBounds
+                    if e2.length <> (2 as size_t)
+                        return 4
+
+            ; (3) Regionen zurueck
+            if scaly_panic_mark() <> mark0
+                return 5
+
+            ; (5) Arm UND else zusammen: hier panickt nichts, also Erfolgspfad
+            try let c deep(0)
+                when e3: OutOfBounds
+                    return 6
+            else
+                return 7
+            if c < 1
+                return 8
+
+            print "PASS"
+            return 0
+        }
+    print "FAIL nicht gefangen"
+    9
+}

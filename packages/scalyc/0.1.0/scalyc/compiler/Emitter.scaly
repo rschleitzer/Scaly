@@ -3897,6 +3897,39 @@ define Emitter
             fn
         }
 
+        ; The kind of the panic that was caught, as the variant tag of the
+        ; prelude's RuntimeFault, and the filler that writes a variant's
+        ; payload record in place. The FILLER exists so the record's field
+        ; layout stays in the shim instead of being rebuilt with GEPs here.
+        function get_panic_kind_fn(this) returns LLVMValueRef
+        {
+            var fn LLVMGetNamedFunction(llvm_module, "scaly_panic_last_kind")
+            if fn = null
+            {
+                let i32_ty LLVMInt32TypeInContext(context)
+                let fty LLVMFunctionType(i32_ty, null as pointer[LLVMTypeRef], 0, 0)
+                set fn: LLVMAddFunction(llvm_module, "scaly_panic_last_kind", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+            }
+            fn
+        }
+
+        function get_panic_fill_fn(this) returns LLVMValueRef
+        {
+            var fn LLVMGetNamedFunction(llvm_module, "scaly_panic_fill_bounds")
+            if fn = null
+            {
+                let void_ty LLVMVoidTypeInContext(context)
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                var ptys Vector[LLVMTypeRef](1)
+                ptys.put(0, ptr_ty)
+                let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+                set fn: LLVMAddFunction(llvm_module, "scaly_panic_fill_bounds", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+            }
+            fn
+        }
+
         ; ★★★The two Scaly routines the shim calls back into, referenced BY
         ; THEIR ITANIUM NAMES -- which freezes their parameter types, the cost
         ; CLAUDE.md names for the eight symbols that already pay it. Grep for
@@ -16450,18 +16483,96 @@ define Emitter
             if body_term = null
                 LLVMBuildBr(builder, end_block)
 
-            ; --- the jump lands here: unlink, unwind, then the else arm
+            ; --- the jump lands here: unlink, unwind, then the arms
             LLVMPositionBuilderAtEnd(builder, catch_block)
             let caught_ty LLVMGlobalGetValueType(caught_fn)
             LLVMBuildCall2(builder, caught_ty, caught_fn, null as pointer[LLVMValueRef], 0, "")
-            if try_expr.alternative <> null
+
+            ; `when` arms: switch on the panic's KIND, which is the variant tag
+            ; of RuntimeFault, and build the arm's payload record in place.
+            ;
+            ; ★No union value is materialised. Every arm knows its OWN payload
+            ; type from plan_when (catch_case.variant_type), so the record is
+            ; allocated per arm and filled by the shim -- which keeps the field
+            ; layout in one place and needs no tag/payload offsets here. That is
+            ; also why a second trap kind will not touch this code: it appends a
+            ; variant in the prelude and a filler in the shim.
+            var has_arms: bool false
+            if try_expr.catches <> null
+                if try_expr.catches.length > 0
+                    set has_arms: true
+
+            if has_arms
             {
-                let alt (*try_expr.alternative)
-                emit_statement alt
+                let kind_fn get_panic_kind_fn()
+                let kind_ty LLVMGlobalGetValueType(kind_fn)
+                let kind LLVMBuildCall2(builder, kind_ty, kind_fn, null as pointer[LLVMValueRef], 0, "panic.kind")
+                let i32k_ty LLVMInt32TypeInContext(context)
+
+                var unmatched_block create_block("try.unmatched")
+                if try_expr.alternative <> null
+                    set unmatched_block: create_block("try.else")
+
+                let arm_count try_expr.catches.length as int
+                let arm_switch LLVMBuildSwitch(builder, kind, unmatched_block, arm_count)
+                let fill_fn get_panic_fill_fn()
+                let fill_ty LLVMGlobalGetValueType(fill_fn)
+
+                for arm in try_expr.catches
+                {
+                    let arm_block create_block("try.arm")
+                    LLVMAddCase(arm_switch, LLVMConstInt(i32k_ty, arm.variant_index, 0), arm_block)
+                    LLVMPositionBuilderAtEnd(builder, arm_block)
+
+                    if arm.name.length > 0
+                    {
+                        if arm.variant_type.name <> "void"
+                        {
+                            let pay_ty map_type arm.variant_type
+                            let pay_slot entry_alloca(pay_ty, "panic.payload")
+                            var fill_args Vector[LLVMValueRef](1)
+                            fill_args.put(0, pay_slot)
+                            LLVMBuildCall2(builder, fill_ty, fill_fn, fill_args.data, 1, "")
+                            let pay_val LLVMBuildLoad2(builder, pay_ty, pay_slot, "panic.val")
+                            define_variable(arm.name, pay_val)
+                        }
+                    }
+
+                    if arm.consequent <> null
+                    {
+                        let arm_stmt arm.consequent
+                        emit_statement(*arm_stmt)
+                    }
+
+                    let aterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+                    if aterm = null
+                        LLVMBuildBr(builder, end_block)
+                }
+
+                ; The unmatched path: the else arm when there is one, otherwise
+                ; fall through to the end. It is reachable only if a trap kind
+                ; arrives that no arm names.
+                LLVMPositionBuilderAtEnd(builder, unmatched_block)
+                if try_expr.alternative <> null
+                {
+                    let alt2 (*try_expr.alternative)
+                    emit_statement alt2
+                }
+                let uterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+                if uterm = null
+                    LLVMBuildBr(builder, end_block)
             }
-            let catch_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
-            if catch_term = null
-                LLVMBuildBr(builder, end_block)
+            else
+            {
+                if try_expr.alternative <> null
+                {
+                    let alt (*try_expr.alternative)
+                    emit_statement alt
+                }
+                let catch_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+                if catch_term = null
+                    LLVMBuildBr(builder, end_block)
+            }
 
             LLVMPositionBuilderAtEnd(builder, end_block)
             result_value
@@ -16473,8 +16584,12 @@ define Emitter
             ; BEFORE the work, so a runtime panic inside it lands in the else
             ; arm. It has to be decided here, ahead of emit_operands below.
             if try_expr.is_throwing_cond = false
+            {
+                if try_expr.catches_panic
+                    return emit_try_panic_catch try_expr
                 if try_expr.alternative <> null
                     return emit_try_panic_catch try_expr
+            }
 
             ; Emit the binding's operation
             let result_value emit_operands try_expr.cond.operation

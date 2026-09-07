@@ -309,6 +309,11 @@ define PlannedTry
     cond: PlannedBinding
     catches: ref[Vector[PlannedWhen]]?
     alternative: ref[PlannedStatement]?
+    ; catches_panic: the condition throws NOTHING and the arms name variants
+    ; of the prelude's RuntimeFault, so this try installs a catch point for a
+    ; runtime PANIC instead of unpacking a Result wrapper (TRAPS.md 5.1).
+    ; The two are exclusive: is_throwing_cond decides the wrapper shape.
+    catches_panic: bool
     ; When the try condition is a throwing call, throws_type is the error
     ; union (the function's `throws T`). The wrapper status tag is 0 on
     ; success, non-zero on error; the thrown error union is stored INLINE in

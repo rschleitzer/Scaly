@@ -20383,6 +20383,74 @@ define Planner
             false
         }
 
+        ; try_arms_are_faults#: does EVERY arm of this try name a variant of
+        ; the prelude's RuntimeFault?
+        ;
+        ; ★Every arm, not any: a try that mixes a fault arm with something else
+        ; is a confusion, and answering "yes" would send the other arm into the
+        ; panic path where its tag matches nothing. A mixed try keeps the hard
+        ; diagnosis below instead.
+        ; try_fault_arm_count#: how many arms name a RuntimeFault variant?
+        ; The COUNT and not a yes/no, so the diagnosis can tell a try that
+        ; catches NOTHING from one that MIXES a fault arm with a foreign one --
+        ; two different mistakes, and the second one's message was misleading
+        ; while both said "the when arms are unreachable".
+        function try_fault_arm_count(this: Planner, t: Try) returns size_t
+        {
+            var found: size_t 0
+            var fi: size_t 0
+            while fi < t.catches.length
+            {
+                let fw_ptr t.catches.get fi
+                if fw_ptr <> null
+                {
+                    let fw (*fw_ptr)
+                    if fw.variant.length > 0
+                    {
+                        let fseg fw.variant.get(fw.variant.length - 1)
+                        if fseg <> null
+                            if this.lookup_variant_tag("RuntimeFault", (*fseg)) >= 0
+                                set found: found + 1
+                    }
+                }
+                set fi: fi + 1
+            }
+            found
+        }
+
+        function try_arms_are_faults(this: Planner, t: Try) returns bool
+        {
+            if t.catches.length = 0
+                return false
+
+            var ai: size_t 0
+            while ai < t.catches.length
+            {
+                let w_ptr t.catches.get ai
+                if w_ptr = null
+                    return false
+
+                ; ★`w.name` is the BINDING (`e` in `when e: OutOfBounds`); the
+                ; variant name lives in `w.variant`, as a path whose LAST
+                ; segment is the name -- the same extraction plan_when does.
+                ; Reading w.name here made the check answer false for every
+                ; arm, so the diagnosis fired on the very form it must allow.
+                let w (*w_ptr)
+                if w.variant.length = 0
+                    return false
+
+                let seg_ptr w.variant.get(w.variant.length - 1)
+                if seg_ptr = null
+                    return false
+
+                if this.lookup_variant_tag("RuntimeFault", (*seg_ptr)) < 0
+                    return false
+
+                set ai: ai + 1
+            }
+            true
+        }
+
         ; report_try_without_throw#: a `try` whose condition cannot throw.
         ;
         ; ★★★It used to compile in TOTAL SILENCE and do nothing: the `when`
@@ -20408,11 +20476,19 @@ define Planner
             if Planner.try_condition_can_throw(bind)
                 return
 
+            ; Arms that name RuntimeFault variants are the PANIC form, built
+            ; 2026-09-07: they catch a runtime trap, so they are not a lie.
+            if this.try_arms_are_faults(t)
+                return
+
             var tsb StringBuilder()
             ; No raw backticks in a compiler string: they are interpolation
             ; (CLAUDE.md), and the parse error names the interpolation rather
             ; than this line.
-            tsb.append "this try cannot catch anything: its condition calls no throws function, so the when arms are unreachable -- a runtime trap (a bounds violation, exit 15) is NOT caught by try; guard the call with Region.run_guarded, or drop the try"
+            if this.try_fault_arm_count(t) > 0
+                tsb.append "this try mixes a runtime-fault arm with an arm that names something else: the condition throws nothing, so only fault arms can be reached here -- split the try, or drop the foreign arm"
+            else
+                tsb.append "this try cannot catch anything: its condition calls no throws function, so the when arms are unreachable -- a runtime trap is caught by an arm naming a RuntimeFault variant (when e: OutOfBounds) or by an else arm; nothing else"
             let tmsg tsb.to_string()
             this.add_diagnostic(t.span, String^this(tmsg))
         }
@@ -20467,6 +20543,18 @@ define Planner
 
             this.report_try_without_throw(t, planned_bind)
 
+            ; The PANIC form: nothing in the condition throws, and the arms
+            ; name RuntimeFault variants. Then the arms select on THAT union,
+            ; and the emitter installs a catch point instead of unpacking a
+            ; wrapper (emit_try_panic_catch#).
+            var catches_panic: bool false
+            if is_throwing = false
+                if this.try_arms_are_faults(t)
+                {
+                    set catches_panic: true
+                    set union_for_catches: Planner.make_runtime_fault_type()
+                }
+
             var catches_arr Array[PlannedWhen]()
             var ci: size_t 0
             while ci < t.catches.length
@@ -20490,7 +20578,7 @@ define Planner
             }
 
             var catches_holder Vector[PlannedWhen](catches_arr)
-            PlannedTry(t.span, planned_bind, &catches_holder, alternative_ref, throws_type, is_throwing)
+            PlannedTry(t.span, planned_bind, &catches_holder, alternative_ref, catches_panic, throws_type, is_throwing)
         }
 
         ; plan_when: one pattern arm of choose/try. When `union_type` is
@@ -37710,6 +37798,15 @@ define Planner
 
     function make_void_type() returns PlannedType
         Planner.make_primitive_type("void", "v")
+
+    ; The prelude's RuntimeFault (scaly/memory/runtime.scaly) -- the union a
+    ; `try` catches a runtime panic through. Built by hand rather than looked
+    ; up because plan_when resolves its arms through the NAME (lookup_variant_
+    ; type / lookup_variant_tag), and the mangled form is what map_type needs
+    ; in the emitter: a top-level define mangles without its module, so
+    ; RuntimeFault is _Z12RuntimeFault (verified in the IR, not guessed).
+    function make_runtime_fault_type() returns PlannedType
+        Planner.make_primitive_type("RuntimeFault", "_Z12RuntimeFault")
 
     function make_bool_type() returns PlannedType
         Planner.make_primitive_type("bool", "b")
