@@ -251,6 +251,60 @@ procedure scaly_panic_oob(what: pointer[const_char], index: size_t, length: size
     exit 15
 }
 
+; The ONE place a null unwrap ends the program -- `x as ref[T]`, this
+; language's `!`, meeting a null (exit 21).
+;
+; Until 2026-09-07 the Emitter BUILT this message at every unwrap site: two
+; scaly_eputs calls, a scaly_eputnl, an `exit`, and its own copy of the head
+; string. That is the shape the eight bounds traps had before Etappe B, and
+; the population is not small -- 5281 sites in `tscaly`, 709 in `dazzle`, 269
+; in `opensp`, 27 in the stdlib itself, each with two string globals. One call
+; per site instead of four, and the head string exists ONCE.
+;
+; Three reasons in the order they matter, the same order as scaly_panic_oob's:
+;
+; 1. It is where a FANGPUNKT goes. The catch point for a bounds violation
+;    (TRAPS.md 3.6-3.8) needed exactly one site to jump from; a null unwrap has
+;    none yet, and it CANNOT get one while the sequence is rebuilt in the
+;    Emitter at every site. This is the preparation, not the change: adding
+;    the jump here is then two lines plus a RuntimeFault variant, and the
+;    contract for that is in scaly/memory/runtime.scaly.
+; 2. The trap can say more than it does. Today it names the enclosing mangled
+;    symbol and nothing else, because everything the Emitter had at the site
+;    was a name; a helper can be given whatever a caller can compute.
+; 3. It is countable. `panic_null_count` below is the null twin of
+;    `panic_oob_count`, and a trap family with one counted member and one
+;    uncounted member is the inconsistency somebody trips over later.
+;    ★★It is NOT exercisable yet, and saying so is the point: the only way to
+;    reach this counter today is a FATAL trap, so nobody is alive to read it.
+;    It becomes a measurement when the null panic is catchable; a test
+;    asserting it reads 0 would be vacuous, which is worse than none.
+;
+; ★★★It stays noreturn for the same reason and by the same means: the body
+; ends in `exit`, and `Emitter.mark_noreturn_callee` carries this routine's
+; MANGLED name so a program's module -- which sees only a `declare`, the body
+; being in libscaly.a -- gets the attribute anyway. A mangled name written out
+; as a literal FREEZES the parameter types (CLAUDE.md); grep for
+; `_Z16scaly_panic_nullP10const_char` before re-signing this.
+;
+; ★`where` is the enclosing symbol's mangled name, not a source location:
+; there is no source position at run time. It is a `pointer[const_char]` for
+; the same reason `what` above is -- it goes straight into scaly_eputs.
+mutable panic_null_count: i64 0
+
+function scaly_panic_null_count() returns i64
+    panic_null_count
+
+procedure scaly_panic_null(where: pointer[const_char])
+{
+    set panic_null_count: panic_null_count + 1
+
+    scaly_eputs("Scaly: null unwrapped as ref in ")
+    scaly_eputs(where)
+    scaly_eputnl()
+    exit 21
+}
+
 ; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array
 ; `char[]` lookup table would be a module-level array constant, which
 ; stage-1's planner emits as an external declaration (no body) — the

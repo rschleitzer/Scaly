@@ -3820,6 +3820,11 @@ define Emitter
             ; scaly_panic_oob. The RETURN is free (Itanium does not encode it).
             if name = "_Z15scaly_panic_oobP10const_charmm"
                 set known: true
+            ; Its null twin, same file and same reasoning: `x as ref[T]` met a
+            ; null. The Emitter declares it on the fly (get_panic_null_fn), so
+            ; the module sees a `declare` and infers nothing.
+            if name = "_Z16scaly_panic_nullP10const_char"
+                set known: true
             if known = false
                 return
 
@@ -4006,6 +4011,34 @@ define Emitter
             fn
         }
 
+        ; The stdlib's null-unwrap panic (scaly/memory/root_pages.scaly). Same
+        ; shape as get_eputs_fn: the body lives in libscaly.a, so a program's
+        ; module carries a `declare` and the noreturn attribute has to be put
+        ; on by hand -- mark_noreturn_callee knows this mangled name.
+        ;
+        ; ★★★The literal FREEZES scaly_panic_null's parameter types, the ninth
+        ; such case in this tree (CLAUDE.md's rule): grep for the string before
+        ; re-signing it. The RETURN is free -- Itanium does not encode one.
+        function get_panic_null_fn(this) returns LLVMValueRef
+        {
+            var fn lookup_function_cache("_Z16scaly_panic_nullP10const_char")
+            if fn = null
+                set fn: LLVMGetNamedFunction(llvm_module, "_Z16scaly_panic_nullP10const_char")
+            if fn = null
+            {
+                let void_ty LLVMVoidTypeInContext(context)
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                var ptys Vector[LLVMTypeRef](1)
+                ptys.put(0, ptr_ty)
+                let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+                set fn: LLVMAddFunction(llvm_module, "_Z16scaly_panic_nullP10const_char", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+                cache_function("_Z16scaly_panic_nullP10const_char", fn)
+            }
+            mark_noreturn_callee(fn, "_Z16scaly_panic_nullP10const_char")
+            fn
+        }
+
         ; libc `exit`. Declared with the C prototype (i32, not Scaly's 64-bit
         ; `int`) and marked noreturn through the same helper every other trap
         ; callee goes through — without the attribute the block after the call
@@ -4079,35 +4112,25 @@ define Emitter
             let ok_bb create_block("unwrap.ok")
             LLVMBuildCondBr(builder, is_null, trap_bb, ok_bb)
 
+            ; ONE call, not the four this used to build (two scaly_eputs, a
+            ; scaly_eputnl and an `exit`) plus a private copy of the head
+            ; string. The sequence lives in the stdlib now
+            ; (scaly/memory/root_pages.scaly, scaly_panic_null), which is what
+            ; gives a later catch point ONE site to jump from -- the same move
+            ; the eight bounds traps made in Etappe B. The emitted bytes at a
+            ; site are a compare, a branch, one global string and one call.
             LLVMPositionBuilderAtEnd(builder, trap_bb)
-            let void_ty LLVMVoidTypeInContext(context)
-            var ptys Vector[LLVMTypeRef](1)
-            ptys.put(0, ptr_ty)
-            let eputs_ty LLVMFunctionType(void_ty, ptys.data, 1, 0)
-            let eputs_fn get_eputs_fn()
-
-            let head LLVMBuildGlobalStringPtr(builder, "Scaly: null unwrapped as ref in " as pointer[const_char], ".unwrap.msg")
-            var a1 Vector[LLVMValueRef](1)
-            a1.put(0, head)
-            LLVMBuildCall2(builder, eputs_ty, eputs_fn, a1.data, 1, "")
 
             ; The enclosing symbol, so the message names a place. There is no
             ; source location at run time; a mangled name is what can be grepped.
             let where_s LLVMBuildGlobalStringPtr(builder, site as pointer[const_char], ".unwrap.at")
-            var a2 Vector[LLVMValueRef](1)
-            a2.put(0, where_s)
-            LLVMBuildCall2(builder, eputs_ty, eputs_fn, a2.data, 1, "")
-
-            let nl_ty LLVMFunctionType(void_ty, null as pointer[LLVMTypeRef], 0, 0)
-            LLVMBuildCall2(builder, nl_ty, get_eputnl_fn(), null as pointer[LLVMValueRef], 0, "")
-
-            let i32_ty LLVMInt32TypeInContext(context)
-            var eptys Vector[LLVMTypeRef](1)
-            eptys.put(0, i32_ty)
-            let exit_ty LLVMFunctionType(void_ty, eptys.data, 1, 0)
-            var eargs Vector[LLVMValueRef](1)
-            eargs.put(0, LLVMConstInt(i32_ty, 21, 0))
-            LLVMBuildCall2(builder, exit_ty, get_exit_fn(), eargs.data, 1, "")
+            var a1 Vector[LLVMValueRef](1)
+            a1.put(0, where_s)
+            let void_ty LLVMVoidTypeInContext(context)
+            var ptys Vector[LLVMTypeRef](1)
+            ptys.put(0, ptr_ty)
+            let panic_ty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+            LLVMBuildCall2(builder, panic_ty, get_panic_null_fn(), a1.data, 1, "")
             LLVMBuildUnreachable builder
 
             LLVMPositionBuilderAtEnd(builder, ok_bb)

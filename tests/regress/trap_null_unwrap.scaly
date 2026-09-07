@@ -1,0 +1,29 @@
+; Laufzeit-Trap: `x as ref[T]` traf null (exit 21).
+;
+; ★Bis heute hielt KEIN Tor diesen Trap fest -- dieselbe Lage, die TRAPS.md 1.5
+; für die acht Bounds-Traps beschreibt: die Prüfung könnte aufhören zu feuern
+; und jede Suite bliebe grün, weil ein Trap die PASS-Konvention auf stdout gar
+; nicht erreichen kann. Deshalb ein `expect-rc`-Fixture.
+;
+; Geprüft wird beides, was die Meldung leistet: dass sie überhaupt kommt, und
+; dass sie den ORT nennt -- zur Laufzeit gibt es keine Quellposition, also ist
+; der gemangelte Name des umgebenden Symbols das, was ein Leser greppen kann.
+;
+; expect-rc: 21
+; expect-out: Scaly: null unwrapped as ref in
+; expect-out: _Z5probem
+
+function probe(n: size_t) returns int
+{
+    var buf int[2]
+    set buf[0]: 10
+    let s Slice[int](2, &buf[0])
+    let r s.get(n) as ref[int]         ; die Behauptung, und sie ist falsch
+    r
+}
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let v probe((argc as size_t) + 4)
+    v as int
+}
