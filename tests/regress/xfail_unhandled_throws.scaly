@@ -1,0 +1,33 @@
+; Expected-failure: das Ergebnis eines `throws`-Aufrufs wird nicht behandelt.
+;
+; Bis 2026-09-07 war das STILL FALSCH und damit schlimmer als jede andere
+; Fehlklasse um try: `let x step(b)` band den Result-Wrapper als Erfolgswert
+; und lieferte 6164131296 statt der 100 des Erfolgsfalls. Es propagierte auch
+; nicht -- dieselbe Zeile in einer Funktion, die SELBST `throws` deklariert,
+; nahm den Erfolgsarm, sodass der Fehler zwischen zwei Funktionen verschwand,
+; die beide `throws` sagen, und der Aufrufer mit einem ordentlichen
+; `choose ... when e: Error` einen Erfolg mit Muellwert sah (TRAPS.md 3.9).
+;
+; Die Konvention des Baums ist explizite Propagierung (throws_propagate.scaly:
+; `choose` plus `throw e`); gefehlt hat, dass die Unterlassung nichts sagte.
+;
+; Sechs Formen lasen den Wrapper still: die nackte Bindung, `return f()`,
+; `set x: f()`, ein verschachteltes Argument `g(f())`, der implizite
+; Rueckgabewert und eine Bedingung `if f() > 0`. Alle sechs melden jetzt.
+; xfail: the error of this throws call is not handled
+
+define D(a: int)
+define TErr union (Bad: D)
+
+function step(b: int) returns int throws TErr
+{
+    if b = 0
+        throw TErr.Bad(D(7))
+    return b + 100
+}
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let x step(argc - 1)
+    x
+}

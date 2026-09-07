@@ -19008,6 +19008,12 @@ define Planner
 
             var cond_holder Vector[PlannedOperand](1)
             cond_holder.put(0, planned_cond_collapsed)
+
+            ; ★A condition reads the wrapper too: `if step(b) > 0` compared the
+            ; Result wrapper against 0 and took the wrong branch, silently
+            ; (measured rc 6 where the throw should have surfaced).
+            this.report_unhandled_throw_ops(&cond_holder, f.span)
+
             PlannedIf(
                 f.span,
                 &cond_holder,
@@ -20357,39 +20363,8 @@ define Planner
         ; condition like `f() + 1` with a throwing `f` would be reported as a
         ; lie when it is not one.
         function try_condition_can_throw(bind: PlannedBinding) returns bool
-        {
-            if bind.operation = null
-                return false
+            Planner.ops_contain_throwing_call(bind.operation)
 
-            let ops (*bind.operation)
-            var i: size_t 0
-            while i < ops.length
-            {
-                let op_ptr ops.get(i)
-                if op_ptr <> null
-                {
-                    let op (*op_ptr)
-                    choose op.expr
-                        when call: Call
-                        {
-                            if call.can_throw
-                                return true
-                        }
-                        else
-                            0
-                }
-                set i: i + 1
-            }
-            false
-        }
-
-        ; try_arms_are_faults#: does EVERY arm of this try name a variant of
-        ; the prelude's RuntimeFault?
-        ;
-        ; ★Every arm, not any: a try that mixes a fault arm with something else
-        ; is a confusion, and answering "yes" would send the other arm into the
-        ; panic path where its tag matches nothing. A mixed try keeps the hard
-        ; diagnosis below instead.
         ; try_fault_arm_count#: how many arms name a RuntimeFault variant?
         ; The COUNT and not a yes/no, so the diagnosis can tell a try that
         ; catches NOTHING from one that MIXES a fault arm with a foreign one --
@@ -20418,6 +20393,13 @@ define Planner
             found
         }
 
+        ; try_arms_are_faults#: does EVERY arm of this try name a variant of
+        ; the prelude's RuntimeFault?
+        ;
+        ; ★Every arm, not any: a try that mixes a fault arm with something else
+        ; is a confusion, and answering "yes" would send the other arm into the
+        ; panic path where its tag matches nothing. A mixed try keeps the hard
+        ; diagnosis below instead.
         function try_arms_are_faults(this: Planner, t: Try) returns bool
         {
             if t.catches.length = 0
@@ -20426,15 +20408,15 @@ define Planner
             var ai: size_t 0
             while ai < t.catches.length
             {
-                let w_ptr t.catches.get ai
-                if w_ptr = null
-                    return false
-
                 ; ★`w.name` is the BINDING (`e` in `when e: OutOfBounds`); the
                 ; variant name lives in `w.variant`, as a path whose LAST
                 ; segment is the name -- the same extraction plan_when does.
                 ; Reading w.name here made the check answer false for every
                 ; arm, so the diagnosis fired on the very form it must allow.
+                let w_ptr t.catches.get ai
+                if w_ptr = null
+                    return false
+
                 let w (*w_ptr)
                 if w.variant.length = 0
                     return false
@@ -20464,10 +20446,6 @@ define Planner
         ; ★It is the CONDITION that is judged, never the arms: a `try` with no
         ; arms at all is left alone, and so is one whose condition throws
         ; somewhere other than in its last operand.
-        ;
-        ; ★A bounds violation is exactly what an author reaches for here (see
-        ; TRAPS.md), so the message names the route that DOES catch one today
-        ; instead of only refusing.
         procedure report_try_without_throw(this: Planner, t: Try, bind: PlannedBinding)
         {
             if t.catches.length = 0
@@ -20482,15 +20460,95 @@ define Planner
                 return
 
             var tsb StringBuilder()
-            ; No raw backticks in a compiler string: they are interpolation
-            ; (CLAUDE.md), and the parse error names the interpolation rather
-            ; than this line.
             if this.try_fault_arm_count(t) > 0
                 tsb.append "this try mixes a runtime-fault arm with an arm that names something else: the condition throws nothing, so only fault arms can be reached here -- split the try, or drop the foreign arm"
             else
                 tsb.append "this try cannot catch anything: its condition calls no throws function, so the when arms are unreachable -- a runtime trap is caught by an arm naming a RuntimeFault variant (when e: OutOfBounds) or by an else arm; nothing else"
             let tmsg tsb.to_string()
             this.add_diagnostic(t.span, String^this(tmsg))
+        }
+
+        ; report_unhandled_throw#: a binding whose operation calls a `throws`
+        ; function, outside any try.
+        ;
+        ; ★★★It used to be SILENT and wrong, which is worse than the try class
+        ; closed the same day: `let x step(b)` where step throws answered
+        ; 6164131296 -- the Result wrapper read as the success value -- with no
+        ; diagnostic and no trap. And it did not propagate either: the same
+        ; line inside a function that itself declares `throws` took the success
+        ; arm, so the error vanished between two functions that both say
+        ; `throws` and the caller's honest `choose ... when e: Error` saw a
+        ; success with a garbage value (measured 2026-09-07, TRAPS.md 3.9).
+        ;
+        ; The tree's convention is EXPLICIT propagation -- CLAUDE.md's "no
+        ; exceptions, explicit error propagation", and
+        ; tests/regress/throws_propagate.scaly writes `choose` plus `throw e`.
+        ; What was missing is that leaving it out said nothing.
+        ;
+        ; ★Judged at the BINDING, because that is where the wrapper is read as
+        ; a value. A `choose` over the call handles it (its subject is an
+        ; operation, not a binding), and a `try` plans its binding through
+        ; plan_try rather than through plan_statement, so neither reaches here.
+        ; ops_contain_throwing_call#: dieselbe Frage wie
+        ; try_condition_can_throw#, aber über eine nackte Operandenfolge --
+        ; ein `return` und ein `set` haben kein PlannedBinding.
+        function ops_contain_throwing_call(ops: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if ops = null
+                return false
+
+            let opv (*ops)
+            var oi: size_t 0
+            while oi < opv.length
+            {
+                let op_ptr opv.get(oi)
+                if op_ptr <> null
+                {
+                    let op (*op_ptr)
+                    choose op.expr
+                        when call: Call
+                        {
+                            if call.can_throw
+                                return true
+
+                            ; ★A throwing call can sit NESTED in another call's
+                            ; arguments -- `sink(step(b))` reads the wrapper as
+                            ; step's result and hands it on. Measured: rc 192
+                            ; from a garbage value, silently. So recurse into
+                            ; the argument list rather than looking only at the
+                            ; top level of the sequence.
+                            if call.args <> null
+                                if Planner.ops_contain_throwing_call(call.args)
+                                    return true
+                        }
+                        else
+                            0
+                }
+                set oi: oi + 1
+            }
+            false
+        }
+
+        procedure report_unhandled_throw_ops(this: Planner, ops: ref[Vector[PlannedOperand]]?, loc: Span)
+        {
+            if Planner.ops_contain_throwing_call(ops) = false
+                return
+
+            var rsb StringBuilder()
+            rsb.append "the error of this throws call is not handled: the value read here is the Result wrapper taken for a success, not the callee's result -- wrap the call in a try, or choose over it and rethrow"
+            let rmsg rsb.to_string()
+            this.add_diagnostic(loc, String^this(rmsg))
+        }
+
+        procedure report_unhandled_throw(this: Planner, bind: PlannedBinding)
+        {
+            if Planner.try_condition_can_throw(bind) = false
+                return
+
+            var usb StringBuilder()
+            usb.append "the error of this throws call is not handled: the value bound here is the Result wrapper read as a success, not the callee's result -- wrap the call in a try, or choose over it and rethrow"
+            let umsg usb.to_string()
+            this.add_diagnostic(bind.loc, String^this(umsg))
         }
 
         ; plan_try: try { binding } catch WhenPatterns else alt.
@@ -29713,6 +29771,13 @@ define Planner
             var holder Vector[PlannedOperand](1)
             if planned_flat.length > 0
                 holder.put(0, planned_collapsed)
+
+            ; ★A `return step(b)` reads the wrapper as a success exactly like a
+            ; binding does -- measured, it handed 6090304944 to a caller whose
+            ; own `choose ... when e: Error` then took the SUCCESS arm. The
+            ; binding form was diagnosed first and this one was still silent.
+            this.report_unhandled_throw_ops(&holder, r.span)
+
             PlannedReturn(r.span, &holder)
         }
 
@@ -29821,9 +29886,21 @@ define Planner
         {
             choose s
                 when a: Action
-                    PlannedStatement.Action(this.plan_action(a))
+                {
+                    ; ★Deckt `set x: step(b)` UND den impliziten Rückgabewert
+                    ; (der letzte Ausdruck eines Rumpfes ist eine Action) --
+                    ; beide lasen den Wrapper still als Erfolg, gemessen mit
+                    ; rc 168 und rc 0 aus einem Müllwert.
+                    let pa this.plan_action(a)
+                    this.report_unhandled_throw_ops(pa.source, pa.loc)
+                    PlannedStatement.Action(pa)
+                }
                 when b: Binding
-                    PlannedStatement.Binding(this.plan_binding(b))
+                {
+                    let pb this.plan_binding(b)
+                    this.report_unhandled_throw(pb)
+                    PlannedStatement.Binding(pb)
+                }
                 when br: Break
                     PlannedStatement.Break(this.plan_break(br))
                 when c: Continue
