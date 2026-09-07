@@ -38,6 +38,7 @@
  */
 #include <setjmp.h>
 #include <stddef.h>
+#include <stdlib.h>   /* malloc/free for the emitter-side frames */
 
 /* The region-stack watermark and the unwind live in Scaly
  * (scaly/memory/root_pages.scaly). They are reached through function POINTERS
@@ -107,6 +108,71 @@ int scaly_panic_jump(const char *what, size_t index, size_t length)
     t->what = what; t->index = index; t->length = length;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
+}
+
+/* --- the three halves a `try` needs, for the EMITTER ---------------------
+ *
+ * scaly_catch_run above is the library form: it owns the catcher, so the frame
+ * can live on its C stack. A `try` in Scaly source cannot work that way —
+ * the catcher is the user's function, and the emitter has to call `setjmp`
+ * THERE (a context whose function returned is dead). But the emitter must not
+ * need to know how big a `jmp_buf` is, or the OS-specific layout would leak
+ * into the compiler and from there into the ONE committed seed.
+ *
+ * So the split: push allocates the frame HERE and hands back a pointer to its
+ * buffer; the emitter calls `setjmp` on that pointer in the catcher's own
+ * frame; pop leaves on the success path; caught runs the unwind on the jump
+ * path. The emitted shape is
+ *
+ *     %buf = call ptr @scaly_catch_push(ptr @mark, ptr @unwind)
+ *     %sj  = call i32 @setjmp(ptr %buf)        ; returns_twice
+ *     br i1 (%sj == 0), label %try.body, label %try.catch
+ *
+ * ★The frame is malloc'd rather than stack-allocated, and that is a
+ * deliberate first cut: a dynamic alloca of scaly_catch_frame_size() would be
+ * free but must then sit in the function's ENTRY block, or a `try` inside a
+ * loop would grow the stack every iteration. One malloc per guarded region is
+ * paid only where somebody catches; a `try` on a hot path is its own topic.
+ */
+void *scaly_catch_push(scaly_mark_fn mark, scaly_unwind_fn unwind)
+{
+    scaly_catch_frame *f = (scaly_catch_frame *)malloc(sizeof *f);
+    if (!f)
+        return 0;                  /* the emitted setjmp on a null pointer
+                                    * would fault, so the caller checks */
+    f->prev = scaly_catch_top;
+    f->mark = mark ? mark() : 0;
+    f->unwind = unwind;
+    f->what = 0; f->index = 0; f->length = 0;
+    scaly_catch_top = f;
+    return (void *)&f->buf;
+}
+
+/* Success path: the guarded work returned normally. */
+void scaly_catch_pop(void)
+{
+    scaly_catch_frame *f = scaly_catch_top;
+    if (!f)
+        return;
+    scaly_catch_top = f->prev;
+    free(f);
+}
+
+/* Jump path: unlink FIRST (so a panic raised by the unwind cannot land back
+ * in this frame), then give the regions back, then keep the detail where the
+ * accessors can read it. */
+void scaly_catch_caught(void)
+{
+    scaly_catch_frame *f = scaly_catch_top;
+    if (!f)
+        return;
+    scaly_catch_top = f->prev;
+    if (f->unwind)
+        f->unwind(f->mark);
+    scaly_last_what = f->what;
+    scaly_last_index = f->index;
+    scaly_last_length = f->length;
+    free(f);
 }
 
 int scaly_catch_active(void) { return scaly_catch_top != 0; }

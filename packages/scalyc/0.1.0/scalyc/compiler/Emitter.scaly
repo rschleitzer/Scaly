@@ -3832,6 +3832,108 @@ define Emitter
             LLVMAddAttributeAtIndex(fn, 4294967295, attr)
         }
 
+        ; setjmp is the one callee in this compiler that RETURNS TWICE, and
+        ; the attribute is not cosmetic: without it LLVM may promote a local
+        ; of the catching function into a register across the call, and after
+        ; the jump that register holds whatever it held before — the classic
+        ; setjmp trap, which C answers with `volatile`. With the attribute the
+        ; backend keeps what it must in memory, so a `try` can use its own
+        ; locals in the else arm (measured against clang's own output for the
+        ; same shape, TRAPS.md 5.6).
+        procedure mark_returns_twice_callee(this, fn: LLVMValueRef)
+        {
+            if fn = null
+                return
+
+            let kind LLVMGetEnumAttributeKindForName("returns_twice" as pointer[const_char], 13)
+            if kind = 0
+                return
+
+            let attr LLVMCreateEnumAttribute(context, kind, 0)
+            LLVMAddAttributeAtIndex(fn, 4294967295, attr)
+        }
+
+        ; libc setjmp. The buffer comes from scaly_catch_push (the shim owns
+        ; the jmp_buf layout, which is OS- and arch-specific and must not reach
+        ; the ONE committed seed), so this declaration only needs the pointer.
+        function get_setjmp_fn(this) returns LLVMValueRef
+        {
+            var fn LLVMGetNamedFunction(llvm_module, "setjmp")
+            if fn = null
+            {
+                let i32_ty LLVMInt32TypeInContext(context)
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                var ptys Vector[LLVMTypeRef](1)
+                ptys.put(0, ptr_ty)
+                let fty LLVMFunctionType(i32_ty, ptys.data, 1, 0)
+                set fn: LLVMAddFunction(llvm_module, "setjmp", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+            }
+            mark_returns_twice_callee(fn)
+            fn
+        }
+
+        ; The catch-point shim (scaly/memory/panic.c). push takes the two
+        ; function POINTERS that reach the region watermark and the unwind, so
+        ; that neither this file nor the C shim writes the other's mangled
+        ; names; it answers a pointer to the frame's jmp_buf.
+        function get_catch_fn(this, name: String, nargs: int, returns_ptr: bool) returns LLVMValueRef
+        {
+            let cname name.to_c_string()
+            var fn LLVMGetNamedFunction(llvm_module, cname)
+            if fn = null
+            {
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                var rty LLVMVoidTypeInContext(context)
+                if returns_ptr
+                    set rty: ptr_ty
+                var ptys Vector[LLVMTypeRef](2)
+                ptys.put(0, ptr_ty)
+                ptys.put(1, ptr_ty)
+                let fty LLVMFunctionType(rty, ptys.data, nargs as u32, 0)
+                set fn: LLVMAddFunction(llvm_module, cname, fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+            }
+            fn
+        }
+
+        ; ★★★The two Scaly routines the shim calls back into, referenced BY
+        ; THEIR ITANIUM NAMES -- which freezes their parameter types, the cost
+        ; CLAUDE.md names for the eight symbols that already pay it. Grep for
+        ; these strings before re-signing scaly_panic_mark or
+        ; scaly_panic_unwind_to; the RETURN is free (Itanium does not encode
+        ; one). They are looked up rather than declared where possible, so a
+        ; rename shows up as an undefined symbol at link time and not as a
+        ; silently wrong call.
+        function get_panic_mark_fn(this) returns LLVMValueRef
+        {
+            var fn LLVMGetNamedFunction(llvm_module, "_Z16scaly_panic_markv")
+            if fn = null
+            {
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                let fty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
+                set fn: LLVMAddFunction(llvm_module, "_Z16scaly_panic_markv", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+            }
+            fn
+        }
+
+        function get_panic_unwind_fn(this) returns LLVMValueRef
+        {
+            var fn LLVMGetNamedFunction(llvm_module, "_Z21scaly_panic_unwind_toP4Page")
+            if fn = null
+            {
+                let void_ty LLVMVoidTypeInContext(context)
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                var ptys Vector[LLVMTypeRef](1)
+                ptys.put(0, ptr_ty)
+                let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+                set fn: LLVMAddFunction(llvm_module, "_Z21scaly_panic_unwind_toP4Page", fty)
+                LLVMSetLinkage(fn, LLVMLinkage.External())
+            }
+            fn
+        }
+
         ; The two runtime prints the emitted traps use. Both live in
         ; libscaly.a, which EVERY `-o` link pulls in (SCALY_HOME's lib or the
         ; cwd fallback), so a generated call resolves in exactly the programs
@@ -16275,8 +16377,105 @@ define Emitter
         }
 
         ; Emit a try expression
+        ; emit_try_panic_catch: a `try ... else` whose condition throws
+        ; NOTHING, which since 2026-09-07 catches a runtime PANIC instead of
+        ; being the silent no-op it was (TRAPS.md 5.1). The shape:
+        ;
+        ;     %buf = call ptr @scaly_catch_push(@mark, @unwind)
+        ;     %sj  = call i32 @setjmp(ptr %buf)     ; returns_twice
+        ;     br i1 (%sj == 0), %try.body, %try.catch
+        ;   try.body:   <condition> ; @scaly_catch_pop()   ; br %try.end
+        ;   try.catch:  @scaly_catch_caught()  ; <else>    ; br %try.end
+        ;
+        ; ★★★The push and the setjmp must come BEFORE the condition is
+        ; emitted, which is why this is a separate function hooked in at the
+        ; TOP of emit_try: that one emits its operands first, and a catch point
+        ; installed after the work it guards would catch nothing.
+        ;
+        ; ★The ELSE form only. The `when`-arm form needs a union VALUE in
+        ; memory (tag plus payload) for plan_when's switch, while a panic
+        ; arrives as three scalars from the shim -- synthesising that union is
+        ; the next step, and until it exists an arm without a throwing
+        ; condition stays the hard diagnosis in report_try_without_throw#. The
+        ; detail is reachable in the else arm through Region.panic_index() and
+        ; its siblings.
+        ;
+        ; ★No value is bound on the catch path: the binding leaks into the
+        ; enclosing scope (see plan_try) and the else arm of every shape in the
+        ; tree ends in a return or a throw, so nothing downstream reads it.
+        function emit_try_panic_catch(this, try_expr: PlannedTry) returns LLVMValueRef
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+
+            let push_fn get_catch_fn(String("scaly_catch_push"), 2, true)
+            let pop_fn get_catch_fn(String("scaly_catch_pop"), 0, false)
+            let caught_fn get_catch_fn(String("scaly_catch_caught"), 0, false)
+            let mark_fn get_panic_mark_fn()
+            let unwind_fn get_panic_unwind_fn()
+
+            var push_args Vector[LLVMValueRef](2)
+            push_args.put(0, mark_fn)
+            push_args.put(1, unwind_fn)
+            let push_ty LLVMGlobalGetValueType(push_fn)
+            let buf LLVMBuildCall2(builder, push_ty, push_fn, push_args.data, 2, "catch.buf")
+
+            let sj_fn get_setjmp_fn()
+            var sj_args Vector[LLVMValueRef](1)
+            sj_args.put(0, buf)
+            let sj_ty LLVMGlobalGetValueType(sj_fn)
+            let sj LLVMBuildCall2(builder, sj_ty, sj_fn, sj_args.data, 1, "catch.sj")
+
+            let body_block create_block("try.body")
+            let catch_block create_block("try.catch")
+            let end_block create_block("try.end")
+
+            let zero32 LLVMConstInt(i32_ty, 0, 0)
+            let first LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), sj, zero32, "catch.first")
+            LLVMBuildCondBr(builder, first, body_block, catch_block)
+
+            ; --- the guarded work
+            LLVMPositionBuilderAtEnd(builder, body_block)
+            let result_value emit_operands try_expr.cond.operation
+            let pop_ty LLVMGlobalGetValueType(pop_fn)
+            LLVMBuildCall2(builder, pop_ty, pop_fn, null as pointer[LLVMValueRef], 0, "")
+            if try_expr.cond.binding_item.name <> null
+            {
+                let name_ref try_expr.cond.binding_item.name
+                let name (*name_ref)
+                if result_value <> null
+                    define_variable(name, result_value)
+            }
+            let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+            if body_term = null
+                LLVMBuildBr(builder, end_block)
+
+            ; --- the jump lands here: unlink, unwind, then the else arm
+            LLVMPositionBuilderAtEnd(builder, catch_block)
+            let caught_ty LLVMGlobalGetValueType(caught_fn)
+            LLVMBuildCall2(builder, caught_ty, caught_fn, null as pointer[LLVMValueRef], 0, "")
+            if try_expr.alternative <> null
+            {
+                let alt (*try_expr.alternative)
+                emit_statement alt
+            }
+            let catch_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+            if catch_term = null
+                LLVMBuildBr(builder, end_block)
+
+            LLVMPositionBuilderAtEnd(builder, end_block)
+            result_value
+        }
+
         function emit_try(this, try_expr: PlannedTry) returns LLVMValueRef
         {
+            ; A non-throwing condition with an `else`: install a catch point
+            ; BEFORE the work, so a runtime panic inside it lands in the else
+            ; arm. It has to be decided here, ahead of emit_operands below.
+            if try_expr.is_throwing_cond = false
+                if try_expr.alternative <> null
+                    return emit_try_panic_catch try_expr
+
             ; Emit the binding's operation
             let result_value emit_operands try_expr.cond.operation
             if result_value = null

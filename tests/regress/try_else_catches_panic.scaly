@@ -1,0 +1,89 @@
+; Regression: `try ... else` faengt einen Laufzeit-PANIC (TRAPS.md 0, 5.1).
+;
+; Bis 2026-09-07 war diese Form ein stiller No-op -- der Trap beendete den
+; Prozess mit rc 15, als staende kein try da. Jetzt installiert der Emitter
+; einen Fangpunkt VOR der Bedingung (emit_try_panic_catch#).
+;
+; Geprueft wird, was die Form tragen muss:
+;   (1) Locals des FAENGERS ueberleben den Sprung -- das haengt am
+;       returns_twice-Attribut auf setjmp; ohne es duerfte LLVM sie in
+;       Register ziehen, und nach dem Sprung staende dort Beliebiges.
+;   (2) der Erfolgspfad bindet die Variable und laeuft normal durch
+;   (3) die Regionen der uebersprungenen Rahmen kommen zurueck (Wasserstand)
+;   (4) Verschachtelung: ein try IM Fangzweig eines anderen
+;
+; Die when-Arm-Form ist NICHT hier: sie braucht einen Union-Wert im Speicher
+; und ist noch nicht gebaut -- ein Arm ohne werfende Bedingung ist die harte
+; Diagnose in xfail_try_without_throw.scaly.
+;
+; Erwartet: PASS
+function deep(n: i64) returns i64
+{
+    let s String("eine Region auf diesem Rahmen")
+    var buf int[2]
+    set buf[0]: 7
+    let v Slice[int](2, &buf[0])
+    if n > 0
+        return v[(n as size_t) + 4]
+    (s.get_length() as i64)
+}
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    ; (1) Locals, die den Sprung ueberleben muessen
+    var vor 100
+    let konstant 41
+    set vor: vor + argc
+
+    let mark0 scaly_panic_mark()
+
+    try let a deep(1)
+    else
+    {
+        if vor <> 101
+        {
+            scaly_eputs "FAIL: Local nach dem Sprung verloren"
+            scaly_eputnl()
+            return 1
+        }
+        if konstant <> 41
+        {
+            scaly_eputs "FAIL: let-Local verloren"
+            scaly_eputnl()
+            return 2
+        }
+        if Region.panic_index() <> 5
+            return 3
+
+        ; (4) Verschachtelung: ein try IM Fangzweig
+        try let b deep(1)
+        else
+        {
+            if Region.panic_length() <> 2
+                return 4
+            scaly_eputs "verschachtelt gefangen"
+            scaly_eputnl()
+        }
+
+        ; (3) die Regionen sind zurueck
+        if scaly_panic_mark() <> mark0
+        {
+            scaly_eputs "FAIL: Wasserstand verschoben"
+            scaly_eputnl()
+            return 5
+        }
+
+        ; (2) der Erfolgspfad bindet und laeuft durch
+        try let c deep(0)
+        else
+            return 6
+        if c < 1
+            return 7
+
+        print "PASS"
+        return 0
+    }
+    scaly_eputs "FAIL: nicht gefangen"
+    scaly_eputnl()
+    8
+}

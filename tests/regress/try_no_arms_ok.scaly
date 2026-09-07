@@ -3,6 +3,11 @@
 ; und bleibt unbehelligt -- sonst waere die Diagnose eine Aussage ueber die
 ; Form statt ueber die Unerreichbarkeit.
 ;
+; ★Seit 2026-09-07 ist diese Form zugleich ein FANGPUNKT (emit_try_panic_catch#,
+; try_else_catches_panic.scaly): hier panickt nichts, also laeuft der
+; else-Zweig nie -- was der Test weiter prueft, ist die Diagnose-Grenze und
+; der ungestoerte Erfolgspfad.
+;
 ; Erwartet: PASS
 
 function plain(n: int) returns int
