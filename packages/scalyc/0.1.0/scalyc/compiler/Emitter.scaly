@@ -3834,6 +3834,10 @@ define Emitter
             ; And the size-overflow guard in Array.add (exit 22).
             if name = "_Z16scaly_panic_sizeP10const_charmm"
                 set known: true
+            ; And the malformed-String guard, nine readers in String.scaly
+            ; (exit 11).
+            if name = "_Z18scaly_panic_stringP10const_charm"
+                set known: true
             if known = false
                 return
 

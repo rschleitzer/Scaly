@@ -477,6 +477,9 @@ define Region
     function panic_size_count() returns i64
         scaly_panic_size_count()
 
+    function panic_string_count() returns i64
+        scaly_panic_string_count()
+
     ; Is a catch point installed on this thread's stack? The panic helper asks
     ; the shim the same question implicitly; this is for a caller that wants to
     ; know whether a trap would end the process.

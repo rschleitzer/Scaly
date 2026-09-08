@@ -160,10 +160,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-            {
-                ; Bad string length
-                exit 12
-            }
+                scaly_panic_string("String.init", other.data as size_t)
 
             let byte *(other.data + index)
             set length: length | ((byte & 0x7F) as size_t) << bit_count
@@ -200,7 +197,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit 11
+                scaly_panic_string("String.get_buffer", data as size_t)
 
             var byte: u8 *(data + index)
             set length: length | ((byte & 0x7F) as size_t) << bit_count
@@ -228,7 +225,7 @@ define String (data: pointer[u8](null))
             while true
             {
                 if bit_count = (PACKED_SIZE * 7) as size_t
-                    exit 11
+                    scaly_panic_string("String.to_c_string", data as size_t)
 
                 var byte: u8 *(data + index)
                 set length: length | ((byte & 0x7F) as size_t) << bit_count
@@ -263,7 +260,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit 11
+                scaly_panic_string("String.get_length", data as size_t)
 
             var byte: u8 *(data + index)
             set result: result | (((byte & 0x7F) as size_t)) << bit_count
@@ -304,7 +301,7 @@ define String (data: pointer[u8](null))
             while true
             {
                 if bit_count = (PACKED_SIZE * 7) as size_t
-                    exit 11
+                    scaly_panic_string("String.equals(String)", data as size_t)
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & 0x7F) as size_t)) << bit_count
@@ -335,7 +332,7 @@ define String (data: pointer[u8](null))
             while true
             {
                 if bit_count = (PACKED_SIZE * 7) as size_t
-                    exit 13
+                    scaly_panic_string("String.equals(cstring)", data as size_t)
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & 0x7F) as size_t)) << bit_count
@@ -364,7 +361,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit 11
+                scaly_panic_string("String.equals(Vector)", data as size_t)
 
             var byte: u8 *(data + index)
             set length: length | (((byte & 0x7F) as size_t)) << bit_count
@@ -395,7 +392,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit 11
+                scaly_panic_string("String.hash", data as size_t)
 
             var byte: u8 *(data + index)
             set length: length | (((byte & 0x7F) as size_t)) << bit_count
@@ -425,7 +422,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit 11
+                scaly_panic_string("String.as_slice", data as size_t)
 
             var byte: u8 *(data + index)
             set string_length: string_length | (((byte & 0x7F) as size_t)) << bit_count

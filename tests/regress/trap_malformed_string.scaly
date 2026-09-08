@@ -1,0 +1,37 @@
+; Runtime trap: a String whose length prefix is not a varint (exit 11).
+;
+; A String is a pointer at a varint length prefix followed by that many
+; bytes. Nine readers decode that prefix, and each one carried its own copy of
+; the same guard -- with THREE different exit codes (11, 12, 13) and not one
+; message between them. Since 2026-09-08 they all route through
+; `scaly_panic_string`, which names the reader and the address.
+;
+; ★What the fault means: the object this String points at is not a String --
+; the dangling-String class (a record built with `allocate` + `set *p: T()`,
+; or a `StringC(literal)` stack temporary stored into a field). The check
+; fires BEFORE the bogus length is used.
+;
+; The fixture builds it directly: nine continuation bytes make the varint run
+; past PACKED_SIZE * 7 bits, which is the one thing a real String's prefix can
+; never do.
+;
+; expect-rc: 11
+; expect-out: String.get_length: malformed string length prefix at 0x
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var buf u8[16]
+    var i 0
+    while i < 16
+    {
+        set buf[i]: 0x80 as u8       ; continuation bit set, forever
+        set i: i + 1
+    }
+
+    var s String()
+    set s.data: &buf[0]
+    let n s.get_length()
+
+    print "FAIL: the malformed string was read"
+    n as int
+}

@@ -429,6 +429,57 @@ procedure scaly_panic_size(what: pointer[const_char], added: size_t, length: siz
     exit 22
 }
 
+; The ONE place a malformed String ends the program (exit 11).
+;
+; A String is a pointer at a varint length prefix followed by that many
+; bytes. Nine readers decode that prefix -- `get_buffer`, `to_c_string`,
+; `get_length`, the three `equals` overloads, `hash`, `as_slice` and
+; `init(other: String)` -- and each one carried its own copy of the same
+; guard: if the varint runs past PACKED_SIZE * 7 bits, the bytes at `data`
+; are not a String.
+;
+; ★★★What it MEANS is worth writing down, because the message could not say
+; it before: the object this String points at is not a String. That is the
+; dangling-String class CLAUDE.md describes twice -- a record built with
+; `allocate` + `set *p: T()` whose `Page.get(this)` answered a header in
+; arbitrary memory, or a `StringC(literal)` stack temporary stored into a
+; field. The check fires BEFORE the bogus length is used, so nothing has been
+; read past yet.
+;
+; ★★★The nine sites carried THREE different exit codes -- 11 at seven of
+; them, 12 in `init(other: String)`, 13 in `equals(pointer[const_char])` --
+; for one condition, and none of them said a word. One condition, one code
+; (11, what most of them already used), and a message that names the reader
+; and the address.
+;
+; ★NOT catchable yet, and that is the open decision rather than an oversight:
+; unlike an index one past the end, this fault says the program's own memory
+; is already wrong. Making it catchable is a variant in
+; scaly/memory/runtime.scaly plus a case in the shim, exactly as the other
+; four went (TRAPS.md 2.4 carries the argument).
+;
+; ★★Which is also why the counter below cannot be read yet: the only way to
+; reach it is a FATAL trap, so nobody is alive to ask. Same situation the null
+; counter was in before its kind became catchable.
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z18scaly_panic_stringP10const_charm` before re-signing.
+mutable panic_string_count: i64 0
+
+function scaly_panic_string_count() returns i64
+    panic_string_count
+
+procedure scaly_panic_string(what: pointer[const_char], address: size_t)
+{
+    set panic_string_count: panic_string_count + 1
+
+    scaly_eputs(what)
+    scaly_eputs(": malformed string length prefix at ")
+    scaly_eputp(address as pointer[void])
+    scaly_eputnl()
+    exit 11
+}
+
 ; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array
 ; `char[]` lookup table would be a module-level array constant, which
 ; stage-1's planner emits as an external declaration (no body) — the
