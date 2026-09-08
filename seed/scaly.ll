@@ -1385,6 +1385,8 @@ if.end21:                                         ; preds = %if.then20, %while.e
 
 declare i32 @scaly_panic_jump(ptr, i64, i64)
 
+declare i32 @scaly_panic_null_jump(ptr)
+
 declare i64 @scaly_catch_run(ptr, ptr, ptr, ptr, ptr)
 
 declare i32 @scaly_catch_active()
@@ -1430,6 +1432,7 @@ entry:
   %global.load = load i64, ptr @panic_null_count, align 8
   %add = add i64 %global.load, 1
   store i64 %add, ptr @panic_null_count, align 8
+  %call = call i32 @scaly_panic_null_jump(ptr %0)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.9)
   call void @_Z11scaly_eputsP10const_char(ptr %0)
   call void @_Z12scaly_eputnlv()

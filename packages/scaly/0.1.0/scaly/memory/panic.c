@@ -40,6 +40,14 @@
 #include <stddef.h>
 #include <stdlib.h>   /* malloc/free for the emitter-side frames */
 
+/* ★★★THE CONTRACT WITH scaly/memory/runtime.scaly: these are the variant TAGS
+ * of the prelude's `RuntimeFault` union, and a tag is a variant's POSITION in
+ * that declaration. Appending a kind means appending it THERE and here in the
+ * same order; getting them out of step would make a `when` arm bind another
+ * kind's payload, and nothing would say a word. Both files carry this note. */
+#define SCALY_FAULT_OUT_OF_BOUNDS   0
+#define SCALY_FAULT_NULL_REFERENCE  1
+
 /* The region-stack watermark and the unwind live in Scaly
  * (scaly/memory/root_pages.scaly). They are reached through function POINTERS
  * that the Scaly side passes in, deliberately: writing their Itanium mangled
@@ -56,12 +64,14 @@ typedef struct scaly_catch_frame {
     scaly_unwind_fn unwind;
     const char *what;              /* the panic value, allocation-free: */
     size_t index, length;          /* everything between here and the trap */
+    int kind;                      /* which RuntimeFault variant it is */
 } scaly_catch_frame;               /* has been given back by then */
 
 static __thread scaly_catch_frame *scaly_catch_top = 0;
 static __thread const char *scaly_last_what = 0;
 static __thread size_t scaly_last_index = 0;
 static __thread size_t scaly_last_length = 0;
+static __thread int scaly_last_kind_v = 0;
 
 /* Run `body(arg)` with a catch point installed. On a panic inside, the region
  * stack is popped back to the watermark and *caught is set; the panic's own
@@ -77,7 +87,7 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
     f.prev = scaly_catch_top;
     f.mark = mark ? mark() : 0;
     f.unwind = unwind;
-    f.what = 0; f.index = 0; f.length = 0;
+    f.what = 0; f.index = 0; f.length = 0; f.kind = 0;
 
     if (setjmp(f.buf) == 0) {
         scaly_catch_top = &f;
@@ -92,6 +102,7 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
     scaly_last_what = f.what;
     scaly_last_index = f.index;
     scaly_last_length = f.length;
+    scaly_last_kind_v = f.kind;
     if (caught) *caught = 1;
     return 0;
 }
@@ -106,6 +117,25 @@ int scaly_panic_jump(const char *what, size_t index, size_t length)
     if (!t)
         return 0;
     t->what = what; t->index = index; t->length = length;
+    t->kind = SCALY_FAULT_OUT_OF_BOUNDS;
+    longjmp(t->buf, 1);
+    return 0;                      /* unreachable; longjmp is noreturn */
+}
+
+/* The null twin, raised by scaly_panic_null in root_pages.scaly: `x as ref[T]`
+ * met a null. Same answer discipline — 0 when no catch point is installed, so
+ * a program that catches nothing ends exactly as it did.
+ *
+ * `where` is the enclosing symbol's MANGLED name, because a run has no source
+ * location. It is a static string in the module that raised, so it outlives
+ * every region this jump unwinds — which is what lets the payload carry it. */
+int scaly_panic_null_jump(const char *where)
+{
+    scaly_catch_frame *t = scaly_catch_top;
+    if (!t)
+        return 0;
+    t->what = where; t->index = 0; t->length = 0;
+    t->kind = SCALY_FAULT_NULL_REFERENCE;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -143,7 +173,7 @@ void *scaly_catch_push(scaly_mark_fn mark, scaly_unwind_fn unwind)
     f->prev = scaly_catch_top;
     f->mark = mark ? mark() : 0;
     f->unwind = unwind;
-    f->what = 0; f->index = 0; f->length = 0;
+    f->what = 0; f->index = 0; f->length = 0; f->kind = 0;
     scaly_catch_top = f;
     return (void *)&f->buf;
 }
@@ -172,30 +202,52 @@ void scaly_catch_caught(void)
     scaly_last_what = f->what;
     scaly_last_index = f->index;
     scaly_last_length = f->length;
+    scaly_last_kind_v = f->kind;   /* the arm's switch reads this */
     free(f);
 }
 
 /* --- what a `when` arm needs ---------------------------------------------
  *
  * The kind, as the variant TAG of the prelude's RuntimeFault. ★★★The mapping
- * is a contract with scaly/memory/runtime.scaly: 0 is OutOfBounds because it
- * is that union's first variant, and a new trap kind must be appended THERE
- * and here in the same order, or an arm would bind the wrong payload. There is
- * one kind today, which is why this is a constant.
+ * is a contract with scaly/memory/runtime.scaly: the tag is the variant's
+ * position in that union's declaration, so a new trap kind must be appended
+ * THERE and here in the same order, or an arm would bind the wrong payload.
+ * The constants below are that contract written down once.
  */
-int scaly_panic_last_kind(void) { return 0; }
+int scaly_panic_last_kind(void) { return scaly_last_kind_v; }
 
-/* Fill an OutOfBoundsFault in place. The emitter allocates the record (it
- * knows the type from the arm) and hands the pointer here, so the FIELD
- * LAYOUT stays in one place instead of being rebuilt with GEPs in the
- * compiler: two size_t in declaration order, index then length. */
-void scaly_panic_fill_bounds(void *dst)
+/* Fill the arm's payload record in place. The emitter allocates it (it knows
+ * the type from the arm) and hands the pointer here, so the FIELD LAYOUT stays
+ * in ONE place instead of being rebuilt with GEPs in the compiler.
+ *
+ * ★★★It dispatches on the KIND rather than being one function per variant,
+ * and that is what keeps the Emitter kind-agnostic: the switch it emits sends
+ * each arm to the SAME filler, and the arm it runs is by construction the one
+ * whose tag equals this kind. A third trap kind therefore appends a variant in
+ * the prelude and a case here, and touches no compiler code at all.
+ *
+ * The layouts, each in declaration order:
+ *   OutOfBoundsFault   (index: size_t, length: size_t)
+ *   NullReferenceFault (where: pointer[const_char])
+ */
+void scaly_panic_fill(void *dst)
 {
-    size_t *out = (size_t *)dst;
-    if (!out)
+    if (!dst)
         return;
-    out[0] = scaly_last_index;
-    out[1] = scaly_last_length;
+    switch (scaly_last_kind_v) {
+    case SCALY_FAULT_NULL_REFERENCE: {
+        const char **out = (const char **)dst;
+        out[0] = scaly_last_what ? scaly_last_what : "";
+        break;
+    }
+    case SCALY_FAULT_OUT_OF_BOUNDS:
+    default: {
+        size_t *out = (size_t *)dst;
+        out[0] = scaly_last_index;
+        out[1] = scaly_last_length;
+        break;
+    }
+    }
 }
 
 int scaly_catch_active(void) { return scaly_catch_top != 0; }

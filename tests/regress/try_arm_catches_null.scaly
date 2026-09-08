@@ -1,0 +1,111 @@
+; Regression: `try ... when e: NullReference` fängt den NULL-UNWRAP
+; (TRAPS.md 3.12) — die zweite Trap-Art, die fangbar ist.
+;
+; Der Trap liegt zwei Rahmen tief in Code, der nichts von Fangpunkten weiß:
+; `x as ref[T]` ist die Behauptung, dass da etwas ist, und sie ist falsch.
+; Ohne `try` endet derselbe Zugriff mit exit 21 (trap_null_unwrap.scaly).
+;
+; Geprüft wird:
+;   (1) der Arm bindet e mit e.where, und das nennt das umgebende Symbol
+;   (2) Locals des FÄNGERS überleben den Sprung (returns_twice)
+;   (3) die Regionen der übersprungenen Rahmen kommen zurück
+;   (4) der Zähler am Panic-Ort zählt den GEFANGENEN Trap -- erst seit die
+;       Art fangbar ist, kann ihn überhaupt jemand lesen
+;   (5) die `else`-Form fängt dieselbe Art, ohne sie zu benennen
+;   (6) ein gültiger Lauf nimmt den Erfolgspfad
+;
+; Erwartet: PASS
+
+function inner(n: size_t) returns int
+{
+    let s String("eine Region auf diesem Rahmen")
+    var buf int[2]
+    set buf[0]: 7
+    let v Slice[int](2, &buf[0])
+    let r v.get(n) as ref[int]        ; bei n >= 2 ist die Behauptung falsch
+    r + ((s.get_length() as int) / 29)
+}
+
+function outer(n: size_t) returns int
+    inner(n) + 1
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var vor 100
+    set vor: vor + argc
+    let mark0 scaly_panic_mark()
+    let vorher Region.panic_null_count()
+
+    try let a outer((argc as size_t) + 4)
+        when e: NullReference
+        {
+            ; (2) Locals des Fängers
+            if vor <> 101
+            {
+                print "FAIL: ein Local des Faengers hat den Sprung nicht ueberlebt"
+                return 2
+            }
+
+            ; (3) Regionen zurück
+            if scaly_panic_mark() <> mark0
+            {
+                print "FAIL: der Wasserstand der Regionen ist verschoben"
+                return 3
+            }
+
+            ; (4) gezählt, und lesbar, weil wir leben
+            if Region.panic_null_count() - vorher <> 1
+            {
+                print "FAIL: der Null-Zaehler zaehlte nicht genau einmal"
+                return 4
+            }
+
+            ; (1) der Ort, als gemangelter Name des umgebenden Symbols. ★Diese
+            ;     Prüfung steht ABSICHTLICH nach der Wasserstandsprüfung: die
+            ;     String-Konstruktion ist die erste Allokation dieses Rahmens
+            ;     und schiebt den Wasserstand selbst, was die Kontrolle (3)
+            ;     rot machte -- eine Messung, die ihr eigenes Instrument
+            ;     bewegt.
+            let w String(e.where)
+            if w.equals(String("_Z5innerm")) = false
+            {
+                print "FAIL: e.where nennt nicht das Symbol"
+                print w
+                return 1
+            }
+
+            ; (5) die else-Form fängt dieselbe Art
+            var caught_else false
+            try let b outer((argc as size_t) + 4)
+            else
+                set caught_else: true
+            if caught_else = false
+            {
+                print "FAIL: die else-Form hat den Null-Unwrap nicht gefangen"
+                return 5
+            }
+            if Region.panic_null_count() - vorher <> 2
+            {
+                print "FAIL: der zweite Fang wurde nicht gezaehlt"
+                return 6
+            }
+
+            ; (6) und ein gültiger Lauf geht durch
+            try let c outer(0)
+                when e3: NullReference
+                {
+                    print "FAIL: der gueltige Lauf hat gepanickt"
+                    return 7
+                }
+            if c <> 9
+            {
+                print "FAIL: der gueltige Lauf hat nichts geliefert"
+                return 8
+            }
+
+            print "PASS"
+            return 0
+        }
+    print "FAIL: nicht gefangen"
+    9
+}

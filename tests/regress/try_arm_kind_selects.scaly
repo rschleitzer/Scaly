@@ -1,0 +1,123 @@
+; Regression: ein `when`-Arm wählt nach der ART des Panics, nicht nach „irgendein
+; Panic" (TRAPS.md 3.12).
+;
+; Seit es zwei fangbare Arten gibt, ist das eine prüfbare Aussage — und die
+; Kopplung, an der sie hängt, ist eng: der Variantentag EINES Unions im Prelude
+; muss mit dem übereinstimmen, was `scaly_panic_last_kind` im Shim liefert.
+; Stünden die beiden Reihenfolgen nicht gleich, würde ein Arm den Payload der
+; anderen Art binden — und niemand sagte ein Wort. Darum alle vier Paarungen.
+;
+; Erwartet: PASS
+
+function null_trap(n: size_t) returns int
+{
+    var buf int[2]
+    set buf[0]: 7
+    let v Slice[int](2, &buf[0])
+    let r v.get(n) as ref[int]
+    r
+}
+
+function oob_trap(n: size_t) returns int
+{
+    var buf int[2]
+    set buf[0]: 7
+    let v Slice[int](2, &buf[0])
+    v[n]
+}
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let bad (argc as size_t) + 4
+
+    ; (1) ein NULL-Panic gegen einen OutOfBounds-Arm: der Arm bleibt kalt,
+    ;     das else fängt
+    var wrong_arm false
+    var else_ran false
+    try let a null_trap(bad)
+        when e: OutOfBounds
+            set wrong_arm: true
+    else
+        set else_ran: true
+    if wrong_arm
+    {
+        print "FAIL: der OutOfBounds-Arm hat ein Null-Panic gefangen"
+        return 1
+    }
+    if else_ran = false
+    {
+        print "FAIL: das else hat das Null-Panic nicht gefangen"
+        return 2
+    }
+
+    ; (2) ein BOUNDS-Panic gegen einen NullReference-Arm: dasselbe umgekehrt
+    var wrong_arm2 false
+    var else_ran2 false
+    try let b oob_trap(bad)
+        when e2: NullReference
+            set wrong_arm2: true
+    else
+        set else_ran2: true
+    if wrong_arm2
+    {
+        print "FAIL: der NullReference-Arm hat ein Bounds-Panic gefangen"
+        return 3
+    }
+    if else_ran2 = false
+    {
+        print "FAIL: das else hat das Bounds-Panic nicht gefangen"
+        return 4
+    }
+
+    ; (3) jede Art gegen ihren eigenen Arm, mit dem Detail ihres Payloads
+    var oob_ok false
+    try let c oob_trap(bad)
+        when e3: OutOfBounds
+            if e3.index = (5 as size_t)
+                if e3.length = (2 as size_t)
+                    set oob_ok: true
+    if oob_ok = false
+    {
+        print "FAIL: der eigene OutOfBounds-Arm blieb aus oder log"
+        return 5
+    }
+
+    var null_ok false
+    try let d null_trap(bad)
+        when e4: NullReference
+            if e4.where <> null
+                set null_ok: true
+    if null_ok = false
+    {
+        print "FAIL: der eigene NullReference-Arm blieb aus oder log"
+        return 6
+    }
+
+    ; (4) und die Form, die ein echter Fänger schreibt: BEIDE Arme an einem
+    ;     try, ein Switch mit zwei Fällen -- jede Art nimmt ihren
+    var pick1 0
+    try let e oob_trap(bad)
+        when e5: OutOfBounds
+            set pick1: 1
+        when e6: NullReference
+            set pick1: 2
+    var pick2 0
+    try let f null_trap(bad)
+        when e7: OutOfBounds
+            set pick2: 1
+        when e8: NullReference
+            set pick2: 2
+    if pick1 <> 1
+    {
+        print "FAIL: bei zwei Armen nahm das Bounds-Panic den falschen"
+        return 7
+    }
+    if pick2 <> 2
+    {
+        print "FAIL: bei zwei Armen nahm das Null-Panic den falschen"
+        return 8
+    }
+
+    print "PASS"
+    0
+}

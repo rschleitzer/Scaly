@@ -47,18 +47,33 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; ★It is a UNION and not a record because that is what `when` arms are: the
 ; planner resolves an arm name to a variant tag of the scrutinee's union
 ; (plan_when -> lookup_variant_tag), so a single record would have no arm to
-; select. The union has one variant today and room for the rest of the trap
-; family in TRAPS.md 2.4 -- a null unwrap, an oversized page -- each of which
-; needs its own decision about whether it MAY be caught at all.
+; select. Two variants today; the rest of the trap family in TRAPS.md 2.4 --
+; an oversized page, the fiber codes -- each needs its own decision about
+; whether it MAY be caught at all, which is why they are not here yet.
 ;
 ; ★The names are deliberately specific: everything here lives in the prelude,
 ; where a short name like `Bounds` would be taken away from every program in
 ; the tree (CLAUDE.md, prelude names are TAKEN).
+;
+; ★★★THE ORDER IS A CONTRACT WITH scaly/memory/panic.c: a variant's TAG is its
+; position here, and the shim answers that tag from `scaly_panic_last_kind`
+; and fills the matching payload in `scaly_panic_fill`. Appending a kind means
+; appending it in BOTH files in the same order -- out of step, a `when` arm
+; binds another kind's payload and nothing says a word. The shim carries the
+; same note with the constants written out.
+;
+; ★`where` is the enclosing symbol's MANGLED name and not a source location:
+; a run has no source position, and a mangled name is what a reader can grep
+; for. It is a `pointer[const_char]` because that is what the C shim hands
+; over -- a static string in the module that raised, so it outlives every
+; region the jump unwinds.
 define OutOfBoundsFault (index: size_t, length: size_t)
+define NullReferenceFault (where: pointer[const_char])
 
 define RuntimeFault union
 (
-    OutOfBounds: OutOfBoundsFault
+    OutOfBounds: OutOfBoundsFault,
+    NullReference: NullReferenceFault
 )
 
 define OpaqueFile()

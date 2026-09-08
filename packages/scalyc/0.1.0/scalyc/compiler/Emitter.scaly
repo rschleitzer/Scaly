@@ -3919,9 +3919,15 @@ define Emitter
             fn
         }
 
+        ; ★ONE filler for every kind, dispatching in the shim on the kind it
+        ; just recorded -- not one function per variant. That is what keeps
+        ; this emitter kind-agnostic: the switch below sends every arm to the
+        ; same callee, and the arm that runs is by construction the one whose
+        ; tag equals that kind. A third trap kind appends a variant in the
+        ; prelude and a case in the shim, and touches nothing here.
         function get_panic_fill_fn(this) returns LLVMValueRef
         {
-            var fn LLVMGetNamedFunction(llvm_module, "scaly_panic_fill_bounds")
+            var fn LLVMGetNamedFunction(llvm_module, "scaly_panic_fill")
             if fn = null
             {
                 let void_ty LLVMVoidTypeInContext(context)
@@ -3929,7 +3935,7 @@ define Emitter
                 var ptys Vector[LLVMTypeRef](1)
                 ptys.put(0, ptr_ty)
                 let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
-                set fn: LLVMAddFunction(llvm_module, "scaly_panic_fill_bounds", fty)
+                set fn: LLVMAddFunction(llvm_module, "scaly_panic_fill", fty)
                 LLVMSetLinkage(fn, LLVMLinkage.External())
             }
             fn
@@ -16448,13 +16454,9 @@ define Emitter
         ; TOP of emit_try: that one emits its operands first, and a catch point
         ; installed after the work it guards would catch nothing.
         ;
-        ; ★The ELSE form only. The `when`-arm form needs a union VALUE in
-        ; memory (tag plus payload) for plan_when's switch, while a panic
-        ; arrives as three scalars from the shim -- synthesising that union is
-        ; the next step, and until it exists an arm without a throwing
-        ; condition stays the hard diagnosis in report_try_without_throw#. The
-        ; detail is reachable in the else arm through Region.panic_index() and
-        ; its siblings.
+        ; ★Both forms land here: the `else` arm and the `when` arms, the
+        ; latter switching on the panic's KIND below. No union VALUE is ever
+        ; materialised -- see the note at the switch.
         ;
         ; ★No value is bound on the catch path: the binding leaks into the
         ; enclosing scope (see plan_try) and the else arm of every shape in the

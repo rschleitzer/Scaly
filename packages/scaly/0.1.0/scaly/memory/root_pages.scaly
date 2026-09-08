@@ -166,6 +166,7 @@ procedure scaly_eputi(n: i64)
 ; NO catch point is installed and does not return at all when one is: it
 ; longjmps, which is why the helper below stays noreturn either way.
 procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: size_t) returns i32 extern
+procedure scaly_panic_null_jump(where: pointer[const_char]) returns i32 extern
 function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
 function scaly_catch_active() returns i32 extern
 function scaly_panic_last_what() returns pointer[const_char] extern
@@ -263,22 +264,20 @@ procedure scaly_panic_oob(what: pointer[const_char], index: size_t, length: size
 ;
 ; Three reasons in the order they matter, the same order as scaly_panic_oob's:
 ;
-; 1. It is where a FANGPUNKT goes. The catch point for a bounds violation
-;    (TRAPS.md 3.6-3.8) needed exactly one site to jump from; a null unwrap has
-;    none yet, and it CANNOT get one while the sequence is rebuilt in the
-;    Emitter at every site. This is the preparation, not the change: adding
-;    the jump here is then two lines plus a RuntimeFault variant, and the
-;    contract for that is in scaly/memory/runtime.scaly.
+; 1. It is where the FANGPUNKT jumps from, and since 2026-09-08 it does:
+;    `try let x … when e: NullReference` catches this trap the way an arm
+;    catches a bounds violation (TRAPS.md 3.12). One site to jump from is what
+;    made that possible -- it could not be done while the sequence was rebuilt
+;    in the Emitter at ~6300 sites.
 ; 2. The trap can say more than it does. Today it names the enclosing mangled
 ;    symbol and nothing else, because everything the Emitter had at the site
 ;    was a name; a helper can be given whatever a caller can compute.
 ; 3. It is countable. `panic_null_count` below is the null twin of
 ;    `panic_oob_count`, and a trap family with one counted member and one
 ;    uncounted member is the inconsistency somebody trips over later.
-;    ★★It is NOT exercisable yet, and saying so is the point: the only way to
-;    reach this counter today is a FATAL trap, so nobody is alive to read it.
-;    It becomes a measurement when the null panic is catchable; a test
-;    asserting it reads 0 would be vacuous, which is worse than none.
+;    ★It became exercisable when the trap became catchable: after a caught
+;    null unwrap somebody is alive to read it, and
+;    tests/regress/try_arm_catches_null.scaly does.
 ;
 ; ★★★It stays noreturn for the same reason and by the same means: the body
 ; ends in `exit`, and `Emitter.mark_noreturn_callee` carries this routine's
@@ -298,6 +297,11 @@ function scaly_panic_null_count() returns i64
 procedure scaly_panic_null(where: pointer[const_char])
 {
     set panic_null_count: panic_null_count + 1
+
+    ; A catch point on the stack takes it, exactly as it takes a bounds
+    ; violation: the jump ends the guarded work and the catcher decides what
+    ; that means. Without one this returns 0 and the program ends as before.
+    scaly_panic_null_jump(where)
 
     scaly_eputs("Scaly: null unwrapped as ref in ")
     scaly_eputs(where)
