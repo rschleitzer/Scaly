@@ -1,0 +1,72 @@
+; The panic catch-point chain is per FIBER, not per thread (TRAPS.md 3.16).
+;
+; A catch frame lives on the stack of the routine that pushed it, and a fiber
+; has its own stack. So a fiber must not see a catch point armed outside it,
+; and whoever runs while a fiber is suspended must not see the fiber's. The
+; observable is Region.catch_active(), which asks exactly that question --
+; no fault needs to be raised to check the visibility.
+;
+; The positive half is here too: a trap INSIDE a fiber is caught by a catch
+; point on that fiber's own stack.
+; Expected: fiber:blind fiber:caught-own main:blind main:sees-own done
+
+procedure worker(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+
+    ; main armed a try around the resume -- invisible from here
+    if Region.catch_active()
+        Console.print "fiber:SEES-MAIN "
+    else
+        Console.print "fiber:blind "
+
+    ; its own catch point does work, on its own stack
+    var buf int[2]
+    set buf[0]: 7
+    let v Slice[int](2, &buf[0])
+    var ok false
+    try let x v[5]
+    else
+        set ok: true
+    if ok
+        Console.print "fiber:caught-own "
+    else
+        Console.print "fiber:MISSED-OWN "
+
+    ; arm one and suspend inside it: main must not see this frame
+    try Fiber.yield()
+    else
+        Console.print "fiber:CAUGHT-FOREIGN "
+
+    Fiber.finish()
+}
+
+let page Page.allocate_page()
+let f Fiber.create(page, &worker)
+
+try Fiber.resume(f)
+else
+    Console.print "main:CAUGHT-FIBER "
+
+; the fiber is suspended inside its own try -- invisible from out here
+if Region.catch_active()
+    Console.print "main:SEES-FIBER "
+else
+    Console.print "main:blind "
+
+; and main's own catch point still works for main's own trap
+var mine false
+var mbuf int[2]
+set mbuf[0]: 7
+let mv Slice[int](2, &mbuf[0])
+try let y mv[5]
+else
+    set mine: true
+if mine
+    Console.print "main:sees-own "
+else
+    Console.print "main:MISSED-OWN "
+
+Fiber.resume(f)
+let n Fiber.dispose(f)
+Console.println "done"

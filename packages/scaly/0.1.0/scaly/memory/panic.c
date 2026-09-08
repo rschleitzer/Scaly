@@ -310,6 +310,29 @@ void scaly_panic_fill(void *dst)
 
 int scaly_catch_active(void) { return scaly_catch_top != 0; }
 
+/* --- the chain head, for the FIBER crossings -----------------------------
+ *
+ * ★★★A catch frame lives on the stack of the routine that pushed it, and a
+ * fiber has its own stack. The chain must therefore be per FIBER, not per
+ * thread: while fiber A is suspended, its frames must be invisible, or a
+ * panic raised by whoever runs next would longjmp into a stack that is not
+ * running. Measured before the fix (TRAPS.md 3.16): a fiber armed a catch
+ * point and yielded, main then violated a bound, and the FIBER's else arm ran
+ * -- on the suspended stack -- and died in Fiber.finish with exit 21 because
+ * `current_fiber` was not it.
+ *
+ * `Fiber.swap_allocator` already swaps the StackBucket allocator state at
+ * every crossing, keeping the invariant that the record holds the NON-running
+ * side's state; these two let it do the same for the chain head. It is a
+ * get/set pair rather than one swap function because the Scaly side owns the
+ * record field and the invariant. */
+void *scaly_catch_top_get(void) { return (void *)scaly_catch_top; }
+
+void scaly_catch_top_set(void *top)
+{
+    scaly_catch_top = (scaly_catch_frame *)top;
+}
+
 const char *scaly_panic_last_what(void)
 {
     return scaly_last_what ? scaly_last_what : "";

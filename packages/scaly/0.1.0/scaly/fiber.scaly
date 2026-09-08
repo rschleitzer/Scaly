@@ -309,6 +309,11 @@ use scaly.memory.root_pages.StackBucketHeader
 function scaly_make_context(stack_top: pointer[void], fn: pointer[void], stack_base: pointer[void]) returns pointer[void] extern
 procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern
 
+; The panic catch-point chain head (scaly/memory/panic.c). Read and written at
+; every context crossing so the chain is per FIBER; see swap_allocator.
+function scaly_catch_top_get() returns pointer[void] extern
+procedure scaly_catch_top_set(top: pointer[void]) extern
+
 ; Evented-I/O backend shim (fiber/eio.c — kqueue/epoll behind one C API).
 ; Readiness registration is oneshot: an armed fd fires once, then must be
 ; re-armed. wait blocks until at least one event and fills tags (the void*
@@ -637,6 +642,7 @@ define Fiber
     stack_size: size_t
     saved_head: pointer[StackBucketHeader]  ; the non-running side's ...
     saved_top: pointer[Page]                ; ... StackBucket allocator state
+    saved_catch: pointer[void]              ; ... panic catch-point chain
     done: bool
 )
 {
@@ -694,17 +700,40 @@ define Fiber
         set stack_pool: null
     }
 
-    ; Swap the StackBucket allocator state between the process globals and
-    ; the record. Called at every context crossing, keeping the invariant
-    ; that the record holds the NON-running side's state.
+    ; Swap the per-side state between the process globals and the record.
+    ; Called at every context crossing, keeping the invariant that the record
+    ; holds the NON-running side's state.
+    ;
+    ; Two things travel: the StackBucket allocator state (without it,
+    ; interleaved root-page pushes from two fibers violate the shared
+    ; bucket's strict LIFO discipline -- tests/fiber/interleave.scaly), and
+    ; since 2026-09-08 the PANIC CATCH-POINT CHAIN.
+    ;
+    ; ★★★Why the chain belongs here: a catch frame lives on the stack of the
+    ; routine that pushed it, and a fiber has its own stack. Kept per thread,
+    ; the frames of a SUSPENDED fiber stay visible, and a panic raised by
+    ; whoever runs next longjmps into a stack that is not running. Measured
+    ; before the fix (TRAPS.md 3.16): a fiber armed a catch point and yielded,
+    ; main violated a bound, and the FIBER's else arm ran on the suspended
+    ; stack, then died in Fiber.finish with exit 21 because `current_fiber`
+    ; was not it.
+    ;
+    ; ★The consequence is a RULE, not a limitation to work around: a panic
+    ; inside a fiber is caught only by a catch point on THAT fiber's stack.
+    ; Delivering a fiber's fault to its resumer is a task-boundary policy
+    ; (TRAPS.md 3.1) and needs an unwind that can cross stacks -- it is not
+    ; this crossing's job.
     procedure swap_allocator(f: ref[Fiber])
     {
         let h stack_head
         let t stack_top
+        let c scaly_catch_top_get()
         set stack_head: f.saved_head
         set stack_top: f.saved_top
+        scaly_catch_top_set(f.saved_catch)
         set f.saved_head: h
         set f.saved_top: t
+        set f.saved_catch: c
     }
 
     ; Create a suspended fiber. The record lives on the given page; the
@@ -745,6 +774,7 @@ define Fiber
         set f.stack_size: size
         set f.saved_head: null    ; fresh region: the fiber's first local page
         set f.saved_top: null     ; creates its own bucket chain
+        set f.saved_catch: null   ; and no catch point of its own yet
         set f.done: false
         f
     }

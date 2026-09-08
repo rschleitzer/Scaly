@@ -170,13 +170,21 @@ ALL=$(printf '%s\n' "$ALL" | while read -r s
 # A name being present in the CRT is not the same as it being usable.
 # ★`__chkstk` is not a library call anyone wrote: the compiler emits it to probe
 # a stack frame larger than a page, and the CRT defines it.
+# ★★★`setjmp` arrived with the panic catch point (2026-09-08) and it is the one
+# entry on this list whose PRESENCE is not the whole question: the CRT declares
+# and provides it, so it belongs here rather than in MISSING -- but whether a
+# catch point WORKS on Windows is a different matter (MSVC's setjmp/longjmp
+# interacts with SEH unwinding, and panic.c's header says so). Rung 3 of the
+# roadmap is what would prove it; this list only answers "does something
+# provide the symbol". It shows up here because a program with a `try` emits
+# the call directly from the Emitter, not through a shim.
 # ★The second block arrived with dazzle and scalyc in scope (2026-08-11): the
 # DOUBLE-precision math the DSSSL numeric primitives call (the `f` suffixed ones
 # above are the tensor kernels'), plus `calloc` (dazzle/FrameMark.scaly's state
 # block), `raise`, and the four the compiler itself adds — `atoll`, `strtod`,
 # `system`, `memmove`. Nothing here needs a shim; they are listed because a
 # provider class with no entry reads as an unprovided symbol.
-CRT='^(abort|atexit|atoll|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memmove|memset|puts|rewind|strcmp|strerror|strlen|strdup|strtod|system|write|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index|__chkstk)$|^(acos|asin|atan|atan2|calloc|ceil|cos|exp|floor|log|log10|pow|raise|sin|sqrt|tan)$'
+CRT='^(abort|atexit|atoll|exit|fclose|fopen|fread|free|fwrite|getenv|malloc|memcmp|memcpy|memmove|memset|puts|rewind|strcmp|strerror|strlen|strdup|strtod|system|write|access|mkdir|rmdir|unlink|expf|logf|powf|sqrtf|tanhf|_fltused|_tls_index|__chkstk|setjmp)$|^(acos|asin|atan|atan2|calloc|ceil|cos|exp|floor|log|log10|pow|raise|sin|sqrt|tan)$'
 HAVE=$(printf '%s\n' "$ALL" | grep -E "$CRT")
 
 # ★A third provider class, added with the compiler (2026-08-11): the LLVM-C API.

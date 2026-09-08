@@ -190,7 +190,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z14StringIterator = type { ptr, ptr }
 %_Z13DeadlockState = type { i64, i64, i64 }
 %_Z6IoPool = type { i64, ptr, ptr, i32, i32, i64, i64, ptr }
-%_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, i1 }
+%_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, ptr, i1 }
 %_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64 }
 %_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr }
 %_Z6IoWork = type { ptr, ptr, ptr, ptr, ptr }
@@ -24185,6 +24185,10 @@ declare ptr @scaly_make_context(ptr, ptr, ptr)
 
 declare ptr @scaly_jump_context(ptr)
 
+declare ptr @scaly_catch_top_get()
+
+declare void @scaly_catch_top_set(ptr)
+
 declare i32 @scaly_eio_create()
 
 declare i32 @scaly_eio_arm(i32, i32, i32, ptr)
@@ -24543,16 +24547,22 @@ define linkonce_odr void @_ZN5Fiber14swap_allocatorER5Fiber(ptr %0) {
 entry:
   %global.load = load ptr, ptr @stack_head, align 8
   %global.load1 = load ptr, ptr @stack_top, align 8
+  %call = call ptr @scaly_catch_top_get()
   %load.struct = load %_Z5Fiber, ptr %0, align 8
   %saved_head = extractvalue %_Z5Fiber %load.struct, 3
   store ptr %saved_head, ptr @stack_head, align 8
   %load.struct2 = load %_Z5Fiber, ptr %0, align 8
   %saved_top = extractvalue %_Z5Fiber %load.struct2, 4
   store ptr %saved_top, ptr @stack_top, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z5Fiber, ptr %0, i32 0, i32 5
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  call void @scaly_catch_top_set(ptr %deref.recv)
   %saved_head3 = getelementptr inbounds nuw %_Z5Fiber, ptr %0, i32 0, i32 3
   store ptr %global.load, ptr %saved_head3, align 8
   %saved_top4 = getelementptr inbounds nuw %_Z5Fiber, ptr %0, i32 0, i32 4
   store ptr %global.load1, ptr %saved_top4, align 8
+  %saved_catch = getelementptr inbounds nuw %_Z5Fiber, ptr %0, i32 0, i32 5
+  store ptr %call, ptr %saved_catch, align 8
   ret void
 }
 
@@ -24605,7 +24615,9 @@ if.end6:                                          ; preds = %if.end15, %if.end
   store ptr null, ptr %saved_head, align 8
   %saved_top = getelementptr inbounds nuw %_Z5Fiber, ptr %call, i32 0, i32 4
   store ptr null, ptr %saved_top, align 8
-  %done = getelementptr inbounds nuw %_Z5Fiber, ptr %call, i32 0, i32 5
+  %saved_catch = getelementptr inbounds nuw %_Z5Fiber, ptr %call, i32 0, i32 5
+  store ptr null, ptr %saved_catch, align 8
+  %done = getelementptr inbounds nuw %_Z5Fiber, ptr %call, i32 0, i32 6
   store i1 false, ptr %done, align 1
   ret ptr %call
 
@@ -24636,7 +24648,7 @@ entry:
 define linkonce_odr i1 @_ZN5Fiber6resumeER5Fiber(ptr %0) {
 entry:
   %load.struct = load %_Z5Fiber, ptr %0, align 8
-  %done = extractvalue %_Z5Fiber %load.struct, 5
+  %done = extractvalue %_Z5Fiber %load.struct, 6
   br i1 %done, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -24653,7 +24665,7 @@ if.end:                                           ; preds = %entry
   store ptr %call, ptr %ctx, align 8
   store ptr %global.load, ptr @current_fiber, align 8
   %load.struct1 = load %_Z5Fiber, ptr %0, align 8
-  %done2 = extractvalue %_Z5Fiber %load.struct1, 5
+  %done2 = extractvalue %_Z5Fiber %load.struct1, 6
   %not = xor i1 %done2, true
   ret i1 %not
 }
@@ -24705,7 +24717,7 @@ unwrap.trap:                                      ; preds = %entry
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
-  %done = getelementptr inbounds nuw %_Z5Fiber, ptr %global.load, i32 0, i32 5
+  %done = getelementptr inbounds nuw %_Z5Fiber, ptr %global.load, i32 0, i32 6
   store i1 true, ptr %done, align 1
   call void @_ZN5Fiber14swap_allocatorER5Fiber(ptr %global.load)
   %field.inplace = getelementptr inbounds nuw %_Z5Fiber, ptr %global.load, i32 0, i32 0

@@ -1,0 +1,35 @@
+; The defect this per-fiber chain closes, as a gate (TRAPS.md 3.16).
+;
+; Before the fix, a fiber that armed a catch point and suspended inside it
+; stayed on the thread's chain -- so when MAIN violated a bound, the panic
+; longjmp'd into the SUSPENDED fiber's stack: the fiber's else arm ran (it
+; printed), and the fiber then died in Fiber.finish with exit 21, because
+; `current_fiber` was not it.
+;
+; What must happen instead: main's trap finds no catch point of its own and
+; ends the process with the ordinary bounds message, while the fiber's arm
+; stays cold. A jump must never cross stacks.
+; Expected: fiber:armed main:trapping
+; ExpectedExit: 15
+; ExpectedErr: index out of bounds
+
+procedure worker(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+    Console.print "fiber:armed "
+    try Fiber.yield()
+    else
+        Console.print "fiber:CAUGHT-MAINS-TRAP "
+    Fiber.finish()
+}
+
+let page Page.allocate_page()
+let f Fiber.create(page, &worker)
+Fiber.resume(f)                       ; runs to the yield, inside its own try
+
+Console.print "main:trapping"
+var buf int[2]
+set buf[0]: 7
+let v Slice[int](2, &buf[0])
+let x v[5]                            ; nobody on MAIN's stack is catching
+Console.println " main:NOT-REACHED"
